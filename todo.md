@@ -28,8 +28,8 @@ Phase 1 gateway/configuration cleanup, Phase 2 global background lifecycle,
 Phase 3 typed global MCP tools, and Phase 4 context inspect/bind/release plus
 required-context errors are complete. P4.5 workspace bind/unbind controls and
 P4.6 lifecycle coverage, P5.1 typed page tools, and P5.2 typed basic shape
-creation tools are complete. The current implementation focus is P5.3: typed
-shape update/delete tools.
+creation tools are complete. P5.3 typed shape update/delete tools are
+complete. The current implementation focus is P5.4: typed prototype tools.
 
 ## Feature Roadmap
 
@@ -127,7 +127,7 @@ Goal: reduce normal workflow dependence on arbitrary JavaScript execution.
 | --- | --- | --- | --- | --- | --- |
 | P5.1 | done | Add page tools | `mcp/packages/server`, `mcp/packages/plugin` | `page.list`, `page.create`, `page.rename`, `page.set_current` work | Completed 2026-06-11; added plugin-backed typed page tasks, registered four page tools, guarded them with the bound file context, and covered task serialization in server tests |
 | P5.2 | done | Add basic shape creation tools | `mcp/packages/server`, `mcp/packages/plugin` | Frame, rect, text, image creation work with typed args | Completed 2026-06-11; added plugin-backed `shape.create_frame`, `shape.create_rect`, `shape.create_text`, and `shape.create_image` guarded by the bound file context |
-| P5.3 | todo | Add shape update/delete tools | `mcp/packages/server`, `mcp/packages/plugin` | Position, size, style, layout, delete actions work | Next; audit destructive operations |
+| P5.3 | done | Add shape update/delete tools | `mcp/packages/server`, `mcp/packages/plugin` | Position, size, style, layout, delete actions work | Completed 2026-06-11; added plugin-backed `shape.update` and `shape.delete` with explicit shape ids, typed geometry/style/text updates, and basic board layout edits |
 | P5.4 | todo | Add prototype tools | `mcp/packages/server`, `mcp/packages/plugin` | Basic flows and interactions can be created | Needed for prototype drawing |
 | P5.5 | todo | Add export/render tools | `mcp/packages/server`, `mcp/packages/plugin`, `exporter` | Selection/page export works through typed tools | Local file output requires explicit permission |
 | P5.6 | todo | Gate `execute_code` behind setting | `mcp/packages/server`, `frontend` | Advanced code execution respects user setting | Default should be conservative |
@@ -172,9 +172,9 @@ Goal: make first-class MCP safe and diagnosable.
 
 ## Next Recommended Sprint
 
-Start the smallest slice that makes file-bound editing typed and reliable:
+Start the smallest slice that makes prototypes typed and reliable:
 
-1. Start P5.3 with typed shape update operations for position, size, name, fill, stroke, and radius.
-2. Add a conservative delete tool policy with explicit shape ids and clear destructive-action audit notes.
-3. Extend typed shape summaries so update/delete responses can be chained by prototype/export tools.
+1. Start P5.4 with typed flow creation for a selected starting frame/board.
+2. Add typed frame-to-frame click interactions using explicit source and destination shape ids.
+3. Return typed prototype summaries so later export/preview tools can chain operations.
 4. Keep plugin-backed implementation first, then move stable commands into the shared automation runtime.

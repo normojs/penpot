@@ -1,6 +1,7 @@
-import { Fill, Page, Shape, Stroke } from "@penpot/plugin-types";
+import { Board, Fill, FlexLayout, GridLayout, Page, Shape, Stroke, Text } from "@penpot/plugin-types";
 import {
     PageSummary,
+    ShapeLayout,
     ShapeSolidFill,
     ShapeStroke,
     ShapeSummary,
@@ -12,6 +13,11 @@ import { Task, TaskHandler } from "../TaskHandler";
 
 type ContainerShape = Shape & {
     appendChild(child: Shape): void;
+};
+
+type BoardWithLayout = Board & {
+    flex?: FlexLayout;
+    grid?: GridLayout;
 };
 
 export class ShapeTaskHandler extends TaskHandler<ShapeTaskParams> {
@@ -46,6 +52,10 @@ export class ShapeTaskHandler extends TaskHandler<ShapeTaskParams> {
                 return this.result(this.createText(params));
             case "createImage":
                 return this.result(await this.createImage(params));
+            case "update":
+                return this.result(this.updateShape(params));
+            case "delete":
+                return this.deleteShape(params);
             default:
                 throw new Error(`Unsupported shape action: ${(params as ShapeTaskParams).action}`);
         }
@@ -114,7 +124,34 @@ export class ShapeTaskHandler extends TaskHandler<ShapeTaskParams> {
         return rect;
     }
 
-    private applyShapeParams(shape: Shape, params: ShapeTaskParams): void {
+    private updateShape(params: ShapeTaskParams): Shape {
+        const shape = this.requireShape(params.shapeId);
+        if (params.content !== undefined) {
+            this.requireTextShape(shape).characters = params.content;
+        }
+        if (params.fontSize !== undefined) {
+            this.requireTextShape(shape).fontSize = String(params.fontSize);
+        }
+        this.applyShapeParams(shape, params, { allowReparent: false });
+        return shape;
+    }
+
+    private deleteShape(params: ShapeTaskParams): ShapeTaskResultData {
+        const shape = this.requireShape(params.shapeId);
+        const summary = this.summarizeShape(shape);
+        shape.remove();
+        return {
+            shape: summary,
+            currentPage: penpot.currentPage ? this.summarizePage(penpot.currentPage) : null,
+            deleted: true,
+        };
+    }
+
+    private applyShapeParams(
+        shape: Shape,
+        params: ShapeTaskParams,
+        options: { allowReparent: boolean } = { allowReparent: true }
+    ): void {
         const name = params.name?.trim();
         if (name) {
             shape.name = name;
@@ -132,8 +169,11 @@ export class ShapeTaskHandler extends TaskHandler<ShapeTaskParams> {
         if (params.width !== undefined || params.height !== undefined) {
             shape.resize(params.width ?? shape.width, params.height ?? shape.height);
         }
+        if (params.layout) {
+            this.applyLayout(shape, params.layout);
+        }
 
-        const parent = params.parentId ? this.requireContainer(params.parentId) : null;
+        const parent = params.parentId && options.allowReparent ? this.requireContainer(params.parentId) : null;
         if (parent) {
             parent.appendChild(shape);
         }
@@ -141,11 +181,80 @@ export class ShapeTaskHandler extends TaskHandler<ShapeTaskParams> {
         if (params.x !== undefined || params.y !== undefined) {
             if (parent) {
                 PenpotUtils.setParentXY(shape, params.x ?? shape.parentX, params.y ?? shape.parentY);
+            } else if (!options.allowReparent && shape.parent) {
+                PenpotUtils.setParentXY(shape, params.x ?? shape.parentX, params.y ?? shape.parentY);
             } else {
                 shape.x = params.x ?? shape.x;
                 shape.y = params.y ?? shape.y;
             }
         }
+    }
+
+    private applyLayout(shape: Shape, layout: ShapeLayout): void {
+        const board = this.requireLayoutBoard(shape);
+        this.removeLayout(board, layout.type);
+
+        if (layout.type === "none") {
+            return;
+        }
+
+        const nextLayout =
+            layout.type === "flex" ? this.getOrCreateFlexLayout(board, layout) : this.getOrCreateGridLayout(board);
+        this.applyCommonLayout(nextLayout, layout);
+    }
+
+    private removeLayout(board: BoardWithLayout, nextType: ShapeLayout["type"]): void {
+        if (nextType !== "flex") {
+            board.flex?.remove();
+        }
+        if (nextType !== "grid") {
+            board.grid?.remove();
+        }
+    }
+
+    private getOrCreateFlexLayout(board: BoardWithLayout, layout: ShapeLayout): FlexLayout {
+        const flex = board.flex ?? board.addFlexLayout();
+        flex.dir = layout.direction ?? flex.dir ?? "row";
+        if (layout.wrap) {
+            flex.wrap = layout.wrap;
+        }
+        return flex;
+    }
+
+    private getOrCreateGridLayout(board: BoardWithLayout): GridLayout {
+        return board.grid ?? board.addGridLayout();
+    }
+
+    private applyCommonLayout(layout: FlexLayout | GridLayout, params: ShapeLayout): void {
+        if (params.alignItems) {
+            layout.alignItems = params.alignItems;
+        }
+        if (params.justifyContent) {
+            layout.justifyContent = params.justifyContent;
+        }
+        if (params.rowGap !== undefined) {
+            layout.rowGap = params.rowGap;
+        }
+        if (params.columnGap !== undefined) {
+            layout.columnGap = params.columnGap;
+        }
+        if (params.padding !== undefined) {
+            layout.topPadding = params.padding;
+            layout.rightPadding = params.padding;
+            layout.bottomPadding = params.padding;
+            layout.leftPadding = params.padding;
+        }
+    }
+
+    private requireShape(shapeId: string | undefined): Shape {
+        if (!shapeId) {
+            throw new Error("A shapeId is required.");
+        }
+        const shape = PenpotUtils.findShapeById(shapeId);
+        if (!shape) {
+            throw new Error(`Shape not found: ${shapeId}`);
+        }
+        return shape;
     }
 
     private requireContainer(parentId: string): ContainerShape {
@@ -161,6 +270,20 @@ export class ShapeTaskHandler extends TaskHandler<ShapeTaskParams> {
 
     private isContainerShape(shape: Shape): shape is ContainerShape {
         return typeof (shape as Partial<ContainerShape>).appendChild === "function";
+    }
+
+    private requireLayoutBoard(shape: Shape): BoardWithLayout {
+        if (shape.type !== "board") {
+            throw new Error(`Shape does not support layout updates: ${shape.id}`);
+        }
+        return shape as BoardWithLayout;
+    }
+
+    private requireTextShape(shape: Shape): Text {
+        if (shape.type !== "text") {
+            throw new Error(`Shape is not a text layer: ${shape.id}`);
+        }
+        return shape as Text;
     }
 
     private toFill(fill: ShapeSolidFill): Fill {

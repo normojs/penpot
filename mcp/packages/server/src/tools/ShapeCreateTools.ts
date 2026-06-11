@@ -29,6 +29,25 @@ const strokeSchema = z
     })
     .optional();
 
+const layoutSchema = z
+    .object({
+        type: z.enum(["none", "flex", "grid"]).describe("Container layout mode."),
+        direction: z
+            .enum(["row", "row-reverse", "column", "column-reverse"])
+            .optional()
+            .describe("Flex layout direction. Defaults to the existing direction or row."),
+        wrap: z.enum(["wrap", "nowrap"]).optional().describe("Flex wrapping behavior."),
+        alignItems: z.enum(["start", "end", "center", "stretch"]).optional().describe("Default item alignment."),
+        justifyContent: z
+            .enum(["start", "center", "end", "space-between", "space-around", "space-evenly", "stretch"])
+            .optional()
+            .describe("Content distribution inside the container."),
+        rowGap: z.number().min(0).max(10000).optional().describe("Layout row gap in pixels."),
+        columnGap: z.number().min(0).max(10000).optional().describe("Layout column gap in pixels."),
+        padding: z.number().min(0).max(10000).optional().describe("Uniform container padding in pixels."),
+    })
+    .optional();
+
 const parentIdSchema = z
     .string()
     .uuid()
@@ -278,6 +297,97 @@ export class ShapeCreateImageTool extends ShapeTool<ShapeCreateImageArgs> {
             height: args.height,
             imageBase64: args.imageBase64,
             mimeType: args.mimeType,
+        });
+    }
+}
+
+export class ShapeUpdateArgs {
+    static schema = {
+        shapeId: z.string().uuid().describe("Shape id to update."),
+        name: z.string().min(1).max(250).optional().describe("Optional new shape name."),
+        x: coordinateSchema.optional().describe("Optional new x position. Uses parent-relative coordinates."),
+        y: coordinateSchema.optional().describe("Optional new y position. Uses parent-relative coordinates."),
+        width: dimensionSchema.optional().describe("Optional new width in pixels."),
+        height: dimensionSchema.optional().describe("Optional new height in pixels."),
+        fill: fillSchema,
+        stroke: strokeSchema,
+        borderRadius: z.number().min(0).max(10000).optional().describe("Optional corner radius in pixels."),
+        content: z.string().min(1).max(10000).optional().describe("Optional text content for text shapes."),
+        fontSize: z.number().positive().max(512).optional().describe("Optional font size for text shapes."),
+        layout: layoutSchema,
+    };
+
+    shapeId!: string;
+    name?: string;
+    x?: number;
+    y?: number;
+    width?: number;
+    height?: number;
+    fill?: ShapeTaskParams["fill"];
+    stroke?: ShapeTaskParams["stroke"];
+    borderRadius?: number;
+    content?: string;
+    fontSize?: number;
+    layout?: ShapeTaskParams["layout"];
+}
+
+export class ShapeUpdateTool extends ShapeTool<ShapeUpdateArgs> {
+    constructor(mcpServer: PenpotMcpServer) {
+        super(mcpServer, ShapeUpdateArgs.schema);
+    }
+
+    public getToolName(): string {
+        return ToolNames.SHAPE_UPDATE;
+    }
+
+    public getToolDescription(): string {
+        return "Updates geometry, style, text, or basic layout for a shape in the currently bound Penpot file context.";
+    }
+
+    protected async executeCore(args: ShapeUpdateArgs): Promise<ToolResponse> {
+        return this.executeShapeTask({
+            action: "update",
+            shapeId: args.shapeId,
+            name: this.nonEmptyString(args.name),
+            x: args.x,
+            y: args.y,
+            width: args.width,
+            height: args.height,
+            fill: args.fill,
+            stroke: args.stroke,
+            borderRadius: args.borderRadius,
+            content: args.content,
+            fontSize: args.fontSize,
+            layout: args.layout,
+        });
+    }
+}
+
+export class ShapeDeleteArgs {
+    static schema = {
+        shapeId: z.string().uuid().describe("Shape id to delete."),
+    };
+
+    shapeId!: string;
+}
+
+export class ShapeDeleteTool extends ShapeTool<ShapeDeleteArgs> {
+    constructor(mcpServer: PenpotMcpServer) {
+        super(mcpServer, ShapeDeleteArgs.schema);
+    }
+
+    public getToolName(): string {
+        return ToolNames.SHAPE_DELETE;
+    }
+
+    public getToolDescription(): string {
+        return "Deletes a shape in the currently bound Penpot file context.";
+    }
+
+    protected async executeCore(args: ShapeDeleteArgs): Promise<ToolResponse> {
+        return this.executeShapeTask({
+            action: "delete",
+            shapeId: args.shapeId,
         });
     }
 }

@@ -241,10 +241,22 @@ export interface ShapeStroke {
     alignment?: "center" | "inner" | "outer";
 }
 
-export type ShapeTaskAction = "createFrame" | "createRect" | "createText" | "createImage";
+export interface ShapeLayout {
+    type: "none" | "flex" | "grid";
+    direction?: "row" | "row-reverse" | "column" | "column-reverse";
+    wrap?: "wrap" | "nowrap";
+    alignItems?: "start" | "end" | "center" | "stretch";
+    justifyContent?: "start" | "center" | "end" | "space-between" | "space-around" | "space-evenly" | "stretch";
+    rowGap?: number;
+    columnGap?: number;
+    padding?: number;
+}
+
+export type ShapeTaskAction = "createFrame" | "createRect" | "createText" | "createImage" | "update" | "delete";
 
 export interface ShapeTaskParams {
     action: ShapeTaskAction;
+    shapeId?: string;
     parentId?: string;
     name?: string;
     x?: number;
@@ -256,6 +268,7 @@ export interface ShapeTaskParams {
     borderRadius?: number;
     content?: string;
     fontSize?: number;
+    layout?: ShapeLayout;
     imageBase64?: string;
     mimeType?: string;
 }
@@ -263,4 +276,5 @@ export interface ShapeTaskParams {
 export interface ShapeTaskResultData {
     shape: ShapeSummary;
     currentPage: PageSummary | null;
+    deleted?: boolean;
 }

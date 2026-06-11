@@ -1299,6 +1299,20 @@ Phase 5.2 implementation note:
   absolute coordinates, parent-relative coordinates when available, and size so
   later page, prototype, and export tools can chain from the created shape.
 
+Phase 5.3 implementation note:
+
+- `shape.update` and `shape.delete` are implemented as first-class typed MCP
+  tools backed by the same typed `shape` plugin task.
+- The tools require a bound file context through the shared file context guard.
+- `shape.update` accepts explicit `shapeId` plus typed geometry, name, solid
+  fill, stroke, corner radius, text content/font size for text shapes, and
+  basic board layout settings (`none`, `flex`, or `grid`).
+- `shape.delete` deletes one explicitly identified shape and returns the
+  deleted shape summary with `deleted: true`.
+- Update/delete responses keep the `ShapeSummary` shape so prototype/export
+  tools can chain from the edited or removed layer without invoking
+  `execute_code`.
+
 Definition of done:
 
 - Common prototype generation can be done through typed tools.

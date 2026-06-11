@@ -103,3 +103,57 @@ test("ShapePluginTask serializes image creation requests", () => {
         mimeType: "image/png",
     });
 });
+
+test("ShapePluginTask serializes shape update requests", () => {
+    const request = new ShapePluginTask({
+        action: "update",
+        shapeId: "00000000-0000-0000-0000-000000000011",
+        name: "Updated Card",
+        x: 48,
+        y: 64,
+        width: 320,
+        height: 180,
+        fill: { color: "#f5f5f5", opacity: 0.9 },
+        stroke: { color: "#222222", width: 1, style: "dashed" },
+        borderRadius: 12,
+        layout: {
+            type: "flex",
+            direction: "column",
+            rowGap: 12,
+            padding: 16,
+        },
+    }).toRequest();
+
+    assert.equal(request.task, "shape");
+    assert.deepEqual(request.params, {
+        action: "update",
+        shapeId: "00000000-0000-0000-0000-000000000011",
+        name: "Updated Card",
+        x: 48,
+        y: 64,
+        width: 320,
+        height: 180,
+        fill: { color: "#f5f5f5", opacity: 0.9 },
+        stroke: { color: "#222222", width: 1, style: "dashed" },
+        borderRadius: 12,
+        layout: {
+            type: "flex",
+            direction: "column",
+            rowGap: 12,
+            padding: 16,
+        },
+    });
+});
+
+test("ShapePluginTask serializes shape delete requests", () => {
+    const request = new ShapePluginTask({
+        action: "delete",
+        shapeId: "00000000-0000-0000-0000-000000000011",
+    }).toRequest();
+
+    assert.equal(request.task, "shape");
+    assert.deepEqual(request.params, {
+        action: "delete",
+        shapeId: "00000000-0000-0000-0000-000000000011",
+    });
+});
