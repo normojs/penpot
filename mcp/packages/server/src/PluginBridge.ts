@@ -103,6 +103,16 @@ export class PluginBridge {
         this.logger.info("WebSocket mcpServer started on port %d", this.port);
     }
 
+    public getStatus() {
+        return {
+            port: this.port,
+            connectedClients: this.connectedClients.size,
+            authenticatedClients: this.clientsByToken.size,
+            pendingTasks: this.pendingTasks.size,
+            taskTimeoutSeconds: this.taskTimeoutSecs,
+        };
+    }
+
     /**
      * Removes a client connection and releases all resources associated with it.
      *

@@ -3,6 +3,7 @@ import { Tool } from "../Tool";
 import { TextResponse, ToolResponse } from "../ToolResponse";
 import "reflect-metadata";
 import { PenpotMcpServer } from "../PenpotMcpServer";
+import { ToolNames } from "../ToolNames";
 import { ExecuteCodePluginTask } from "../tasks/ExecuteCodePluginTask";
 import { FileUtils } from "../utils/FileUtils";
 import * as fs from "fs";
@@ -68,7 +69,7 @@ export class ImportImageTool extends Tool<ImportImageArgs> {
     }
 
     public getToolName(): string {
-        return "import_image";
+        return ToolNames.LEGACY_IMPORT_IMAGE;
     }
 
     public getToolDescription(): string {
@@ -110,8 +111,8 @@ export class ImportImageTool extends Tool<ImportImageArgs> {
         const escapedFileName = fileName.replace(/\\/g, "\\\\").replace(/'/g, "\\'");
         const code = `
             const rectangle = await penpotUtils.importImage(
-                '${escapedBase64}', '${mimeType}', '${escapedFileName}', 
-                ${args.x ?? "undefined"}, ${args.y ?? "undefined"}, 
+                '${escapedBase64}', '${mimeType}', '${escapedFileName}',
+                ${args.x ?? "undefined"}, ${args.y ?? "undefined"},
                 ${args.width ?? "undefined"}, ${args.height ?? "undefined"});
             return { shapeId: rectangle.id };
             `;

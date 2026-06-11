@@ -3,6 +3,7 @@ import "reflect-metadata";
 import type { ToolResponse } from "../ToolResponse";
 import { TextResponse } from "../ToolResponse";
 import { PenpotMcpServer } from "../PenpotMcpServer";
+import { ToolNames } from "../ToolNames";
 
 export class HighLevelOverviewTool extends Tool<EmptyToolArgs> {
     constructor(mcpServer: PenpotMcpServer) {
@@ -10,7 +11,7 @@ export class HighLevelOverviewTool extends Tool<EmptyToolArgs> {
     }
 
     public getToolName(): string {
-        return "high_level_overview";
+        return ToolNames.LEGACY_HIGH_LEVEL_OVERVIEW;
     }
 
     public getToolDescription(): string {

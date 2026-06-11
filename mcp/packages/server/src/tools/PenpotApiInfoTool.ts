@@ -4,6 +4,7 @@ import "reflect-metadata";
 import type { ToolResponse } from "../ToolResponse";
 import { TextResponse } from "../ToolResponse";
 import { PenpotMcpServer } from "../PenpotMcpServer";
+import { ToolNames } from "../ToolNames";
 import { ApiDocs } from "../ApiDocs";
 
 /**
@@ -47,7 +48,7 @@ export class PenpotApiInfoTool extends Tool<PenpotApiInfoArgs> {
     }
 
     public getToolName(): string {
-        return "penpot_api_info";
+        return ToolNames.LEGACY_PENPOT_API_INFO;
     }
 
     public getToolDescription(): string {

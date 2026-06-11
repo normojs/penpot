@@ -4,6 +4,7 @@ import type { ToolResponse } from "../ToolResponse";
 import { TextResponse } from "../ToolResponse";
 import "reflect-metadata";
 import { PenpotMcpServer } from "../PenpotMcpServer";
+import { ToolNames } from "../ToolNames";
 import { ExecuteCodePluginTask } from "../tasks/ExecuteCodePluginTask";
 import { ExecuteCodeTaskParams } from "@penpot/mcp-common";
 
@@ -38,7 +39,7 @@ export class ExecuteCodeTool extends Tool<ExecuteCodeArgs> {
     }
 
     public getToolName(): string {
-        return "execute_code";
+        return ToolNames.LEGACY_EXECUTE_CODE;
     }
 
     public getToolDescription(): string {

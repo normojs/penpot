@@ -21,8 +21,8 @@ The **Penpot MCP Server** exposes tools to AI clients (LLMs), which
 support the retrieval of design data as well as the modification and
 creation of design elements.  The MCP server communicates with Penpot
 via the dedicated **Penpot MCP Plugin**,
-which connects to the MCP server via WebSocket.  
-This enables the LLM to carry out tasks in the context of a design file by 
+which connects to the MCP server via WebSocket.
+This enables the LLM to carry out tasks in the context of a design file by
 executing code that leverages the Penpot Plugin API.
 The LLM is free to write and execute arbitrary code snippets
 within the Penpot Plugin environment to accomplish its tasks.
@@ -30,7 +30,7 @@ within the Penpot Plugin environment to accomplish its tasks.
 ![Architecture](resources/architecture.png)
 
 This repository thus contains not only the MCP server implementation itself
-but also the supporting Penpot MCP Plugin 
+but also the supporting Penpot MCP Plugin
 (see section [Repository Structure](#repository-structure) below).
 
 ## Demonstration
@@ -43,7 +43,7 @@ but also the supporting Penpot MCP Plugin
 To use the Penpot MCP server, you must
  * run the MCP server and connect your AI client to it,
  * run the web server providing the Penpot MCP plugin, and
- * open the Penpot MCP plugin in Penpot and connect it to the MCP server. 
+ * open the Penpot MCP plugin in Penpot and connect it to the MCP server.
 
 Follow the steps below to enable the integration.
 
@@ -76,10 +76,10 @@ The tools `corepack` and `npx` should be available in your terminal.
 
 On Windows, use the Git Bash terminal to ensure compatibility with the provided scripts.
 
-##### Clone the Appropriate Branch of the Repository 
+##### Clone the Appropriate Branch of the Repository
 
 > [!IMPORTANT]
-> The branches are subject to change in the future.  
+> The branches are subject to change in the future.
 > Be sure to check the instructions for the latest information on which branch to use.
 
 Clone the Penpot repository, using the proper branch depending on the
@@ -157,35 +157,50 @@ This bootstrap command will:
 
 ### 3. Connect an MCP Client
 
-> [!IMPORTANT]  
+> [!IMPORTANT]
 > **Use an appropriate model.**
-> 
+>
 > We recommend that you ...
->   * use the most capable model at your disposal. 
->     You will achieve the best results with frontier models, 
+>   * use the most capable model at your disposal.
+>     You will achieve the best results with frontier models,
 >     especially when dealing with more complex tasks.
->     Weaker models, including most locally hosted ones, 
+>     Weaker models, including most locally hosted ones,
 >     are unlikely to produce usable results for anything beyond simple tasks.
 >   * use a vision language model (VLM), as many design tasks necessitate visual
->     inspection. 
+>     inspection.
 >     (If you are using a standard commercial model, it almost certainly supports vision already.)
 
-By default, the server runs on port 4401 and provides:
+When MCP is used through Penpot's built-in gateway, configure clients with the
+stable public stream URL shown in Penpot settings:
+
+- **Modern Streamable HTTP endpoint**: `https://<your-penpot-domain>/mcp/stream?userToken=YOUR_MCP_KEY`
+- **Legacy SSE endpoint**: `https://<your-penpot-domain>/mcp/sse?userToken=YOUR_MCP_KEY`
+- **Plugin WebSocket endpoint**: `https://<your-penpot-domain>/mcp/ws`
+- **Status endpoint**: `https://<your-penpot-domain>/mcp/status`
+
+The WebSocket endpoint is used by the bundled MCP plugin, not by normal MCP
+clients. Direct ports such as `4401` and `4402` are internal details in built-in
+and reverse-proxied deployments.
+
+When running this package standalone outside the Penpot gateway, the server
+runs on port `4401` by default and provides:
 
 - **Modern Streamable HTTP endpoint**: `http://localhost:4401/mcp`
 - **Legacy SSE endpoint**: `http://localhost:4401/sse`
+- **Status endpoint**: `http://localhost:4401/status`
 
-These endpoints can be used directly by MCP clients that support them.
-Simply configure the client to connect the MCP server by providing the respective URL.
+These standalone endpoints can be used directly by MCP clients that support
+them. Simply configure the client to connect the MCP server by providing the
+respective URL.
 
 When using a client that only supports stdio transport,
 a proxy like `mcp-remote` is required.
 
 #### Using a Proxy for stdio Transport
 
-NOTE: only relevant if you are executing this outside of devenv
+NOTE: only relevant if you are executing this outside of the Penpot gateway.
 
-The `mcp-remote` package can proxy stdio transport to HTTP/SSE, 
+The `mcp-remote` package can proxy stdio transport to HTTP/SSE,
 allowing clients that support only stdio to connect to the MCP server indirectly.
 Use it to provide the launch command for your MCP client as follows:
 
@@ -205,7 +220,7 @@ To add the server to Claude Desktop's configuration, locate the configuration fi
 - **macOS**: `~/Library/Application Support/Claude/claude_desktop_config.json`
 - **Linux**: `~/.config/Claude/claude_desktop_config.json`
 
-Add a `penpot` entry under `mcpServers` with the following content: 
+Add a `penpot` entry under `mcpServers` with the following content:
 
 ```json
 {
@@ -220,8 +235,8 @@ Add a `penpot` entry under `mcpServers` with the following content:
 
 After updating the configuration file, restart Claude Desktop completely for the changes to take effect.
 
-> [!IMPORTANT] 
-> Be sure to fully quit the app for the changes to take effect; closing the window is *not* sufficient.   
+> [!IMPORTANT]
+> Be sure to fully quit the app for the changes to take effect; closing the window is *not* sufficient.
 > To fully terminate the app, choose Menu / File / Quit.
 
 After the restart, you should see the MCP server listed when clicking on the "Search and tools" icon at the bottom
@@ -284,6 +299,18 @@ The Penpot MCP server can be configured using environment variables.
 | Environment Variable                      | Description                                                                             | Default      |
 |-------------------------------------------|-----------------------------------------------------------------------------------------|--------------|
 | `PENPOT_MCP_PLUGIN_SERVER_HOST`           | Address on which the plugin web server listens (single address or comma-separated list) | (local only) |
+| `PENPOT_MCP_PUBLIC_URI`                   | Public Penpot base used to derive `/mcp/ws` for built-in/gateway deployments            | (unset)      |
+| `PENPOT_MCP_WEBSOCKET_URI`                | Explicit public WebSocket URL for the MCP plugin                                        | (unset)      |
+| `WS_URI`                                  | Legacy explicit WebSocket URL for local plugin builds                                   | `http://localhost:4402` |
+
+### Status Endpoint
+
+The server exposes `GET /status` for local diagnostics. Through the Penpot
+gateway this is available as `/mcp/status`.
+
+The response reports server mode, registered tool count, active Streamable HTTP
+and SSE sessions, WebSocket plugin connection counts, and pending plugin tasks.
+It does not include user tokens.
 
 ## Beyond Local Execution
 
@@ -309,9 +336,9 @@ you may set the following environment variables to configure the two servers
 * Generating API type data: See [types-generator/README.md](types-generator/README.md)
 * Versioning: Use `bash scripts/set-version` to set the version for the MCP package (in `package.json`).
   - Ensure that at least the major, minor and patch components of the version are always up-to-date.
-  - The MCP plugin assumes that a mismatch between the MCP version and the Penpot version (as returned by the API) 
+  - The MCP plugin assumes that a mismatch between the MCP version and the Penpot version (as returned by the API)
     indicates incompatibility, resulting in the display of a warning message in the plugin UI.
-* Packaging and publishing: 
+* Packaging and publishing:
   1. Ensure release version is set correctly in package.json (call `bash scripts/set-version` to update it automatically)
   2. Create npm package: `bash scripts/pack` (creates `penpot-mcp-<version>.tgz` for publishing)
   3. Publish to npm: `npm publish penpot-mcp-<version>.tgz --access public`

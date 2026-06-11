@@ -2,6 +2,8 @@
   (:require
    [cljs.test :as t]
    [frontend-tests.basic-shapes-test]
+   [frontend-tests.config-test]
+   [frontend-tests.data.mcp-test]
    [frontend-tests.data.repo-test]
    [frontend-tests.data.uploads-test]
    [frontend-tests.data.viewer-test]
@@ -45,6 +47,8 @@
   []
   (t/run-tests
    'frontend-tests.basic-shapes-test
+   'frontend-tests.config-test
+   'frontend-tests.data.mcp-test
    'frontend-tests.data.repo-test
    'frontend-tests.errors-test
    'frontend-tests.main-errors-test

@@ -3,6 +3,7 @@ import { Tool } from "../Tool";
 import { ImageContent, PNGImageContent, PNGResponse, TextContent, TextResponse, ToolResponse } from "../ToolResponse";
 import "reflect-metadata";
 import { PenpotMcpServer } from "../PenpotMcpServer";
+import { ToolNames } from "../ToolNames";
 import { ExecuteCodePluginTask } from "../tasks/ExecuteCodePluginTask";
 import { FileUtils } from "../utils/FileUtils";
 import sharp from "sharp";
@@ -65,7 +66,7 @@ export class ExportShapeTool extends Tool<ExportShapeArgs> {
     }
 
     public getToolName(): string {
-        return "export_shape";
+        return ToolNames.LEGACY_EXPORT_SHAPE;
     }
 
     public getToolDescription(): string {

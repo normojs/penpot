@@ -1,0 +1,178 @@
+# penpot-cli MCP Development TODO
+
+This file is the execution tracker for the `penpot-cli` fork based on Penpot
+`2.15.4`.
+
+## Tracking Rules
+
+- Update this file every time a task starts, completes, or becomes blocked.
+- Keep exactly one task marked as `in_progress` unless tasks are truly
+  independent.
+- When a task is completed, add the completion date and a short result note.
+- If implementation changes the architecture, update
+  `mcp/docs/first-class-mcp-architecture.md` in the same change.
+- If behavior, docs, or user-visible project structure changes, update
+  `CHANGES.md`.
+- Use `AI_CODE_RULES.md` as the AI coding rules for this fork.
+
+## Status Legend
+
+- `todo`: not started
+- `in_progress`: actively being worked on
+- `done`: completed and verified for its scope
+- `blocked`: cannot proceed without a decision or external dependency
+
+## Current Focus
+
+Phase 1 gateway/configuration cleanup and Phase 2 global background lifecycle
+are complete for the current slice. The next implementation focus is Phase 3:
+typed global MCP tools.
+
+## Feature Roadmap
+
+This roadmap groups the work by user-visible capability. The phase tables below
+remain the execution plan.
+
+| ID | Status | Capability | Target phases | User outcome | First acceptance check |
+| --- | --- | --- | --- | --- | --- |
+| F1 | done | Built-in MCP gateway | Phase 1 | Users see one MCP URL instead of several internal ports | Settings and generated client config point to `/mcp/stream` |
+| F2 | todo | Manual MCP configuration | Phase 1, Phase 2 | Users can choose built-in, custom, or local MCP settings | Settings persist mode, stream URL, WebSocket URL, and auto-connect |
+| F3 | in_progress | Global background MCP agent | Phase 2 | MCP can connect after login without opening a file | Connection reaches `connected-global` from dashboard/settings |
+| F4 | todo | MCP status and diagnostics | Phase 2, Phase 8 | Users and agents can inspect connection health | `mcp.get_status` reports server, plugin, user, and file context |
+| F5 | todo | Global resource tools | Phase 3 | Agents can list teams, projects, and files before a workspace opens | MCP can list files using normal user permissions |
+| F6 | todo | File creation and opening | Phase 3, Phase 4 | Agents can create a file and ask Penpot to open or bind it | `file.create` returns a file id and `file.bind_context` can attach it |
+| F7 | todo | File context broker | Phase 4 | Users and agents know which file MCP is editing | Missing context returns `file_context_required` with next actions |
+| F8 | todo | Typed page and shape creation | Phase 5 | Agents can draw basic screens without arbitrary JS | `page.create`, `shape.create_frame`, and `shape.create_text` work |
+| F9 | todo | Prototype authoring tools | Phase 5 | Agents can create flows and interactions | Basic frame-to-frame interaction can be created through typed tools |
+| F10 | todo | Export and preview tools | Phase 5, Phase 7 | Agents and CLI can export useful visual output | Bound file/page can export PNG or SVG through typed command |
+| F11 | todo | Advanced execution controls | Phase 5, Phase 8 | Admins/users can control whether `execute_code` is available | `execute_code` respects explicit user setting |
+| F12 | todo | `penpot-cli` MCP operations | Phase 6 | Developers can inspect and operate MCP from terminal | `penpot-cli mcp status` works locally |
+| F13 | todo | `penpot-cli` file/export operations | Phase 6, Phase 7 | Scripts can create/export files through the same automation layer | CLI command names and schemas align with MCP tools |
+| F14 | todo | Headless automation runtime | Phase 7 | Selected operations work without an open browser tab | Simple file/page/shape creation can run through backend/common adapter |
+| F15 | todo | Audit, limits, and confirmations | Phase 8 | MCP is safer for real deployments | Write operations are auditable and destructive actions are gated |
+
+## Phase 0: Baseline, Planning, And Rules
+
+Goal: make the development direction explicit before changing runtime behavior.
+
+| ID | Status | Task | Modules | Verification | Notes |
+| --- | --- | --- | --- | --- | --- |
+| P0.1 | done | Create first-class MCP architecture plan | `mcp/docs` | Document exists and covers architecture, phases, tools, security | Completed 2026-06-11 in `mcp/docs/first-class-mcp-architecture.md` |
+| P0.2 | done | Create implementation task tracker | root docs | `todo.md` exists and defines update protocol | Completed 2026-06-11 in this file |
+| P0.3 | done | Add AI coding rules for the fork | root docs | `AI_CODE_RULES.md` exists and is referenced by docs | Completed 2026-06-11 in `AI_CODE_RULES.md` |
+| P0.4 | done | Link tracker and rules from architecture doc | `mcp/docs` | Architecture doc references `todo.md` and `AI_CODE_RULES.md` | Completed 2026-06-11 |
+| P0.5 | done | Review baseline docs for consistency | root docs, `mcp/docs` | No trailing whitespace; statuses are accurate | Completed 2026-06-11; docs are visible to git and whitespace check passed |
+| P0.6 | done | Plan user-facing feature roadmap | root docs | `todo.md` maps capabilities to phases and acceptance checks | Completed 2026-06-11 in Feature Roadmap |
+
+## Phase 1: MCP Gateway And Configuration Cleanup
+
+Goal: expose one stable MCP surface and hide internal ports from normal users.
+
+| ID | Status | Task | Modules | Verification | Notes |
+| --- | --- | --- | --- | --- | --- |
+| P1.1 | done | Audit dev/prod MCP routing | `docker`, `frontend`, `mcp` | Map `/mcp/stream`, `/mcp/sse`, `/mcp/ws`, plugin assets, and local ports | Completed 2026-06-11; added routing audit and divergence list to `mcp/docs/first-class-mcp-architecture.md` |
+| P1.2 | done | Normalize MCP URL sources | `frontend`, `docker`, `mcp` | Settings, plugin, and generated client config use the same source of truth | Completed 2026-06-11; frontend, Docker config injection, plugin build, and MCP README now share public MCP URL terminology; cljs tests blocked locally because `clojure` is missing |
+| P1.3 | done | Add MCP status endpoint or command surface | `mcp`, future `penpot-cli` | A local developer can inspect server, ws, plugin, and auth status | Completed 2026-06-11; added MCP server `/status` and gateway `/mcp/status` with token-safe server/session/plugin counts; TS build blocked locally because MCP dependencies are not installed |
+| P1.4 | done | Add local orchestration design for `penpot-cli dev up --mcp` | future `penpot-cli`, docs | Command design covers backend, frontend, exporter, mcp server, plugin assets | Completed 2026-06-11; architecture doc defines CLI modes, public URLs, internal processes, readiness checks, and follow-up commands |
+| P1.5 | done | Update docs after gateway decisions | `mcp/docs`, `todo.md` | Architecture doc and TODO reflect chosen URLs and commands | Completed 2026-06-11; Phase 1 decisions and next sprint focus are documented |
+
+## Phase 2: Global Background System Plugin
+
+Goal: start MCP after login without requiring the user to open a design file
+first.
+
+| ID | Status | Task | Modules | Verification | Notes |
+| --- | --- | --- | --- | --- | --- |
+| P2.1 | done | Read frontend and plugin lifecycle code deeply | `frontend`, `mcp/packages/plugin` | Notes identify current workspace-only lifecycle and startup hooks | Completed 2026-06-11; architecture doc captures current workspace startup, plugin auto-connect, reconnect watcher, menu controls, and multi-tab broadcast behavior |
+| P2.2 | done | Design global MCP state namespace | `frontend` | Proposed state keys cover enabled, configured, connecting, connected-global, connected-file, error | Completed 2026-06-11; architecture doc defines proposed namespaces, state shape, statuses, events, and migration compatibility aliases |
+| P2.3 | done | Move MCP lifecycle ownership to global app flow | `frontend` | Login/settings can start/stop MCP without entering workspace | Completed 2026-06-11; authenticated app initialization now starts global MCP and workspace no longer owns MCP startup/shutdown |
+| P2.4 | done | Start bundled MCP plugin as background system plugin | `frontend`, `mcp/packages/plugin` | Plugin connects in background and remains invisible unless status UI is opened | Completed 2026-06-11; global MCP startup reuses hidden bundled plugin with injected token and WebSocket URL |
+| P2.5 | done | Preserve multi-tab ownership behavior | `frontend` | Only one active tab can own write-capable MCP work | Completed 2026-06-11; existing ping/pong/force-disconnect ownership flow moved to global MCP namespace |
+| P2.6 | done | Add frontend tests for global lifecycle | `frontend` | Focused tests cover enable, disable, reconnect, and tab ownership | Completed 2026-06-11; added focused `frontend-tests.data.mcp-test`; execution blocked locally because `clojure` and frontend `node_modules` are missing |
+
+## Phase 3: Global MCP Tools
+
+Goal: make MCP useful before a file context is active.
+
+| ID | Status | Task | Modules | Verification | Notes |
+| --- | --- | --- | --- | --- | --- |
+| P3.1 | done | Define shared tool naming and schemas | `mcp/packages/server` | Tool names match architecture doc and inputs are typed | Completed 2026-06-11; added `ToolNames.ts`, documented dotted first-class naming, schema/response rules, and legacy compatibility |
+| P3.2 | todo | Add `mcp.get_status` tool | `mcp/packages/server`, `frontend` | MCP client can see server, plugin, user, and file-context status | First proving tool |
+| P3.3 | todo | Add account/team/project/file read tools | `mcp/packages/server`, `backend` or `frontend` | MCP can list teams, projects, and files without a workspace | Use normal Penpot permissions |
+| P3.4 | todo | Add `file.create` global tool | `mcp/packages/server`, `backend` | MCP can create a file in a selected project/team | Ambiguous target must return structured error |
+| P3.5 | todo | Add structured global-tool errors | `mcp/packages/server` | Missing auth, missing config, and missing permissions are machine-readable | Avoid generic bridge failures |
+| P3.6 | todo | Add tests for global tools | `mcp/packages/server`, `backend` if touched | Schema and permission behavior are covered | Choose focused tests first |
+
+## Phase 4: File Context Broker
+
+Goal: make file context explicit, inspectable, and safe.
+
+| ID | Status | Task | Modules | Verification | Notes |
+| --- | --- | --- | --- | --- | --- |
+| P4.1 | todo | Design file context registry | `frontend`, `mcp/packages/server` | Registry tracks open files, active page, selection, tab owner | Include multi-tab behavior |
+| P4.2 | todo | Add `file.get_context` and `file.bind_context` | `mcp/packages/server`, `frontend` | MCP can inspect and bind an available file context | Must verify user access |
+| P4.3 | todo | Add `file.release_context` | `mcp/packages/server`, `frontend` | MCP can detach from the current file context | Should return to connected-global |
+| P4.4 | todo | Add `file_context_required` error path | `mcp/packages/server` | File tools return clear next actions when no context is bound | Required before broad file tools |
+| P4.5 | todo | Add workspace menu bind/unbind controls | `frontend` | User can manually bind current file and see status | UI should stay small and operational |
+| P4.6 | todo | Add lifecycle tests | `frontend`, `mcp/packages/server` | Bind, release, close tab, and reconnect are covered | Include race cases where practical |
+
+## Phase 5: Structured File Tools
+
+Goal: reduce normal workflow dependence on arbitrary JavaScript execution.
+
+| ID | Status | Task | Modules | Verification | Notes |
+| --- | --- | --- | --- | --- | --- |
+| P5.1 | todo | Add page tools | `mcp/packages/server`, `mcp/packages/plugin` | `page.list`, `page.create`, `page.rename`, `page.set_current` work | Plugin-backed first |
+| P5.2 | todo | Add basic shape creation tools | `mcp/packages/server`, `mcp/packages/plugin` | Frame, rect, text, image creation work with typed args | Keep schemas strict |
+| P5.3 | todo | Add shape update/delete tools | `mcp/packages/server`, `mcp/packages/plugin` | Position, size, style, layout, delete actions work | Audit destructive operations |
+| P5.4 | todo | Add prototype tools | `mcp/packages/server`, `mcp/packages/plugin` | Basic flows and interactions can be created | Needed for prototype drawing |
+| P5.5 | todo | Add export/render tools | `mcp/packages/server`, `mcp/packages/plugin`, `exporter` | Selection/page export works through typed tools | Local file output requires explicit permission |
+| P5.6 | todo | Gate `execute_code` behind setting | `mcp/packages/server`, `frontend` | Advanced code execution respects user setting | Default should be conservative |
+
+## Phase 6: `penpot-cli` Entry Point
+
+Goal: provide a command-line surface that shares automation concepts with MCP.
+
+| ID | Status | Task | Modules | Verification | Notes |
+| --- | --- | --- | --- | --- | --- |
+| P6.1 | todo | Decide CLI package location | root, future `penpot-cli` | Decision captured in docs | Monorepo module vs separate package |
+| P6.2 | todo | Scaffold CLI package | future `penpot-cli` | CLI has package metadata, build, lint, help output | Add module rules if needed |
+| P6.3 | todo | Add MCP orchestration commands | future `penpot-cli`, `mcp` | `mcp status`, `mcp config`, `mcp logs` work locally | Can start with status/config only |
+| P6.4 | todo | Add dev orchestration command | future `penpot-cli` | `dev up --mcp` starts required services or prints missing deps | Avoid hiding failures |
+| P6.5 | todo | Add file/export CLI commands | future `penpot-cli`, `mcp`, `backend`, `exporter` | CLI can list/create/open/export through shared command runtime | Keep command names aligned with MCP tools |
+| P6.6 | todo | Add CLI docs | docs, future `penpot-cli` | Users can install/run the CLI in local dev | Include examples |
+
+## Phase 7: Headless Command Runtime
+
+Goal: move stable automation out of browser/plugin dependency.
+
+| ID | Status | Task | Modules | Verification | Notes |
+| --- | --- | --- | --- | --- | --- |
+| P7.1 | todo | Design command runtime interface | `mcp`, future `penpot-cli`, `backend`, `common` | Interface covers schemas, auth, capabilities, adapters | Avoid coupling to MCP transport |
+| P7.2 | todo | Move safe file/page commands to backend/common | `backend`, `common` | Commands work without open workspace | Requires backend/common AGENTS and tests |
+| P7.3 | todo | Move simple shape operations to backend/common | `backend`, `common` | Simple prototype can be created headlessly | Validate file data carefully |
+| P7.4 | todo | Add exporter-backed headless output | `exporter`, `render-wasm` if needed | CLI/MCP can export without a UI tab for supported cases | Keep plugin path for live selection |
+| P7.5 | todo | Add adapter selection | `mcp`, future `penpot-cli` | Commands choose backend, exporter, plugin, or local adapter | Tool responses should disclose adapter used |
+
+## Phase 8: Hardening And Observability
+
+Goal: make first-class MCP safe and diagnosable.
+
+| ID | Status | Task | Modules | Verification | Notes |
+| --- | --- | --- | --- | --- | --- |
+| P8.1 | todo | Add audit events for MCP writes | `backend`, `mcp` | File writes are traceable to MCP user/session/tool | Needed before broad enablement |
+| P8.2 | todo | Add rate and concurrency limits | `mcp`, `backend` | Per-user/session/file limits prevent runaway edits | Prefer existing limit patterns |
+| P8.3 | todo | Add version/capability negotiation | `mcp/packages/server`, `mcp/packages/plugin`, `frontend` | Server and plugin reject incompatible versions clearly | Include supported capability list |
+| P8.4 | todo | Add diagnostics UI/logs | `frontend`, `mcp` | Users can see connection, last error, active context, and logs | Keep UI operational, not decorative |
+| P8.5 | todo | Add destructive action confirmations | `mcp`, `frontend` | High-risk write/delete tools can require confirmation | Policy should be configurable |
+| P8.6 | todo | Add regression tests and smoke flows | all touched modules | Core MCP startup, global tools, file binding, and export are covered | Include CLI smoke when available |
+
+## Next Recommended Sprint
+
+Start the smallest slice that makes global MCP useful before a file opens:
+
+1. Start P3.1: define shared tool naming and schemas.
+2. Start P3.2: add `mcp.get_status` using the new `/mcp/status` and frontend
+   lifecycle state.
+3. Prepare P3.3 design notes for account/team/project/file read tools.
+4. Prepare P4.4 design notes for `file_context_required`.

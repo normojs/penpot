@@ -23,6 +23,18 @@ update_flags() {
   if [ -n "$PENPOT_PUBLIC_URI" ]; then
       echo "var penpotPublicURI = \"$PENPOT_PUBLIC_URI\";" >> "$1";
   fi
+
+  if [ -n "$PENPOT_MCP_PUBLIC_URI" ]; then
+      echo "var penpotMcpPublicURI = \"$PENPOT_MCP_PUBLIC_URI\";" >> "$1";
+  fi
+
+  if [ -n "$PENPOT_MCP_STREAM_URI" ]; then
+      echo "var penpotMcpStreamURI = \"$PENPOT_MCP_STREAM_URI\";" >> "$1";
+  fi
+
+  if [ -n "$PENPOT_MCP_WEBSOCKET_URI" ]; then
+      echo "var penpotMcpWebSocketURI = \"$PENPOT_MCP_WEBSOCKET_URI\";" >> "$1";
+  fi
 }
 
 update_flags /var/www/app/js/config.js

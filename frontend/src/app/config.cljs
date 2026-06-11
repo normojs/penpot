@@ -176,9 +176,23 @@
   (normalize-uri (or (obj/get global "penpotPublicURI")
                      (obj/get location "origin"))))
 
+(def mcp-public-uri
+  (normalize-uri (or (obj/get global "penpotMcpPublicURI")
+                     public-uri)))
+
+(defn mcp-public-url
+  ([path]
+   (mcp-public-url mcp-public-uri path))
+  ([base-uri path]
+   (-> (normalize-uri base-uri)
+       (u/join "mcp" path)
+       str)))
+
 (def mcp-ws-uri
-  (or (some-> (obj/get global "penpotMcpServerURI") u/uri)
-      (u/join public-uri "mcp/ws")))
+  (or (some-> (obj/get global "penpotMcpWebSocketURI") u/uri str)
+      ;; Backwards-compatible runtime override kept for existing deployments.
+      (some-> (obj/get global "penpotMcpServerURI") u/uri str)
+      (mcp-public-url "ws")))
 
 (def rasterizer-uri
   (or (some-> (obj/get global "penpotRasterizerURI") normalize-uri)
@@ -216,7 +230,9 @@
   (let [f (obj/get global "initializeExternalConfigInfo")]
     (when (fn? f) (f))))
 
-(def mcp-server-url (-> public-uri u/ensure-path-slash (u/join "mcp/stream") str))
+(def mcp-server-url
+  (or (some-> (obj/get global "penpotMcpStreamURI") u/uri str)
+      (mcp-public-url "stream")))
 (def mcp-help-center-uri "https://help.penpot.app/mcp/")
 
 ;; --- Helper Functions

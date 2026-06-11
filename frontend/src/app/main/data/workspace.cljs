@@ -52,7 +52,6 @@
    [app.main.data.workspace.layers :as dwly]
    [app.main.data.workspace.layout :as layout]
    [app.main.data.workspace.libraries :as dwl]
-   [app.main.data.workspace.mcp :as mcp]
    [app.main.data.workspace.notifications :as dwn]
    [app.main.data.workspace.pages :as dwpg]
    [app.main.data.workspace.path :as dwdp]
@@ -214,9 +213,7 @@
     (watch [_ _ _]
       (rx/merge
        (rx/of (dp/check-open-plugin)
-              (fdf/fix-deleted-fonts-for-local-library file-id))
-       (when (contains? cf/flags :mcp)
-         (rx/of (mcp/init)))))))
+              (fdf/fix-deleted-fonts-for-local-library file-id))))))
 
 (defn- bundle-fetched
   [{:keys [file file-id thumbnails] :as bundle}]
@@ -346,10 +343,7 @@
                  (rx/of (ntf/hide)
                         (dcmt/retrieve-comment-threads file-id)
                         (dcmt/fetch-profiles)
-                        (df/fetch-fonts team-id))
-
-                 (when (contains? cf/flags :mcp)
-                   (rx/of (du/fetch-access-tokens))))
+                        (df/fetch-fonts team-id)))
 
                 ;; Once the essential data is fetched, lets proceed to
                 ;; fetch teh file bunldle
@@ -484,9 +478,7 @@
                                       :tags tags}]
                            (rx/of (dwu/append-undo entry stack-undo?)))
                          (rx/empty))))))
-              (rx/take-until stoper-s))
-
-         (rx/of (mcp/notify-other-tabs-disconnect)))))
+              (rx/take-until stoper-s)))))
     ptk/EffectEvent
     (effect [_ _ _]
       (let [name (dm/str "workspace-" file-id)]

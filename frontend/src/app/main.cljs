@@ -14,6 +14,7 @@
    [app.config :as cf]
    [app.main.data.auth :as da]
    [app.main.data.event :as ev]
+   [app.main.data.mcp :as mcp]
    [app.main.data.profile :as dp]
    [app.main.data.websocket :as ws]
    [app.main.errors]
@@ -74,7 +75,12 @@
        ;; Watch for profile deletion events
        (->> stream
             (rx/filter dp/profile-deleted-event?)
-            (rx/map da/logged-out))
+            (rx/mapcat
+             (fn [event]
+               (if (contains? cf/flags :mcp)
+                 (rx/of (mcp/finalize)
+                        (da/logged-out event))
+                 (rx/of (da/logged-out event))))))
 
        ;; Once profile is fetched, initialize all penpot application
        ;; routes
@@ -90,7 +96,12 @@
             (rx/map deref)
             (rx/filter dp/is-authenticated?)
             (rx/take 1)
-            (rx/map #(ws/initialize)))))
+            (rx/mapcat
+             (fn [_]
+               (if (contains? cf/flags :mcp)
+                 (rx/of (ws/initialize)
+                        (mcp/initialize))
+                 (rx/of (ws/initialize))))))))
 
     ptk/EffectEvent
     (effect [_ state _]

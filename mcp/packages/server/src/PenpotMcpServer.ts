@@ -94,6 +94,7 @@ export class PenpotMcpServer {
     public readonly webSocketPort: number;
     public readonly replPort: number;
     private sessionTimeoutInterval: ReturnType<typeof setInterval> | undefined;
+    private readonly startedAt = new Date();
 
     constructor(private isMultiUser: boolean = false) {
         // read port configuration from environment variables
@@ -146,6 +147,27 @@ export class PenpotMcpServer {
      */
     public isFileSystemAccessEnabled(): boolean {
         return !this.isRemoteMode();
+    }
+
+    public getStatus() {
+        return {
+            status: "ok",
+            server: {
+                startedAt: this.startedAt.toISOString(),
+                host: this.host,
+                port: this.port,
+                multiUserMode: this.isMultiUserMode(),
+                remoteMode: this.isRemoteMode(),
+                fileSystemAccessEnabled: this.isFileSystemAccessEnabled(),
+                registeredTools: this.tools.length,
+                sessionTimeoutMinutes: PenpotMcpServer.SESSION_TIMEOUT_MINUTES,
+            },
+            transports: {
+                streamableHttpSessions: Object.keys(this.streamableTransports).length,
+                sseSessions: Object.keys(this.sseTransports).length,
+                webSocket: this.pluginBridge.getStatus(),
+            },
+        };
     }
 
     /**
@@ -224,6 +246,10 @@ export class PenpotMcpServer {
     }
 
     private setupHttpEndpoints(): void {
+        this.app.get("/status", (_req: any, res: any) => {
+            res.json(this.getStatus());
+        });
+
         /**
          * Modern Streamable HTTP connection endpoint.
          *
