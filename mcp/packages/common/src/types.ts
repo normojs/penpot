@@ -212,3 +212,55 @@ export interface PageTaskResultData {
     pages: PageSummary[];
     currentPage: PageSummary | null;
 }
+
+export interface ShapeSummary {
+    id: string;
+    name: string;
+    type: string;
+    pageId?: string;
+    pageName?: string;
+    parentId?: string;
+    x: number;
+    y: number;
+    parentX?: number;
+    parentY?: number;
+    width: number;
+    height: number;
+}
+
+export interface ShapeSolidFill {
+    color: string;
+    opacity?: number;
+}
+
+export interface ShapeStroke {
+    color: string;
+    opacity?: number;
+    width?: number;
+    style?: "solid" | "dotted" | "dashed";
+    alignment?: "center" | "inner" | "outer";
+}
+
+export type ShapeTaskAction = "createFrame" | "createRect" | "createText" | "createImage";
+
+export interface ShapeTaskParams {
+    action: ShapeTaskAction;
+    parentId?: string;
+    name?: string;
+    x?: number;
+    y?: number;
+    width?: number;
+    height?: number;
+    fill?: ShapeSolidFill;
+    stroke?: ShapeStroke;
+    borderRadius?: number;
+    content?: string;
+    fontSize?: number;
+    imageBase64?: string;
+    mimeType?: string;
+}
+
+export interface ShapeTaskResultData {
+    shape: ShapeSummary;
+    currentPage: PageSummary | null;
+}

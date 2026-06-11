@@ -22,6 +22,12 @@ import {
 import { FileCreateTool } from "./tools/FileCreateTool";
 import { FileBindContextTool, FileGetContextTool, FileReleaseContextTool } from "./tools/FileContextTools";
 import { PageCreateTool, PageListTool, PageRenameTool, PageSetCurrentTool } from "./tools/PageTools";
+import {
+    ShapeCreateFrameTool,
+    ShapeCreateImageTool,
+    ShapeCreateRectTool,
+    ShapeCreateTextTool,
+} from "./tools/ShapeCreateTools";
 import { PenpotRpcClient } from "./PenpotRpcClient";
 import { ReplServer } from "./ReplServer";
 import { ApiDocs } from "./ApiDocs";
@@ -220,6 +226,10 @@ export class PenpotMcpServer {
             new PageCreateTool(this),
             new PageRenameTool(this),
             new PageSetCurrentTool(this),
+            new ShapeCreateFrameTool(this),
+            new ShapeCreateRectTool(this),
+            new ShapeCreateTextTool(this),
+            new ShapeCreateImageTool(this),
             new ExecuteCodeTool(this),
             new HighLevelOverviewTool(this),
             new PenpotApiInfoTool(this, this.apiDocs),

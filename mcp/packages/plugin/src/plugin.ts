@@ -1,5 +1,6 @@
 import { ExecuteCodeTaskHandler } from "./task-handlers/ExecuteCodeTaskHandler";
 import { PageTaskHandler } from "./task-handlers/PageTaskHandler";
+import { ShapeTaskHandler } from "./task-handlers/ShapeTaskHandler";
 import { Task, TaskHandler } from "./TaskHandler";
 
 type FileContextUpdateMessage = {
@@ -64,7 +65,7 @@ mcp?.setMcpStatus("connecting");
 /**
  * Registry of all available task handlers.
  */
-const taskHandlers: TaskHandler[] = [new ExecuteCodeTaskHandler(), new PageTaskHandler()];
+const taskHandlers: TaskHandler[] = [new ExecuteCodeTaskHandler(), new PageTaskHandler(), new ShapeTaskHandler()];
 
 /**
  * Creates a stable id for this plugin runtime. The id is intentionally scoped

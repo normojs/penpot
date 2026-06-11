@@ -1283,6 +1283,22 @@ Phase 5.1 implementation note:
 - Tool responses return the changed page when applicable, the full page list,
   and the current page summary.
 
+Phase 5.2 implementation note:
+
+- `shape.create_frame`, `shape.create_rect`, `shape.create_text`, and
+  `shape.create_image` are implemented as first-class typed MCP tools.
+- The tools require a bound file context through the shared file context guard
+  and send a typed `shape` plugin task instead of arbitrary `execute_code`.
+- The bundled MCP plugin handles shape creation through the Penpot Plugin API:
+  `createBoard`, `createRectangle`, `createText`, and `uploadMediaData`.
+- Shape creation accepts typed geometry, optional parent container ids, solid
+  fill, stroke, and corner radius where applicable. When `parentId` is
+  provided, `x` and `y` are interpreted relative to that parent; otherwise
+  they are page coordinates.
+- Tool responses return a `ShapeSummary` with ids, page info, parent id,
+  absolute coordinates, parent-relative coordinates when available, and size so
+  later page, prototype, and export tools can chain from the created shape.
+
 Definition of done:
 
 - Common prototype generation can be done through typed tools.
