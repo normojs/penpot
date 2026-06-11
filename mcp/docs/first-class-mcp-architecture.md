@@ -710,7 +710,15 @@ Phase 4.2 implementation note:
   plugin API does not always expose them directly; backend authorization is the
   source of truth.
 - WebSocket disconnects mark contexts stale and clear the bound context for the
-  session. Explicit release remains Phase 4.3.
+  session.
+
+Phase 4.3 implementation note:
+
+- `file.release_context` clears the current token-scoped bound context.
+- Releasing keeps the open plugin-reported context available for future
+  `file.bind_context` calls because the user still has the file open.
+- Calling `file.release_context` without a bound context is idempotent and
+  returns the current context summary with `released: false`.
 
 Structured errors:
 

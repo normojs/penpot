@@ -92,3 +92,19 @@ test("FileContextRegistry marks contexts stale after disconnect", () => {
         assert.equal(result.error.code, FileContextErrorCodes.FILE_CONTEXT_STALE);
     }
 });
+
+test("FileContextRegistry releases the current bound context", () => {
+    const registry = new FileContextRegistry();
+    const snapshot = context();
+    registry.upsertContext("token-1", snapshot);
+    registry.bindContext("token-1", snapshot.contextId);
+
+    const released = registry.releaseContext("token-1");
+    assert.equal(released?.contextId, snapshot.contextId);
+
+    const summary = registry.getSessionSummary("token-1");
+    assert.equal(summary.status, "available");
+    assert.equal(summary.bound, false);
+    assert.equal(summary.boundContext, null);
+    assert.equal(summary.availableContexts[0].contextId, snapshot.contextId);
+});

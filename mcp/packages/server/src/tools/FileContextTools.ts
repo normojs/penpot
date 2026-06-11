@@ -166,3 +166,34 @@ export class FileBindContextTool extends PenpotRpcTool<FileBindContextArgs> {
         return typeof value === "string" && value.trim() !== "" ? value.trim() : undefined;
     }
 }
+
+export class FileReleaseContextTool extends PenpotRpcTool<EmptyToolArgs> {
+    constructor(mcpServer: PenpotMcpServer) {
+        super(mcpServer, EmptyToolArgs.schema);
+    }
+
+    public getToolName(): string {
+        return ToolNames.FILE_RELEASE_CONTEXT;
+    }
+
+    public getToolDescription(): string {
+        return "Releases the current MCP file context binding while keeping open file contexts available for future binding.";
+    }
+
+    protected async executeCore(args: EmptyToolArgs): Promise<ToolResponse> {
+        const userToken = this.getUserToken();
+        if (!userToken) {
+            return this.authenticationRequired();
+        }
+
+        const releasedContext = this.mcpServer.fileContextRegistry.releaseContext(userToken);
+        const fileContext = this.mcpServer.fileContextRegistry.getSessionSummary(userToken);
+
+        return this.ok({
+            released: Boolean(releasedContext),
+            releasedContext,
+            fileContext,
+            nextActions: fileContext.status === "available" ? [ToolNames.FILE_BIND_CONTEXT] : [ToolNames.FILE_LIST],
+        });
+    }
+}

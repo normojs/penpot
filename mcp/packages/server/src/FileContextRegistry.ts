@@ -245,6 +245,24 @@ export class FileContextRegistry {
         return target;
     }
 
+    public releaseContext(userToken: string | null | undefined): StoredFileContext | null {
+        const sessionKey = this.sessionKey(userToken);
+        const boundContextId = this.boundContextBySession.get(sessionKey);
+        if (!boundContextId) {
+            return null;
+        }
+
+        const contexts = this.contextsBySession.get(sessionKey);
+        const context = contexts?.get(boundContextId) ?? null;
+        this.boundContextBySession.delete(sessionKey);
+
+        if (context && context.status !== "stale") {
+            context.status = "available";
+        }
+
+        return context;
+    }
+
     private sessionKey(userToken: string | null | undefined): string {
         return userToken || SINGLE_USER_CONTEXT_KEY;
     }

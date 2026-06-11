@@ -20,7 +20,7 @@ import {
     TeamListTool,
 } from "./tools/GlobalReadTools";
 import { FileCreateTool } from "./tools/FileCreateTool";
-import { FileBindContextTool, FileGetContextTool } from "./tools/FileContextTools";
+import { FileBindContextTool, FileGetContextTool, FileReleaseContextTool } from "./tools/FileContextTools";
 import { PenpotRpcClient } from "./PenpotRpcClient";
 import { ReplServer } from "./ReplServer";
 import { ApiDocs } from "./ApiDocs";
@@ -214,6 +214,7 @@ export class PenpotMcpServer {
             new FileCreateTool(this),
             new FileGetContextTool(this),
             new FileBindContextTool(this),
+            new FileReleaseContextTool(this),
             new ExecuteCodeTool(this),
             new HighLevelOverviewTool(this),
             new PenpotApiInfoTool(this, this.apiDocs),

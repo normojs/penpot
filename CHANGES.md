@@ -12,6 +12,7 @@
 - Add focused MCP server tests for global-tool backend RPC request shape and structured error mapping.
 - Document the Phase 4 file context registry design for MCP file binding and multi-tab ownership.
 - Add first-class MCP file context reporting and `file.get_context` / `file.bind_context` tools with backend permission verification.
+- Add a first-class `file.release_context` MCP tool for detaching from the current bound file context.
 - Add rate limiting and concurrency safety for file snapshot operations [#9723](https://github.com/penpot/penpot/issues/9723) (PR: [#9722](https://github.com/penpot/penpot/pull/9722))
 - Prevent concurrent font uploads from causing excessive simultaneous requests [#9922](https://github.com/penpot/penpot/issues/9922) (PR: [#9921](https://github.com/penpot/penpot/pull/9921))
 
