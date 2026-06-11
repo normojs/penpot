@@ -24,9 +24,9 @@ This file is the execution tracker for the `penpot-cli` fork based on Penpot
 
 ## Current Focus
 
-Phase 1 gateway/configuration cleanup and Phase 2 global background lifecycle
-are complete for the current slice. The next implementation focus is Phase 3:
-typed global MCP tools.
+Phase 1 gateway/configuration cleanup, Phase 2 global background lifecycle, and
+Phase 3 typed global MCP tools are complete for the current slice. The next
+implementation focus is Phase 4: file context broker.
 
 ## Feature Roadmap
 
@@ -39,7 +39,7 @@ remain the execution plan.
 | F2 | todo | Manual MCP configuration | Phase 1, Phase 2 | Users can choose built-in, custom, or local MCP settings | Settings persist mode, stream URL, WebSocket URL, and auto-connect |
 | F3 | in_progress | Global background MCP agent | Phase 2 | MCP can connect after login without opening a file | Connection reaches `connected-global` from dashboard/settings |
 | F4 | in_progress | MCP status and diagnostics | Phase 2, Phase 8 | Users and agents can inspect connection health | `mcp.get_status` now reports server, plugin, session, and placeholder file context; richer diagnostics remain for Phase 8 |
-| F5 | in_progress | Global resource tools | Phase 3 | Agents can list teams, projects, and files before a workspace opens | First read tools are implemented through backend RPC; dependency-backed type/runtime checks remain |
+| F5 | done | Global resource tools | Phase 3 | Agents can list teams, projects, and files before a workspace opens | Completed 2026-06-11; MCP can list teams, projects, project files, and recent files through backend permissions |
 | F6 | in_progress | File creation and opening | Phase 3, Phase 4 | Agents can create a file and ask Penpot to open or bind it | `file.create` returns a file summary; open/bind remains Phase 4 |
 | F7 | todo | File context broker | Phase 4 | Users and agents know which file MCP is editing | Missing context returns `file_context_required` with next actions |
 | F8 | todo | Typed page and shape creation | Phase 5 | Agents can draw basic screens without arbitrary JS | `page.create`, `shape.create_frame`, and `shape.create_text` work |
@@ -101,7 +101,7 @@ Goal: make MCP useful before a file context is active.
 | P3.3 | done | Add account/team/project/file read tools | `mcp/packages/server`, `backend` or `frontend` | MCP can list teams, projects, and files without a workspace | Completed 2026-06-11; added backend RPC client and `account.get_current_user`, `team.list`, `project.list`, `file.list`, `file.get_recent`; uses existing backend permissions; `mcp-server types:check` and `mcp fmt:check` passed |
 | P3.4 | done | Add `file.create` global tool | `mcp/packages/server`, `backend` | MCP can create a file in a selected project/team | Completed 2026-06-11; added `FileCreateTool` using existing `create-file` RPC, `projectId` target validation, and backend project edit permissions; `mcp-server types:check` and `mcp fmt:check` passed |
 | P3.5 | done | Add structured global-tool errors | `mcp/packages/server` | Missing auth, missing config, and missing permissions are machine-readable | Completed 2026-06-11; added shared `PenpotRpcTool`, backend config/unavailable/permission error codes, and recovery actions; `mcp-server types:check` and `mcp fmt:check` passed |
-| P3.6 | todo | Add tests for global tools | `mcp/packages/server`, `backend` if touched | Schema and permission behavior are covered | Choose focused tests first |
+| P3.6 | done | Add tests for global tools | `mcp/packages/server`, `backend` if touched | Schema and permission behavior are covered | Completed 2026-06-11; added Node tests for RPC request shape, JSON POST body, backend config/unavailable errors, and auth/permission/error-code normalization; `mcp-server test`, `mcp-server types:check`, and `mcp fmt:check` passed |
 
 ## Phase 4: File Context Broker
 
@@ -169,10 +169,9 @@ Goal: make first-class MCP safe and diagnosable.
 
 ## Next Recommended Sprint
 
-Start the smallest slice that makes global MCP useful before a file opens:
+Start the smallest slice that makes file-bound work explicit and safe:
 
-1. Start P3.1: define shared tool naming and schemas.
-2. Start P3.2: add `mcp.get_status` using the new `/mcp/status` and frontend
-   lifecycle state.
-3. Prepare P3.3 design notes for account/team/project/file read tools.
-4. Prepare P4.4 design notes for `file_context_required`.
+1. Start P4.1: design the file context registry.
+2. Start P4.2: add `file.get_context` and `file.bind_context`.
+3. Start P4.4: add clear `file_context_required` errors for file tools.
+4. Prepare workspace UI notes for manual bind/unbind controls.

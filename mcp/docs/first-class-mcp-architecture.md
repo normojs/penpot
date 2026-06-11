@@ -1059,6 +1059,9 @@ Implementation notes:
   `create-file` RPC command and backend project edit permissions.
 - `mcp/packages/server/src/tools/PenpotRpcTool.ts` centralizes structured
   global-tool responses and recoverable error actions.
+- `mcp/packages/server/test/PenpotRpcClient.test.ts` covers RPC request shape,
+  JSON POST bodies, backend configuration/unavailable errors, and auth,
+  permission, not-found, and validation error normalization.
 
 Definition of done:
 
@@ -1066,6 +1069,13 @@ Definition of done:
   being open.
 - File-level tools return `file_context_required` instead of generic plugin
   connection failures.
+
+Phase 3 implementation note:
+
+- Global status/read/create tools are implemented and covered by MCP server
+  type, format, and focused unit checks.
+- `file_context_required` remains Phase 4 because it needs the file context
+  registry and file-bound tool classification.
 
 ### Phase 4: File Context Broker
 

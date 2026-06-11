@@ -345,6 +345,12 @@ stable `error.code`, such as `authentication_required`,
 `penpot_backend_config_invalid`, `penpot_backend_unavailable`,
 `permission_denied`, or `object_not_found_or_forbidden`.
 
+Focused MCP server tests can be run with:
+
+```bash
+pnpm --dir mcp --filter mcp-server run test
+```
+
 ## Beyond Local Execution
 
 The above instructions describe how to run the MCP server and plugin server locally.

@@ -12,6 +12,7 @@
     "start:multi-user": "node dist/index.js --multi-user",
     "start:dev": "node --import ts-node/register src/index.ts",
     "start:dev:multi-user": "node --loader ts-node/esm src/index.ts --multi-user",
+    "test": "node --import 'data:text/javascript,import { register } from \"node:module\"; import { pathToFileURL } from \"node:url\"; register(\"ts-node/esm\", pathToFileURL(\"./\"));' --test test/PenpotRpcClient.test.ts",
     "types:check": "tsc --noEmit",
     "clean": "rm -rf dist/"
   },
