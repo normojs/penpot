@@ -10,6 +10,7 @@
 - Add a first-class `file.create` MCP tool for creating files in a target project through the existing Penpot backend permission checks.
 - Add structured error codes and recovery actions for global MCP tools that call Penpot backend RPC.
 - Add focused MCP server tests for global-tool backend RPC request shape and structured error mapping.
+- Document the Phase 4 file context registry design for MCP file binding and multi-tab ownership.
 - Add rate limiting and concurrency safety for file snapshot operations [#9723](https://github.com/penpot/penpot/issues/9723) (PR: [#9722](https://github.com/penpot/penpot/pull/9722))
 - Prevent concurrent font uploads from causing excessive simultaneous requests [#9922](https://github.com/penpot/penpot/issues/9922) (PR: [#9921](https://github.com/penpot/penpot/pull/9921))
 

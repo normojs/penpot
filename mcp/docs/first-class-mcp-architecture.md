@@ -614,6 +614,91 @@ return:
 }
 ```
 
+#### 5.3.1 File Context Registry Design
+
+The file context registry is the bridge between global MCP tools and
+file-scoped design tools. It should exist in two layers:
+
+| Layer | Owner | Responsibility |
+| --- | --- | --- |
+| Frontend registry | Global MCP agent in `frontend/src/app/main/data/mcp.cljs` | Know which browser tabs/workspaces are open, which tab owns MCP work, and what file/page/selection is current |
+| Server registry | MCP server | Know which user session has an available or bound file context, without trusting client-provided permissions blindly |
+
+Registry entry shape:
+
+```json
+{
+  "contextId": "tab-uuid:file-uuid",
+  "status": "available",
+  "ownerTabId": "tab-uuid",
+  "teamId": "team-uuid",
+  "projectId": "project-uuid",
+  "fileId": "file-uuid",
+  "fileName": "Mobile checkout",
+  "pageId": "page-uuid",
+  "pageName": "Flow",
+  "selectionIds": ["shape-uuid"],
+  "capabilities": ["page.read", "shape.write", "export.read"],
+  "updatedAt": "2026-06-11T00:00:00.000Z"
+}
+```
+
+Status model:
+
+| Status | Meaning |
+| --- | --- |
+| `available` | A workspace tab is open and can be bound by MCP |
+| `bound` | MCP has selected this context for file-scoped tools |
+| `stale` | The tab stopped reporting or the file was closed |
+| `released` | MCP/user explicitly detached the context |
+| `error` | Last registry update failed |
+
+Registration flow:
+
+```text
+workspace opens file
+  -> frontend emits mcp/register-file-context
+  -> global MCP agent stores available context
+  -> plugin/server bridge publishes token-scoped context summary
+  -> MCP server verifies access with backend RPC before binding
+  -> file.bind_context marks one context as bound
+```
+
+Update flow:
+
+- Workspace selection/page changes update the frontend registry.
+- The active owner tab publishes context deltas to the MCP server.
+- The MCP server stores only token-scoped context summaries and timestamps.
+- If the owner tab disconnects or misses heartbeats, the server marks bound
+  context `stale` and file tools return `file_context_required`.
+
+Multi-tab rules:
+
+- A user token may have multiple available contexts.
+- Only one context per user token can be `bound` for write-capable file tools
+  at a time.
+- Binding a context in one tab should force-release the previously bound
+  context for that same token.
+- Read-only inspection may later support multiple contexts, but Phase 4 should
+  keep a single bound context to avoid ambiguous edits.
+
+Planned tools:
+
+| Tool | Scope | Behavior |
+| --- | --- | --- |
+| `file.get_context` | global/file | Return current bound context and available contexts |
+| `file.bind_context` | global/file | Bind by `contextId` or by `fileId` when exactly one matching available context exists |
+| `file.release_context` | file | Release current bound context and return to `connected-global` |
+
+Structured errors:
+
+| Error code | Trigger |
+| --- | --- |
+| `file_context_required` | A file-scoped tool needs a bound context and none exists |
+| `file_context_ambiguous` | A bind request matches multiple available contexts |
+| `file_context_not_found` | Requested `contextId`/`fileId` is not available to the session |
+| `file_context_stale` | Bound tab closed or stopped reporting |
+
 ### 5.4 Automation Command Runtime
 
 The command runtime is the long-term shared layer for MCP and `penpot-cli`.

@@ -109,7 +109,7 @@ Goal: make file context explicit, inspectable, and safe.
 
 | ID | Status | Task | Modules | Verification | Notes |
 | --- | --- | --- | --- | --- | --- |
-| P4.1 | todo | Design file context registry | `frontend`, `mcp/packages/server` | Registry tracks open files, active page, selection, tab owner | Include multi-tab behavior |
+| P4.1 | done | Design file context registry | `frontend`, `mcp/packages/server` | Registry tracks open files, active page, selection, tab owner | Completed 2026-06-11; documented frontend/server registry layers, context shape, status model, register/update/bind flows, multi-tab rules, planned tools, and structured errors |
 | P4.2 | todo | Add `file.get_context` and `file.bind_context` | `mcp/packages/server`, `frontend` | MCP can inspect and bind an available file context | Must verify user access |
 | P4.3 | todo | Add `file.release_context` | `mcp/packages/server`, `frontend` | MCP can detach from the current file context | Should return to connected-global |
 | P4.4 | todo | Add `file_context_required` error path | `mcp/packages/server` | File tools return clear next actions when no context is bound | Required before broad file tools |
