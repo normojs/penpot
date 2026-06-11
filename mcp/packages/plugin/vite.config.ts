@@ -17,10 +17,7 @@ function buildMcpPublicUrl(path: string): string | undefined {
 }
 
 const WS_URI =
-    process.env.PENPOT_MCP_WEBSOCKET_URI ||
-    process.env.WS_URI ||
-    buildMcpPublicUrl("ws") ||
-    "http://localhost:4402";
+    process.env.PENPOT_MCP_WEBSOCKET_URI || process.env.WS_URI || buildMcpPublicUrl("ws") || "http://localhost:4402";
 const SERVER_HOST = process.env.PENPOT_MCP_PLUGIN_SERVER_HOST ?? "localhost";
 const MCP_VERSION = JSON.stringify(rootPkg.version);
 

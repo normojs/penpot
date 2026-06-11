@@ -860,6 +860,22 @@ current MCP session information. It never returns the raw user token. Until the
 Phase 4 file context broker exists, `data.fileContext.status` is reported as
 `unbound`.
 
+The first global read tools are implemented through existing Penpot RPC
+endpoints and do not require a workspace tab:
+
+| MCP tool | Penpot RPC command | Required input |
+| --- | --- | --- |
+| `account.get_current_user` | `get-profile` | Current MCP `userToken` |
+| `team.list` | `get-teams` | Current MCP `userToken` |
+| `project.list` | `get-projects` | Optional `teamId`; without it, projects are fetched for all available teams |
+| `file.list` | `get-project-files` | `projectId` |
+| `file.get_recent` | `get-team-recent-files` | `teamId`; optional response `limit` |
+
+These tools call the backend through `PENPOT_BACKEND_URI`, falling back to
+`PENPOT_PUBLIC_URI` and then `http://localhost:6060`. They send the MCP
+`userToken` as `Authorization: Token <token>` so normal Penpot access-token
+authentication and permissions apply.
+
 ### 8.2 File Context Tools
 
 Require a bound file:
@@ -1012,6 +1028,11 @@ Implementation notes:
 - The first status tool includes server, transport, plugin, session, and
   placeholder file-context fields. File-context discovery and binding remain
   Phase 4 work.
+- `mcp/packages/server/src/PenpotRpcClient.ts` is the first backend RPC bridge
+  for global tools.
+- `account.get_current_user`, `team.list`, `project.list`, `file.list`, and
+  `file.get_recent` are implemented in
+  `mcp/packages/server/src/tools/GlobalReadTools.ts`.
 
 Definition of done:
 

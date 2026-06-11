@@ -12,6 +12,14 @@ import { PenpotApiInfoTool } from "./tools/PenpotApiInfoTool";
 import { ExportShapeTool } from "./tools/ExportShapeTool";
 import { ImportImageTool } from "./tools/ImportImageTool";
 import { McpStatusTool } from "./tools/McpStatusTool";
+import {
+    AccountGetCurrentUserTool,
+    FileGetRecentTool,
+    FileListTool,
+    ProjectListTool,
+    TeamListTool,
+} from "./tools/GlobalReadTools";
+import { PenpotRpcClient } from "./PenpotRpcClient";
 import { ReplServer } from "./ReplServer";
 import { ApiDocs } from "./ApiDocs";
 
@@ -81,6 +89,7 @@ export class PenpotMcpServer {
     private apiDocs: ApiDocs;
     private readonly penpotHighLevelOverview: string;
     private readonly connectionInstructions: string;
+    public readonly rpcClient: PenpotRpcClient;
 
     /**
      * Manages session-specific context, particularly user tokens for each request.
@@ -106,6 +115,7 @@ export class PenpotMcpServer {
 
         this.configLoader = new ConfigurationLoader(process.cwd());
         this.apiDocs = new ApiDocs();
+        this.rpcClient = new PenpotRpcClient();
 
         // prepare instructions
         let instructions = this.configLoader.getInitialInstructions();
@@ -190,6 +200,11 @@ export class PenpotMcpServer {
     private initTools(): ToolInfo[] {
         const toolInstances: Tool<any>[] = [
             new McpStatusTool(this),
+            new AccountGetCurrentUserTool(this),
+            new TeamListTool(this),
+            new ProjectListTool(this),
+            new FileListTool(this),
+            new FileGetRecentTool(this),
             new ExecuteCodeTool(this),
             new HighLevelOverviewTool(this),
             new PenpotApiInfoTool(this, this.apiDocs),

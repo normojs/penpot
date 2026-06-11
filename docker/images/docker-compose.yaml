@@ -183,6 +183,8 @@ services:
     restart: always
     networks:
       - penpot
+    environment:
+      PENPOT_BACKEND_URI: http://penpot-backend:6060
 
   penpot-exporter:
     image: "penpotapp/exporter:${PENPOT_VERSION:-2.15}"

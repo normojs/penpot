@@ -1,7 +1,7 @@
 import { EmptyToolArgs, Tool } from "../Tool";
 import "reflect-metadata";
 import type { ToolResponse } from "../ToolResponse";
-import { TextResponse } from "../ToolResponse";
+import { JsonResponse } from "../ToolResponse";
 import { PenpotMcpServer } from "../PenpotMcpServer";
 import { ToolNames } from "../ToolNames";
 
@@ -28,37 +28,29 @@ export class McpStatusTool extends Tool<EmptyToolArgs> {
         const webSocket = status.transports.webSocket;
         const pluginConnected = webSocket.connectedClients > 0;
 
-        return new TextResponse(
-            JSON.stringify(
-                {
-                    status: "ok",
-                    data: {
-                        server: status.server,
-                        transports: status.transports,
-                        session: {
-                            mode: status.server.multiUserMode ? "multi-user" : "single-user",
-                            authenticated: !status.server.multiUserMode || userTokenPresent,
-                            userTokenPresent,
-                        },
-                        plugin: {
-                            status: pluginConnected ? "connected" : "disconnected",
-                            connectedClients: webSocket.connectedClients,
-                            authenticatedClients: webSocket.authenticatedClients,
-                            pendingTasks: webSocket.pendingTasks,
-                        },
-                        fileContext: {
-                            status: "unbound",
-                            bound: false,
-                            availableContexts: 0,
-                        },
-                    },
-                    warnings: [
-                        "File context broker is not implemented yet; file-context status is currently unbound.",
-                    ],
+        return new JsonResponse({
+            status: "ok",
+            data: {
+                server: status.server,
+                transports: status.transports,
+                session: {
+                    mode: status.server.multiUserMode ? "multi-user" : "single-user",
+                    authenticated: !status.server.multiUserMode || userTokenPresent,
+                    userTokenPresent,
                 },
-                null,
-                2
-            )
-        );
+                plugin: {
+                    status: pluginConnected ? "connected" : "disconnected",
+                    connectedClients: webSocket.connectedClients,
+                    authenticatedClients: webSocket.authenticatedClients,
+                    pendingTasks: webSocket.pendingTasks,
+                },
+                fileContext: {
+                    status: "unbound",
+                    bound: false,
+                    availableContexts: 0,
+                },
+            },
+            warnings: ["File context broker is not implemented yet; file-context status is currently unbound."],
+        });
     }
 }

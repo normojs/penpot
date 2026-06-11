@@ -286,6 +286,8 @@ The Penpot MCP server can be configured using environment variables.
 | `PENPOT_MCP_WEBSOCKET_PORT`        | Port for the WebSocket server (plugin connection)                          | `4402`       |
 | `PENPOT_MCP_REPL_PORT`             | Port for the REPL server (development/debugging)                           | `4403`       |
 | `PENPOT_MCP_REMOTE_MODE`           | Enable remote mode (disables file system access). Set to `true` to enable. | `false`      |
+| `PENPOT_BACKEND_URI`               | Penpot backend base URI used by global read/write tools                    | `PENPOT_PUBLIC_URI` or `http://localhost:6060` |
+| `PENPOT_PUBLIC_URI`                | Public Penpot base URI fallback for backend RPC calls                      | (unset)      |
 
 ### Logging Configuration
 
@@ -311,6 +313,26 @@ gateway this is available as `/mcp/status`.
 The response reports server mode, registered tool count, active Streamable HTTP
 and SSE sessions, WebSocket plugin connection counts, and pending plugin tasks.
 It does not include user tokens.
+
+The MCP server also registers `mcp.get_status`, which returns the same
+token-safe server/transport information to MCP clients and adds current session,
+plugin, and file-context status.
+
+### Global Read Tools
+
+First-class global tools can call existing Penpot RPC endpoints through
+`PENPOT_BACKEND_URI` before a design file is open:
+
+| Tool | Purpose |
+|------|---------|
+| `account.get_current_user` | Return the profile attached to the MCP access token |
+| `team.list` | List teams available to the current user |
+| `project.list` | List projects for one team, or all available teams |
+| `file.list` | List files in a project |
+| `file.get_recent` | List recent files for a team |
+
+These tools use the MCP `userToken` as a Penpot access token and send it to the
+backend as `Authorization: Token <token>`.
 
 ## Beyond Local Execution
 

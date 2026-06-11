@@ -94,6 +94,12 @@ export class TextResponse extends ToolResponse {
     }
 }
 
+export class JsonResponse extends TextResponse {
+    constructor(data: unknown) {
+        super(JSON.stringify(data, null, 2));
+    }
+}
+
 export class PNGResponse extends ToolResponse {
     /**
      * @param data - PNG image data as Uint8Array or as object (from JSON conversion of Uint8Array)
