@@ -278,3 +278,55 @@ export interface ShapeTaskResultData {
     currentPage: PageSummary | null;
     deleted?: boolean;
 }
+
+export interface PrototypeFlowSummary {
+    name: string;
+    pageId?: string;
+    pageName?: string;
+    startingBoardId: string;
+    startingBoardName: string;
+}
+
+export type PrototypeTrigger = "click" | "mouse-enter" | "mouse-leave" | "after-delay";
+
+export type PrototypeAnimationType = "dissolve" | "slide" | "push";
+
+export interface PrototypeAnimation {
+    type: PrototypeAnimationType;
+    duration: number;
+    easing?: "linear" | "ease" | "ease-in" | "ease-out" | "ease-in-out";
+    direction?: "right" | "left" | "up" | "down";
+    way?: "in" | "out";
+    offsetEffect?: boolean;
+}
+
+export interface PrototypeInteractionSummary {
+    sourceShapeId: string;
+    sourceShapeName: string;
+    index: number;
+    trigger: PrototypeTrigger;
+    delay?: number | null;
+    actionType: "navigate-to";
+    destinationBoardId: string;
+    destinationBoardName: string;
+}
+
+export type PrototypeTaskAction = "createFlow" | "createInteraction";
+
+export interface PrototypeTaskParams {
+    action: PrototypeTaskAction;
+    name?: string;
+    startingBoardId?: string;
+    sourceShapeId?: string;
+    destinationBoardId?: string;
+    trigger?: PrototypeTrigger;
+    delay?: number;
+    preserveScrollPosition?: boolean;
+    animation?: PrototypeAnimation;
+}
+
+export interface PrototypeTaskResultData {
+    flow?: PrototypeFlowSummary;
+    interaction?: PrototypeInteractionSummary;
+    currentPage: PageSummary | null;
+}

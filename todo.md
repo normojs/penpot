@@ -29,7 +29,8 @@ Phase 3 typed global MCP tools, and Phase 4 context inspect/bind/release plus
 required-context errors are complete. P4.5 workspace bind/unbind controls and
 P4.6 lifecycle coverage, P5.1 typed page tools, and P5.2 typed basic shape
 creation tools are complete. P5.3 typed shape update/delete tools are
-complete. The current implementation focus is P5.4: typed prototype tools.
+complete. P5.4 typed prototype flow/interaction tools are complete. The
+current implementation focus is P5.5: typed export/render tools.
 
 ## Feature Roadmap
 
@@ -46,7 +47,7 @@ remain the execution plan.
 | F6 | in_progress | File creation and opening | Phase 3, Phase 4 | Agents can create a file and ask Penpot to open or bind it | `file.create` returns a file summary; open/bind remains Phase 4 |
 | F7 | done | File context broker | Phase 4 | Users and agents know which file MCP is editing | Completed 2026-06-11; context reporting, inspect, bind, release, required-context errors, workspace bind/unbind UI, and lifecycle tests are implemented |
 | F8 | done | Typed page and shape creation | Phase 5 | Agents can draw basic screens without arbitrary JS | Completed 2026-06-11; typed page tools and frame/rect/text/image creation tools are implemented |
-| F9 | todo | Prototype authoring tools | Phase 5 | Agents can create flows and interactions | Basic frame-to-frame interaction can be created through typed tools |
+| F9 | done | Prototype authoring tools | Phase 5 | Agents can create flows and interactions | Completed 2026-06-11; MCP can create flows and navigate-to interactions through typed tools |
 | F10 | todo | Export and preview tools | Phase 5, Phase 7 | Agents and CLI can export useful visual output | Bound file/page can export PNG or SVG through typed command |
 | F11 | todo | Advanced execution controls | Phase 5, Phase 8 | Admins/users can control whether `execute_code` is available | `execute_code` respects explicit user setting |
 | F12 | todo | `penpot-cli` MCP operations | Phase 6 | Developers can inspect and operate MCP from terminal | `penpot-cli mcp status` works locally |
@@ -128,7 +129,7 @@ Goal: reduce normal workflow dependence on arbitrary JavaScript execution.
 | P5.1 | done | Add page tools | `mcp/packages/server`, `mcp/packages/plugin` | `page.list`, `page.create`, `page.rename`, `page.set_current` work | Completed 2026-06-11; added plugin-backed typed page tasks, registered four page tools, guarded them with the bound file context, and covered task serialization in server tests |
 | P5.2 | done | Add basic shape creation tools | `mcp/packages/server`, `mcp/packages/plugin` | Frame, rect, text, image creation work with typed args | Completed 2026-06-11; added plugin-backed `shape.create_frame`, `shape.create_rect`, `shape.create_text`, and `shape.create_image` guarded by the bound file context |
 | P5.3 | done | Add shape update/delete tools | `mcp/packages/server`, `mcp/packages/plugin` | Position, size, style, layout, delete actions work | Completed 2026-06-11; added plugin-backed `shape.update` and `shape.delete` with explicit shape ids, typed geometry/style/text updates, and basic board layout edits |
-| P5.4 | todo | Add prototype tools | `mcp/packages/server`, `mcp/packages/plugin` | Basic flows and interactions can be created | Needed for prototype drawing |
+| P5.4 | done | Add prototype tools | `mcp/packages/server`, `mcp/packages/plugin` | Basic flows and interactions can be created | Completed 2026-06-11; added plugin-backed `prototype.create_flow` and `prototype.create_interaction` with explicit board/shape ids |
 | P5.5 | todo | Add export/render tools | `mcp/packages/server`, `mcp/packages/plugin`, `exporter` | Selection/page export works through typed tools | Local file output requires explicit permission |
 | P5.6 | todo | Gate `execute_code` behind setting | `mcp/packages/server`, `frontend` | Advanced code execution respects user setting | Default should be conservative |
 
@@ -172,9 +173,9 @@ Goal: make first-class MCP safe and diagnosable.
 
 ## Next Recommended Sprint
 
-Start the smallest slice that makes prototypes typed and reliable:
+Start the smallest slice that makes export and preview typed and reliable:
 
-1. Start P5.4 with typed flow creation for a selected starting frame/board.
-2. Add typed frame-to-frame click interactions using explicit source and destination shape ids.
-3. Return typed prototype summaries so later export/preview tools can chain operations.
+1. Start P5.5 with typed export for a bound page or explicit shape id.
+2. Return export metadata and bytes or file output through a clear local-mode contract.
+3. Keep legacy `export_shape` available while moving normal export flows to typed tools.
 4. Keep plugin-backed implementation first, then move stable commands into the shared automation runtime.

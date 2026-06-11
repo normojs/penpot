@@ -1,5 +1,6 @@
 import { ExecuteCodeTaskHandler } from "./task-handlers/ExecuteCodeTaskHandler";
 import { PageTaskHandler } from "./task-handlers/PageTaskHandler";
+import { PrototypeTaskHandler } from "./task-handlers/PrototypeTaskHandler";
 import { ShapeTaskHandler } from "./task-handlers/ShapeTaskHandler";
 import { Task, TaskHandler } from "./TaskHandler";
 
@@ -46,7 +47,14 @@ type FileContextSnapshot = {
     updatedAt: string;
 };
 
-const FILE_CONTEXT_CAPABILITIES = ["page.read", "selection.read", "shape.read", "shape.write", "export.read"];
+const FILE_CONTEXT_CAPABILITIES = [
+    "page.read",
+    "selection.read",
+    "shape.read",
+    "shape.write",
+    "prototype.write",
+    "export.read",
+];
 const ownerTabId = createOwnerTabId();
 
 /**
@@ -65,7 +73,12 @@ mcp?.setMcpStatus("connecting");
 /**
  * Registry of all available task handlers.
  */
-const taskHandlers: TaskHandler[] = [new ExecuteCodeTaskHandler(), new PageTaskHandler(), new ShapeTaskHandler()];
+const taskHandlers: TaskHandler[] = [
+    new ExecuteCodeTaskHandler(),
+    new PageTaskHandler(),
+    new ShapeTaskHandler(),
+    new PrototypeTaskHandler(),
+];
 
 /**
  * Creates a stable id for this plugin runtime. The id is intentionally scoped

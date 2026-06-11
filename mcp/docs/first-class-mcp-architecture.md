@@ -1313,6 +1313,19 @@ Phase 5.3 implementation note:
   tools can chain from the edited or removed layer without invoking
   `execute_code`.
 
+Phase 5.4 implementation note:
+
+- `prototype.create_flow` and `prototype.create_interaction` are implemented as
+  first-class typed MCP tools backed by a typed `prototype` plugin task.
+- The tools require a bound file context through the shared file context guard.
+- `prototype.create_flow` creates a page flow from an explicit starting
+  board/frame id.
+- `prototype.create_interaction` creates a navigate-to interaction from an
+  explicit source shape id to an explicit destination board/frame id, with
+  typed trigger, optional delay, preserve-scroll, and transition animation.
+- Tool responses return typed flow and interaction summaries so generated
+  prototype screens can be chained into export and preview tools.
+
 Definition of done:
 
 - Common prototype generation can be done through typed tools.
