@@ -824,6 +824,21 @@ message, and optional `actions`:
 }
 ```
 
+Global RPC-backed tools use the same structure for backend and permission
+failures:
+
+| Error code | Meaning | Typical next action |
+| --- | --- | --- |
+| `authentication_required` | No MCP user token is attached to the current session, or the backend returned 401 | Reconnect MCP with a valid `userToken` |
+| `penpot_backend_config_invalid` | `PENPOT_BACKEND_URI` or `PENPOT_PUBLIC_URI` is not a valid URL | Fix server configuration |
+| `penpot_backend_unavailable` | The MCP server could not reach backend RPC | Start/check the Penpot backend |
+| `permission_denied` | Backend returned 403 | Pick a resource available to the user |
+| `object_not_found_or_forbidden` | Backend returned `object-not-found`, which Penpot also uses to hide inaccessible objects | List teams/projects/files again and choose an accessible target |
+| backend code with underscores | Backend returned a validation/domain error | Inspect `error.data.response` for backend details |
+
+`error.data` may include the backend HTTP status, backend error code/type, and
+the original backend response. It must not include raw access tokens.
+
 ### 8.1 Global Tools
 
 Available without an open file:
@@ -1042,6 +1057,8 @@ Implementation notes:
 - `file.create` is implemented in
   `mcp/packages/server/src/tools/FileCreateTool.ts` using the existing
   `create-file` RPC command and backend project edit permissions.
+- `mcp/packages/server/src/tools/PenpotRpcTool.ts` centralizes structured
+  global-tool responses and recoverable error actions.
 
 Definition of done:
 

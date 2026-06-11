@@ -340,6 +340,11 @@ It creates the file through the existing backend `create-file` RPC command and
 returns a file summary. Opening and binding the new file as the active file
 context is planned for the file context broker phase.
 
+Recoverable global-tool failures return JSON with `status: "error"` and a
+stable `error.code`, such as `authentication_required`,
+`penpot_backend_config_invalid`, `penpot_backend_unavailable`,
+`permission_denied`, or `object_not_found_or_forbidden`.
+
 ## Beyond Local Execution
 
 The above instructions describe how to run the MCP server and plugin server locally.

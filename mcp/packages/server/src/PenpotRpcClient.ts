@@ -30,7 +30,7 @@ export class PenpotRpcClient {
     }
 
     public async get<T>(methodName: string, params: RpcParams, userToken: string): Promise<T> {
-        const url = new URL(`api/main/methods/${methodName}`, `${this.baseUri}/`);
+        const url = this.createRpcUrl(methodName);
         url.searchParams.set("_fmt", "json");
 
         for (const [key, value] of Object.entries(params)) {
@@ -43,10 +43,27 @@ export class PenpotRpcClient {
     }
 
     public async post<T>(methodName: string, params: RpcParams, userToken: string): Promise<T> {
-        const url = new URL(`api/main/methods/${methodName}`, `${this.baseUri}/`);
+        const url = this.createRpcUrl(methodName);
         url.searchParams.set("_fmt", "json");
 
         return await this.request<T>(url, "POST", userToken, params);
+    }
+
+    private createRpcUrl(methodName: string): URL {
+        try {
+            return new URL(`api/main/methods/${methodName}`, `${this.baseUri}/`);
+        } catch (cause) {
+            throw new PenpotRpcError(
+                0,
+                "Invalid Penpot backend URI. Set PENPOT_BACKEND_URI or PENPOT_PUBLIC_URI to a valid URL.",
+                "penpot_backend_config_invalid",
+                {
+                    baseUri: this.baseUri,
+                    methodName,
+                    cause: String(cause),
+                }
+            );
+        }
     }
 
     private async request<T>(url: URL, method: "GET" | "POST", userToken: string, params?: RpcParams): Promise<T> {
@@ -60,11 +77,26 @@ export class PenpotRpcClient {
             headers["content-type"] = "application/json";
         }
 
-        const response = await fetch(url, {
-            method,
-            headers,
-            body: method === "POST" ? JSON.stringify(params ?? {}) : undefined,
-        });
+        let response: Response;
+        try {
+            response = await fetch(url, {
+                method,
+                headers,
+                body: method === "POST" ? JSON.stringify(params ?? {}) : undefined,
+            });
+        } catch (cause) {
+            throw new PenpotRpcError(
+                0,
+                "Unable to reach the Penpot backend RPC endpoint.",
+                "penpot_backend_unavailable",
+                {
+                    baseUri: this.baseUri,
+                    url: url.toString(),
+                    method,
+                    cause: String(cause),
+                }
+            );
+        }
 
         const text = await response.text();
         const data = this.parseResponse(text);
@@ -94,13 +126,40 @@ export class PenpotRpcClient {
     private createError(status: number, data: unknown): PenpotRpcError {
         if (typeof data === "object" && data !== null) {
             const errorData = data as Record<string, unknown>;
-            const code = typeof errorData.code === "string" ? errorData.code : "penpot_rpc_error";
+            const backendCode = typeof errorData.code === "string" ? errorData.code : undefined;
+            const backendType = typeof errorData.type === "string" ? errorData.type : undefined;
+            const code = this.normalizeErrorCode(status, backendCode);
             const hint = typeof errorData.hint === "string" ? errorData.hint : undefined;
             const message = typeof errorData.message === "string" ? errorData.message : hint;
 
-            return new PenpotRpcError(status, message ?? `Penpot RPC failed with status ${status}`, code, data);
+            return new PenpotRpcError(status, message ?? `Penpot RPC failed with status ${status}`, code, {
+                backendCode,
+                backendType,
+                response: data,
+            });
         }
 
-        return new PenpotRpcError(status, `Penpot RPC failed with status ${status}`, "penpot_rpc_error", data);
+        return new PenpotRpcError(
+            status,
+            `Penpot RPC failed with status ${status}`,
+            this.normalizeErrorCode(status),
+            data
+        );
+    }
+
+    private normalizeErrorCode(status: number, backendCode?: string): string {
+        if (status === 401) {
+            return "authentication_required";
+        }
+        if (status === 403) {
+            return "permission_denied";
+        }
+        if (status === 404 && backendCode === "object-not-found") {
+            return "object_not_found_or_forbidden";
+        }
+        if (backendCode) {
+            return backendCode.replaceAll("-", "_");
+        }
+        return "penpot_rpc_error";
     }
 }

@@ -1,76 +1,11 @@
 import { z } from "zod";
-import { EmptyToolArgs, Tool } from "../Tool";
+import { EmptyToolArgs } from "../Tool";
 import type { ToolResponse } from "../ToolResponse";
-import { JsonResponse } from "../ToolResponse";
 import { PenpotMcpServer } from "../PenpotMcpServer";
-import { PenpotRpcError, RpcParams } from "../PenpotRpcClient";
 import { ToolNames } from "../ToolNames";
+import { PenpotRpcTool } from "./PenpotRpcTool";
 
 type PenpotRecord = Record<string, unknown>;
-
-export abstract class PenpotRpcTool<TArgs extends object> extends Tool<TArgs> {
-    protected constructor(mcpServer: PenpotMcpServer, inputSchema: z.ZodRawShape) {
-        super(mcpServer, inputSchema);
-    }
-
-    protected getUserToken(): string | undefined {
-        return this.getSessionContext()?.userToken;
-    }
-
-    protected ok(data: unknown, warnings: string[] = []): ToolResponse {
-        return new JsonResponse({
-            status: "ok",
-            data,
-            warnings,
-        });
-    }
-
-    protected authenticationRequired(): ToolResponse {
-        return this.error(
-            "authentication_required",
-            "This MCP tool requires a Penpot MCP access token for the current session.",
-            ["Reconnect MCP with a userToken query parameter."]
-        );
-    }
-
-    protected error(code: string, message: string, actions: string[] = [], data?: unknown): ToolResponse {
-        return new JsonResponse({
-            status: "error",
-            error: {
-                code,
-                message,
-                actions,
-                data,
-            },
-        });
-    }
-
-    protected rpcFailure(cause: unknown): ToolResponse {
-        if (cause instanceof PenpotRpcError) {
-            return new JsonResponse({
-                status: "error",
-                error: {
-                    code: cause.code,
-                    message: cause.message,
-                    status: cause.status,
-                    data: cause.data,
-                },
-            });
-        }
-
-        return new JsonResponse({
-            status: "error",
-            error: {
-                code: "penpot_rpc_error",
-                message: String(cause),
-            },
-        });
-    }
-
-    protected async rpcGet<T>(methodName: string, params: RpcParams, userToken: string): Promise<T> {
-        return await this.mcpServer.rpcClient.get<T>(methodName, params, userToken);
-    }
-}
 
 export class AccountGetCurrentUserTool extends PenpotRpcTool<EmptyToolArgs> {
     constructor(mcpServer: PenpotMcpServer) {

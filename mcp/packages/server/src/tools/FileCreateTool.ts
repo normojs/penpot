@@ -2,7 +2,7 @@ import { z } from "zod";
 import type { ToolResponse } from "../ToolResponse";
 import { PenpotMcpServer } from "../PenpotMcpServer";
 import { ToolNames } from "../ToolNames";
-import { PenpotRpcTool } from "./GlobalReadTools";
+import { PenpotRpcTool } from "./PenpotRpcTool";
 
 type PenpotRecord = Record<string, unknown>;
 
@@ -55,7 +55,7 @@ export class FileCreateTool extends PenpotRpcTool<FileCreateArgs> {
         const name = typeof args.name === "string" && args.name.trim() !== "" ? args.name.trim() : "Untitled";
 
         try {
-            const file = await this.mcpServer.rpcClient.post<PenpotRecord>(
+            const file = await this.rpcPost<PenpotRecord>(
                 "create-file",
                 {
                     name,
