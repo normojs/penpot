@@ -1271,6 +1271,18 @@ Work:
 - Keep implementation plugin-backed at first.
 - Add a capability registry so tools can report when they are available.
 
+Phase 5.1 implementation note:
+
+- `page.list`, `page.create`, `page.rename`, and `page.set_current` are
+  implemented as first-class typed MCP tools.
+- The tools require a bound file context through the shared file context guard.
+- Server tools send a typed `page` plugin task instead of arbitrary
+  `execute_code`.
+- The bundled MCP plugin handles page operations through the Penpot Plugin API:
+  `currentFile.pages`, `createPage`, `openPage`, and page `name` updates.
+- Tool responses return the changed page when applicable, the full page list,
+  and the current page summary.
+
 Definition of done:
 
 - Common prototype generation can be done through typed tools.

@@ -155,7 +155,10 @@ export class PluginBridge {
         }
     }
 
-    private async handlePluginMessage(connection: ClientConnection, message: PluginToServerMessage<any>): Promise<void> {
+    private async handlePluginMessage(
+        connection: ClientConnection,
+        message: PluginToServerMessage<any>
+    ): Promise<void> {
         if (this.isFileContextUpdateMessage(message)) {
             this.handleFileContextUpdate(connection, message);
             return;
@@ -225,7 +228,11 @@ export class PluginBridge {
             this.mcpServer.fileContextRegistry.upsertContext(connection.userToken, message.context);
 
             if (connection.userToken) {
-                await this.mcpServer.rpcClient.get("get-file-summary", { id: message.context.fileId }, connection.userToken);
+                await this.mcpServer.rpcClient.get(
+                    "get-file-summary",
+                    { id: message.context.fileId },
+                    connection.userToken
+                );
             }
 
             const context = this.mcpServer.fileContextRegistry.bindContext(

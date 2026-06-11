@@ -1,4 +1,5 @@
 import { ExecuteCodeTaskHandler } from "./task-handlers/ExecuteCodeTaskHandler";
+import { PageTaskHandler } from "./task-handlers/PageTaskHandler";
 import { Task, TaskHandler } from "./TaskHandler";
 
 type FileContextUpdateMessage = {
@@ -63,7 +64,7 @@ mcp?.setMcpStatus("connecting");
 /**
  * Registry of all available task handlers.
  */
-const taskHandlers: TaskHandler[] = [new ExecuteCodeTaskHandler()];
+const taskHandlers: TaskHandler[] = [new ExecuteCodeTaskHandler(), new PageTaskHandler()];
 
 /**
  * Creates a stable id for this plugin runtime. The id is intentionally scoped
@@ -190,7 +191,7 @@ penpot.ui.onMessage<string | { id: string; type?: string; status?: string; task:
     } else if (typeof message === "object" && message.type === "update-connection-status") {
         mcp?.setMcpStatus(message.status || "unknown");
     } else if (typeof message === "object" && message.type === "file-context-control-result") {
-        handleFileContextControlResult(message as FileContextControlResultMessage);
+        handleFileContextControlResult(message as unknown as FileContextControlResultMessage);
     } else if (typeof message === "object" && message.task && message.id) {
         // Handle plugin tasks submitted by the MCP server
         handlePluginTaskRequest(message).catch((error) => {

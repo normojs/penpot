@@ -165,7 +165,7 @@ export type PluginToServerMessage<T> =
     | PluginFileContextBindRequestMessage
     | PluginFileContextReleaseRequestMessage;
 
-export type ServerToPluginMessage<T> = PluginTaskRequest | PluginFileContextControlResultMessage;
+export type ServerToPluginMessage = PluginTaskRequest | PluginFileContextControlResultMessage;
 
 /**
  * Parameters for the executeCode task.
@@ -190,4 +190,25 @@ export interface ExecuteCodeTaskResultData<T> {
      * Captured console output during code execution.
      */
     log: string;
+}
+
+export interface PageSummary {
+    id: string;
+    name: string;
+    current: boolean;
+}
+
+export type PageTaskAction = "list" | "create" | "rename" | "setCurrent";
+
+export interface PageTaskParams {
+    action: PageTaskAction;
+    pageId?: string;
+    name?: string;
+    makeCurrent?: boolean;
+}
+
+export interface PageTaskResultData {
+    page?: PageSummary;
+    pages: PageSummary[];
+    currentPage: PageSummary | null;
 }
