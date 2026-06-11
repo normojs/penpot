@@ -108,3 +108,69 @@ test("FileContextRegistry releases the current bound context", () => {
     assert.equal(summary.boundContext, null);
     assert.equal(summary.availableContexts[0].contextId, snapshot.contextId);
 });
+
+test("FileContextRegistry supports bind-release-rebind lifecycle", () => {
+    const registry = new FileContextRegistry();
+    const snapshot = context();
+    registry.upsertContext("token-1", snapshot);
+
+    registry.bindContext("token-1", snapshot.contextId);
+    assert.equal(registry.getSessionSummary("token-1").status, "bound");
+
+    registry.releaseContext("token-1");
+    assert.equal(registry.getSessionSummary("token-1").status, "available");
+
+    const rebound = registry.bindContext("token-1", snapshot.contextId);
+    assert.equal(rebound?.contextId, snapshot.contextId);
+    assert.equal(registry.getSessionSummary("token-1").status, "bound");
+});
+
+test("FileContextRegistry release without bound context is idempotent", () => {
+    const registry = new FileContextRegistry();
+    registry.upsertContext("token-1", context());
+
+    assert.equal(registry.releaseContext("token-1"), null);
+    assert.equal(registry.getSessionSummary("token-1").status, "available");
+});
+
+test("FileContextRegistry reconnect upsert restores available context after stale disconnect", () => {
+    const registry = new FileContextRegistry();
+    const snapshot = context();
+    registry.upsertContext("token-1", snapshot);
+    registry.bindContext("token-1", snapshot.contextId);
+
+    registry.clearSession("token-1", "plugin WebSocket disconnected");
+    assert.equal(registry.getSessionSummary("token-1").status, "stale");
+
+    const refreshed = context({
+        pageId: "00000000-0000-0000-0000-000000000011",
+        pageName: "Page 2",
+        updatedAt: "2026-06-11T01:00:00.000Z",
+    });
+    registry.upsertContext("token-1", refreshed);
+
+    const summary = registry.getSessionSummary("token-1");
+    assert.equal(summary.status, "available");
+    assert.equal(summary.bound, false);
+    assert.equal(summary.availableContexts[0].pageName, "Page 2");
+    assert.equal(summary.staleContexts.length, 0);
+});
+
+test("FileContextRegistry upsert keeps bound status for the active context", () => {
+    const registry = new FileContextRegistry();
+    const snapshot = context();
+    registry.upsertContext("token-1", snapshot);
+    registry.bindContext("token-1", snapshot.contextId);
+
+    const updated = registry.upsertContext(
+        "token-1",
+        context({
+            selectionIds: ["shape-1"],
+            updatedAt: "2026-06-11T01:00:00.000Z",
+        })
+    );
+
+    assert.equal(updated.status, "bound");
+    assert.deepEqual(updated.selectionIds, ["shape-1"]);
+    assert.equal(registry.getSessionSummary("token-1").status, "bound");
+});

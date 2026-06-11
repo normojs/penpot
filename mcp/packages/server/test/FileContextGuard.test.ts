@@ -50,3 +50,29 @@ test("requireBoundFileContext allows execution when a context is bound", () => {
     const response = requireBoundFileContext(mcpServerWithRegistry(registry), "token-1", "export_shape");
     assert.equal(response, null);
 });
+
+test("requireBoundFileContext blocks file tools again after release", () => {
+    const registry = new FileContextRegistry();
+    const snapshot = context();
+    registry.upsertContext("token-1", snapshot);
+    registry.bindContext("token-1", snapshot.contextId);
+    registry.releaseContext("token-1");
+
+    const response = requireBoundFileContext(mcpServerWithRegistry(registry), "token-1", "export_shape");
+    assert.ok(response);
+    const body = parseJsonResponse(response);
+    assert.equal(body.error.code, FileContextErrorCodes.FILE_CONTEXT_REQUIRED);
+});
+
+test("requireBoundFileContext blocks file tools after plugin disconnect marks context stale", () => {
+    const registry = new FileContextRegistry();
+    const snapshot = context();
+    registry.upsertContext("token-1", snapshot);
+    registry.bindContext("token-1", snapshot.contextId);
+    registry.clearSession("token-1", "plugin WebSocket disconnected");
+
+    const response = requireBoundFileContext(mcpServerWithRegistry(registry), "token-1", "export_shape");
+    assert.ok(response);
+    const body = parseJsonResponse(response);
+    assert.equal(body.error.code, FileContextErrorCodes.FILE_CONTEXT_REQUIRED);
+});

@@ -749,6 +749,19 @@ Phase 4.5 implementation note:
 - Frontend lint/test runs are blocked locally because `clojure` and frontend
   `node_modules` are not installed.
 
+Phase 4.6 implementation note:
+
+- Frontend lifecycle tests in `frontend/test/frontend_tests/data/mcp_test.cljs`
+  cover file-context initialization, bind/release optimistic status updates, and
+  plugin status persistence.
+- MCP server lifecycle tests in
+  `mcp/packages/server/test/FileContextRegistry.test.ts` cover
+  bind-release-rebind, idempotent release, reconnect upsert after stale
+  disconnect, and bound-context refresh updates.
+- `mcp/packages/server/test/FileContextGuard.test.ts` now verifies that file
+  tools are blocked again after release or plugin disconnect.
+- `mcp-server test` passed with 18 focused unit tests after these additions.
+
 Structured errors:
 
 | Error code | Trigger |
