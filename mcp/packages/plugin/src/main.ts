@@ -6,6 +6,13 @@ document.body.dataset.theme = searchParams.get("theme") ?? "light";
 
 // WebSocket connection management
 let ws: WebSocket | null = null;
+let latestFileContextMessage: FileContextUpdateMessage | null = null;
+
+type FileContextUpdateMessage = {
+    type: "file-context-update";
+    context: unknown;
+    reason?: string;
+};
 
 const statusPill = document.getElementById("connection-status") as HTMLElement;
 const statusText = document.getElementById("status-text") as HTMLElement;
@@ -78,11 +85,20 @@ function updateExecutedCode(code: string | null): void {
  * @param response - The response containing task ID and result
  */
 function sendTaskResponse(response: any): void {
+    sendServerMessage(response);
+}
+
+function sendFileContextUpdate(message: FileContextUpdateMessage): void {
+    latestFileContextMessage = message;
+    sendServerMessage(message);
+}
+
+function sendServerMessage(message: any): void {
     if (ws && ws.readyState === WebSocket.OPEN) {
-        ws.send(JSON.stringify(response));
-        console.log("Sent response to MCP server:", response);
+        ws.send(JSON.stringify(message));
+        console.log("Sent message to MCP server:", message);
     } else {
-        console.error("WebSocket not connected, cannot send response");
+        console.warn("WebSocket not connected, cannot send message");
     }
 }
 
@@ -111,6 +127,9 @@ function connectToMcpServer(baseUrl?: string, token?: string): void {
                 if (ws) {
                     console.log("Connected to MCP server");
                     updateConnectionStatus("connected", "Connected");
+                    if (latestFileContextMessage) {
+                        sendServerMessage(latestFileContextMessage);
+                    }
                 }
             }, 100);
         };
@@ -190,6 +209,8 @@ window.addEventListener("message", (event) => {
     }
     if (event.data.type === "stop-server") {
         ws?.close();
+    } else if (event.data.type === "file-context-update") {
+        sendFileContextUpdate(event.data);
     } else if (event.data.source === "penpot") {
         document.body.dataset.theme = event.data.theme;
     } else if (event.data.type === "task-response") {

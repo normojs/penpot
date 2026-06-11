@@ -27,6 +27,7 @@ export class McpStatusTool extends Tool<EmptyToolArgs> {
         const userTokenPresent = Boolean(sessionContext?.userToken);
         const webSocket = status.transports.webSocket;
         const pluginConnected = webSocket.connectedClients > 0;
+        const fileContext = this.mcpServer.fileContextRegistry.getSessionSummary(sessionContext?.userToken);
 
         return new JsonResponse({
             status: "ok",
@@ -44,13 +45,12 @@ export class McpStatusTool extends Tool<EmptyToolArgs> {
                     authenticatedClients: webSocket.authenticatedClients,
                     pendingTasks: webSocket.pendingTasks,
                 },
-                fileContext: {
-                    status: "unbound",
-                    bound: false,
-                    availableContexts: 0,
-                },
+                fileContext,
             },
-            warnings: ["File context broker is not implemented yet; file-context status is currently unbound."],
+            warnings:
+                fileContext.status === "unbound"
+                    ? ["Open a Penpot file in this browser session before using file-scoped MCP tools."]
+                    : [],
         });
     }
 }

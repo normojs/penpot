@@ -20,9 +20,11 @@ import {
     TeamListTool,
 } from "./tools/GlobalReadTools";
 import { FileCreateTool } from "./tools/FileCreateTool";
+import { FileBindContextTool, FileGetContextTool } from "./tools/FileContextTools";
 import { PenpotRpcClient } from "./PenpotRpcClient";
 import { ReplServer } from "./ReplServer";
 import { ApiDocs } from "./ApiDocs";
+import { FileContextRegistry } from "./FileContextRegistry";
 
 /**
  * Session context for request-scoped data.
@@ -91,6 +93,7 @@ export class PenpotMcpServer {
     private readonly penpotHighLevelOverview: string;
     private readonly connectionInstructions: string;
     public readonly rpcClient: PenpotRpcClient;
+    public readonly fileContextRegistry: FileContextRegistry;
 
     /**
      * Manages session-specific context, particularly user tokens for each request.
@@ -117,6 +120,7 @@ export class PenpotMcpServer {
         this.configLoader = new ConfigurationLoader(process.cwd());
         this.apiDocs = new ApiDocs();
         this.rpcClient = new PenpotRpcClient();
+        this.fileContextRegistry = new FileContextRegistry();
 
         // prepare instructions
         let instructions = this.configLoader.getInitialInstructions();
@@ -179,6 +183,7 @@ export class PenpotMcpServer {
                 sseSessions: Object.keys(this.sseTransports).length,
                 webSocket: this.pluginBridge.getStatus(),
             },
+            fileContexts: this.fileContextRegistry.getStatus(),
         };
     }
 
@@ -207,6 +212,8 @@ export class PenpotMcpServer {
             new FileListTool(this),
             new FileGetRecentTool(this),
             new FileCreateTool(this),
+            new FileGetContextTool(this),
+            new FileBindContextTool(this),
             new ExecuteCodeTool(this),
             new HighLevelOverviewTool(this),
             new PenpotApiInfoTool(this, this.apiDocs),

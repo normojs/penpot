@@ -690,6 +690,28 @@ Planned tools:
 | `file.bind_context` | global/file | Bind by `contextId` or by `fileId` when exactly one matching available context exists |
 | `file.release_context` | file | Release current bound context and return to `connected-global` |
 
+Phase 4.2 implementation note:
+
+- The plugin now reports `file-context-update` WebSocket messages containing
+  `currentFile`, `currentPage`, selection ids, owner id, capabilities, and
+  timestamps.
+- The MCP server stores token-scoped file context summaries in
+  `FileContextRegistry`.
+- `mcp.get_status` now reads the registry for current session file context
+  state instead of returning a placeholder.
+- `file.get_context` returns the bound context, available contexts, stale
+  contexts, and next actions for the current MCP token.
+- `file.bind_context` can bind by `contextId`, by `fileId` when exactly one
+  matching context exists, or by no selector when exactly one active context
+  exists.
+- Binding verifies current-user file access through the existing
+  `get-file-summary` backend RPC before marking the context bound.
+- Plugin-reported `teamId` and `projectId` remain optional because the Penpot
+  plugin API does not always expose them directly; backend authorization is the
+  source of truth.
+- WebSocket disconnects mark contexts stale and clear the bound context for the
+  session. Explicit release remains Phase 4.3.
+
 Structured errors:
 
 | Error code | Trigger |

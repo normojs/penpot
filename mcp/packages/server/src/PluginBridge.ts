@@ -1,7 +1,13 @@
 import { WebSocket, WebSocketServer } from "ws";
 import * as http from "http";
 import { PluginTask } from "./PluginTask";
-import { PluginTaskResponse, PluginTaskResult } from "@penpot/mcp-common";
+import {
+    PluginFileContextUpdateMessage,
+    PluginTaskResponse,
+    PluginTaskResult,
+    PluginToServerMessage,
+    WrappedPluginTaskResponse,
+} from "@penpot/mcp-common";
 import { createLogger } from "./logger";
 import type { PenpotMcpServer } from "./PenpotMcpServer";
 
@@ -71,7 +77,7 @@ export class PluginBridge {
                 // ensure only one connection per userToken
                 if (this.clientsByToken.has(userToken)) {
                     this.logger.warn("Duplicate connection for given user token; rejecting new connection");
-                    this.removeConnection(ws);
+                    this.removeConnection(ws, { markContextsStale: false });
                     ws.close(1008, "Duplicate connection for given user token; close previous connection first.");
                     return;
                 }
@@ -82,8 +88,8 @@ export class PluginBridge {
             ws.on("message", (data: Buffer) => {
                 this.logger.debug("Received WebSocket message: %s", data.toString());
                 try {
-                    const response: PluginTaskResponse<any> = JSON.parse(data.toString());
-                    this.handlePluginTaskResponse(response);
+                    const message: PluginToServerMessage<any> = JSON.parse(data.toString());
+                    this.handlePluginMessage(connection, message);
                 } catch (error) {
                     this.logger.error(error, "Failure while processing WebSocket message");
                 }
@@ -122,7 +128,12 @@ export class PluginBridge {
      *
      * @param ws - The WebSocket whose connection state should be removed
      */
-    private removeConnection(ws: WebSocket): void {
+    private removeConnection(
+        ws: WebSocket,
+        options: {
+            markContextsStale: boolean;
+        } = { markContextsStale: true }
+    ): void {
         const connection = this.connectedClients.get(ws);
         if (!connection) {
             return;
@@ -130,8 +141,69 @@ export class PluginBridge {
         clearInterval(connection.pingInterval);
         this.connectedClients.delete(ws);
         if (connection.userToken) {
-            this.clientsByToken.delete(connection.userToken);
+            if (this.clientsByToken.get(connection.userToken) === connection) {
+                this.clientsByToken.delete(connection.userToken);
+            }
         }
+        if (options.markContextsStale) {
+            this.mcpServer.fileContextRegistry.clearSession(connection.userToken, "plugin WebSocket disconnected");
+        }
+    }
+
+    private handlePluginMessage(connection: ClientConnection, message: PluginToServerMessage<any>): void {
+        if (this.isFileContextUpdateMessage(message)) {
+            this.handleFileContextUpdate(connection, message);
+            return;
+        }
+
+        if (this.isWrappedPluginTaskResponse(message)) {
+            this.handlePluginTaskResponse(message.response);
+            return;
+        }
+
+        if (this.isPluginTaskResponse(message)) {
+            this.handlePluginTaskResponse(message);
+            return;
+        }
+
+        this.logger.warn("Received unsupported WebSocket message from plugin");
+    }
+
+    private handleFileContextUpdate(connection: ClientConnection, message: PluginFileContextUpdateMessage): void {
+        if (!message.context) {
+            this.mcpServer.fileContextRegistry.clearSession(
+                connection.userToken,
+                message.reason ?? "plugin reported no file context"
+            );
+            this.logger.info("Plugin reported no available file context");
+            return;
+        }
+
+        const context = this.mcpServer.fileContextRegistry.upsertContext(connection.userToken, message.context);
+        this.logger.info(
+            "Plugin file context updated: contextId=%s fileId=%s status=%s",
+            context.contextId,
+            context.fileId,
+            context.status
+        );
+    }
+
+    private isFileContextUpdateMessage(message: unknown): message is PluginFileContextUpdateMessage {
+        return this.isRecord(message) && message.type === "file-context-update";
+    }
+
+    private isWrappedPluginTaskResponse(message: unknown): message is WrappedPluginTaskResponse<any> {
+        return (
+            this.isRecord(message) && message.type === "task-response" && this.isPluginTaskResponse(message.response)
+        );
+    }
+
+    private isPluginTaskResponse(message: unknown): message is PluginTaskResponse<any> {
+        return this.isRecord(message) && typeof message.id === "string" && typeof message.success === "boolean";
+    }
+
+    private isRecord(value: unknown): value is Record<string, any> {
+        return typeof value === "object" && value !== null;
     }
 
     /**

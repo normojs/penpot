@@ -1,6 +1,29 @@
 import { ExecuteCodeTaskHandler } from "./task-handlers/ExecuteCodeTaskHandler";
 import { Task, TaskHandler } from "./TaskHandler";
 
+type FileContextUpdateMessage = {
+    type: "file-context-update";
+    context: FileContextSnapshot | null;
+    reason?: string;
+};
+
+type FileContextSnapshot = {
+    contextId: string;
+    status: "available";
+    ownerTabId: string;
+    fileId: string;
+    fileName?: string;
+    revn?: number;
+    pageId?: string;
+    pageName?: string;
+    selectionIds: string[];
+    capabilities: string[];
+    updatedAt: string;
+};
+
+const FILE_CONTEXT_CAPABILITIES = ["page.read", "selection.read", "shape.read", "shape.write", "export.read"];
+const ownerTabId = createOwnerTabId();
+
 /**
  * Extracts the major.minor.patch prefix from a version string.
  *
@@ -18,6 +41,61 @@ mcp?.setMcpStatus("connecting");
  * Registry of all available task handlers.
  */
 const taskHandlers: TaskHandler[] = [new ExecuteCodeTaskHandler()];
+
+/**
+ * Creates a stable id for this plugin runtime. The id is intentionally scoped
+ * to this browser/plugin instance and is not persisted across reloads.
+ */
+function createOwnerTabId(): string {
+    if (typeof crypto !== "undefined" && "randomUUID" in crypto) {
+        return crypto.randomUUID();
+    }
+    return `plugin-${Date.now()}-${Math.random().toString(36).slice(2)}`;
+}
+
+function buildFileContextSnapshot(): FileContextSnapshot | null {
+    const currentFile = penpot.currentFile;
+    if (!currentFile) {
+        return null;
+    }
+
+    const currentPage = penpot.currentPage;
+    const selectionIds = (penpot.selection ?? [])
+        .map((shape) => shape?.id)
+        .filter((id): id is string => typeof id === "string" && id.length > 0);
+
+    return {
+        contextId: `${ownerTabId}:${currentFile.id}`,
+        status: "available",
+        ownerTabId,
+        fileId: currentFile.id,
+        fileName: currentFile.name,
+        revn: currentFile.revn,
+        pageId: currentPage?.id,
+        pageName: currentPage?.name,
+        selectionIds,
+        capabilities: FILE_CONTEXT_CAPABILITIES,
+        updatedAt: new Date().toISOString(),
+    };
+}
+
+function reportFileContext(reason: string): void {
+    const context = buildFileContextSnapshot();
+    const message: FileContextUpdateMessage = {
+        type: "file-context-update",
+        context,
+        reason: context ? reason : `${reason}:no-current-file`,
+    };
+    penpot.ui.sendMessage(message);
+}
+
+function registerFileContextListener(eventType: "pagechange" | "selectionchange" | "filechange" | "contentsave"): void {
+    try {
+        penpot.on(eventType, () => reportFileContext(eventType));
+    } catch (error) {
+        console.warn(`Unable to register ${eventType} MCP context listener:`, error);
+    }
+}
 
 // Open the plugin UI (main.ts)
 penpot.ui.open("Penpot MCP Plugin", `?theme=${penpot.theme}`, {
@@ -48,6 +126,7 @@ penpot.ui.onMessage<string | { id: string; type?: string; status?: string; task:
                 url: mcp?.getServerUrl(),
                 token: mcp?.getToken(),
             });
+            reportFileContext("ui-initialized");
         }
     } else if (typeof message === "object" && message.type === "update-connection-status") {
         mcp?.setMcpStatus(message.status || "unknown");
@@ -84,6 +163,7 @@ async function handlePluginTaskRequest(request: { id: string; task: string; para
             }
 
             console.log("Task handled successfully:", task);
+            reportFileContext(`task:${request.task}`);
         } catch (error) {
             console.error("Error handling task:", error);
             const errorMessage = error instanceof Error ? error.message : "Unknown error";
@@ -107,7 +187,13 @@ if (mcp) {
             url: mcp?.getServerUrl(),
             token: mcp?.getToken(),
         });
+        reportFileContext("mcp-connect");
     });
+
+    registerFileContextListener("pagechange");
+    registerFileContextListener("selectionchange");
+    registerFileContextListener("filechange");
+    registerFileContextListener("contentsave");
 }
 
 // Handle theme change in the iframe
