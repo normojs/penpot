@@ -5739,6 +5739,18 @@ msgstr "Hide rulers"
 msgid "workspace.header.menu.hide-textpalette"
 msgstr "Hide fonts palette"
 
+msgid "workspace.header.menu.mcp.file.bind"
+msgstr "Bind this file"
+
+msgid "workspace.header.menu.mcp.file.unbind"
+msgstr "Unbind this file"
+
+msgid "workspace.header.menu.mcp.file.binding"
+msgstr "Binding file…"
+
+msgid "workspace.header.menu.mcp.file.releasing"
+msgstr "Unbinding file…"
+
 msgid "workspace.header.menu.mcp.plugin.status.connect"
 msgstr "Connect"
 

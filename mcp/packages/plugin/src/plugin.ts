@@ -7,6 +7,29 @@ type FileContextUpdateMessage = {
     reason?: string;
 };
 
+type FileContextBindRequestMessage = {
+    type: "file-context-bind-request";
+    requestId: string;
+    context: FileContextSnapshot | null;
+};
+
+type FileContextReleaseRequestMessage = {
+    type: "file-context-release-request";
+    requestId: string;
+};
+
+type FileContextControlResultMessage = {
+    type: "file-context-control-result";
+    requestId: string;
+    action: "bind" | "release";
+    success: boolean;
+    context?: FileContextSnapshot | null;
+    error?: {
+        code: string;
+        message: string;
+    };
+};
+
 type FileContextSnapshot = {
     contextId: string;
     status: "available";
@@ -53,6 +76,10 @@ function createOwnerTabId(): string {
     return `plugin-${Date.now()}-${Math.random().toString(36).slice(2)}`;
 }
 
+function createRequestId(action: "bind" | "release"): string {
+    return `${action}-${Date.now()}-${Math.random().toString(36).slice(2)}`;
+}
+
 function buildFileContextSnapshot(): FileContextSnapshot | null {
     const currentFile = penpot.currentFile;
     if (!currentFile) {
@@ -97,6 +124,38 @@ function registerFileContextListener(eventType: "pagechange" | "selectionchange"
     }
 }
 
+function requestFileContextBind(): void {
+    mcp?.setFileContextStatus?.({ status: "binding", updatedAt: new Date().toISOString() });
+    const message: FileContextBindRequestMessage = {
+        type: "file-context-bind-request",
+        requestId: createRequestId("bind"),
+        context: buildFileContextSnapshot(),
+    };
+    penpot.ui.sendMessage(message);
+}
+
+function requestFileContextRelease(): void {
+    mcp?.setFileContextStatus?.({ status: "releasing", updatedAt: new Date().toISOString() });
+    const message: FileContextReleaseRequestMessage = {
+        type: "file-context-release-request",
+        requestId: createRequestId("release"),
+    };
+    penpot.ui.sendMessage(message);
+}
+
+function handleFileContextControlResult(message: FileContextControlResultMessage): void {
+    const status = message.success ? (message.action === "bind" ? "bound" : "available") : "error";
+    mcp?.setFileContextStatus?.({
+        status,
+        action: message.action,
+        success: message.success,
+        context: message.context,
+        error: message.error,
+        updatedAt: new Date().toISOString(),
+    });
+    reportFileContext(`control:${message.action}`);
+}
+
 // Open the plugin UI (main.ts)
 penpot.ui.open("Penpot MCP Plugin", `?theme=${penpot.theme}`, {
     width: 236,
@@ -130,6 +189,8 @@ penpot.ui.onMessage<string | { id: string; type?: string; status?: string; task:
         }
     } else if (typeof message === "object" && message.type === "update-connection-status") {
         mcp?.setMcpStatus(message.status || "unknown");
+    } else if (typeof message === "object" && message.type === "file-context-control-result") {
+        handleFileContextControlResult(message as FileContextControlResultMessage);
     } else if (typeof message === "object" && message.task && message.id) {
         // Handle plugin tasks submitted by the MCP server
         handlePluginTaskRequest(message).catch((error) => {
@@ -188,6 +249,12 @@ if (mcp) {
             token: mcp?.getToken(),
         });
         reportFileContext("mcp-connect");
+    });
+    mcp.on("bind-context", async () => {
+        requestFileContextBind();
+    });
+    mcp.on("release-context", async () => {
+        requestFileContextRelease();
     });
 
     registerFileContextListener("pagechange");

@@ -759,7 +759,31 @@
         mcp-connection (get mcp :connection-status)
         mcp-connected? (= mcp-connection "connected")
 
+        file-context-status (-> mcp :file-context :status)
+        file-context-bound? (= file-context-status "bound")
+        file-context-busy?  (contains? #{"binding" "releasing"} file-context-status)
+
         show-enabled?   (and mcp-enabled? (false? expired?))
+
+        on-toggle-file-context
+        (mf/use-fn
+         (mf/deps file-context-bound? file-context-busy?)
+         (fn []
+           (when-not file-context-busy?
+             (if file-context-bound?
+               (st/emit! (mcp/release-current-file-context)
+                         (ev/event {::ev/name "release-mcp-file-context"
+                                    ::ev/origin "workspace-menu"}))
+               (st/emit! (mcp/bind-current-file-context)
+                         (ev/event {::ev/name "bind-mcp-file-context"
+                                    ::ev/origin "workspace-menu"}))))))
+
+        on-toggle-file-context-key-down
+        (mf/use-fn
+         (mf/deps on-toggle-file-context)
+         (fn [event]
+           (when (kbd/enter? event)
+             (on-toggle-file-context))))
 
         on-nav-to-integrations
         (mf/use-fn
@@ -807,6 +831,18 @@
          (if mcp-connected?
            (tr "workspace.header.menu.mcp.plugin.status.disconnect")
            (tr "workspace.header.menu.mcp.plugin.status.connect"))]])
+
+     (when (and show-enabled? mcp-connected?)
+       [:> dropdown-menu-item* {:id          "mcp-menu-toggle-file-context"
+                                :class       (stl/css :base-menu-item :submenu-item)
+                                :on-click    on-toggle-file-context
+                                :on-key-down on-toggle-file-context-key-down}
+        [:span {:class (stl/css :item-name)}
+         (cond
+           (= file-context-status "binding")   (tr "workspace.header.menu.mcp.file.binding")
+           (= file-context-status "releasing") (tr "workspace.header.menu.mcp.file.releasing")
+           file-context-bound?                 (tr "workspace.header.menu.mcp.file.unbind")
+           :else                               (tr "workspace.header.menu.mcp.file.bind"))]])
 
      [:> dropdown-menu-item* {:id          "mcp-menu-nav-to-integrations"
                               :class       (stl/css :base-menu-item :submenu-item)

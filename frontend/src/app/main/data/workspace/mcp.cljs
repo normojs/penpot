@@ -18,5 +18,7 @@
 (def update-mcp-connection-status mcp/update-mcp-connection-status)
 (def connect-mcp mcp/connect-mcp)
 (def user-disconnect-mcp mcp/user-disconnect-mcp)
+(def bind-current-file-context mcp/bind-current-file-context)
+(def release-current-file-context mcp/release-current-file-context)
 (def init-mcp mcp/init-mcp)
 (def init mcp/initialize)

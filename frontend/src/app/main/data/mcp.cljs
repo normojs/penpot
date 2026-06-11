@@ -142,6 +142,13 @@
       (rx/of (manage-mcp-notification)
              (mbc/event :mcp/pong {:connection-status value})))))
 
+(defn update-mcp-file-context-status
+  [value]
+  (ptk/reify ::update-mcp-file-context-status
+    ptk/UpdateEvent
+    (update [_ state]
+      (update state :mcp assoc :file-context value))))
+
 (defn connect-mcp
   []
   (ptk/reify ::connect-mcp
@@ -160,11 +167,34 @@
     ptk/WatchEvent
     (watch [_ _ _]
       (rx/of (ptk/data-event ::disconnect)
-             (update-mcp-connection-status "disconnected")))
+             (update-mcp-connection-status "disconnected")
+             (update-mcp-file-context-status {:status "unbound"})))
 
     ptk/EffectEvent
     (effect [_ _ _]
       (stop-reconnect-watcher!))))
+
+(defn bind-current-file-context
+  []
+  (ptk/reify ::bind-current-file-context
+    ptk/UpdateEvent
+    (update [_ state]
+      (update state :mcp assoc :file-context {:status "binding"}))
+
+    ptk/WatchEvent
+    (watch [_ _ _]
+      (rx/of (ptk/data-event ::bind-file-context)))))
+
+(defn release-current-file-context
+  []
+  (ptk/reify ::release-current-file-context
+    ptk/UpdateEvent
+    (update [_ state]
+      (update state :mcp assoc :file-context {:status "releasing"}))
+
+    ptk/WatchEvent
+    (watch [_ _ _]
+      (rx/of (ptk/data-event ::release-file-context)))))
 
 (defn- manage-mcp-notification
   []
@@ -212,6 +242,10 @@
                         (start-reconnect-watcher!))
                       (st/emit! (update-mcp-connection-status status))
                       (log/info :hint "MCP STATUS" :status status))
+                    :setFileContextStatus
+                    (fn [status]
+                      (st/emit! (update-mcp-file-context-status (js->clj status :keywordize-keys true)))
+                      (log/info :hint "MCP FILE CONTEXT" :status status))
 
                     :on
                     (fn [event cb]
@@ -219,6 +253,8 @@
                                  (case event
                                    "disconnect" ::disconnect
                                    "connect" ::connect
+                                   "bind-context" ::bind-file-context
+                                   "release-context" ::release-file-context
                                    nil)]
 
                         (let [stopper (rx/filter stop-event? stream)]
@@ -235,7 +271,8 @@
     (update [_ state]
       (cond-> (update state :mcp assoc
                       :active (enabled? state)
-                      :connection-status (get-in state [:mcp :connection-status] "disconnected"))
+                      :connection-status (get-in state [:mcp :connection-status] "disconnected")
+                      :file-context (get-in state [:mcp :file-context] {:status "unbound"}))
         (enabled? state)
         (update :mcp assoc :connected-tab (:session-id state))))
 

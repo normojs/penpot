@@ -130,6 +130,29 @@ export interface PluginFileContextUpdateMessage {
     reason?: string;
 }
 
+export interface PluginFileContextBindRequestMessage {
+    type: "file-context-bind-request";
+    requestId: string;
+    context: FileContextSnapshot | null;
+}
+
+export interface PluginFileContextReleaseRequestMessage {
+    type: "file-context-release-request";
+    requestId: string;
+}
+
+export interface PluginFileContextControlResultMessage {
+    type: "file-context-control-result";
+    requestId: string;
+    action: "bind" | "release";
+    success: boolean;
+    context?: FileContextSnapshot | null;
+    error?: {
+        code: string;
+        message: string;
+    };
+}
+
 export interface WrappedPluginTaskResponse<T> {
     type: "task-response";
     response: PluginTaskResponse<T>;
@@ -138,7 +161,11 @@ export interface WrappedPluginTaskResponse<T> {
 export type PluginToServerMessage<T> =
     | PluginTaskResponse<T>
     | WrappedPluginTaskResponse<T>
-    | PluginFileContextUpdateMessage;
+    | PluginFileContextUpdateMessage
+    | PluginFileContextBindRequestMessage
+    | PluginFileContextReleaseRequestMessage;
+
+export type ServerToPluginMessage<T> = PluginTaskRequest | PluginFileContextControlResultMessage;
 
 /**
  * Parameters for the executeCode task.

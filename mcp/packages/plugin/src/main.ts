@@ -14,6 +14,12 @@ type FileContextUpdateMessage = {
     reason?: string;
 };
 
+type FileContextControlRequestMessage = {
+    type: "file-context-bind-request" | "file-context-release-request";
+    requestId: string;
+    context?: unknown;
+};
+
 const statusPill = document.getElementById("connection-status") as HTMLElement;
 const statusText = document.getElementById("status-text") as HTMLElement;
 const currentTaskEl = document.getElementById("current-task") as HTMLElement;
@@ -142,9 +148,10 @@ function connectToMcpServer(baseUrl?: string, token?: string): void {
                 if (request.task) {
                     updateCurrentTask(request.task);
                     updateExecutedCode(request.params?.code ?? null);
+                    parent.postMessage(request, "*");
+                } else if (request.type === "file-context-control-result") {
+                    parent.postMessage(request, "*");
                 }
-                // Forward the task request to the plugin for execution
-                parent.postMessage(request, "*");
             } catch (error) {
                 console.error("Failed to parse WebSocket message:", error);
             }
@@ -211,6 +218,8 @@ window.addEventListener("message", (event) => {
         ws?.close();
     } else if (event.data.type === "file-context-update") {
         sendFileContextUpdate(event.data);
+    } else if (event.data.type === "file-context-bind-request" || event.data.type === "file-context-release-request") {
+        sendServerMessage(event.data as FileContextControlRequestMessage);
     } else if (event.data.source === "penpot") {
         document.body.dataset.theme = event.data.theme;
     } else if (event.data.type === "task-response") {

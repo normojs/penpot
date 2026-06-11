@@ -2,6 +2,9 @@ import { WebSocket, WebSocketServer } from "ws";
 import * as http from "http";
 import { PluginTask } from "./PluginTask";
 import {
+    PluginFileContextBindRequestMessage,
+    PluginFileContextControlResultMessage,
+    PluginFileContextReleaseRequestMessage,
     PluginFileContextUpdateMessage,
     PluginTaskResponse,
     PluginTaskResult,
@@ -89,7 +92,9 @@ export class PluginBridge {
                 this.logger.debug("Received WebSocket message: %s", data.toString());
                 try {
                     const message: PluginToServerMessage<any> = JSON.parse(data.toString());
-                    this.handlePluginMessage(connection, message);
+                    this.handlePluginMessage(connection, message).catch((error) => {
+                        this.logger.error(error, "Failure while handling WebSocket message");
+                    });
                 } catch (error) {
                     this.logger.error(error, "Failure while processing WebSocket message");
                 }
@@ -150,9 +155,19 @@ export class PluginBridge {
         }
     }
 
-    private handlePluginMessage(connection: ClientConnection, message: PluginToServerMessage<any>): void {
+    private async handlePluginMessage(connection: ClientConnection, message: PluginToServerMessage<any>): Promise<void> {
         if (this.isFileContextUpdateMessage(message)) {
             this.handleFileContextUpdate(connection, message);
+            return;
+        }
+
+        if (this.isFileContextBindRequestMessage(message)) {
+            await this.handleFileContextBindRequest(connection, message);
+            return;
+        }
+
+        if (this.isFileContextReleaseRequestMessage(message)) {
+            this.handleFileContextReleaseRequest(connection, message);
             return;
         }
 
@@ -188,8 +203,105 @@ export class PluginBridge {
         );
     }
 
+    private async handleFileContextBindRequest(
+        connection: ClientConnection,
+        message: PluginFileContextBindRequestMessage
+    ): Promise<void> {
+        if (!message.context) {
+            this.sendFileContextControlResult(connection, {
+                type: "file-context-control-result",
+                requestId: message.requestId,
+                action: "bind",
+                success: false,
+                error: {
+                    code: "file_context_required",
+                    message: "No current Penpot file context is available to bind.",
+                },
+            });
+            return;
+        }
+
+        try {
+            this.mcpServer.fileContextRegistry.upsertContext(connection.userToken, message.context);
+
+            if (connection.userToken) {
+                await this.mcpServer.rpcClient.get("get-file-summary", { id: message.context.fileId }, connection.userToken);
+            }
+
+            const context = this.mcpServer.fileContextRegistry.bindContext(
+                connection.userToken,
+                message.context.contextId,
+                new Date().toISOString()
+            );
+
+            this.sendFileContextControlResult(connection, {
+                type: "file-context-control-result",
+                requestId: message.requestId,
+                action: "bind",
+                success: Boolean(context),
+                context,
+                error: context
+                    ? undefined
+                    : {
+                          code: "file_context_stale",
+                          message: "The selected file context became stale before it could be bound.",
+                      },
+            });
+        } catch (cause) {
+            this.sendFileContextControlResult(connection, {
+                type: "file-context-control-result",
+                requestId: message.requestId,
+                action: "bind",
+                success: false,
+                error: {
+                    code: this.getErrorCode(cause, "file_context_bind_failed"),
+                    message: cause instanceof Error ? cause.message : String(cause),
+                },
+            });
+        }
+    }
+
+    private handleFileContextReleaseRequest(
+        connection: ClientConnection,
+        message: PluginFileContextReleaseRequestMessage
+    ): void {
+        const context = this.mcpServer.fileContextRegistry.releaseContext(connection.userToken);
+        this.sendFileContextControlResult(connection, {
+            type: "file-context-control-result",
+            requestId: message.requestId,
+            action: "release",
+            success: true,
+            context,
+        });
+    }
+
+    private sendFileContextControlResult(
+        connection: ClientConnection,
+        message: PluginFileContextControlResultMessage
+    ): void {
+        if (connection.socket.readyState === WebSocket.OPEN) {
+            connection.socket.send(JSON.stringify(message));
+        }
+    }
+
     private isFileContextUpdateMessage(message: unknown): message is PluginFileContextUpdateMessage {
         return this.isRecord(message) && message.type === "file-context-update";
+    }
+
+    private isFileContextBindRequestMessage(message: unknown): message is PluginFileContextBindRequestMessage {
+        return (
+            this.isRecord(message) &&
+            message.type === "file-context-bind-request" &&
+            typeof message.requestId === "string"
+        );
+    }
+
+    private isFileContextReleaseRequestMessage(message: unknown): message is PluginFileContextReleaseRequestMessage {
+        return (
+            this.isRecord(message) &&
+            message.type === "file-context-release-request" &&
+            typeof message.requestId === "string"
+        );
     }
 
     private isWrappedPluginTaskResponse(message: unknown): message is WrappedPluginTaskResponse<any> {
@@ -204,6 +316,13 @@ export class PluginBridge {
 
     private isRecord(value: unknown): value is Record<string, any> {
         return typeof value === "object" && value !== null;
+    }
+
+    private getErrorCode(cause: unknown, fallback: string): string {
+        if (this.isRecord(cause) && typeof cause.code === "string") {
+            return cause.code;
+        }
+        return fallback;
     }
 
     /**

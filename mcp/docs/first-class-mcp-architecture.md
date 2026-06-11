@@ -733,6 +733,22 @@ Phase 4.4 implementation note:
 - `execute_code` is intentionally not gated here because it remains an
   advanced/debug escape hatch until P5.6 defines the explicit user setting.
 
+Phase 4.5 implementation note:
+
+- The workspace MCP menu (`frontend/src/app/main/ui/workspace/main_menu.cljs`)
+  now shows a bind/unbind control while MCP is connected.
+- The control emits `mcp/bind-current-file-context` or
+  `mcp/release-current-file-context`, which optimistically set the frontend
+  `:mcp :file-context` status to `binding`/`releasing` and forward
+  `bind-context` / `release-context` plugin events.
+- The plugin sends `file-context-bind-request` / `file-context-release-request`
+  WebSocket messages; the server verifies access through `get-file-summary`,
+  updates the registry, and replies with `file-context-control-result`.
+- The plugin then calls `setFileContextStatus`, so the menu label reflects
+  `binding`, `releasing`, `bound` (Unbind), or `unbound`/`available` (Bind).
+- Frontend lint/test runs are blocked locally because `clojure` and frontend
+  `node_modules` are not installed.
+
 Structured errors:
 
 | Error code | Trigger |
