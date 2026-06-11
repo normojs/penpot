@@ -1,4 +1,4 @@
-type RpcParamValue = string | number | boolean | null | undefined;
+type RpcParamValue = string | number | boolean | string[] | number[] | boolean[] | null | undefined;
 
 export type RpcParams = Record<string, RpcParamValue>;
 
@@ -39,13 +39,31 @@ export class PenpotRpcClient {
             }
         }
 
+        return await this.request<T>(url, "GET", userToken);
+    }
+
+    public async post<T>(methodName: string, params: RpcParams, userToken: string): Promise<T> {
+        const url = new URL(`api/main/methods/${methodName}`, `${this.baseUri}/`);
+        url.searchParams.set("_fmt", "json");
+
+        return await this.request<T>(url, "POST", userToken, params);
+    }
+
+    private async request<T>(url: URL, method: "GET" | "POST", userToken: string, params?: RpcParams): Promise<T> {
+        const headers: Record<string, string> = {
+            accept: "application/json",
+            authorization: `Token ${userToken}`,
+            "x-client": "penpot-mcp/1.0",
+        };
+
+        if (method === "POST") {
+            headers["content-type"] = "application/json";
+        }
+
         const response = await fetch(url, {
-            method: "GET",
-            headers: {
-                accept: "application/json",
-                authorization: `Token ${userToken}`,
-                "x-client": "penpot-mcp/1.0",
-            },
+            method,
+            headers,
+            body: method === "POST" ? JSON.stringify(params ?? {}) : undefined,
         });
 
         const text = await response.text();

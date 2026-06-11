@@ -8,7 +8,7 @@ import { ToolNames } from "../ToolNames";
 
 type PenpotRecord = Record<string, unknown>;
 
-abstract class PenpotRpcTool<TArgs extends object> extends Tool<TArgs> {
+export abstract class PenpotRpcTool<TArgs extends object> extends Tool<TArgs> {
     protected constructor(mcpServer: PenpotMcpServer, inputSchema: z.ZodRawShape) {
         super(mcpServer, inputSchema);
     }
@@ -26,12 +26,21 @@ abstract class PenpotRpcTool<TArgs extends object> extends Tool<TArgs> {
     }
 
     protected authenticationRequired(): ToolResponse {
+        return this.error(
+            "authentication_required",
+            "This MCP tool requires a Penpot MCP access token for the current session.",
+            ["Reconnect MCP with a userToken query parameter."]
+        );
+    }
+
+    protected error(code: string, message: string, actions: string[] = [], data?: unknown): ToolResponse {
         return new JsonResponse({
             status: "error",
             error: {
-                code: "authentication_required",
-                message: "This MCP tool requires a Penpot MCP access token for the current session.",
-                actions: ["Reconnect MCP with a userToken query parameter."],
+                code,
+                message,
+                actions,
+                data,
             },
         });
     }

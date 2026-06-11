@@ -330,9 +330,15 @@ First-class global tools can call existing Penpot RPC endpoints through
 | `project.list` | List projects for one team, or all available teams |
 | `file.list` | List files in a project |
 | `file.get_recent` | List recent files for a team |
+| `file.create` | Create a file in a project |
 
 These tools use the MCP `userToken` as a Penpot access token and send it to the
 backend as `Authorization: Token <token>`.
+
+`file.create` requires `projectId` and accepts optional `name` and `isShared`.
+It creates the file through the existing backend `create-file` RPC command and
+returns a file summary. Opening and binding the new file as the active file
+context is planned for the file context broker phase.
 
 ## Beyond Local Execution
 

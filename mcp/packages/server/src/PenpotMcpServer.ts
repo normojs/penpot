@@ -19,6 +19,7 @@ import {
     ProjectListTool,
     TeamListTool,
 } from "./tools/GlobalReadTools";
+import { FileCreateTool } from "./tools/FileCreateTool";
 import { PenpotRpcClient } from "./PenpotRpcClient";
 import { ReplServer } from "./ReplServer";
 import { ApiDocs } from "./ApiDocs";
@@ -205,6 +206,7 @@ export class PenpotMcpServer {
             new ProjectListTool(this),
             new FileListTool(this),
             new FileGetRecentTool(this),
+            new FileCreateTool(this),
             new ExecuteCodeTool(this),
             new HighLevelOverviewTool(this),
             new PenpotApiInfoTool(this, this.apiDocs),
