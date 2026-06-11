@@ -11,6 +11,7 @@ import { HighLevelOverviewTool } from "./tools/HighLevelOverviewTool";
 import { PenpotApiInfoTool } from "./tools/PenpotApiInfoTool";
 import { ExportShapeTool } from "./tools/ExportShapeTool";
 import { ImportImageTool } from "./tools/ImportImageTool";
+import { McpStatusTool } from "./tools/McpStatusTool";
 import { ReplServer } from "./ReplServer";
 import { ApiDocs } from "./ApiDocs";
 
@@ -188,6 +189,7 @@ export class PenpotMcpServer {
 
     private initTools(): ToolInfo[] {
         const toolInstances: Tool<any>[] = [
+            new McpStatusTool(this),
             new ExecuteCodeTool(this),
             new HighLevelOverviewTool(this),
             new PenpotApiInfoTool(this, this.apiDocs),

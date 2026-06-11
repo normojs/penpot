@@ -38,7 +38,7 @@ remain the execution plan.
 | F1 | done | Built-in MCP gateway | Phase 1 | Users see one MCP URL instead of several internal ports | Settings and generated client config point to `/mcp/stream` |
 | F2 | todo | Manual MCP configuration | Phase 1, Phase 2 | Users can choose built-in, custom, or local MCP settings | Settings persist mode, stream URL, WebSocket URL, and auto-connect |
 | F3 | in_progress | Global background MCP agent | Phase 2 | MCP can connect after login without opening a file | Connection reaches `connected-global` from dashboard/settings |
-| F4 | todo | MCP status and diagnostics | Phase 2, Phase 8 | Users and agents can inspect connection health | `mcp.get_status` reports server, plugin, user, and file context |
+| F4 | in_progress | MCP status and diagnostics | Phase 2, Phase 8 | Users and agents can inspect connection health | `mcp.get_status` now reports server, plugin, session, and placeholder file context; richer diagnostics remain for Phase 8 |
 | F5 | todo | Global resource tools | Phase 3 | Agents can list teams, projects, and files before a workspace opens | MCP can list files using normal user permissions |
 | F6 | todo | File creation and opening | Phase 3, Phase 4 | Agents can create a file and ask Penpot to open or bind it | `file.create` returns a file id and `file.bind_context` can attach it |
 | F7 | todo | File context broker | Phase 4 | Users and agents know which file MCP is editing | Missing context returns `file_context_required` with next actions |
@@ -97,7 +97,7 @@ Goal: make MCP useful before a file context is active.
 | ID | Status | Task | Modules | Verification | Notes |
 | --- | --- | --- | --- | --- | --- |
 | P3.1 | done | Define shared tool naming and schemas | `mcp/packages/server` | Tool names match architecture doc and inputs are typed | Completed 2026-06-11; added `ToolNames.ts`, documented dotted first-class naming, schema/response rules, and legacy compatibility |
-| P3.2 | todo | Add `mcp.get_status` tool | `mcp/packages/server`, `frontend` | MCP client can see server, plugin, user, and file-context status | First proving tool |
+| P3.2 | done | Add `mcp.get_status` tool | `mcp/packages/server`, `frontend` | MCP client can see server, plugin, user, and file-context status | Completed 2026-06-11; added `McpStatusTool` with server, transport, plugin, session, and placeholder file-context status; `git diff --check` passed, TS check blocked because MCP `node_modules`/`tsc` are missing |
 | P3.3 | todo | Add account/team/project/file read tools | `mcp/packages/server`, `backend` or `frontend` | MCP can list teams, projects, and files without a workspace | Use normal Penpot permissions |
 | P3.4 | todo | Add `file.create` global tool | `mcp/packages/server`, `backend` | MCP can create a file in a selected project/team | Ambiguous target must return structured error |
 | P3.5 | todo | Add structured global-tool errors | `mcp/packages/server` | Missing auth, missing config, and missing permissions are machine-readable | Avoid generic bridge failures |

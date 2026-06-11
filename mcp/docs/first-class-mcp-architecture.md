@@ -842,6 +842,24 @@ file.get_recent
 token.get_mcp_status
 ```
 
+`mcp.get_status` is the first implemented dotted global tool. It returns JSON
+text with these top-level fields:
+
+```text
+status
+data.server
+data.transports
+data.session
+data.plugin
+data.fileContext
+warnings
+```
+
+The tool reuses the same token-safe status model as `/mcp/status`, then adds
+current MCP session information. It never returns the raw user token. Until the
+Phase 4 file context broker exists, `data.fileContext.status` is reported as
+`unbound`.
+
 ### 8.2 File Context Tools
 
 Require a bound file:
@@ -983,6 +1001,17 @@ Work:
   appropriate.
 - Add structured errors for missing permissions and missing configuration.
 - Add tests around tool schemas and permission checks.
+
+Implementation notes:
+
+- `mcp/packages/server/src/ToolNames.ts` is the shared tool-name registry for
+  dotted first-class tools and legacy compatibility tools.
+- `mcp.get_status` is implemented by
+  `mcp/packages/server/src/tools/McpStatusTool.ts` and registered before legacy
+  plugin-backed tools.
+- The first status tool includes server, transport, plugin, session, and
+  placeholder file-context fields. File-context discovery and binding remain
+  Phase 4 work.
 
 Definition of done:
 
