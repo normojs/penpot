@@ -6,6 +6,7 @@ import { PenpotMcpServer } from "../PenpotMcpServer";
 import { ToolNames } from "../ToolNames";
 import { ExecuteCodePluginTask } from "../tasks/ExecuteCodePluginTask";
 import { FileUtils } from "../utils/FileUtils";
+import { requireBoundFileContext } from "./FileContextGuard";
 import * as fs from "fs";
 import * as path from "path";
 
@@ -83,6 +84,15 @@ export class ImportImageTool extends Tool<ImportImageArgs> {
     }
 
     protected async executeCore(args: ImportImageArgs): Promise<ToolResponse> {
+        const contextError = requireBoundFileContext(
+            this.mcpServer,
+            this.getSessionContext()?.userToken,
+            this.getToolName()
+        );
+        if (contextError) {
+            return contextError;
+        }
+
         // check that file path is absolute
         FileUtils.checkPathIsAbsolute(args.filePath);
 

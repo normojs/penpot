@@ -6,6 +6,7 @@ import { PenpotMcpServer } from "../PenpotMcpServer";
 import { ToolNames } from "../ToolNames";
 import { ExecuteCodePluginTask } from "../tasks/ExecuteCodePluginTask";
 import { FileUtils } from "../utils/FileUtils";
+import { requireBoundFileContext } from "./FileContextGuard";
 import sharp from "sharp";
 
 /**
@@ -80,6 +81,15 @@ export class ExportShapeTool extends Tool<ExportShapeArgs> {
     }
 
     protected async executeCore(args: ExportShapeArgs): Promise<ToolResponse> {
+        const contextError = requireBoundFileContext(
+            this.mcpServer,
+            this.getSessionContext()?.userToken,
+            this.getToolName()
+        );
+        if (contextError) {
+            return contextError;
+        }
+
         // check arguments
         if (args.filePath) {
             FileUtils.checkPathIsAbsolute(args.filePath);

@@ -720,6 +720,19 @@ Phase 4.3 implementation note:
 - Calling `file.release_context` without a bound context is idempotent and
   returns the current context summary with `released: false`.
 
+Phase 4.4 implementation note:
+
+- File-scoped plugin-backed tools use a shared file context guard before
+  executing plugin tasks.
+- `export_shape` and `import_image` now return structured
+  `file_context_required` errors with `file.get_context`,
+  `file.bind_context`, `file.list`, and `file.get_recent` recovery actions
+  when no context is bound.
+- The guard runs before local file reads or writes in `import_image` and before
+  optional export file writes in `export_shape`.
+- `execute_code` is intentionally not gated here because it remains an
+  advanced/debug escape hatch until P5.6 defines the explicit user setting.
+
 Structured errors:
 
 | Error code | Trigger |

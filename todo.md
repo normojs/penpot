@@ -25,9 +25,9 @@ This file is the execution tracker for the `penpot-cli` fork based on Penpot
 ## Current Focus
 
 Phase 1 gateway/configuration cleanup, Phase 2 global background lifecycle,
-Phase 3 typed global MCP tools, and Phase 4 context inspect/bind/release are
-complete. The next implementation focus is required-context errors for
-file-scoped tools.
+Phase 3 typed global MCP tools, and Phase 4 context inspect/bind/release plus
+required-context errors are complete. The next implementation focus is manual
+workspace bind/unbind controls and lifecycle coverage.
 
 ## Feature Roadmap
 
@@ -42,7 +42,7 @@ remain the execution plan.
 | F4 | in_progress | MCP status and diagnostics | Phase 2, Phase 8 | Users and agents can inspect connection health | `mcp.get_status` now reports server, plugin, session, and real registry-backed file context; richer diagnostics remain for Phase 8 |
 | F5 | done | Global resource tools | Phase 3 | Agents can list teams, projects, and files before a workspace opens | Completed 2026-06-11; MCP can list teams, projects, project files, and recent files through backend permissions |
 | F6 | in_progress | File creation and opening | Phase 3, Phase 4 | Agents can create a file and ask Penpot to open or bind it | `file.create` returns a file summary; open/bind remains Phase 4 |
-| F7 | in_progress | File context broker | Phase 4 | Users and agents know which file MCP is editing | Context reporting, inspect, bind, and release are implemented; required-context errors and UI controls remain |
+| F7 | in_progress | File context broker | Phase 4 | Users and agents know which file MCP is editing | Context reporting, inspect, bind, release, and required-context errors are implemented; UI controls and broader lifecycle coverage remain |
 | F8 | todo | Typed page and shape creation | Phase 5 | Agents can draw basic screens without arbitrary JS | `page.create`, `shape.create_frame`, and `shape.create_text` work |
 | F9 | todo | Prototype authoring tools | Phase 5 | Agents can create flows and interactions | Basic frame-to-frame interaction can be created through typed tools |
 | F10 | todo | Export and preview tools | Phase 5, Phase 7 | Agents and CLI can export useful visual output | Bound file/page can export PNG or SVG through typed command |
@@ -113,7 +113,7 @@ Goal: make file context explicit, inspectable, and safe.
 | P4.1 | done | Design file context registry | `frontend`, `mcp/packages/server` | Registry tracks open files, active page, selection, tab owner | Completed 2026-06-11; documented frontend/server registry layers, context shape, status model, register/update/bind flows, multi-tab rules, planned tools, and structured errors |
 | P4.2 | done | Add `file.get_context` and `file.bind_context` | `mcp/packages/server`, `frontend` | MCP can inspect and bind an available file context | Completed 2026-06-11; plugin reports file/page/selection contexts, server stores token-scoped registry state, `mcp.get_status` reads the registry, and `file.bind_context` verifies access through backend RPC before binding |
 | P4.3 | done | Add `file.release_context` | `mcp/packages/server`, `frontend` | MCP can detach from the current file context | Completed 2026-06-11; added idempotent `file.release_context`, registry release state, and unit coverage that returns the open context to available |
-| P4.4 | todo | Add `file_context_required` error path | `mcp/packages/server` | File tools return clear next actions when no context is bound | Required before broad file tools |
+| P4.4 | done | Add `file_context_required` error path | `mcp/packages/server` | File tools return clear next actions when no context is bound | Completed 2026-06-11; added shared file-context guard, protected `export_shape` and `import_image`, and covered structured error behavior in server tests |
 | P4.5 | todo | Add workspace menu bind/unbind controls | `frontend` | User can manually bind current file and see status | UI should stay small and operational |
 | P4.6 | todo | Add lifecycle tests | `frontend`, `mcp/packages/server` | Bind, release, close tab, and reconnect are covered | Include race cases where practical |
 
@@ -172,6 +172,6 @@ Goal: make first-class MCP safe and diagnosable.
 
 Start the smallest slice that makes file-bound work explicit and safe:
 
-1. Start P4.4: add clear `file_context_required` errors for file tools.
-2. Prepare workspace UI notes for manual bind/unbind controls.
-3. Add lifecycle coverage for stale contexts and reconnect.
+1. Start P4.5: add workspace menu bind/unbind controls.
+2. Start P4.6: add lifecycle coverage for stale contexts and reconnect.
+3. Prepare Phase 5 typed page tool implementation.
