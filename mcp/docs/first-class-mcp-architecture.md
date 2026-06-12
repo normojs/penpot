@@ -54,8 +54,8 @@ top when a design file is open or explicitly selected.
    questions before a workspace tab is active.
 
 4. **Structured tools before arbitrary code.**
-   Keep `execute_code` as an advanced/debug tool, but move normal workflows to
-   typed tools and a shared command runtime.
+   Keep `execute_code` as an explicitly enabled advanced/debug tool, but move
+   normal workflows to typed tools and a shared command runtime.
 
 5. **CLI and MCP should converge.**
    `penpot-cli` and MCP tools should call the same automation command layer
@@ -1125,8 +1125,9 @@ debug.get_plugin_state
 debug.get_agent_logs
 ```
 
-`execute_code` should remain useful for development and emergency fallback, but
-normal agent workflows should prefer typed tools.
+`execute_code` remains useful for development and emergency fallback, but the
+MCP server only runs it when `PENPOT_MCP_ENABLE_EXECUTE_CODE=true` is set.
+Normal agent workflows should prefer typed tools.
 
 ## 9. Development Order
 
@@ -1337,6 +1338,20 @@ Phase 5.5 implementation note:
 - Tool responses return format, MIME type, byte length, target metadata, and
   base64 data so agents and the future CLI can consume the result without
   falling back to `execute_code`.
+
+Phase 5.6 implementation note:
+
+- The public legacy `execute_code` tool is registered for compatibility but is
+  disabled unless the MCP server starts with
+  `PENPOT_MCP_ENABLE_EXECUTE_CODE=true`.
+- When disabled, `execute_code` returns a structured
+  `execute_code_disabled` response with typed-tool recovery actions and the
+  required environment variable.
+- `mcp.get_status` and `/status` expose `server.executeCodeEnabled` so clients
+  can explain the current advanced-tool mode.
+- Legacy `export_shape` and `import_image` remain registered for compatibility;
+  they continue to use bound file-context checks and local-mode file access
+  rules while normal creation/export workflows move to typed tools.
 
 Definition of done:
 

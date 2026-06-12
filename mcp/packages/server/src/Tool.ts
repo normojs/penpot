@@ -1,8 +1,8 @@
 import { z } from "zod";
 import "reflect-metadata";
-import { TextResponse, ToolResponse } from "./ToolResponse";
-import type { PenpotMcpServer, SessionContext } from "./PenpotMcpServer";
-import { createLogger } from "./logger";
+import { TextResponse, ToolResponse } from "./ToolResponse.js";
+import type { PenpotMcpServer, SessionContext } from "./PenpotMcpServer.js";
+import { createLogger } from "./logger.js";
 
 /**
  * An empty arguments class for tools that do not require any parameters.

@@ -176,6 +176,14 @@ export class PenpotMcpServer {
         return !this.isRemoteMode();
     }
 
+    /**
+     * Indicates whether the legacy `execute_code` tool can run arbitrary JavaScript
+     * in the Penpot plugin context.
+     */
+    public isExecuteCodeEnabled(): boolean {
+        return process.env.PENPOT_MCP_ENABLE_EXECUTE_CODE === "true";
+    }
+
     public getStatus() {
         return {
             status: "ok",
@@ -186,6 +194,7 @@ export class PenpotMcpServer {
                 multiUserMode: this.isMultiUserMode(),
                 remoteMode: this.isRemoteMode(),
                 fileSystemAccessEnabled: this.isFileSystemAccessEnabled(),
+                executeCodeEnabled: this.isExecuteCodeEnabled(),
                 registeredTools: this.tools.length,
                 sessionTimeoutMinutes: PenpotMcpServer.SESSION_TIMEOUT_MINUTES,
             },

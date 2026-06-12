@@ -30,8 +30,9 @@ required-context errors are complete. P4.5 workspace bind/unbind controls and
 P4.6 lifecycle coverage, P5.1 typed page tools, and P5.2 typed basic shape
 creation tools are complete. P5.3 typed shape update/delete tools are
 complete. P5.4 typed prototype flow/interaction tools are complete. The
-P5.5 typed export/render tools are complete. The current implementation focus
-is P5.6: gate `execute_code` behind a setting.
+P5.5 typed export/render tools and P5.6 `execute_code` setting gate are
+complete. The next implementation focus is P6.1: decide the `penpot-cli`
+package location.
 
 ## Feature Roadmap
 
@@ -50,7 +51,7 @@ remain the execution plan.
 | F8 | done | Typed page and shape creation | Phase 5 | Agents can draw basic screens without arbitrary JS | Completed 2026-06-11; typed page tools and frame/rect/text/image creation tools are implemented |
 | F9 | done | Prototype authoring tools | Phase 5 | Agents can create flows and interactions | Completed 2026-06-11; MCP can create flows and navigate-to interactions through typed tools |
 | F10 | done | Export and preview tools | Phase 5, Phase 7 | Agents and CLI can export useful visual output | Completed 2026-06-12; MCP can export shape/page data and render PNG previews through typed tools |
-| F11 | todo | Advanced execution controls | Phase 5, Phase 8 | Admins/users can control whether `execute_code` is available | `execute_code` respects explicit user setting |
+| F11 | done | Advanced execution controls | Phase 5, Phase 8 | Admins/users can control whether `execute_code` is available | Completed 2026-06-12; `execute_code` is disabled unless `PENPOT_MCP_ENABLE_EXECUTE_CODE=true` |
 | F12 | todo | `penpot-cli` MCP operations | Phase 6 | Developers can inspect and operate MCP from terminal | `penpot-cli mcp status` works locally |
 | F13 | todo | `penpot-cli` file/export operations | Phase 6, Phase 7 | Scripts can create/export files through the same automation layer | CLI command names and schemas align with MCP tools |
 | F14 | todo | Headless automation runtime | Phase 7 | Selected operations work without an open browser tab | Simple file/page/shape creation can run through backend/common adapter |
@@ -132,7 +133,7 @@ Goal: reduce normal workflow dependence on arbitrary JavaScript execution.
 | P5.3 | done | Add shape update/delete tools | `mcp/packages/server`, `mcp/packages/plugin` | Position, size, style, layout, delete actions work | Completed 2026-06-11; added plugin-backed `shape.update` and `shape.delete` with explicit shape ids, typed geometry/style/text updates, and basic board layout edits |
 | P5.4 | done | Add prototype tools | `mcp/packages/server`, `mcp/packages/plugin` | Basic flows and interactions can be created | Completed 2026-06-11; added plugin-backed `prototype.create_flow` and `prototype.create_interaction` with explicit board/shape ids |
 | P5.5 | done | Add export/render tools | `mcp/packages/server`, `mcp/packages/plugin`, `exporter` | Selection/page export works through typed tools | Completed 2026-06-12; added plugin-backed `export.shape`, `export.page`, and `render.preview` returning base64 data and export metadata |
-| P5.6 | todo | Gate `execute_code` behind setting | `mcp/packages/server`, `frontend` | Advanced code execution respects user setting | Default should be conservative |
+| P5.6 | done | Gate `execute_code` behind setting | `mcp/packages/server` | Advanced code execution respects user setting | Completed 2026-06-12; `execute_code` returns `execute_code_disabled` unless `PENPOT_MCP_ENABLE_EXECUTE_CODE=true`, and status reports `executeCodeEnabled` |
 
 ## Phase 6: `penpot-cli` Entry Point
 
@@ -174,9 +175,11 @@ Goal: make first-class MCP safe and diagnosable.
 
 ## Next Recommended Sprint
 
-Start the smallest slice that controls advanced execution explicitly:
+Start the smallest CLI slice:
 
-1. Start P5.6 with an explicit server-side setting for `execute_code`.
-2. Keep typed page/shape/prototype/export tools available by default.
-3. Return a clear disabled response when `execute_code` is not enabled.
-4. Keep legacy tools registered where compatible, but route normal workflows through typed tools.
+1. Start P6.1 by deciding whether `penpot-cli` lives as a root package, inside
+   `mcp/packages`, or in a separate future module.
+2. Document the package location decision in
+   `mcp/docs/first-class-mcp-architecture.md`.
+3. Keep the initial CLI scope aligned with existing MCP tool names and status
+   semantics.
