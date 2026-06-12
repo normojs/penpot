@@ -165,26 +165,39 @@ workspace context.
 
 ## Export Commands
 
-The CLI can parse and report page export requests now:
+The CLI can parse and report exporter-backed page export requests now. The
+headless path requires explicit file, page, and object ids because the exporter
+cannot infer the current workspace selection.
 
 ```bash
 node penpot-cli/dist/index.js export page \
   --file <file-id> \
   --page <page-id> \
+  --object <frame-or-shape-id> \
   --export-format pdf \
   --dry-run
 
 node penpot-cli/dist/index.js export page \
   --file <file-id> \
+  --page <page-id> \
+  --object <frame-or-shape-id> \
   --export-format png \
   --scale 2 \
   --output ./out/page.png \
+  --exporter-uri http://localhost:6061 \
   --dry-run \
   --format json
 ```
 
-Actual CLI export execution waits for the Phase 7 shared command runtime. Until
-then, use MCP `export.page` with a bound live file context for real exports.
+Dry-run output includes the exporter URI, the planned `export-shapes` request,
+the required Transit JSON content type, and the fields that still need runtime
+resolution before execution, such as `profileId` when it is not supplied by
+`--profile-id` or `PENPOT_PROFILE_ID`.
+
+Actual CLI exporter execution waits for the Phase 7 shared command runtime. The
+exporter-backed path will return uploaded resource metadata. Until execution is
+wired, use MCP `export.page` with a bound live file context for real base64
+exports.
 
 ## Verification
 

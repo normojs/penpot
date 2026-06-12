@@ -1,6 +1,7 @@
 # Headless Command Runtime
 
-Status: P7.2 page list/create backend-command adapter slice implemented.
+Status: P7.4 exporter-backed dry-run plan metadata implemented for CLI
+`export.page`.
 
 This document defines the transport-neutral command runtime that will let MCP
 tools and `penpot-cli` share command names, schemas, adapter selection, and
@@ -278,8 +279,8 @@ they already exist in MCP, CLI, or both.
 | `shape.create_frame` | file | MCP plugin task | `plugin-live`, then `backend-command` |
 | `shape.create_rect` | file | MCP plugin task | `plugin-live`, then `backend-command` |
 | `shape.create_text` | file | MCP plugin task | `plugin-live`, then `backend-command` |
-| `export.page` | file | MCP plugin task, CLI dry-run | `plugin-live`, then `exporter` |
-| `render.preview` | file | MCP plugin task | `plugin-live`, then `exporter` |
+| `export.page` | file | MCP plugin task, CLI exporter dry-run | `exporter`, fallback `plugin-live` |
+| `render.preview` | file | MCP plugin task | `exporter`, fallback `plugin-live` |
 
 ## Schema Strategy
 
@@ -435,3 +436,56 @@ P7.3 is complete when:
 - The backend command returns a stable shape summary plus revision metadata.
 - Common and backend tests cover generated changes and persistence through
   `get-file`.
+
+## P7.4 Exporter Plan Slice
+
+The first exporter-backed slice keeps real execution disabled but makes the
+headless export contract explicit for CLI callers. `penpot-cli export page`
+now plans the `exporter` adapter instead of a generic live MCP adapter and
+requires the smallest target that the current exporter can render without
+workspace state:
+
+```text
+fileId + pageId + objectId
+```
+
+The object id should be the page root frame, a board, or another exportable
+shape on the page. The exporter HTTP handler does not know about current
+selection, current page, or bound workspace context, so those values must not
+be inferred by the headless path.
+
+The planned direct exporter request maps to the existing exporter command:
+
+```clojure
+{:cmd :export-shapes
+ :wait true
+ :profile-id <profile-id>
+ :exports [{:file-id <file-id>
+            :page-id <page-id>
+            :object-id <object-id>
+            :type :png
+            :suffix ""
+            :scale 1
+            :name "page"}]}
+```
+
+CLI dry-run output reports the exporter URI, HTTP method, required
+`application/transit+json` request/response format, `auth-token` cookie name,
+the planned payload, and missing runtime fields such as `profileId`.
+
+Important behavior differences from the plugin-live export path:
+
+- Exporter-backed output uploads a rendered temporary file through backend
+  management APIs and returns resource metadata.
+- Plugin-live MCP export currently returns base64 data from the live Plugin API
+  context.
+- Selection export remains plugin-live because no stable headless selection
+  representation exists yet.
+
+P7.4 is complete when:
+
+- CLI dry-runs disclose `adapter: "exporter"` and the planned direct exporter
+  request.
+- CLI requires explicit file, page, and object ids for exporter planning.
+- Docs describe exporter resource metadata separately from plugin-live base64
+  output.

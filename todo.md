@@ -37,9 +37,10 @@ added `dev up --mcp` orchestration, and P6.5 added initial file/export CLI
 commands. P6.6 added local CLI documentation, P7.1 designed the shared
 headless command runtime interface, P7.2 moved page list/create onto the
 backend-command path for MCP and CLI while keeping plugin-live fallback for
-bound workspace usage, and P7.3 added backend/common headless frame, rectangle,
-and text creation. The current implementation focus is P7.4: exporter-backed
-headless output for supported cases.
+bound workspace usage, P7.3 added backend/common headless frame, rectangle,
+and text creation, and P7.4 added exporter-backed dry-run plan metadata for
+explicit file/page/object exports. The current implementation focus is P7.5:
+centralized adapter selection and adapter reporting.
 
 ## Feature Roadmap
 
@@ -60,8 +61,8 @@ remain the execution plan.
 | F10 | done | Export and preview tools | Phase 5, Phase 7 | Agents and CLI can export useful visual output | Completed 2026-06-12; MCP can export shape/page data and render PNG previews through typed tools |
 | F11 | done | Advanced execution controls | Phase 5, Phase 8 | Admins/users can control whether `execute_code` is available | Completed 2026-06-12; `execute_code` is disabled unless `PENPOT_MCP_ENABLE_EXECUTE_CODE=true` |
 | F12 | done | `penpot-cli` MCP operations | Phase 6 | Developers can inspect and operate MCP from terminal | Completed 2026-06-12; `penpot-cli mcp status`, `mcp config`, and `mcp logs` are available |
-| F13 | in_progress | `penpot-cli` file/page/export operations | Phase 6, Phase 7 | Scripts can create files, create pages, and prepare exports through the same automation layer | `file list/create/open`, `page list/create`, and `export page --dry-run` exist; real export execution remains Phase 7 |
-| F14 | in_progress | Headless automation runtime | Phase 7 | Selected operations work without an open browser tab | P7.1 documented the neutral command runtime contract; P7.2 completed backend-command page list/create wiring; P7.3 added backend/common shape creation; P7.4 is next for exporter-backed output |
+| F13 | in_progress | `penpot-cli` file/page/export operations | Phase 6, Phase 7 | Scripts can create files, create pages, and prepare exports through the same automation layer | `file list/create/open`, `page list/create`, and `export page --dry-run` now reports an exporter request plan; real export execution remains Phase 7 |
+| F14 | in_progress | Headless automation runtime | Phase 7 | Selected operations work without an open browser tab | P7.1 documented the neutral command runtime contract; P7.2 completed backend-command page list/create wiring; P7.3 added backend/common shape creation; P7.4 completed exporter dry-run planning; P7.5 is next for adapter selection |
 | F15 | todo | Audit, limits, and confirmations | Phase 8 | MCP is safer for real deployments | Write operations are auditable and destructive actions are gated |
 
 ## Phase 0: Baseline, Planning, And Rules
@@ -164,8 +165,8 @@ Goal: move stable automation out of browser/plugin dependency.
 | P7.1 | done | Design command runtime interface | `mcp`, `penpot-cli`, `backend`, `common` | Interface covers schemas, auth, capabilities, adapters | Completed 2026-06-12; added `mcp/docs/headless-command-runtime.md` with neutral package boundaries, command descriptors, execution envelopes, adapter selection, structured errors, and migration order |
 | P7.2 | done | Move safe file/page commands to backend/common | `backend`, `common`, `mcp`, `penpot-cli` | Commands work without open workspace | Completed 2026-06-12; added common page helpers, backend `get-file-pages` / `create-file-page` RPC commands, MCP `page.list` / `page.create` backend-command mode by `fileId`, and CLI `page list/create --file`; MCP/CLI TS checks passed; JVM tests/check-fmt/lint remained blocked locally because `clojure`, `cljfmt`, and `clj-kondo` are missing |
 | P7.3 | done | Move simple shape operations to backend/common | `backend`, `common` | Simple prototype can be created headlessly | Completed 2026-06-12; added common headless shape helpers and backend `create-file-shape` for frame, rectangle, and text creation; MCP/CLI adapter wiring remains part of P7.5 adapter selection |
-| P7.4 | in_progress | Add exporter-backed headless output | `exporter`, `render-wasm` if needed | CLI/MCP can export without a UI tab for supported cases | Started 2026-06-12; keep plugin path for live selection and add exporter-backed output only for explicit file/page targets |
-| P7.5 | todo | Add adapter selection | `mcp`, future `penpot-cli` | Commands choose backend, exporter, plugin, or local adapter | Tool responses should disclose adapter used |
+| P7.4 | done | Add exporter-backed headless output | `exporter`, `render-wasm` if needed | CLI/MCP can export without a UI tab for supported cases | Completed 2026-06-12; CLI `export page --dry-run` now plans the exporter adapter for explicit `fileId`/`pageId`/`objectId` targets, reports the `export-shapes` payload, and documents exporter resource metadata separately from plugin-live base64 output |
+| P7.5 | in_progress | Add adapter selection | `mcp`, future `penpot-cli` | Commands choose backend, exporter, plugin, or local adapter | Started 2026-06-12; centralize command adapter selection and ensure responses disclose the adapter used |
 
 ## Phase 8: Hardening And Observability
 
@@ -182,11 +183,10 @@ Goal: make first-class MCP safe and diagnosable.
 
 ## Next Recommended Sprint
 
-Continue with exporter-backed headless output:
+Continue with adapter selection:
 
-1. Audit current exporter HTTP/API entry points and MCP `export.page` /
-   `render.preview` plugin-live behavior.
-2. Define the smallest explicit file/page export request that can run without
-   live selection state.
-3. Wire exporter-backed dry-run/plan metadata before enabling real file output
-   paths in MCP or CLI.
+1. Define the smallest shared adapter selection helper that can be used by MCP
+   and `penpot-cli` without importing MCP server internals.
+2. Move existing page and export adapter labels into the shared selection model.
+3. Ensure MCP and CLI JSON responses disclose selected, requested, and fallback
+   adapters consistently.

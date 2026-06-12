@@ -8,6 +8,7 @@ import { fileURLToPath } from "node:url";
 
 const VERSION = "0.1.0";
 const DEFAULT_PUBLIC_URI = "http://localhost:3449";
+const DEFAULT_EXPORTER_URI = "http://localhost:6061";
 
 const HELP_TEXT = `penpot-cli ${VERSION}
 
@@ -23,7 +24,7 @@ Usage:
   penpot-cli file open <file-id> [--team-id <id>] [--page-id <id>] [--format text|json]
   penpot-cli page list --file <file-id> [--format text|json]
   penpot-cli page create --file <file-id> [--name <name>] [--format text|json]
-  penpot-cli export page --file <file-id> [--page <page-id>] [--dry-run] [--format text|json]`;
+  penpot-cli export page --file <file-id> --page <page-id> --object <object-id> [--dry-run] [--format text|json]`;
 
 const MCP_HELP_TEXT = `penpot-cli mcp
 
@@ -79,10 +80,14 @@ Environment:
 const EXPORT_HELP_TEXT = `penpot-cli export
 
 Usage:
-  penpot-cli export page --file <file-id> [--page <page-id>] [--export-format png|jpeg|svg|pdf] [--scale <n>] [--output <path>] [--dry-run] [--format text|json]
+  penpot-cli export page --file <file-id> --page <page-id> --object <object-id> [--export-format png|jpeg|svg|pdf] [--scale <n>] [--output <path>] [--exporter-uri <uri>] [--dry-run] [--format text|json]
 
 Current adapters:
-  mcp-live   Planned Phase 7 adapter backed by MCP/export tooling. Dry-run is available now.`;
+  exporter   Phase 7 headless adapter plan backed by the Penpot exporter HTTP service.
+
+Environment:
+  PENPOT_EXPORTER_URI      Exporter HTTP URI, default http://localhost:6061
+  PENPOT_PROFILE_ID        Optional profile id for the direct exporter request`;
 
 type Format = "text" | "json";
 type RpcParamValue = string | number | boolean | string[] | number[] | boolean[] | null | undefined;
@@ -129,15 +134,45 @@ interface RpcConfig {
 }
 
 interface ExportPagePlan {
+    command: string;
     adapter: string;
     fileId: string | null;
     pageId: string | null;
+    objectId: string | null;
+    profileId: string | null;
+    name: string;
     exportFormat: string;
-    scale: number | null;
+    scale: number;
+    suffix: string;
+    skipChildren: boolean;
     output: string | null;
     dryRun: boolean;
     status: string;
+    exporter: {
+        uri: string;
+        endpoint: string;
+        method: string;
+        requestContentType: string;
+        responseContentType: string;
+    };
+    request: {
+        cmd: string;
+        wait: boolean;
+        "profile-id": string | null;
+        "skip-children"?: boolean;
+        exports: Array<{
+            "file-id": string | null;
+            "page-id": string | null;
+            "object-id": string | null;
+            type: string;
+            suffix: string;
+            scale: number;
+            name: string;
+        }>;
+    };
+    requires: string[];
     nextActions: string[];
+    diagnostics: Record<string, unknown>;
 }
 
 const DEFAULT_IO: CliIO = {
@@ -254,6 +289,10 @@ function getRpcConfig(args: string[], env: NodeJS.ProcessEnv): RpcConfig {
     };
 }
 
+function getExporterUri(args: string[], env: NodeJS.ProcessEnv): string {
+    return trimTrailingSlash(readOption(args, ["--exporter-uri"]) ?? env.PENPOT_EXPORTER_URI ?? DEFAULT_EXPORTER_URI);
+}
+
 function createWorkspaceUrl(args: string[], env: NodeJS.ProcessEnv, fileId: string): string {
     const publicUri = trimTrailingSlash(
         readOption(args, ["--public-uri"]) ?? env.PENPOT_PUBLIC_URI ?? env.PENPOT_MCP_PUBLIC_URI ?? DEFAULT_PUBLIC_URI
@@ -302,25 +341,75 @@ function getDevPlan(args: string[], env: NodeJS.ProcessEnv, dryRun: boolean): De
     };
 }
 
-function createExportPagePlan(args: string[]): ExportPagePlan {
+function createExportPagePlan(args: string[], env: NodeJS.ProcessEnv): ExportPagePlan {
     const fileId = readOption(args, ["--file", "--file-id"]) ?? null;
     const pageId = readOption(args, ["--page", "--page-id"]) ?? null;
+    const objectId = readOption(args, ["--object", "--object-id", "--frame", "--frame-id"]) ?? null;
+    const profileId = readOption(args, ["--profile-id"]) ?? env.PENPOT_PROFILE_ID ?? null;
     const scaleValue = readOption(args, ["--scale"]);
     const exportFormat = readOption(args, ["--export-format"]) ?? "png";
+    const scale = scaleValue ? Number(scaleValue) : 1;
+    const name = readOption(args, ["--name"])?.trim() || "page";
+    const suffix = readOption(args, ["--suffix"]) ?? "";
+    const skipChildren = hasFlag(args, "--skip-children");
+    const exporterUri = getExporterUri(args, env);
+    const requires = [
+        fileId ? null : "fileId",
+        pageId ? null : "pageId",
+        objectId ? null : "objectId",
+        profileId ? null : "profileId",
+    ].filter((value): value is string => typeof value === "string");
 
     return {
-        adapter: readOption(args, ["--adapter"]) ?? "mcp-live",
+        command: "export.page",
+        adapter: readOption(args, ["--adapter"]) ?? "exporter",
         fileId,
         pageId,
+        objectId,
+        profileId,
+        name,
         exportFormat,
-        scale: scaleValue ? Number(scaleValue) : null,
+        scale,
+        suffix,
+        skipChildren,
         output: readOption(args, ["--output"]) ?? null,
         dryRun: hasFlag(args, "--dry-run"),
         status: "planned",
+        exporter: {
+            uri: exporterUri,
+            endpoint: exporterUri,
+            method: "POST",
+            requestContentType: "application/transit+json",
+            responseContentType: "application/transit+json",
+        },
+        request: {
+            cmd: "export-shapes",
+            wait: true,
+            "profile-id": profileId,
+            ...(skipChildren ? { "skip-children": true } : {}),
+            exports: [
+                {
+                    "file-id": fileId,
+                    "page-id": pageId,
+                    "object-id": objectId,
+                    type: exportFormat,
+                    suffix,
+                    scale,
+                    name,
+                },
+            ],
+        },
+        requires,
         nextActions: [
-            "Open or bind the target file in Penpot.",
-            "Use MCP export.page for live plugin-backed export until Phase 7 adds a shared headless adapter.",
+            "Pass explicit file, page, and object ids; the exporter cannot infer live selection state.",
+            "Provide a profile id directly or let the future runtime resolve it from the authenticated user.",
+            "Use --dry-run until exporter POST execution is enabled in the shared command runtime.",
         ],
+        diagnostics: {
+            transitKeywordFields: ["cmd", "exports[].type"],
+            authCookie: "auth-token",
+            outputMode: "exporter-resource-upload",
+        },
     };
 }
 
@@ -577,13 +666,26 @@ function writePageCreatedText(io: CliIO, fileId: string, page: unknown): void {
 
 function writeExportPlanText(io: CliIO, plan: ExportPagePlan): void {
     writeLine(io.stdout, "Export page plan");
+    writeLine(io.stdout, `command: ${plan.command}`);
     writeLine(io.stdout, `adapter: ${plan.adapter}`);
     writeLine(io.stdout, `status: ${plan.status}`);
+    writeLine(io.stdout, `exporter: ${plan.exporter.method} ${plan.exporter.endpoint}`);
     writeLine(io.stdout, `fileId: ${plan.fileId ?? "<missing>"}`);
-    writeLine(io.stdout, `pageId: ${plan.pageId ?? "<current page when bound>"}`);
+    writeLine(io.stdout, `pageId: ${plan.pageId ?? "<missing>"}`);
+    writeLine(io.stdout, `objectId: ${plan.objectId ?? "<missing>"}`);
+    writeLine(io.stdout, `profileId: ${plan.profileId ?? "<resolve from user before execution>"}`);
+    writeLine(io.stdout, `name: ${plan.name}`);
     writeLine(io.stdout, `exportFormat: ${plan.exportFormat}`);
-    writeLine(io.stdout, `scale: ${plan.scale ?? "<default>"}`);
-    writeLine(io.stdout, `output: ${plan.output ?? "<stdout/base64 in future adapter>"}`);
+    writeLine(io.stdout, `scale: ${plan.scale}`);
+    writeLine(io.stdout, `suffix: ${plan.suffix || "<none>"}`);
+    writeLine(io.stdout, `skipChildren: ${String(plan.skipChildren)}`);
+    writeLine(io.stdout, `output: ${plan.output ?? "<exporter resource metadata>"}`);
+    if (plan.requires.length > 0) {
+        writeLine(io.stdout, "requires:");
+        for (const requirement of plan.requires) {
+            writeLine(io.stdout, `  ${requirement}`);
+        }
+    }
     writeLine(io.stdout, "nextActions:");
     for (const action of plan.nextActions) {
         writeLine(io.stdout, `  ${action}`);
@@ -1133,16 +1235,38 @@ async function handlePageCommand(args: string[], io: CliIO, env: NodeJS.ProcessE
     }
 }
 
-function handleExportPage(args: string[], io: CliIO): number {
+function handleExportPage(args: string[], io: CliIO, env: NodeJS.ProcessEnv): number {
     const format = parseFormat(args, io);
     if (!format) {
         return 2;
     }
 
-    const plan = createExportPagePlan(args);
+    const plan = createExportPagePlan(args, env);
     if (!plan.fileId) {
         writeError(io, format, "file_id_required", "export page requires --file <file-id>.", [
             "Open or list files first, then pass --file <file-id>.",
+        ]);
+        return 2;
+    }
+
+    if (!plan.pageId) {
+        writeError(io, format, "page_id_required", "export page requires --page <page-id>.", [
+            "Run penpot-cli page list --file <file-id> first, then pass --page <page-id>.",
+        ]);
+        return 2;
+    }
+
+    if (!plan.objectId) {
+        writeError(io, format, "object_id_required", "export page requires --object <object-id>.", [
+            "Pass the page root frame or another exportable object id.",
+            "Headless export cannot use the current live selection.",
+        ]);
+        return 2;
+    }
+
+    if (plan.adapter !== "exporter") {
+        writeError(io, format, "export_adapter_not_supported", `Unsupported export adapter: ${plan.adapter}.`, [
+            "Use the default exporter adapter for headless export planning.",
         ]);
         return 2;
     }
@@ -1155,9 +1279,9 @@ function handleExportPage(args: string[], io: CliIO): number {
         return 2;
     }
 
-    if (plan.scale !== null && (!Number.isFinite(plan.scale) || plan.scale <= 0 || plan.scale > 16)) {
+    if (!Number.isFinite(plan.scale) || plan.scale <= 0 || plan.scale > 16) {
         writeError(io, format, "export_scale_invalid", "Export scale must be greater than 0 and at most 16.", [
-            "Use --scale <number> between 0 and 16.",
+            "Use --scale <number> greater than 0 and at most 16.",
         ]);
         return 2;
     }
@@ -1171,10 +1295,10 @@ function handleExportPage(args: string[], io: CliIO): number {
         io,
         format,
         "export_adapter_not_available",
-        "CLI export execution is waiting for the Phase 7 shared command runtime.",
+        "CLI exporter execution is waiting for the Phase 7 shared command runtime.",
         [
-            "Use --dry-run to inspect the parsed export request.",
-            "Use MCP export.page with a bound live file context for now.",
+            "Use --dry-run to inspect the exporter request plan.",
+            "Keep using MCP export.page with a bound live file context for real base64 exports until execution is wired.",
         ],
         {
             plan,
@@ -1183,7 +1307,7 @@ function handleExportPage(args: string[], io: CliIO): number {
     return 2;
 }
 
-function handleExportCommand(args: string[], io: CliIO): number {
+function handleExportCommand(args: string[], io: CliIO, env: NodeJS.ProcessEnv): number {
     const [subcommand, ...rest] = args;
 
     if (isHelpFlag(subcommand)) {
@@ -1193,7 +1317,7 @@ function handleExportCommand(args: string[], io: CliIO): number {
 
     switch (subcommand) {
         case "page":
-            return handleExportPage(rest, io);
+            return handleExportPage(rest, io, env);
         default:
             writeLine(io.stderr, `Unknown export command: ${subcommand}`);
             writeLine(io.stderr, 'Run "penpot-cli export --help" for usage.');
@@ -1235,7 +1359,7 @@ export async function run(
     }
 
     if (first === "export") {
-        return handleExportCommand(argv.slice(1), io);
+        return handleExportCommand(argv.slice(1), io, env);
     }
 
     writeLine(io.stderr, `Unknown command: ${first}`);

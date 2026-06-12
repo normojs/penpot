@@ -32,6 +32,7 @@
 - Add backend/common headless page helpers plus `get-file-pages` and `create-file-page` RPC commands for page list/create operations without a live browser workspace.
 - Wire MCP `page.list` / `page.create` and `penpot-cli page list/create` to backend-command page list/create operations while preserving live plugin fallback for bound workspace context.
 - Add backend/common headless shape creation helpers plus a `create-file-shape` RPC command for creating frame, rectangle, and text shapes without a live browser workspace.
+- Expand `penpot-cli export page --dry-run` into an exporter-backed plan that requires explicit file/page/object targets and reports the planned exporter payload, service metadata, and output mode.
 - Add rate limiting and concurrency safety for file snapshot operations [#9723](https://github.com/penpot/penpot/issues/9723) (PR: [#9722](https://github.com/penpot/penpot/pull/9722))
 - Prevent concurrent font uploads from causing excessive simultaneous requests [#9922](https://github.com/penpot/penpot/issues/9922) (PR: [#9921](https://github.com/penpot/penpot/pull/9921))
 

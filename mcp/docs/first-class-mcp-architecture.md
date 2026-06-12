@@ -446,10 +446,12 @@ P6.5 implementation note:
   `PENPOT_CLI_TOKEN`, `PENPOT_MCP_USER_TOKEN`, or `PENPOT_ACCESS_TOKEN`.
 - `penpot-cli file open` prints a browser workspace URL and explicitly reports
   that it does not bind an MCP file context.
-- `penpot-cli export page` parses the page export request and supports
-  `--dry-run`; actual CLI export execution waits for the Phase 7 shared command
-  runtime, while live MCP users can still call `export.page` with a bound file
-  context.
+- `penpot-cli export page` now parses an explicit exporter-backed request with
+  `--file`, `--page`, and `--object`, reports the exporter URI, planned
+  `export-shapes` payload, Transit JSON requirement, auth cookie name, and
+  missing runtime fields in `--dry-run` output. Actual CLI exporter execution
+  waits for the Phase 7 shared command runtime, while live MCP users can still
+  call `export.page` with a bound file context for base64 exports.
 
 P6.6 implementation note:
 
@@ -1527,7 +1529,7 @@ penpot-cli mcp logs
 penpot-cli file list
 penpot-cli file create --name "Demo"
 penpot-cli file open <file-id>
-penpot-cli export page --file <file-id> --page <page-id>
+penpot-cli export page --file <file-id> --page <page-id> --object <object-id>
 ```
 
 Definition of done:
