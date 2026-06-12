@@ -1,6 +1,6 @@
 # Headless Command Runtime
 
-Status: P7.1 design.
+Status: P7.2 page list/create backend-command adapter slice implemented.
 
 This document defines the transport-neutral command runtime that will let MCP
 tools and `penpot-cli` share command names, schemas, adapter selection, and
@@ -371,22 +371,27 @@ CommandRuntime exporter adapter
 
 ## P7.2 Backend/Common Slice
 
-The first P7.2 implementation slice adds the backend/common page command
-surface that future runtime adapters can call:
+The P7.2 implementation slice adds the backend/common page command surface and
+wires the first entry adapters to it:
 
 - `app.common.files.headless/page-summaries`
 - `app.common.files.headless/create-page-request`
 - backend RPC `get-file-pages`
 - backend RPC `create-file-page`
+- MCP `page.list` / `page.create` with optional `fileId`
+- CLI `penpot-cli page list/create --file <file-id>`
 
 `create-file-page` deliberately reuses the existing backend `update-file`
 pipeline instead of mutating file data directly. That keeps permission checks,
 file locks, feature validation, revision changes, file-change rows, cache
 invalidation, and notifications aligned with normal workspace edits.
 
-MCP and CLI entry adapters are intentionally left as the next step. They should
-map `page.list` and `page.create` to these backend commands through the runtime
-contract instead of importing backend-specific details.
+MCP `page.list` and `page.create` now choose the backend-command path when
+`fileId` is supplied and keep the plugin-live path when callers rely on the
+currently bound workspace context. CLI page commands always require `--file`
+and call the same backend RPC commands. This is an incremental adapter slice:
+responses disclose `backend-command` or `plugin-live`, while the future
+`command-runtime/` package still needs to centralize descriptors and selection.
 
 ## Acceptance Checks
 
@@ -397,3 +402,12 @@ P7.1 is complete when:
 - Request/result envelopes cover auth, context, capabilities, adapter choice,
   dry-run, structured success, and structured error.
 - The first command migration list is explicit enough for P7.2 and P7.4 work.
+
+P7.2 is complete when:
+
+- Backend/common expose page list/create commands that work without an open
+  workspace tab.
+- MCP `page.list` and `page.create` can use `backend-command` by file id and
+  still fall back to `plugin-live` for the bound workspace flow.
+- `penpot-cli page list/create --file <file-id>` returns text or JSON output
+  through the backend-command path.

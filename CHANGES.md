@@ -30,6 +30,7 @@
 - Document local `penpot-cli` build/run workflows, MCP diagnostics, development orchestration, file commands, export dry-runs, and required environment variables.
 - Document the P7 headless command runtime contract, including neutral package boundaries, command descriptors, execution envelopes, adapter selection, structured errors, and initial command migration order.
 - Add backend/common headless page helpers plus `get-file-pages` and `create-file-page` RPC commands for page list/create operations without a live browser workspace.
+- Wire MCP `page.list` / `page.create` and `penpot-cli page list/create` to backend-command page list/create operations while preserving live plugin fallback for bound workspace context.
 - Add rate limiting and concurrency safety for file snapshot operations [#9723](https://github.com/penpot/penpot/issues/9723) (PR: [#9722](https://github.com/penpot/penpot/pull/9722))
 - Prevent concurrent font uploads from causing excessive simultaneous requests [#9922](https://github.com/penpot/penpot/issues/9922) (PR: [#9921](https://github.com/penpot/penpot/pull/9921))
 

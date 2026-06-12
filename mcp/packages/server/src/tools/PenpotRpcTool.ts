@@ -1,9 +1,9 @@
 import { z } from "zod";
-import { Tool } from "../Tool";
-import type { ToolResponse } from "../ToolResponse";
-import { JsonResponse } from "../ToolResponse";
-import { PenpotMcpServer } from "../PenpotMcpServer";
-import { PenpotRpcError, RpcParams } from "../PenpotRpcClient";
+import { Tool } from "../Tool.js";
+import type { ToolResponse } from "../ToolResponse.js";
+import { JsonResponse } from "../ToolResponse.js";
+import { PenpotMcpServer } from "../PenpotMcpServer.js";
+import { PenpotRpcError, RpcParams } from "../PenpotRpcClient.js";
 
 export const ToolErrorCodes = {
     AUTHENTICATION_REQUIRED: "authentication_required",

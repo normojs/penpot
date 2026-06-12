@@ -1,14 +1,15 @@
 import { z } from "zod";
-import { EmptyToolArgs, Tool } from "../Tool.js";
 import type { ToolResponse } from "../ToolResponse.js";
-import { JsonResponse } from "../ToolResponse.js";
 import { PenpotMcpServer } from "../PenpotMcpServer.js";
 import { PagePluginTask } from "../tasks/PagePluginTask.js";
 import { ToolNames } from "../ToolNames.js";
 import { requireBoundFileContext } from "./FileContextGuard.js";
-import type { PageTaskParams, PageTaskResultData, PluginTaskResult } from "@penpot/mcp-common";
+import { PenpotRpcTool } from "./PenpotRpcTool.js";
+import type { PageTaskParams } from "@penpot/mcp-common";
 
-abstract class PageTool<TArgs extends object> extends Tool<TArgs> {
+type PenpotRecord = Record<string, unknown>;
+
+abstract class PageTool<TArgs extends object> extends PenpotRpcTool<TArgs> {
     protected constructor(mcpServer: PenpotMcpServer, inputSchema: z.ZodRawShape) {
         super(mcpServer, inputSchema);
     }
@@ -25,20 +26,81 @@ abstract class PageTool<TArgs extends object> extends Tool<TArgs> {
 
         const task = new PagePluginTask(params);
         const result = await this.mcpServer.pluginBridge.executePluginTask(task);
-        return this.ok(result);
+        return this.ok({
+            adapter: "plugin-live",
+            ...result.data,
+        });
     }
 
-    private ok(result: PluginTaskResult<PageTaskResultData>): ToolResponse {
-        return new JsonResponse({
-            status: "ok",
-            data: result.data,
-        });
+    protected async executeBackendPageList(fileId: string): Promise<ToolResponse> {
+        const userToken = this.getUserToken();
+        if (!userToken) {
+            return this.authenticationRequired();
+        }
+
+        try {
+            const result = await this.rpcGet<PenpotRecord>("get-file-pages", { id: fileId }, userToken);
+            return this.ok({
+                adapter: "backend-command",
+                fileId,
+                pages: result.pages ?? [],
+            });
+        } catch (cause) {
+            return this.rpcFailure(cause);
+        }
+    }
+
+    protected async executeBackendPageCreate(args: PageCreateArgs): Promise<ToolResponse> {
+        const userToken = this.getUserToken();
+        if (!userToken) {
+            return this.authenticationRequired();
+        }
+
+        try {
+            const result = await this.rpcPost<PenpotRecord>(
+                "create-file-page",
+                {
+                    id: args.fileId,
+                    "page-id": args.pageId,
+                    name: this.nonEmptyString(args.name),
+                },
+                userToken
+            );
+            return this.ok(
+                {
+                    adapter: "backend-command",
+                    fileId: args.fileId,
+                    page: result.page,
+                    revn: result.revn,
+                    vern: result.vern,
+                },
+                args.makeCurrent
+                    ? [
+                          "makeCurrent requires a live bound workspace; backend-command created the page without switching UI state.",
+                      ]
+                    : []
+            );
+        } catch (cause) {
+            return this.rpcFailure(cause);
+        }
+    }
+
+    protected nonEmptyString(value: unknown): string | undefined {
+        return typeof value === "string" && value.trim() !== "" ? value.trim() : undefined;
     }
 }
 
-export class PageListTool extends PageTool<EmptyToolArgs> {
+export class PageListArgs {
+    static schema = {
+        fileId: z.string().uuid().optional().describe("Optional file id for backend-command headless page listing."),
+    };
+
+    fileId?: string;
+}
+
+export class PageListTool extends PageTool<PageListArgs> {
     constructor(mcpServer: PenpotMcpServer) {
-        super(mcpServer, EmptyToolArgs.schema);
+        super(mcpServer, PageListArgs.schema);
     }
 
     public getToolName(): string {
@@ -46,19 +108,29 @@ export class PageListTool extends PageTool<EmptyToolArgs> {
     }
 
     public getToolDescription(): string {
-        return "Lists pages in the currently bound Penpot file context.";
+        return "Lists pages in a Penpot file, using backend-command when fileId is supplied or the bound live context otherwise.";
     }
 
-    protected async executeCore(args: EmptyToolArgs): Promise<ToolResponse> {
+    protected async executeCore(args: PageListArgs): Promise<ToolResponse> {
+        if (args.fileId) {
+            return this.executeBackendPageList(args.fileId);
+        }
+
         return this.executePageTask({ action: "list" });
     }
 }
 
 export class PageCreateArgs {
     static schema = {
+        fileId: z.string().uuid().optional().describe("Optional file id for backend-command headless page creation."),
+        pageId: z.string().uuid().optional().describe("Optional page id for backend-command page creation."),
         name: z.string().min(1).max(250).optional().describe("Optional page name."),
         makeCurrent: z.boolean().optional().describe("Whether to switch to the new page. Defaults to true."),
     };
+
+    fileId?: string;
+
+    pageId?: string;
 
     name?: string;
 
@@ -75,19 +147,19 @@ export class PageCreateTool extends PageTool<PageCreateArgs> {
     }
 
     public getToolDescription(): string {
-        return "Creates a page in the currently bound Penpot file context.";
+        return "Creates a page in a Penpot file, using backend-command when fileId is supplied or the bound live context otherwise.";
     }
 
     protected async executeCore(args: PageCreateArgs): Promise<ToolResponse> {
+        if (args.fileId) {
+            return this.executeBackendPageCreate(args);
+        }
+
         return this.executePageTask({
             action: "create",
             name: this.nonEmptyString(args.name),
             makeCurrent: args.makeCurrent,
         });
-    }
-
-    private nonEmptyString(value: unknown): string | undefined {
-        return typeof value === "string" && value.trim() !== "" ? value.trim() : undefined;
     }
 }
 

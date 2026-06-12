@@ -133,6 +133,36 @@ File command environment variables:
 `PENPOT_PUBLIC_URI`, then `PENPOT_MCP_PUBLIC_URI`, then
 `http://localhost:3449`.
 
+## Page Commands
+
+Page list and create commands call the backend headless page RPC commands. They
+work without an open Penpot workspace tab when a valid file id and token are
+provided.
+
+```bash
+export PENPOT_BACKEND_URI=http://localhost:6060
+export PENPOT_CLI_TOKEN=<token>
+
+node penpot-cli/dist/index.js page list --file <file-id>
+node penpot-cli/dist/index.js page list --file <file-id> --format json
+
+node penpot-cli/dist/index.js page create \
+  --file <file-id> \
+  --name "Mobile flow"
+
+node penpot-cli/dist/index.js page create \
+  --file <file-id> \
+  --page-id <page-id> \
+  --name "Generated prototype" \
+  --format json
+```
+
+JSON output reports `adapter: "backend-command"` so scripts can distinguish the
+headless path from live plugin-backed MCP operations. The matching MCP
+`page.list` and `page.create` tools use the same backend-command path when
+`fileId` is supplied, while calls without `fileId` keep using the bound live
+workspace context.
+
 ## Export Commands
 
 The CLI can parse and report page export requests now:

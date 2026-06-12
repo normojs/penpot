@@ -21,6 +21,8 @@ Usage:
   penpot-cli file list --project-id <id> [--format text|json]
   penpot-cli file create --project-id <id> [--name <name>] [--format text|json]
   penpot-cli file open <file-id> [--team-id <id>] [--page-id <id>] [--format text|json]
+  penpot-cli page list --file <file-id> [--format text|json]
+  penpot-cli page create --file <file-id> [--name <name>] [--format text|json]
   penpot-cli export page --file <file-id> [--page <page-id>] [--dry-run] [--format text|json]`;
 
 const MCP_HELP_TEXT = `penpot-cli mcp
@@ -57,6 +59,19 @@ Usage:
 Environment:
   PENPOT_BACKEND_URI       Backend RPC base URI, default http://localhost:6060
   PENPOT_PUBLIC_URI        Public Penpot base URI used as backend fallback and browser URL base
+  PENPOT_CLI_TOKEN         Penpot access token for backend RPC
+  PENPOT_MCP_USER_TOKEN    Penpot MCP user token fallback for backend RPC
+  PENPOT_ACCESS_TOKEN      Generic Penpot access token fallback`;
+
+const PAGE_HELP_TEXT = `penpot-cli page
+
+Usage:
+  penpot-cli page list --file <file-id> [--backend-uri <uri>] [--token <token>] [--format text|json]
+  penpot-cli page create --file <file-id> [--name <name>] [--page-id <id>] [--backend-uri <uri>] [--token <token>] [--format text|json]
+
+Environment:
+  PENPOT_BACKEND_URI       Backend RPC base URI, default http://localhost:6060
+  PENPOT_PUBLIC_URI        Public Penpot base URI used as backend fallback
   PENPOT_CLI_TOKEN         Penpot access token for backend RPC
   PENPOT_MCP_USER_TOKEN    Penpot MCP user token fallback for backend RPC
   PENPOT_ACCESS_TOKEN      Generic Penpot access token fallback`;
@@ -539,6 +554,27 @@ function writeFileOpenText(io: CliIO, url: string): void {
     writeLine(io.stdout, "This opens the file in the browser; it does not bind an MCP file context by itself.");
 }
 
+function writePagesText(io: CliIO, fileId: string, pages: unknown): void {
+    writeLine(io.stdout, `Pages for file ${fileId}`);
+    if (!Array.isArray(pages) || pages.length === 0) {
+        writeLine(io.stdout, "No pages found.");
+        return;
+    }
+
+    for (const page of pages) {
+        const record = asRecord(page);
+        writeLine(io.stdout, `${String(record.id ?? "<unknown>")}  ${String(record.name ?? "<unnamed>")}`);
+    }
+}
+
+function writePageCreatedText(io: CliIO, fileId: string, page: unknown): void {
+    const record = asRecord(page);
+    writeLine(io.stdout, "Page created");
+    writeLine(io.stdout, `fileId: ${fileId}`);
+    writeLine(io.stdout, `id: ${String(record.id ?? "<unknown>")}`);
+    writeLine(io.stdout, `name: ${String(record.name ?? "<unnamed>")}`);
+}
+
 function writeExportPlanText(io: CliIO, plan: ExportPagePlan): void {
     writeLine(io.stdout, "Export page plan");
     writeLine(io.stdout, `adapter: ${plan.adapter}`);
@@ -990,6 +1026,113 @@ async function handleFileCommand(args: string[], io: CliIO, env: NodeJS.ProcessE
     }
 }
 
+async function handlePageList(args: string[], io: CliIO, env: NodeJS.ProcessEnv): Promise<number> {
+    const format = parseFormat(args, io);
+    if (!format) {
+        return 2;
+    }
+
+    const fileId = readOption(args, ["--file-id", "--file"]);
+    if (!fileId) {
+        writeError(io, format, "file_id_required", "page list requires --file <file-id>.", [
+            "Use penpot-cli file list first, then pass --file <file-id>.",
+        ]);
+        return 2;
+    }
+
+    const rpc = getRpcConfig(args, env);
+    if (!rpc.token) {
+        return rpcAuthenticationRequired(io, format);
+    }
+
+    try {
+        const result = await rpcRequest<Record<string, unknown>>(
+            "GET",
+            rpc.backendUri,
+            "get-file-pages",
+            { id: fileId },
+            rpc.token
+        );
+        const pages = Array.isArray(result.pages) ? result.pages : [];
+        writeOk(io, format, { fileId, pages, adapter: "backend-command" }, () => writePagesText(io, fileId, pages));
+        return 0;
+    } catch (cause) {
+        return rpcErrorResponse(io, format, "get-file-pages", rpc.backendUri, cause);
+    }
+}
+
+async function handlePageCreate(args: string[], io: CliIO, env: NodeJS.ProcessEnv): Promise<number> {
+    const format = parseFormat(args, io);
+    if (!format) {
+        return 2;
+    }
+
+    const fileId = readOption(args, ["--file-id", "--file"]);
+    if (!fileId) {
+        writeError(io, format, "file_id_required", "page create requires --file <file-id>.", [
+            "Use penpot-cli file list first, then pass --file <file-id>.",
+        ]);
+        return 2;
+    }
+
+    const rpc = getRpcConfig(args, env);
+    if (!rpc.token) {
+        return rpcAuthenticationRequired(io, format);
+    }
+
+    const name = readOption(args, ["--name"])?.trim();
+    const pageId = readOption(args, ["--page-id", "--page"]);
+
+    try {
+        const result = await rpcRequest<Record<string, unknown>>(
+            "POST",
+            rpc.backendUri,
+            "create-file-page",
+            {
+                id: fileId,
+                "page-id": pageId,
+                name: name || undefined,
+            },
+            rpc.token
+        );
+        writeOk(
+            io,
+            format,
+            {
+                fileId,
+                page: result.page,
+                revn: result.revn,
+                vern: result.vern,
+                adapter: "backend-command",
+            },
+            () => writePageCreatedText(io, fileId, result.page)
+        );
+        return 0;
+    } catch (cause) {
+        return rpcErrorResponse(io, format, "create-file-page", rpc.backendUri, cause);
+    }
+}
+
+async function handlePageCommand(args: string[], io: CliIO, env: NodeJS.ProcessEnv): Promise<number> {
+    const [subcommand, ...rest] = args;
+
+    if (isHelpFlag(subcommand)) {
+        writeLine(io.stdout, PAGE_HELP_TEXT);
+        return 0;
+    }
+
+    switch (subcommand) {
+        case "list":
+            return await handlePageList(rest, io, env);
+        case "create":
+            return await handlePageCreate(rest, io, env);
+        default:
+            writeLine(io.stderr, `Unknown page command: ${subcommand}`);
+            writeLine(io.stderr, 'Run "penpot-cli page --help" for usage.');
+            return 2;
+    }
+}
+
 function handleExportPage(args: string[], io: CliIO): number {
     const format = parseFormat(args, io);
     if (!format) {
@@ -1085,6 +1228,10 @@ export async function run(
 
     if (first === "file") {
         return await handleFileCommand(argv.slice(1), io, env);
+    }
+
+    if (first === "page") {
+        return await handlePageCommand(argv.slice(1), io, env);
     }
 
     if (first === "export") {

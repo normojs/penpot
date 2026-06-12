@@ -926,9 +926,15 @@ P7.2 implementation note:
 - The backend now exposes `get-file-pages` and `create-file-page` RPC commands.
   They reuse existing read/edit permission checks, feature validation, file
   locking, and the normal `update-file` persistence/notification pipeline.
-- These RPC commands back future runtime adapters for `page.list` and
-  `page.create`; MCP and CLI wrappers still need to be wired through the command
-  runtime adapter layer.
+- MCP `page.list` and `page.create` now use these backend-command RPCs when a
+  `fileId` is supplied, while preserving the plugin-live path for callers that
+  rely on the bound workspace context.
+- `penpot-cli page list/create --file <file-id>` exposes the same headless page
+  operations to scripts and reports `adapter: "backend-command"` in JSON
+  output.
+- This is a transitional adapter slice. The future `command-runtime/` package
+  should still centralize descriptors, request envelopes, and adapter selection
+  instead of leaving this mapping duplicated in MCP and CLI entry adapters.
 
 ## 6. User Configuration
 
