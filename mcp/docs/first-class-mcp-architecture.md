@@ -866,6 +866,8 @@ Structured errors:
 ### 5.4 Automation Command Runtime
 
 The command runtime is the long-term shared layer for MCP and `penpot-cli`.
+The detailed P7.1 contract is captured in
+[`headless-command-runtime.md`](headless-command-runtime.md).
 
 It should define typed commands with:
 
@@ -903,6 +905,19 @@ local-fs       allowed only in local mode with explicit permission
 ```
 
 MCP tools and CLI commands become thin adapters over this runtime.
+
+P7.1 implementation note:
+
+- The runtime is designed as a transport-neutral package, planned as
+  `command-runtime/` with package name `@penpot/command-runtime`.
+- MCP server and `penpot-cli` should depend on the runtime package instead of
+  importing each other's internals.
+- Backend/common remain Clojure-owned for persisted file data validation and
+  headless command handlers; the TypeScript runtime calls backend surfaces
+  through adapters.
+- The contract defines command descriptors, request/result envelopes,
+  capability hints, adapter selection, structured errors, and the initial
+  command migration set for file, page, shape, export, and render commands.
 
 ## 6. User Configuration
 

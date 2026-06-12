@@ -34,8 +34,9 @@ P5.5 typed export/render tools and P5.6 `execute_code` setting gate are
 complete. P6.1 selected `penpot-cli/` as a top-level package, P6.2
 scaffolded the CLI package, P6.3 added MCP status/config/log commands, P6.4
 added `dev up --mcp` orchestration, and P6.5 added initial file/export CLI
-commands. P6.6 added local CLI documentation. The next implementation focus is
-P7.1: design the shared headless command runtime interface.
+commands. P6.6 added local CLI documentation, and P7.1 designed the shared
+headless command runtime interface. The next implementation focus is P7.2: move
+safe file/page commands toward backend/common headless handlers.
 
 ## Feature Roadmap
 
@@ -57,7 +58,7 @@ remain the execution plan.
 | F11 | done | Advanced execution controls | Phase 5, Phase 8 | Admins/users can control whether `execute_code` is available | Completed 2026-06-12; `execute_code` is disabled unless `PENPOT_MCP_ENABLE_EXECUTE_CODE=true` |
 | F12 | done | `penpot-cli` MCP operations | Phase 6 | Developers can inspect and operate MCP from terminal | Completed 2026-06-12; `penpot-cli mcp status`, `mcp config`, and `mcp logs` are available |
 | F13 | in_progress | `penpot-cli` file/export operations | Phase 6, Phase 7 | Scripts can create/export files through the same automation layer | `file list/create/open` and `export page --dry-run` exist; shared execution runtime remains Phase 7 |
-| F14 | todo | Headless automation runtime | Phase 7 | Selected operations work without an open browser tab | Simple file/page/shape creation can run through backend/common adapter |
+| F14 | in_progress | Headless automation runtime | Phase 7 | Selected operations work without an open browser tab | P7.1 documented the neutral command runtime contract; implementation begins with backend/common file/page handlers |
 | F15 | todo | Audit, limits, and confirmations | Phase 8 | MCP is safer for real deployments | Write operations are auditable and destructive actions are gated |
 
 ## Phase 0: Baseline, Planning, And Rules
@@ -157,7 +158,7 @@ Goal: move stable automation out of browser/plugin dependency.
 
 | ID | Status | Task | Modules | Verification | Notes |
 | --- | --- | --- | --- | --- | --- |
-| P7.1 | todo | Design command runtime interface | `mcp`, future `penpot-cli`, `backend`, `common` | Interface covers schemas, auth, capabilities, adapters | Avoid coupling to MCP transport |
+| P7.1 | done | Design command runtime interface | `mcp`, `penpot-cli`, `backend`, `common` | Interface covers schemas, auth, capabilities, adapters | Completed 2026-06-12; added `mcp/docs/headless-command-runtime.md` with neutral package boundaries, command descriptors, execution envelopes, adapter selection, structured errors, and migration order |
 | P7.2 | todo | Move safe file/page commands to backend/common | `backend`, `common` | Commands work without open workspace | Requires backend/common AGENTS and tests |
 | P7.3 | todo | Move simple shape operations to backend/common | `backend`, `common` | Simple prototype can be created headlessly | Validate file data carefully |
 | P7.4 | todo | Add exporter-backed headless output | `exporter`, `render-wasm` if needed | CLI/MCP can export without a UI tab for supported cases | Keep plugin path for live selection |
@@ -178,11 +179,10 @@ Goal: make first-class MCP safe and diagnosable.
 
 ## Next Recommended Sprint
 
-Start the shared command runtime design slice:
+Start the backend/common headless command slice:
 
-1. Start P7.1 by defining a transport-neutral command runtime interface shared
-   by MCP and `penpot-cli`.
-2. Capture command schemas, capability discovery, auth/user context,
-   adapter selection, and structured error contracts.
-3. Keep the first implementation plan focused on file/page/export operations
-   already exposed by MCP and the CLI.
+1. Start P7.2 by choosing the first safe backend/common command surface for
+   file/page operations.
+2. Keep the initial scope small: reuse existing backend permission checks and
+   common validation, then expose the result through the runtime adapter plan.
+3. Update MCP and CLI wrappers only after the backend/common contract is clear.
