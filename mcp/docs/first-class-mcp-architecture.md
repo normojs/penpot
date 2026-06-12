@@ -413,6 +413,18 @@ P6.2 implementation note:
 - Root scripts provide `cli`, `cli:build`, and `cli:help` shortcuts.
 - `penpot-cli/AGENTS.md` defines module-specific rules for future CLI work.
 
+P6.3 implementation note:
+
+- `penpot-cli mcp status` reads the existing MCP status endpoint and supports
+  `--url`, `--status-uri`, `PENPOT_MCP_STATUS_URI`, and the default public
+  `/mcp/status` route.
+- `penpot-cli mcp config` prints the derived public stream, SSE, WebSocket,
+  status, and log-directory settings in text or JSON.
+- `penpot-cli mcp logs` reads `PENPOT_MCP_LOG_DIR` or `--dir`, lists local log
+  files, supports JSON output, and can follow the latest file with `--follow`.
+- CLI errors use structured JSON when `--format json` is requested so scripts
+  can distinguish unreachable status endpoints from configuration problems.
+
 ### 5.2 Global MCP Agent
 
 The Global MCP Agent is a built-in system plugin that can run in the background

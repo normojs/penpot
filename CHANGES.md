@@ -24,6 +24,7 @@
 - Gate the legacy MCP `execute_code` tool behind `PENPOT_MCP_ENABLE_EXECUTE_CODE=true` while keeping typed MCP tools enabled by default.
 - Document the `penpot-cli` package location decision as a top-level monorepo package separate from the nested MCP workspace.
 - Scaffold the top-level `penpot-cli` TypeScript package with build, typecheck, lint, and help-output commands.
+- Add `penpot-cli mcp status`, `mcp config`, and `mcp logs` commands for local MCP diagnostics and configuration inspection.
 - Add rate limiting and concurrency safety for file snapshot operations [#9723](https://github.com/penpot/penpot/issues/9723) (PR: [#9722](https://github.com/penpot/penpot/pull/9722))
 - Prevent concurrent font uploads from causing excessive simultaneous requests [#9922](https://github.com/penpot/penpot/issues/9922) (PR: [#9921](https://github.com/penpot/penpot/pull/9921))
 

@@ -31,9 +31,9 @@ P4.6 lifecycle coverage, P5.1 typed page tools, and P5.2 typed basic shape
 creation tools are complete. P5.3 typed shape update/delete tools are
 complete. P5.4 typed prototype flow/interaction tools are complete. The
 P5.5 typed export/render tools and P5.6 `execute_code` setting gate are
-complete. P6.1 selected `penpot-cli/` as a top-level package and P6.2
-scaffolded the CLI package. The next implementation focus is P6.3: add MCP
-orchestration commands.
+complete. P6.1 selected `penpot-cli/` as a top-level package, P6.2
+scaffolded the CLI package, and P6.3 added MCP status/config/log commands. The
+next implementation focus is P6.4: add `dev up --mcp` orchestration.
 
 ## Feature Roadmap
 
@@ -53,7 +53,7 @@ remain the execution plan.
 | F9 | done | Prototype authoring tools | Phase 5 | Agents can create flows and interactions | Completed 2026-06-11; MCP can create flows and navigate-to interactions through typed tools |
 | F10 | done | Export and preview tools | Phase 5, Phase 7 | Agents and CLI can export useful visual output | Completed 2026-06-12; MCP can export shape/page data and render PNG previews through typed tools |
 | F11 | done | Advanced execution controls | Phase 5, Phase 8 | Admins/users can control whether `execute_code` is available | Completed 2026-06-12; `execute_code` is disabled unless `PENPOT_MCP_ENABLE_EXECUTE_CODE=true` |
-| F12 | todo | `penpot-cli` MCP operations | Phase 6 | Developers can inspect and operate MCP from terminal | `penpot-cli mcp status` works locally |
+| F12 | done | `penpot-cli` MCP operations | Phase 6 | Developers can inspect and operate MCP from terminal | Completed 2026-06-12; `penpot-cli mcp status`, `mcp config`, and `mcp logs` are available |
 | F13 | todo | `penpot-cli` file/export operations | Phase 6, Phase 7 | Scripts can create/export files through the same automation layer | CLI command names and schemas align with MCP tools |
 | F14 | todo | Headless automation runtime | Phase 7 | Selected operations work without an open browser tab | Simple file/page/shape creation can run through backend/common adapter |
 | F15 | todo | Audit, limits, and confirmations | Phase 8 | MCP is safer for real deployments | Write operations are auditable and destructive actions are gated |
@@ -144,7 +144,7 @@ Goal: provide a command-line surface that shares automation concepts with MCP.
 | --- | --- | --- | --- | --- | --- |
 | P6.1 | done | Decide CLI package location | root, future `penpot-cli` | Decision captured in docs | Completed 2026-06-12; CLI will live at top-level `penpot-cli/`, separate from the nested `mcp/` workspace |
 | P6.2 | done | Scaffold CLI package | `penpot-cli` | CLI has package metadata, build, lint, help output | Completed 2026-06-12; added top-level TypeScript package, root workspace scripts, module AGENTS, and `--help` smoke verification |
-| P6.3 | todo | Add MCP orchestration commands | future `penpot-cli`, `mcp` | `mcp status`, `mcp config`, `mcp logs` work locally | Can start with status/config only |
+| P6.3 | done | Add MCP orchestration commands | `penpot-cli`, `mcp` | `mcp status`, `mcp config`, `mcp logs` work locally | Completed 2026-06-12; status fetches `/mcp/status`, config prints derived MCP URLs, and logs inspects `PENPOT_MCP_LOG_DIR` or `--dir` |
 | P6.4 | todo | Add dev orchestration command | future `penpot-cli` | `dev up --mcp` starts required services or prints missing deps | Avoid hiding failures |
 | P6.5 | todo | Add file/export CLI commands | future `penpot-cli`, `mcp`, `backend`, `exporter` | CLI can list/create/open/export through shared command runtime | Keep command names aligned with MCP tools |
 | P6.6 | todo | Add CLI docs | docs, future `penpot-cli` | Users can install/run the CLI in local dev | Include examples |
@@ -176,10 +176,10 @@ Goal: make first-class MCP safe and diagnosable.
 
 ## Next Recommended Sprint
 
-Start the smallest MCP CLI operations slice:
+Start the smallest local dev orchestration slice:
 
-1. Start P6.3 by implementing `penpot-cli mcp status` against the existing
-   MCP `/status` endpoint.
-2. Add `penpot-cli mcp config --format text|json` using the documented default
-   URLs.
-3. Keep `mcp logs` minimal unless a stable log location is already configured.
+1. Start P6.4 by implementing `penpot-cli dev up --mcp --dry-run` to print the
+   exact local services and commands it would use.
+2. Add dependency/readiness checks without hiding failures.
+3. Keep real process startup conservative and aligned with existing
+   `manage.sh`/devenv behavior.
