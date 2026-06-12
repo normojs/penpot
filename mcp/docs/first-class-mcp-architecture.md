@@ -425,6 +425,17 @@ P6.3 implementation note:
 - CLI errors use structured JSON when `--format json` is requested so scripts
   can distinguish unreachable status endpoints from configuration problems.
 
+P6.4 implementation note:
+
+- `penpot-cli dev up --mcp --dry-run` prints the local MCP development plan in
+  text or JSON without starting processes.
+- The default `devenv` mode derives the same public MCP URLs as
+  `penpot-cli mcp config` and lists expected readiness checks.
+- Real `penpot-cli dev up --mcp --mode devenv` checks `./manage.sh` and
+  `docker` before delegating dependency startup to `./manage.sh start-devenv`.
+- `host` and `hybrid` remain planned modes; the CLI reports them explicitly
+  instead of pretending to start unsupported flows.
+
 ### 5.2 Global MCP Agent
 
 The Global MCP Agent is a built-in system plugin that can run in the background

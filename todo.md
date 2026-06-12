@@ -32,8 +32,9 @@ creation tools are complete. P5.3 typed shape update/delete tools are
 complete. P5.4 typed prototype flow/interaction tools are complete. The
 P5.5 typed export/render tools and P5.6 `execute_code` setting gate are
 complete. P6.1 selected `penpot-cli/` as a top-level package, P6.2
-scaffolded the CLI package, and P6.3 added MCP status/config/log commands. The
-next implementation focus is P6.4: add `dev up --mcp` orchestration.
+scaffolded the CLI package, P6.3 added MCP status/config/log commands, and
+P6.4 added `dev up --mcp` orchestration. The next implementation focus is
+P6.5: add file/export CLI commands.
 
 ## Feature Roadmap
 
@@ -145,7 +146,7 @@ Goal: provide a command-line surface that shares automation concepts with MCP.
 | P6.1 | done | Decide CLI package location | root, future `penpot-cli` | Decision captured in docs | Completed 2026-06-12; CLI will live at top-level `penpot-cli/`, separate from the nested `mcp/` workspace |
 | P6.2 | done | Scaffold CLI package | `penpot-cli` | CLI has package metadata, build, lint, help output | Completed 2026-06-12; added top-level TypeScript package, root workspace scripts, module AGENTS, and `--help` smoke verification |
 | P6.3 | done | Add MCP orchestration commands | `penpot-cli`, `mcp` | `mcp status`, `mcp config`, `mcp logs` work locally | Completed 2026-06-12; status fetches `/mcp/status`, config prints derived MCP URLs, and logs inspects `PENPOT_MCP_LOG_DIR` or `--dir` |
-| P6.4 | todo | Add dev orchestration command | future `penpot-cli` | `dev up --mcp` starts required services or prints missing deps | Avoid hiding failures |
+| P6.4 | done | Add dev orchestration command | `penpot-cli` | `dev up --mcp` starts required services or prints missing deps | Completed 2026-06-12; added dry-run text/JSON plan, `manage.sh`/Docker checks, and conservative `devenv` startup delegation |
 | P6.5 | todo | Add file/export CLI commands | future `penpot-cli`, `mcp`, `backend`, `exporter` | CLI can list/create/open/export through shared command runtime | Keep command names aligned with MCP tools |
 | P6.6 | todo | Add CLI docs | docs, future `penpot-cli` | Users can install/run the CLI in local dev | Include examples |
 
@@ -176,10 +177,11 @@ Goal: make first-class MCP safe and diagnosable.
 
 ## Next Recommended Sprint
 
-Start the smallest local dev orchestration slice:
+Start the smallest file/export CLI slice:
 
-1. Start P6.4 by implementing `penpot-cli dev up --mcp --dry-run` to print the
-   exact local services and commands it would use.
-2. Add dependency/readiness checks without hiding failures.
-3. Keep real process startup conservative and aligned with existing
-   `manage.sh`/devenv behavior.
+1. Start P6.5 by adding `penpot-cli file list` and `file create` command
+   shells aligned with MCP tool names.
+2. Add `penpot-cli export page` argument parsing and explicit adapter/status
+   messaging.
+3. Keep backend/MCP network execution conservative until the shared command
+   runtime lands in Phase 7.

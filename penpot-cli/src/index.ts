@@ -1,8 +1,9 @@
 #!/usr/bin/env node
 
 import { spawn } from "node:child_process";
-import { readdir, stat } from "node:fs/promises";
-import { join, resolve } from "node:path";
+import { constants } from "node:fs";
+import { access, readdir, stat } from "node:fs/promises";
+import { delimiter, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 
 const VERSION = "0.1.0";
@@ -16,7 +17,7 @@ Usage:
   penpot-cli mcp status [--url <status-url>] [--format text|json]
   penpot-cli mcp config [--format text|json]
   penpot-cli mcp logs [--dir <path>] [--follow] [--format text|json]
-  penpot-cli dev up --mcp
+  penpot-cli dev up --mcp [--mode devenv] [--dry-run] [--format text|json]
 
 Planned automation commands:
   penpot-cli file list
@@ -37,6 +38,16 @@ Environment:
   PENPOT_MCP_WEBSOCKET_URI   Explicit MCP WebSocket URL
   PENPOT_MCP_STATUS_URI      Explicit MCP status URL
   PENPOT_MCP_LOG_DIR         MCP file log directory`;
+
+const DEV_HELP_TEXT = `penpot-cli dev
+
+Usage:
+  penpot-cli dev up --mcp [--mode devenv] [--dry-run] [--format text|json]
+
+Modes:
+  devenv   Reuse the existing Docker devenv managed by ./manage.sh
+  host     Planned future host-native startup mode
+  hybrid   Planned future mixed Docker/host startup mode`;
 
 type Format = "text" | "json";
 
@@ -63,6 +74,16 @@ interface LogFile {
     name: string;
     sizeBytes: number;
     modifiedAt: string;
+}
+
+interface DevPlan {
+    mode: string;
+    mcpEnabled: boolean;
+    dryRun: boolean;
+    publicUri: string;
+    commands: string[];
+    surfaces: Record<string, string>;
+    readinessChecks: string[];
 }
 
 const DEFAULT_IO: CliIO = {
@@ -146,6 +167,86 @@ function getMcpConfig(args: string[], env: NodeJS.ProcessEnv): McpConfig {
         statusUri,
         logDir,
     };
+}
+
+function getDevPlan(args: string[], env: NodeJS.ProcessEnv, dryRun: boolean): DevPlan {
+    const config = getMcpConfig(args, env);
+    const mode = readOption(args, ["--mode"]) ?? "devenv";
+
+    return {
+        mode,
+        mcpEnabled: hasFlag(args, "--mcp"),
+        dryRun,
+        publicUri: config.publicUri,
+        commands:
+            mode === "devenv"
+                ? [
+                      "./manage.sh start-devenv",
+                      "./manage.sh run-devenv",
+                      "Inside devenv: start the frontend/backend/exporter/MCP processes with enable-mcp.",
+                  ]
+                : [`${mode} mode startup is planned for a later Phase 6 slice.`],
+        surfaces: {
+            frontend: config.publicUri,
+            mcpStream: config.streamUri,
+            mcpSse: config.sseUri,
+            mcpWebSocket: config.websocketUri,
+            mcpStatus: config.statusUri,
+        },
+        readinessChecks: [
+            "GET /api/health or the available backend health endpoint",
+            `GET ${config.statusUri}`,
+            `${config.publicUri}/plugins/mcp/manifest.json`,
+        ],
+    };
+}
+
+function writeDevPlanText(io: CliIO, plan: DevPlan): void {
+    writeLine(io.stdout, "Penpot dev MCP plan");
+    writeLine(io.stdout, `mode: ${plan.mode}`);
+    writeLine(io.stdout, `dryRun: ${String(plan.dryRun)}`);
+    writeLine(io.stdout, `mcp: ${plan.mcpEnabled ? "enabled" : "disabled"}`);
+    writeLine(io.stdout, `publicUri: ${plan.publicUri}`);
+    writeLine(io.stdout, "surfaces:");
+    for (const [name, uri] of Object.entries(plan.surfaces)) {
+        writeLine(io.stdout, `  ${name}: ${uri}`);
+    }
+    writeLine(io.stdout, "commands:");
+    for (const command of plan.commands) {
+        writeLine(io.stdout, `  ${command}`);
+    }
+    writeLine(io.stdout, "readiness:");
+    for (const check of plan.readinessChecks) {
+        writeLine(io.stdout, `  ${check}`);
+    }
+}
+
+async function canExecute(filePath: string): Promise<boolean> {
+    try {
+        await access(filePath, constants.X_OK);
+        return true;
+    } catch {
+        return false;
+    }
+}
+
+async function commandExists(command: string, env: NodeJS.ProcessEnv): Promise<boolean> {
+    const pathValue = env.PATH ?? "";
+    const pathEntries = pathValue.split(delimiter).filter(Boolean);
+    for (const pathEntry of pathEntries) {
+        if (await canExecute(join(pathEntry, command))) {
+            return true;
+        }
+    }
+    return false;
+}
+
+async function runProcess(command: string, args: string[]): Promise<number> {
+    return await new Promise((resolveProcess) => {
+        const child = spawn(command, args, { stdio: "inherit" });
+        child.on("error", () => resolveProcess(2));
+        child.on("exit", (code) => resolveProcess(code ?? 0));
+    });
 }
 
 function writeError(
@@ -386,8 +487,103 @@ async function handleMcpCommand(args: string[], io: CliIO, env: NodeJS.ProcessEn
     }
 }
 
+async function handleDevUp(args: string[], io: CliIO, env: NodeJS.ProcessEnv): Promise<number> {
+    const format = parseFormat(args, io);
+    if (!format) {
+        return 2;
+    }
+
+    const dryRun = hasFlag(args, "--dry-run");
+    const mode = readOption(args, ["--mode"]) ?? "devenv";
+    const plan = getDevPlan(args, env, dryRun);
+
+    if (!plan.mcpEnabled) {
+        writeError(
+            io,
+            format,
+            "dev_mcp_flag_required",
+            "The first dev orchestration slice only supports MCP-enabled startup.",
+            ['Run "penpot-cli dev up --mcp --dry-run" to inspect the local MCP plan.']
+        );
+        return 2;
+    }
+
+    if (mode !== "devenv" && mode !== "host" && mode !== "hybrid") {
+        writeError(io, format, "dev_mode_invalid", `Unsupported dev mode: ${mode}`, [
+            "Use --mode devenv, --mode host, or --mode hybrid.",
+        ]);
+        return 2;
+    }
+
+    if (dryRun) {
+        if (format === "json") {
+            writeJson(io.stdout, {
+                status: "ok",
+                data: plan,
+            });
+        } else {
+            writeDevPlanText(io, plan);
+        }
+        return 0;
+    }
+
+    if (mode !== "devenv") {
+        writeError(io, format, "dev_mode_not_implemented", `${mode} mode startup is not implemented yet.`, [
+            "Use --mode devenv for the first implementation.",
+            "Use --dry-run to inspect planned host/hybrid surfaces.",
+        ]);
+        return 2;
+    }
+
+    if (!(await canExecute(resolve("manage.sh")))) {
+        writeError(io, format, "manage_script_not_found", "Cannot execute ./manage.sh from the current directory.", [
+            "Run this command from the Penpot repository root.",
+        ]);
+        return 2;
+    }
+
+    if (!(await commandExists("docker", env))) {
+        writeError(io, format, "docker_not_found", "Docker is required for --mode devenv but was not found on PATH.", [
+            "Install Docker with Compose V2.",
+            "Use --dry-run to inspect the plan without starting services.",
+        ]);
+        return 2;
+    }
+
+    writeDevPlanText(io, plan);
+    writeLine(io.stdout);
+    writeLine(io.stdout, "Starting devenv dependencies with ./manage.sh start-devenv...");
+    const exitCode = await runProcess("./manage.sh", ["start-devenv"]);
+    if (exitCode !== 0) {
+        return exitCode;
+    }
+
+    writeLine(io.stdout);
+    writeLine(io.stdout, "Devenv dependencies are running.");
+    writeLine(io.stdout, "Next: run ./manage.sh run-devenv and start the MCP-enabled app processes inside the devenv.");
+    return 0;
+}
+
+async function handleDevCommand(args: string[], io: CliIO, env: NodeJS.ProcessEnv): Promise<number> {
+    const [subcommand, ...rest] = args;
+
+    if (isHelpFlag(subcommand)) {
+        writeLine(io.stdout, DEV_HELP_TEXT);
+        return 0;
+    }
+
+    switch (subcommand) {
+        case "up":
+            return await handleDevUp(rest, io, env);
+        default:
+            writeLine(io.stderr, `Unknown dev command: ${subcommand}`);
+            writeLine(io.stderr, 'Run "penpot-cli dev --help" for usage.');
+            return 2;
+    }
+}
+
 function isPlannedNonMcpCommand(value: string | undefined): boolean {
-    return value === "dev" || value === "file" || value === "export";
+    return value === "file" || value === "export";
 }
 
 export async function run(
@@ -409,6 +605,10 @@ export async function run(
 
     if (first === "mcp") {
         return await handleMcpCommand(argv.slice(1), io, env);
+    }
+
+    if (first === "dev") {
+        return await handleDevCommand(argv.slice(1), io, env);
     }
 
     if (isPlannedNonMcpCommand(first)) {
