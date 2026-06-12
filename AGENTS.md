@@ -85,6 +85,7 @@ Penpot is an open-source design tool composed of several modules:
 | `render-wasm/` | Rust -> WebAssembly | High-performance canvas renderer (Skia) | Yes |
 | `exporter/` | ClojureScript (Node.js) | Headless Playwright-based export (SVG/PDF) | No |
 | `mcp/` | TypeScript | Model Context Protocol integration | No |
+| `penpot-cli/` | TypeScript | CLI orchestration and automation entry point | Yes |
 | `plugins/` | TypeScript | Plugin runtime and example plugins | No |
 
 Some submodules use `pnpm` workspaces. The root `package.json` and

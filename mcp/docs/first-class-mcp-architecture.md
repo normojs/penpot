@@ -404,6 +404,15 @@ P6.2 should scaffold `penpot-cli/` as a TypeScript package with a
 depend on stable boundaries first: process spawning, local config files, and
 MCP HTTP status/config endpoints.
 
+P6.2 implementation note:
+
+- `penpot-cli/` is scaffolded as a TypeScript package in the root pnpm
+  workspace with a `penpot-cli` bin that builds to `dist/index.js`.
+- The initial CLI supports `--help` and `--version`; planned Phase 6 commands
+  return a clear not-yet-implemented message until their dedicated tasks land.
+- Root scripts provide `cli`, `cli:build`, and `cli:help` shortcuts.
+- `penpot-cli/AGENTS.md` defines module-specific rules for future CLI work.
+
 ### 5.2 Global MCP Agent
 
 The Global MCP Agent is a built-in system plugin that can run in the background

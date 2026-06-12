@@ -11,6 +11,9 @@
   },
   "type": "module",
   "scripts": {
+    "cli": "pnpm --filter penpot-cli",
+    "cli:build": "pnpm --filter penpot-cli build",
+    "cli:help": "pnpm --filter penpot-cli smoke:help",
     "lint": "./scripts/lint",
     "check-fmt": "./scripts/check-fmt",
     "fmt": "./scripts/fmt"

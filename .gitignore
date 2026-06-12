@@ -68,6 +68,8 @@
 /frontend/test-results/
 /frontend/.shadow-cljs
 /other/
+/penpot-cli/dist/
+/penpot-cli/*.tsbuildinfo
 /scripts/
 /nexus/
 /tmp/

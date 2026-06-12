@@ -1,0 +1,24 @@
+{
+  "name": "penpot-cli",
+  "version": "0.1.0",
+  "description": "Command-line orchestration and automation entry point for the penpot-cli fork.",
+  "private": true,
+  "type": "module",
+  "bin": {
+    "penpot-cli": "./dist/index.js"
+  },
+  "scripts": {
+    "build": "tsc",
+    "clean": "rm -rf dist",
+    "lint": "pnpm run types:check",
+    "smoke:help": "pnpm run build && node dist/index.js --help",
+    "types:check": "tsc --noEmit"
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "devDependencies": {
+    "@types/node": "^25.6.2",
+    "typescript": "^5.9.3"
+  }
+}

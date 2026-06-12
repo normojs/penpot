@@ -31,8 +31,9 @@ P4.6 lifecycle coverage, P5.1 typed page tools, and P5.2 typed basic shape
 creation tools are complete. P5.3 typed shape update/delete tools are
 complete. P5.4 typed prototype flow/interaction tools are complete. The
 P5.5 typed export/render tools and P5.6 `execute_code` setting gate are
-complete. P6.1 selected `penpot-cli/` as a top-level package. The next
-implementation focus is P6.2: scaffold the CLI package.
+complete. P6.1 selected `penpot-cli/` as a top-level package and P6.2
+scaffolded the CLI package. The next implementation focus is P6.3: add MCP
+orchestration commands.
 
 ## Feature Roadmap
 
@@ -142,7 +143,7 @@ Goal: provide a command-line surface that shares automation concepts with MCP.
 | ID | Status | Task | Modules | Verification | Notes |
 | --- | --- | --- | --- | --- | --- |
 | P6.1 | done | Decide CLI package location | root, future `penpot-cli` | Decision captured in docs | Completed 2026-06-12; CLI will live at top-level `penpot-cli/`, separate from the nested `mcp/` workspace |
-| P6.2 | todo | Scaffold CLI package | future `penpot-cli` | CLI has package metadata, build, lint, help output | Add module rules if needed |
+| P6.2 | done | Scaffold CLI package | `penpot-cli` | CLI has package metadata, build, lint, help output | Completed 2026-06-12; added top-level TypeScript package, root workspace scripts, module AGENTS, and `--help` smoke verification |
 | P6.3 | todo | Add MCP orchestration commands | future `penpot-cli`, `mcp` | `mcp status`, `mcp config`, `mcp logs` work locally | Can start with status/config only |
 | P6.4 | todo | Add dev orchestration command | future `penpot-cli` | `dev up --mcp` starts required services or prints missing deps | Avoid hiding failures |
 | P6.5 | todo | Add file/export CLI commands | future `penpot-cli`, `mcp`, `backend`, `exporter` | CLI can list/create/open/export through shared command runtime | Keep command names aligned with MCP tools |
@@ -175,10 +176,10 @@ Goal: make first-class MCP safe and diagnosable.
 
 ## Next Recommended Sprint
 
-Start the smallest CLI implementation slice:
+Start the smallest MCP CLI operations slice:
 
-1. Start P6.2 by scaffolding `penpot-cli/` as a TypeScript package with a
-   `penpot-cli` bin.
-2. Add root workspace wiring and package scripts without changing MCP runtime
-   behavior.
-3. Verify build, typecheck, formatting, and `penpot-cli --help`.
+1. Start P6.3 by implementing `penpot-cli mcp status` against the existing
+   MCP `/status` endpoint.
+2. Add `penpot-cli mcp config --format text|json` using the documented default
+   URLs.
+3. Keep `mcp logs` minimal unless a stable log location is already configured.
