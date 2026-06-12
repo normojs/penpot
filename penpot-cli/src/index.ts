@@ -18,12 +18,10 @@ Usage:
   penpot-cli mcp config [--format text|json]
   penpot-cli mcp logs [--dir <path>] [--follow] [--format text|json]
   penpot-cli dev up --mcp [--mode devenv] [--dry-run] [--format text|json]
-
-Planned automation commands:
-  penpot-cli file list
-  penpot-cli file create --name <name>
-  penpot-cli file open <file-id>
-  penpot-cli export page --file <file-id> --page <page-id>`;
+  penpot-cli file list --project-id <id> [--format text|json]
+  penpot-cli file create --project-id <id> [--name <name>] [--format text|json]
+  penpot-cli file open <file-id> [--team-id <id>] [--page-id <id>] [--format text|json]
+  penpot-cli export page --file <file-id> [--page <page-id>] [--dry-run] [--format text|json]`;
 
 const MCP_HELP_TEXT = `penpot-cli mcp
 
@@ -49,7 +47,31 @@ Modes:
   host     Planned future host-native startup mode
   hybrid   Planned future mixed Docker/host startup mode`;
 
+const FILE_HELP_TEXT = `penpot-cli file
+
+Usage:
+  penpot-cli file list --project-id <id> [--backend-uri <uri>] [--token <token>] [--format text|json]
+  penpot-cli file create --project-id <id> [--name <name>] [--shared] [--backend-uri <uri>] [--token <token>] [--format text|json]
+  penpot-cli file open <file-id> [--team-id <id>] [--page-id <id>] [--public-uri <uri>] [--format text|json]
+
+Environment:
+  PENPOT_BACKEND_URI       Backend RPC base URI, default http://localhost:6060
+  PENPOT_PUBLIC_URI        Public Penpot base URI used as backend fallback and browser URL base
+  PENPOT_CLI_TOKEN         Penpot access token for backend RPC
+  PENPOT_MCP_USER_TOKEN    Penpot MCP user token fallback for backend RPC
+  PENPOT_ACCESS_TOKEN      Generic Penpot access token fallback`;
+
+const EXPORT_HELP_TEXT = `penpot-cli export
+
+Usage:
+  penpot-cli export page --file <file-id> [--page <page-id>] [--export-format png|jpeg|svg|pdf] [--scale <n>] [--output <path>] [--dry-run] [--format text|json]
+
+Current adapters:
+  mcp-live   Planned Phase 7 adapter backed by MCP/export tooling. Dry-run is available now.`;
+
 type Format = "text" | "json";
+type RpcParamValue = string | number | boolean | string[] | number[] | boolean[] | null | undefined;
+type RpcParams = Record<string, RpcParamValue>;
 
 interface Writable {
     write(chunk: string): boolean;
@@ -84,6 +106,23 @@ interface DevPlan {
     commands: string[];
     surfaces: Record<string, string>;
     readinessChecks: string[];
+}
+
+interface RpcConfig {
+    backendUri: string;
+    token: string | null;
+}
+
+interface ExportPagePlan {
+    adapter: string;
+    fileId: string | null;
+    pageId: string | null;
+    exportFormat: string;
+    scale: number | null;
+    output: string | null;
+    dryRun: boolean;
+    status: string;
+    nextActions: string[];
 }
 
 const DEFAULT_IO: CliIO = {
@@ -124,6 +163,20 @@ function readOption(args: string[], names: string[]): string | undefined {
                 return arg.slice(prefix.length);
             }
         }
+    }
+    return undefined;
+}
+
+function readFirstPositional(args: string[]): string | undefined {
+    for (let index = 0; index < args.length; index++) {
+        const arg = args[index];
+        if (arg.startsWith("--")) {
+            if (!arg.includes("=") && args[index + 1] && !args[index + 1].startsWith("--")) {
+                index++;
+            }
+            continue;
+        }
+        return arg;
     }
     return undefined;
 }
@@ -169,6 +222,39 @@ function getMcpConfig(args: string[], env: NodeJS.ProcessEnv): McpConfig {
     };
 }
 
+function getRpcConfig(args: string[], env: NodeJS.ProcessEnv): RpcConfig {
+    return {
+        backendUri: trimTrailingSlash(
+            readOption(args, ["--backend-uri"]) ??
+                env.PENPOT_BACKEND_URI ??
+                env.PENPOT_PUBLIC_URI ??
+                "http://localhost:6060"
+        ),
+        token:
+            readOption(args, ["--token"]) ??
+            env.PENPOT_CLI_TOKEN ??
+            env.PENPOT_MCP_USER_TOKEN ??
+            env.PENPOT_ACCESS_TOKEN ??
+            null,
+    };
+}
+
+function createWorkspaceUrl(args: string[], env: NodeJS.ProcessEnv, fileId: string): string {
+    const publicUri = trimTrailingSlash(
+        readOption(args, ["--public-uri"]) ?? env.PENPOT_PUBLIC_URI ?? env.PENPOT_MCP_PUBLIC_URI ?? DEFAULT_PUBLIC_URI
+    );
+    const params = new URLSearchParams({ "file-id": fileId });
+    const teamId = readOption(args, ["--team-id"]);
+    const pageId = readOption(args, ["--page-id", "--page"]);
+    if (teamId) {
+        params.set("team-id", teamId);
+    }
+    if (pageId) {
+        params.set("page-id", pageId);
+    }
+    return `${publicUri}/#/workspace?${params.toString()}`;
+}
+
 function getDevPlan(args: string[], env: NodeJS.ProcessEnv, dryRun: boolean): DevPlan {
     const config = getMcpConfig(args, env);
     const mode = readOption(args, ["--mode"]) ?? "devenv";
@@ -197,6 +283,28 @@ function getDevPlan(args: string[], env: NodeJS.ProcessEnv, dryRun: boolean): De
             "GET /api/health or the available backend health endpoint",
             `GET ${config.statusUri}`,
             `${config.publicUri}/plugins/mcp/manifest.json`,
+        ],
+    };
+}
+
+function createExportPagePlan(args: string[]): ExportPagePlan {
+    const fileId = readOption(args, ["--file", "--file-id"]) ?? null;
+    const pageId = readOption(args, ["--page", "--page-id"]) ?? null;
+    const scaleValue = readOption(args, ["--scale"]);
+    const exportFormat = readOption(args, ["--export-format"]) ?? "png";
+
+    return {
+        adapter: readOption(args, ["--adapter"]) ?? "mcp-live",
+        fileId,
+        pageId,
+        exportFormat,
+        scale: scaleValue ? Number(scaleValue) : null,
+        output: readOption(args, ["--output"]) ?? null,
+        dryRun: hasFlag(args, "--dry-run"),
+        status: "planned",
+        nextActions: [
+            "Open or bind the target file in Penpot.",
+            "Use MCP export.page for live plugin-backed export until Phase 7 adds a shared headless adapter.",
         ],
     };
 }
@@ -276,6 +384,109 @@ function writeError(
     }
 }
 
+function writeOk(io: CliIO, format: Format, data: unknown, textWriter: () => void): void {
+    if (format === "json") {
+        writeJson(io.stdout, {
+            status: "ok",
+            data,
+        });
+        return;
+    }
+
+    textWriter();
+}
+
+function rpcAuthenticationRequired(io: CliIO, format: Format): number {
+    writeError(
+        io,
+        format,
+        "authentication_required",
+        "This command requires a Penpot access token.",
+        [
+            "Pass --token <token>.",
+            "Set PENPOT_CLI_TOKEN, PENPOT_MCP_USER_TOKEN, or PENPOT_ACCESS_TOKEN.",
+        ]
+    );
+    return 2;
+}
+
+function createRpcUrl(backendUri: string, methodName: string, params: RpcParams = {}): URL {
+    const url = new URL(`api/main/methods/${methodName}`, `${backendUri}/`);
+    url.searchParams.set("_fmt", "json");
+    for (const [key, value] of Object.entries(params)) {
+        if (value !== undefined && value !== null) {
+            url.searchParams.set(key, String(value));
+        }
+    }
+    return url;
+}
+
+async function rpcRequest<T>(
+    method: "GET" | "POST",
+    backendUri: string,
+    methodName: string,
+    params: RpcParams,
+    token: string
+): Promise<T> {
+    const url = createRpcUrl(backendUri, methodName, method === "GET" ? params : {});
+    const response = await fetch(url, {
+        method,
+        headers: {
+            accept: "application/json",
+            authorization: `Token ${token}`,
+            "content-type": "application/json",
+            "x-client": "penpot-cli/0.1",
+        },
+        body: method === "POST" ? JSON.stringify(params) : undefined,
+    });
+    const text = await response.text();
+    const data = text.trim() ? JSON.parse(text) : null;
+
+    if (!response.ok) {
+        const body = asRecord(data);
+        const code = typeof body.code === "string" ? body.code.replaceAll("-", "_") : "penpot_rpc_error";
+        const message =
+            typeof body.message === "string"
+                ? body.message
+                : typeof body.hint === "string"
+                  ? body.hint
+                  : `Penpot RPC ${methodName} failed with HTTP ${response.status}`;
+        throw Object.assign(new Error(message), {
+            code,
+            status: response.status,
+            data,
+        });
+    }
+
+    return data as T;
+}
+
+function rpcErrorResponse(io: CliIO, format: Format, methodName: string, backendUri: string, cause: unknown): number {
+    const error = asRecord(cause);
+    const code = typeof error.code === "string" ? error.code : "penpot_rpc_error";
+    const status = typeof error.status === "number" ? error.status : 0;
+    const message =
+        cause instanceof Error
+            ? cause.message
+            : `Unable to call Penpot RPC command ${methodName}.`;
+    writeError(
+        io,
+        format,
+        code,
+        `${message}`,
+        [
+            "Check PENPOT_BACKEND_URI or --backend-uri.",
+            "Check the token and normal Penpot permissions.",
+        ],
+        {
+            backendUri,
+            methodName,
+            status,
+        }
+    );
+    return 2;
+}
+
 function writeConfigText(io: CliIO, config: McpConfig): void {
     writeLine(io.stdout, "MCP config");
     writeLine(io.stdout, `public: ${config.publicUri}`);
@@ -284,6 +495,63 @@ function writeConfigText(io: CliIO, config: McpConfig): void {
     writeLine(io.stdout, `websocket: ${config.websocketUri}`);
     writeLine(io.stdout, `status: ${config.statusUri}`);
     writeLine(io.stdout, `logDir: ${config.logDir ?? "<not configured>"}`);
+}
+
+function writeFilesText(io: CliIO, projectId: string, files: unknown): void {
+    writeLine(io.stdout, `Files for project ${projectId}`);
+    if (!Array.isArray(files) || files.length === 0) {
+        writeLine(io.stdout, "No files found.");
+        return;
+    }
+
+    for (const file of files) {
+        const record = asRecord(file);
+        writeLine(io.stdout, `${String(record.id ?? "<unknown>")}  ${String(record.name ?? "<unnamed>")}`);
+    }
+}
+
+function summarizeFile(file: unknown, projectId: string, fallbackName: string): Record<string, unknown> {
+    const record = asRecord(file);
+    return {
+        id: record.id,
+        name: record.name ?? fallbackName,
+        projectId: record.projectId ?? record["project-id"] ?? projectId,
+        teamId: record.teamId ?? record["team-id"],
+        revn: record.revn,
+        vern: record.vern,
+        isShared: record.isShared ?? record["is-shared"],
+        createdAt: record.createdAt ?? record["created-at"],
+        modifiedAt: record.modifiedAt ?? record["modified-at"],
+    };
+}
+
+function writeFileCreatedText(io: CliIO, file: Record<string, unknown>, url: string): void {
+    writeLine(io.stdout, "File created");
+    writeLine(io.stdout, `id: ${String(file.id ?? "<unknown>")}`);
+    writeLine(io.stdout, `name: ${String(file.name ?? "<unnamed>")}`);
+    writeLine(io.stdout, `projectId: ${String(file.projectId ?? "<unknown>")}`);
+    writeLine(io.stdout, `url: ${url}`);
+}
+
+function writeFileOpenText(io: CliIO, url: string): void {
+    writeLine(io.stdout, "Workspace URL");
+    writeLine(io.stdout, url);
+    writeLine(io.stdout, "This opens the file in the browser; it does not bind an MCP file context by itself.");
+}
+
+function writeExportPlanText(io: CliIO, plan: ExportPagePlan): void {
+    writeLine(io.stdout, "Export page plan");
+    writeLine(io.stdout, `adapter: ${plan.adapter}`);
+    writeLine(io.stdout, `status: ${plan.status}`);
+    writeLine(io.stdout, `fileId: ${plan.fileId ?? "<missing>"}`);
+    writeLine(io.stdout, `pageId: ${plan.pageId ?? "<current page when bound>"}`);
+    writeLine(io.stdout, `exportFormat: ${plan.exportFormat}`);
+    writeLine(io.stdout, `scale: ${plan.scale ?? "<default>"}`);
+    writeLine(io.stdout, `output: ${plan.output ?? "<stdout/base64 in future adapter>"}`);
+    writeLine(io.stdout, "nextActions:");
+    for (const action of plan.nextActions) {
+        writeLine(io.stdout, `  ${action}`);
+    }
 }
 
 function asRecord(value: unknown): Record<string, unknown> {
@@ -582,8 +850,212 @@ async function handleDevCommand(args: string[], io: CliIO, env: NodeJS.ProcessEn
     }
 }
 
-function isPlannedNonMcpCommand(value: string | undefined): boolean {
-    return value === "file" || value === "export";
+async function handleFileList(args: string[], io: CliIO, env: NodeJS.ProcessEnv): Promise<number> {
+    const format = parseFormat(args, io);
+    if (!format) {
+        return 2;
+    }
+
+    const projectId = readOption(args, ["--project-id", "--project"]);
+    if (!projectId) {
+        writeError(io, format, "project_id_required", "file list requires --project-id <id>.", [
+            "Use penpot-cli mcp config to inspect local service URLs.",
+            "Use MCP project.list or the Penpot UI to choose a project id.",
+        ]);
+        return 2;
+    }
+
+    const rpc = getRpcConfig(args, env);
+    if (!rpc.token) {
+        return rpcAuthenticationRequired(io, format);
+    }
+
+    try {
+        const files = await rpcRequest<unknown[]>(
+            "GET",
+            rpc.backendUri,
+            "get-project-files",
+            { "project-id": projectId },
+            rpc.token
+        );
+        writeOk(io, format, { projectId, files, adapter: "backend-rpc" }, () => writeFilesText(io, projectId, files));
+        return 0;
+    } catch (cause) {
+        return rpcErrorResponse(io, format, "get-project-files", rpc.backendUri, cause);
+    }
+}
+
+async function handleFileCreate(args: string[], io: CliIO, env: NodeJS.ProcessEnv): Promise<number> {
+    const format = parseFormat(args, io);
+    if (!format) {
+        return 2;
+    }
+
+    const projectId = readOption(args, ["--project-id", "--project"]);
+    if (!projectId) {
+        writeError(io, format, "project_id_required", "file create requires --project-id <id>.", [
+            "Use MCP project.list or the Penpot UI to choose a project id.",
+        ]);
+        return 2;
+    }
+
+    const rpc = getRpcConfig(args, env);
+    if (!rpc.token) {
+        return rpcAuthenticationRequired(io, format);
+    }
+
+    const name = readOption(args, ["--name"])?.trim() || "Untitled";
+    const isShared = hasFlag(args, "--shared") || hasFlag(args, "--is-shared");
+
+    try {
+        const created = await rpcRequest<unknown>(
+            "POST",
+            rpc.backendUri,
+            "create-file",
+            {
+                name,
+                "project-id": projectId,
+                "is-shared": isShared,
+            },
+            rpc.token
+        );
+        const file = summarizeFile(created, projectId, name);
+        const fileId = typeof file.id === "string" ? file.id : "";
+        const url = fileId ? createWorkspaceUrl(args, env, fileId) : "";
+        writeOk(
+            io,
+            format,
+            {
+                file,
+                url,
+                adapter: "backend-rpc",
+                nextActions: ["Open the workspace URL before using file-scoped MCP tools.", "file.open"],
+            },
+            () => writeFileCreatedText(io, file, url)
+        );
+        return 0;
+    } catch (cause) {
+        return rpcErrorResponse(io, format, "create-file", rpc.backendUri, cause);
+    }
+}
+
+function handleFileOpen(args: string[], io: CliIO, env: NodeJS.ProcessEnv): number {
+    const format = parseFormat(args, io);
+    if (!format) {
+        return 2;
+    }
+
+    const fileId = readOption(args, ["--file-id", "--file"]) ?? readFirstPositional(args);
+    if (!fileId) {
+        writeError(io, format, "file_id_required", "file open requires a file id.", [
+            "Run penpot-cli file open <file-id>.",
+        ]);
+        return 2;
+    }
+
+    const url = createWorkspaceUrl(args, env, fileId);
+    writeOk(
+        io,
+        format,
+        {
+            fileId,
+            url,
+            adapter: "browser-url",
+            boundContext: false,
+        },
+        () => writeFileOpenText(io, url)
+    );
+    return 0;
+}
+
+async function handleFileCommand(args: string[], io: CliIO, env: NodeJS.ProcessEnv): Promise<number> {
+    const [subcommand, ...rest] = args;
+
+    if (isHelpFlag(subcommand)) {
+        writeLine(io.stdout, FILE_HELP_TEXT);
+        return 0;
+    }
+
+    switch (subcommand) {
+        case "list":
+            return await handleFileList(rest, io, env);
+        case "create":
+            return await handleFileCreate(rest, io, env);
+        case "open":
+            return handleFileOpen(rest, io, env);
+        default:
+            writeLine(io.stderr, `Unknown file command: ${subcommand}`);
+            writeLine(io.stderr, 'Run "penpot-cli file --help" for usage.');
+            return 2;
+    }
+}
+
+function handleExportPage(args: string[], io: CliIO): number {
+    const format = parseFormat(args, io);
+    if (!format) {
+        return 2;
+    }
+
+    const plan = createExportPagePlan(args);
+    if (!plan.fileId) {
+        writeError(io, format, "file_id_required", "export page requires --file <file-id>.", [
+            "Open or list files first, then pass --file <file-id>.",
+        ]);
+        return 2;
+    }
+
+    const validFormats = new Set(["png", "jpeg", "svg", "pdf"]);
+    if (!validFormats.has(plan.exportFormat)) {
+        writeError(io, format, "export_format_invalid", `Unsupported export format: ${plan.exportFormat}.`, [
+            "Use --export-format png, jpeg, svg, or pdf.",
+        ]);
+        return 2;
+    }
+
+    if (plan.scale !== null && (!Number.isFinite(plan.scale) || plan.scale <= 0 || plan.scale > 16)) {
+        writeError(io, format, "export_scale_invalid", "Export scale must be greater than 0 and at most 16.", [
+            "Use --scale <number> between 0 and 16.",
+        ]);
+        return 2;
+    }
+
+    if (plan.dryRun) {
+        writeOk(io, format, plan, () => writeExportPlanText(io, plan));
+        return 0;
+    }
+
+    writeError(
+        io,
+        format,
+        "export_adapter_not_available",
+        "CLI export execution is waiting for the Phase 7 shared command runtime.",
+        [
+            "Use --dry-run to inspect the parsed export request.",
+            "Use MCP export.page with a bound live file context for now.",
+        ],
+        {
+            plan,
+        }
+    );
+    return 2;
+}
+
+function handleExportCommand(args: string[], io: CliIO): number {
+    const [subcommand, ...rest] = args;
+
+    if (isHelpFlag(subcommand)) {
+        writeLine(io.stdout, EXPORT_HELP_TEXT);
+        return 0;
+    }
+
+    switch (subcommand) {
+        case "page":
+            return handleExportPage(rest, io);
+        default:
+            writeLine(io.stderr, `Unknown export command: ${subcommand}`);
+            writeLine(io.stderr, 'Run "penpot-cli export --help" for usage.');
+            return 2;
+    }
 }
 
 export async function run(
@@ -611,12 +1083,12 @@ export async function run(
         return await handleDevCommand(argv.slice(1), io, env);
     }
 
-    if (isPlannedNonMcpCommand(first)) {
-        writeLine(
-            io.stderr,
-            `Command "${argv.join(" ")}" is planned but not implemented yet. Run "penpot-cli --help" for the current scaffold.`
-        );
-        return 2;
+    if (first === "file") {
+        return await handleFileCommand(argv.slice(1), io, env);
+    }
+
+    if (first === "export") {
+        return handleExportCommand(argv.slice(1), io);
     }
 
     writeLine(io.stderr, `Unknown command: ${first}`);

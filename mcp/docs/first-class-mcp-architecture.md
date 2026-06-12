@@ -436,6 +436,21 @@ P6.4 implementation note:
 - `host` and `hybrid` remain planned modes; the CLI reports them explicitly
   instead of pretending to start unsupported flows.
 
+P6.5 implementation note:
+
+- `penpot-cli file list` and `penpot-cli file create` call the same backend RPC
+  commands used by first-class MCP global tools: `get-project-files` and
+  `create-file`.
+- File commands use `PENPOT_BACKEND_URI`, then `PENPOT_PUBLIC_URI`, then
+  `http://localhost:6060`; access tokens can be supplied through `--token`,
+  `PENPOT_CLI_TOKEN`, `PENPOT_MCP_USER_TOKEN`, or `PENPOT_ACCESS_TOKEN`.
+- `penpot-cli file open` prints a browser workspace URL and explicitly reports
+  that it does not bind an MCP file context.
+- `penpot-cli export page` parses the page export request and supports
+  `--dry-run`; actual CLI export execution waits for the Phase 7 shared command
+  runtime, while live MCP users can still call `export.page` with a bound file
+  context.
+
 ### 5.2 Global MCP Agent
 
 The Global MCP Agent is a built-in system plugin that can run in the background
