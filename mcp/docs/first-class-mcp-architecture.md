@@ -1326,6 +1326,18 @@ Phase 5.4 implementation note:
 - Tool responses return typed flow and interaction summaries so generated
   prototype screens can be chained into export and preview tools.
 
+Phase 5.5 implementation note:
+
+- `export.shape`, `export.page`, and `render.preview` are implemented as
+  first-class typed MCP tools backed by a typed `export` plugin task.
+- The tools require a bound file context through the shared file context guard.
+- `export.shape` exports an explicit shape id or the current selection.
+- `export.page` exports an explicit page id or the current page.
+- `render.preview` returns a PNG preview for a page, shape, or selection.
+- Tool responses return format, MIME type, byte length, target metadata, and
+  base64 data so agents and the future CLI can consume the result without
+  falling back to `execute_code`.
+
 Definition of done:
 
 - Common prototype generation can be done through typed tools.

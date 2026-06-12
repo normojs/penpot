@@ -330,3 +330,37 @@ export interface PrototypeTaskResultData {
     interaction?: PrototypeInteractionSummary;
     currentPage: PageSummary | null;
 }
+
+export type ExportTaskAction = "exportShape" | "exportPage" | "renderPreview";
+
+export type ExportFormat = "png" | "jpeg" | "svg" | "pdf";
+
+export type ExportTargetType = "shape" | "selection" | "page";
+
+export interface ExportTaskParams {
+    action: ExportTaskAction;
+    target?: ExportTargetType;
+    shapeId?: string;
+    pageId?: string;
+    format?: ExportFormat;
+    scale?: number;
+    skipChildren?: boolean;
+}
+
+export interface ExportSummary {
+    targetType: ExportTargetType;
+    targetId?: string;
+    targetName?: string;
+    pageId?: string;
+    pageName?: string;
+    format: ExportFormat;
+    mimeType: string;
+    scale?: number;
+    byteLength: number;
+    dataBase64: string;
+}
+
+export interface ExportTaskResultData {
+    export: ExportSummary;
+    currentPage: PageSummary | null;
+}

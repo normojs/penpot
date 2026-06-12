@@ -1,4 +1,5 @@
 import { ExecuteCodeTaskHandler } from "./task-handlers/ExecuteCodeTaskHandler";
+import { ExportTaskHandler } from "./task-handlers/ExportTaskHandler";
 import { PageTaskHandler } from "./task-handlers/PageTaskHandler";
 import { PrototypeTaskHandler } from "./task-handlers/PrototypeTaskHandler";
 import { ShapeTaskHandler } from "./task-handlers/ShapeTaskHandler";
@@ -78,6 +79,7 @@ const taskHandlers: TaskHandler[] = [
     new PageTaskHandler(),
     new ShapeTaskHandler(),
     new PrototypeTaskHandler(),
+    new ExportTaskHandler(),
 ];
 
 /**

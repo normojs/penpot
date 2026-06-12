@@ -30,7 +30,8 @@ required-context errors are complete. P4.5 workspace bind/unbind controls and
 P4.6 lifecycle coverage, P5.1 typed page tools, and P5.2 typed basic shape
 creation tools are complete. P5.3 typed shape update/delete tools are
 complete. P5.4 typed prototype flow/interaction tools are complete. The
-current implementation focus is P5.5: typed export/render tools.
+P5.5 typed export/render tools are complete. The current implementation focus
+is P5.6: gate `execute_code` behind a setting.
 
 ## Feature Roadmap
 
@@ -48,7 +49,7 @@ remain the execution plan.
 | F7 | done | File context broker | Phase 4 | Users and agents know which file MCP is editing | Completed 2026-06-11; context reporting, inspect, bind, release, required-context errors, workspace bind/unbind UI, and lifecycle tests are implemented |
 | F8 | done | Typed page and shape creation | Phase 5 | Agents can draw basic screens without arbitrary JS | Completed 2026-06-11; typed page tools and frame/rect/text/image creation tools are implemented |
 | F9 | done | Prototype authoring tools | Phase 5 | Agents can create flows and interactions | Completed 2026-06-11; MCP can create flows and navigate-to interactions through typed tools |
-| F10 | todo | Export and preview tools | Phase 5, Phase 7 | Agents and CLI can export useful visual output | Bound file/page can export PNG or SVG through typed command |
+| F10 | done | Export and preview tools | Phase 5, Phase 7 | Agents and CLI can export useful visual output | Completed 2026-06-12; MCP can export shape/page data and render PNG previews through typed tools |
 | F11 | todo | Advanced execution controls | Phase 5, Phase 8 | Admins/users can control whether `execute_code` is available | `execute_code` respects explicit user setting |
 | F12 | todo | `penpot-cli` MCP operations | Phase 6 | Developers can inspect and operate MCP from terminal | `penpot-cli mcp status` works locally |
 | F13 | todo | `penpot-cli` file/export operations | Phase 6, Phase 7 | Scripts can create/export files through the same automation layer | CLI command names and schemas align with MCP tools |
@@ -130,7 +131,7 @@ Goal: reduce normal workflow dependence on arbitrary JavaScript execution.
 | P5.2 | done | Add basic shape creation tools | `mcp/packages/server`, `mcp/packages/plugin` | Frame, rect, text, image creation work with typed args | Completed 2026-06-11; added plugin-backed `shape.create_frame`, `shape.create_rect`, `shape.create_text`, and `shape.create_image` guarded by the bound file context |
 | P5.3 | done | Add shape update/delete tools | `mcp/packages/server`, `mcp/packages/plugin` | Position, size, style, layout, delete actions work | Completed 2026-06-11; added plugin-backed `shape.update` and `shape.delete` with explicit shape ids, typed geometry/style/text updates, and basic board layout edits |
 | P5.4 | done | Add prototype tools | `mcp/packages/server`, `mcp/packages/plugin` | Basic flows and interactions can be created | Completed 2026-06-11; added plugin-backed `prototype.create_flow` and `prototype.create_interaction` with explicit board/shape ids |
-| P5.5 | todo | Add export/render tools | `mcp/packages/server`, `mcp/packages/plugin`, `exporter` | Selection/page export works through typed tools | Local file output requires explicit permission |
+| P5.5 | done | Add export/render tools | `mcp/packages/server`, `mcp/packages/plugin`, `exporter` | Selection/page export works through typed tools | Completed 2026-06-12; added plugin-backed `export.shape`, `export.page`, and `render.preview` returning base64 data and export metadata |
 | P5.6 | todo | Gate `execute_code` behind setting | `mcp/packages/server`, `frontend` | Advanced code execution respects user setting | Default should be conservative |
 
 ## Phase 6: `penpot-cli` Entry Point
@@ -173,9 +174,9 @@ Goal: make first-class MCP safe and diagnosable.
 
 ## Next Recommended Sprint
 
-Start the smallest slice that makes export and preview typed and reliable:
+Start the smallest slice that controls advanced execution explicitly:
 
-1. Start P5.5 with typed export for a bound page or explicit shape id.
-2. Return export metadata and bytes or file output through a clear local-mode contract.
-3. Keep legacy `export_shape` available while moving normal export flows to typed tools.
-4. Keep plugin-backed implementation first, then move stable commands into the shared automation runtime.
+1. Start P5.6 with an explicit server-side setting for `execute_code`.
+2. Keep typed page/shape/prototype/export tools available by default.
+3. Return a clear disabled response when `execute_code` is not enabled.
+4. Keep legacy tools registered where compatible, but route normal workflows through typed tools.
