@@ -371,6 +371,39 @@ penpot-cli mcp logs --follow
 The first Phase 6 implementation can wrap existing devenv commands and status
 URLs. It does not need to replace tmux immediately.
 
+#### 5.1.2 CLI Package Location Decision
+
+P6.1 decision: `penpot-cli` lives as a top-level package at
+`penpot-cli/` in this monorepo.
+
+Rationale:
+
+- The CLI needs to orchestrate multiple Penpot modules: backend, frontend,
+  exporter, MCP server, MCP plugin assets, and future shared command runtime.
+  Placing it under `mcp/packages` would make MCP appear to own the whole
+  orchestration layer.
+- Keeping it in this monorepo lets the fork evolve CLI commands, MCP tools,
+  schemas, docs, and local development scripts together while the work is still
+  changing quickly.
+- A top-level package can expose the user-facing `penpot-cli` binary without
+  changing the existing `@penpot/mcp` / `penpot-mcp` package contract.
+- The CLI can start by calling stable process and HTTP surfaces, then gradually
+  share typed command schemas with MCP as Phase 7 introduces a neutral command
+  runtime.
+
+Rejected placements:
+
+| Option | Reason rejected for this phase |
+| --- | --- |
+| `mcp/packages/cli` | Too narrow; the CLI coordinates more than MCP internals and should not force backend/frontend orchestration through the MCP workspace. |
+| Separate repository/package | Too early; it would make rapid schema, docs, and development-script changes harder while the fork is still defining the command runtime. |
+| Root `package.json` bin only | Too small; the CLI needs its own source tree, tests, build output, and future module-specific rules. |
+
+P6.2 should scaffold `penpot-cli/` as a TypeScript package with a
+`penpot-cli` bin and add it to the root pnpm workspace. Initial commands should
+depend on stable boundaries first: process spawning, local config files, and
+MCP HTTP status/config endpoints.
+
 ### 5.2 Global MCP Agent
 
 The Global MCP Agent is a built-in system plugin that can run in the background
@@ -1362,6 +1395,15 @@ Definition of done:
 
 Goal: give developers one command-line surface for MCP and automation.
 
+P6.1 package decision:
+
+- Directory: `penpot-cli/` at the repository root.
+- Package/bin: TypeScript package exposing `penpot-cli`.
+- Workspace: root pnpm workspace, separate from the existing nested
+  `mcp/` workspace.
+- First dependency direction: call stable process, filesystem config, and MCP
+  HTTP surfaces before importing MCP server internals.
+
 Work:
 
 - Add CLI commands for orchestration:
@@ -1479,10 +1521,13 @@ mcp-require-confirmation-for-destructive-actions
    or through the Global MCP Agent first?
 4. How should a headless command choose a target team/project when the prompt is
    ambiguous?
-5. Should `penpot-cli` live inside this monorepo or as a separate package that
-   consumes Penpot packages?
-6. What is the minimum typed tool set needed to create a useful prototype
+5. What is the minimum typed tool set needed to create a useful prototype
    without arbitrary JavaScript?
+
+Resolved decisions:
+
+- P6.1: `penpot-cli` lives in this monorepo as a top-level `penpot-cli/`
+  package, not inside `mcp/packages` and not in a separate repository.
 
 ## 13. Recommended First Implementation Slice
 
