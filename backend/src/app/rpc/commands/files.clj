@@ -11,6 +11,7 @@
    [app.common.data.macros :as dm]
    [app.common.exceptions :as ex]
    [app.common.features :as cfeat]
+   [app.common.files.headless :as headless]
    [app.common.files.helpers :as cfh]
    [app.common.files.migrations :as fmg]
    [app.common.logging :as l]
@@ -278,6 +279,11 @@
 (def schema:files
   [:vector schema:file])
 
+(def schema:page-summary
+  [:map {:title "PageSummary"}
+   [:id ::sm/uuid]
+   [:name [:string {:max 250}]]])
+
 (sv/defmethod ::get-project-files
   "Get all files for the specified project."
   {::doc/added "1.17"
@@ -286,6 +292,43 @@
   [{:keys [::db/pool] :as cfg} {:keys [::rpc/profile-id project-id]}]
   (projects/check-read-permissions! pool profile-id project-id)
   (get-project-files pool project-id))
+
+;; --- COMMAND QUERY: get-file-pages
+
+(def ^:private
+  schema:get-file-pages
+  [:map {:title "get-file-pages"}
+   [:id ::sm/uuid]
+   [:features {:optional true} ::cfeat/features]])
+
+(def ^:private
+  schema:file-pages
+  [:map {:title "FilePages"}
+   [:file-id ::sm/uuid]
+   [:pages [:vector schema:page-summary]]])
+
+(sv/defmethod ::get-file-pages
+  "Get page summaries for the specified file."
+  {::doc/added "2.15.4"
+   ::sm/params schema:get-file-pages
+   ::sm/result schema:file-pages
+   ::db/transaction true}
+  [{:keys [::db/conn] :as cfg} {:keys [::rpc/profile-id id] :as params}]
+  (let [perms (bfc/get-file-permissions conn profile-id id)]
+    (check-read-permissions! perms)
+    (let [team (teams/get-team conn
+                               :profile-id profile-id
+                               :file-id id)
+
+          file (-> (bfc/get-file cfg id)
+                   (check-version!))]
+
+      (-> (cfeat/get-team-enabled-features cf/flags team)
+          (cfeat/check-client-features! (:features params))
+          (cfeat/check-file-features! (:features file)))
+
+      {:file-id id
+       :pages (headless/page-summaries (:data file))})))
 
 ;; --- COMMAND QUERY: has-file-libraries
 

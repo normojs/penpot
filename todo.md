@@ -34,9 +34,10 @@ P5.5 typed export/render tools and P5.6 `execute_code` setting gate are
 complete. P6.1 selected `penpot-cli/` as a top-level package, P6.2
 scaffolded the CLI package, P6.3 added MCP status/config/log commands, P6.4
 added `dev up --mcp` orchestration, and P6.5 added initial file/export CLI
-commands. P6.6 added local CLI documentation, and P7.1 designed the shared
-headless command runtime interface. The next implementation focus is P7.2: move
-safe file/page commands toward backend/common headless handlers.
+commands. P6.6 added local CLI documentation, P7.1 designed the shared
+headless command runtime interface, and P7.2 has its first backend/common page
+command slice implemented. The next implementation focus is continuing P7.2 by
+wiring MCP/CLI page commands through the runtime adapter path.
 
 ## Feature Roadmap
 
@@ -58,7 +59,7 @@ remain the execution plan.
 | F11 | done | Advanced execution controls | Phase 5, Phase 8 | Admins/users can control whether `execute_code` is available | Completed 2026-06-12; `execute_code` is disabled unless `PENPOT_MCP_ENABLE_EXECUTE_CODE=true` |
 | F12 | done | `penpot-cli` MCP operations | Phase 6 | Developers can inspect and operate MCP from terminal | Completed 2026-06-12; `penpot-cli mcp status`, `mcp config`, and `mcp logs` are available |
 | F13 | in_progress | `penpot-cli` file/export operations | Phase 6, Phase 7 | Scripts can create/export files through the same automation layer | `file list/create/open` and `export page --dry-run` exist; shared execution runtime remains Phase 7 |
-| F14 | in_progress | Headless automation runtime | Phase 7 | Selected operations work without an open browser tab | P7.1 documented the neutral command runtime contract; implementation begins with backend/common file/page handlers |
+| F14 | in_progress | Headless automation runtime | Phase 7 | Selected operations work without an open browser tab | P7.1 documented the neutral command runtime contract; P7.2 first slice adds backend/common page list/create commands |
 | F15 | todo | Audit, limits, and confirmations | Phase 8 | MCP is safer for real deployments | Write operations are auditable and destructive actions are gated |
 
 ## Phase 0: Baseline, Planning, And Rules
@@ -159,7 +160,7 @@ Goal: move stable automation out of browser/plugin dependency.
 | ID | Status | Task | Modules | Verification | Notes |
 | --- | --- | --- | --- | --- | --- |
 | P7.1 | done | Design command runtime interface | `mcp`, `penpot-cli`, `backend`, `common` | Interface covers schemas, auth, capabilities, adapters | Completed 2026-06-12; added `mcp/docs/headless-command-runtime.md` with neutral package boundaries, command descriptors, execution envelopes, adapter selection, structured errors, and migration order |
-| P7.2 | todo | Move safe file/page commands to backend/common | `backend`, `common` | Commands work without open workspace | Requires backend/common AGENTS and tests |
+| P7.2 | in_progress | Move safe file/page commands to backend/common | `backend`, `common` | Commands work without open workspace | First slice completed 2026-06-12; added common page helpers plus backend `get-file-pages` and `create-file-page` RPC commands; `git diff --check` and bracket checks passed; JVM tests/check-fmt/lint blocked locally because `clojure`, `cljfmt`, and `clj-kondo` are missing; remaining work is MCP/CLI runtime adapter wiring |
 | P7.3 | todo | Move simple shape operations to backend/common | `backend`, `common` | Simple prototype can be created headlessly | Validate file data carefully |
 | P7.4 | todo | Add exporter-backed headless output | `exporter`, `render-wasm` if needed | CLI/MCP can export without a UI tab for supported cases | Keep plugin path for live selection |
 | P7.5 | todo | Add adapter selection | `mcp`, future `penpot-cli` | Commands choose backend, exporter, plugin, or local adapter | Tool responses should disclose adapter used |
@@ -179,10 +180,10 @@ Goal: make first-class MCP safe and diagnosable.
 
 ## Next Recommended Sprint
 
-Start the backend/common headless command slice:
+Continue the backend/common headless command slice:
 
-1. Start P7.2 by choosing the first safe backend/common command surface for
-   file/page operations.
-2. Keep the initial scope small: reuse existing backend permission checks and
-   common validation, then expose the result through the runtime adapter plan.
-3. Update MCP and CLI wrappers only after the backend/common contract is clear.
+1. Wire MCP `page.list` and `page.create` to use backend headless RPC when a
+   file id is supplied and no live file context is bound.
+2. Add matching `penpot-cli page list/create` command shells through the same
+   runtime adapter shape.
+3. Keep plugin-live as the fallback for selection/current-workspace behavior.

@@ -273,8 +273,8 @@ they already exist in MCP, CLI, or both.
 | `file.list` | global | MCP and CLI backend RPC | `backend-rpc` |
 | `file.create` | global | MCP and CLI backend RPC | `backend-rpc`, then `backend-command` |
 | `file.open` | global | CLI browser URL | `browser-url` |
-| `page.list` | file | MCP plugin task | `plugin-live`, then `backend-command` |
-| `page.create` | file | MCP plugin task | `plugin-live`, then `backend-command` |
+| `page.list` | file | MCP plugin task, backend `get-file-pages` RPC | `backend-command`, fallback `plugin-live` |
+| `page.create` | file | MCP plugin task, backend `create-file-page` RPC | `backend-command`, fallback `plugin-live` |
 | `shape.create_frame` | file | MCP plugin task | `plugin-live`, then `backend-command` |
 | `shape.create_rect` | file | MCP plugin task | `plugin-live`, then `backend-command` |
 | `shape.create_text` | file | MCP plugin task | `plugin-live`, then `backend-command` |
@@ -368,6 +368,25 @@ CommandRuntime exporter adapter
 4. Add basic shape descriptors for frame, rectangle, text, and image creation.
 5. Add exporter adapter descriptors for `export.page` and `render.preview`.
 6. Add adapter selection reporting to MCP status and CLI JSON results.
+
+## P7.2 Backend/Common Slice
+
+The first P7.2 implementation slice adds the backend/common page command
+surface that future runtime adapters can call:
+
+- `app.common.files.headless/page-summaries`
+- `app.common.files.headless/create-page-request`
+- backend RPC `get-file-pages`
+- backend RPC `create-file-page`
+
+`create-file-page` deliberately reuses the existing backend `update-file`
+pipeline instead of mutating file data directly. That keeps permission checks,
+file locks, feature validation, revision changes, file-change rows, cache
+invalidation, and notifications aligned with normal workspace edits.
+
+MCP and CLI entry adapters are intentionally left as the next step. They should
+map `page.list` and `page.create` to these backend commands through the runtime
+contract instead of importing backend-specific details.
 
 ## Acceptance Checks
 

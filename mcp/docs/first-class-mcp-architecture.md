@@ -919,6 +919,17 @@ P7.1 implementation note:
   capability hints, adapter selection, structured errors, and the initial
   command migration set for file, page, shape, export, and render commands.
 
+P7.2 implementation note:
+
+- The first backend/common headless slice adds `app.common.files.headless`
+  helpers for page summaries and add-page command changes.
+- The backend now exposes `get-file-pages` and `create-file-page` RPC commands.
+  They reuse existing read/edit permission checks, feature validation, file
+  locking, and the normal `update-file` persistence/notification pipeline.
+- These RPC commands back future runtime adapters for `page.list` and
+  `page.create`; MCP and CLI wrappers still need to be wired through the command
+  runtime adapter layer.
+
 ## 6. User Configuration
 
 MCP settings should stay explicit and user-visible.
