@@ -936,6 +936,21 @@ P7.2 implementation note:
   should still centralize descriptors, request envelopes, and adapter selection
   instead of leaving this mapping duplicated in MCP and CLI entry adapters.
 
+P7.3 implementation note:
+
+- The first backend/common shape slice adds `create-shape-request` and
+  `shape-summary` helpers in `app.common.files.headless`.
+- The backend exposes `create-file-shape` for headless frame, rectangle, and
+  text creation on a target page. It validates page/parent frame targets,
+  creates canonical shape data through common shape constructors, and persists
+  the result through the normal `update-file` path.
+- The command intentionally omits image upload, arbitrary layout setup, shape
+  update, and delete in this slice. Those stay on plugin-live tools until
+  backend/common coverage is added.
+- MCP and CLI shape tools should be wired to this command through the future
+  adapter-selection layer rather than each entry point growing separate shape
+  routing logic.
+
 ## 6. User Configuration
 
 MCP settings should stay explicit and user-visible.

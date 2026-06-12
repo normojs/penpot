@@ -411,3 +411,27 @@ P7.2 is complete when:
   still fall back to `plugin-live` for the bound workspace flow.
 - `penpot-cli page list/create --file <file-id>` returns text or JSON output
   through the backend-command path.
+
+## P7.3 Backend/Common Shape Slice
+
+The P7.3 backend/common slice adds the first headless shape write command:
+
+- `app.common.files.headless/create-shape-request`
+- `app.common.files.headless/shape-summary`
+- backend RPC `create-file-shape`
+
+`create-file-shape` supports `frame`, `rect`, and `text` creation on an
+explicit page. It validates the target page and parent frame, creates canonical
+Penpot shape data through `app.common.types.shape/setup-shape`, and persists the
+result through the normal `update-file` pipeline with a single `:add-obj`
+change. The first slice deliberately excludes image upload, arbitrary layout,
+shape updates, and deletes; those remain plugin-live until dedicated backend
+coverage exists.
+
+P7.3 is complete when:
+
+- Backend/common can create top-level frames and child rectangles/text shapes
+  without an open workspace tab.
+- The backend command returns a stable shape summary plus revision metadata.
+- Common and backend tests cover generated changes and persistence through
+  `get-file`.

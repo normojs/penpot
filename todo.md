@@ -35,10 +35,11 @@ complete. P6.1 selected `penpot-cli/` as a top-level package, P6.2
 scaffolded the CLI package, P6.3 added MCP status/config/log commands, P6.4
 added `dev up --mcp` orchestration, and P6.5 added initial file/export CLI
 commands. P6.6 added local CLI documentation, P7.1 designed the shared
-headless command runtime interface, and P7.2 moved page list/create onto the
+headless command runtime interface, P7.2 moved page list/create onto the
 backend-command path for MCP and CLI while keeping plugin-live fallback for
-bound workspace usage. The current implementation focus is P7.3: moving the
-first simple shape operations into backend/common headless commands.
+bound workspace usage, and P7.3 added backend/common headless frame, rectangle,
+and text creation. The current implementation focus is P7.4: exporter-backed
+headless output for supported cases.
 
 ## Feature Roadmap
 
@@ -60,7 +61,7 @@ remain the execution plan.
 | F11 | done | Advanced execution controls | Phase 5, Phase 8 | Admins/users can control whether `execute_code` is available | Completed 2026-06-12; `execute_code` is disabled unless `PENPOT_MCP_ENABLE_EXECUTE_CODE=true` |
 | F12 | done | `penpot-cli` MCP operations | Phase 6 | Developers can inspect and operate MCP from terminal | Completed 2026-06-12; `penpot-cli mcp status`, `mcp config`, and `mcp logs` are available |
 | F13 | in_progress | `penpot-cli` file/page/export operations | Phase 6, Phase 7 | Scripts can create files, create pages, and prepare exports through the same automation layer | `file list/create/open`, `page list/create`, and `export page --dry-run` exist; real export execution remains Phase 7 |
-| F14 | in_progress | Headless automation runtime | Phase 7 | Selected operations work without an open browser tab | P7.1 documented the neutral command runtime contract; P7.2 completed backend-command page list/create wiring; P7.3 is moving simple shape operations |
+| F14 | in_progress | Headless automation runtime | Phase 7 | Selected operations work without an open browser tab | P7.1 documented the neutral command runtime contract; P7.2 completed backend-command page list/create wiring; P7.3 added backend/common shape creation; P7.4 is next for exporter-backed output |
 | F15 | todo | Audit, limits, and confirmations | Phase 8 | MCP is safer for real deployments | Write operations are auditable and destructive actions are gated |
 
 ## Phase 0: Baseline, Planning, And Rules
@@ -162,8 +163,8 @@ Goal: move stable automation out of browser/plugin dependency.
 | --- | --- | --- | --- | --- | --- |
 | P7.1 | done | Design command runtime interface | `mcp`, `penpot-cli`, `backend`, `common` | Interface covers schemas, auth, capabilities, adapters | Completed 2026-06-12; added `mcp/docs/headless-command-runtime.md` with neutral package boundaries, command descriptors, execution envelopes, adapter selection, structured errors, and migration order |
 | P7.2 | done | Move safe file/page commands to backend/common | `backend`, `common`, `mcp`, `penpot-cli` | Commands work without open workspace | Completed 2026-06-12; added common page helpers, backend `get-file-pages` / `create-file-page` RPC commands, MCP `page.list` / `page.create` backend-command mode by `fileId`, and CLI `page list/create --file`; MCP/CLI TS checks passed; JVM tests/check-fmt/lint remained blocked locally because `clojure`, `cljfmt`, and `clj-kondo` are missing |
-| P7.3 | in_progress | Move simple shape operations to backend/common | `backend`, `common` | Simple prototype can be created headlessly | Started 2026-06-12; next slice should add carefully validated minimal frame/rectangle/text creation commands |
-| P7.4 | todo | Add exporter-backed headless output | `exporter`, `render-wasm` if needed | CLI/MCP can export without a UI tab for supported cases | Keep plugin path for live selection |
+| P7.3 | done | Move simple shape operations to backend/common | `backend`, `common` | Simple prototype can be created headlessly | Completed 2026-06-12; added common headless shape helpers and backend `create-file-shape` for frame, rectangle, and text creation; MCP/CLI adapter wiring remains part of P7.5 adapter selection |
+| P7.4 | in_progress | Add exporter-backed headless output | `exporter`, `render-wasm` if needed | CLI/MCP can export without a UI tab for supported cases | Started 2026-06-12; keep plugin path for live selection and add exporter-backed output only for explicit file/page targets |
 | P7.5 | todo | Add adapter selection | `mcp`, future `penpot-cli` | Commands choose backend, exporter, plugin, or local adapter | Tool responses should disclose adapter used |
 
 ## Phase 8: Hardening And Observability
@@ -181,12 +182,11 @@ Goal: make first-class MCP safe and diagnosable.
 
 ## Next Recommended Sprint
 
-Continue with the simple shape headless command slice:
+Continue with exporter-backed headless output:
 
-1. Audit the existing plugin-backed `shape.create_frame`, `shape.create_rect`,
-   and `shape.create_text` command payloads and the persisted file-change shape
-   data expected by backend updates.
-2. Add common helpers for minimal headless shape creation with strict bounds,
-   parent/page validation, and deterministic ids.
-3. Expose backend RPC commands for the first shape creation slice, then wire
-   MCP/CLI adapters only after the backend/common behavior is covered.
+1. Audit current exporter HTTP/API entry points and MCP `export.page` /
+   `render.preview` plugin-live behavior.
+2. Define the smallest explicit file/page export request that can run without
+   live selection state.
+3. Wire exporter-backed dry-run/plan metadata before enabling real file output
+   paths in MCP or CLI.
