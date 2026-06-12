@@ -34,7 +34,8 @@ P5.5 typed export/render tools and P5.6 `execute_code` setting gate are
 complete. P6.1 selected `penpot-cli/` as a top-level package, P6.2
 scaffolded the CLI package, P6.3 added MCP status/config/log commands, P6.4
 added `dev up --mcp` orchestration, and P6.5 added initial file/export CLI
-commands. The next implementation focus is P6.6: add CLI docs.
+commands. P6.6 added local CLI documentation. The next implementation focus is
+P7.1: design the shared headless command runtime interface.
 
 ## Feature Roadmap
 
@@ -148,7 +149,7 @@ Goal: provide a command-line surface that shares automation concepts with MCP.
 | P6.3 | done | Add MCP orchestration commands | `penpot-cli`, `mcp` | `mcp status`, `mcp config`, `mcp logs` work locally | Completed 2026-06-12; status fetches `/mcp/status`, config prints derived MCP URLs, and logs inspects `PENPOT_MCP_LOG_DIR` or `--dir` |
 | P6.4 | done | Add dev orchestration command | `penpot-cli` | `dev up --mcp` starts required services or prints missing deps | Completed 2026-06-12; added dry-run text/JSON plan, `manage.sh`/Docker checks, and conservative `devenv` startup delegation |
 | P6.5 | done | Add file/export CLI commands | `penpot-cli`, `mcp`, `backend`, `exporter` | CLI can list/create/open/export through shared command runtime | Completed 2026-06-12; added backend-RPC `file list/create`, browser URL `file open`, and `export page --dry-run` adapter plan |
-| P6.6 | todo | Add CLI docs | docs, future `penpot-cli` | Users can install/run the CLI in local dev | Include examples |
+| P6.6 | done | Add CLI docs | docs, `penpot-cli` | Users can install/run the CLI in local dev | Completed 2026-06-12; added `penpot-cli/README.md` with build/run commands, MCP/dev/file/export examples, current limitations, and required env vars |
 
 ## Phase 7: Headless Command Runtime
 
@@ -177,9 +178,11 @@ Goal: make first-class MCP safe and diagnosable.
 
 ## Next Recommended Sprint
 
-Start the CLI documentation slice:
+Start the shared command runtime design slice:
 
-1. Start P6.6 by documenting install/build/run commands for `penpot-cli`.
-2. Include examples for `mcp status/config/logs`, `dev up --mcp --dry-run`,
-   `file list/create/open`, and `export page --dry-run`.
-3. Call out required token and backend environment variables for file commands.
+1. Start P7.1 by defining a transport-neutral command runtime interface shared
+   by MCP and `penpot-cli`.
+2. Capture command schemas, capability discovery, auth/user context,
+   adapter selection, and structured error contracts.
+3. Keep the first implementation plan focused on file/page/export operations
+   already exposed by MCP and the CLI.

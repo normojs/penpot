@@ -27,6 +27,7 @@
 - Add `penpot-cli mcp status`, `mcp config`, and `mcp logs` commands for local MCP diagnostics and configuration inspection.
 - Add `penpot-cli dev up --mcp` orchestration with dry-run planning and conservative `devenv` dependency startup checks.
 - Add `penpot-cli file list`, `file create`, `file open`, and `export page --dry-run` commands aligned with MCP file/export tool names.
+- Document local `penpot-cli` build/run workflows, MCP diagnostics, development orchestration, file commands, export dry-runs, and required environment variables.
 - Add rate limiting and concurrency safety for file snapshot operations [#9723](https://github.com/penpot/penpot/issues/9723) (PR: [#9722](https://github.com/penpot/penpot/pull/9722))
 - Prevent concurrent font uploads from causing excessive simultaneous requests [#9922](https://github.com/penpot/penpot/issues/9922) (PR: [#9921](https://github.com/penpot/penpot/pull/9921))
 

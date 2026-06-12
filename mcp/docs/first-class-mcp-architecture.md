@@ -451,6 +451,18 @@ P6.5 implementation note:
   runtime, while live MCP users can still call `export.page` with a bound file
   context.
 
+P6.6 implementation note:
+
+- `penpot-cli/README.md` is the local developer entry point for CLI usage while
+  the package remains private.
+- The README documents build/run workflows, root pnpm shortcuts, MCP
+  diagnostics, log inspection, `dev up --mcp`, file list/create/open examples,
+  export dry-run examples, and the token/backend/public URI environment
+  variables required by current commands.
+- The documented limitations match the implementation: `dev up --mcp` only
+  delegates Docker dependency startup in `devenv` mode, `file open` only emits a
+  browser URL, and real CLI export execution waits for Phase 7.
+
 ### 5.2 Global MCP Agent
 
 The Global MCP Agent is a built-in system plugin that can run in the background
