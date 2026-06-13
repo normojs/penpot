@@ -952,9 +952,10 @@ P7.3 implementation note:
   text creation on a target page. It validates page/parent frame targets,
   creates canonical shape data through common shape constructors, and persists
   the result through the normal `update-file` path.
-- The command intentionally omits image upload, arbitrary layout setup, shape
-  update, and delete in this slice. Those stay on plugin-live tools until
-  backend/common coverage is added.
+- The first shape slice intentionally omitted image upload, arbitrary layout
+  setup, shape update, and delete. P7.7 adds backend/common coverage for simple
+  shape update/delete; image upload and arbitrary layout still stay on
+  plugin-live tools until dedicated backend coverage is added.
 - MCP `shape.create_frame`, `shape.create_rect`, and `shape.create_text` now
   choose backend-command when callers provide explicit `fileId` and `pageId`.
   Calls without explicit file/page targets keep using the plugin-live bound
@@ -962,6 +963,10 @@ P7.3 implementation note:
 - `penpot-cli shape create-frame`, `shape create-rect`, and
   `shape create-text` call backend `create-file-shape` directly and report
   `adapterSelection` in JSON output.
+- The backend now also exposes `update-file-shape` and `delete-file-shape` for
+  simple frame, rectangle, and text targets. MCP and `penpot-cli` still need the
+  follow-up adapter wiring slice before those commands are script-accessible
+  through the TypeScript entry points.
 
 ## 6. User Configuration
 

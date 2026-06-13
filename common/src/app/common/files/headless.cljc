@@ -77,6 +77,15 @@
       name
       (default-shape-name type))))
 
+(defn- normalize-updated-shape-name
+  [name]
+  (let [name (some-> name str/trim)]
+    (when-not (seq name)
+      (ex/raise :type :validation
+                :code :shape-name-required
+                :hint "Headless shape updates require a non-empty name."))
+    name))
+
 (defn- require-page
   [file-data page-id]
   (let [page-id (or page-id (first (:pages file-data)))
@@ -87,6 +96,41 @@
                 :hint "The target page does not exist."
                 :page-id page-id))
     [page-id page]))
+
+(defn- require-shape
+  [file-data page-id shape-id]
+  (letfn [(shape-entry [page-id]
+            (when-let [page (dm/get-in file-data [:pages-index page-id])]
+              (when-let [shape (dm/get-in page [:objects shape-id])]
+                [page-id page shape])))]
+    (let [entry (if page-id
+                  (let [[page-id page] (require-page file-data page-id)]
+                    (when-let [shape (dm/get-in page [:objects shape-id])]
+                      [page-id page shape]))
+                  (some shape-entry (:pages file-data)))]
+      (when-not entry
+        (ex/raise :type :validation
+                  :code :shape-not-found
+                  :hint "The target shape does not exist."
+                  :page-id page-id
+                  :shape-id shape-id))
+      entry)))
+
+(defn- require-supported-shape
+  [file-data page-id shape-id]
+  (let [[page-id page shape] (require-shape file-data page-id shape-id)]
+    (when (= shape-id uuid/zero)
+      (ex/raise :type :validation
+                :code :unsupported-root-shape
+                :hint "Headless shape operations cannot target the root shape."
+                :shape-id shape-id))
+    (when-not (contains? supported-shape-types (:type shape))
+      (ex/raise :type :validation
+                :code :unsupported-shape-type
+                :hint "Headless shape operations support frame, rect, and text shapes."
+                :shape-type (:type shape)
+                :shape-id shape-id))
+    [page-id page shape]))
 
 (defn- require-frame-parent
   [objects type parent-id]
@@ -148,6 +192,112 @@
                    (assoc :fills [(solid-fill fill)]))]
       (assoc shape :content (apply cttx/change-text (:content shape) content (mapcat identity styles))))))
 
+(def ^:private geometry-attrs
+  [:x :y :width :height])
+
+(def ^:private operation-attrs
+  [:name
+   :x
+   :y
+   :width
+   :height
+   :selrect
+   :points
+   :fills
+   :strokes
+   :r1
+   :r2
+   :r3
+   :r4
+   :content])
+
+(def ^:private update-attrs
+  [:name
+   :x
+   :y
+   :width
+   :height
+   :fill
+   :stroke
+   :border-radius
+   :content
+   :font-size])
+
+(defn- requested?
+  [params attrs]
+  (some #(contains? params %) attrs))
+
+(defn- apply-geometry-update
+  [shape params]
+  (if-not (requested? params geometry-attrs)
+    shape
+    (let [shape (reduce (fn [shape attr]
+                          (cond-> shape
+                            (contains? params attr)
+                            (assoc attr (get params attr))))
+                        shape
+                        geometry-attrs)]
+      (-> shape
+          (dissoc :selrect :points)
+          (cts/setup-shape)))))
+
+(defn- apply-text-update
+  [shape {:keys [content font-size fill] :as params}]
+  (if (= :text (:type shape))
+    (if-not (requested? params [:content :font-size :fill])
+      shape
+      (let [content (if (contains? params :content)
+                      (some-> content str/trim)
+                      (cttx/content->text (:content shape)))]
+        (when-not (seq content)
+          (ex/raise :type :validation
+                    :code :text-content-required
+                    :hint "Headless text shape updates require non-empty content."))
+        (let [styles (cond-> {}
+                       (some? font-size)
+                       (assoc :font-size (str font-size))
+
+                       (some? fill)
+                       (assoc :fills [(solid-fill fill)]))]
+          (assoc shape :content (apply cttx/change-text (:content shape) content (mapcat identity styles))))))
+    (do
+      (when (requested? params [:content :font-size])
+        (ex/raise :type :validation
+                  :code :unsupported-text-update
+                  :hint "Only text shapes support content and font-size updates."
+                  :shape-id (:id shape)
+                  :shape-type (:type shape)))
+      shape)))
+
+(defn- apply-shape-update
+  [shape {:keys [name fill stroke border-radius] :as params}]
+  (-> shape
+      (cond-> (contains? params :name)
+        (assoc :name (normalize-updated-shape-name name)))
+      (apply-geometry-update params)
+      (cond-> (and (some? fill) (not= (:type shape) :text))
+        (assoc :fills [(solid-fill fill)])
+
+        (some? stroke)
+        (assoc :strokes [(solid-stroke stroke)])
+
+        (some? border-radius)
+        (apply-border-radius border-radius))
+      (apply-text-update params)
+      (cts/check-shape)))
+
+(defn- shape-update-operations
+  [shape updated-shape]
+  (into []
+        (keep (fn [attr]
+                (let [old-val (get shape attr)
+                      new-val (get updated-shape attr)]
+                  (when (not= old-val new-val)
+                    {:type :set
+                     :attr attr
+                     :val new-val}))))
+        operation-attrs))
+
 (defn- frame-id-for
   [type parent-id]
   (if (= type :frame)
@@ -202,3 +352,29 @@
                 :frame-id (:frame-id shape)
                 :ignore-touched true
                 :obj shape}]}))
+
+(defn update-shape-request
+  [file-data {:keys [page-id shape-id] :as params}]
+  (when-not (requested? params update-attrs)
+    (ex/raise :type :validation
+              :code :empty-shape-update
+              :hint "Headless shape updates require at least one supported field."))
+  (let [[page-id _page shape] (require-supported-shape file-data page-id shape-id)
+        updated-shape         (apply-shape-update shape params)
+        operations            (shape-update-operations shape updated-shape)]
+    {:shape (shape-summary updated-shape page-id)
+     :changes (cond-> []
+                (seq operations)
+                (conj {:type :mod-obj
+                       :id shape-id
+                       :page-id page-id
+                       :operations operations}))}))
+
+(defn delete-shape-request
+  [file-data {:keys [page-id shape-id]}]
+  (let [[page-id _page shape] (require-supported-shape file-data page-id shape-id)]
+    {:shape (shape-summary shape page-id)
+     :changes [{:type :del-obj
+                :id shape-id
+                :page-id page-id
+                :ignore-touched true}]}))

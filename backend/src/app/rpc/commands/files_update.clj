@@ -164,6 +164,50 @@
    [:revn {:min 0} ::sm/int]
    [:vern {:min 0} ::sm/int]])
 
+(def ^:private
+  schema:update-file-shape
+  [:map {:title "update-file-shape"}
+   [:id ::sm/uuid]
+   [:page-id {:optional true} ::sm/uuid]
+   [:shape-id ::sm/uuid]
+   [:name {:optional true} [:string {:max 250}]]
+   [:x {:optional true} [::sm/number {:min -100000 :max 100000}]]
+   [:y {:optional true} [::sm/number {:min -100000 :max 100000}]]
+   [:width {:optional true} [::sm/number {:min 0.01 :max 100000}]]
+   [:height {:optional true} [::sm/number {:min 0.01 :max 100000}]]
+   [:content {:optional true} [:string {:max 10000}]]
+   [:fill {:optional true} schema:solid-fill]
+   [:stroke {:optional true} schema:solid-stroke]
+   [:border-radius {:optional true} [::sm/number {:min 0 :max 10000}]]
+   [:font-size {:optional true} [::sm/number {:min 0.01 :max 512}]]
+   [:session-id {:optional true} ::sm/uuid]
+   [:features {:optional true} ::cfeat/features]])
+
+(def ^:private
+  schema:update-file-shape-result
+  [:map {:title "update-file-shape-result"}
+   [:file-id ::sm/uuid]
+   [:shape schema:shape-summary]
+   [:revn {:min 0} ::sm/int]
+   [:vern {:min 0} ::sm/int]])
+
+(def ^:private
+  schema:delete-file-shape
+  [:map {:title "delete-file-shape"}
+   [:id ::sm/uuid]
+   [:page-id {:optional true} ::sm/uuid]
+   [:shape-id ::sm/uuid]
+   [:session-id {:optional true} ::sm/uuid]
+   [:features {:optional true} ::cfeat/features]])
+
+(def ^:private
+  schema:delete-file-shape-result
+  [:map {:title "delete-file-shape-result"}
+   [:file-id ::sm/uuid]
+   [:shape schema:shape-summary]
+   [:revn {:min 0} ::sm/int]
+   [:vern {:min 0} ::sm/int]])
+
 ;; --- HELPERS
 
 ;; File changes that affect to the library, and must be notified
@@ -365,6 +409,115 @@
                           (cfeat/check-client-features! (:features params))
                           (cfeat/check-file-features! (:features file)))
         shape-request (headless/create-shape-request (blob/decode (:data file)) params)
+        changes       (:changes shape-request)
+        session-id    (or session-id (uuid/next))
+        cfg           (assoc cfg ::timestamp (ct/now))
+        update-args   {:id id
+                       :revn (:revn file)
+                       :vern (:vern file)
+                       :file file
+                       :team team
+                       :features (set/difference features cfeat/frontend-only-features)
+                       :changes changes
+                       :session-id session-id
+                       :profile-id profile-id}]
+
+    (mtx/run! metrics {:id :update-file-changes :inc (count changes)})
+    (update-file* cfg update-args)
+
+    (with-meta {:file-id id
+                :shape (:shape shape-request)
+                :revn (inc (:revn file))
+                :vern (:vern file)}
+      {::audit/replace-props
+       {:id         (:id file)
+        :name       (:name file)
+        :features   (:features file)
+        :project-id (:project-id file)
+        :team-id    (:team-id file)}})))
+
+(sv/defmethod ::update-file-shape
+  {::climit/id [[:update-file/by-profile ::rpc/profile-id]
+                [:update-file/global]]
+
+   ::webhooks/event? true
+   ::webhooks/batch-timeout (ct/duration "2m")
+   ::webhooks/batch-key (webhooks/key-fn ::rpc/profile-id :id)
+
+   ::sm/params schema:update-file-shape
+   ::sm/result schema:update-file-shape-result
+   ::doc/module :files
+   ::doc/added "2.15.4"
+   ::db/transaction true}
+  [{:keys [::mtx/metrics ::db/conn] :as cfg}
+   {:keys [::rpc/profile-id id session-id] :as params}]
+
+  (files/check-edition-permissions! conn profile-id id)
+  (db/xact-lock! conn id)
+
+  (let [file          (get-file cfg id)
+        team          (teams/get-team conn
+                                      :profile-id profile-id
+                                      :team-id (:team-id file))
+        features      (-> (cfeat/get-team-enabled-features cf/flags team)
+                          (cfeat/check-client-features! (:features params))
+                          (cfeat/check-file-features! (:features file)))
+        shape-request (headless/update-shape-request (blob/decode (:data file)) params)
+        changes       (:changes shape-request)
+        session-id    (or session-id (uuid/next))
+        cfg           (assoc cfg ::timestamp (ct/now))
+        update-args   {:id id
+                       :revn (:revn file)
+                       :vern (:vern file)
+                       :file file
+                       :team team
+                       :features (set/difference features cfeat/frontend-only-features)
+                       :changes changes
+                       :session-id session-id
+                       :profile-id profile-id}]
+
+    (when (seq changes)
+      (mtx/run! metrics {:id :update-file-changes :inc (count changes)})
+      (update-file* cfg update-args))
+
+    (with-meta {:file-id id
+                :shape (:shape shape-request)
+                :revn (cond-> (:revn file) (seq changes) inc)
+                :vern (:vern file)}
+      {::audit/replace-props
+       {:id         (:id file)
+        :name       (:name file)
+        :features   (:features file)
+        :project-id (:project-id file)
+        :team-id    (:team-id file)}})))
+
+(sv/defmethod ::delete-file-shape
+  {::climit/id [[:update-file/by-profile ::rpc/profile-id]
+                [:update-file/global]]
+
+   ::webhooks/event? true
+   ::webhooks/batch-timeout (ct/duration "2m")
+   ::webhooks/batch-key (webhooks/key-fn ::rpc/profile-id :id)
+
+   ::sm/params schema:delete-file-shape
+   ::sm/result schema:delete-file-shape-result
+   ::doc/module :files
+   ::doc/added "2.15.4"
+   ::db/transaction true}
+  [{:keys [::mtx/metrics ::db/conn] :as cfg}
+   {:keys [::rpc/profile-id id session-id] :as params}]
+
+  (files/check-edition-permissions! conn profile-id id)
+  (db/xact-lock! conn id)
+
+  (let [file          (get-file cfg id)
+        team          (teams/get-team conn
+                                      :profile-id profile-id
+                                      :team-id (:team-id file))
+        features      (-> (cfeat/get-team-enabled-features cf/flags team)
+                          (cfeat/check-client-features! (:features params))
+                          (cfeat/check-file-features! (:features file)))
+        shape-request (headless/delete-shape-request (blob/decode (:data file)) params)
         changes       (:changes shape-request)
         session-id    (or session-id (uuid/next))
         cfg           (assoc cfg ::timestamp (ct/now))

@@ -301,6 +301,8 @@ they already exist in MCP, CLI, or both.
 | `shape.create_frame` | file | MCP plugin task, backend `create-file-shape` RPC | `backend-command`, fallback `plugin-live` |
 | `shape.create_rect` | file | MCP plugin task, backend `create-file-shape` RPC | `backend-command`, fallback `plugin-live` |
 | `shape.create_text` | file | MCP plugin task, backend `create-file-shape` RPC | `backend-command`, fallback `plugin-live` |
+| `shape.update` | file | MCP plugin task, backend `update-file-shape` RPC | `backend-command`, fallback `plugin-live` |
+| `shape.delete` | file | MCP plugin task, backend `delete-file-shape` RPC | `backend-command`, fallback `plugin-live` |
 | `export.page` | file | MCP plugin task, CLI exporter dry-run | `exporter`, fallback `plugin-live` |
 | `render.preview` | file | MCP plugin task | `exporter`, fallback `plugin-live` |
 
@@ -448,8 +450,9 @@ explicit page. It validates the target page and parent frame, creates canonical
 Penpot shape data through `app.common.types.shape/setup-shape`, and persists the
 result through the normal `update-file` pipeline with a single `:add-obj`
 change. The first slice deliberately excludes image upload, arbitrary layout,
-shape updates, and deletes; those remain plugin-live until dedicated backend
-coverage exists.
+shape updates, and deletes. P7.7 adds simple backend/common update/delete
+coverage; image upload and arbitrary layout remain plugin-live until dedicated
+backend coverage exists.
 
 P7.3 is complete when:
 
@@ -568,3 +571,34 @@ P7.6 is complete when:
   targets and still preserve plugin-live behavior for bound workspace calls.
 - CLI can create frame, rectangle, and text shapes through backend-command.
 - MCP tests cover backend request mapping and incomplete backend targets.
+
+## P7.7 Backend/Common Shape Update/Delete Slice
+
+P7.7 adds backend/common support for revising or removing simple generated
+shapes without a live workspace tab:
+
+- `app.common.files.headless/update-shape-request`
+- `app.common.files.headless/delete-shape-request`
+- backend RPC `update-file-shape`
+- backend RPC `delete-file-shape`
+
+`update-file-shape` supports `frame`, `rect`, and `text` targets. It accepts a
+file id, a shape id, an optional page id, and simple patch fields for `name`,
+`x`, `y`, `width`, `height`, `fill`, `stroke`, `borderRadius`, `content`, and
+`fontSize`. The common helper resolves a missing page id by scanning the file's
+page order, rejects unsupported/root shapes, recalculates `selrect` and
+`points` for geometry patches, and persists through the normal `:mod-obj`
+change path. Text `content`, `fontSize`, and `fill` updates rewrite the text
+content tree while preserving existing text when only style fields are passed.
+
+`delete-file-shape` resolves the same target shape and persists a standard
+`:del-obj` change, allowing the existing file-change processor to remove the
+shape from its parent children list.
+
+P7.7 is complete when:
+
+- Common tests cover geometry/style updates, text updates, and delete changes.
+- Backend tests cover persisted rectangle updates, text updates, and deletion
+  through RPC.
+- MCP and `penpot-cli` entry adapters remain plugin-live for update/delete until
+  the next adapter wiring slice.

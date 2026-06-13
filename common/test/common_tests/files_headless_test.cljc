@@ -130,6 +130,127 @@
     (t/is (= [{:fill-color "#112233" :fill-opacity 1}]
              (get-in shape [:content :children 0 :children 0 :fills])))))
 
+(t/deftest update-shape-request-updates-geometry-and-style
+  (let [file-id  (uuid/next)
+        page-id  (uuid/next)
+        frame-id (uuid/next)
+        rect-id  (uuid/next)
+        data     (ctf/make-file-data file-id page-id)
+        frame    (headless/create-shape-request data {:page-id page-id
+                                                      :shape-id frame-id
+                                                      :type :frame
+                                                      :x 0
+                                                      :y 0
+                                                      :width 320
+                                                      :height 640})
+        data     (cpc/process-changes data (:changes frame))
+        rect     (headless/create-shape-request data {:page-id page-id
+                                                     :shape-id rect-id
+                                                     :parent-id frame-id
+                                                     :type :rect
+                                                     :x 24
+                                                     :y 32
+                                                     :width 120
+                                                     :height 40})
+        data     (cpc/process-changes data (:changes rect))
+        update   (headless/update-shape-request data {:shape-id rect-id
+                                                      :name "  Primary CTA  "
+                                                      :x 40
+                                                      :y 56
+                                                      :width 160
+                                                      :height 48
+                                                      :fill {:color "#abcdef"
+                                                             :opacity 0.8}
+                                                      :stroke {:color "#111111"
+                                                               :opacity 0.4
+                                                               :width 2
+                                                               :style :dashed
+                                                               :alignment :inner}
+                                                      :border-radius 12})
+        data'    (cpc/process-changes data (:changes update))
+        shape    (get-in data' [:pages-index page-id :objects rect-id])]
+    (t/is (= {:id rect-id
+              :name "Primary CTA"
+              :type :rect
+              :page-id page-id
+              :parent-id frame-id
+              :frame-id frame-id
+              :x 40
+              :y 56
+              :width 160
+              :height 48}
+             (:shape update)))
+    (t/is (= 40 (:x (:selrect shape))))
+    (t/is (= 56 (:y (:selrect shape))))
+    (t/is (= 160 (:width (:selrect shape))))
+    (t/is (= 48 (:height (:selrect shape))))
+    (t/is (= [{:fill-color "#abcdef" :fill-opacity 0.8}] (:fills shape)))
+    (t/is (= [{:stroke-color "#111111"
+               :stroke-opacity 0.4
+               :stroke-width 2
+               :stroke-style :dashed
+               :stroke-alignment :inner}]
+             (:strokes shape)))
+    (t/is (= 12 (:r1 shape) (:r2 shape) (:r3 shape) (:r4 shape)))))
+
+(t/deftest update-shape-request-updates-text-content
+  (let [file-id (uuid/next)
+        page-id (uuid/next)
+        text-id (uuid/next)
+        data    (ctf/make-file-data file-id page-id)
+        text    (headless/create-shape-request data {:page-id page-id
+                                                     :shape-id text-id
+                                                     :type :text
+                                                     :x 10
+                                                     :y 20
+                                                     :width 200
+                                                     :height 32
+                                                     :content "Hello CLI"
+                                                     :font-size 24
+                                                     :fill {:color "#112233"}})
+        data    (cpc/process-changes data (:changes text))
+        update  (headless/update-shape-request data {:page-id page-id
+                                                     :shape-id text-id
+                                                     :content "  Updated CLI  "
+                                                     :font-size 30
+                                                     :fill {:color "#445566"}})
+        data'   (cpc/process-changes data (:changes update))
+        shape   (get-in data' [:pages-index page-id :objects text-id])]
+    (t/is (= text-id (get-in update [:shape :id])))
+    (t/is (= "Updated CLI" (cttx/content->text (:content shape))))
+    (t/is (= "30" (get-in shape [:content :children 0 :children 0 :font-size])))
+    (t/is (= [{:fill-color "#445566" :fill-opacity 1}]
+             (get-in shape [:content :children 0 :children 0 :fills])))))
+
+(t/deftest delete-shape-request-removes-shape-from-parent
+  (let [file-id  (uuid/next)
+        page-id  (uuid/next)
+        frame-id (uuid/next)
+        rect-id  (uuid/next)
+        data     (ctf/make-file-data file-id page-id)
+        frame    (headless/create-shape-request data {:page-id page-id
+                                                      :shape-id frame-id
+                                                      :type :frame
+                                                      :x 0
+                                                      :y 0
+                                                      :width 320
+                                                      :height 640})
+        data     (cpc/process-changes data (:changes frame))
+        rect     (headless/create-shape-request data {:page-id page-id
+                                                     :shape-id rect-id
+                                                     :parent-id frame-id
+                                                     :type :rect
+                                                     :x 24
+                                                     :y 32
+                                                     :width 120
+                                                     :height 40})
+        data     (cpc/process-changes data (:changes rect))
+        delete   (headless/delete-shape-request data {:shape-id rect-id})
+        data'    (cpc/process-changes data (:changes delete))]
+    (t/is (= rect-id (get-in delete [:shape :id])))
+    (t/is (nil? (get-in data' [:pages-index page-id :objects rect-id])))
+    (t/is (= [] (get-in data' [:pages-index page-id :objects frame-id :shapes])))))
+
 (t/deftest create-shape-request-rejects-missing-parent
   (let [file-id (uuid/next)
         page-id (uuid/next)

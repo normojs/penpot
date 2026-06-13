@@ -139,7 +139,84 @@
         (t/is (= text-id (get-in out [:result :shape :id])))
         (t/is (= 3 (get-in out [:result :revn])))))
 
-    (t/testing "created shapes are persisted"
+    (t/testing "update a rectangle through the headless backend command"
+      (let [out {::th/type :update-file-shape
+                 ::rpc/profile-id (:id profile)
+                 :id (:id file)
+                 :page-id page-id
+                 :shape-id rect-id
+                 :name "  Primary CTA  "
+                 :x 48
+                 :y 64
+                 :width 140
+                 :height 56
+                 :fill {:color "#ff00aa"
+                        :opacity 0.5}
+                 :stroke {:color "#111111"
+                          :opacity 0.4
+                          :width 2
+                          :style :dashed
+                          :alignment :inner}
+                 :border-radius 12
+                 :features cfeat/supported-features}
+            out (th/command! out)]
+        (t/is (nil? (:error out)))
+        (t/is (= {:id rect-id
+                  :name "Primary CTA"
+                  :type :rect
+                  :page-id page-id
+                  :parent-id frame-id
+                  :frame-id frame-id
+                  :x 48
+                  :y 64
+                  :width 140
+                  :height 56}
+                 (get-in out [:result :shape])))
+        (t/is (= 4 (get-in out [:result :revn])))))
+
+    (t/testing "updated rectangle is persisted"
+      (let [out {::th/type :get-file
+                 ::rpc/profile-id (:id profile)
+                 :id (:id file)
+                 :features cfeat/supported-features}
+            out (th/command! out)
+            data (:data (:result out))
+            rect (get-in data [:pages-index page-id :objects rect-id])]
+        (t/is (nil? (:error out)))
+        (t/is (= "Primary CTA" (:name rect)))
+        (t/is (= 48 (:x rect) (:x (:selrect rect))))
+        (t/is (= 64 (:y rect) (:y (:selrect rect))))
+        (t/is (= 140 (:width rect) (:width (:selrect rect))))
+        (t/is (= 56 (:height rect) (:height (:selrect rect))))
+        (t/is (= [{:fill-color "#ff00aa" :fill-opacity 0.5}] (:fills rect)))
+        (t/is (= 12 (:r1 rect) (:r2 rect) (:r3 rect) (:r4 rect)))))
+
+    (t/testing "update a text layer through the headless backend command"
+      (let [out {::th/type :update-file-shape
+                 ::rpc/profile-id (:id profile)
+                 :id (:id file)
+                 :shape-id text-id
+                 :content "Updated backend"
+                 :font-size 18
+                 :fill {:color "#112233"}
+                 :features cfeat/supported-features}
+            out (th/command! out)]
+        (t/is (nil? (:error out)))
+        (t/is (= text-id (get-in out [:result :shape :id])))
+        (t/is (= 5 (get-in out [:result :revn])))))
+
+    (t/testing "delete a rectangle through the headless backend command"
+      (let [out {::th/type :delete-file-shape
+                 ::rpc/profile-id (:id profile)
+                 :id (:id file)
+                 :shape-id rect-id
+                 :features cfeat/supported-features}
+            out (th/command! out)]
+        (t/is (nil? (:error out)))
+        (t/is (= rect-id (get-in out [:result :shape :id])))
+        (t/is (= 6 (get-in out [:result :revn])))))
+
+    (t/testing "updated and deleted shapes are persisted"
       (let [out {::th/type :get-file
                  ::rpc/profile-id (:id profile)
                  :id (:id file)
@@ -151,6 +228,9 @@
             text (get objects text-id)]
         (t/is (nil? (:error out)))
         (t/is (= [frame-id] (get-in objects [uuid/zero :shapes])))
-        (t/is (= [rect-id text-id] (get-in objects [frame-id :shapes])))
-        (t/is (= [{:fill-color "#00ff00" :fill-opacity 0.75}] (:fills rect)))
-        (t/is (= "Hello backend" (cttx/content->text (:content text))))))))
+        (t/is (= [text-id] (get-in objects [frame-id :shapes])))
+        (t/is (nil? rect))
+        (t/is (= "Updated backend" (cttx/content->text (:content text))))
+        (t/is (= "18" (get-in text [:content :children 0 :children 0 :font-size])))
+        (t/is (= [{:fill-color "#112233" :fill-opacity 1}]
+                 (get-in text [:content :children 0 :children 0 :fills])))))))
