@@ -53,6 +53,9 @@ test("PageListTool uses backend RPC when fileId is provided", async () => {
     ]);
     assert.equal(body.status, "ok");
     assert.equal(body.data.adapter, "backend-command");
+    assert.equal(body.data.adapterSelection.selected, "backend-command");
+    assert.equal(body.data.adapterSelection.requested, "auto");
+    assert.equal(body.data.adapterSelection.fallbacks[0].kind, "plugin-live");
     assert.deepEqual(body.data.pages, [{ id: "00000000-0000-0000-0000-000000000002", name: "Page 1" }]);
 });
 
@@ -92,11 +95,37 @@ test("PageCreateTool uses backend RPC when fileId is provided", async () => {
     ]);
     assert.equal(body.status, "ok");
     assert.equal(body.data.adapter, "backend-command");
+    assert.equal(body.data.adapterSelection.selected, "backend-command");
+    assert.equal(body.data.adapterSelection.requested, "auto");
     assert.deepEqual(body.data.page, { id: "00000000-0000-0000-0000-000000000003", name: "Flow" });
     assert.equal(
         body.warnings[0],
         "makeCurrent requires a live bound workspace; backend-command created the page without switching UI state."
     );
+});
+
+test("PageListTool returns adapter selection error for unsupported explicit adapter", async () => {
+    const calls: RpcCall[] = [];
+    const tool = new PageListTool(
+        mcpServerWithRpc({
+            get: async (methodName: string, params: Record<string, unknown>, userToken: string) => {
+                calls.push({ methodName, params, userToken });
+                return { pages: [] };
+            },
+        })
+    );
+
+    const response = await tool.execute({
+        fileId: "00000000-0000-0000-0000-000000000001",
+        adapter: "exporter",
+    });
+    const body = parseJsonResponse(response);
+
+    assert.deepEqual(calls, []);
+    assert.equal(body.status, "error");
+    assert.equal(body.error.code, "adapter_not_supported");
+    assert.equal(body.error.data.adapterSelection.requested, "exporter");
+    assert.equal(body.error.data.adapterSelection.selected, null);
 });
 
 test("PageListTool without fileId still requires a live bound file context", async () => {

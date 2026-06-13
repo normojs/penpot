@@ -1,7 +1,7 @@
 # Headless Command Runtime
 
-Status: P7.4 exporter-backed dry-run plan metadata implemented for CLI
-`export.page`.
+Status: P7.5 shared adapter selection helper implemented for CLI page/export
+commands and MCP page tools.
 
 This document defines the transport-neutral command runtime that will let MCP
 tools and `penpot-cli` share command names, schemas, adapter selection, and
@@ -29,24 +29,20 @@ structured results without making either entry point own the implementation.
 
 The runtime should live outside both MCP server internals and `penpot-cli`.
 
-Planned package:
+Package:
 
 ```text
 command-runtime/
   package.json             # package name: @penpot/command-runtime
-  src/
-    CommandDescriptor.ts
-    CommandRuntime.ts
-    CommandResult.ts
-    AdapterRegistry.ts
-    commands/
+  index.js                 # first shared adapter-selection helper
+  index.d.ts               # shared adapter-selection types
 ```
 
 Workspace wiring:
 
-- Add `./command-runtime` to the root `pnpm-workspace.yaml`.
-- Add `../command-runtime` to `mcp/pnpm-workspace.yaml` so the MCP server can
-  consume the same package during this fork's development.
+- `./command-runtime` is included in the root `pnpm-workspace.yaml`.
+- `../command-runtime` is included in `mcp/pnpm-workspace.yaml` so the MCP
+  server can consume the same package during this fork's development.
 - Keep `penpot-cli` depending on `@penpot/command-runtime`, not on
   `mcp/packages/server`.
 - Keep backend/common implementation in Clojure and expose it through backend
@@ -247,6 +243,32 @@ Adapter selection is deterministic:
    live workspace availability.
 6. Sort candidates by priority and execute the first available adapter.
 7. Include the chosen adapter and relevant diagnostics in the response.
+
+The P7.5 selection object is:
+
+```ts
+interface CommandAdapterSelection {
+  command: string;
+  requested: CommandAdapterKind | "auto";
+  selected: CommandAdapterKind | null;
+  status: "selected" | "unsupported" | "unavailable";
+  candidates: Array<{
+    kind: CommandAdapterKind;
+    available: boolean;
+    priority: number;
+    reason: string | null;
+  }>;
+  fallbacks: Array<{
+    kind: CommandAdapterKind;
+    available: boolean;
+    reason: string | null;
+  }>;
+}
+```
+
+Entry adapters keep the legacy `adapter` field for compatibility and add
+`adapterSelection` for scripts and MCP clients that need requested/selected
+adapter and fallback details.
 
 Initial priority guidance:
 
@@ -489,3 +511,29 @@ P7.4 is complete when:
 - CLI requires explicit file, page, and object ids for exporter planning.
 - Docs describe exporter resource metadata separately from plugin-live base64
   output.
+
+## P7.5 Shared Adapter Selection Slice
+
+P7.5 adds the first concrete `@penpot/command-runtime` package. The initial
+package is deliberately small: it exports `selectCommandAdapter` plus shared
+adapter-selection types. It does not yet own full command descriptors,
+request/result envelopes, or execution dispatch.
+
+Implemented entry adapters:
+
+- `penpot-cli page list/create` select `backend-command` and report
+  `plugin-live` as an unavailable CLI fallback.
+- `penpot-cli export page --dry-run` selects `exporter` and reports
+  `plugin-live` as an unavailable CLI fallback.
+- MCP `page.list` and `page.create` select `backend-command` when `fileId` is
+  supplied and `plugin-live` when callers rely on the bound workspace context.
+- MCP page tools accept optional `adapter` requests and return
+  `adapter_not_supported` or `adapter_not_available` before execution when the
+  request cannot be satisfied.
+
+P7.5 is complete when:
+
+- Both root and MCP pnpm workspaces can resolve `@penpot/command-runtime`.
+- CLI page/export JSON output includes `adapterSelection`.
+- MCP page tool responses include `adapterSelection`.
+- MCP tests cover backend-command selection and unsupported explicit adapters.

@@ -5,6 +5,8 @@ import { constants } from "node:fs";
 import { access, readdir, stat } from "node:fs/promises";
 import { delimiter, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
+import { selectCommandAdapter } from "@penpot/command-runtime";
+import type { CommandAdapterSelection, RequestedCommandAdapter } from "@penpot/command-runtime";
 
 const VERSION = "0.1.0";
 const DEFAULT_PUBLIC_URI = "http://localhost:3449";
@@ -22,9 +24,9 @@ Usage:
   penpot-cli file list --project-id <id> [--format text|json]
   penpot-cli file create --project-id <id> [--name <name>] [--format text|json]
   penpot-cli file open <file-id> [--team-id <id>] [--page-id <id>] [--format text|json]
-  penpot-cli page list --file <file-id> [--format text|json]
-  penpot-cli page create --file <file-id> [--name <name>] [--format text|json]
-  penpot-cli export page --file <file-id> --page <page-id> --object <object-id> [--dry-run] [--format text|json]`;
+  penpot-cli page list --file <file-id> [--adapter auto|backend-command] [--format text|json]
+  penpot-cli page create --file <file-id> [--name <name>] [--adapter auto|backend-command] [--format text|json]
+  penpot-cli export page --file <file-id> --page <page-id> --object <object-id> [--adapter auto|exporter] [--dry-run] [--format text|json]`;
 
 const MCP_HELP_TEXT = `penpot-cli mcp
 
@@ -67,8 +69,8 @@ Environment:
 const PAGE_HELP_TEXT = `penpot-cli page
 
 Usage:
-  penpot-cli page list --file <file-id> [--backend-uri <uri>] [--token <token>] [--format text|json]
-  penpot-cli page create --file <file-id> [--name <name>] [--page-id <id>] [--backend-uri <uri>] [--token <token>] [--format text|json]
+  penpot-cli page list --file <file-id> [--adapter auto|backend-command] [--backend-uri <uri>] [--token <token>] [--format text|json]
+  penpot-cli page create --file <file-id> [--name <name>] [--page-id <id>] [--adapter auto|backend-command] [--backend-uri <uri>] [--token <token>] [--format text|json]
 
 Environment:
   PENPOT_BACKEND_URI       Backend RPC base URI, default http://localhost:6060
@@ -80,7 +82,7 @@ Environment:
 const EXPORT_HELP_TEXT = `penpot-cli export
 
 Usage:
-  penpot-cli export page --file <file-id> --page <page-id> --object <object-id> [--export-format png|jpeg|svg|pdf] [--scale <n>] [--output <path>] [--exporter-uri <uri>] [--dry-run] [--format text|json]
+  penpot-cli export page --file <file-id> --page <page-id> --object <object-id> [--export-format png|jpeg|svg|pdf] [--scale <n>] [--output <path>] [--exporter-uri <uri>] [--adapter auto|exporter] [--dry-run] [--format text|json]
 
 Current adapters:
   exporter   Phase 7 headless adapter plan backed by the Penpot exporter HTTP service.
@@ -135,7 +137,8 @@ interface RpcConfig {
 
 interface ExportPagePlan {
     command: string;
-    adapter: string;
+    adapter: string | null;
+    adapterSelection: CommandAdapterSelection;
     fileId: string | null;
     pageId: string | null;
     objectId: string | null;
@@ -293,6 +296,56 @@ function getExporterUri(args: string[], env: NodeJS.ProcessEnv): string {
     return trimTrailingSlash(readOption(args, ["--exporter-uri"]) ?? env.PENPOT_EXPORTER_URI ?? DEFAULT_EXPORTER_URI);
 }
 
+function readRequestedAdapter(args: string[]): RequestedCommandAdapter | string {
+    const adapter = readOption(args, ["--adapter"]);
+    switch (adapter) {
+        case undefined:
+            return "auto";
+        case "auto":
+        case "backend-rpc":
+        case "backend-command":
+        case "plugin-live":
+        case "exporter":
+        case "browser-url":
+        case "local-fs":
+            return adapter;
+        default:
+            return adapter;
+    }
+}
+
+function selectCliBackendCommandAdapter(command: string, args: string[]): CommandAdapterSelection {
+    return selectCommandAdapter({
+        command,
+        requestedAdapter: readRequestedAdapter(args),
+        candidates: [
+            { kind: "backend-command", available: true, priority: 10 },
+            {
+                kind: "plugin-live",
+                available: false,
+                priority: 50,
+                reason: "CLI commands do not execute live workspace plugin tasks.",
+            },
+        ],
+    });
+}
+
+function selectCliExporterAdapter(args: string[]): CommandAdapterSelection {
+    return selectCommandAdapter({
+        command: "export.page",
+        requestedAdapter: readRequestedAdapter(args),
+        candidates: [
+            { kind: "exporter", available: true, priority: 20 },
+            {
+                kind: "plugin-live",
+                available: false,
+                priority: 50,
+                reason: "CLI export planning requires explicit file/page/object ids and does not use live selection.",
+            },
+        ],
+    });
+}
+
 function createWorkspaceUrl(args: string[], env: NodeJS.ProcessEnv, fileId: string): string {
     const publicUri = trimTrailingSlash(
         readOption(args, ["--public-uri"]) ?? env.PENPOT_PUBLIC_URI ?? env.PENPOT_MCP_PUBLIC_URI ?? DEFAULT_PUBLIC_URI
@@ -353,6 +406,7 @@ function createExportPagePlan(args: string[], env: NodeJS.ProcessEnv): ExportPag
     const suffix = readOption(args, ["--suffix"]) ?? "";
     const skipChildren = hasFlag(args, "--skip-children");
     const exporterUri = getExporterUri(args, env);
+    const adapterSelection = selectCliExporterAdapter(args);
     const requires = [
         fileId ? null : "fileId",
         pageId ? null : "pageId",
@@ -362,7 +416,8 @@ function createExportPagePlan(args: string[], env: NodeJS.ProcessEnv): ExportPag
 
     return {
         command: "export.page",
-        adapter: readOption(args, ["--adapter"]) ?? "exporter",
+        adapter: adapterSelection.selected,
+        adapterSelection,
         fileId,
         pageId,
         objectId,
@@ -486,6 +541,25 @@ function writeError(
     for (const action of actions) {
         writeLine(io.stderr, `- ${action}`);
     }
+}
+
+function adapterSelectionFailure(io: CliIO, format: Format, selection: CommandAdapterSelection): number {
+    const code = selection.status === "unsupported" ? "adapter_not_supported" : "adapter_not_available";
+    const requested = selection.requested === "auto" ? "auto" : `'${selection.requested}'`;
+    writeError(
+        io,
+        format,
+        code,
+        `No available adapter matched ${requested} for ${selection.command}.`,
+        [
+            "Use --adapter auto to let penpot-cli choose the first available adapter.",
+            "Inspect adapterSelection in JSON output for available candidates and fallback reasons.",
+        ],
+        {
+            adapterSelection: selection,
+        }
+    );
+    return 2;
 }
 
 function writeOk(io: CliIO, format: Format, data: unknown, textWriter: () => void): void {
@@ -667,7 +741,9 @@ function writePageCreatedText(io: CliIO, fileId: string, page: unknown): void {
 function writeExportPlanText(io: CliIO, plan: ExportPagePlan): void {
     writeLine(io.stdout, "Export page plan");
     writeLine(io.stdout, `command: ${plan.command}`);
-    writeLine(io.stdout, `adapter: ${plan.adapter}`);
+    writeLine(io.stdout, `adapter: ${plan.adapter ?? "<none>"}`);
+    writeLine(io.stdout, `requestedAdapter: ${plan.adapterSelection.requested}`);
+    writeLine(io.stdout, `adapterSelection: ${plan.adapterSelection.status}`);
     writeLine(io.stdout, `status: ${plan.status}`);
     writeLine(io.stdout, `exporter: ${plan.exporter.method} ${plan.exporter.endpoint}`);
     writeLine(io.stdout, `fileId: ${plan.fileId ?? "<missing>"}`);
@@ -684,6 +760,13 @@ function writeExportPlanText(io: CliIO, plan: ExportPagePlan): void {
         writeLine(io.stdout, "requires:");
         for (const requirement of plan.requires) {
             writeLine(io.stdout, `  ${requirement}`);
+        }
+    }
+    if (plan.adapterSelection.fallbacks.length > 0) {
+        writeLine(io.stdout, "adapterFallbacks:");
+        for (const fallback of plan.adapterSelection.fallbacks) {
+            const reason = fallback.reason ? ` (${fallback.reason})` : "";
+            writeLine(io.stdout, `  ${fallback.kind}: ${fallback.available ? "available" : "unavailable"}${reason}`);
         }
     }
     writeLine(io.stdout, "nextActions:");
@@ -1142,6 +1225,11 @@ async function handlePageList(args: string[], io: CliIO, env: NodeJS.ProcessEnv)
         return 2;
     }
 
+    const adapterSelection = selectCliBackendCommandAdapter("page.list", args);
+    if (adapterSelection.status !== "selected" || adapterSelection.selected !== "backend-command") {
+        return adapterSelectionFailure(io, format, adapterSelection);
+    }
+
     const rpc = getRpcConfig(args, env);
     if (!rpc.token) {
         return rpcAuthenticationRequired(io, format);
@@ -1156,7 +1244,12 @@ async function handlePageList(args: string[], io: CliIO, env: NodeJS.ProcessEnv)
             rpc.token
         );
         const pages = Array.isArray(result.pages) ? result.pages : [];
-        writeOk(io, format, { fileId, pages, adapter: "backend-command" }, () => writePagesText(io, fileId, pages));
+        writeOk(
+            io,
+            format,
+            { fileId, pages, adapter: adapterSelection.selected, adapterSelection },
+            () => writePagesText(io, fileId, pages)
+        );
         return 0;
     } catch (cause) {
         return rpcErrorResponse(io, format, "get-file-pages", rpc.backendUri, cause);
@@ -1175,6 +1268,11 @@ async function handlePageCreate(args: string[], io: CliIO, env: NodeJS.ProcessEn
             "Use penpot-cli file list first, then pass --file <file-id>.",
         ]);
         return 2;
+    }
+
+    const adapterSelection = selectCliBackendCommandAdapter("page.create", args);
+    if (adapterSelection.status !== "selected" || adapterSelection.selected !== "backend-command") {
+        return adapterSelectionFailure(io, format, adapterSelection);
     }
 
     const rpc = getRpcConfig(args, env);
@@ -1205,7 +1303,8 @@ async function handlePageCreate(args: string[], io: CliIO, env: NodeJS.ProcessEn
                 page: result.page,
                 revn: result.revn,
                 vern: result.vern,
-                adapter: "backend-command",
+                adapter: adapterSelection.selected,
+                adapterSelection,
             },
             () => writePageCreatedText(io, fileId, result.page)
         );
@@ -1264,11 +1363,8 @@ function handleExportPage(args: string[], io: CliIO, env: NodeJS.ProcessEnv): nu
         return 2;
     }
 
-    if (plan.adapter !== "exporter") {
-        writeError(io, format, "export_adapter_not_supported", `Unsupported export adapter: ${plan.adapter}.`, [
-            "Use the default exporter adapter for headless export planning.",
-        ]);
-        return 2;
+    if (plan.adapterSelection.status !== "selected" || plan.adapterSelection.selected !== "exporter") {
+        return adapterSelectionFailure(io, format, plan.adapterSelection);
     }
 
     const validFormats = new Set(["png", "jpeg", "svg", "pdf"]);

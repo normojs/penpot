@@ -24,7 +24,13 @@ importers:
         specifier: ^1.15.13
         version: 1.15.13
 
+  command-runtime: {}
+
   penpot-cli:
+    dependencies:
+      '@penpot/command-runtime':
+        specifier: workspace:*
+        version: link:../command-runtime
     devDependencies:
       '@types/node':
         specifier: ^25.6.2

@@ -1,6 +1,7 @@
 linkWorkspacePackages: true
 
 packages:
+    - "../command-runtime"
     - "./packages/common"
     - "./packages/server"
     - "./packages/plugin"

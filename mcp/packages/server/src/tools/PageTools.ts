@@ -6,15 +6,59 @@ import { ToolNames } from "../ToolNames.js";
 import { requireBoundFileContext } from "./FileContextGuard.js";
 import { PenpotRpcTool } from "./PenpotRpcTool.js";
 import type { PageTaskParams } from "@penpot/mcp-common";
+import { selectCommandAdapter } from "@penpot/command-runtime";
+import type { CommandAdapterSelection } from "@penpot/command-runtime";
 
 type PenpotRecord = Record<string, unknown>;
+type PageAdapterArgs = { fileId?: string; adapter?: string };
 
 abstract class PageTool<TArgs extends object> extends PenpotRpcTool<TArgs> {
     protected constructor(mcpServer: PenpotMcpServer, inputSchema: z.ZodRawShape) {
         super(mcpServer, inputSchema);
     }
 
-    protected async executePageTask(params: PageTaskParams): Promise<ToolResponse> {
+    protected selectPageAdapter(command: string, args: PageAdapterArgs): CommandAdapterSelection {
+        const hasFileId = Boolean(args.fileId);
+        return selectCommandAdapter({
+            command,
+            requestedAdapter: args.adapter ?? "auto",
+            candidates: [
+                {
+                    kind: "backend-command",
+                    available: hasFileId,
+                    priority: 10,
+                    reason: hasFileId ? null : "backend-command requires an explicit fileId.",
+                },
+                {
+                    kind: "plugin-live",
+                    available: !hasFileId,
+                    priority: 50,
+                    reason: hasFileId
+                        ? "plugin-live uses the bound workspace context; omit fileId to request it."
+                        : null,
+                },
+            ],
+        });
+    }
+
+    protected adapterSelectionFailure(selection: CommandAdapterSelection): ToolResponse {
+        return this.error(
+            selection.status === "unsupported" ? "adapter_not_supported" : "adapter_not_available",
+            `No available adapter matched '${selection.requested}' for ${selection.command}.`,
+            [
+                "Use adapter: 'auto' to let MCP choose the first available adapter.",
+                "Inspect adapterSelection for available candidates and fallback reasons.",
+            ],
+            {
+                adapterSelection: selection,
+            }
+        );
+    }
+
+    protected async executePageTask(
+        params: PageTaskParams,
+        adapterSelection: CommandAdapterSelection
+    ): Promise<ToolResponse> {
         const contextError = requireBoundFileContext(
             this.mcpServer,
             this.getSessionContext()?.userToken,
@@ -27,12 +71,16 @@ abstract class PageTool<TArgs extends object> extends PenpotRpcTool<TArgs> {
         const task = new PagePluginTask(params);
         const result = await this.mcpServer.pluginBridge.executePluginTask(task);
         return this.ok({
-            adapter: "plugin-live",
             ...result.data,
+            adapter: adapterSelection.selected,
+            adapterSelection,
         });
     }
 
-    protected async executeBackendPageList(fileId: string): Promise<ToolResponse> {
+    protected async executeBackendPageList(
+        fileId: string,
+        adapterSelection: CommandAdapterSelection
+    ): Promise<ToolResponse> {
         const userToken = this.getUserToken();
         if (!userToken) {
             return this.authenticationRequired();
@@ -41,7 +89,8 @@ abstract class PageTool<TArgs extends object> extends PenpotRpcTool<TArgs> {
         try {
             const result = await this.rpcGet<PenpotRecord>("get-file-pages", { id: fileId }, userToken);
             return this.ok({
-                adapter: "backend-command",
+                adapter: adapterSelection.selected,
+                adapterSelection,
                 fileId,
                 pages: result.pages ?? [],
             });
@@ -50,7 +99,10 @@ abstract class PageTool<TArgs extends object> extends PenpotRpcTool<TArgs> {
         }
     }
 
-    protected async executeBackendPageCreate(args: PageCreateArgs): Promise<ToolResponse> {
+    protected async executeBackendPageCreate(
+        args: PageCreateArgs,
+        adapterSelection: CommandAdapterSelection
+    ): Promise<ToolResponse> {
         const userToken = this.getUserToken();
         if (!userToken) {
             return this.authenticationRequired();
@@ -68,7 +120,8 @@ abstract class PageTool<TArgs extends object> extends PenpotRpcTool<TArgs> {
             );
             return this.ok(
                 {
-                    adapter: "backend-command",
+                    adapter: adapterSelection.selected,
+                    adapterSelection,
                     fileId: args.fileId,
                     page: result.page,
                     revn: result.revn,
@@ -93,9 +146,12 @@ abstract class PageTool<TArgs extends object> extends PenpotRpcTool<TArgs> {
 export class PageListArgs {
     static schema = {
         fileId: z.string().uuid().optional().describe("Optional file id for backend-command headless page listing."),
+        adapter: z.string().optional().describe("Optional adapter request: auto, backend-command, or plugin-live."),
     };
 
     fileId?: string;
+
+    adapter?: string;
 }
 
 export class PageListTool extends PageTool<PageListArgs> {
@@ -112,11 +168,16 @@ export class PageListTool extends PageTool<PageListArgs> {
     }
 
     protected async executeCore(args: PageListArgs): Promise<ToolResponse> {
-        if (args.fileId) {
-            return this.executeBackendPageList(args.fileId);
+        const adapterSelection = this.selectPageAdapter(ToolNames.PAGE_LIST, args);
+        if (adapterSelection.status !== "selected") {
+            return this.adapterSelectionFailure(adapterSelection);
         }
 
-        return this.executePageTask({ action: "list" });
+        if (adapterSelection.selected === "backend-command" && args.fileId) {
+            return this.executeBackendPageList(args.fileId, adapterSelection);
+        }
+
+        return this.executePageTask({ action: "list" }, adapterSelection);
     }
 }
 
@@ -126,6 +187,7 @@ export class PageCreateArgs {
         pageId: z.string().uuid().optional().describe("Optional page id for backend-command page creation."),
         name: z.string().min(1).max(250).optional().describe("Optional page name."),
         makeCurrent: z.boolean().optional().describe("Whether to switch to the new page. Defaults to true."),
+        adapter: z.string().optional().describe("Optional adapter request: auto, backend-command, or plugin-live."),
     };
 
     fileId?: string;
@@ -135,6 +197,8 @@ export class PageCreateArgs {
     name?: string;
 
     makeCurrent?: boolean;
+
+    adapter?: string;
 }
 
 export class PageCreateTool extends PageTool<PageCreateArgs> {
@@ -151,15 +215,23 @@ export class PageCreateTool extends PageTool<PageCreateArgs> {
     }
 
     protected async executeCore(args: PageCreateArgs): Promise<ToolResponse> {
-        if (args.fileId) {
-            return this.executeBackendPageCreate(args);
+        const adapterSelection = this.selectPageAdapter(ToolNames.PAGE_CREATE, args);
+        if (adapterSelection.status !== "selected") {
+            return this.adapterSelectionFailure(adapterSelection);
         }
 
-        return this.executePageTask({
-            action: "create",
-            name: this.nonEmptyString(args.name),
-            makeCurrent: args.makeCurrent,
-        });
+        if (adapterSelection.selected === "backend-command" && args.fileId) {
+            return this.executeBackendPageCreate(args, adapterSelection);
+        }
+
+        return this.executePageTask(
+            {
+                action: "create",
+                name: this.nonEmptyString(args.name),
+                makeCurrent: args.makeCurrent,
+            },
+            adapterSelection
+        );
     }
 }
 
@@ -188,11 +260,19 @@ export class PageRenameTool extends PageTool<PageRenameArgs> {
     }
 
     protected async executeCore(args: PageRenameArgs): Promise<ToolResponse> {
-        return this.executePageTask({
-            action: "rename",
-            pageId: args.pageId,
-            name: args.name.trim(),
-        });
+        const adapterSelection = this.selectPageAdapter(ToolNames.PAGE_RENAME, {});
+        if (adapterSelection.status !== "selected") {
+            return this.adapterSelectionFailure(adapterSelection);
+        }
+
+        return this.executePageTask(
+            {
+                action: "rename",
+                pageId: args.pageId,
+                name: args.name.trim(),
+            },
+            adapterSelection
+        );
     }
 }
 
@@ -218,9 +298,17 @@ export class PageSetCurrentTool extends PageTool<PageSetCurrentArgs> {
     }
 
     protected async executeCore(args: PageSetCurrentArgs): Promise<ToolResponse> {
-        return this.executePageTask({
-            action: "setCurrent",
-            pageId: args.pageId,
-        });
+        const adapterSelection = this.selectPageAdapter(ToolNames.PAGE_SET_CURRENT, {});
+        if (adapterSelection.status !== "selected") {
+            return this.adapterSelectionFailure(adapterSelection);
+        }
+
+        return this.executePageTask(
+            {
+                action: "setCurrent",
+                pageId: args.pageId,
+            },
+            adapterSelection
+        );
     }
 }

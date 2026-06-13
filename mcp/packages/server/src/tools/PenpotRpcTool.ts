@@ -12,6 +12,8 @@ export const ToolErrorCodes = {
     OBJECT_NOT_FOUND_OR_FORBIDDEN: "object_not_found_or_forbidden",
     PERMISSION_DENIED: "permission_denied",
     PENPOT_RPC_ERROR: "penpot_rpc_error",
+    ADAPTER_NOT_AVAILABLE: "adapter_not_available",
+    ADAPTER_NOT_SUPPORTED: "adapter_not_supported",
 } as const;
 
 export abstract class PenpotRpcTool<TArgs extends object> extends Tool<TArgs> {

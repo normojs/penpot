@@ -452,6 +452,11 @@ P6.5 implementation note:
   missing runtime fields in `--dry-run` output. Actual CLI exporter execution
   waits for the Phase 7 shared command runtime, while live MCP users can still
   call `export.page` with a bound file context for base64 exports.
+- P7.5 adds the first shared `@penpot/command-runtime` adapter-selection helper
+  and wires it into `penpot-cli` page/export commands plus MCP page tools.
+  Responses keep the legacy `adapter` field and add `adapterSelection` with
+  requested, selected, candidate, and fallback details. Full command
+  descriptors and centralized execution dispatch remain future runtime work.
 
 P6.6 implementation note:
 
@@ -910,8 +915,9 @@ MCP tools and CLI commands become thin adapters over this runtime.
 
 P7.1 implementation note:
 
-- The runtime is designed as a transport-neutral package, planned as
-  `command-runtime/` with package name `@penpot/command-runtime`.
+- The runtime is designed as a transport-neutral package. The first shared
+  package now exists at `command-runtime/` with package name
+  `@penpot/command-runtime`.
 - MCP server and `penpot-cli` should depend on the runtime package instead of
   importing each other's internals.
 - Backend/common remain Clojure-owned for persisted file data validation and
@@ -934,9 +940,9 @@ P7.2 implementation note:
 - `penpot-cli page list/create --file <file-id>` exposes the same headless page
   operations to scripts and reports `adapter: "backend-command"` in JSON
   output.
-- This is a transitional adapter slice. The future `command-runtime/` package
-  should still centralize descriptors, request envelopes, and adapter selection
-  instead of leaving this mapping duplicated in MCP and CLI entry adapters.
+- This is a transitional adapter slice. `command-runtime/` now centralizes the
+  first adapter-selection helper, while descriptors, request envelopes, and
+  execution dispatch still need to move out of MCP and CLI entry adapters.
 
 P7.3 implementation note:
 

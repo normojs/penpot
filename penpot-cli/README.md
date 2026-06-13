@@ -161,7 +161,8 @@ JSON output reports `adapter: "backend-command"` so scripts can distinguish the
 headless path from live plugin-backed MCP operations. The matching MCP
 `page.list` and `page.create` tools use the same backend-command path when
 `fileId` is supplied, while calls without `fileId` keep using the bound live
-workspace context.
+workspace context. Page command JSON also includes `adapterSelection` with the
+requested adapter, selected adapter, candidates, and fallback reasons.
 
 ## Export Commands
 
@@ -174,6 +175,7 @@ node penpot-cli/dist/index.js export page \
   --file <file-id> \
   --page <page-id> \
   --object <frame-or-shape-id> \
+  --adapter auto \
   --export-format pdf \
   --dry-run
 
@@ -192,7 +194,9 @@ node penpot-cli/dist/index.js export page \
 Dry-run output includes the exporter URI, the planned `export-shapes` request,
 the required Transit JSON content type, and the fields that still need runtime
 resolution before execution, such as `profileId` when it is not supplied by
-`--profile-id` or `PENPOT_PROFILE_ID`.
+`--profile-id` or `PENPOT_PROFILE_ID`. JSON output includes
+`adapterSelection` so scripts can see the requested adapter, selected adapter,
+and plugin-live fallback status.
 
 Actual CLI exporter execution waits for the Phase 7 shared command runtime. The
 exporter-backed path will return uploaded resource metadata. Until execution is
