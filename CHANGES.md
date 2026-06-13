@@ -39,6 +39,7 @@
 - Wire backend-command shape update/delete into MCP `shape.update` / `shape.delete` and add matching `penpot-cli shape update/delete` commands.
 - Execute `penpot-cli export page` through the exporter adapter, returning resource metadata or writing downloaded output bytes when `--output` is supplied.
 - Add MCP write audit context for backend-command file, page, and shape writes, including MCP tool, adapter, session, and target metadata.
+- Add MCP/backend-command write rate and concurrency limits for headless file, page, and shape write operations.
 - Add rate limiting and concurrency safety for file snapshot operations [#9723](https://github.com/penpot/penpot/issues/9723) (PR: [#9722](https://github.com/penpot/penpot/pull/9722))
 - Prevent concurrent font uploads from causing excessive simultaneous requests [#9922](https://github.com/penpot/penpot/issues/9922) (PR: [#9921](https://github.com/penpot/penpot/pull/9921))
 

@@ -13,8 +13,11 @@ export const ToolErrorCodes = {
     OBJECT_NOT_FOUND_OR_FORBIDDEN: "object_not_found_or_forbidden",
     PERMISSION_DENIED: "permission_denied",
     PENPOT_RPC_ERROR: "penpot_rpc_error",
+    RATE_LIMIT_REACHED: "rate_limit_reached",
     ADAPTER_NOT_AVAILABLE: "adapter_not_available",
     ADAPTER_NOT_SUPPORTED: "adapter_not_supported",
+    MCP_WRITE_CONCURRENCY_LIMIT: "mcp_write_concurrency_limit",
+    MCP_WRITE_RATE_LIMIT: "mcp_write_rate_limit",
 } as const;
 
 export abstract class PenpotRpcTool<TArgs extends object> extends Tool<TArgs> {
@@ -78,6 +81,31 @@ export abstract class PenpotRpcTool<TArgs extends object> extends Tool<TArgs> {
         return await this.mcpServer.rpcClient.post<T>(methodName, params, userToken, context);
     }
 
+    protected async rpcWritePost<T>(
+        methodName: string,
+        params: RpcParams,
+        userToken: string,
+        context: Omit<PenpotRpcRequestContext, "mcpToolName" | "mcpSessionId"> = {}
+    ): Promise<T> {
+        const writeContext = this.rpcWriteContext(context);
+        const lease = this.mcpServer.writeLimiter.acquire({
+            toolName: this.getToolName(),
+            userToken,
+            sessionId: writeContext.mcpSessionId,
+            fileId: writeContext.mcpFileId,
+        });
+
+        if (!lease.acquired) {
+            throw new PenpotRpcError(429, lease.rejection.message, lease.rejection.code, lease.rejection);
+        }
+
+        try {
+            return await this.rpcPost<T>(methodName, params, userToken, writeContext);
+        } finally {
+            lease.release();
+        }
+    }
+
     protected rpcWriteContext(
         context: Omit<PenpotRpcRequestContext, "mcpToolName" | "mcpSessionId"> = {}
     ): PenpotRpcRequestContext {
@@ -99,6 +127,12 @@ export abstract class PenpotRpcTool<TArgs extends object> extends Tool<TArgs> {
             case ToolErrorCodes.PERMISSION_DENIED:
             case ToolErrorCodes.OBJECT_NOT_FOUND_OR_FORBIDDEN:
                 return ["Use team.list, project.list, and file.list to choose a resource available to this user."];
+            case ToolErrorCodes.RATE_LIMIT_REACHED:
+                return ["Wait for the backend rate or concurrency window to clear, then retry the command."];
+            case ToolErrorCodes.MCP_WRITE_CONCURRENCY_LIMIT:
+                return ["Wait for the current MCP write to finish, then retry the same command."];
+            case ToolErrorCodes.MCP_WRITE_RATE_LIMIT:
+                return ["Wait until the reported retryAfterMs has elapsed, then retry the command."];
             default:
                 return [];
         }

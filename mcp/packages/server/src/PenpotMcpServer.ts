@@ -36,6 +36,7 @@ import { PenpotRpcClient } from "./PenpotRpcClient";
 import { ReplServer } from "./ReplServer";
 import { ApiDocs } from "./ApiDocs";
 import { FileContextRegistry } from "./FileContextRegistry";
+import { McpWriteLimiter } from "./McpWriteLimiter";
 
 /**
  * Session context for request-scoped data.
@@ -106,6 +107,7 @@ export class PenpotMcpServer {
     private readonly connectionInstructions: string;
     public readonly rpcClient: PenpotRpcClient;
     public readonly fileContextRegistry: FileContextRegistry;
+    public readonly writeLimiter: McpWriteLimiter;
 
     /**
      * Manages session-specific context, particularly user tokens for each request.
@@ -133,6 +135,7 @@ export class PenpotMcpServer {
         this.apiDocs = new ApiDocs();
         this.rpcClient = new PenpotRpcClient();
         this.fileContextRegistry = new FileContextRegistry();
+        this.writeLimiter = McpWriteLimiter.fromEnv();
 
         // prepare instructions
         let instructions = this.configLoader.getInitialInstructions();
@@ -205,6 +208,7 @@ export class PenpotMcpServer {
                 webSocket: this.pluginBridge.getStatus(),
             },
             fileContexts: this.fileContextRegistry.getStatus(),
+            writeLimits: this.writeLimiter.getStatus(),
         };
     }
 

@@ -55,7 +55,7 @@ export class FileCreateTool extends PenpotRpcTool<FileCreateArgs> {
         const name = typeof args.name === "string" && args.name.trim() !== "" ? args.name.trim() : "Untitled";
 
         try {
-            const file = await this.rpcPost<PenpotRecord>(
+            const file = await this.rpcWritePost<PenpotRecord>(
                 "create-file",
                 {
                     name,
@@ -63,10 +63,10 @@ export class FileCreateTool extends PenpotRpcTool<FileCreateArgs> {
                     "is-shared": args.isShared ?? false,
                 },
                 userToken,
-                this.rpcWriteContext({
+                {
                     mcpAdapter: "backend-command",
                     mcpProjectId: args.projectId,
-                })
+                }
             );
 
             return this.ok(

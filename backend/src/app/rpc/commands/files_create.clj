@@ -17,6 +17,7 @@
    [app.loggers.audit :as-alias audit]
    [app.loggers.webhooks :as-alias webhooks]
    [app.rpc :as-alias rpc]
+   [app.rpc.climit :as-alias climit]
    [app.rpc.commands.projects :as projects]
    [app.rpc.commands.teams :as teams]
    [app.rpc.doc :as-alias doc]
@@ -82,6 +83,8 @@
 (sv/defmethod ::create-file
   {::doc/added "1.17"
    ::doc/module :files
+   ::climit/id [[:create-file/by-profile ::rpc/profile-id]
+                [:create-file/global]]
    ::webhooks/event? true
    ::sm/params schema:create-file
    ::db/transaction true}

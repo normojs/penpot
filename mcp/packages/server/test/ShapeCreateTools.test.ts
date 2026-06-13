@@ -1,5 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
+import { McpWriteLimiter } from "../src/McpWriteLimiter.js";
+import type { McpWriteLimiterConfig } from "../src/McpWriteLimiter.js";
 import type { PenpotRpcRequestContext } from "../src/PenpotRpcClient.js";
 import type { PenpotMcpServer } from "../src/PenpotMcpServer.js";
 import {
@@ -27,10 +29,12 @@ function parseJsonResponse(response: Awaited<ReturnType<ShapeCreateFrameTool["ex
 function mcpServerWithRpc(
     rpcClient: { post?: (...args: any[]) => Promise<unknown> },
     userToken = "token-1",
-    mcpSessionId = "session-1"
+    mcpSessionId = "session-1",
+    limiterConfig: Partial<McpWriteLimiterConfig> = {}
 ): PenpotMcpServer {
     return {
         rpcClient,
+        writeLimiter: new McpWriteLimiter(limiterConfig),
         getSessionContext: () => ({ userToken, mcpSessionId }),
     } as unknown as PenpotMcpServer;
 }
@@ -325,4 +329,65 @@ test("ShapeUpdateTool reports adapter error for backend layout updates", async (
     assert.equal(body.status, "error");
     assert.equal(body.error.code, "adapter_not_available");
     assert.equal(body.error.data.adapterSelection.selected, null);
+});
+
+test("ShapeUpdateTool rejects concurrent writes to the same file and releases after completion", async () => {
+    let releaseFirstWrite: (() => void) | undefined;
+    const calls: RpcCall[] = [];
+    const tool = new ShapeUpdateTool(
+        mcpServerWithRpc(
+            {
+                post: async (
+                    methodName: string,
+                    params: Record<string, unknown>,
+                    userToken: string,
+                    context?: PenpotRpcRequestContext
+                ) => {
+                    calls.push({ methodName, params, userToken, context });
+                    if (calls.length === 1) {
+                        await new Promise<void>((resolve) => {
+                            releaseFirstWrite = resolve;
+                        });
+                    }
+                    return {
+                        shape: { id: "00000000-0000-0000-0000-000000000003", type: "rect", name: "CTA" },
+                        revn: calls.length,
+                        vern: 0,
+                    };
+                },
+            },
+            "token-1",
+            "session-1",
+            {
+                perFileConcurrency: 1,
+                perSessionConcurrency: 2,
+                perUserConcurrency: 4,
+            }
+        )
+    );
+
+    const args = {
+        fileId: "00000000-0000-0000-0000-000000000001",
+        shapeId: "00000000-0000-0000-0000-000000000003",
+        x: 24,
+    };
+
+    const firstWrite = tool.execute(args);
+    const rejectedResponse = await tool.execute({ ...args, x: 32 });
+    const rejectedBody = parseJsonResponse(rejectedResponse);
+
+    assert.equal(rejectedBody.status, "error");
+    assert.equal(rejectedBody.error.code, "mcp_write_concurrency_limit");
+    assert.equal(rejectedBody.error.data.status, 429);
+    assert.equal(rejectedBody.error.data.data.scope, "file");
+    assert.equal(calls.length, 1);
+
+    releaseFirstWrite?.();
+    const firstBody = parseJsonResponse(await firstWrite);
+    assert.equal(firstBody.status, "ok");
+
+    const acceptedResponse = await tool.execute({ ...args, x: 40 });
+    const acceptedBody = parseJsonResponse(acceptedResponse);
+    assert.equal(acceptedBody.status, "ok");
+    assert.equal(calls.length, 2);
 });

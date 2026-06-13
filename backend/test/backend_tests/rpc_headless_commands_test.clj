@@ -10,11 +10,18 @@
    [app.common.types.text :as cttx]
    [app.common.uuid :as uuid]
    [app.rpc :as-alias rpc]
+   [app.rpc.climit :as-alias climit]
+   [app.rpc.commands.files-create :as files.create]
    [backend-tests.helpers :as th]
    [clojure.test :as t]))
 
 (t/use-fixtures :once th/state-init)
 (t/use-fixtures :each th/database-reset)
+
+(t/deftest create-file-command-has-concurrency-limit
+  (t/is (= [[:create-file/by-profile ::rpc/profile-id]
+            [:create-file/global]]
+           (::climit/id (meta #'files.create/sm$create-file)))))
 
 (t/deftest get-file-pages-and-create-file-page
   (let [profile (th/create-profile* 1 {:is-active true})

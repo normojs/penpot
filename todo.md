@@ -44,9 +44,10 @@ helper with CLI/MCP adapter reporting, P7.6 wired backend-command shape
 creation into MCP and `penpot-cli`, and P7.7 added backend/common support for
 simple headless shape updates and deletes. P7.8 wired shape update/delete entry
 adapters into MCP and `penpot-cli`, and P7.9 added real exporter-backed CLI
-output execution. P8.1 added backend audit context for first-class MCP writes.
-The current implementation focus is P8.2: adding rate and concurrency limits
-for MCP/backend write paths.
+output execution. P8.1 added backend audit context for first-class MCP writes,
+and P8.2 added rate and concurrency limits for MCP/backend-command writes. The
+current implementation focus is P8.3: adding version and capability
+negotiation between MCP server, plugin, and frontend.
 
 ## Feature Roadmap
 
@@ -69,7 +70,7 @@ remain the execution plan.
 | F12 | done | `penpot-cli` MCP operations | Phase 6 | Developers can inspect and operate MCP from terminal | Completed 2026-06-12; `penpot-cli mcp status`, `mcp config`, and `mcp logs` are available |
 | F13 | done | `penpot-cli` file/page/export operations | Phase 6, Phase 7 | Scripts can create files, create pages, export pages, and edit simple shapes through the same automation layer | Completed 2026-06-13; `file list/create/open`, `page list/create`, `shape create/update/delete`, and real `export page` execution report adapter-selection metadata |
 | F14 | done | Headless automation runtime | Phase 7 | Selected operations work without an open browser tab | Completed 2026-06-13; page list/create, simple shape create/update/delete, adapter selection, and exporter-backed CLI output execute without a live workspace tab |
-| F15 | in_progress | Audit, limits, and confirmations | Phase 8 | MCP is safer for real deployments | Write operations are auditable; limits and destructive action gates remain |
+| F15 | in_progress | Audit, limits, and confirmations | Phase 8 | MCP is safer for real deployments | Write operations are auditable and limited; destructive action gates remain |
 
 ## Phase 0: Baseline, Planning, And Rules
 
@@ -185,19 +186,20 @@ Goal: make first-class MCP safe and diagnosable.
 | ID | Status | Task | Modules | Verification | Notes |
 | --- | --- | --- | --- | --- | --- |
 | P8.1 | done | Add audit events for MCP writes | `backend`, `mcp` | File writes are traceable to MCP user/session/tool | Completed 2026-06-13; backend-command MCP file/page/shape writes now attach tool, adapter, MCP session, and target metadata to backend audit context without changing tool schemas; MCP types/tests/format passed, backend focused test blocked locally because `clojure` is missing |
-| P8.2 | in_progress | Add rate and concurrency limits | `mcp`, `backend` | Per-user/session/file limits prevent runaway edits | Started 2026-06-13; inspect existing backend command limit patterns and MCP request concurrency hooks before implementation |
-| P8.3 | todo | Add version/capability negotiation | `mcp/packages/server`, `mcp/packages/plugin`, `frontend` | Server and plugin reject incompatible versions clearly | Include supported capability list |
+| P8.2 | done | Add rate and concurrency limits | `mcp`, `backend` | Per-user/session/file limits prevent runaway edits | Completed 2026-06-13; MCP backend-command writes now use configurable per-user/session/file rate and concurrency limits, backend `create-file` has a dedicated concurrency limit, and default backend rate-limit config covers headless file/page/shape writes; MCP types/tests/format passed, backend focused test blocked locally because `clojure` is missing |
+| P8.3 | in_progress | Add version/capability negotiation | `mcp/packages/server`, `mcp/packages/plugin`, `frontend` | Server and plugin reject incompatible versions clearly | Started 2026-06-13; map existing plugin handshake payloads and server status surfaces before adding supported capability lists |
 | P8.4 | todo | Add diagnostics UI/logs | `frontend`, `mcp` | Users can see connection, last error, active context, and logs | Keep UI operational, not decorative |
 | P8.5 | todo | Add destructive action confirmations | `mcp`, `frontend` | High-risk write/delete tools can require confirmation | Policy should be configurable |
 | P8.6 | todo | Add regression tests and smoke flows | all touched modules | Core MCP startup, global tools, file binding, and export are covered | Include CLI smoke when available |
 
 ## Next Recommended Sprint
 
-Continue with P8.2 MCP/backend limits:
+Continue with P8.3 MCP capability negotiation:
 
-1. Inspect existing backend command limit helpers and any MCP request
-   concurrency primitives.
-2. Define initial per-user/session/file limits for backend-command writes
-   without changing public tool schemas.
-3. Wire focused checks around first-class MCP write paths, then add tests for
-   limit responses and concurrency release behavior.
+1. Inspect the current plugin WebSocket registration/update payloads and server
+   status output.
+2. Define server/plugin/frontend version fields plus a minimal supported
+   capability list for global, file-context, backend-command, export, and
+   execute-code surfaces.
+3. Add clear incompatible-version/capability errors without changing existing
+   tool schemas unnecessarily.

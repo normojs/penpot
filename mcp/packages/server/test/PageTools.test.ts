@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import { FileContextRegistry, FileContextErrorCodes } from "../src/FileContextRegistry.js";
+import { McpWriteLimiter } from "../src/McpWriteLimiter.js";
 import type { PenpotRpcRequestContext } from "../src/PenpotRpcClient.js";
 import type { PenpotMcpServer } from "../src/PenpotMcpServer.js";
 import { PageCreateTool, PageListTool } from "../src/tools/PageTools.js";
@@ -27,6 +28,7 @@ function mcpServerWithRpc(
 ): PenpotMcpServer {
     return {
         rpcClient,
+        writeLimiter: new McpWriteLimiter(),
         getSessionContext: () => ({ userToken, mcpSessionId }),
     } as unknown as PenpotMcpServer;
 }

@@ -226,6 +226,9 @@ export class PenpotRpcClient {
         if (status === 404 && backendCode === "object-not-found") {
             return "object_not_found_or_forbidden";
         }
+        if (status === 429) {
+            return "rate_limit_reached";
+        }
         if (backendCode) {
             return backendCode.replaceAll("-", "_");
         }

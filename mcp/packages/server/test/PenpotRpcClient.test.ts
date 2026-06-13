@@ -163,6 +163,11 @@ test("PenpotRpcClient normalizes backend HTTP errors", async () => {
             body: { type: "validation", code: "params-validation", hint: "invalid params" },
             code: "params_validation",
         },
+        {
+            status: 429,
+            body: null,
+            code: "rate_limit_reached",
+        },
     ];
 
     for (const item of cases) {

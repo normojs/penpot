@@ -109,7 +109,7 @@ abstract class PageTool<TArgs extends object> extends PenpotRpcTool<TArgs> {
         }
 
         try {
-            const result = await this.rpcPost<PenpotRecord>(
+            const result = await this.rpcWritePost<PenpotRecord>(
                 "create-file-page",
                 {
                     id: args.fileId,
@@ -117,11 +117,11 @@ abstract class PageTool<TArgs extends object> extends PenpotRpcTool<TArgs> {
                     name: this.nonEmptyString(args.name),
                 },
                 userToken,
-                this.rpcWriteContext({
+                {
                     mcpAdapter: adapterSelection.selected,
                     mcpFileId: args.fileId,
                     mcpPageId: args.pageId,
-                })
+                }
             );
             return this.ok(
                 {

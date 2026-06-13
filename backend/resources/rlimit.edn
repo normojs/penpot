@@ -8,4 +8,13 @@
 
  ;; #{:main/get-profile}
  ;; [[:burst :bucket "60/60/1m"]]
+
+ #{:main/create-file}
+ [[:headless-file-create :bucket "60/10/1m"]]
+
+ #{:main/create-file-page
+   :main/create-file-shape
+   :main/update-file-shape
+   :main/delete-file-shape}
+ [[:headless-file-write :bucket "240/120/1m"]]
  }

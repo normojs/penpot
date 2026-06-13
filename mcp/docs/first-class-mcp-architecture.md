@@ -1610,6 +1610,24 @@ P8.1 implementation note (2026-06-13):
 - MCP session ids are also sent as `x-external-session-id`, reusing the
   existing backend request context field.
 
+P8.2 implementation note (2026-06-13):
+
+- The MCP server now has an in-memory write limiter for backend-command writes.
+- Limits are applied per user, session, and target file, with immediate
+  structured errors for rate or concurrency rejection.
+- Defaults can be tuned with `PENPOT_MCP_WRITE_RATE_LIMIT_PER_USER`,
+  `PENPOT_MCP_WRITE_RATE_LIMIT_PER_SESSION`,
+  `PENPOT_MCP_WRITE_RATE_LIMIT_PER_FILE`,
+  `PENPOT_MCP_WRITE_CONCURRENCY_PER_USER`,
+  `PENPOT_MCP_WRITE_CONCURRENCY_PER_SESSION`,
+  `PENPOT_MCP_WRITE_CONCURRENCY_PER_FILE`, and
+  `PENPOT_MCP_WRITE_RATE_WINDOW_MS`.
+- The backend `create-file` command now uses a dedicated `create-file`
+  concurrency limit, and default backend rate-limit configuration includes
+  headless file/page/shape write buckets.
+- `mcp.get_status` exposes token-safe write-limit configuration and current
+  limiter scope counts for diagnostics.
+
 ## 10. Feature Backlog
 
 | Priority | Feature | Main modules | Notes |

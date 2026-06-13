@@ -164,7 +164,7 @@ abstract class ShapeTool<TArgs extends object> extends PenpotRpcTool<TArgs> {
         }
 
         try {
-            const result = await this.rpcPost<PenpotRecord>(
+            const result = await this.rpcWritePost<PenpotRecord>(
                 "create-file-shape",
                 {
                     id: args.fileId,
@@ -184,12 +184,12 @@ abstract class ShapeTool<TArgs extends object> extends PenpotRpcTool<TArgs> {
                     "font-size": "fontSize" in args ? args.fontSize : undefined,
                 },
                 userToken,
-                this.rpcWriteContext({
+                {
                     mcpAdapter: adapterSelection.selected,
                     mcpFileId: args.fileId,
                     mcpPageId: args.pageId,
                     mcpShapeId: args.shapeId,
-                })
+                }
             );
             return this.ok({
                 adapter: adapterSelection.selected,
@@ -214,7 +214,7 @@ abstract class ShapeTool<TArgs extends object> extends PenpotRpcTool<TArgs> {
         }
 
         try {
-            const result = await this.rpcPost<PenpotRecord>(
+            const result = await this.rpcWritePost<PenpotRecord>(
                 "update-file-shape",
                 {
                     id: args.fileId,
@@ -232,12 +232,12 @@ abstract class ShapeTool<TArgs extends object> extends PenpotRpcTool<TArgs> {
                     "font-size": args.fontSize,
                 },
                 userToken,
-                this.rpcWriteContext({
+                {
                     mcpAdapter: adapterSelection.selected,
                     mcpFileId: args.fileId,
                     mcpPageId: args.pageId,
                     mcpShapeId: args.shapeId,
-                })
+                }
             );
             return this.ok({
                 adapter: adapterSelection.selected,
@@ -262,7 +262,7 @@ abstract class ShapeTool<TArgs extends object> extends PenpotRpcTool<TArgs> {
         }
 
         try {
-            const result = await this.rpcPost<PenpotRecord>(
+            const result = await this.rpcWritePost<PenpotRecord>(
                 "delete-file-shape",
                 {
                     id: args.fileId,
@@ -270,12 +270,12 @@ abstract class ShapeTool<TArgs extends object> extends PenpotRpcTool<TArgs> {
                     "shape-id": args.shapeId,
                 },
                 userToken,
-                this.rpcWriteContext({
+                {
                     mcpAdapter: adapterSelection.selected,
                     mcpFileId: args.fileId,
                     mcpPageId: args.pageId,
                     mcpShapeId: args.shapeId,
-                })
+                }
             );
             return this.ok({
                 adapter: adapterSelection.selected,

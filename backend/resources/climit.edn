@@ -7,6 +7,10 @@
  :update-file/by-profile
  {:permits 1 :queue 5}
 
+ :create-file/global {:permits 10}
+ :create-file/by-profile
+ {:permits 1 :queue 3 :timeout 30000}
+
  :process-font/global {:permits 4}
  :process-font/by-profile {:permits 1}
 
