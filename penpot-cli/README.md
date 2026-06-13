@@ -283,5 +283,6 @@ Run the focused CLI checks before committing CLI changes:
 pnpm --filter penpot-cli types:check
 pnpm --filter penpot-cli lint
 pnpm --filter penpot-cli build
+pnpm --filter penpot-cli test
 pnpm --filter penpot-cli smoke:help
 ```

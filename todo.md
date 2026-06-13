@@ -49,9 +49,10 @@ and P8.2 added rate and concurrency limits for MCP/backend-command writes. P8.3
 added version and capability negotiation between MCP server, plugin, and
 frontend. P8.4 added diagnostics UI and logging status for MCP connection,
 compatibility, file context, last error, and server log paths. P8.5 added
-configurable destructive action confirmations for `shape.delete`. The current
-implementation focus is P8.6: regression tests and smoke flows across the
-first-class MCP stack.
+configurable destructive action confirmations for `shape.delete`, and P8.6
+added CLI smoke regression tests plus MCP/CLI smoke-flow documentation. The
+current implementation focus is P9.1: auditing the manual MCP configuration
+settings and persistence path.
 
 ## Feature Roadmap
 
@@ -61,7 +62,7 @@ remain the execution plan.
 | ID | Status | Capability | Target phases | User outcome | First acceptance check |
 | --- | --- | --- | --- | --- | --- |
 | F1 | done | Built-in MCP gateway | Phase 1 | Users see one MCP URL instead of several internal ports | Settings and generated client config point to `/mcp/stream` |
-| F2 | todo | Manual MCP configuration | Phase 1, Phase 2 | Users can choose built-in, custom, or local MCP settings | Settings persist mode, stream URL, WebSocket URL, and auto-connect |
+| F2 | in_progress | Manual MCP configuration | Phase 1, Phase 2, Phase 9 | Users can choose built-in, custom, or local MCP settings | Settings persist mode, stream URL, WebSocket URL, and auto-connect |
 | F3 | in_progress | Global background MCP agent | Phase 2 | MCP can connect after login without opening a file | Connection reaches `connected-global` from dashboard/settings |
 | F4 | done | MCP status and diagnostics | Phase 2, Phase 8 | Users and agents can inspect connection health | Completed 2026-06-13; `mcp.get_status` and Integrations settings now report server, plugin compatibility, session/file context, write limits, logs, and last-error state |
 | F5 | done | Global resource tools | Phase 3 | Agents can list teams, projects, and files before a workspace opens | Completed 2026-06-11; MCP can list teams, projects, project files, and recent files through backend permissions |
@@ -75,6 +76,7 @@ remain the execution plan.
 | F13 | done | `penpot-cli` file/page/export operations | Phase 6, Phase 7 | Scripts can create files, create pages, export pages, and edit simple shapes through the same automation layer | Completed 2026-06-13; `file list/create/open`, `page list/create`, `shape create/update/delete`, and real `export page` execution report adapter-selection metadata |
 | F14 | done | Headless automation runtime | Phase 7 | Selected operations work without an open browser tab | Completed 2026-06-13; page list/create, simple shape create/update/delete, adapter selection, and exporter-backed CLI output execute without a live workspace tab |
 | F15 | done | Audit, limits, and confirmations | Phase 8 | MCP is safer for real deployments | Completed 2026-06-13; write operations are auditable and limited, plugin compatibility is negotiated, diagnostics are exposed, and `shape.delete` can require explicit confirmation |
+| F16 | done | MCP/CLI smoke coverage | Phase 8 | Developers can catch first-class MCP regressions quickly | Completed 2026-06-13; MCP server tests, CLI no-service smoke tests, and documented running-stack smoke flows cover the critical regression paths |
 
 ## Phase 0: Baseline, Planning, And Rules
 
@@ -194,16 +196,29 @@ Goal: make first-class MCP safe and diagnosable.
 | P8.3 | done | Add version/capability negotiation | `mcp/packages/server`, `mcp/packages/plugin`, `frontend` | Server and plugin reject incompatible versions clearly | Completed 2026-06-13; plugin now sends protocol/version/capability hello, server replies with compatibility, rejects incompatible protocol or missing capabilities, and status reports token-safe negotiation summaries |
 | P8.4 | done | Add diagnostics UI/logs | `frontend`, `mcp` | Users can see connection, last error, active context, and logs | Completed 2026-06-13; server status and `mcp.get_status` expose logging metadata, frontend stores diagnostics snapshots and last errors, and Integrations settings show connection, compatibility, file context, logs, and refresh state |
 | P8.5 | done | Add destructive action confirmations | `mcp` | High-risk write/delete tools can require confirmation | Completed 2026-06-13; `shape.delete` accepts `confirm: true`, returns `destructive_action_confirmation_required` before mutation when required, defaults to requiring confirmation in remote/multi-user mode, and exposes the policy in MCP status |
-| P8.6 | in_progress | Add regression tests and smoke flows | all touched modules | Core MCP startup, global tools, file binding, and export are covered | Started 2026-06-13; inventory the critical MCP/CLI flows and add focused automated coverage where local dependencies allow |
+| P8.6 | done | Add regression tests and smoke flows | `mcp`, `penpot-cli` | Core MCP startup, global tools, file binding, and export are covered | Completed 2026-06-13; added `penpot-cli` no-service smoke tests, documented automated and running-stack MCP/CLI smoke flows, and recorded locally blocked Clojure/frontend checks |
+
+## Phase 9: Manual MCP Configuration And Global Agent Polish
+
+Goal: finish the user-facing configuration path so MCP can be manually enabled,
+disabled, and pointed at built-in or custom endpoints without project-specific
+setup.
+
+| ID | Status | Task | Modules | Verification | Notes |
+| --- | --- | --- | --- | --- | --- |
+| P9.1 | in_progress | Audit existing MCP settings and persistence path | `frontend`, `backend`, `mcp` | Document current profile props, settings UI, env injection, and gaps | Started 2026-06-13; inspect existing global MCP state, profile props, settings pages, and gateway URL sources before changing schemas |
+| P9.2 | todo | Define persistent manual MCP config model | `frontend`, `backend`, `mcp` | Config model covers mode, enabled, auto-connect, stream URL, WebSocket URL, status URL, and reset-to-built-in | Keep migration/backward compatibility explicit |
+| P9.3 | todo | Add Integrations settings controls for MCP config | `frontend` | Users can toggle MCP and edit/reset endpoint settings | Reuse existing diagnostics section and avoid project-specific setup |
+| P9.4 | todo | Wire global MCP lifecycle to manual config | `frontend`, `mcp` | Global plugin connects/disconnects according to saved config | Preserve multi-tab ownership and diagnostics |
+| P9.5 | todo | Add config tests and docs | `frontend`, `penpot-cli`, `mcp/docs` | Settings persistence, derived URLs, and CLI config docs are covered | Record frontend/backend checks that remain blocked locally |
 
 ## Next Recommended Sprint
 
-Continue with P8.6 regression tests and smoke flows:
+Continue with P9.1 manual MCP configuration audit:
 
-1. Inventory the highest-value MCP/CLI flows: server status, global read tools,
-   file context bind/release, backend-command page/shape writes, confirmation
-   rejection, and exporter-backed CLI output.
-2. Add or consolidate focused tests around the gaps that are practical in the
-   local TypeScript workspaces.
-3. Document any smoke flows that remain blocked by missing Clojure/frontend
-   tooling so they can be run in a fuller dev environment.
+1. Read the current frontend MCP state namespace, Integrations settings page,
+   profile settings persistence, and Docker/env URL injection.
+2. Map how built-in URLs are derived today versus which values need to become
+   user-editable.
+3. Update the architecture notes with a concrete config model before changing
+   runtime behavior.

@@ -1675,6 +1675,17 @@ P8.5 implementation note (2026-06-13):
   MCP protocol can carry explicit confirmation in the tool arguments; future
   destructive tools should reuse the same policy before mutation.
 
+P8.6 implementation note (2026-06-13):
+
+- Added a no-service `penpot-cli` smoke test suite that runs against the real
+  CLI entry point after build.
+- The suite covers command discovery, MCP config URL derivation, dev dry-run
+  planning, file-open URL generation, exporter dry-run payloads, structured
+  adapter errors, and shape-update validation before RPC.
+- Added `mcp/docs/regression-smoke-flows.md` as the shared smoke matrix for
+  automated TypeScript checks, manual running-stack checks, and locally blocked
+  Clojure/frontend checks.
+
 ## 10. Feature Backlog
 
 | Priority | Feature | Main modules | Notes |

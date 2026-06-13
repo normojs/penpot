@@ -43,6 +43,7 @@
 - Add MCP server/plugin version and capability negotiation with token-safe status diagnostics.
 - Add MCP diagnostics in Integrations settings, including connection, compatibility, file context, logs, and last-error state.
 - Add configurable MCP destructive-action confirmations for `shape.delete`, with remote/multi-user defaults and status diagnostics.
+- Add CLI smoke regression tests and MCP/CLI smoke-flow documentation for first-class MCP development.
 - Add rate limiting and concurrency safety for file snapshot operations [#9723](https://github.com/penpot/penpot/issues/9723) (PR: [#9722](https://github.com/penpot/penpot/pull/9722))
 - Prevent concurrent font uploads from causing excessive simultaneous requests [#9922](https://github.com/penpot/penpot/issues/9922) (PR: [#9921](https://github.com/penpot/penpot/pull/9921))
 
