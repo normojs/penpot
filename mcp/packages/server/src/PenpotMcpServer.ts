@@ -42,6 +42,7 @@ import { FileContextRegistry } from "./FileContextRegistry";
  */
 export interface SessionContext {
     userToken?: string;
+    mcpSessionId?: string;
 }
 
 /**
@@ -363,7 +364,7 @@ export class PenpotMcpServer {
             }
 
             // handle the request
-            await this.sessionContext.run({ userToken }, async () => {
+            await this.sessionContext.run({ userToken, mcpSessionId: sessionId ?? transport.sessionId }, async () => {
                 await transport.handleRequest(req, res, req.body);
             });
         });
@@ -373,11 +374,10 @@ export class PenpotMcpServer {
          */
         this.app.get("/sse", async (req: any, res: any) => {
             const userToken = req.query.userToken as string | undefined;
+            const transport = new SSEServerTransport("/messages", res);
+            this.sseTransports[transport.sessionId] = { transport, userToken };
 
-            await this.sessionContext.run({ userToken }, async () => {
-                const transport = new SSEServerTransport("/messages", res);
-                this.sseTransports[transport.sessionId] = { transport, userToken };
-
+            await this.sessionContext.run({ userToken, mcpSessionId: transport.sessionId }, async () => {
                 const server = this.createMcpServer();
                 await server.connect(transport);
                 res.on("close", () => {
@@ -395,7 +395,7 @@ export class PenpotMcpServer {
             const session = this.sseTransports[sessionId];
 
             if (session) {
-                await this.sessionContext.run({ userToken: session.userToken }, async () => {
+                await this.sessionContext.run({ userToken: session.userToken, mcpSessionId: sessionId }, async () => {
                     await session.transport.handlePostMessage(req, res, req.body);
                 });
             } else {

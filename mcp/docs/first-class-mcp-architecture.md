@@ -1598,6 +1598,18 @@ Definition of done:
 - Sensitive tools are gated.
 - Concurrent sessions cannot silently edit the wrong file.
 
+P8.1 implementation note (2026-06-13):
+
+- Backend-command MCP writes now send an audit context envelope on backend RPC
+  requests.
+- The envelope includes MCP tool name, adapter, MCP session id, and available
+  project/file/page/shape target ids.
+- The backend audit logger merges these headers into the normal RPC audit
+  context, so existing audit events keep their current names and props while
+  gaining MCP traceability.
+- MCP session ids are also sent as `x-external-session-id`, reusing the
+  existing backend request context field.
+
 ## 10. Feature Backlog
 
 | Priority | Feature | Main modules | Notes |

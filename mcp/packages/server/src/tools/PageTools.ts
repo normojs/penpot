@@ -116,7 +116,12 @@ abstract class PageTool<TArgs extends object> extends PenpotRpcTool<TArgs> {
                     "page-id": args.pageId,
                     name: this.nonEmptyString(args.name),
                 },
-                userToken
+                userToken,
+                this.rpcWriteContext({
+                    mcpAdapter: adapterSelection.selected,
+                    mcpFileId: args.fileId,
+                    mcpPageId: args.pageId,
+                })
             );
             return this.ok(
                 {

@@ -4,6 +4,7 @@ import type { ToolResponse } from "../ToolResponse.js";
 import { JsonResponse } from "../ToolResponse.js";
 import { PenpotMcpServer } from "../PenpotMcpServer.js";
 import { PenpotRpcError, RpcParams } from "../PenpotRpcClient.js";
+import type { PenpotRpcRequestContext } from "../PenpotRpcClient.js";
 
 export const ToolErrorCodes = {
     AUTHENTICATION_REQUIRED: "authentication_required",
@@ -68,8 +69,23 @@ export abstract class PenpotRpcTool<TArgs extends object> extends Tool<TArgs> {
         return await this.mcpServer.rpcClient.get<T>(methodName, params, userToken);
     }
 
-    protected async rpcPost<T>(methodName: string, params: RpcParams, userToken: string): Promise<T> {
-        return await this.mcpServer.rpcClient.post<T>(methodName, params, userToken);
+    protected async rpcPost<T>(
+        methodName: string,
+        params: RpcParams,
+        userToken: string,
+        context?: PenpotRpcRequestContext
+    ): Promise<T> {
+        return await this.mcpServer.rpcClient.post<T>(methodName, params, userToken, context);
+    }
+
+    protected rpcWriteContext(
+        context: Omit<PenpotRpcRequestContext, "mcpToolName" | "mcpSessionId"> = {}
+    ): PenpotRpcRequestContext {
+        return {
+            mcpToolName: this.getToolName(),
+            mcpSessionId: this.getSessionContext()?.mcpSessionId,
+            ...context,
+        };
     }
 
     private actionsForErrorCode(code: string): string[] {

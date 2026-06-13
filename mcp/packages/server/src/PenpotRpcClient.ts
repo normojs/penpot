@@ -2,6 +2,16 @@ type RpcParamValue = string | number | boolean | string[] | number[] | boolean[]
 
 export type RpcParams = Record<string, RpcParamValue>;
 
+export interface PenpotRpcRequestContext {
+    mcpToolName?: string;
+    mcpAdapter?: string | null;
+    mcpSessionId?: string;
+    mcpProjectId?: string;
+    mcpFileId?: string;
+    mcpPageId?: string;
+    mcpShapeId?: string;
+}
+
 export class PenpotRpcError extends Error {
     constructor(
         public readonly status: number,
@@ -29,7 +39,12 @@ export class PenpotRpcClient {
         return this.baseUri;
     }
 
-    public async get<T>(methodName: string, params: RpcParams, userToken: string): Promise<T> {
+    public async get<T>(
+        methodName: string,
+        params: RpcParams,
+        userToken: string,
+        context?: PenpotRpcRequestContext
+    ): Promise<T> {
         const url = this.createRpcUrl(methodName);
         url.searchParams.set("_fmt", "json");
 
@@ -39,14 +54,19 @@ export class PenpotRpcClient {
             }
         }
 
-        return await this.request<T>(url, "GET", userToken);
+        return await this.request<T>(url, "GET", userToken, undefined, context);
     }
 
-    public async post<T>(methodName: string, params: RpcParams, userToken: string): Promise<T> {
+    public async post<T>(
+        methodName: string,
+        params: RpcParams,
+        userToken: string,
+        context?: PenpotRpcRequestContext
+    ): Promise<T> {
         const url = this.createRpcUrl(methodName);
         url.searchParams.set("_fmt", "json");
 
-        return await this.request<T>(url, "POST", userToken, params);
+        return await this.request<T>(url, "POST", userToken, params, context);
     }
 
     private createRpcUrl(methodName: string): URL {
@@ -66,12 +86,19 @@ export class PenpotRpcClient {
         }
     }
 
-    private async request<T>(url: URL, method: "GET" | "POST", userToken: string, params?: RpcParams): Promise<T> {
+    private async request<T>(
+        url: URL,
+        method: "GET" | "POST",
+        userToken: string,
+        params?: RpcParams,
+        context?: PenpotRpcRequestContext
+    ): Promise<T> {
         const headers: Record<string, string> = {
             accept: "application/json",
             authorization: `Token ${userToken}`,
             "x-client": "penpot-mcp/1.0",
         };
+        Object.assign(headers, this.createContextHeaders(context));
 
         if (method === "POST") {
             headers["content-type"] = "application/json";
@@ -106,6 +133,48 @@ export class PenpotRpcClient {
         }
 
         return data as T;
+    }
+
+    private createContextHeaders(context?: PenpotRpcRequestContext): Record<string, string> {
+        const headers: Record<string, string> = {};
+        if (!context) {
+            return headers;
+        }
+
+        this.setHeader(headers, "x-event-origin", "mcp");
+        this.setHeader(headers, "x-penpot-mcp-tool", context.mcpToolName);
+        this.setHeader(headers, "x-penpot-mcp-adapter", context.mcpAdapter);
+        this.setHeader(headers, "x-penpot-mcp-session-id", context.mcpSessionId);
+        this.setHeader(headers, "x-penpot-mcp-project-id", context.mcpProjectId);
+        this.setHeader(headers, "x-penpot-mcp-file-id", context.mcpFileId);
+        this.setHeader(headers, "x-penpot-mcp-page-id", context.mcpPageId);
+        this.setHeader(headers, "x-penpot-mcp-shape-id", context.mcpShapeId);
+
+        if (headers["x-penpot-mcp-session-id"]) {
+            headers["x-external-session-id"] = headers["x-penpot-mcp-session-id"];
+        }
+
+        return headers;
+    }
+
+    private setHeader(headers: Record<string, string>, name: string, value: string | null | undefined): void {
+        const headerValue = this.normalizeHeaderValue(value);
+        if (headerValue) {
+            headers[name] = headerValue;
+        }
+    }
+
+    private normalizeHeaderValue(value: string | null | undefined): string | undefined {
+        if (typeof value !== "string") {
+            return undefined;
+        }
+
+        const trimmed = value.trim();
+        if (trimmed === "" || trimmed === "null") {
+            return undefined;
+        }
+
+        return trimmed.slice(0, 512);
     }
 
     private parseResponse(text: string): unknown {

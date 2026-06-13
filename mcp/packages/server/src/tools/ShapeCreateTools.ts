@@ -183,7 +183,13 @@ abstract class ShapeTool<TArgs extends object> extends PenpotRpcTool<TArgs> {
                     "border-radius": "borderRadius" in args ? args.borderRadius : undefined,
                     "font-size": "fontSize" in args ? args.fontSize : undefined,
                 },
-                userToken
+                userToken,
+                this.rpcWriteContext({
+                    mcpAdapter: adapterSelection.selected,
+                    mcpFileId: args.fileId,
+                    mcpPageId: args.pageId,
+                    mcpShapeId: args.shapeId,
+                })
             );
             return this.ok({
                 adapter: adapterSelection.selected,
@@ -225,7 +231,13 @@ abstract class ShapeTool<TArgs extends object> extends PenpotRpcTool<TArgs> {
                     content: args.content,
                     "font-size": args.fontSize,
                 },
-                userToken
+                userToken,
+                this.rpcWriteContext({
+                    mcpAdapter: adapterSelection.selected,
+                    mcpFileId: args.fileId,
+                    mcpPageId: args.pageId,
+                    mcpShapeId: args.shapeId,
+                })
             );
             return this.ok({
                 adapter: adapterSelection.selected,
@@ -257,7 +269,13 @@ abstract class ShapeTool<TArgs extends object> extends PenpotRpcTool<TArgs> {
                     "page-id": args.pageId,
                     "shape-id": args.shapeId,
                 },
-                userToken
+                userToken,
+                this.rpcWriteContext({
+                    mcpAdapter: adapterSelection.selected,
+                    mcpFileId: args.fileId,
+                    mcpPageId: args.pageId,
+                    mcpShapeId: args.shapeId,
+                })
             );
             return this.ok({
                 adapter: adapterSelection.selected,

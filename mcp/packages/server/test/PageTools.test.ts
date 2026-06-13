@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import { FileContextRegistry, FileContextErrorCodes } from "../src/FileContextRegistry.js";
+import type { PenpotRpcRequestContext } from "../src/PenpotRpcClient.js";
 import type { PenpotMcpServer } from "../src/PenpotMcpServer.js";
 import { PageCreateTool, PageListTool } from "../src/tools/PageTools.js";
 
@@ -8,6 +9,7 @@ type RpcCall = {
     methodName: string;
     params: Record<string, unknown>;
     userToken: string;
+    context?: PenpotRpcRequestContext;
 };
 
 function parseJsonResponse(response: Awaited<ReturnType<PageListTool["execute"]>>) {
@@ -20,11 +22,12 @@ function parseJsonResponse(response: Awaited<ReturnType<PageListTool["execute"]>
 
 function mcpServerWithRpc(
     rpcClient: { get?: (...args: any[]) => Promise<unknown>; post?: (...args: any[]) => Promise<unknown> },
-    userToken = "token-1"
+    userToken = "token-1",
+    mcpSessionId = "session-1"
 ): PenpotMcpServer {
     return {
         rpcClient,
-        getSessionContext: () => ({ userToken }),
+        getSessionContext: () => ({ userToken, mcpSessionId }),
     } as unknown as PenpotMcpServer;
 }
 
@@ -63,8 +66,13 @@ test("PageCreateTool uses backend RPC when fileId is provided", async () => {
     const calls: RpcCall[] = [];
     const tool = new PageCreateTool(
         mcpServerWithRpc({
-            post: async (methodName: string, params: Record<string, unknown>, userToken: string) => {
-                calls.push({ methodName, params, userToken });
+            post: async (
+                methodName: string,
+                params: Record<string, unknown>,
+                userToken: string,
+                context?: PenpotRpcRequestContext
+            ) => {
+                calls.push({ methodName, params, userToken, context });
                 return {
                     page: { id: "00000000-0000-0000-0000-000000000003", name: "Flow" },
                     revn: 1,
@@ -91,6 +99,13 @@ test("PageCreateTool uses backend RPC when fileId is provided", async () => {
                 name: "Flow",
             },
             userToken: "token-1",
+            context: {
+                mcpToolName: "page.create",
+                mcpSessionId: "session-1",
+                mcpAdapter: "backend-command",
+                mcpFileId: "00000000-0000-0000-0000-000000000001",
+                mcpPageId: "00000000-0000-0000-0000-000000000003",
+            },
         },
     ]);
     assert.equal(body.status, "ok");

@@ -39,8 +39,11 @@
 (def ^:private safe-backend-context-keys
   #{:version
     :initiator
+    :client-event-origin
     :client-version
-    :client-user-agent})
+    :client-user-agent
+    :mcp-tool-name
+    :mcp-adapter})
 
 (def ^:private safe-frontend-context-keys
   #{:version
@@ -147,6 +150,32 @@
                   (str/blank? origin))
       (str/prune origin 100))))
 
+(def ^:private mcp-context-headers
+  {:mcp-tool-name "x-penpot-mcp-tool"
+   :mcp-adapter "x-penpot-mcp-adapter"
+   :mcp-session-id "x-penpot-mcp-session-id"
+   :mcp-project-id "x-penpot-mcp-project-id"
+   :mcp-file-id "x-penpot-mcp-file-id"
+   :mcp-page-id "x-penpot-mcp-page-id"
+   :mcp-shape-id "x-penpot-mcp-shape-id"})
+
+(defn- get-pruned-header
+  [request header-name max-length]
+  (when-let [value (yreq/get-header request header-name)]
+    (when-not (or (= value "null")
+                  (str/blank? value))
+      (str/prune value max-length))))
+
+(defn- get-mcp-context-from-request
+  [request]
+  (reduce-kv
+   (fn [context key header-name]
+     (if-let [value (get-pruned-header request header-name 200)]
+       (assoc context key value)
+       context))
+   {}
+   mcp-context-headers))
+
 ;; --- SPECS
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -191,15 +220,18 @@
         session-id          (get-external-session-id request)
         key-id              (::http/auth-key-id request)
         token-id            (::actoken/id request)
-        token-type          (::actoken/type request)]
-    {:external-session-id session-id
-     :initiator (or key-id "app")
-     :access-token-id (some-> token-id str)
-     :access-token-type (some-> token-type str)
-     :client-event-origin client-event-origin
-     :client-user-agent client-user-agent
-     :client-version client-version
-     :version (:full cf/version)}))
+        token-type          (::actoken/type request)
+        mcp-context         (get-mcp-context-from-request request)]
+    (merge
+     {:external-session-id session-id
+      :initiator (or key-id "app")
+      :access-token-id (some-> token-id str)
+      :access-token-type (some-> token-type str)
+      :client-event-origin client-event-origin
+      :client-user-agent client-user-agent
+      :client-version client-version
+      :version (:full cf/version)}
+     mcp-context)))
 
 (defn- append-audit-entry
   [cfg params]
@@ -242,7 +274,8 @@
     ;; ip-addr, tagged with source="telemetry" so the telemetry task can
     ;; collect and ship them.  The profile-id is preserved (UUIDs are already
     ;; anonymous random identifiers).  Only a safe subset of context fields
-    ;; is kept: initiator, version, client-version and client-user-agent.
+    ;; is kept: initiator, version, client version/user-agent, client origin,
+    ;; and MCP tool/adapter names.
     ;; Timestamps are truncated to day precision to avoid leaking exact event
     ;; timing.
     (let [event (-> event

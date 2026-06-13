@@ -473,6 +473,71 @@
                     (case name "x-frontend-version" "  ")))]
     (t/is (nil? (get-client-version request)))))
 
+(t/deftest prepare-context-from-request-includes-mcp-context
+  (let [prepare-context-from-request (ns-resolve 'app.loggers.audit 'prepare-context-from-request)
+        request (reify yetti.request/IRequest
+                  (get-header [_ name]
+                    (case name
+                      "x-external-session-id" "session-1"
+                      "x-event-origin" "mcp"
+                      "x-penpot-mcp-tool" "shape.update"
+                      "x-penpot-mcp-adapter" "backend-command"
+                      "x-penpot-mcp-session-id" "session-1"
+                      "x-penpot-mcp-file-id" "00000000-0000-0000-0000-000000000001"
+                      "x-penpot-mcp-page-id" "00000000-0000-0000-0000-000000000002"
+                      "x-penpot-mcp-shape-id" "00000000-0000-0000-0000-000000000003"
+                      nil)))
+        context (prepare-context-from-request request)]
+    (t/is (= {:external-session-id "session-1"
+              :client-event-origin "mcp"
+              :mcp-tool-name "shape.update"
+              :mcp-adapter "backend-command"
+              :mcp-session-id "session-1"
+              :mcp-file-id "00000000-0000-0000-0000-000000000001"
+              :mcp-page-id "00000000-0000-0000-0000-000000000002"
+              :mcp-shape-id "00000000-0000-0000-0000-000000000003"}
+             (select-keys context [:external-session-id
+                                   :client-event-origin
+                                   :mcp-tool-name
+                                   :mcp-adapter
+                                   :mcp-session-id
+                                   :mcp-file-id
+                                   :mcp-page-id
+                                   :mcp-shape-id])))))
+
+(t/deftest get-mcp-context-from-request-ignores-empty-values
+  (let [get-mcp-context-from-request (ns-resolve 'app.loggers.audit 'get-mcp-context-from-request)
+        request (reify yetti.request/IRequest
+                  (get-header [_ name]
+                    (case name
+                      "x-penpot-mcp-tool" " "
+                      "x-penpot-mcp-adapter" "null"
+                      nil)))]
+    (t/is (= {} (get-mcp-context-from-request request)))))
+
+(t/deftest get-mcp-context-from-request-truncates-long-values
+  (let [get-mcp-context-from-request (ns-resolve 'app.loggers.audit 'get-mcp-context-from-request)
+        long-name (apply str (repeat 300 "x"))
+        request (reify yetti.request/IRequest
+                  (get-header [_ name]
+                    (case name
+                      "x-penpot-mcp-tool" long-name
+                      nil)))
+        context (get-mcp-context-from-request request)]
+    (t/is (<= (count (:mcp-tool-name context)) 200))))
+
+(t/deftest filter-telemetry-context-keeps-safe-mcp-context
+  (let [event {:source "backend"
+               :context {:client-event-origin "mcp"
+                         :mcp-tool-name "shape.update"
+                         :mcp-adapter "backend-command"
+                         :mcp-session-id "session-1"
+                         :mcp-file-id "00000000-0000-0000-0000-000000000001"}}]
+    (t/is (= {:client-event-origin "mcp"
+              :mcp-tool-name "shape.update"
+              :mcp-adapter "backend-command"}
+             (:context (audit/filter-telemetry-context event))))))
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; INSERT DEFAULTS
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;

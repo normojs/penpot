@@ -76,6 +76,40 @@ test("PenpotRpcClient.post sends JSON body", async () => {
     }
 });
 
+test("PenpotRpcClient.post sends MCP audit context headers", async () => {
+    let call: FetchCall | undefined;
+    const restoreFetch = withFetchMock(async (input, init) => {
+        call = { input, init };
+        return new Response(JSON.stringify({ id: "shape-1" }), { status: 200 });
+    });
+
+    try {
+        const client = new PenpotRpcClient("http://penpot.example");
+        const result = await client.post("create-file-shape", { id: "file-1", "page-id": "page-1" }, "token-123", {
+            mcpToolName: "shape.create_rect",
+            mcpAdapter: "backend-command",
+            mcpSessionId: "session-1",
+            mcpFileId: "file-1",
+            mcpPageId: "page-1",
+            mcpShapeId: "shape-1",
+        });
+
+        assert.deepEqual(result, { id: "shape-1" });
+        assert.ok(call);
+        const headers = call.init?.headers as Record<string, string>;
+        assert.equal(headers["x-event-origin"], "mcp");
+        assert.equal(headers["x-external-session-id"], "session-1");
+        assert.equal(headers["x-penpot-mcp-tool"], "shape.create_rect");
+        assert.equal(headers["x-penpot-mcp-adapter"], "backend-command");
+        assert.equal(headers["x-penpot-mcp-session-id"], "session-1");
+        assert.equal(headers["x-penpot-mcp-file-id"], "file-1");
+        assert.equal(headers["x-penpot-mcp-page-id"], "page-1");
+        assert.equal(headers["x-penpot-mcp-shape-id"], "shape-1");
+    } finally {
+        restoreFetch();
+    }
+});
+
 test("PenpotRpcClient classifies backend configuration errors", async () => {
     const client = new PenpotRpcClient("not a url");
 

@@ -1,5 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
+import type { PenpotRpcRequestContext } from "../src/PenpotRpcClient.js";
 import type { PenpotMcpServer } from "../src/PenpotMcpServer.js";
 import {
     ShapeCreateFrameTool,
@@ -12,6 +13,7 @@ type RpcCall = {
     methodName: string;
     params: Record<string, unknown>;
     userToken: string;
+    context?: PenpotRpcRequestContext;
 };
 
 function parseJsonResponse(response: Awaited<ReturnType<ShapeCreateFrameTool["execute"]>>) {
@@ -24,11 +26,12 @@ function parseJsonResponse(response: Awaited<ReturnType<ShapeCreateFrameTool["ex
 
 function mcpServerWithRpc(
     rpcClient: { post?: (...args: any[]) => Promise<unknown> },
-    userToken = "token-1"
+    userToken = "token-1",
+    mcpSessionId = "session-1"
 ): PenpotMcpServer {
     return {
         rpcClient,
-        getSessionContext: () => ({ userToken }),
+        getSessionContext: () => ({ userToken, mcpSessionId }),
     } as unknown as PenpotMcpServer;
 }
 
@@ -36,8 +39,13 @@ test("ShapeCreateFrameTool uses backend RPC when fileId and pageId are provided"
     const calls: RpcCall[] = [];
     const tool = new ShapeCreateFrameTool(
         mcpServerWithRpc({
-            post: async (methodName: string, params: Record<string, unknown>, userToken: string) => {
-                calls.push({ methodName, params, userToken });
+            post: async (
+                methodName: string,
+                params: Record<string, unknown>,
+                userToken: string,
+                context?: PenpotRpcRequestContext
+            ) => {
+                calls.push({ methodName, params, userToken, context });
                 return {
                     shape: { id: "00000000-0000-0000-0000-000000000003", type: "frame", name: "Login" },
                     revn: 1,
@@ -81,6 +89,14 @@ test("ShapeCreateFrameTool uses backend RPC when fileId and pageId are provided"
                 "font-size": undefined,
             },
             userToken: "token-1",
+            context: {
+                mcpToolName: "shape.create_frame",
+                mcpSessionId: "session-1",
+                mcpAdapter: "backend-command",
+                mcpFileId: "00000000-0000-0000-0000-000000000001",
+                mcpPageId: "00000000-0000-0000-0000-000000000002",
+                mcpShapeId: "00000000-0000-0000-0000-000000000003",
+            },
         },
     ]);
     assert.equal(body.status, "ok");
@@ -93,8 +109,13 @@ test("ShapeCreateTextTool maps backend text parameters", async () => {
     const calls: RpcCall[] = [];
     const tool = new ShapeCreateTextTool(
         mcpServerWithRpc({
-            post: async (methodName: string, params: Record<string, unknown>, userToken: string) => {
-                calls.push({ methodName, params, userToken });
+            post: async (
+                methodName: string,
+                params: Record<string, unknown>,
+                userToken: string,
+                context?: PenpotRpcRequestContext
+            ) => {
+                calls.push({ methodName, params, userToken, context });
                 return {
                     shape: { id: "00000000-0000-0000-0000-000000000004", type: "text", name: "Title" },
                     revn: 2,
@@ -124,6 +145,14 @@ test("ShapeCreateTextTool maps backend text parameters", async () => {
     assert.equal(calls[0].params.content, "Welcome");
     assert.equal(calls[0].params["font-size"], 24);
     assert.deepEqual(calls[0].params.fill, { color: "#111111" });
+    assert.deepEqual(calls[0].context, {
+        mcpToolName: "shape.create_text",
+        mcpSessionId: "session-1",
+        mcpAdapter: "backend-command",
+        mcpFileId: "00000000-0000-0000-0000-000000000001",
+        mcpPageId: "00000000-0000-0000-0000-000000000002",
+        mcpShapeId: undefined,
+    });
     assert.equal(body.status, "ok");
     assert.equal(body.data.adapter, "backend-command");
 });
@@ -158,8 +187,13 @@ test("ShapeUpdateTool uses backend RPC when fileId is provided", async () => {
     const calls: RpcCall[] = [];
     const tool = new ShapeUpdateTool(
         mcpServerWithRpc({
-            post: async (methodName: string, params: Record<string, unknown>, userToken: string) => {
-                calls.push({ methodName, params, userToken });
+            post: async (
+                methodName: string,
+                params: Record<string, unknown>,
+                userToken: string,
+                context?: PenpotRpcRequestContext
+            ) => {
+                calls.push({ methodName, params, userToken, context });
                 return {
                     shape: { id: "00000000-0000-0000-0000-000000000003", type: "rect", name: "CTA" },
                     revn: 3,
@@ -203,6 +237,14 @@ test("ShapeUpdateTool uses backend RPC when fileId is provided", async () => {
                 "font-size": undefined,
             },
             userToken: "token-1",
+            context: {
+                mcpToolName: "shape.update",
+                mcpSessionId: "session-1",
+                mcpAdapter: "backend-command",
+                mcpFileId: "00000000-0000-0000-0000-000000000001",
+                mcpPageId: "00000000-0000-0000-0000-000000000002",
+                mcpShapeId: "00000000-0000-0000-0000-000000000003",
+            },
         },
     ]);
     assert.equal(body.status, "ok");
@@ -215,8 +257,13 @@ test("ShapeDeleteTool uses backend RPC when fileId is provided", async () => {
     const calls: RpcCall[] = [];
     const tool = new ShapeDeleteTool(
         mcpServerWithRpc({
-            post: async (methodName: string, params: Record<string, unknown>, userToken: string) => {
-                calls.push({ methodName, params, userToken });
+            post: async (
+                methodName: string,
+                params: Record<string, unknown>,
+                userToken: string,
+                context?: PenpotRpcRequestContext
+            ) => {
+                calls.push({ methodName, params, userToken, context });
                 return {
                     shape: { id: "00000000-0000-0000-0000-000000000003", type: "rect", name: "CTA" },
                     revn: 4,
@@ -241,6 +288,14 @@ test("ShapeDeleteTool uses backend RPC when fileId is provided", async () => {
                 "shape-id": "00000000-0000-0000-0000-000000000003",
             },
             userToken: "token-1",
+            context: {
+                mcpToolName: "shape.delete",
+                mcpSessionId: "session-1",
+                mcpAdapter: "backend-command",
+                mcpFileId: "00000000-0000-0000-0000-000000000001",
+                mcpPageId: undefined,
+                mcpShapeId: "00000000-0000-0000-0000-000000000003",
+            },
         },
     ]);
     assert.equal(body.status, "ok");
