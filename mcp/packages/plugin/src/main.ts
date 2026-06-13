@@ -7,6 +7,19 @@ document.body.dataset.theme = searchParams.get("theme") ?? "light";
 // WebSocket connection management
 let ws: WebSocket | null = null;
 let latestFileContextMessage: FileContextUpdateMessage | null = null;
+let latestPluginHelloMessage: PluginHelloMessage | null = null;
+
+const MCP_PROTOCOL_VERSION = "1.0";
+const MCP_PLUGIN_CAPABILITIES = [
+    "file-context.read",
+    "file-context.bind",
+    "page.read",
+    "page.write",
+    "shape.write-basic",
+    "prototype.write-basic",
+    "export.read",
+    "execute-code.optional",
+];
 
 type FileContextUpdateMessage = {
     type: "file-context-update";
@@ -18,6 +31,40 @@ type FileContextControlRequestMessage = {
     type: "file-context-bind-request" | "file-context-release-request";
     requestId: string;
     context?: unknown;
+};
+
+type PluginHelloMessage = {
+    type: "plugin-hello";
+    protocolVersion: string;
+    pluginVersion: string;
+    penpotVersion?: string;
+    frontendVersion?: string;
+    capabilities: string[];
+    fileContextCapabilities: string[];
+    ownerTabId?: string;
+    updatedAt: string;
+};
+
+type PluginCompatibilityMessage = {
+    type: "plugin-compatibility";
+    compatible: boolean;
+    serverVersion: string;
+    protocolVersion: string;
+    supportedCapabilities: string[];
+    requiredCapabilities: string[];
+    missingCapabilities: string[];
+    unsupportedCapabilities: string[];
+    error?: {
+        code: string;
+        message: string;
+    };
+};
+
+type StartServerMessage = {
+    type: "start-server";
+    url?: string;
+    token?: string;
+    hello?: PluginHelloMessage;
 };
 
 const statusPill = document.getElementById("connection-status") as HTMLElement;
@@ -55,6 +102,13 @@ function updateConnectionStatus(code: string, label: string): void {
         },
         "*"
     );
+}
+
+function showVersionWarningText(message: string): void {
+    if (versionWarningEl && versionWarningTextEl) {
+        versionWarningTextEl.textContent = message;
+        versionWarningEl.hidden = false;
+    }
 }
 
 /**
@@ -99,6 +153,14 @@ function sendFileContextUpdate(message: FileContextUpdateMessage): void {
     sendServerMessage(message);
 }
 
+function sendPluginHello(): void {
+    const hello = latestPluginHelloMessage ?? buildFallbackPluginHello();
+    sendServerMessage({
+        ...hello,
+        updatedAt: new Date().toISOString(),
+    });
+}
+
 function sendServerMessage(message: any): void {
     if (ws && ws.readyState === WebSocket.OPEN) {
         ws.send(JSON.stringify(message));
@@ -108,11 +170,46 @@ function sendServerMessage(message: any): void {
     }
 }
 
+function buildFallbackPluginHello(): PluginHelloMessage {
+    return {
+        type: "plugin-hello",
+        protocolVersion: MCP_PROTOCOL_VERSION,
+        pluginVersion: PENPOT_MCP_VERSION,
+        capabilities: [...MCP_PLUGIN_CAPABILITIES],
+        fileContextCapabilities: [],
+        updatedAt: new Date().toISOString(),
+    };
+}
+
+function handlePluginCompatibility(message: PluginCompatibilityMessage): boolean {
+    if (message.compatible) {
+        console.log("MCP plugin compatibility accepted:", message);
+        updateConnectionStatus("connected", "Connected");
+        return true;
+    }
+
+    const reason = message.error?.message ?? "The MCP plugin is not compatible with this MCP server.";
+    console.warn("MCP plugin compatibility rejected:", message);
+    showVersionWarningText(reason);
+    updateConnectionStatus("error", "Incompatible MCP plugin");
+    ws?.close(1008, truncateCloseReason(reason));
+    return false;
+}
+
+function truncateCloseReason(reason: string): string {
+    return reason.length > 120 ? `${reason.slice(0, 117)}...` : reason;
+}
+
 /**
  * Establishes a WebSocket connection to the MCP server.
  */
-function connectToMcpServer(baseUrl?: string, token?: string): void {
+function connectToMcpServer(baseUrl?: string, token?: string, hello?: PluginHelloMessage): void {
+    if (hello) {
+        latestPluginHelloMessage = hello;
+    }
+
     if (ws?.readyState === WebSocket.OPEN) {
+        sendPluginHello();
         updateConnectionStatus("connected", "Connected");
         return;
     }
@@ -129,15 +226,13 @@ function connectToMcpServer(baseUrl?: string, token?: string): void {
         updateConnectionStatus("connecting", "Connecting...");
 
         ws.onopen = () => {
-            setTimeout(() => {
-                if (ws) {
-                    console.log("Connected to MCP server");
-                    updateConnectionStatus("connected", "Connected");
-                    if (latestFileContextMessage) {
-                        sendServerMessage(latestFileContextMessage);
-                    }
+            if (ws) {
+                console.log("Connected to MCP server, negotiating compatibility");
+                sendPluginHello();
+                if (latestFileContextMessage) {
+                    sendServerMessage(latestFileContextMessage);
                 }
-            }, 100);
+            }
         };
 
         ws.onmessage = (event) => {
@@ -145,7 +240,11 @@ function connectToMcpServer(baseUrl?: string, token?: string): void {
                 console.log("Received from MCP server:", event.data);
                 const request = JSON.parse(event.data);
                 // Track the current task received from the MCP server
-                if (request.task) {
+                if (request.type === "plugin-compatibility") {
+                    if (!handlePluginCompatibility(request)) {
+                        wsError = request.error ?? request;
+                    }
+                } else if (request.task) {
                     updateCurrentTask(request.task);
                     updateExecutedCode(request.params?.code ?? null);
                     parent.postMessage(request, "*");
@@ -203,16 +302,15 @@ disconnectBtn?.addEventListener("click", () => {
 // Listen plugin.ts messages
 window.addEventListener("message", (event) => {
     if (event.data.type === "start-server") {
-        connectToMcpServer(event.data.url, event.data.token);
+        const message = event.data as StartServerMessage;
+        connectToMcpServer(message.url, message.token, message.hello);
     }
     if (event.data.type === "version-mismatch") {
-        if (versionWarningEl && versionWarningTextEl) {
-            versionWarningTextEl.innerHTML =
-                `<b>Version mismatch detected</b>: This version of the MCP server is intended for Penpot ` +
+        showVersionWarningText(
+            `Version mismatch detected: This version of the MCP server is intended for Penpot ` +
                 `${event.data.mcpVersion} while the current version is ${event.data.penpotVersion}. ` +
-                `Executions may not work or produce suboptimal results.`;
-            versionWarningEl.hidden = false;
-        }
+                `Executions may not work or produce suboptimal results.`
+        );
     }
     if (event.data.type === "stop-server") {
         ws?.close();

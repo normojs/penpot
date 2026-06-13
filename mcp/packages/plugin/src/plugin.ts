@@ -34,6 +34,18 @@ type FileContextControlResultMessage = {
     };
 };
 
+type PluginHelloMessage = {
+    type: "plugin-hello";
+    protocolVersion: string;
+    pluginVersion: string;
+    penpotVersion?: string;
+    frontendVersion?: string;
+    capabilities: string[];
+    fileContextCapabilities: string[];
+    ownerTabId?: string;
+    updatedAt: string;
+};
+
 type FileContextSnapshot = {
     contextId: string;
     status: "available";
@@ -48,6 +60,17 @@ type FileContextSnapshot = {
     updatedAt: string;
 };
 
+const MCP_PROTOCOL_VERSION = "1.0";
+const MCP_PLUGIN_CAPABILITIES = [
+    "file-context.read",
+    "file-context.bind",
+    "page.read",
+    "page.write",
+    "shape.write-basic",
+    "prototype.write-basic",
+    "export.read",
+    "execute-code.optional",
+];
 const FILE_CONTEXT_CAPABILITIES = [
     "page.read",
     "selection.read",
@@ -119,6 +142,20 @@ function buildFileContextSnapshot(): FileContextSnapshot | null {
         pageName: currentPage?.name,
         selectionIds,
         capabilities: FILE_CONTEXT_CAPABILITIES,
+        updatedAt: new Date().toISOString(),
+    };
+}
+
+function buildPluginHelloMessage(): PluginHelloMessage {
+    return {
+        type: "plugin-hello",
+        protocolVersion: MCP_PROTOCOL_VERSION,
+        pluginVersion: PENPOT_MCP_VERSION,
+        penpotVersion: penpot.version ? extractVersionPrefix(penpot.version) : undefined,
+        frontendVersion: mcp?.getFrontendVersion?.(),
+        capabilities: [...MCP_PLUGIN_CAPABILITIES],
+        fileContextCapabilities: [...FILE_CONTEXT_CAPABILITIES],
+        ownerTabId,
         updatedAt: new Date().toISOString(),
     };
 }
@@ -201,6 +238,7 @@ penpot.ui.onMessage<string | { id: string; type?: string; status?: string; task:
                 type: "start-server",
                 url: mcp?.getServerUrl(),
                 token: mcp?.getToken(),
+                hello: buildPluginHelloMessage(),
             });
             reportFileContext("ui-initialized");
         }
@@ -264,6 +302,7 @@ if (mcp) {
             type: "start-server",
             url: mcp?.getServerUrl(),
             token: mcp?.getToken(),
+            hello: buildPluginHelloMessage(),
         });
         reportFileContext("mcp-connect");
     });

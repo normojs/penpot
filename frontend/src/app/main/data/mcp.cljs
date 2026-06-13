@@ -48,6 +48,12 @@
   [event]
   (contains? #{::initialize ::finalize} (ptk/type event)))
 
+(defn frontend-version
+  []
+  (or (:full cf/version)
+      cf/version-tag
+      "unknown"))
+
 (defn set-mcp-active
   [value]
   (ptk/reify ::set-mcp-active
@@ -236,6 +242,7 @@
                   #js
                    {:getToken (constantly token)
                     :getServerUrl #(str cf/mcp-ws-uri)
+                    :getFrontendVersion frontend-version
                     :setMcpStatus
                     (fn [status]
                       (when (= status "connected")

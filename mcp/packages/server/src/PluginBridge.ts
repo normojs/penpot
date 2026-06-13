@@ -2,15 +2,19 @@ import { WebSocket, WebSocketServer } from "ws";
 import * as http from "http";
 import { PluginTask } from "./PluginTask";
 import {
+    PluginClientInfo,
     PluginFileContextBindRequestMessage,
     PluginFileContextControlResultMessage,
     PluginFileContextReleaseRequestMessage,
     PluginFileContextUpdateMessage,
+    PluginHelloMessage,
     PluginTaskResponse,
     PluginTaskResult,
     PluginToServerMessage,
+    ServerPluginCompatibilityMessage,
     WrappedPluginTaskResponse,
 } from "@penpot/mcp-common";
+import { getPluginClientInfo, negotiatePluginCompatibility } from "./PluginCompatibility";
 import { createLogger } from "./logger";
 import type { PenpotMcpServer } from "./PenpotMcpServer";
 
@@ -20,6 +24,8 @@ interface ClientConnection {
     socket: WebSocket;
     userToken: string | null;
     pingInterval: NodeJS.Timeout;
+    plugin?: PluginClientInfo;
+    compatibility?: ServerPluginCompatibilityMessage;
 }
 
 /**
@@ -115,13 +121,46 @@ export class PluginBridge {
     }
 
     public getStatus() {
+        const clients = Array.from(this.connectedClients.values()).map((connection) =>
+            this.getClientStatus(connection)
+        );
+
         return {
             port: this.port,
             connectedClients: this.connectedClients.size,
             authenticatedClients: this.clientsByToken.size,
+            compatibleClients: clients.filter((client) => client.negotiationStatus === "compatible").length,
+            incompatibleClients: clients.filter((client) => client.negotiationStatus === "incompatible").length,
+            pendingNegotiationClients: clients.filter((client) => client.negotiationStatus === "pending").length,
+            clients,
             pendingTasks: this.pendingTasks.size,
             taskTimeoutSeconds: this.taskTimeoutSecs,
         };
+    }
+
+    private getClientStatus(connection: ClientConnection) {
+        return {
+            authenticated: Boolean(connection.userToken),
+            negotiationStatus: this.getNegotiationStatus(connection),
+            plugin: connection.plugin ?? null,
+            compatibility: connection.compatibility
+                ? {
+                      compatible: connection.compatibility.compatible,
+                      serverVersion: connection.compatibility.serverVersion,
+                      protocolVersion: connection.compatibility.protocolVersion,
+                      missingCapabilities: connection.compatibility.missingCapabilities,
+                      unsupportedCapabilities: connection.compatibility.unsupportedCapabilities,
+                      error: connection.compatibility.error,
+                  }
+                : null,
+        };
+    }
+
+    private getNegotiationStatus(connection: ClientConnection): "pending" | "compatible" | "incompatible" {
+        if (!connection.compatibility) {
+            return "pending";
+        }
+        return connection.compatibility.compatible ? "compatible" : "incompatible";
     }
 
     /**
@@ -159,6 +198,16 @@ export class PluginBridge {
         connection: ClientConnection,
         message: PluginToServerMessage<any>
     ): Promise<void> {
+        if (this.isPluginHelloMessage(message)) {
+            this.handlePluginHello(connection, message);
+            return;
+        }
+
+        if (!connection.compatibility?.compatible) {
+            this.logger.warn("Ignoring plugin message before successful MCP compatibility negotiation");
+            return;
+        }
+
         if (this.isFileContextUpdateMessage(message)) {
             this.handleFileContextUpdate(connection, message);
             return;
@@ -185,6 +234,38 @@ export class PluginBridge {
         }
 
         this.logger.warn("Received unsupported WebSocket message from plugin");
+    }
+
+    private handlePluginHello(connection: ClientConnection, message: PluginHelloMessage): void {
+        const compatibility = negotiatePluginCompatibility(message);
+        connection.plugin = getPluginClientInfo(message);
+        connection.compatibility = compatibility;
+        this.sendPluginCompatibility(connection, compatibility);
+
+        if (compatibility.compatible) {
+            this.logger.info(
+                "MCP plugin compatibility accepted: protocol=%s plugin=%s penpot=%s frontend=%s",
+                message.protocolVersion,
+                message.pluginVersion,
+                message.penpotVersion ?? "<unknown>",
+                message.frontendVersion ?? "<unknown>"
+            );
+            return;
+        }
+
+        this.logger.warn(
+            "MCP plugin compatibility rejected: code=%s message=%s",
+            compatibility.error?.code ?? "mcp_plugin_incompatible",
+            compatibility.error?.message ?? "Incompatible MCP plugin"
+        );
+        setTimeout(() => {
+            if (connection.socket.readyState === WebSocket.OPEN) {
+                connection.socket.close(
+                    1008,
+                    this.truncateCloseReason(compatibility.error?.message ?? "Incompatible MCP plugin")
+                );
+            }
+        }, 0);
     }
 
     private handleFileContextUpdate(connection: ClientConnection, message: PluginFileContextUpdateMessage): void {
@@ -291,6 +372,23 @@ export class PluginBridge {
         }
     }
 
+    private sendPluginCompatibility(connection: ClientConnection, message: ServerPluginCompatibilityMessage): void {
+        if (connection.socket.readyState === WebSocket.OPEN) {
+            connection.socket.send(JSON.stringify(message));
+        }
+    }
+
+    private isPluginHelloMessage(message: unknown): message is PluginHelloMessage {
+        return (
+            this.isRecord(message) &&
+            message.type === "plugin-hello" &&
+            typeof message.protocolVersion === "string" &&
+            typeof message.pluginVersion === "string" &&
+            Array.isArray(message.capabilities) &&
+            Array.isArray(message.fileContextCapabilities)
+        );
+    }
+
     private isFileContextUpdateMessage(message: unknown): message is PluginFileContextUpdateMessage {
         return this.isRecord(message) && message.type === "file-context-update";
     }
@@ -389,6 +487,7 @@ export class PluginBridge {
                 );
             }
 
+            this.assertConnectionCompatible(connection);
             return connection;
         } else {
             // single-user mode: return the single connected client
@@ -406,8 +505,26 @@ export class PluginBridge {
 
             // return the first (and only) connection
             const connection = this.connectedClients.values().next().value;
+            this.assertConnectionCompatible(<ClientConnection>connection);
             return <ClientConnection>connection;
         }
+    }
+
+    private assertConnectionCompatible(connection: ClientConnection): void {
+        if (!connection.compatibility) {
+            throw new Error("The connected Penpot MCP Plugin has not completed version/capability negotiation yet.");
+        }
+
+        if (!connection.compatibility.compatible) {
+            throw new Error(
+                connection.compatibility.error?.message ??
+                    "The connected Penpot MCP Plugin is not compatible with this MCP server."
+            );
+        }
+    }
+
+    private truncateCloseReason(reason: string): string {
+        return reason.length > 120 ? `${reason.slice(0, 117)}...` : reason;
     }
 
     /**

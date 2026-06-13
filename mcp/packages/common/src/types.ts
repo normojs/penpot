@@ -59,7 +59,72 @@ export interface PluginTaskResponse<T> {
     data?: T;
 }
 
-export type PluginMessageType = "task-response" | "file-context-update";
+export const MCP_PROTOCOL_VERSION = "1.0";
+
+export const MCP_SERVER_VERSION = "1.0.0";
+
+export const MCP_SERVER_CAPABILITIES = [
+    "global.read",
+    "file-context.read",
+    "file-context.bind",
+    "page.read",
+    "page.write",
+    "shape.write-basic",
+    "prototype.write-basic",
+    "export.read",
+    "backend-command.write",
+    "execute-code.optional",
+] as const;
+
+export const MCP_REQUIRED_PLUGIN_CAPABILITIES = [
+    "file-context.read",
+    "file-context.bind",
+    "page.read",
+    "page.write",
+    "shape.write-basic",
+    "prototype.write-basic",
+    "export.read",
+] as const;
+
+export type PluginMessageType = "plugin-hello" | "task-response" | "file-context-update";
+
+export interface PluginHelloMessage {
+    type: "plugin-hello";
+    protocolVersion: string;
+    pluginVersion: string;
+    penpotVersion?: string;
+    frontendVersion?: string;
+    capabilities: string[];
+    fileContextCapabilities: string[];
+    ownerTabId?: string;
+    updatedAt: string;
+}
+
+export interface PluginClientInfo {
+    protocolVersion: string;
+    pluginVersion: string;
+    penpotVersion?: string;
+    frontendVersion?: string;
+    capabilities: string[];
+    fileContextCapabilities: string[];
+    ownerTabId?: string;
+    updatedAt: string;
+}
+
+export interface ServerPluginCompatibilityMessage {
+    type: "plugin-compatibility";
+    compatible: boolean;
+    serverVersion: string;
+    protocolVersion: string;
+    supportedCapabilities: string[];
+    requiredCapabilities: string[];
+    missingCapabilities: string[];
+    unsupportedCapabilities: string[];
+    error?: {
+        code: string;
+        message: string;
+    };
+}
 
 export type FileContextStatus = "available" | "bound" | "stale" | "released" | "error";
 
@@ -165,7 +230,10 @@ export type PluginToServerMessage<T> =
     | PluginFileContextBindRequestMessage
     | PluginFileContextReleaseRequestMessage;
 
-export type ServerToPluginMessage = PluginTaskRequest | PluginFileContextControlResultMessage;
+export type ServerToPluginMessage =
+    | PluginTaskRequest
+    | PluginFileContextControlResultMessage
+    | ServerPluginCompatibilityMessage;
 
 /**
  * Parameters for the executeCode task.

@@ -21,6 +21,10 @@
     (t/is (= "disconnected" (get-in result [:mcp :connection-status])))
     (t/is (nil? (get-in result [:mcp :connected-tab])))))
 
+(t/deftest frontend-version-is-available-for-plugin-handshake
+  (t/is (string? (mcp/frontend-version)))
+  (t/is (seq (mcp/frontend-version))))
+
 (t/deftest initialize-owns-mcp-when-enabled-without-workspace
   (let [result (ptk/update (mcp/initialize) (state true))]
     (t/is (true? (get-in result [:mcp :active])))

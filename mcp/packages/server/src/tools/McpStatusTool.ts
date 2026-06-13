@@ -26,7 +26,14 @@ export class McpStatusTool extends Tool<EmptyToolArgs> {
         const sessionContext = this.getSessionContext();
         const userTokenPresent = Boolean(sessionContext?.userToken);
         const webSocket = status.transports.webSocket;
-        const pluginConnected = webSocket.connectedClients > 0;
+        const pluginStatus =
+            webSocket.compatibleClients > 0
+                ? "connected"
+                : webSocket.incompatibleClients > 0
+                  ? "incompatible"
+                  : webSocket.pendingNegotiationClients > 0
+                    ? "negotiating"
+                    : "disconnected";
         const fileContext = this.mcpServer.fileContextRegistry.getSessionSummary(sessionContext?.userToken);
 
         return new JsonResponse({
@@ -40,9 +47,13 @@ export class McpStatusTool extends Tool<EmptyToolArgs> {
                     userTokenPresent,
                 },
                 plugin: {
-                    status: pluginConnected ? "connected" : "disconnected",
+                    status: pluginStatus,
                     connectedClients: webSocket.connectedClients,
                     authenticatedClients: webSocket.authenticatedClients,
+                    compatibleClients: webSocket.compatibleClients,
+                    incompatibleClients: webSocket.incompatibleClients,
+                    pendingNegotiationClients: webSocket.pendingNegotiationClients,
+                    clients: webSocket.clients,
                     pendingTasks: webSocket.pendingTasks,
                 },
                 writeLimits: status.writeLimits,

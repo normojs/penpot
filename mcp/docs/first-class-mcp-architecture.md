@@ -1628,6 +1628,21 @@ P8.2 implementation note (2026-06-13):
 - `mcp.get_status` exposes token-safe write-limit configuration and current
   limiter scope counts for diagnostics.
 
+P8.3 implementation note (2026-06-13):
+
+- Shared MCP types now define protocol version `1.0`, server capabilities, and
+  the minimum plugin capabilities required for first-class file operations.
+- The bundled MCP plugin sends a `plugin-hello` message after WebSocket open
+  with plugin, Penpot, frontend, owner-tab, capability, and file-context
+  metadata.
+- The server replies with `plugin-compatibility`, records token-safe plugin
+  metadata in WebSocket status, and blocks task dispatch until negotiation
+  succeeds.
+- Protocol major-version mismatches or missing required plugin capabilities are
+  rejected with a structured error and WebSocket close code `1008`.
+- `mcp.get_status` now reports compatible, incompatible, and pending plugin
+  negotiation counts plus per-connection compatibility summaries.
+
 ## 10. Feature Backlog
 
 | Priority | Feature | Main modules | Notes |
