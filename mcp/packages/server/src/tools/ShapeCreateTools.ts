@@ -59,6 +59,7 @@ const parentIdSchema = z
 type PenpotRecord = Record<string, unknown>;
 type BackendShapeType = "frame" | "rect" | "text";
 type ShapeCreateAdapterArgs = { fileId?: string; pageId?: string; adapter?: string };
+type ShapeEditAdapterArgs = { fileId?: string; pageId?: string; adapter?: string; layout?: ShapeTaskParams["layout"] };
 
 abstract class ShapeTool<TArgs extends object> extends PenpotRpcTool<TArgs> {
     protected constructor(mcpServer: PenpotMcpServer, inputSchema: z.ZodRawShape) {
@@ -90,13 +91,40 @@ abstract class ShapeTool<TArgs extends object> extends PenpotRpcTool<TArgs> {
         });
     }
 
+    protected selectShapeEditAdapter(command: string, args: ShapeEditAdapterArgs): CommandAdapterSelection {
+        const hasExplicitTarget = Boolean(args.fileId || args.pageId);
+        const hasBackendTarget = Boolean(args.fileId && !args.layout);
+        return selectCommandAdapter({
+            command,
+            requestedAdapter: args.adapter ?? "auto",
+            candidates: [
+                {
+                    kind: "backend-command",
+                    available: hasBackendTarget,
+                    priority: 10,
+                    reason: args.fileId
+                        ? "backend-command does not support layout updates yet."
+                        : "backend-command requires explicit fileId.",
+                },
+                {
+                    kind: "plugin-live",
+                    available: !hasExplicitTarget,
+                    priority: 50,
+                    reason: hasExplicitTarget
+                        ? "plugin-live uses the bound workspace context; omit fileId and pageId to request it."
+                        : null,
+                },
+            ],
+        });
+    }
+
     protected adapterSelectionFailure(selection: CommandAdapterSelection): ToolResponse {
         return this.error(
             selection.status === "unsupported" ? "adapter_not_supported" : "adapter_not_available",
             `No available adapter matched '${selection.requested}' for ${selection.command}.`,
             [
                 "Use adapter: 'auto' to let MCP choose the first available adapter.",
-                "Pass fileId and pageId for backend-command, or omit both to use plugin-live.",
+                "Pass the backend-command target ids, or omit fileId and pageId to use plugin-live.",
             ],
             {
                 adapterSelection: selection,
@@ -164,6 +192,81 @@ abstract class ShapeTool<TArgs extends object> extends PenpotRpcTool<TArgs> {
                 shape: result.shape,
                 revn: result.revn,
                 vern: result.vern,
+            });
+        } catch (cause) {
+            return this.rpcFailure(cause);
+        }
+    }
+
+    protected async executeBackendShapeUpdate(
+        args: ShapeUpdateArgs,
+        adapterSelection: CommandAdapterSelection
+    ): Promise<ToolResponse> {
+        const userToken = this.getUserToken();
+        if (!userToken) {
+            return this.authenticationRequired();
+        }
+
+        try {
+            const result = await this.rpcPost<PenpotRecord>(
+                "update-file-shape",
+                {
+                    id: args.fileId,
+                    "page-id": args.pageId,
+                    "shape-id": args.shapeId,
+                    name: this.nonEmptyString(args.name),
+                    x: args.x,
+                    y: args.y,
+                    width: args.width,
+                    height: args.height,
+                    fill: args.fill,
+                    stroke: args.stroke,
+                    "border-radius": args.borderRadius,
+                    content: args.content,
+                    "font-size": args.fontSize,
+                },
+                userToken
+            );
+            return this.ok({
+                adapter: adapterSelection.selected,
+                adapterSelection,
+                fileId: args.fileId,
+                shape: result.shape,
+                revn: result.revn,
+                vern: result.vern,
+            });
+        } catch (cause) {
+            return this.rpcFailure(cause);
+        }
+    }
+
+    protected async executeBackendShapeDelete(
+        args: ShapeDeleteArgs,
+        adapterSelection: CommandAdapterSelection
+    ): Promise<ToolResponse> {
+        const userToken = this.getUserToken();
+        if (!userToken) {
+            return this.authenticationRequired();
+        }
+
+        try {
+            const result = await this.rpcPost<PenpotRecord>(
+                "delete-file-shape",
+                {
+                    id: args.fileId,
+                    "page-id": args.pageId,
+                    "shape-id": args.shapeId,
+                },
+                userToken
+            );
+            return this.ok({
+                adapter: adapterSelection.selected,
+                adapterSelection,
+                fileId: args.fileId,
+                shape: result.shape,
+                revn: result.revn,
+                vern: result.vern,
+                deleted: true,
             });
         } catch (cause) {
             return this.rpcFailure(cause);
@@ -452,7 +555,10 @@ export class ShapeCreateImageTool extends ShapeTool<ShapeCreateImageArgs> {
 
 export class ShapeUpdateArgs {
     static schema = {
+        fileId: uuidSchema.optional().describe("Optional file id for backend-command headless shape updates."),
+        pageId: uuidSchema.optional().describe("Optional page id for backend-command headless shape updates."),
         shapeId: z.string().uuid().describe("Shape id to update."),
+        adapter: z.string().optional().describe("Optional adapter request: auto, backend-command, or plugin-live."),
         name: z.string().min(1).max(250).optional().describe("Optional new shape name."),
         x: coordinateSchema.optional().describe("Optional new x position. Uses parent-relative coordinates."),
         y: coordinateSchema.optional().describe("Optional new y position. Uses parent-relative coordinates."),
@@ -466,7 +572,10 @@ export class ShapeUpdateArgs {
         layout: layoutSchema,
     };
 
+    fileId?: string;
+    pageId?: string;
     shapeId!: string;
+    adapter?: string;
     name?: string;
     x?: number;
     y?: number;
@@ -494,30 +603,48 @@ export class ShapeUpdateTool extends ShapeTool<ShapeUpdateArgs> {
     }
 
     protected async executeCore(args: ShapeUpdateArgs): Promise<ToolResponse> {
-        return this.executeShapeTask({
-            action: "update",
-            shapeId: args.shapeId,
-            name: this.nonEmptyString(args.name),
-            x: args.x,
-            y: args.y,
-            width: args.width,
-            height: args.height,
-            fill: args.fill,
-            stroke: args.stroke,
-            borderRadius: args.borderRadius,
-            content: args.content,
-            fontSize: args.fontSize,
-            layout: args.layout,
-        });
+        const adapterSelection = this.selectShapeEditAdapter(ToolNames.SHAPE_UPDATE, args);
+        if (adapterSelection.status !== "selected") {
+            return this.adapterSelectionFailure(adapterSelection);
+        }
+
+        if (adapterSelection.selected === "backend-command") {
+            return this.executeBackendShapeUpdate(args, adapterSelection);
+        }
+
+        return this.executeShapeTask(
+            {
+                action: "update",
+                shapeId: args.shapeId,
+                name: this.nonEmptyString(args.name),
+                x: args.x,
+                y: args.y,
+                width: args.width,
+                height: args.height,
+                fill: args.fill,
+                stroke: args.stroke,
+                borderRadius: args.borderRadius,
+                content: args.content,
+                fontSize: args.fontSize,
+                layout: args.layout,
+            },
+            adapterSelection
+        );
     }
 }
 
 export class ShapeDeleteArgs {
     static schema = {
+        fileId: uuidSchema.optional().describe("Optional file id for backend-command headless shape deletion."),
+        pageId: uuidSchema.optional().describe("Optional page id for backend-command headless shape deletion."),
         shapeId: z.string().uuid().describe("Shape id to delete."),
+        adapter: z.string().optional().describe("Optional adapter request: auto, backend-command, or plugin-live."),
     };
 
+    fileId?: string;
+    pageId?: string;
     shapeId!: string;
+    adapter?: string;
 }
 
 export class ShapeDeleteTool extends ShapeTool<ShapeDeleteArgs> {
@@ -534,9 +661,21 @@ export class ShapeDeleteTool extends ShapeTool<ShapeDeleteArgs> {
     }
 
     protected async executeCore(args: ShapeDeleteArgs): Promise<ToolResponse> {
-        return this.executeShapeTask({
-            action: "delete",
-            shapeId: args.shapeId,
-        });
+        const adapterSelection = this.selectShapeEditAdapter(ToolNames.SHAPE_DELETE, args);
+        if (adapterSelection.status !== "selected") {
+            return this.adapterSelectionFailure(adapterSelection);
+        }
+
+        if (adapterSelection.selected === "backend-command") {
+            return this.executeBackendShapeDelete(args, adapterSelection);
+        }
+
+        return this.executeShapeTask(
+            {
+                action: "delete",
+                shapeId: args.shapeId,
+            },
+            adapterSelection
+        );
     }
 }

@@ -602,3 +602,35 @@ P7.7 is complete when:
   through RPC.
 - MCP and `penpot-cli` entry adapters remain plugin-live for update/delete until
   the next adapter wiring slice.
+
+## P7.8 Shape Update/Delete Entry Adapter Slice
+
+P7.8 wires the P7.7 backend commands into the TypeScript entry adapters:
+
+- MCP `shape.update` selects `backend-command` when callers provide `fileId`
+  and `shapeId`. `pageId` is optional because the backend can resolve the shape
+  by scanning file pages.
+- MCP `shape.delete` uses the same explicit backend target contract.
+- MCP update/delete calls without explicit `fileId` / `pageId` continue to use
+  plugin-live and the currently bound workspace context.
+- `penpot-cli shape update` calls backend `update-file-shape` directly.
+- `penpot-cli shape delete` calls backend `delete-file-shape` directly.
+
+The backend-command update contract is:
+
+```text
+fileId + shapeId + optional pageId + at least one simple update field
+```
+
+Supported update fields are `name`, `x`, `y`, `width`, `height`, `fill`,
+`stroke`, `borderRadius`, `content`, and `fontSize`. Layout updates remain
+plugin-live because the backend/common P7.7 slice deliberately supports only
+simple generated shapes and simple patches.
+
+P7.8 is complete when:
+
+- MCP update/delete tools report backend-command adapter metadata for explicit
+  file targets.
+- CLI shape update/delete commands return script-friendly text/JSON output with
+  `adapterSelection`.
+- MCP and CLI checks cover backend request mapping and help output.

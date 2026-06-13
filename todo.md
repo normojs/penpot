@@ -42,8 +42,9 @@ and text creation, P7.4 added exporter-backed dry-run plan metadata for
 explicit file/page/object exports, P7.5 added a shared adapter-selection
 helper with CLI/MCP adapter reporting, P7.6 wired backend-command shape
 creation into MCP and `penpot-cli`, and P7.7 added backend/common support for
-simple headless shape updates and deletes. The current implementation focus is
-P7.8: wiring shape update/delete entry adapters into MCP and `penpot-cli`.
+simple headless shape updates and deletes. P7.8 wired shape update/delete entry
+adapters into MCP and `penpot-cli`. The current implementation focus is P7.9:
+turning exporter dry-run plans into real exporter-backed CLI output.
 
 ## Feature Roadmap
 
@@ -64,8 +65,8 @@ remain the execution plan.
 | F10 | done | Export and preview tools | Phase 5, Phase 7 | Agents and CLI can export useful visual output | Completed 2026-06-12; MCP can export shape/page data and render PNG previews through typed tools |
 | F11 | done | Advanced execution controls | Phase 5, Phase 8 | Admins/users can control whether `execute_code` is available | Completed 2026-06-12; `execute_code` is disabled unless `PENPOT_MCP_ENABLE_EXECUTE_CODE=true` |
 | F12 | done | `penpot-cli` MCP operations | Phase 6 | Developers can inspect and operate MCP from terminal | Completed 2026-06-12; `penpot-cli mcp status`, `mcp config`, and `mcp logs` are available |
-| F13 | in_progress | `penpot-cli` file/page/export operations | Phase 6, Phase 7 | Scripts can create files, create pages, and prepare exports through the same automation layer | `file list/create/open`, `page list/create`, `shape create-*`, and `export page --dry-run` now report adapter-selection metadata; shape update/delete adapter wiring remains P7.8 and real export execution remains Phase 7 |
-| F14 | in_progress | Headless automation runtime | Phase 7 | Selected operations work without an open browser tab | P7.1 documented the neutral command runtime contract; P7.2 completed backend-command page list/create wiring; P7.3 added backend/common shape creation; P7.4 completed exporter dry-run planning; P7.5 completed shared adapter selection; P7.6 completed shape entry adapters; P7.7 completed backend/common shape update/delete; P7.8 is next for entry adapters |
+| F13 | in_progress | `penpot-cli` file/page/export operations | Phase 6, Phase 7 | Scripts can create files, create pages, prepare exports, and edit simple shapes through the same automation layer | `file list/create/open`, `page list/create`, `shape create/update/delete`, and `export page --dry-run` now report adapter-selection metadata; real export execution remains P7.9 |
+| F14 | in_progress | Headless automation runtime | Phase 7 | Selected operations work without an open browser tab | P7.1 documented the neutral command runtime contract; P7.2 completed backend-command page list/create wiring; P7.3 added backend/common shape creation; P7.4 completed exporter dry-run planning; P7.5 completed shared adapter selection; P7.6 completed shape entry adapters; P7.7 completed backend/common shape update/delete; P7.8 completed update/delete entry adapters; P7.9 is next for real exporter execution |
 | F15 | todo | Audit, limits, and confirmations | Phase 8 | MCP is safer for real deployments | Write operations are auditable and destructive actions are gated |
 
 ## Phase 0: Baseline, Planning, And Rules
@@ -172,7 +173,8 @@ Goal: move stable automation out of browser/plugin dependency.
 | P7.5 | done | Add adapter selection | `mcp`, future `penpot-cli` | Commands choose backend, exporter, plugin, or local adapter | Completed 2026-06-13; added `@penpot/command-runtime` with shared adapter selection, wired CLI page/export and MCP page tools to report `adapterSelection`, and covered unsupported explicit adapter requests in MCP tests |
 | P7.6 | done | Wire headless shape entry adapters | `mcp`, `penpot-cli`, `backend`, `common` | MCP and CLI can create simple shapes without a live workspace | Completed 2026-06-13; MCP `shape.create_frame` / `shape.create_rect` / `shape.create_text` use backend-command when `fileId` and `pageId` are supplied, CLI has matching `shape create-*` commands, and plugin-live fallback remains for bound workspace calls |
 | P7.7 | done | Add backend/common simple headless shape update/delete | `backend`, `common` | Backend/common can revise or remove simple generated shapes without a live workspace | Completed 2026-06-13; added common update/delete request helpers, backend `update-file-shape` / `delete-file-shape` RPCs, geometry/style/text coverage, and delete persistence checks; MCP/CLI entry adapter wiring moved to P7.8 |
-| P7.8 | in_progress | Wire headless shape update/delete entry adapters | `mcp`, `penpot-cli`, `backend`, `common` | Scripts and MCP can revise or remove simple generated shapes without a live workspace | Started 2026-06-13; wire MCP `shape.update` / `shape.delete` and CLI shape update/delete commands to backend-command using the P7.7 RPCs while preserving plugin-live fallback |
+| P7.8 | done | Wire headless shape update/delete entry adapters | `mcp`, `penpot-cli`, `backend`, `common` | Scripts and MCP can revise or remove simple generated shapes without a live workspace | Completed 2026-06-13; MCP `shape.update` / `shape.delete` use backend-command with explicit `fileId` / `shapeId`, CLI adds `shape update/delete`, and plugin-live fallback remains for bound workspace calls |
+| P7.9 | in_progress | Execute exporter-backed page output | `penpot-cli`, `exporter`, `mcp` | CLI can produce a real exported file from explicit file/page/object targets | Started 2026-06-13; replace `export page --dry-run` planning-only behavior with an opt-in real exporter request while preserving dry-run diagnostics |
 
 ## Phase 8: Hardening And Observability
 
@@ -189,12 +191,11 @@ Goal: make first-class MCP safe and diagnosable.
 
 ## Next Recommended Sprint
 
-Continue with P7.8 shape update/delete adapter wiring:
+Continue with P7.9 exporter-backed output execution:
 
-1. Audit existing MCP plugin-live `shape.update` / `shape.delete` request
-   mapping and the CLI shape command parser for compatible option names.
-2. Add MCP backend-command branches for explicit `fileId` / `shapeId` targets,
-   using optional `pageId` and preserving plugin-live fallback for bound
-   workspace usage.
-3. Add `penpot-cli shape update` and `penpot-cli shape delete` commands with
-   JSON adapter-selection metadata and focused smoke/type checks.
+1. Audit the exporter HTTP command shape already emitted by
+   `penpot-cli export page --dry-run` and the exporter service response format.
+2. Add real execution behind the existing `exporter` adapter when `--dry-run`
+   is omitted, preserving JSON/text diagnostics.
+3. Write output bytes or exporter resource metadata according to `--output`,
+   then add focused CLI tests/smoke checks.

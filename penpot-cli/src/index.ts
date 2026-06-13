@@ -29,6 +29,8 @@ Usage:
   penpot-cli shape create-frame --file <file-id> --page <page-id> --x <n> --y <n> --width <n> --height <n> [--format text|json]
   penpot-cli shape create-rect --file <file-id> --page <page-id> --parent <frame-id> --x <n> --y <n> --width <n> --height <n> [--format text|json]
   penpot-cli shape create-text --file <file-id> --page <page-id> --parent <frame-id> --x <n> --y <n> --width <n> --height <n> --content <text> [--format text|json]
+  penpot-cli shape update --file <file-id> --shape <shape-id> [--page <page-id>] [--x <n>] [--y <n>] [--width <n>] [--height <n>] [--fill <hex>] [--format text|json]
+  penpot-cli shape delete --file <file-id> --shape <shape-id> [--page <page-id>] [--format text|json]
   penpot-cli export page --file <file-id> --page <page-id> --object <object-id> [--adapter auto|exporter] [--dry-run] [--format text|json]`;
 
 const MCP_HELP_TEXT = `penpot-cli mcp
@@ -88,6 +90,8 @@ Usage:
   penpot-cli shape create-frame --file <file-id> --page <page-id> --x <n> --y <n> --width <n> --height <n> [--name <name>] [--shape-id <id>] [--fill <hex>] [--format text|json]
   penpot-cli shape create-rect --file <file-id> --page <page-id> --parent <frame-id> --x <n> --y <n> --width <n> --height <n> [--name <name>] [--shape-id <id>] [--fill <hex>] [--border-radius <n>] [--format text|json]
   penpot-cli shape create-text --file <file-id> --page <page-id> --parent <frame-id> --x <n> --y <n> --width <n> --height <n> --content <text> [--name <name>] [--shape-id <id>] [--font-size <n>] [--fill <hex>] [--format text|json]
+  penpot-cli shape update --file <file-id> --shape <shape-id> [--page <page-id>] [--name <name>] [--x <n>] [--y <n>] [--width <n>] [--height <n>] [--fill <hex>] [--stroke <hex>] [--border-radius <n>] [--content <text>] [--font-size <n>] [--format text|json]
+  penpot-cli shape delete --file <file-id> --shape <shape-id> [--page <page-id>] [--format text|json]
 
 Environment:
   PENPOT_BACKEND_URI       Backend RPC base URI, default http://localhost:6060
@@ -222,6 +226,28 @@ interface ShapeCreateParams {
     stroke?: Record<string, unknown>;
     borderRadius?: number;
     fontSize?: number;
+}
+
+interface ShapeUpdateParams {
+    fileId: string;
+    shapeId: string;
+    pageId?: string;
+    name?: string;
+    x?: number;
+    y?: number;
+    width?: number;
+    height?: number;
+    content?: string;
+    fill?: Record<string, unknown>;
+    stroke?: Record<string, unknown>;
+    borderRadius?: number;
+    fontSize?: number;
+}
+
+interface ShapeDeleteParams {
+    fileId: string;
+    shapeId: string;
+    pageId?: string;
 }
 
 const DEFAULT_IO: CliIO = {
@@ -411,7 +437,7 @@ function selectCliShapeAdapter(command: string, args: string[]): CommandAdapterS
                 kind: "plugin-live",
                 available: false,
                 priority: 50,
-                reason: "CLI shape commands require explicit file/page targets and do not use live workspace state.",
+                reason: "CLI shape commands require explicit backend targets and do not use live workspace state.",
             },
         ],
     });
@@ -643,6 +669,125 @@ function parseShapeCreateParams(kind: ShapeCreateKind, args: string[], io: CliIO
         stroke: createSolidStroke(args),
         borderRadius,
         fontSize,
+    };
+}
+
+function requireShapeFileId(args: string[], io: CliIO, format: Format, command: string): string | null {
+    const fileId = readOption(args, ["--file", "--file-id"]);
+    if (!fileId) {
+        writeError(io, format, "file_id_required", `${command} requires --file <file-id>.`, [
+            "Use penpot-cli file list first, then pass --file <file-id>.",
+        ]);
+        return null;
+    }
+    return fileId;
+}
+
+function requireShapeId(args: string[], io: CliIO, format: Format, command: string): string | null {
+    const shapeId = readOption(args, ["--shape", "--shape-id", "--id"]);
+    if (!shapeId) {
+        writeError(io, format, "shape_id_required", `${command} requires --shape <shape-id>.`, [
+            "Use shape create output, MCP output, or a file inspection flow to choose a shape id.",
+        ]);
+        return null;
+    }
+    return shapeId;
+}
+
+function validateOptionalShapeNumbers(args: string[], io: CliIO, format: Format): Record<string, number | undefined> | null {
+    const values = {
+        x: readNumberOption(args, ["--x"]),
+        y: readNumberOption(args, ["--y"]),
+        width: readNumberOption(args, ["--width", "--w"]),
+        height: readNumberOption(args, ["--height", "--h"]),
+        borderRadius: readNumberOption(args, ["--border-radius", "--radius"]),
+        fontSize: readNumberOption(args, ["--font-size"]),
+    };
+
+    for (const [name, value] of Object.entries(values)) {
+        if (value !== undefined && !Number.isFinite(value)) {
+            writeError(io, format, "shape_numeric_option_invalid", `Invalid numeric value for ${name}.`, [
+                "Pass finite numeric optional shape values.",
+            ]);
+            return null;
+        }
+    }
+
+    return values;
+}
+
+function hasShapeUpdateField(params: ShapeUpdateParams): boolean {
+    return [
+        params.name,
+        params.x,
+        params.y,
+        params.width,
+        params.height,
+        params.content,
+        params.fill,
+        params.stroke,
+        params.borderRadius,
+        params.fontSize,
+    ].some((value) => value !== undefined);
+}
+
+function parseShapeUpdateParams(args: string[], io: CliIO, format: Format): ShapeUpdateParams | null {
+    const fileId = requireShapeFileId(args, io, format, "shape update");
+    if (!fileId) {
+        return null;
+    }
+
+    const shapeId = requireShapeId(args, io, format, "shape update");
+    if (!shapeId) {
+        return null;
+    }
+
+    const numbers = validateOptionalShapeNumbers(args, io, format);
+    if (!numbers) {
+        return null;
+    }
+
+    const params: ShapeUpdateParams = {
+        fileId,
+        shapeId,
+        pageId: readOption(args, ["--page", "--page-id"]),
+        name: readOption(args, ["--name"])?.trim() || undefined,
+        x: numbers.x,
+        y: numbers.y,
+        width: numbers.width,
+        height: numbers.height,
+        content: readOption(args, ["--content", "--text"]),
+        fill: createSolidFill(args),
+        stroke: createSolidStroke(args),
+        borderRadius: numbers.borderRadius,
+        fontSize: numbers.fontSize,
+    };
+
+    if (!hasShapeUpdateField(params)) {
+        writeError(io, format, "shape_update_empty", "shape update requires at least one update option.", [
+            "Pass --name, geometry, fill, stroke, border radius, content, or font size.",
+        ]);
+        return null;
+    }
+
+    return params;
+}
+
+function parseShapeDeleteParams(args: string[], io: CliIO, format: Format): ShapeDeleteParams | null {
+    const fileId = requireShapeFileId(args, io, format, "shape delete");
+    if (!fileId) {
+        return null;
+    }
+
+    const shapeId = requireShapeId(args, io, format, "shape delete");
+    if (!shapeId) {
+        return null;
+    }
+
+    return {
+        fileId,
+        shapeId,
+        pageId: readOption(args, ["--page", "--page-id"]),
     };
 }
 
@@ -925,6 +1070,26 @@ function writeShapeCreatedText(io: CliIO, fileId: string, shape: unknown): void 
     writeLine(io.stdout, `name: ${String(record.name ?? "<unnamed>")}`);
     writeLine(io.stdout, `pageId: ${String(record.pageId ?? record["page-id"] ?? "<unknown>")}`);
     writeLine(io.stdout, `parentId: ${String(record.parentId ?? record["parent-id"] ?? "<unknown>")}`);
+}
+
+function writeShapeUpdatedText(io: CliIO, fileId: string, shape: unknown): void {
+    const record = asRecord(shape);
+    writeLine(io.stdout, "Shape updated");
+    writeLine(io.stdout, `fileId: ${fileId}`);
+    writeLine(io.stdout, `id: ${String(record.id ?? "<unknown>")}`);
+    writeLine(io.stdout, `type: ${String(record.type ?? "<unknown>")}`);
+    writeLine(io.stdout, `name: ${String(record.name ?? "<unnamed>")}`);
+    writeLine(io.stdout, `pageId: ${String(record.pageId ?? record["page-id"] ?? "<unknown>")}`);
+}
+
+function writeShapeDeletedText(io: CliIO, fileId: string, shape: unknown): void {
+    const record = asRecord(shape);
+    writeLine(io.stdout, "Shape deleted");
+    writeLine(io.stdout, `fileId: ${fileId}`);
+    writeLine(io.stdout, `id: ${String(record.id ?? "<unknown>")}`);
+    writeLine(io.stdout, `type: ${String(record.type ?? "<unknown>")}`);
+    writeLine(io.stdout, `name: ${String(record.name ?? "<unnamed>")}`);
+    writeLine(io.stdout, `pageId: ${String(record.pageId ?? record["page-id"] ?? "<unknown>")}`);
 }
 
 function writeExportPlanText(io: CliIO, plan: ExportPagePlan): void {
@@ -1593,6 +1758,121 @@ async function handleShapeCreate(
     }
 }
 
+async function handleShapeUpdate(args: string[], io: CliIO, env: NodeJS.ProcessEnv): Promise<number> {
+    const format = parseFormat(args, io);
+    if (!format) {
+        return 2;
+    }
+
+    const adapterSelection = selectCliShapeAdapter("shape.update", args);
+    if (adapterSelection.status !== "selected" || adapterSelection.selected !== "backend-command") {
+        return adapterSelectionFailure(io, format, adapterSelection);
+    }
+
+    const shapeParams = parseShapeUpdateParams(args, io, format);
+    if (!shapeParams) {
+        return 2;
+    }
+
+    const rpc = getRpcConfig(args, env);
+    if (!rpc.token) {
+        return rpcAuthenticationRequired(io, format);
+    }
+
+    try {
+        const result = await rpcRequest<Record<string, unknown>>(
+            "POST",
+            rpc.backendUri,
+            "update-file-shape",
+            {
+                id: shapeParams.fileId,
+                "page-id": shapeParams.pageId,
+                "shape-id": shapeParams.shapeId,
+                name: shapeParams.name,
+                x: shapeParams.x,
+                y: shapeParams.y,
+                width: shapeParams.width,
+                height: shapeParams.height,
+                content: shapeParams.content,
+                fill: shapeParams.fill,
+                stroke: shapeParams.stroke,
+                "border-radius": shapeParams.borderRadius,
+                "font-size": shapeParams.fontSize,
+            },
+            rpc.token
+        );
+        writeOk(
+            io,
+            format,
+            {
+                fileId: shapeParams.fileId,
+                shape: result.shape,
+                revn: result.revn,
+                vern: result.vern,
+                adapter: adapterSelection.selected,
+                adapterSelection,
+            },
+            () => writeShapeUpdatedText(io, shapeParams.fileId, result.shape)
+        );
+        return 0;
+    } catch (cause) {
+        return rpcErrorResponse(io, format, "update-file-shape", rpc.backendUri, cause);
+    }
+}
+
+async function handleShapeDelete(args: string[], io: CliIO, env: NodeJS.ProcessEnv): Promise<number> {
+    const format = parseFormat(args, io);
+    if (!format) {
+        return 2;
+    }
+
+    const adapterSelection = selectCliShapeAdapter("shape.delete", args);
+    if (adapterSelection.status !== "selected" || adapterSelection.selected !== "backend-command") {
+        return adapterSelectionFailure(io, format, adapterSelection);
+    }
+
+    const shapeParams = parseShapeDeleteParams(args, io, format);
+    if (!shapeParams) {
+        return 2;
+    }
+
+    const rpc = getRpcConfig(args, env);
+    if (!rpc.token) {
+        return rpcAuthenticationRequired(io, format);
+    }
+
+    try {
+        const result = await rpcRequest<Record<string, unknown>>(
+            "POST",
+            rpc.backendUri,
+            "delete-file-shape",
+            {
+                id: shapeParams.fileId,
+                "page-id": shapeParams.pageId,
+                "shape-id": shapeParams.shapeId,
+            },
+            rpc.token
+        );
+        writeOk(
+            io,
+            format,
+            {
+                fileId: shapeParams.fileId,
+                shape: result.shape,
+                revn: result.revn,
+                vern: result.vern,
+                deleted: true,
+                adapter: adapterSelection.selected,
+                adapterSelection,
+            },
+            () => writeShapeDeletedText(io, shapeParams.fileId, result.shape)
+        );
+        return 0;
+    } catch (cause) {
+        return rpcErrorResponse(io, format, "delete-file-shape", rpc.backendUri, cause);
+    }
+}
+
 async function handleShapeCommand(args: string[], io: CliIO, env: NodeJS.ProcessEnv): Promise<number> {
     const [subcommand, ...rest] = args;
 
@@ -1608,6 +1888,10 @@ async function handleShapeCommand(args: string[], io: CliIO, env: NodeJS.Process
             return await handleShapeCreate("rect", "shape.create_rect", rest, io, env);
         case "create-text":
             return await handleShapeCreate("text", "shape.create_text", rest, io, env);
+        case "update":
+            return await handleShapeUpdate(rest, io, env);
+        case "delete":
+            return await handleShapeDelete(rest, io, env);
         default:
             writeLine(io.stderr, `Unknown shape command: ${subcommand}`);
             writeLine(io.stderr, 'Run "penpot-cli shape --help" for usage.');

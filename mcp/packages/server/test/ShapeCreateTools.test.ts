@@ -1,7 +1,12 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import type { PenpotMcpServer } from "../src/PenpotMcpServer.js";
-import { ShapeCreateFrameTool, ShapeCreateTextTool } from "../src/tools/ShapeCreateTools.js";
+import {
+    ShapeCreateFrameTool,
+    ShapeCreateTextTool,
+    ShapeDeleteTool,
+    ShapeUpdateTool,
+} from "../src/tools/ShapeCreateTools.js";
 
 type RpcCall = {
     methodName: string;
@@ -140,6 +145,124 @@ test("ShapeCreateFrameTool reports adapter error when backend target is incomple
         y: 20,
         width: 320,
         height: 640,
+    });
+    const body = parseJsonResponse(response);
+
+    assert.deepEqual(calls, []);
+    assert.equal(body.status, "error");
+    assert.equal(body.error.code, "adapter_not_available");
+    assert.equal(body.error.data.adapterSelection.selected, null);
+});
+
+test("ShapeUpdateTool uses backend RPC when fileId is provided", async () => {
+    const calls: RpcCall[] = [];
+    const tool = new ShapeUpdateTool(
+        mcpServerWithRpc({
+            post: async (methodName: string, params: Record<string, unknown>, userToken: string) => {
+                calls.push({ methodName, params, userToken });
+                return {
+                    shape: { id: "00000000-0000-0000-0000-000000000003", type: "rect", name: "CTA" },
+                    revn: 3,
+                    vern: 0,
+                };
+            },
+        })
+    );
+
+    const response = await tool.execute({
+        fileId: "00000000-0000-0000-0000-000000000001",
+        pageId: "00000000-0000-0000-0000-000000000002",
+        shapeId: "00000000-0000-0000-0000-000000000003",
+        name: " CTA ",
+        x: 24,
+        y: 32,
+        width: 180,
+        height: 48,
+        fill: { color: "#3366ff", opacity: 0.8 },
+        stroke: { color: "#2244aa", width: 2, alignment: "inner" },
+        borderRadius: 8,
+    });
+    const body = parseJsonResponse(response);
+
+    assert.deepEqual(calls, [
+        {
+            methodName: "update-file-shape",
+            params: {
+                id: "00000000-0000-0000-0000-000000000001",
+                "page-id": "00000000-0000-0000-0000-000000000002",
+                "shape-id": "00000000-0000-0000-0000-000000000003",
+                name: "CTA",
+                x: 24,
+                y: 32,
+                width: 180,
+                height: 48,
+                fill: { color: "#3366ff", opacity: 0.8 },
+                stroke: { color: "#2244aa", width: 2, alignment: "inner" },
+                "border-radius": 8,
+                content: undefined,
+                "font-size": undefined,
+            },
+            userToken: "token-1",
+        },
+    ]);
+    assert.equal(body.status, "ok");
+    assert.equal(body.data.adapter, "backend-command");
+    assert.equal(body.data.adapterSelection.selected, "backend-command");
+    assert.deepEqual(body.data.shape, { id: "00000000-0000-0000-0000-000000000003", type: "rect", name: "CTA" });
+});
+
+test("ShapeDeleteTool uses backend RPC when fileId is provided", async () => {
+    const calls: RpcCall[] = [];
+    const tool = new ShapeDeleteTool(
+        mcpServerWithRpc({
+            post: async (methodName: string, params: Record<string, unknown>, userToken: string) => {
+                calls.push({ methodName, params, userToken });
+                return {
+                    shape: { id: "00000000-0000-0000-0000-000000000003", type: "rect", name: "CTA" },
+                    revn: 4,
+                    vern: 0,
+                };
+            },
+        })
+    );
+
+    const response = await tool.execute({
+        fileId: "00000000-0000-0000-0000-000000000001",
+        shapeId: "00000000-0000-0000-0000-000000000003",
+    });
+    const body = parseJsonResponse(response);
+
+    assert.deepEqual(calls, [
+        {
+            methodName: "delete-file-shape",
+            params: {
+                id: "00000000-0000-0000-0000-000000000001",
+                "page-id": undefined,
+                "shape-id": "00000000-0000-0000-0000-000000000003",
+            },
+            userToken: "token-1",
+        },
+    ]);
+    assert.equal(body.status, "ok");
+    assert.equal(body.data.adapter, "backend-command");
+    assert.equal(body.data.deleted, true);
+});
+
+test("ShapeUpdateTool reports adapter error for backend layout updates", async () => {
+    const calls: RpcCall[] = [];
+    const tool = new ShapeUpdateTool(
+        mcpServerWithRpc({
+            post: async (methodName: string, params: Record<string, unknown>, userToken: string) => {
+                calls.push({ methodName, params, userToken });
+                return { shape: null };
+            },
+        })
+    );
+
+    const response = await tool.execute({
+        fileId: "00000000-0000-0000-0000-000000000001",
+        shapeId: "00000000-0000-0000-0000-000000000003",
+        layout: { type: "flex" },
     });
     const body = parseJsonResponse(response);
 

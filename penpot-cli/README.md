@@ -166,8 +166,8 @@ requested adapter, selected adapter, candidates, and fallback reasons.
 
 ## Shape Commands
 
-Shape create commands call the backend `create-file-shape` headless command.
-They work without an open Penpot workspace tab when a valid file id, page id,
+Shape create, update, and delete commands call backend headless shape commands.
+They work without an open Penpot workspace tab when a valid file id, target ids,
 and token are provided.
 
 ```bash
@@ -204,13 +204,30 @@ node penpot-cli/dist/index.js shape create-text \
   --height 40 \
   --content "Welcome" \
   --font-size 24
+
+node penpot-cli/dist/index.js shape update \
+  --file <file-id> \
+  --shape <shape-id> \
+  --page <page-id> \
+  --x 32 \
+  --y 112 \
+  --width 260 \
+  --fill "#445566" \
+  --border-radius 12 \
+  --format json
+
+node penpot-cli/dist/index.js shape delete \
+  --file <file-id> \
+  --shape <shape-id> \
+  --format json
 ```
 
 JSON output reports `adapter: "backend-command"` and includes
 `adapterSelection`. MCP `shape.create_frame`, `shape.create_rect`, and
 `shape.create_text` use the same backend-command path when `fileId` and
-`pageId` are supplied; calls without explicit file/page targets continue to use
-the bound live workspace context.
+`pageId` are supplied. MCP `shape.update` and `shape.delete` use
+backend-command when `fileId` and `shapeId` are supplied; calls without
+explicit file/page targets continue to use the bound live workspace context.
 
 ## Export Commands
 

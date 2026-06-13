@@ -964,9 +964,12 @@ P7.3 implementation note:
   `shape create-text` call backend `create-file-shape` directly and report
   `adapterSelection` in JSON output.
 - The backend now also exposes `update-file-shape` and `delete-file-shape` for
-  simple frame, rectangle, and text targets. MCP and `penpot-cli` still need the
-  follow-up adapter wiring slice before those commands are script-accessible
-  through the TypeScript entry points.
+  simple frame, rectangle, and text targets.
+- MCP `shape.update` and `shape.delete` now choose backend-command when callers
+  provide explicit `fileId` and `shapeId`. Calls without explicit file/page
+  targets keep using the plugin-live bound workspace path.
+- `penpot-cli shape update` and `shape delete` call `update-file-shape` and
+  `delete-file-shape` directly and report `adapterSelection` in JSON output.
 
 ## 6. User Configuration
 
