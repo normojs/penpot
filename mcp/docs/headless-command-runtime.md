@@ -634,3 +634,42 @@ P7.8 is complete when:
 - CLI shape update/delete commands return script-friendly text/JSON output with
   `adapterSelection`.
 - MCP and CLI checks cover backend request mapping and help output.
+
+## P7.9 Exporter Execution Slice
+
+P7.9 turns the exporter dry-run plan into the first real CLI execution path.
+`penpot-cli export page` still requires explicit `fileId`, `pageId`, and
+`objectId`, but omitting `--dry-run` now posts the planned Transit JSON payload
+directly to the exporter HTTP service.
+
+Execution behavior:
+
+- The CLI encodes the fixed exporter request as `application/transit+json`,
+  including keyword fields for `cmd` and `exports[].type` and UUID-tagged file,
+  page, object, and profile ids.
+- The exporter request uses `Cookie: auth-token=<token>` so the renderer can
+  load the file through the normal Penpot session path.
+- If `--profile-id` or `PENPOT_PROFILE_ID` is not supplied, the CLI resolves it
+  through backend `get-profile` with the same token before calling exporter.
+- The exporter response is decoded from Transit JSON into script-friendly JSON.
+- Without `--output`, the CLI returns exporter resource metadata such as
+  `id`, `uri`, `mtype`, and `filename`.
+- With `--output`, the CLI downloads the returned resource URI and writes the
+  rendered bytes to the requested path, while still reporting the metadata.
+
+Important limitations:
+
+- The command still does not infer live selection or current page state.
+- Local byte downloads rely on the public Penpot gateway serving
+  `/assets/by-id/<id>`; direct backend-only asset responses may return
+  `x-accel-redirect` metadata instead of bytes.
+- Exporter execution is session-token oriented because the renderer opens the
+  frontend with an `auth-token` cookie.
+
+P7.9 is complete when:
+
+- `penpot-cli export page --dry-run` continues to report the exporter plan.
+- `penpot-cli export page` posts to exporter when `--dry-run` is omitted.
+- JSON/text output reports adapter metadata and exporter resource metadata.
+- `--output` downloads the returned resource bytes when the public asset route
+  serves them.

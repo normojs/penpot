@@ -446,12 +446,13 @@ P6.5 implementation note:
   `PENPOT_CLI_TOKEN`, `PENPOT_MCP_USER_TOKEN`, or `PENPOT_ACCESS_TOKEN`.
 - `penpot-cli file open` prints a browser workspace URL and explicitly reports
   that it does not bind an MCP file context.
-- `penpot-cli export page` now parses an explicit exporter-backed request with
+- `penpot-cli export page` parses an explicit exporter-backed request with
   `--file`, `--page`, and `--object`, reports the exporter URI, planned
   `export-shapes` payload, Transit JSON requirement, auth cookie name, and
-  missing runtime fields in `--dry-run` output. Actual CLI exporter execution
-  waits for the Phase 7 shared command runtime, while live MCP users can still
-  call `export.page` with a bound file context for base64 exports.
+  missing runtime fields in `--dry-run` output. When `--dry-run` is omitted it
+  posts the Transit request to exporter, resolves `profileId` from backend
+  `get-profile` when needed, returns exporter resource metadata, and downloads
+  bytes when `--output` is supplied.
 - P7.5 adds the first shared `@penpot/command-runtime` adapter-selection helper
   and wires it into `penpot-cli` page/export commands plus MCP page tools.
   Responses keep the legacy `adapter` field and add `adapterSelection` with
@@ -970,6 +971,9 @@ P7.3 implementation note:
   targets keep using the plugin-live bound workspace path.
 - `penpot-cli shape update` and `shape delete` call `update-file-shape` and
   `delete-file-shape` directly and report `adapterSelection` in JSON output.
+- `penpot-cli export page` now executes the exporter adapter without a live
+  workspace tab for explicit file/page/object targets, returning resource
+  metadata or writing the downloaded output bytes to `--output`.
 
 ## 6. User Configuration
 

@@ -231,9 +231,9 @@ explicit file/page targets continue to use the bound live workspace context.
 
 ## Export Commands
 
-The CLI can parse and report exporter-backed page export requests now. The
-headless path requires explicit file, page, and object ids because the exporter
-cannot infer the current workspace selection.
+The CLI can execute exporter-backed page export requests. The headless path
+requires explicit file, page, and object ids because the exporter cannot infer
+the current workspace selection.
 
 ```bash
 node penpot-cli/dist/index.js export page \
@@ -252,7 +252,7 @@ node penpot-cli/dist/index.js export page \
   --scale 2 \
   --output ./out/page.png \
   --exporter-uri http://localhost:6061 \
-  --dry-run \
+  --token "$PENPOT_CLI_TOKEN" \
   --format json
 ```
 
@@ -263,10 +263,17 @@ resolution before execution, such as `profileId` when it is not supplied by
 `adapterSelection` so scripts can see the requested adapter, selected adapter,
 and plugin-live fallback status.
 
-Actual CLI exporter execution waits for the Phase 7 shared command runtime. The
-exporter-backed path will return uploaded resource metadata. Until execution is
-wired, use MCP `export.page` with a bound live file context for real base64
-exports.
+When `--dry-run` is omitted, the CLI posts the Transit request to the exporter
+service using `Cookie: auth-token=<token>`. If `profileId` is not provided, it
+resolves the current profile through backend `get-profile` using the same token.
+Without `--output`, the command returns the uploaded exporter resource
+metadata. With `--output`, it downloads the returned resource URI and writes the
+bytes to the requested path.
+
+Exporter execution needs the normal Penpot frontend, backend, and exporter
+services running. For local development, use an auth-token/session token in
+`--token`, `PENPOT_CLI_TOKEN`, or `PENPOT_MCP_USER_TOKEN`; pass `--profile-id`
+or set `PENPOT_PROFILE_ID` if profile resolution is not available.
 
 ## Verification
 

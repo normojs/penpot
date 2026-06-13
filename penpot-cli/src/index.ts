@@ -2,8 +2,8 @@
 
 import { spawn } from "node:child_process";
 import { constants } from "node:fs";
-import { access, readdir, stat } from "node:fs/promises";
-import { delimiter, join, resolve } from "node:path";
+import { access, mkdir, readdir, stat, writeFile } from "node:fs/promises";
+import { delimiter, dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { selectCommandAdapter } from "@penpot/command-runtime";
 import type { CommandAdapterSelection, RequestedCommandAdapter } from "@penpot/command-runtime";
@@ -31,7 +31,7 @@ Usage:
   penpot-cli shape create-text --file <file-id> --page <page-id> --parent <frame-id> --x <n> --y <n> --width <n> --height <n> --content <text> [--format text|json]
   penpot-cli shape update --file <file-id> --shape <shape-id> [--page <page-id>] [--x <n>] [--y <n>] [--width <n>] [--height <n>] [--fill <hex>] [--format text|json]
   penpot-cli shape delete --file <file-id> --shape <shape-id> [--page <page-id>] [--format text|json]
-  penpot-cli export page --file <file-id> --page <page-id> --object <object-id> [--adapter auto|exporter] [--dry-run] [--format text|json]`;
+  penpot-cli export page --file <file-id> --page <page-id> --object <object-id> [--adapter auto|exporter] [--output <path>] [--dry-run] [--format text|json]`;
 
 const MCP_HELP_TEXT = `penpot-cli mcp
 
@@ -103,14 +103,18 @@ Environment:
 const EXPORT_HELP_TEXT = `penpot-cli export
 
 Usage:
-  penpot-cli export page --file <file-id> --page <page-id> --object <object-id> [--export-format png|jpeg|svg|pdf] [--scale <n>] [--output <path>] [--exporter-uri <uri>] [--adapter auto|exporter] [--dry-run] [--format text|json]
+  penpot-cli export page --file <file-id> --page <page-id> --object <object-id> [--export-format png|jpeg|svg|pdf] [--scale <n>] [--output <path>] [--exporter-uri <uri>] [--backend-uri <uri>] [--token <token>] [--adapter auto|exporter] [--dry-run] [--format text|json]
 
 Current adapters:
-  exporter   Phase 7 headless adapter plan backed by the Penpot exporter HTTP service.
+  exporter   Phase 7 headless adapter backed by the Penpot exporter HTTP service.
 
 Environment:
   PENPOT_EXPORTER_URI      Exporter HTTP URI, default http://localhost:6061
-  PENPOT_PROFILE_ID        Optional profile id for the direct exporter request`;
+  PENPOT_BACKEND_URI       Backend RPC base URI used to resolve profile id
+  PENPOT_PROFILE_ID        Optional profile id for the direct exporter request
+  PENPOT_CLI_TOKEN         Penpot auth-token/session token for exporter execution
+  PENPOT_MCP_USER_TOKEN    Penpot MCP user token fallback for exporter execution
+  PENPOT_ACCESS_TOKEN      Generic Penpot access token fallback`;
 
 type Format = "text" | "json";
 type RpcParamValue =
@@ -206,6 +210,26 @@ interface ExportPagePlan {
     requires: string[];
     nextActions: string[];
     diagnostics: Record<string, unknown>;
+}
+
+interface ExportPageResult {
+    command: string;
+    adapter: string | null;
+    adapterSelection: CommandAdapterSelection;
+    fileId: string;
+    pageId: string;
+    objectId: string;
+    profileId: string;
+    exportFormat: string;
+    scale: number;
+    output: string | null;
+    exporter: ExportPagePlan["exporter"];
+    resource: Record<string, unknown>;
+    downloadedResource?: {
+        path: string;
+        bytes: number;
+        contentType: string | null;
+    };
 }
 
 type ShapeCreateKind = "frame" | "rect" | "text";
@@ -554,13 +578,14 @@ function createExportPagePlan(args: string[], env: NodeJS.ProcessEnv): ExportPag
         requires,
         nextActions: [
             "Pass explicit file, page, and object ids; the exporter cannot infer live selection state.",
-            "Provide a profile id directly or let the future runtime resolve it from the authenticated user.",
-            "Use --dry-run until exporter POST execution is enabled in the shared command runtime.",
+            "Provide a profile id directly or let execution resolve it from the authenticated user token.",
+            "Run without --dry-run to call the exporter; pass --output <path> to download the resource bytes.",
         ],
         diagnostics: {
             transitKeywordFields: ["cmd", "exports[].type"],
             authCookie: "auth-token",
             outputMode: "exporter-resource-upload",
+            profileResolution: "profile-id option, PENPOT_PROFILE_ID, or backend get-profile with an auth-token/session token",
         },
     };
 }
@@ -988,6 +1013,343 @@ function rpcErrorResponse(io: CliIO, format: Format, methodName: string, backend
     return 2;
 }
 
+const ZERO_UUID = "00000000-0000-0000-0000-000000000000";
+
+function isUuidString(value: string): boolean {
+    return /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(value);
+}
+
+function encodeTransitKeyword(value: string): string {
+    return `~:${value}`;
+}
+
+function encodeTransitUuid(value: string): string {
+    return `~u${value}`;
+}
+
+function decodeTransitString(value: string): string {
+    if (value.startsWith("~~")) {
+        return value.slice(1);
+    }
+
+    if (value.startsWith("~:")) {
+        return value.slice(2);
+    }
+
+    if (value.startsWith("~u") && isUuidString(value.slice(2))) {
+        return value.slice(2);
+    }
+
+    return value;
+}
+
+function decodeTransitKey(value: unknown): string {
+    const decoded = decodeTransitValue(value);
+    return typeof decoded === "string" ? decoded : JSON.stringify(decoded);
+}
+
+function decodeTransitValue(value: unknown): unknown {
+    if (typeof value === "string") {
+        return decodeTransitString(value);
+    }
+
+    if (Array.isArray(value)) {
+        if (value[0] === "^ " && value.length % 2 === 1) {
+            const decoded: Record<string, unknown> = {};
+            for (let index = 1; index < value.length; index += 2) {
+                decoded[decodeTransitKey(value[index])] = decodeTransitValue(value[index + 1]);
+            }
+            return decoded;
+        }
+
+        if (value.length === 2 && value[0] === "~#uuid" && typeof value[1] === "string") {
+            return value[1];
+        }
+
+        return value.map((entry) => decodeTransitValue(entry));
+    }
+
+    if (value !== null && typeof value === "object") {
+        const decoded: Record<string, unknown> = {};
+        for (const [key, entry] of Object.entries(value)) {
+            decoded[decodeTransitKey(key)] = decodeTransitValue(entry);
+        }
+        return decoded;
+    }
+
+    return value;
+}
+
+function decodeTransitJson(text: string): unknown {
+    return decodeTransitValue(JSON.parse(text));
+}
+
+function extractAuthTokenValue(rawToken: string): string {
+    const token = rawToken.trim();
+    const authorization = /^(Token|Bearer)\s+(.+)$/i.exec(token);
+    if (authorization) {
+        return authorization[2].trim();
+    }
+
+    const cookie = token
+        .split(";")
+        .map((part) => part.trim())
+        .find((part) => part.toLowerCase().startsWith("auth-token="));
+    if (cookie) {
+        return decodeURIComponent(cookie.slice("auth-token=".length));
+    }
+
+    return token;
+}
+
+function authCookieHeader(token: string): string {
+    return `auth-token=${encodeURIComponent(token)}`;
+}
+
+function createExporterTransitRequest(plan: ExportPagePlan, profileId: string): string {
+    return JSON.stringify({
+        "~:cmd": encodeTransitKeyword("export-shapes"),
+        "~:wait": true,
+        "~:profile-id": encodeTransitUuid(profileId),
+        ...(plan.skipChildren ? { "~:skip-children": true } : {}),
+        "~:exports": [
+            {
+                "~:file-id": encodeTransitUuid(plan.fileId as string),
+                "~:page-id": encodeTransitUuid(plan.pageId as string),
+                "~:object-id": encodeTransitUuid(plan.objectId as string),
+                "~:type": encodeTransitKeyword(plan.exportFormat),
+                "~:suffix": plan.suffix,
+                "~:scale": plan.scale,
+                "~:name": plan.name,
+            },
+        ],
+    });
+}
+
+function createCliError(code: string, message: string, status = 0, data: Record<string, unknown> = {}): Error {
+    return Object.assign(new Error(message), {
+        code,
+        status,
+        data,
+    });
+}
+
+async function readStructuredResponse(response: Response): Promise<unknown> {
+    const text = await response.text();
+    if (!text.trim()) {
+        return null;
+    }
+
+    const contentType = response.headers.get("content-type") ?? "";
+    if (contentType.includes("application/transit+json")) {
+        return decodeTransitJson(text);
+    }
+
+    return JSON.parse(text);
+}
+
+function createHttpResponseError(defaultCode: string, defaultMessage: string, response: Response, data: unknown): Error {
+    const body = asRecord(data);
+    const code = typeof body.code === "string" ? body.code.replaceAll("-", "_") : defaultCode;
+    const message =
+        typeof body.message === "string"
+            ? body.message
+            : typeof body.hint === "string"
+              ? body.hint
+              : `${defaultMessage} HTTP ${response.status}`;
+    return createCliError(code, message, response.status, { response: data });
+}
+
+async function resolveExporterProfileId(
+    plan: ExportPagePlan,
+    args: string[],
+    env: NodeJS.ProcessEnv,
+    token: string
+): Promise<string> {
+    if (plan.profileId) {
+        return plan.profileId;
+    }
+
+    const rpc = getRpcConfig(args, env);
+    const url = createRpcUrl(rpc.backendUri, "get-profile");
+    let response: Response;
+    try {
+        response = await fetch(url, {
+            method: "GET",
+            headers: {
+                accept: "application/json",
+                authorization: `Bearer ${token}`,
+                cookie: authCookieHeader(token),
+                "x-client": "penpot-cli/0.1",
+            },
+        });
+    } catch (cause) {
+        throw createCliError(
+            "profile_id_resolution_failed",
+            `Unable to resolve the exporter profile id from ${rpc.backendUri}: ${String(cause)}`,
+            0,
+            { backendUri: rpc.backendUri }
+        );
+    }
+
+    const data = await readStructuredResponse(response);
+    if (!response.ok) {
+        throw createHttpResponseError("profile_id_resolution_failed", "Unable to resolve the exporter profile id.", response, data);
+    }
+
+    const profile = asRecord(data);
+    const profileId = typeof profile.id === "string" ? profile.id : "";
+    if (!isUuidString(profileId) || profileId === ZERO_UUID) {
+        throw createCliError(
+            "profile_id_required",
+            "Unable to resolve a non-anonymous profile id for exporter execution.",
+            response.status,
+            { backendUri: rpc.backendUri, profile }
+        );
+    }
+
+    return profileId;
+}
+
+async function postExporterRequest(plan: ExportPagePlan, profileId: string, token: string): Promise<Record<string, unknown>> {
+    let response: Response;
+    try {
+        response = await fetch(plan.exporter.endpoint, {
+            method: "POST",
+            headers: {
+                accept: plan.exporter.responseContentType,
+                authorization: `Bearer ${token}`,
+                cookie: authCookieHeader(token),
+                "content-type": plan.exporter.requestContentType,
+                "x-client": "penpot-cli/0.1",
+            },
+            body: createExporterTransitRequest(plan, profileId),
+        });
+    } catch (cause) {
+        throw createCliError(
+            "exporter_unavailable",
+            `Unable to reach the Penpot exporter at ${plan.exporter.endpoint}: ${String(cause)}`,
+            0,
+            { exporterUri: plan.exporter.endpoint }
+        );
+    }
+
+    const data = await readStructuredResponse(response);
+    if (!response.ok) {
+        throw createHttpResponseError("exporter_request_failed", "Penpot exporter request failed.", response, data);
+    }
+
+    return asRecord(data);
+}
+
+async function downloadExporterResource(
+    resource: Record<string, unknown>,
+    output: string,
+    token: string
+): Promise<ExportPageResult["downloadedResource"]> {
+    const uri = resource.uri ?? resource["resource-uri"];
+    if (typeof uri !== "string" || uri.length === 0) {
+        throw createCliError("exporter_resource_uri_missing", "Exporter response did not include a downloadable resource uri.", 0, {
+            resource,
+        });
+    }
+
+    let response: Response;
+    try {
+        response = await fetch(uri, {
+            headers: {
+                accept: "*/*",
+                authorization: `Bearer ${token}`,
+                cookie: authCookieHeader(token),
+                "x-client": "penpot-cli/0.1",
+            },
+        });
+    } catch (cause) {
+        throw createCliError("exporter_resource_unavailable", `Unable to download exporter resource ${uri}: ${String(cause)}`, 0, {
+            resourceUri: uri,
+        });
+    }
+
+    if (response.status === 204 && response.headers.has("x-accel-redirect")) {
+        throw createCliError(
+            "exporter_resource_requires_gateway",
+            "Exporter resource download requires the Penpot public gateway that serves x-accel-redirect assets.",
+            response.status,
+            { resourceUri: uri, xAccelRedirect: response.headers.get("x-accel-redirect") }
+        );
+    }
+
+    if (!response.ok) {
+        throw createHttpResponseError("exporter_resource_download_failed", "Exporter resource download failed.", response, null);
+    }
+
+    const bytes = Buffer.from(await response.arrayBuffer());
+    const outputPath = resolve(output);
+    await mkdir(dirname(outputPath), { recursive: true });
+    await writeFile(outputPath, bytes);
+
+    return {
+        path: outputPath,
+        bytes: bytes.byteLength,
+        contentType: response.headers.get("content-type"),
+    };
+}
+
+async function executeExportPagePlan(plan: ExportPagePlan, args: string[], env: NodeJS.ProcessEnv): Promise<ExportPageResult> {
+    const rawToken = getRpcConfig(args, env).token;
+    if (!rawToken) {
+        throw createCliError("authentication_required", "Exporter execution requires a Penpot auth-token/session token.");
+    }
+
+    const token = extractAuthTokenValue(rawToken);
+    const profileId = await resolveExporterProfileId(plan, args, env, token);
+    const resource = await postExporterRequest(plan, profileId, token);
+    const downloadedResource = plan.output ? await downloadExporterResource(resource, plan.output, token) : undefined;
+
+    return {
+        command: plan.command,
+        adapter: plan.adapter,
+        adapterSelection: plan.adapterSelection,
+        fileId: plan.fileId as string,
+        pageId: plan.pageId as string,
+        objectId: plan.objectId as string,
+        profileId,
+        exportFormat: plan.exportFormat,
+        scale: plan.scale,
+        output: plan.output,
+        exporter: plan.exporter,
+        resource,
+        ...(downloadedResource ? { downloadedResource } : {}),
+    };
+}
+
+function exportErrorResponse(io: CliIO, format: Format, plan: ExportPagePlan, cause: unknown): number {
+    const error = asRecord(cause);
+    const code = typeof error.code === "string" ? error.code : "exporter_request_failed";
+    const status = typeof error.status === "number" ? error.status : 0;
+    const message = cause instanceof Error ? cause.message : "Unable to execute exporter-backed page output.";
+    const actions =
+        code === "authentication_required" || code === "profile_id_required"
+            ? [
+                  "Pass --token with a Penpot auth-token/session token.",
+                  "Pass --profile-id or set PENPOT_PROFILE_ID if profile resolution is not available.",
+                  "Use --dry-run to inspect the exporter request without executing it.",
+              ]
+            : [
+                  "Check PENPOT_EXPORTER_URI or --exporter-uri.",
+                  "Check that the Penpot frontend, backend, and exporter services are running.",
+                  "Use --dry-run to inspect the exporter request payload.",
+              ];
+
+    writeError(io, format, code, message, actions, {
+        status,
+        exporterUri: plan.exporter.endpoint,
+        output: plan.output,
+        details: error.data,
+    });
+    return 2;
+}
+
 function writeConfigText(io: CliIO, config: McpConfig): void {
     writeLine(io.stdout, "MCP config");
     writeLine(io.stdout, `public: ${config.publicUri}`);
@@ -1126,6 +1488,30 @@ function writeExportPlanText(io: CliIO, plan: ExportPagePlan): void {
     writeLine(io.stdout, "nextActions:");
     for (const action of plan.nextActions) {
         writeLine(io.stdout, `  ${action}`);
+    }
+}
+
+function writeExportResultText(io: CliIO, result: ExportPageResult): void {
+    const resourceId = result.resource.id ?? result.resource["resource-id"] ?? "<unknown>";
+    const resourceUri = result.resource.uri ?? result.resource["resource-uri"] ?? "<unknown>";
+
+    writeLine(io.stdout, "Export page completed");
+    writeLine(io.stdout, `command: ${result.command}`);
+    writeLine(io.stdout, `adapter: ${result.adapter ?? "<none>"}`);
+    writeLine(io.stdout, `exporter: ${result.exporter.method} ${result.exporter.endpoint}`);
+    writeLine(io.stdout, `fileId: ${result.fileId}`);
+    writeLine(io.stdout, `pageId: ${result.pageId}`);
+    writeLine(io.stdout, `objectId: ${result.objectId}`);
+    writeLine(io.stdout, `profileId: ${result.profileId}`);
+    writeLine(io.stdout, `resourceId: ${String(resourceId)}`);
+    writeLine(io.stdout, `resourceUri: ${String(resourceUri)}`);
+    writeLine(io.stdout, `mtype: ${String(result.resource.mtype ?? "<unknown>")}`);
+    writeLine(io.stdout, `filename: ${String(result.resource.filename ?? "<unknown>")}`);
+    if (result.downloadedResource) {
+        writeLine(io.stdout, `output: ${result.downloadedResource.path}`);
+        writeLine(io.stdout, `bytes: ${result.downloadedResource.bytes}`);
+    } else {
+        writeLine(io.stdout, "output: <not written; resource metadata only>");
     }
 }
 
@@ -1899,7 +2285,7 @@ async function handleShapeCommand(args: string[], io: CliIO, env: NodeJS.Process
     }
 }
 
-function handleExportPage(args: string[], io: CliIO, env: NodeJS.ProcessEnv): number {
+async function handleExportPage(args: string[], io: CliIO, env: NodeJS.ProcessEnv): Promise<number> {
     const format = parseFormat(args, io);
     if (!format) {
         return 2;
@@ -1952,23 +2338,16 @@ function handleExportPage(args: string[], io: CliIO, env: NodeJS.ProcessEnv): nu
         return 0;
     }
 
-    writeError(
-        io,
-        format,
-        "export_adapter_not_available",
-        "CLI exporter execution is waiting for the Phase 7 shared command runtime.",
-        [
-            "Use --dry-run to inspect the exporter request plan.",
-            "Keep using MCP export.page with a bound live file context for real base64 exports until execution is wired.",
-        ],
-        {
-            plan,
-        }
-    );
-    return 2;
+    try {
+        const result = await executeExportPagePlan(plan, args, env);
+        writeOk(io, format, result, () => writeExportResultText(io, result));
+        return 0;
+    } catch (cause) {
+        return exportErrorResponse(io, format, plan, cause);
+    }
 }
 
-function handleExportCommand(args: string[], io: CliIO, env: NodeJS.ProcessEnv): number {
+async function handleExportCommand(args: string[], io: CliIO, env: NodeJS.ProcessEnv): Promise<number> {
     const [subcommand, ...rest] = args;
 
     if (isHelpFlag(subcommand)) {
@@ -1978,7 +2357,7 @@ function handleExportCommand(args: string[], io: CliIO, env: NodeJS.ProcessEnv):
 
     switch (subcommand) {
         case "page":
-            return handleExportPage(rest, io, env);
+            return await handleExportPage(rest, io, env);
         default:
             writeLine(io.stderr, `Unknown export command: ${subcommand}`);
             writeLine(io.stderr, 'Run "penpot-cli export --help" for usage.');
@@ -2024,7 +2403,7 @@ export async function run(
     }
 
     if (first === "export") {
-        return handleExportCommand(argv.slice(1), io, env);
+        return await handleExportCommand(argv.slice(1), io, env);
     }
 
     writeLine(io.stderr, `Unknown command: ${first}`);
