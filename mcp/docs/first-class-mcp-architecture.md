@@ -977,18 +977,21 @@ P7.3 implementation note:
 
 ## 6. User Configuration
 
-MCP settings should stay explicit and user-visible.
+MCP settings should stay explicit and user-visible. P9.1 captured the current
+frontend/backend persistence paths and the proposed config model in
+`mcp/docs/manual-mcp-configuration-audit.md`.
 
-Suggested profile props:
+Planned profile props:
 
 ```clojure
 {:mcp-enabled false
- :mcp-auto-connect true
- :mcp-mode "builtin"          ;; builtin | custom | local
- :mcp-server-url nil          ;; optional override
- :mcp-ws-url nil              ;; optional override
- :mcp-allow-execute-code false
- :mcp-allow-local-files false}
+ :mcp-config {:mode "builtin"       ;; builtin | custom | local
+              :auto-connect true
+              :public-uri nil       ;; optional base for derived URLs
+              :stream-uri nil       ;; optional client stream override
+              :sse-uri nil          ;; optional legacy SSE override
+              :websocket-uri nil    ;; optional bundled plugin override
+              :status-uri nil}}     ;; optional diagnostics override
 ```
 
 Existing storage to reuse:
@@ -996,6 +999,9 @@ Existing storage to reuse:
 - `profile.props.mcp-enabled`
 - `access-token` rows with `type = "mcp"`
 - frontend config values for MCP stream and WebSocket URLs
+
+P9.2 should keep `:mcp-enabled` as the compatibility switch while consolidating
+the other MCP connection settings into a nested `:mcp-config` profile prop.
 
 Settings page controls:
 
@@ -1685,6 +1691,16 @@ P8.6 implementation note (2026-06-13):
 - Added `mcp/docs/regression-smoke-flows.md` as the shared smoke matrix for
   automated TypeScript checks, manual running-stack checks, and locally blocked
   Clojure/frontend checks.
+
+P9.1 implementation note (2026-06-13):
+
+- Audited MCP URL derivation in frontend runtime config, Docker runtime
+  injection, `penpot-cli mcp config`, and gateway routing.
+- Audited profile-prop persistence and confirmed only `:mcp-enabled` is
+  currently accepted by the backend schema.
+- Documented the proposed optional `:mcp-config` profile prop, effective config
+  derivation rules, and follow-up development order in
+  `mcp/docs/manual-mcp-configuration-audit.md`.
 
 ## 10. Feature Backlog
 
