@@ -233,6 +233,15 @@
 (def mcp-server-url
   (or (some-> (obj/get global "penpotMcpStreamURI") u/uri str)
       (mcp-public-url "stream")))
+
+(def mcp-sse-uri
+  (or (some-> (obj/get global "penpotMcpSseURI") u/uri str)
+      (mcp-public-url "sse")))
+
+(def mcp-status-uri
+  (or (some-> (obj/get global "penpotMcpStatusURI") u/uri str)
+      (mcp-public-url "status")))
+
 (def mcp-help-center-uri "https://help.penpot.app/mcp/")
 
 ;; --- Helper Functions

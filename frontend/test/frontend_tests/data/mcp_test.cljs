@@ -15,6 +15,74 @@
   {:session-id "tab-1"
    :profile {:props {:mcp-enabled enabled?}}})
 
+(defn- runtime-defaults
+  []
+  {:mode "builtin"
+   :auto-connect true
+   :public-uri "https://penpot.example"
+   :stream-uri "https://penpot.example/mcp/stream"
+   :sse-uri "https://penpot.example/mcp/sse"
+   :websocket-uri "https://penpot.example/mcp/ws"
+   :status-uri "https://penpot.example/mcp/status"})
+
+(t/deftest effective-config-uses-runtime-defaults-without-profile-config
+  (t/is (= (runtime-defaults)
+           (mcp/effective-config (runtime-defaults) {}))))
+
+(t/deftest effective-config-reset-uses-runtime-defaults
+  (t/is (= (runtime-defaults)
+           (mcp/effective-config (runtime-defaults) {:mcp-config nil}))))
+
+(t/deftest effective-config-builtin-ignores-url-overrides
+  (let [result (mcp/effective-config
+                (runtime-defaults)
+                {:mcp-config {:mode "builtin"
+                              :auto-connect false
+                              :stream-uri "https://custom.example/mcp"
+                              :websocket-uri "wss://custom.example/ws"
+                              :status-uri "https://custom.example/status"}})]
+    (t/is (= (assoc (runtime-defaults) :auto-connect false)
+             result))))
+
+(t/deftest effective-config-local-uses-standalone-defaults
+  (let [result (mcp/effective-config
+                (runtime-defaults)
+                {:mcp-config {:mode "local"
+                              :auto-connect false}})]
+    (t/is (= "local" (:mode result)))
+    (t/is (false? (:auto-connect result)))
+    (t/is (= "http://localhost:4401/mcp" (:stream-uri result)))
+    (t/is (= "http://localhost:4401/sse" (:sse-uri result)))
+    (t/is (= "ws://localhost:4402" (:websocket-uri result)))
+    (t/is (= "http://localhost:4401/status" (:status-uri result)))))
+
+(t/deftest effective-config-custom-derives-gateway-urls
+  (let [result (mcp/effective-config
+                (runtime-defaults)
+                {:mcp-config {:mode "custom"
+                              :public-uri "https://mcp.example"}})]
+    (t/is (= {:mode "custom"
+              :auto-connect true
+              :public-uri "https://mcp.example"
+              :stream-uri "https://mcp.example/mcp/stream"
+              :sse-uri "https://mcp.example/mcp/sse"
+              :websocket-uri "https://mcp.example/mcp/ws"
+              :status-uri "https://mcp.example/mcp/status"}
+             result))))
+
+(t/deftest effective-config-custom-explicit-urls-win
+  (let [result (mcp/effective-config
+                (runtime-defaults)
+                {:mcp-config {:mode "custom"
+                              :public-uri "https://mcp.example"
+                              :stream-uri "https://stream.example/mcp"
+                              :websocket-uri "wss://ws.example"
+                              :status-uri "https://status.example/status"}})]
+    (t/is (= "https://stream.example/mcp" (:stream-uri result)))
+    (t/is (= "https://mcp.example/mcp/sse" (:sse-uri result)))
+    (t/is (= "wss://ws.example" (:websocket-uri result)))
+    (t/is (= "https://status.example/status" (:status-uri result)))))
+
 (t/deftest initialize-keeps-mcp-disabled-without-workspace
   (let [result (ptk/update (mcp/initialize) (state false))]
     (t/is (false? (get-in result [:mcp :active])))

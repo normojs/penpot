@@ -73,6 +73,8 @@
   {::mf/private true}
   [{:keys [title mcp-key?]}]
   (let [token-created (mf/deref refs/access-token-created)
+        profile       (mf/deref refs/profile)
+        mcp-stream-uri (:stream-uri (dmcp/effective-config (:props profile)))
 
         on-copy-to-clipboard
         (mf/use-fn
@@ -131,7 +133,7 @@
           "{\n"
           "  \"mcpServers\": {\n"
           "    \"penpot\": {\n"
-          "      \"url\": \"" cf/mcp-server-url "?userToken=" (:token token-created "") "\"\n"
+          "      \"url\": \"" mcp-stream-uri "?userToken=" (:token token-created "") "\"\n"
           "    }\n"
           "  }"
           "\n}")]])
@@ -520,7 +522,8 @@
 
         mcp-key      (some #(when (= (:type %) "mcp") %) tokens)
         mcp-token    (:token mcp-key "")
-        mcp-url      (dm/str cf/mcp-server-url "?userToken=" mcp-token)
+        mcp-config   (dmcp/effective-config (:props profile))
+        mcp-url      (dm/str (:stream-uri mcp-config) "?userToken=" mcp-token)
         mcp-enabled? (true? (-> profile :props :mcp-enabled))
 
         expires-at  (:expires-at mcp-key)

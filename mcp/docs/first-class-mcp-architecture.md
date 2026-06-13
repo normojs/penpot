@@ -133,7 +133,9 @@ Production Docker routing:
 | Feature flag | MCP nginx locations are installed only when `PENPOT_FLAGS` contains `enable-mcp` | `docker/images/files/nginx-entrypoint.sh` |
 | Public frontend base | Optional `PENPOT_MCP_PUBLIC_URI` writes `globalThis.penpotMcpPublicURI` into `config.js` | `docker/images/files/nginx-entrypoint.sh` |
 | Public stream override | Optional `PENPOT_MCP_STREAM_URI` writes `globalThis.penpotMcpStreamURI` into `config.js` | `docker/images/files/nginx-entrypoint.sh` |
+| Public SSE override | Optional `PENPOT_MCP_SSE_URI` writes `globalThis.penpotMcpSseURI` into `config.js` | `docker/images/files/nginx-entrypoint.sh` |
 | Public WebSocket override | Optional `PENPOT_MCP_WEBSOCKET_URI` writes `globalThis.penpotMcpWebSocketURI` into `config.js` | `docker/images/files/nginx-entrypoint.sh` |
+| Public status override | Optional `PENPOT_MCP_STATUS_URI` writes `globalThis.penpotMcpStatusURI` into `config.js` | `docker/images/files/nginx-entrypoint.sh` |
 | MCP service URI | Defaults to `http://penpot-mcp:4401` | `docker/images/files/nginx-entrypoint.sh` |
 | MCP WebSocket URI | Defaults to `http://penpot-mcp:4402` | `docker/images/files/nginx-entrypoint.sh` |
 | Stream route | `/mcp/stream` proxies to `$PENPOT_MCP_URI/mcp` | `docker/images/files/nginx-mcp-locations.conf.template` |
@@ -201,11 +203,12 @@ Phase 1 decisions:
   `/mcp/status`.
 - Internal ports `4401`, `4402`, and `4403` remain configurable but are not the
   normal user-facing model.
-- Frontend stream and WebSocket defaults derive from `penpotMcpPublicURI` or
-  `public-uri`; explicit stream/WebSocket overrides remain available for
-  custom deployments.
-- Docker can inject `PENPOT_MCP_PUBLIC_URI`, `PENPOT_MCP_STREAM_URI`, and
-  `PENPOT_MCP_WEBSOCKET_URI` into frontend runtime config.
+- Frontend stream, SSE, WebSocket, and status defaults derive from
+  `penpotMcpPublicURI` or `public-uri`; explicit endpoint overrides remain
+  available for custom deployments.
+- Docker can inject `PENPOT_MCP_PUBLIC_URI`, `PENPOT_MCP_STREAM_URI`,
+  `PENPOT_MCP_SSE_URI`, `PENPOT_MCP_WEBSOCKET_URI`, and
+  `PENPOT_MCP_STATUS_URI` into frontend runtime config.
 - The MCP plugin build can derive `/mcp/ws` from `PENPOT_MCP_PUBLIC_URI`, use
   explicit `PENPOT_MCP_WEBSOCKET_URI`, or fall back to local standalone
   `http://localhost:4402`.
@@ -997,11 +1000,14 @@ Planned profile props:
 Existing storage to reuse:
 
 - `profile.props.mcp-enabled`
+- `profile.props.mcp-config`
 - `access-token` rows with `type = "mcp"`
 - frontend config values for MCP stream and WebSocket URLs
 
-P9.2 should keep `:mcp-enabled` as the compatibility switch while consolidating
-the other MCP connection settings into a nested `:mcp-config` profile prop.
+P9.2 keeps `:mcp-enabled` as the compatibility switch while consolidating the
+other MCP connection settings into a nested `:mcp-config` profile prop. Missing
+config means built-in gateway defaults; `{:mcp-config nil}` resets the user to
+built-in defaults.
 
 Settings page controls:
 
@@ -1701,6 +1707,18 @@ P9.1 implementation note (2026-06-13):
 - Documented the proposed optional `:mcp-config` profile prop, effective config
   derivation rules, and follow-up development order in
   `mcp/docs/manual-mcp-configuration-audit.md`.
+
+P9.2 implementation note (2026-06-13):
+
+- Backend profile props now accept optional `:mcp-config` with `builtin`,
+  `custom`, and `local` modes plus auto-connect, public, stream, SSE,
+  WebSocket, and status URLs.
+- Frontend runtime config now includes SSE and status URI overrides alongside
+  existing public, stream, and WebSocket overrides.
+- Frontend MCP diagnostics, plugin WebSocket startup, and Integrations copied
+  client URLs now read from a shared effective config helper.
+- Focused backend/frontend tests cover persistence, reset-to-built-in, and
+  effective URL derivation for built-in, local, and custom modes.
 
 ## 10. Feature Backlog
 

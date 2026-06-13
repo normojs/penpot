@@ -45,10 +45,21 @@
    [:email-comments [::sm/one-of #{:all :partial :none}]]
    [:email-invites [::sm/one-of #{:all :none}]]])
 
+(def schema:mcp-config
+  [:map {:title "props-mcp-config"}
+   [:mode {:optional true} [::sm/one-of {:format "string"} #{"builtin" "custom" "local"}]]
+   [:auto-connect {:optional true} ::sm/boolean]
+   [:public-uri {:optional true} [:maybe [::sm/text {:max 2048}]]]
+   [:stream-uri {:optional true} [:maybe [::sm/text {:max 2048}]]]
+   [:sse-uri {:optional true} [:maybe [::sm/text {:max 2048}]]]
+   [:websocket-uri {:optional true} [:maybe [::sm/text {:max 2048}]]]
+   [:status-uri {:optional true} [:maybe [::sm/text {:max 2048}]]]])
+
 (def schema:props
   [:map {:title "ProfileProps"}
    [:plugins {:optional true} schema:plugin-registry]
    [:mcp-enabled {:optional true} ::sm/boolean]
+   [:mcp-config {:optional true} [:maybe schema:mcp-config]]
    [:newsletter-updates {:optional true} ::sm/boolean]
    [:newsletter-news {:optional true} ::sm/boolean]
    [:onboarding-team-id {:optional true} ::sm/uuid]

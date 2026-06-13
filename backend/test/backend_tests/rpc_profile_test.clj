@@ -36,6 +36,45 @@
   (t/is "foo@example.com" (profile/clean-email "foo@example.com>"))
   (t/is "foo@example.com" (profile/clean-email "<foo@example.com")))
 
+(t/deftest update-profile-props-accepts-mcp-config
+  (let [profile (th/create-profile* 1)
+        config  {:mode "custom"
+                 :auto-connect false
+                 :public-uri "https://mcp.example"
+                 :stream-uri "https://mcp.example/mcp"
+                 :sse-uri "https://mcp.example/sse"
+                 :websocket-uri "wss://mcp.example/ws"
+                 :status-uri "https://mcp.example/status"}
+        data    {::th/type :update-profile-props
+                 ::rpc/profile-id (:id profile)
+                 :props {:mcp-enabled true
+                         :mcp-config config}}
+        out     (th/command! data)]
+    (t/is (nil? (:error out)))
+    (t/is (true? (get-in out [:result :mcp-enabled])))
+    (t/is (= config (get-in out [:result :mcp-config])))))
+
+(t/deftest update-profile-props-removes-mcp-config
+  (let [profile (th/create-profile* 1)
+        config  {:mode "local"
+                 :auto-connect true
+                 :stream-uri "http://localhost:4401/mcp"
+                 :websocket-uri "ws://localhost:4402"
+                 :status-uri "http://localhost:4401/status"}
+        seed    {::th/type :update-profile-props
+                 ::rpc/profile-id (:id profile)
+                 :props {:mcp-enabled true
+                         :mcp-config config}}
+        reset   {::th/type :update-profile-props
+                 ::rpc/profile-id (:id profile)
+                 :props {:mcp-config nil}}
+        seed-out  (th/command! seed)
+        reset-out (th/command! reset)]
+    (t/is (nil? (:error seed-out)))
+    (t/is (nil? (:error reset-out)))
+    (t/is (true? (get-in reset-out [:result :mcp-enabled])))
+    (t/is (not (contains? (:result reset-out) :mcp-config)))))
+
 ;; Test with wrong credentials
 (t/deftest profile-login-failed-1
   (let [profile (th/create-profile* 1)

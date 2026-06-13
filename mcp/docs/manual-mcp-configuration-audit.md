@@ -12,16 +12,19 @@ Frontend MCP URLs are currently derived in `frontend/src/app/config.cljs`:
 - `cf/mcp-public-uri` uses `globalThis.penpotMcpPublicURI` or `cf/public-uri`.
 - `cf/mcp-server-url` uses `globalThis.penpotMcpStreamURI` or
   `<mcp-public-uri>/mcp/stream`.
+- `cf/mcp-sse-uri` uses `globalThis.penpotMcpSseURI` or
+  `<mcp-public-uri>/mcp/sse`.
 - `cf/mcp-ws-uri` uses `globalThis.penpotMcpWebSocketURI`, the legacy
   `globalThis.penpotMcpServerURI`, or `<mcp-public-uri>/mcp/ws`.
-- diagnostics use `cf/mcp-public-url "status"`, which resolves to
+- `cf/mcp-status-uri` uses `globalThis.penpotMcpStatusURI` or
   `<mcp-public-uri>/mcp/status`.
 
 Docker injects those globals from `PENPOT_MCP_PUBLIC_URI`,
-`PENPOT_MCP_STREAM_URI`, and `PENPOT_MCP_WEBSOCKET_URI` in
-`docker/images/files/nginx-entrypoint.sh`. The reverse proxy exposes
-`/mcp/ws`, `/mcp/stream`, `/mcp/sse`, and `/mcp/status` when the
-`enable-mcp` flag is present.
+`PENPOT_MCP_STREAM_URI`, `PENPOT_MCP_SSE_URI`,
+`PENPOT_MCP_WEBSOCKET_URI`, and `PENPOT_MCP_STATUS_URI` in
+`docker/images/files/nginx-entrypoint.sh`. The reverse proxy exposes `/mcp/ws`,
+`/mcp/stream`, `/mcp/sse`, and `/mcp/status` when the `enable-mcp` flag is
+present.
 
 `penpot-cli mcp config` has an independent but similar URL derivation model:
 
@@ -33,20 +36,32 @@ Docker injects those globals from `PENPOT_MCP_PUBLIC_URI`,
 
 ### Persisted User State
 
-Only the on/off state is persisted today:
+The on/off state remains the compatibility switch:
 
 ```clojure
 {:mcp-enabled true}
 ```
 
+P9.2 adds an optional nested connection config profile prop:
+
+```clojure
+{:mcp-config {:mode "builtin"       ;; builtin | custom | local
+              :auto-connect true
+              :public-uri nil
+              :stream-uri nil
+              :sse-uri nil
+              :websocket-uri nil
+              :status-uri nil}}
+```
+
 Frontend writes it with `du/update-profile-props` from the Integrations
-settings page and MCP key modals. Backend accepts it through
-`backend/src/app/rpc/commands/profile.clj` in `schema:props`.
+settings page and MCP key modals. Backend accepts both `:mcp-enabled` and
+`:mcp-config` through `backend/src/app/rpc/commands/profile.clj` in
+`schema:props`.
 
 `update-profile-props` merges simple profile props into the profile row, removes
-keys whose value is `nil`, and ignores namespaced keys. That is a good fit for a
-future optional `:mcp-config` map, but the backend schema must explicitly allow
-that map first.
+keys whose value is `nil`, and ignores namespaced keys. Reset-to-built-in can
+therefore remove the whole config by sending `{:mcp-config nil}`.
 
 MCP access tokens are stored separately as access-token rows with
 `type = "mcp"`. `get-current-mcp-token` returns the first non-expired MCP token
@@ -55,13 +70,13 @@ the manual config should only store connection preferences.
 
 ### Lifecycle And UI Usage
 
-`frontend/src/app/main/data/mcp.cljs` uses `:profile :props :mcp-enabled` as
+`frontend/src/app/main/data/mcp.cljs` keeps `:profile :props :mcp-enabled` as
 the only persisted gate:
 
 - app initialization starts MCP only when the `:mcp` feature flag is present
   and `:mcp-enabled` is true
-- `init-mcp` always passes `cf/mcp-ws-uri` to the bundled plugin
-- diagnostics always fetch the runtime-derived status URL
+- `init-mcp` passes the effective `:websocket-uri` to the bundled plugin
+- diagnostics fetch the effective `:status-uri`
 - reconnect watcher activation follows the enabled state, not a separate
   `auto-connect` setting
 
@@ -69,7 +84,8 @@ the only persisted gate:
 
 - generate/regenerate/delete MCP key
 - enable/disable switch
-- copied MCP stream URL with `?userToken=<token>`
+- copied MCP stream URL with `?userToken=<token>` derived from the effective
+  `:stream-uri`
 - diagnostics refresh panel
 
 The workspace menu reads the same `:mcp-enabled` profile prop and current
@@ -84,12 +100,12 @@ ephemeral `:mcp` state for connect/disconnect and bind/release controls.
   startup after login.
 - Frontend URL derivation and CLI URL derivation are similar but not shared as a
   documented product model.
-- Backend `schema:props` only accepts `:mcp-enabled`, so a frontend cannot yet
-  save a nested MCP configuration map.
-- Diagnostics and plugin WebSocket connection do not use an effective user
-  config object; they read `cf/*` globals directly.
-- `PENPOT_MCP_STATUS_URI` is supported by CLI but not injected into frontend
-  runtime config yet.
+- Settings UI controls do not yet edit `:mcp-config`; P9.3 owns the form,
+  validation, and reset action.
+- `auto-connect` is modeled but not yet applied to global lifecycle; P9.4 owns
+  connection/disconnection behavior.
+- `penpot-cli mcp config` still derives URLs from environment variables rather
+  than persisted user profile props.
 
 ## Proposed Persistent Model
 
@@ -142,11 +158,10 @@ URLs directly.
 
 ## Development Order
 
-1. Add backend schema support for `:mcp-config` and frontend helper functions
-   for runtime defaults/effective config.
-2. Add focused tests for config merging and default derivation.
-3. Wire settings UI controls to save mode, auto-connect, and URL overrides.
-4. Switch MCP lifecycle, plugin WebSocket connection, diagnostics, and copied
-   client URL to the effective config.
-5. Update `penpot-cli mcp config` docs so the CLI env names match the same
+1. Done in P9.2: add backend schema support for `:mcp-config`, runtime
+   SSE/status overrides, frontend runtime defaults/effective config helpers,
+   diagnostics/plugin/client URL consumers, and focused backend/frontend tests.
+2. Wire settings UI controls to save mode, auto-connect, and URL overrides.
+3. Apply `auto-connect` to global MCP lifecycle.
+4. Update `penpot-cli mcp config` docs so the CLI env names match the same
    product model.

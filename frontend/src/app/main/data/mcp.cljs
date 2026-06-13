@@ -55,6 +55,86 @@
       cf/version-tag
       "unknown"))
 
+(def ^:private local-default-config
+  {:mode "local"
+   :auto-connect true
+   :public-uri "http://localhost:4401"
+   :stream-uri "http://localhost:4401/mcp"
+   :sse-uri "http://localhost:4401/sse"
+   :websocket-uri "ws://localhost:4402"
+   :status-uri "http://localhost:4401/status"})
+
+(defn- non-empty-string
+  [value]
+  (when (and (string? value) (not= "" value))
+    value))
+
+(defn- config-uri-overrides
+  [config]
+  (into {}
+        (keep (fn [k]
+                (when-let [value (non-empty-string (get config k))]
+                  [k value])))
+        [:public-uri :stream-uri :sse-uri :websocket-uri :status-uri]))
+
+(defn- mcp-public-url
+  [public-uri path]
+  (when-let [public-uri (non-empty-string public-uri)]
+    (try
+      (cf/mcp-public-url public-uri path)
+      (catch :default _
+        nil))))
+
+(defn runtime-default-config
+  []
+  {:mode "builtin"
+   :auto-connect true
+   :public-uri (str cf/mcp-public-uri)
+   :stream-uri (str cf/mcp-server-url)
+   :sse-uri (str cf/mcp-sse-uri)
+   :websocket-uri (str cf/mcp-ws-uri)
+   :status-uri (str cf/mcp-status-uri)})
+
+(defn effective-config
+  ([profile-props]
+   (effective-config (runtime-default-config) profile-props))
+  ([runtime-defaults profile-props]
+   (let [config        (or (:mcp-config profile-props) {})
+         mode          (case (:mode config)
+                         "custom" "custom"
+                         "local"  "local"
+                         "builtin")
+         auto-connect? (not (false? (:auto-connect config)))]
+     (case mode
+       "local"
+       (-> local-default-config
+           (merge (config-uri-overrides config))
+           (assoc :mode "local"
+                  :auto-connect auto-connect?))
+
+       "custom"
+       (let [public-uri (or (non-empty-string (:public-uri config))
+                            (:public-uri runtime-defaults))]
+         {:mode "custom"
+          :auto-connect auto-connect?
+          :public-uri public-uri
+          :stream-uri (or (non-empty-string (:stream-uri config))
+                          (mcp-public-url public-uri "stream")
+                          (:stream-uri runtime-defaults))
+          :sse-uri (or (non-empty-string (:sse-uri config))
+                       (mcp-public-url public-uri "sse")
+                       (:sse-uri runtime-defaults))
+          :websocket-uri (or (non-empty-string (:websocket-uri config))
+                             (mcp-public-url public-uri "ws")
+                             (:websocket-uri runtime-defaults))
+          :status-uri (or (non-empty-string (:status-uri config))
+                          (mcp-public-url public-uri "status")
+                          (:status-uri runtime-defaults))})
+
+       (assoc runtime-defaults
+              :mode "builtin"
+              :auto-connect auto-connect?)))))
+
 (defn- now-iso
   []
   (.toISOString (js/Date.)))
@@ -200,25 +280,26 @@
       (update state :mcp assoc-in [:diagnostics :status] "loading"))
 
     ptk/WatchEvent
-    (watch [_ _ _]
-      (->> (http/send! {:method :get
-                        :uri (cf/mcp-public-url "status")
-                        :credentials "include"
-                        :response-type :json})
-           (rx/mapcat
-            (fn [{:keys [status body]}]
-              (if (= status 200)
-                (rx/of body)
-                (rx/throw (ex-info "MCP status request failed" {:status status})))))
-           (rx/map #(js->clj % :keywordize-keys true))
-           (rx/map #(update-mcp-diagnostics {:status "ok"
-                                             :updated-at (now-iso)
-                                             :data %}))
-           (rx/catch
-            (fn [cause]
-              (rx/of (update-mcp-diagnostics {:status "error"
-                                              :updated-at (now-iso)
-                                              :error {:message (error-message cause)}}))))))))
+    (watch [_ state _]
+      (let [config (effective-config (get-in state [:profile :props]))]
+        (->> (http/send! {:method :get
+                          :uri (:status-uri config)
+                          :credentials "include"
+                          :response-type :json})
+             (rx/mapcat
+              (fn [{:keys [status body]}]
+                (if (= status 200)
+                  (rx/of body)
+                  (rx/throw (ex-info "MCP status request failed" {:status status})))))
+             (rx/map #(js->clj % :keywordize-keys true))
+             (rx/map #(update-mcp-diagnostics {:status "ok"
+                                               :updated-at (now-iso)
+                                               :data %}))
+             (rx/catch
+              (fn [cause]
+                (rx/of (update-mcp-diagnostics {:status "error"
+                                                :updated-at (now-iso)
+                                                :error {:message (error-message cause)}})))))))))
 
 (defn update-mcp-file-context-status
   [value]
@@ -300,48 +381,50 @@
           (rx/of (ntf/hide)))))))
 
 (defn init-mcp
-  [stream]
-  (->> (rp/cmd! :get-current-mcp-token)
-       (rx/tap
-        (fn [{:keys [token]}]
-          (when token
-            (dp/start-plugin!
-             (assoc default-manifest
-                    :url (str (u/join cf/public-uri "plugins/mcp/manifest.json"))
-                    :host (str (u/join cf/public-uri "plugins/mcp/")))
+  [stream profile-props]
+  (let [config        (effective-config profile-props)
+        websocket-uri (:websocket-uri config)]
+    (->> (rp/cmd! :get-current-mcp-token)
+         (rx/tap
+          (fn [{:keys [token]}]
+            (when token
+              (dp/start-plugin!
+               (assoc default-manifest
+                      :url (str (u/join cf/public-uri "plugins/mcp/manifest.json"))
+                      :host (str (u/join cf/public-uri "plugins/mcp/")))
 
-             #js {:mcp
-                  #js
-                   {:getToken (constantly token)
-                    :getServerUrl #(str cf/mcp-ws-uri)
-                    :getFrontendVersion frontend-version
-                    :setMcpStatus
-                    (fn [status details]
-                      (when (= status "connected")
-                        (start-reconnect-watcher!))
-                      (st/emit! (update-mcp-connection-status status details))
-                      (log/info :hint "MCP STATUS" :status status :details details))
-                    :setFileContextStatus
-                    (fn [status]
-                      (st/emit! (update-mcp-file-context-status (js->clj status :keywordize-keys true)))
-                      (log/info :hint "MCP FILE CONTEXT" :status status))
+               #js {:mcp
+                    #js
+                     {:getToken (constantly token)
+                      :getServerUrl #(str websocket-uri)
+                      :getFrontendVersion frontend-version
+                      :setMcpStatus
+                      (fn [status details]
+                        (when (= status "connected")
+                          (start-reconnect-watcher!))
+                        (st/emit! (update-mcp-connection-status status details))
+                        (log/info :hint "MCP STATUS" :status status :details details))
+                      :setFileContextStatus
+                      (fn [status]
+                        (st/emit! (update-mcp-file-context-status (js->clj status :keywordize-keys true)))
+                        (log/info :hint "MCP FILE CONTEXT" :status status))
 
-                    :on
-                    (fn [event cb]
-                      (when-let [event
-                                 (case event
-                                   "disconnect" ::disconnect
-                                   "connect" ::connect
-                                   "bind-context" ::bind-file-context
-                                   "release-context" ::release-file-context
-                                   nil)]
+                      :on
+                      (fn [event cb]
+                        (when-let [event
+                                   (case event
+                                     "disconnect" ::disconnect
+                                     "connect" ::connect
+                                     "bind-context" ::bind-file-context
+                                     "release-context" ::release-file-context
+                                     nil)]
 
-                        (let [stopper (rx/filter stop-event? stream)]
-                          (->> stream
-                               (rx/filter (ptk/type? event))
-                               (rx/take-until stopper)
-                               (rx/subs! #(cb))))))}}))))
-       (rx/ignore)))
+                          (let [stopper (rx/filter stop-event? stream)]
+                            (->> stream
+                                 (rx/filter (ptk/type? event))
+                                 (rx/take-until stopper)
+                                 (rx/subs! #(cb))))))}}))))
+         (rx/ignore))))
 
 (defn initialize
   []
@@ -365,7 +448,7 @@
 
               (if (enabled? state)
                 (rx/merge
-                 (init-mcp stream)
+                 (init-mcp stream (get-in state [:profile :props]))
 
                  (rx/of (mbc/event :mcp/ping {}))
 

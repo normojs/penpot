@@ -51,9 +51,10 @@ frontend. P8.4 added diagnostics UI and logging status for MCP connection,
 compatibility, file context, last error, and server log paths. P8.5 added
 configurable destructive action confirmations for `shape.delete`, and P8.6
 added CLI smoke regression tests plus MCP/CLI smoke-flow documentation. P9.1
-audited the manual MCP configuration settings and persistence path. The current
-implementation focus is P9.2: defining and wiring the persistent manual MCP
-config model.
+audited the manual MCP configuration settings and persistence path, and P9.2
+defined the persisted MCP config model plus frontend effective URL derivation.
+The current implementation focus is P9.3: adding Integrations settings controls
+for manual MCP configuration.
 
 ## Feature Roadmap
 
@@ -208,18 +209,19 @@ setup.
 | ID | Status | Task | Modules | Verification | Notes |
 | --- | --- | --- | --- | --- | --- |
 | P9.1 | done | Audit existing MCP settings and persistence path | `frontend`, `backend`, `mcp` | Document current profile props, settings UI, env injection, and gaps | Completed 2026-06-13; documented current runtime URL sources, `:mcp-enabled` persistence, token separation, lifecycle usage, gaps, and proposed `:mcp-config` model in `mcp/docs/manual-mcp-configuration-audit.md` |
-| P9.2 | in_progress | Define persistent manual MCP config model | `frontend`, `backend`, `mcp` | Config model covers mode, enabled, auto-connect, stream URL, WebSocket URL, status URL, and reset-to-built-in | Started 2026-06-13; implement backend schema support and frontend effective-config helpers while preserving `:mcp-enabled` compatibility |
-| P9.3 | todo | Add Integrations settings controls for MCP config | `frontend` | Users can toggle MCP and edit/reset endpoint settings | Reuse existing diagnostics section and avoid project-specific setup |
+| P9.2 | done | Define persistent manual MCP config model | `frontend`, `backend`, `mcp` | Config model covers mode, enabled, auto-connect, stream URL, WebSocket URL, status URL, and reset-to-built-in | Completed 2026-06-13; backend profile props accept optional `:mcp-config`, frontend computes effective built-in/custom/local URLs, diagnostics/plugin/client URLs consume it, and focused tests cover persistence and derivation |
+| P9.3 | in_progress | Add Integrations settings controls for MCP config | `frontend` | Users can toggle MCP and edit/reset endpoint settings | Started 2026-06-13; reuse existing diagnostics section and avoid project-specific setup |
 | P9.4 | todo | Wire global MCP lifecycle to manual config | `frontend`, `mcp` | Global plugin connects/disconnects according to saved config | Preserve multi-tab ownership and diagnostics |
 | P9.5 | todo | Add config tests and docs | `frontend`, `penpot-cli`, `mcp/docs` | Settings persistence, derived URLs, and CLI config docs are covered | Record frontend/backend checks that remain blocked locally |
 
 ## Next Recommended Sprint
 
-Continue with P9.2 persistent MCP config model:
+Continue with P9.3 Integrations settings controls:
 
-1. Extend backend `schema:props` with an optional `:mcp-config` map for mode,
-   auto-connect, public, stream, SSE, WebSocket, and status URLs.
-2. Add frontend helper functions to derive effective MCP config from runtime
-   defaults plus `profile.props.mcp-config`.
-3. Add focused tests around default, built-in, local, custom, and reset paths
-   before wiring settings UI controls.
+1. Add a settings form for `builtin`, `custom`, and `local` MCP modes with an
+   auto-connect switch and URL fields for public, stream, SSE, WebSocket, and
+   status endpoints.
+2. Persist changes through `du/update-profile-props`, including
+   `{:mcp-config nil}` for reset-to-built-in.
+3. Show the effective stream/status/WebSocket values near diagnostics so users
+   can verify which endpoints MCP will use.

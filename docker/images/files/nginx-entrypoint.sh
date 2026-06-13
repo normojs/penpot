@@ -32,8 +32,16 @@ update_flags() {
       echo "var penpotMcpStreamURI = \"$PENPOT_MCP_STREAM_URI\";" >> "$1";
   fi
 
+  if [ -n "$PENPOT_MCP_SSE_URI" ]; then
+      echo "var penpotMcpSseURI = \"$PENPOT_MCP_SSE_URI\";" >> "$1";
+  fi
+
   if [ -n "$PENPOT_MCP_WEBSOCKET_URI" ]; then
       echo "var penpotMcpWebSocketURI = \"$PENPOT_MCP_WEBSOCKET_URI\";" >> "$1";
+  fi
+
+  if [ -n "$PENPOT_MCP_STATUS_URI" ]; then
+      echo "var penpotMcpStatusURI = \"$PENPOT_MCP_STATUS_URI\";" >> "$1";
   fi
 }
 
