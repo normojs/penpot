@@ -955,9 +955,13 @@ P7.3 implementation note:
 - The command intentionally omits image upload, arbitrary layout setup, shape
   update, and delete in this slice. Those stay on plugin-live tools until
   backend/common coverage is added.
-- MCP and CLI shape tools should be wired to this command through the future
-  adapter-selection layer rather than each entry point growing separate shape
-  routing logic.
+- MCP `shape.create_frame`, `shape.create_rect`, and `shape.create_text` now
+  choose backend-command when callers provide explicit `fileId` and `pageId`.
+  Calls without explicit file/page targets keep using the plugin-live bound
+  workspace path.
+- `penpot-cli shape create-frame`, `shape create-rect`, and
+  `shape create-text` call backend `create-file-shape` directly and report
+  `adapterSelection` in JSON output.
 
 ## 6. User Configuration
 

@@ -26,6 +26,9 @@ Usage:
   penpot-cli file open <file-id> [--team-id <id>] [--page-id <id>] [--format text|json]
   penpot-cli page list --file <file-id> [--adapter auto|backend-command] [--format text|json]
   penpot-cli page create --file <file-id> [--name <name>] [--adapter auto|backend-command] [--format text|json]
+  penpot-cli shape create-frame --file <file-id> --page <page-id> --x <n> --y <n> --width <n> --height <n> [--format text|json]
+  penpot-cli shape create-rect --file <file-id> --page <page-id> --parent <frame-id> --x <n> --y <n> --width <n> --height <n> [--format text|json]
+  penpot-cli shape create-text --file <file-id> --page <page-id> --parent <frame-id> --x <n> --y <n> --width <n> --height <n> --content <text> [--format text|json]
   penpot-cli export page --file <file-id> --page <page-id> --object <object-id> [--adapter auto|exporter] [--dry-run] [--format text|json]`;
 
 const MCP_HELP_TEXT = `penpot-cli mcp
@@ -79,6 +82,20 @@ Environment:
   PENPOT_MCP_USER_TOKEN    Penpot MCP user token fallback for backend RPC
   PENPOT_ACCESS_TOKEN      Generic Penpot access token fallback`;
 
+const SHAPE_HELP_TEXT = `penpot-cli shape
+
+Usage:
+  penpot-cli shape create-frame --file <file-id> --page <page-id> --x <n> --y <n> --width <n> --height <n> [--name <name>] [--shape-id <id>] [--fill <hex>] [--format text|json]
+  penpot-cli shape create-rect --file <file-id> --page <page-id> --parent <frame-id> --x <n> --y <n> --width <n> --height <n> [--name <name>] [--shape-id <id>] [--fill <hex>] [--border-radius <n>] [--format text|json]
+  penpot-cli shape create-text --file <file-id> --page <page-id> --parent <frame-id> --x <n> --y <n> --width <n> --height <n> --content <text> [--name <name>] [--shape-id <id>] [--font-size <n>] [--fill <hex>] [--format text|json]
+
+Environment:
+  PENPOT_BACKEND_URI       Backend RPC base URI, default http://localhost:6060
+  PENPOT_PUBLIC_URI        Public Penpot base URI used as backend fallback
+  PENPOT_CLI_TOKEN         Penpot access token for backend RPC
+  PENPOT_MCP_USER_TOKEN    Penpot MCP user token fallback for backend RPC
+  PENPOT_ACCESS_TOKEN      Generic Penpot access token fallback`;
+
 const EXPORT_HELP_TEXT = `penpot-cli export
 
 Usage:
@@ -92,7 +109,16 @@ Environment:
   PENPOT_PROFILE_ID        Optional profile id for the direct exporter request`;
 
 type Format = "text" | "json";
-type RpcParamValue = string | number | boolean | string[] | number[] | boolean[] | null | undefined;
+type RpcParamValue =
+    | string
+    | number
+    | boolean
+    | string[]
+    | number[]
+    | boolean[]
+    | Record<string, unknown>
+    | null
+    | undefined;
 type RpcParams = Record<string, RpcParamValue>;
 
 interface Writable {
@@ -178,6 +204,26 @@ interface ExportPagePlan {
     diagnostics: Record<string, unknown>;
 }
 
+type ShapeCreateKind = "frame" | "rect" | "text";
+
+interface ShapeCreateParams {
+    fileId: string;
+    pageId: string;
+    type: ShapeCreateKind;
+    x: number;
+    y: number;
+    width: number;
+    height: number;
+    shapeId?: string;
+    parentId?: string;
+    name?: string;
+    content?: string;
+    fill?: Record<string, unknown>;
+    stroke?: Record<string, unknown>;
+    borderRadius?: number;
+    fontSize?: number;
+}
+
 const DEFAULT_IO: CliIO = {
     stdout: process.stdout,
     stderr: process.stderr,
@@ -232,6 +278,15 @@ function readFirstPositional(args: string[]): string | undefined {
         return arg;
     }
     return undefined;
+}
+
+function readNumberOption(args: string[], names: string[]): number | undefined {
+    const value = readOption(args, names);
+    if (value === undefined) {
+        return undefined;
+    }
+    const number = Number(value);
+    return Number.isFinite(number) ? number : Number.NaN;
 }
 
 function parseFormat(args: string[], io: CliIO): Format | null {
@@ -341,6 +396,22 @@ function selectCliExporterAdapter(args: string[]): CommandAdapterSelection {
                 available: false,
                 priority: 50,
                 reason: "CLI export planning requires explicit file/page/object ids and does not use live selection.",
+            },
+        ],
+    });
+}
+
+function selectCliShapeAdapter(command: string, args: string[]): CommandAdapterSelection {
+    return selectCommandAdapter({
+        command,
+        requestedAdapter: readRequestedAdapter(args),
+        candidates: [
+            { kind: "backend-command", available: true, priority: 10 },
+            {
+                kind: "plugin-live",
+                available: false,
+                priority: 50,
+                reason: "CLI shape commands require explicit file/page targets and do not use live workspace state.",
             },
         ],
     });
@@ -465,6 +536,113 @@ function createExportPagePlan(args: string[], env: NodeJS.ProcessEnv): ExportPag
             authCookie: "auth-token",
             outputMode: "exporter-resource-upload",
         },
+    };
+}
+
+function createSolidFill(args: string[]): Record<string, unknown> | undefined {
+    const color = readOption(args, ["--fill", "--fill-color"]);
+    if (!color) {
+        return undefined;
+    }
+    const opacity = readNumberOption(args, ["--fill-opacity"]);
+    return {
+        color,
+        ...(opacity !== undefined ? { opacity } : {}),
+    };
+}
+
+function createSolidStroke(args: string[]): Record<string, unknown> | undefined {
+    const color = readOption(args, ["--stroke", "--stroke-color"]);
+    if (!color) {
+        return undefined;
+    }
+    const opacity = readNumberOption(args, ["--stroke-opacity"]);
+    const width = readNumberOption(args, ["--stroke-width"]);
+    const style = readOption(args, ["--stroke-style"]);
+    const alignment = readOption(args, ["--stroke-alignment"]);
+    return {
+        color,
+        ...(opacity !== undefined ? { opacity } : {}),
+        ...(width !== undefined ? { width } : {}),
+        ...(style ? { style } : {}),
+        ...(alignment ? { alignment } : {}),
+    };
+}
+
+function parseShapeCreateParams(kind: ShapeCreateKind, args: string[], io: CliIO, format: Format): ShapeCreateParams | null {
+    const fileId = readOption(args, ["--file", "--file-id"]);
+    if (!fileId) {
+        writeError(io, format, "file_id_required", `shape create-${kind} requires --file <file-id>.`, [
+            "Use penpot-cli file list first, then pass --file <file-id>.",
+        ]);
+        return null;
+    }
+
+    const pageId = readOption(args, ["--page", "--page-id"]);
+    if (!pageId) {
+        writeError(io, format, "page_id_required", `shape create-${kind} requires --page <page-id>.`, [
+            "Use penpot-cli page list --file <file-id> first, then pass --page <page-id>.",
+        ]);
+        return null;
+    }
+
+    const requiredNumbers = {
+        x: readNumberOption(args, ["--x"]),
+        y: readNumberOption(args, ["--y"]),
+        width: readNumberOption(args, ["--width", "--w"]),
+        height: readNumberOption(args, ["--height", "--h"]),
+    };
+
+    for (const [name, value] of Object.entries(requiredNumbers)) {
+        if (value === undefined) {
+            writeError(io, format, "shape_numeric_option_required", `shape create-${kind} requires --${name} <n>.`, [
+                "Pass numeric x, y, width, and height values.",
+            ]);
+            return null;
+        }
+        if (!Number.isFinite(value)) {
+            writeError(io, format, "shape_numeric_option_invalid", `Invalid numeric value for --${name}.`, [
+                "Pass finite numeric x, y, width, and height values.",
+            ]);
+            return null;
+        }
+    }
+
+    const content = readOption(args, ["--content", "--text"]);
+    if (kind === "text" && !content) {
+        writeError(io, format, "shape_content_required", "shape create-text requires --content <text>.", [
+            "Pass non-empty text content.",
+        ]);
+        return null;
+    }
+
+    const borderRadius = readNumberOption(args, ["--border-radius", "--radius"]);
+    const fontSize = readNumberOption(args, ["--font-size"]);
+    for (const [name, value] of Object.entries({ borderRadius, fontSize })) {
+        if (value !== undefined && !Number.isFinite(value)) {
+            writeError(io, format, "shape_numeric_option_invalid", `Invalid numeric value for ${name}.`, [
+                "Pass finite numeric optional shape values.",
+            ]);
+            return null;
+        }
+    }
+
+    return {
+        fileId,
+        pageId,
+        type: kind,
+        x: requiredNumbers.x as number,
+        y: requiredNumbers.y as number,
+        width: requiredNumbers.width as number,
+        height: requiredNumbers.height as number,
+        shapeId: readOption(args, ["--shape-id", "--id"]),
+        parentId: readOption(args, ["--parent", "--parent-id", "--frame", "--frame-id"]),
+        name: readOption(args, ["--name"])?.trim() || undefined,
+        content,
+        fill: createSolidFill(args),
+        stroke: createSolidStroke(args),
+        borderRadius,
+        fontSize,
     };
 }
 
@@ -736,6 +914,17 @@ function writePageCreatedText(io: CliIO, fileId: string, page: unknown): void {
     writeLine(io.stdout, `fileId: ${fileId}`);
     writeLine(io.stdout, `id: ${String(record.id ?? "<unknown>")}`);
     writeLine(io.stdout, `name: ${String(record.name ?? "<unnamed>")}`);
+}
+
+function writeShapeCreatedText(io: CliIO, fileId: string, shape: unknown): void {
+    const record = asRecord(shape);
+    writeLine(io.stdout, "Shape created");
+    writeLine(io.stdout, `fileId: ${fileId}`);
+    writeLine(io.stdout, `id: ${String(record.id ?? "<unknown>")}`);
+    writeLine(io.stdout, `type: ${String(record.type ?? "<unknown>")}`);
+    writeLine(io.stdout, `name: ${String(record.name ?? "<unnamed>")}`);
+    writeLine(io.stdout, `pageId: ${String(record.pageId ?? record["page-id"] ?? "<unknown>")}`);
+    writeLine(io.stdout, `parentId: ${String(record.parentId ?? record["parent-id"] ?? "<unknown>")}`);
 }
 
 function writeExportPlanText(io: CliIO, plan: ExportPagePlan): void {
@@ -1334,6 +1523,98 @@ async function handlePageCommand(args: string[], io: CliIO, env: NodeJS.ProcessE
     }
 }
 
+async function handleShapeCreate(
+    kind: ShapeCreateKind,
+    commandName: string,
+    args: string[],
+    io: CliIO,
+    env: NodeJS.ProcessEnv
+): Promise<number> {
+    const format = parseFormat(args, io);
+    if (!format) {
+        return 2;
+    }
+
+    const adapterSelection = selectCliShapeAdapter(commandName, args);
+    if (adapterSelection.status !== "selected" || adapterSelection.selected !== "backend-command") {
+        return adapterSelectionFailure(io, format, adapterSelection);
+    }
+
+    const shapeParams = parseShapeCreateParams(kind, args, io, format);
+    if (!shapeParams) {
+        return 2;
+    }
+
+    const rpc = getRpcConfig(args, env);
+    if (!rpc.token) {
+        return rpcAuthenticationRequired(io, format);
+    }
+
+    try {
+        const result = await rpcRequest<Record<string, unknown>>(
+            "POST",
+            rpc.backendUri,
+            "create-file-shape",
+            {
+                id: shapeParams.fileId,
+                "page-id": shapeParams.pageId,
+                "shape-id": shapeParams.shapeId,
+                "parent-id": shapeParams.parentId,
+                type: shapeParams.type,
+                name: shapeParams.name,
+                x: shapeParams.x,
+                y: shapeParams.y,
+                width: shapeParams.width,
+                height: shapeParams.height,
+                content: shapeParams.content,
+                fill: shapeParams.fill,
+                stroke: shapeParams.stroke,
+                "border-radius": shapeParams.borderRadius,
+                "font-size": shapeParams.fontSize,
+            },
+            rpc.token
+        );
+        writeOk(
+            io,
+            format,
+            {
+                fileId: shapeParams.fileId,
+                shape: result.shape,
+                revn: result.revn,
+                vern: result.vern,
+                adapter: adapterSelection.selected,
+                adapterSelection,
+            },
+            () => writeShapeCreatedText(io, shapeParams.fileId, result.shape)
+        );
+        return 0;
+    } catch (cause) {
+        return rpcErrorResponse(io, format, "create-file-shape", rpc.backendUri, cause);
+    }
+}
+
+async function handleShapeCommand(args: string[], io: CliIO, env: NodeJS.ProcessEnv): Promise<number> {
+    const [subcommand, ...rest] = args;
+
+    if (isHelpFlag(subcommand)) {
+        writeLine(io.stdout, SHAPE_HELP_TEXT);
+        return 0;
+    }
+
+    switch (subcommand) {
+        case "create-frame":
+            return await handleShapeCreate("frame", "shape.create_frame", rest, io, env);
+        case "create-rect":
+            return await handleShapeCreate("rect", "shape.create_rect", rest, io, env);
+        case "create-text":
+            return await handleShapeCreate("text", "shape.create_text", rest, io, env);
+        default:
+            writeLine(io.stderr, `Unknown shape command: ${subcommand}`);
+            writeLine(io.stderr, 'Run "penpot-cli shape --help" for usage.');
+            return 2;
+    }
+}
+
 function handleExportPage(args: string[], io: CliIO, env: NodeJS.ProcessEnv): number {
     const format = parseFormat(args, io);
     if (!format) {
@@ -1452,6 +1733,10 @@ export async function run(
 
     if (first === "page") {
         return await handlePageCommand(argv.slice(1), io, env);
+    }
+
+    if (first === "shape") {
+        return await handleShapeCommand(argv.slice(1), io, env);
     }
 
     if (first === "export") {

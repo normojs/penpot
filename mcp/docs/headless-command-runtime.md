@@ -298,9 +298,9 @@ they already exist in MCP, CLI, or both.
 | `file.open` | global | CLI browser URL | `browser-url` |
 | `page.list` | file | MCP plugin task, backend `get-file-pages` RPC | `backend-command`, fallback `plugin-live` |
 | `page.create` | file | MCP plugin task, backend `create-file-page` RPC | `backend-command`, fallback `plugin-live` |
-| `shape.create_frame` | file | MCP plugin task | `plugin-live`, then `backend-command` |
-| `shape.create_rect` | file | MCP plugin task | `plugin-live`, then `backend-command` |
-| `shape.create_text` | file | MCP plugin task | `plugin-live`, then `backend-command` |
+| `shape.create_frame` | file | MCP plugin task, backend `create-file-shape` RPC | `backend-command`, fallback `plugin-live` |
+| `shape.create_rect` | file | MCP plugin task, backend `create-file-shape` RPC | `backend-command`, fallback `plugin-live` |
+| `shape.create_text` | file | MCP plugin task, backend `create-file-shape` RPC | `backend-command`, fallback `plugin-live` |
 | `export.page` | file | MCP plugin task, CLI exporter dry-run | `exporter`, fallback `plugin-live` |
 | `render.preview` | file | MCP plugin task | `exporter`, fallback `plugin-live` |
 
@@ -537,3 +537,34 @@ P7.5 is complete when:
 - CLI page/export JSON output includes `adapterSelection`.
 - MCP page tool responses include `adapterSelection`.
 - MCP tests cover backend-command selection and unsupported explicit adapters.
+
+## P7.6 Headless Shape Entry Adapter Slice
+
+P7.6 wires the existing backend `create-file-shape` command into the TypeScript
+entry adapters:
+
+- MCP `shape.create_frame`, `shape.create_rect`, and `shape.create_text` choose
+  `backend-command` when `fileId` and `pageId` are supplied.
+- The same MCP tools keep `plugin-live` fallback when callers omit explicit
+  file/page targets and rely on the bound workspace context.
+- `penpot-cli shape create-frame`, `shape create-rect`, and
+  `shape create-text` call backend `create-file-shape` directly and report
+  `adapterSelection` in JSON output.
+
+The backend-command shape contract is:
+
+```text
+fileId + pageId + type + x + y + width + height
+```
+
+`shapeId`, `parentId`, `name`, `fill`, `stroke`, `borderRadius`, `content`, and
+`fontSize` are optional depending on shape type. Text creation requires
+`content`. Rectangles and text layers can use `parentId` to target an existing
+frame. Top-level frames should omit `parentId`.
+
+P7.6 is complete when:
+
+- MCP shape create tools can use backend-command for explicit file/page
+  targets and still preserve plugin-live behavior for bound workspace calls.
+- CLI can create frame, rectangle, and text shapes through backend-command.
+- MCP tests cover backend request mapping and incomplete backend targets.

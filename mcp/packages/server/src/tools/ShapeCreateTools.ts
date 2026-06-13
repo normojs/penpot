@@ -1,16 +1,18 @@
 import { z } from "zod";
-import { Tool } from "../Tool.js";
 import type { ToolResponse } from "../ToolResponse.js";
-import { JsonResponse } from "../ToolResponse.js";
 import { PenpotMcpServer } from "../PenpotMcpServer.js";
 import { ShapePluginTask } from "../tasks/ShapePluginTask.js";
 import { ToolNames } from "../ToolNames.js";
 import { requireBoundFileContext } from "./FileContextGuard.js";
-import type { PluginTaskResult, ShapeTaskParams, ShapeTaskResultData } from "@penpot/mcp-common";
+import { PenpotRpcTool } from "./PenpotRpcTool.js";
+import type { ShapeTaskParams } from "@penpot/mcp-common";
+import { selectCommandAdapter } from "@penpot/command-runtime";
+import type { CommandAdapterSelection } from "@penpot/command-runtime";
 
 const coordinateSchema = z.number().min(-100000).max(100000);
 const dimensionSchema = z.number().positive().max(100000);
 const hexColorSchema = z.string().regex(/^#(?:[0-9a-fA-F]{3}|[0-9a-fA-F]{4}|[0-9a-fA-F]{6}|[0-9a-fA-F]{8})$/);
+const uuidSchema = z.string().uuid();
 
 const fillSchema = z
     .object({
@@ -54,12 +56,58 @@ const parentIdSchema = z
     .optional()
     .describe("Optional parent container shape id. When provided, x/y are relative to this parent.");
 
-abstract class ShapeTool<TArgs extends object> extends Tool<TArgs> {
+type PenpotRecord = Record<string, unknown>;
+type BackendShapeType = "frame" | "rect" | "text";
+type ShapeCreateAdapterArgs = { fileId?: string; pageId?: string; adapter?: string };
+
+abstract class ShapeTool<TArgs extends object> extends PenpotRpcTool<TArgs> {
     protected constructor(mcpServer: PenpotMcpServer, inputSchema: z.ZodRawShape) {
         super(mcpServer, inputSchema);
     }
 
-    protected async executeShapeTask(params: ShapeTaskParams): Promise<ToolResponse> {
+    protected selectShapeCreateAdapter(command: string, args: ShapeCreateAdapterArgs): CommandAdapterSelection {
+        const hasExplicitTarget = Boolean(args.fileId || args.pageId);
+        const hasBackendTarget = Boolean(args.fileId && args.pageId);
+        return selectCommandAdapter({
+            command,
+            requestedAdapter: args.adapter ?? "auto",
+            candidates: [
+                {
+                    kind: "backend-command",
+                    available: hasBackendTarget,
+                    priority: 10,
+                    reason: hasBackendTarget ? null : "backend-command requires explicit fileId and pageId.",
+                },
+                {
+                    kind: "plugin-live",
+                    available: !hasExplicitTarget,
+                    priority: 50,
+                    reason: hasExplicitTarget
+                        ? "plugin-live uses the bound workspace context; omit fileId and pageId to request it."
+                        : null,
+                },
+            ],
+        });
+    }
+
+    protected adapterSelectionFailure(selection: CommandAdapterSelection): ToolResponse {
+        return this.error(
+            selection.status === "unsupported" ? "adapter_not_supported" : "adapter_not_available",
+            `No available adapter matched '${selection.requested}' for ${selection.command}.`,
+            [
+                "Use adapter: 'auto' to let MCP choose the first available adapter.",
+                "Pass fileId and pageId for backend-command, or omit both to use plugin-live.",
+            ],
+            {
+                adapterSelection: selection,
+            }
+        );
+    }
+
+    protected async executeShapeTask(
+        params: ShapeTaskParams,
+        adapterSelection?: CommandAdapterSelection
+    ): Promise<ToolResponse> {
         const contextError = requireBoundFileContext(
             this.mcpServer,
             this.getSessionContext()?.userToken,
@@ -71,23 +119,68 @@ abstract class ShapeTool<TArgs extends object> extends Tool<TArgs> {
 
         const task = new ShapePluginTask(params);
         const result = await this.mcpServer.pluginBridge.executePluginTask(task);
-        return this.ok(result);
+        return this.ok({
+            ...result.data,
+            ...(adapterSelection ? { adapter: adapterSelection.selected, adapterSelection } : {}),
+        });
+    }
+
+    protected async executeBackendShapeCreate(
+        args: ShapeCreateFrameArgs | ShapeCreateRectArgs | ShapeCreateTextArgs,
+        type: BackendShapeType,
+        adapterSelection: CommandAdapterSelection
+    ): Promise<ToolResponse> {
+        const userToken = this.getUserToken();
+        if (!userToken) {
+            return this.authenticationRequired();
+        }
+
+        try {
+            const result = await this.rpcPost<PenpotRecord>(
+                "create-file-shape",
+                {
+                    id: args.fileId,
+                    "page-id": args.pageId,
+                    "shape-id": args.shapeId,
+                    "parent-id": args.parentId,
+                    type,
+                    name: this.nonEmptyString(args.name),
+                    x: args.x,
+                    y: args.y,
+                    width: args.width,
+                    height: args.height,
+                    content: "content" in args ? args.content : undefined,
+                    fill: args.fill,
+                    stroke: "stroke" in args ? args.stroke : undefined,
+                    "border-radius": "borderRadius" in args ? args.borderRadius : undefined,
+                    "font-size": "fontSize" in args ? args.fontSize : undefined,
+                },
+                userToken
+            );
+            return this.ok({
+                adapter: adapterSelection.selected,
+                adapterSelection,
+                fileId: args.fileId,
+                shape: result.shape,
+                revn: result.revn,
+                vern: result.vern,
+            });
+        } catch (cause) {
+            return this.rpcFailure(cause);
+        }
     }
 
     protected nonEmptyString(value: unknown): string | undefined {
         return typeof value === "string" && value.trim() !== "" ? value.trim() : undefined;
     }
-
-    private ok(result: PluginTaskResult<ShapeTaskResultData>): ToolResponse {
-        return new JsonResponse({
-            status: "ok",
-            data: result.data,
-        });
-    }
 }
 
 export class ShapeCreateFrameArgs {
     static schema = {
+        fileId: uuidSchema.optional().describe("Optional file id for backend-command headless frame creation."),
+        pageId: uuidSchema.optional().describe("Optional page id for backend-command headless frame creation."),
+        shapeId: uuidSchema.optional().describe("Optional shape id for backend-command frame creation."),
+        adapter: z.string().optional().describe("Optional adapter request: auto, backend-command, or plugin-live."),
         parentId: parentIdSchema,
         name: z.string().min(1).max(250).optional().describe("Optional frame name."),
         x: coordinateSchema.describe("Frame x position. Relative to parentId when provided."),
@@ -99,6 +192,10 @@ export class ShapeCreateFrameArgs {
         borderRadius: z.number().min(0).max(10000).optional().describe("Frame corner radius in pixels."),
     };
 
+    fileId?: string;
+    pageId?: string;
+    shapeId?: string;
+    adapter?: string;
     parentId?: string;
     name?: string;
     x!: number;
@@ -124,23 +221,39 @@ export class ShapeCreateFrameTool extends ShapeTool<ShapeCreateFrameArgs> {
     }
 
     protected async executeCore(args: ShapeCreateFrameArgs): Promise<ToolResponse> {
-        return this.executeShapeTask({
-            action: "createFrame",
-            parentId: args.parentId,
-            name: this.nonEmptyString(args.name),
-            x: args.x,
-            y: args.y,
-            width: args.width,
-            height: args.height,
-            fill: args.fill,
-            stroke: args.stroke,
-            borderRadius: args.borderRadius,
-        });
+        const adapterSelection = this.selectShapeCreateAdapter(ToolNames.SHAPE_CREATE_FRAME, args);
+        if (adapterSelection.status !== "selected") {
+            return this.adapterSelectionFailure(adapterSelection);
+        }
+
+        if (adapterSelection.selected === "backend-command") {
+            return this.executeBackendShapeCreate(args, "frame", adapterSelection);
+        }
+
+        return this.executeShapeTask(
+            {
+                action: "createFrame",
+                parentId: args.parentId,
+                name: this.nonEmptyString(args.name),
+                x: args.x,
+                y: args.y,
+                width: args.width,
+                height: args.height,
+                fill: args.fill,
+                stroke: args.stroke,
+                borderRadius: args.borderRadius,
+            },
+            adapterSelection
+        );
     }
 }
 
 export class ShapeCreateRectArgs {
     static schema = {
+        fileId: uuidSchema.optional().describe("Optional file id for backend-command headless rectangle creation."),
+        pageId: uuidSchema.optional().describe("Optional page id for backend-command headless rectangle creation."),
+        shapeId: uuidSchema.optional().describe("Optional shape id for backend-command rectangle creation."),
+        adapter: z.string().optional().describe("Optional adapter request: auto, backend-command, or plugin-live."),
         parentId: parentIdSchema,
         name: z.string().min(1).max(250).optional().describe("Optional rectangle name."),
         x: coordinateSchema.describe("Rectangle x position. Relative to parentId when provided."),
@@ -152,6 +265,10 @@ export class ShapeCreateRectArgs {
         borderRadius: z.number().min(0).max(10000).optional().describe("Rectangle corner radius in pixels."),
     };
 
+    fileId?: string;
+    pageId?: string;
+    shapeId?: string;
+    adapter?: string;
     parentId?: string;
     name?: string;
     x!: number;
@@ -177,23 +294,39 @@ export class ShapeCreateRectTool extends ShapeTool<ShapeCreateRectArgs> {
     }
 
     protected async executeCore(args: ShapeCreateRectArgs): Promise<ToolResponse> {
-        return this.executeShapeTask({
-            action: "createRect",
-            parentId: args.parentId,
-            name: this.nonEmptyString(args.name),
-            x: args.x,
-            y: args.y,
-            width: args.width,
-            height: args.height,
-            fill: args.fill,
-            stroke: args.stroke,
-            borderRadius: args.borderRadius,
-        });
+        const adapterSelection = this.selectShapeCreateAdapter(ToolNames.SHAPE_CREATE_RECT, args);
+        if (adapterSelection.status !== "selected") {
+            return this.adapterSelectionFailure(adapterSelection);
+        }
+
+        if (adapterSelection.selected === "backend-command") {
+            return this.executeBackendShapeCreate(args, "rect", adapterSelection);
+        }
+
+        return this.executeShapeTask(
+            {
+                action: "createRect",
+                parentId: args.parentId,
+                name: this.nonEmptyString(args.name),
+                x: args.x,
+                y: args.y,
+                width: args.width,
+                height: args.height,
+                fill: args.fill,
+                stroke: args.stroke,
+                borderRadius: args.borderRadius,
+            },
+            adapterSelection
+        );
     }
 }
 
 export class ShapeCreateTextArgs {
     static schema = {
+        fileId: uuidSchema.optional().describe("Optional file id for backend-command headless text creation."),
+        pageId: uuidSchema.optional().describe("Optional page id for backend-command headless text creation."),
+        shapeId: uuidSchema.optional().describe("Optional shape id for backend-command text creation."),
+        adapter: z.string().optional().describe("Optional adapter request: auto, backend-command, or plugin-live."),
         parentId: parentIdSchema,
         name: z.string().min(1).max(250).optional().describe("Optional text layer name."),
         x: coordinateSchema.describe("Text x position. Relative to parentId when provided."),
@@ -205,6 +338,10 @@ export class ShapeCreateTextArgs {
         fontSize: z.number().positive().max(512).optional().describe("Optional text font size in pixels."),
     };
 
+    fileId?: string;
+    pageId?: string;
+    shapeId?: string;
+    adapter?: string;
     parentId?: string;
     name?: string;
     x!: number;
@@ -230,18 +367,30 @@ export class ShapeCreateTextTool extends ShapeTool<ShapeCreateTextArgs> {
     }
 
     protected async executeCore(args: ShapeCreateTextArgs): Promise<ToolResponse> {
-        return this.executeShapeTask({
-            action: "createText",
-            parentId: args.parentId,
-            name: this.nonEmptyString(args.name),
-            x: args.x,
-            y: args.y,
-            width: args.width,
-            height: args.height,
-            content: args.content,
-            fill: args.fill,
-            fontSize: args.fontSize,
-        });
+        const adapterSelection = this.selectShapeCreateAdapter(ToolNames.SHAPE_CREATE_TEXT, args);
+        if (adapterSelection.status !== "selected") {
+            return this.adapterSelectionFailure(adapterSelection);
+        }
+
+        if (adapterSelection.selected === "backend-command") {
+            return this.executeBackendShapeCreate(args, "text", adapterSelection);
+        }
+
+        return this.executeShapeTask(
+            {
+                action: "createText",
+                parentId: args.parentId,
+                name: this.nonEmptyString(args.name),
+                x: args.x,
+                y: args.y,
+                width: args.width,
+                height: args.height,
+                content: args.content,
+                fill: args.fill,
+                fontSize: args.fontSize,
+            },
+            adapterSelection
+        );
     }
 }
 

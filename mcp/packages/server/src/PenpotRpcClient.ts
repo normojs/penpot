@@ -1,4 +1,4 @@
-type RpcParamValue = string | number | boolean | string[] | number[] | boolean[] | null | undefined;
+type RpcParamValue = string | number | boolean | string[] | number[] | boolean[] | object | null | undefined;
 
 export type RpcParams = Record<string, RpcParamValue>;
 

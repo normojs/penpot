@@ -164,6 +164,54 @@ headless path from live plugin-backed MCP operations. The matching MCP
 workspace context. Page command JSON also includes `adapterSelection` with the
 requested adapter, selected adapter, candidates, and fallback reasons.
 
+## Shape Commands
+
+Shape create commands call the backend `create-file-shape` headless command.
+They work without an open Penpot workspace tab when a valid file id, page id,
+and token are provided.
+
+```bash
+node penpot-cli/dist/index.js shape create-frame \
+  --file <file-id> \
+  --page <page-id> \
+  --name "Mobile" \
+  --x 0 \
+  --y 0 \
+  --width 390 \
+  --height 844 \
+  --fill "#ffffff"
+
+node penpot-cli/dist/index.js shape create-rect \
+  --file <file-id> \
+  --page <page-id> \
+  --parent <frame-id> \
+  --name "CTA" \
+  --x 24 \
+  --y 32 \
+  --width 180 \
+  --height 48 \
+  --fill "#3366ff" \
+  --border-radius 8 \
+  --format json
+
+node penpot-cli/dist/index.js shape create-text \
+  --file <file-id> \
+  --page <page-id> \
+  --parent <frame-id> \
+  --x 24 \
+  --y 96 \
+  --width 240 \
+  --height 40 \
+  --content "Welcome" \
+  --font-size 24
+```
+
+JSON output reports `adapter: "backend-command"` and includes
+`adapterSelection`. MCP `shape.create_frame`, `shape.create_rect`, and
+`shape.create_text` use the same backend-command path when `fileId` and
+`pageId` are supplied; calls without explicit file/page targets continue to use
+the bound live workspace context.
+
 ## Export Commands
 
 The CLI can parse and report exporter-backed page export requests now. The
