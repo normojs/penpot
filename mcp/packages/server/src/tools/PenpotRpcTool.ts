@@ -18,6 +18,7 @@ export const ToolErrorCodes = {
     ADAPTER_NOT_SUPPORTED: "adapter_not_supported",
     MCP_WRITE_CONCURRENCY_LIMIT: "mcp_write_concurrency_limit",
     MCP_WRITE_RATE_LIMIT: "mcp_write_rate_limit",
+    DESTRUCTIVE_ACTION_CONFIRMATION_REQUIRED: "destructive_action_confirmation_required",
 } as const;
 
 export abstract class PenpotRpcTool<TArgs extends object> extends Tool<TArgs> {
@@ -133,6 +134,8 @@ export abstract class PenpotRpcTool<TArgs extends object> extends Tool<TArgs> {
                 return ["Wait for the current MCP write to finish, then retry the same command."];
             case ToolErrorCodes.MCP_WRITE_RATE_LIMIT:
                 return ["Wait until the reported retryAfterMs has elapsed, then retry the command."];
+            case ToolErrorCodes.DESTRUCTIVE_ACTION_CONFIRMATION_REQUIRED:
+                return ["Repeat the same tool call with confirm: true when you intend to perform this action."];
             default:
                 return [];
         }

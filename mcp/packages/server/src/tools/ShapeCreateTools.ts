@@ -4,7 +4,7 @@ import { PenpotMcpServer } from "../PenpotMcpServer.js";
 import { ShapePluginTask } from "../tasks/ShapePluginTask.js";
 import { ToolNames } from "../ToolNames.js";
 import { requireBoundFileContext } from "./FileContextGuard.js";
-import { PenpotRpcTool } from "./PenpotRpcTool.js";
+import { PenpotRpcTool, ToolErrorCodes } from "./PenpotRpcTool.js";
 import type { ShapeTaskParams } from "@penpot/mcp-common";
 import { selectCommandAdapter } from "@penpot/command-runtime";
 import type { CommandAdapterSelection } from "@penpot/command-runtime";
@@ -60,6 +60,7 @@ type PenpotRecord = Record<string, unknown>;
 type BackendShapeType = "frame" | "rect" | "text";
 type ShapeCreateAdapterArgs = { fileId?: string; pageId?: string; adapter?: string };
 type ShapeEditAdapterArgs = { fileId?: string; pageId?: string; adapter?: string; layout?: ShapeTaskParams["layout"] };
+type DestructiveShapeArgs = ShapeEditAdapterArgs & { shapeId: string; confirm?: boolean };
 
 abstract class ShapeTool<TArgs extends object> extends PenpotRpcTool<TArgs> {
     protected constructor(mcpServer: PenpotMcpServer, inputSchema: z.ZodRawShape) {
@@ -128,6 +129,42 @@ abstract class ShapeTool<TArgs extends object> extends PenpotRpcTool<TArgs> {
             ],
             {
                 adapterSelection: selection,
+            }
+        );
+    }
+
+    protected destructiveConfirmationRequired(
+        toolName: string,
+        action: string,
+        args: DestructiveShapeArgs,
+        adapterSelection: CommandAdapterSelection
+    ): ToolResponse | undefined {
+        if (!this.mcpServer.isDestructiveConfirmationRequired() || args.confirm === true) {
+            return undefined;
+        }
+
+        return this.error(
+            ToolErrorCodes.DESTRUCTIVE_ACTION_CONFIRMATION_REQUIRED,
+            `${toolName} requires explicit confirmation before deleting a shape.`,
+            [`Repeat ${toolName} with confirm: true to delete the shape.`],
+            {
+                tool: toolName,
+                action,
+                targets: {
+                    fileId: args.fileId ?? null,
+                    pageId: args.pageId ?? null,
+                    shapeId: args.shapeId,
+                },
+                confirmation: {
+                    field: "confirm",
+                    value: true,
+                },
+                adapter: adapterSelection.selected,
+                adapterSelection,
+                policy: {
+                    env: "PENPOT_MCP_REQUIRE_DESTRUCTIVE_CONFIRMATION",
+                    default: "remote-or-multi-user",
+                },
             }
         );
     }
@@ -657,12 +694,17 @@ export class ShapeDeleteArgs {
         pageId: uuidSchema.optional().describe("Optional page id for backend-command headless shape deletion."),
         shapeId: z.string().uuid().describe("Shape id to delete."),
         adapter: z.string().optional().describe("Optional adapter request: auto, backend-command, or plugin-live."),
+        confirm: z
+            .boolean()
+            .optional()
+            .describe("Set to true to confirm this destructive delete action when confirmations are required."),
     };
 
     fileId?: string;
     pageId?: string;
     shapeId!: string;
     adapter?: string;
+    confirm?: boolean;
 }
 
 export class ShapeDeleteTool extends ShapeTool<ShapeDeleteArgs> {
@@ -682,6 +724,16 @@ export class ShapeDeleteTool extends ShapeTool<ShapeDeleteArgs> {
         const adapterSelection = this.selectShapeEditAdapter(ToolNames.SHAPE_DELETE, args);
         if (adapterSelection.status !== "selected") {
             return this.adapterSelectionFailure(adapterSelection);
+        }
+
+        const confirmationError = this.destructiveConfirmationRequired(
+            ToolNames.SHAPE_DELETE,
+            "delete_shape",
+            args,
+            adapterSelection
+        );
+        if (confirmationError) {
+            return confirmationError;
         }
 
         if (adapterSelection.selected === "backend-command") {

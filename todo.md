@@ -48,8 +48,10 @@ output execution. P8.1 added backend audit context for first-class MCP writes,
 and P8.2 added rate and concurrency limits for MCP/backend-command writes. P8.3
 added version and capability negotiation between MCP server, plugin, and
 frontend. P8.4 added diagnostics UI and logging status for MCP connection,
-compatibility, file context, last error, and server log paths. The current
-implementation focus is P8.5: configurable destructive action confirmations.
+compatibility, file context, last error, and server log paths. P8.5 added
+configurable destructive action confirmations for `shape.delete`. The current
+implementation focus is P8.6: regression tests and smoke flows across the
+first-class MCP stack.
 
 ## Feature Roadmap
 
@@ -72,7 +74,7 @@ remain the execution plan.
 | F12 | done | `penpot-cli` MCP operations | Phase 6 | Developers can inspect and operate MCP from terminal | Completed 2026-06-12; `penpot-cli mcp status`, `mcp config`, and `mcp logs` are available |
 | F13 | done | `penpot-cli` file/page/export operations | Phase 6, Phase 7 | Scripts can create files, create pages, export pages, and edit simple shapes through the same automation layer | Completed 2026-06-13; `file list/create/open`, `page list/create`, `shape create/update/delete`, and real `export page` execution report adapter-selection metadata |
 | F14 | done | Headless automation runtime | Phase 7 | Selected operations work without an open browser tab | Completed 2026-06-13; page list/create, simple shape create/update/delete, adapter selection, and exporter-backed CLI output execute without a live workspace tab |
-| F15 | in_progress | Audit, limits, and confirmations | Phase 8 | MCP is safer for real deployments | Write operations are auditable and limited, and plugin compatibility is negotiated; destructive action gates remain |
+| F15 | done | Audit, limits, and confirmations | Phase 8 | MCP is safer for real deployments | Completed 2026-06-13; write operations are auditable and limited, plugin compatibility is negotiated, diagnostics are exposed, and `shape.delete` can require explicit confirmation |
 
 ## Phase 0: Baseline, Planning, And Rules
 
@@ -191,16 +193,17 @@ Goal: make first-class MCP safe and diagnosable.
 | P8.2 | done | Add rate and concurrency limits | `mcp`, `backend` | Per-user/session/file limits prevent runaway edits | Completed 2026-06-13; MCP backend-command writes now use configurable per-user/session/file rate and concurrency limits, backend `create-file` has a dedicated concurrency limit, and default backend rate-limit config covers headless file/page/shape writes; MCP types/tests/format passed, backend focused test blocked locally because `clojure` is missing |
 | P8.3 | done | Add version/capability negotiation | `mcp/packages/server`, `mcp/packages/plugin`, `frontend` | Server and plugin reject incompatible versions clearly | Completed 2026-06-13; plugin now sends protocol/version/capability hello, server replies with compatibility, rejects incompatible protocol or missing capabilities, and status reports token-safe negotiation summaries |
 | P8.4 | done | Add diagnostics UI/logs | `frontend`, `mcp` | Users can see connection, last error, active context, and logs | Completed 2026-06-13; server status and `mcp.get_status` expose logging metadata, frontend stores diagnostics snapshots and last errors, and Integrations settings show connection, compatibility, file context, logs, and refresh state |
-| P8.5 | in_progress | Add destructive action confirmations | `mcp`, `frontend` | High-risk write/delete tools can require confirmation | Started 2026-06-13; define policy around destructive typed tools first |
-| P8.6 | todo | Add regression tests and smoke flows | all touched modules | Core MCP startup, global tools, file binding, and export are covered | Include CLI smoke when available |
+| P8.5 | done | Add destructive action confirmations | `mcp` | High-risk write/delete tools can require confirmation | Completed 2026-06-13; `shape.delete` accepts `confirm: true`, returns `destructive_action_confirmation_required` before mutation when required, defaults to requiring confirmation in remote/multi-user mode, and exposes the policy in MCP status |
+| P8.6 | in_progress | Add regression tests and smoke flows | all touched modules | Core MCP startup, global tools, file binding, and export are covered | Started 2026-06-13; inventory the critical MCP/CLI flows and add focused automated coverage where local dependencies allow |
 
 ## Next Recommended Sprint
 
-Continue with P8.5 destructive action confirmations:
+Continue with P8.6 regression tests and smoke flows:
 
-1. Identify destructive first-class tools, starting with `shape.delete` and
-   context release/delete-like operations.
-2. Define a configurable confirmation policy that can be disabled for trusted
-   local automation but defaults conservatively for user-facing MCP.
-3. Wire structured confirmation-required responses before mutating state, then
-   add frontend/user confirmation flow only where the policy requires it.
+1. Inventory the highest-value MCP/CLI flows: server status, global read tools,
+   file context bind/release, backend-command page/shape writes, confirmation
+   rejection, and exporter-backed CLI output.
+2. Add or consolidate focused tests around the gaps that are practical in the
+   local TypeScript workspaces.
+3. Document any smoke flows that remain blocked by missing Clojure/frontend
+   tooling so they can be run in a fuller dev environment.

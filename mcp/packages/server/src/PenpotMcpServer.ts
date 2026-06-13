@@ -188,6 +188,25 @@ export class PenpotMcpServer {
         return process.env.PENPOT_MCP_ENABLE_EXECUTE_CODE === "true";
     }
 
+    /**
+     * Indicates whether destructive MCP tools require an explicit tool-call
+     * confirmation before mutating Penpot data.
+     *
+     * Local single-user automation keeps confirmations disabled by default.
+     * Remote or multi-user deployments require confirmations unless explicitly
+     * overridden with PENPOT_MCP_REQUIRE_DESTRUCTIVE_CONFIRMATION=false.
+     */
+    public isDestructiveConfirmationRequired(): boolean {
+        const configuredValue = process.env.PENPOT_MCP_REQUIRE_DESTRUCTIVE_CONFIRMATION;
+        if (configuredValue === "true") {
+            return true;
+        }
+        if (configuredValue === "false") {
+            return false;
+        }
+        return this.isRemoteMode();
+    }
+
     public getStatus() {
         return {
             status: "ok",
@@ -199,6 +218,7 @@ export class PenpotMcpServer {
                 remoteMode: this.isRemoteMode(),
                 fileSystemAccessEnabled: this.isFileSystemAccessEnabled(),
                 executeCodeEnabled: this.isExecuteCodeEnabled(),
+                destructiveConfirmationRequired: this.isDestructiveConfirmationRequired(),
                 registeredTools: this.tools.length,
                 sessionTimeoutMinutes: PenpotMcpServer.SESSION_TIMEOUT_MINUTES,
             },

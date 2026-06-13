@@ -1589,6 +1589,7 @@ Work:
 - Add version/capability negotiation between server, plugin, and Penpot.
 - Add structured logs and status diagnostics.
 - Add explicit permissions for local file access and `execute_code`.
+- Add configurable confirmations for destructive typed tools.
 - Add automated tests for connection lifecycle, multi-tab ownership, and
   permission failures.
 
@@ -1596,6 +1597,7 @@ Definition of done:
 
 - MCP failures are diagnosable from UI and logs.
 - Sensitive tools are gated.
+- Destructive tools can require explicit confirmation before mutation.
 - Concurrent sessions cannot silently edit the wrong file.
 
 P8.1 implementation note (2026-06-13):
@@ -1654,6 +1656,24 @@ P8.4 implementation note (2026-06-13):
 - The Integrations MCP section shows a compact diagnostics block for connection
   state, plugin compatibility, active file context, logs, last error, and last
   refresh time, with a manual refresh control.
+
+P8.5 implementation note (2026-06-13):
+
+- The MCP server now exposes `destructiveConfirmationRequired` in `/status` and
+  `mcp.get_status`.
+- The policy is configured by
+  `PENPOT_MCP_REQUIRE_DESTRUCTIVE_CONFIRMATION=true|false`; when unset, local
+  single-user mode does not require confirmations and remote/multi-user mode
+  does.
+- `shape.delete` accepts an optional `confirm` boolean. When confirmations are
+  required and `confirm` is not `true`, the tool returns
+  `destructive_action_confirmation_required` before dispatching backend-command
+  or plugin-live mutations.
+- The structured error includes the tool name, destructive action, target ids,
+  selected adapter, and the exact confirmation field/value to retry with.
+- Frontend approval UI is not required for this slice because the first-class
+  MCP protocol can carry explicit confirmation in the tool arguments; future
+  destructive tools should reuse the same policy before mutation.
 
 ## 10. Feature Backlog
 

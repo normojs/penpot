@@ -10,6 +10,7 @@ import {
     ShapeDeleteTool,
     ShapeUpdateTool,
 } from "../src/tools/ShapeCreateTools.js";
+import { ToolErrorCodes } from "../src/tools/PenpotRpcTool.js";
 
 type RpcCall = {
     methodName: string;
@@ -30,12 +31,14 @@ function mcpServerWithRpc(
     rpcClient: { post?: (...args: any[]) => Promise<unknown> },
     userToken = "token-1",
     mcpSessionId = "session-1",
-    limiterConfig: Partial<McpWriteLimiterConfig> = {}
+    limiterConfig: Partial<McpWriteLimiterConfig> = {},
+    requireDestructiveConfirmation = false
 ): PenpotMcpServer {
     return {
         rpcClient,
         writeLimiter: new McpWriteLimiter(limiterConfig),
         getSessionContext: () => ({ userToken, mcpSessionId }),
+        isDestructiveConfirmationRequired: () => requireDestructiveConfirmation,
     } as unknown as PenpotMcpServer;
 }
 
@@ -302,6 +305,88 @@ test("ShapeDeleteTool uses backend RPC when fileId is provided", async () => {
             },
         },
     ]);
+    assert.equal(body.status, "ok");
+    assert.equal(body.data.adapter, "backend-command");
+    assert.equal(body.data.deleted, true);
+});
+
+test("ShapeDeleteTool requires confirmation before destructive backend delete when configured", async () => {
+    const calls: RpcCall[] = [];
+    const tool = new ShapeDeleteTool(
+        mcpServerWithRpc(
+            {
+                post: async (methodName: string, params: Record<string, unknown>, userToken: string) => {
+                    calls.push({ methodName, params, userToken });
+                    return { shape: null };
+                },
+            },
+            "token-1",
+            "session-1",
+            {},
+            true
+        )
+    );
+
+    const response = await tool.execute({
+        fileId: "00000000-0000-0000-0000-000000000001",
+        shapeId: "00000000-0000-0000-0000-000000000003",
+    });
+    const body = parseJsonResponse(response);
+
+    assert.deepEqual(calls, []);
+    assert.equal(body.status, "error");
+    assert.equal(body.error.code, ToolErrorCodes.DESTRUCTIVE_ACTION_CONFIRMATION_REQUIRED);
+    assert.equal(body.error.data.tool, "shape.delete");
+    assert.equal(body.error.data.action, "delete_shape");
+    assert.deepEqual(body.error.data.targets, {
+        fileId: "00000000-0000-0000-0000-000000000001",
+        pageId: null,
+        shapeId: "00000000-0000-0000-0000-000000000003",
+    });
+    assert.deepEqual(body.error.data.confirmation, {
+        field: "confirm",
+        value: true,
+    });
+    assert.equal(body.error.data.adapter, "backend-command");
+    assert.equal(body.error.data.policy.env, "PENPOT_MCP_REQUIRE_DESTRUCTIVE_CONFIRMATION");
+});
+
+test("ShapeDeleteTool executes confirmed destructive backend delete when configured", async () => {
+    const calls: RpcCall[] = [];
+    const tool = new ShapeDeleteTool(
+        mcpServerWithRpc(
+            {
+                post: async (
+                    methodName: string,
+                    params: Record<string, unknown>,
+                    userToken: string,
+                    context?: PenpotRpcRequestContext
+                ) => {
+                    calls.push({ methodName, params, userToken, context });
+                    return {
+                        shape: { id: "00000000-0000-0000-0000-000000000003", type: "rect", name: "CTA" },
+                        revn: 5,
+                        vern: 0,
+                    };
+                },
+            },
+            "token-1",
+            "session-1",
+            {},
+            true
+        )
+    );
+
+    const response = await tool.execute({
+        fileId: "00000000-0000-0000-0000-000000000001",
+        shapeId: "00000000-0000-0000-0000-000000000003",
+        confirm: true,
+    });
+    const body = parseJsonResponse(response);
+
+    assert.equal(calls.length, 1);
+    assert.equal(calls[0].methodName, "delete-file-shape");
+    assert.equal(calls[0].context?.mcpToolName, "shape.delete");
     assert.equal(body.status, "ok");
     assert.equal(body.data.adapter, "backend-command");
     assert.equal(body.data.deleted, true);
