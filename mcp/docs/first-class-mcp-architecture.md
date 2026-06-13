@@ -1643,6 +1643,18 @@ P8.3 implementation note (2026-06-13):
 - `mcp.get_status` now reports compatible, incompatible, and pending plugin
   negotiation counts plus per-connection compatibility summaries.
 
+P8.4 implementation note (2026-06-13):
+
+- MCP server status now includes a token-safe logging summary: log level,
+  console logging, optional file log path, and Loki enabled state.
+- `mcp.get_status` exposes the same logging summary available from
+  `/mcp/status`.
+- The global frontend MCP state now records connection detail, last error, and
+  `/mcp/status` diagnostics snapshots.
+- The Integrations MCP section shows a compact diagnostics block for connection
+  state, plugin compatibility, active file context, logs, last error, and last
+  refresh time, with a manual refresh control.
+
 ## 10. Feature Backlog
 
 | Priority | Feature | Main modules | Notes |

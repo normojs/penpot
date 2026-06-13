@@ -36,6 +36,35 @@
                            (state true))]
     (t/is (= "connected" (get-in result [:mcp :connection-status])))))
 
+(t/deftest connection-status-update-stores-last-error-details
+  (let [result (ptk/update (mcp/update-mcp-connection-status
+                            "error"
+                            {:label "Connection error"
+                             :error "WebSocket connection error"})
+                           (state true))]
+    (t/is (= "error" (get-in result [:mcp :connection-status])))
+    (t/is (= "WebSocket connection error" (get-in result [:mcp :last-error :message])))))
+
+(t/deftest connection-status-update-clears-last-error-on-connect
+  (let [result (ptk/update (mcp/update-mcp-connection-status "connected")
+                           (assoc (state true)
+                                  :mcp {:last-error {:message "Previous error"}}))]
+    (t/is (= "connected" (get-in result [:mcp :connection-status])))
+    (t/is (nil? (get-in result [:mcp :last-error])))))
+
+(t/deftest fetch-diagnostics-marks-state-loading
+  (let [result (ptk/update (mcp/fetch-diagnostics) (state true))]
+    (t/is (= "loading" (get-in result [:mcp :diagnostics :status])))))
+
+(t/deftest update-mcp-diagnostics-stores-last-error
+  (let [result (ptk/update (mcp/update-mcp-diagnostics
+                            {:status "error"
+                             :updated-at "2026-06-13T00:00:00.000Z"
+                             :error {:message "MCP status unavailable"}})
+                           (state true))]
+    (t/is (= "error" (get-in result [:mcp :diagnostics :status])))
+    (t/is (= "MCP status unavailable" (get-in result [:mcp :last-error :message])))))
+
 (t/deftest set-mcp-active-updates-reconnect-state
   (let [active-result   (ptk/update (mcp/set-mcp-active true) (state true))
         inactive-result (ptk/update (mcp/set-mcp-active false) (state true))]

@@ -57,6 +57,7 @@ export class McpStatusTool extends Tool<EmptyToolArgs> {
                     pendingTasks: webSocket.pendingTasks,
                 },
                 writeLimits: status.writeLimits,
+                logging: status.logging,
                 fileContext,
             },
             warnings:

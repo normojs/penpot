@@ -218,7 +218,19 @@ penpot.ui.open("Penpot MCP Plugin", `?theme=${penpot.theme}`, {
 } as any);
 
 // Register message handlers
-penpot.ui.onMessage<string | { id: string; type?: string; status?: string; task: string; params: any }>((message) => {
+penpot.ui.onMessage<
+    | string
+    | {
+          id?: string;
+          type?: string;
+          status?: string;
+          label?: string;
+          error?: string;
+          updatedAt?: string;
+          task?: string;
+          params?: any;
+      }
+>((message) => {
     if (typeof message === "object" && message.type === "ui-initialized") {
         // Check Penpot version compatibility
         const penpotVersionPrefix = penpot.version ? extractVersionPrefix(penpot.version) : "<2.15"; // pre-2.15 versions don't have version info
@@ -243,12 +255,20 @@ penpot.ui.onMessage<string | { id: string; type?: string; status?: string; task:
             reportFileContext("ui-initialized");
         }
     } else if (typeof message === "object" && message.type === "update-connection-status") {
-        mcp?.setMcpStatus(message.status || "unknown");
+        mcp?.setMcpStatus(message.status || "unknown", {
+            label: message.label,
+            error: message.error,
+            updatedAt: message.updatedAt,
+        });
     } else if (typeof message === "object" && message.type === "file-context-control-result") {
         handleFileContextControlResult(message as unknown as FileContextControlResultMessage);
     } else if (typeof message === "object" && message.task && message.id) {
         // Handle plugin tasks submitted by the MCP server
-        handlePluginTaskRequest(message).catch((error) => {
+        handlePluginTaskRequest({
+            id: message.id,
+            task: message.task,
+            params: message.params,
+        }).catch((error) => {
             console.error("Error in handlePluginTaskRequest:", error);
         });
     }

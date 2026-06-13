@@ -11,7 +11,7 @@ interface McpOptions {
     getToken(): string;
     getServerUrl(): string;
     getFrontendVersion?(): string;
-    setMcpStatus(status: string);
+    setMcpStatus(status: string, details?: unknown);
     setFileContextStatus?(status: unknown);
     on(eventType: "disconnect" | "connect" | "bind-context" | "release-context", cb: () => void);
 }

@@ -6,7 +6,7 @@ import { ExecuteCodeTool } from "./tools/ExecuteCodeTool";
 import { ExportPageTool, ExportShapeDataTool, RenderPreviewTool } from "./tools/ExportTools";
 import { PluginBridge } from "./PluginBridge";
 import { ConfigurationLoader } from "./ConfigurationLoader";
-import { createLogger } from "./logger";
+import { createLogger, getLogStatus } from "./logger";
 import { Tool } from "./Tool";
 import { HighLevelOverviewTool } from "./tools/HighLevelOverviewTool";
 import { PenpotApiInfoTool } from "./tools/PenpotApiInfoTool";
@@ -209,6 +209,7 @@ export class PenpotMcpServer {
             },
             fileContexts: this.fileContextRegistry.getStatus(),
             writeLimits: this.writeLimiter.getStatus(),
+            logging: getLogStatus(),
         };
     }
 

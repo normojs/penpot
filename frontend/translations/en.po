@@ -2239,6 +2239,42 @@ msgstr "MCP key"
 msgid "integrations.mcp-server.mcp-keys.tootip"
 msgstr "The MCP key is needed for the MCP client set up"
 
+msgid "integrations.mcp-server.diagnostics.title"
+msgstr "Diagnostics"
+
+msgid "integrations.mcp-server.diagnostics.refresh"
+msgstr "Refresh"
+
+msgid "integrations.mcp-server.diagnostics.connection"
+msgstr "Connection"
+
+msgid "integrations.mcp-server.diagnostics.plugin"
+msgstr "Plugin"
+
+msgid "integrations.mcp-server.diagnostics.file-context"
+msgstr "File context"
+
+msgid "integrations.mcp-server.diagnostics.logs"
+msgstr "Logs"
+
+msgid "integrations.mcp-server.diagnostics.last-error"
+msgstr "Last error"
+
+msgid "integrations.mcp-server.diagnostics.updated"
+msgstr "Updated"
+
+msgid "integrations.mcp-server.diagnostics.loading"
+msgstr "Loading"
+
+msgid "integrations.mcp-server.diagnostics.unavailable"
+msgstr "Unavailable"
+
+msgid "integrations.mcp-server.diagnostics.no-file"
+msgstr "No active file"
+
+msgid "integrations.mcp-server.diagnostics.logs.console-only"
+msgstr "Console only"
+
 #: src/app/main/ui/settings/integrations.cljs:124
 msgid "integrations.name.label"
 msgstr "Name"

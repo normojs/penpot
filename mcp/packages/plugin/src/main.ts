@@ -83,7 +83,7 @@ const versionWarningTextEl = document.getElementById("version-warning-text") as 
  * @param code - the connection state code ("idle" | "connecting" | "connected" | "disconnected" | "error")
  * @param label - human-readable label to display inside the pill
  */
-function updateConnectionStatus(code: string, label: string): void {
+function updateConnectionStatus(code: string, label: string, error?: string): void {
     if (statusPill) {
         statusPill.dataset.status = code;
     }
@@ -99,6 +99,9 @@ function updateConnectionStatus(code: string, label: string): void {
         {
             type: "update-connection-status",
             status: code,
+            label,
+            error,
+            updatedAt: new Date().toISOString(),
         },
         "*"
     );
@@ -191,7 +194,7 @@ function handlePluginCompatibility(message: PluginCompatibilityMessage): boolean
     const reason = message.error?.message ?? "The MCP plugin is not compatible with this MCP server.";
     console.warn("MCP plugin compatibility rejected:", message);
     showVersionWarningText(reason);
-    updateConnectionStatus("error", "Incompatible MCP plugin");
+    updateConnectionStatus("error", "Incompatible MCP plugin", reason);
     ws?.close(1008, truncateCloseReason(reason));
     return false;
 }
@@ -271,13 +274,13 @@ function connectToMcpServer(baseUrl?: string, token?: string, hello?: PluginHell
             console.error("WebSocket error:", error);
             wsError = error;
             // note: WebSocket error events typically don't contain detailed error messages
-            updateConnectionStatus("error", "Connection error");
+            updateConnectionStatus("error", "Connection error", "WebSocket connection error");
         };
     } catch (error) {
         console.error("Failed to connect to MCP server:", error);
         const reason = error instanceof Error ? error.message : undefined;
         const label = reason ? `Connection failed: ${reason}` : "Connection failed";
-        updateConnectionStatus("error", label);
+        updateConnectionStatus("error", label, reason);
     }
 }
 

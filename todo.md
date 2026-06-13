@@ -47,8 +47,9 @@ adapters into MCP and `penpot-cli`, and P7.9 added real exporter-backed CLI
 output execution. P8.1 added backend audit context for first-class MCP writes,
 and P8.2 added rate and concurrency limits for MCP/backend-command writes. P8.3
 added version and capability negotiation between MCP server, plugin, and
-frontend. The current implementation focus is P8.4: diagnostics UI and logs for
-MCP connection, compatibility, and context state.
+frontend. P8.4 added diagnostics UI and logging status for MCP connection,
+compatibility, file context, last error, and server log paths. The current
+implementation focus is P8.5: configurable destructive action confirmations.
 
 ## Feature Roadmap
 
@@ -60,7 +61,7 @@ remain the execution plan.
 | F1 | done | Built-in MCP gateway | Phase 1 | Users see one MCP URL instead of several internal ports | Settings and generated client config point to `/mcp/stream` |
 | F2 | todo | Manual MCP configuration | Phase 1, Phase 2 | Users can choose built-in, custom, or local MCP settings | Settings persist mode, stream URL, WebSocket URL, and auto-connect |
 | F3 | in_progress | Global background MCP agent | Phase 2 | MCP can connect after login without opening a file | Connection reaches `connected-global` from dashboard/settings |
-| F4 | in_progress | MCP status and diagnostics | Phase 2, Phase 8 | Users and agents can inspect connection health | `mcp.get_status` now reports server, plugin compatibility, session, file context, and write-limit state; UI/log diagnostics remain for P8.4 |
+| F4 | done | MCP status and diagnostics | Phase 2, Phase 8 | Users and agents can inspect connection health | Completed 2026-06-13; `mcp.get_status` and Integrations settings now report server, plugin compatibility, session/file context, write limits, logs, and last-error state |
 | F5 | done | Global resource tools | Phase 3 | Agents can list teams, projects, and files before a workspace opens | Completed 2026-06-11; MCP can list teams, projects, project files, and recent files through backend permissions |
 | F6 | in_progress | File creation and opening | Phase 3, Phase 4 | Agents can create a file and ask Penpot to open or bind it | `file.create` returns a file summary; open/bind remains Phase 4 |
 | F7 | done | File context broker | Phase 4 | Users and agents know which file MCP is editing | Completed 2026-06-11; context reporting, inspect, bind, release, required-context errors, workspace bind/unbind UI, and lifecycle tests are implemented |
@@ -189,16 +190,17 @@ Goal: make first-class MCP safe and diagnosable.
 | P8.1 | done | Add audit events for MCP writes | `backend`, `mcp` | File writes are traceable to MCP user/session/tool | Completed 2026-06-13; backend-command MCP file/page/shape writes now attach tool, adapter, MCP session, and target metadata to backend audit context without changing tool schemas; MCP types/tests/format passed, backend focused test blocked locally because `clojure` is missing |
 | P8.2 | done | Add rate and concurrency limits | `mcp`, `backend` | Per-user/session/file limits prevent runaway edits | Completed 2026-06-13; MCP backend-command writes now use configurable per-user/session/file rate and concurrency limits, backend `create-file` has a dedicated concurrency limit, and default backend rate-limit config covers headless file/page/shape writes; MCP types/tests/format passed, backend focused test blocked locally because `clojure` is missing |
 | P8.3 | done | Add version/capability negotiation | `mcp/packages/server`, `mcp/packages/plugin`, `frontend` | Server and plugin reject incompatible versions clearly | Completed 2026-06-13; plugin now sends protocol/version/capability hello, server replies with compatibility, rejects incompatible protocol or missing capabilities, and status reports token-safe negotiation summaries |
-| P8.4 | in_progress | Add diagnostics UI/logs | `frontend`, `mcp` | Users can see connection, last error, active context, and logs | Started 2026-06-13; build on negotiated plugin status, existing log file reporting, and frontend MCP state |
-| P8.5 | todo | Add destructive action confirmations | `mcp`, `frontend` | High-risk write/delete tools can require confirmation | Policy should be configurable |
+| P8.4 | done | Add diagnostics UI/logs | `frontend`, `mcp` | Users can see connection, last error, active context, and logs | Completed 2026-06-13; server status and `mcp.get_status` expose logging metadata, frontend stores diagnostics snapshots and last errors, and Integrations settings show connection, compatibility, file context, logs, and refresh state |
+| P8.5 | in_progress | Add destructive action confirmations | `mcp`, `frontend` | High-risk write/delete tools can require confirmation | Started 2026-06-13; define policy around destructive typed tools first |
 | P8.6 | todo | Add regression tests and smoke flows | all touched modules | Core MCP startup, global tools, file binding, and export are covered | Include CLI smoke when available |
 
 ## Next Recommended Sprint
 
-Continue with P8.4 MCP diagnostics UI/logs:
+Continue with P8.5 destructive action confirmations:
 
-1. Inspect existing MCP settings/status UI and log surfaces.
-2. Add a compact diagnostics model for connection state, compatibility result,
-   last error, active file context, and log path availability.
-3. Wire the UI to the existing frontend MCP state and `/mcp/status` or
-   `mcp.get_status` data without adding decorative dashboard chrome.
+1. Identify destructive first-class tools, starting with `shape.delete` and
+   context release/delete-like operations.
+2. Define a configurable confirmation policy that can be disabled for trusted
+   local automation but defaults conservatively for user-facing MCP.
+3. Wire structured confirmation-required responses before mutating state, then
+   add frontend/user confirmation flow only where the policy requires it.

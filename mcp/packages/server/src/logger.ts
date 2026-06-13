@@ -198,6 +198,22 @@ const transports: LogTransportProvider[] = [consoleTransport, fileTransport, lok
  */
 export const logFilePath: string | undefined = fileTransport.getFilePath();
 
+export function getLogStatus() {
+    return {
+        level: LOG_LEVEL,
+        console: {
+            enabled: true,
+        },
+        file: {
+            enabled: fileTransport.isEnabled(),
+            path: logFilePath ?? null,
+        },
+        loki: {
+            enabled: lokiTransport.isEnabled(),
+        },
+    };
+}
+
 /**
  * Logger instance configured with the active transports (console, optional file, optional Loki).
  */

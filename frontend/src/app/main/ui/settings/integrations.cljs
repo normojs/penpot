@@ -14,6 +14,7 @@
    [app.main.broadcast :as mbc]
    [app.main.data.event :as ev]
    [app.main.data.modal :as modal]
+   [app.main.data.mcp :as dmcp]
    [app.main.data.notifications :as ntf]
    [app.main.data.profile :as du]
    [app.main.refs :as refs]
@@ -403,11 +404,119 @@
                          :left -138
                          :options options}]]]))
 
+(defn- text-value
+  [value]
+  (if (and (some? value) (not= "" value))
+    value
+    "--"))
+
+(defn- diagnostic-plugin-status
+  [diagnostics]
+  (let [web-socket (get-in diagnostics [:data :transports :webSocket])]
+    (cond
+      (pos? (or (:compatibleClients web-socket) 0))
+      "compatible"
+
+      (pos? (or (:incompatibleClients web-socket) 0))
+      "incompatible"
+
+      (pos? (or (:pendingNegotiationClients web-socket) 0))
+      "negotiating"
+
+      :else
+      "disconnected")))
+
+(defn- diagnostic-client
+  [diagnostics]
+  (first (get-in diagnostics [:data :transports :webSocket :clients])))
+
+(defn- diagnostic-file-context-label
+  [mcp-state]
+  (let [status  (get-in mcp-state [:file-context :status] "unbound")
+        context (get-in mcp-state [:file-context :context])
+        file    (or (:fileName context) (:fileId context))
+        page    (:pageName context)]
+    (if file
+      (dm/str file (when page (dm/str " / " page)) " (" status ")")
+      (dm/str (tr "integrations.mcp-server.diagnostics.no-file") " (" status ")"))))
+
+(defn- diagnostic-log-label
+  [diagnostics]
+  (let [path (get-in diagnostics [:data :logging :file :path])]
+    (or path
+        (when (= "ok" (:status diagnostics))
+          (tr "integrations.mcp-server.diagnostics.logs.console-only"))
+        "--")))
+
+(defn- diagnostic-last-error
+  [mcp-state]
+  (or (get-in mcp-state [:last-error :message])
+      (get-in mcp-state [:diagnostics :error :message])
+      (get-in (diagnostic-client (:diagnostics mcp-state)) [:compatibility :error :message])
+      "--"))
+
+(mf/defc mcp-diagnostics-row*
+  {::mf/private true}
+  [{:keys [label value]}]
+  [:div {:class (stl/css :mcp-diagnostics-row)}
+   [:> text* {:as "div"
+              :typography t/body-small
+              :class (stl/css :color-secondary)}
+    label]
+   [:> text* {:as "div"
+              :typography t/body-small
+              :class (stl/css :color-primary :mcp-diagnostics-value)}
+    (text-value value)]])
+
+(mf/defc mcp-diagnostics*
+  {::mf/private true}
+  [{:keys [mcp-state on-refresh]}]
+  (let [diagnostics       (:diagnostics mcp-state)
+        connection-status (or (:connection-status mcp-state) "disconnected")
+        plugin-status     (diagnostic-plugin-status diagnostics)
+        client            (diagnostic-client diagnostics)
+        plugin            (:plugin client)
+        plugin-version    (:pluginVersion plugin)
+        penpot-version    (:penpotVersion plugin)
+        plugin-label      (dm/str plugin-status
+                                  (when plugin-version (dm/str " / plugin " plugin-version))
+                                  (when penpot-version (dm/str " / Penpot " penpot-version)))
+        status-label      (case (:status diagnostics)
+                            "loading" (tr "integrations.mcp-server.diagnostics.loading")
+                            "ok"      (text-value (:updated-at diagnostics))
+                            "error"   (tr "integrations.mcp-server.diagnostics.unavailable")
+                            "--")]
+    [:div {:class (stl/css :mcp-diagnostics)}
+     [:div {:class (stl/css :mcp-diagnostics-header)}
+      [:> text* {:as "h3"
+                 :typography t/headline-small
+                 :class (stl/css :color-primary)}
+       (tr "integrations.mcp-server.diagnostics.title")]
+      [:> icon-button* {:variant "secondary"
+                        :aria-label (tr "integrations.mcp-server.diagnostics.refresh")
+                        :on-click on-refresh
+                        :icon i/reload}]]
+
+     [:div {:class (stl/css :mcp-diagnostics-grid)}
+      [:> mcp-diagnostics-row* {:label (tr "integrations.mcp-server.diagnostics.connection")
+                                :value connection-status}]
+      [:> mcp-diagnostics-row* {:label (tr "integrations.mcp-server.diagnostics.plugin")
+                                :value plugin-label}]
+      [:> mcp-diagnostics-row* {:label (tr "integrations.mcp-server.diagnostics.file-context")
+                                :value (diagnostic-file-context-label mcp-state)}]
+      [:> mcp-diagnostics-row* {:label (tr "integrations.mcp-server.diagnostics.logs")
+                                :value (diagnostic-log-label diagnostics)}]
+      [:> mcp-diagnostics-row* {:label (tr "integrations.mcp-server.diagnostics.last-error")
+                                :value (diagnostic-last-error mcp-state)}]
+      [:> mcp-diagnostics-row* {:label (tr "integrations.mcp-server.diagnostics.updated")
+                                :value status-label}]]]))
+
 (mf/defc mcp-server-section*
   {::mf/private true}
   []
   (let [tokens  (mf/deref refs/access-tokens)
         profile (mf/deref refs/profile)
+        mcp-state (mf/deref refs/mcp)
 
         mcp-key      (some #(when (= (:type %) "mcp") %) tokens)
         mcp-token    (:token mcp-key "")
@@ -447,6 +556,10 @@
         (mf/use-fn
          #(st/emit! (modal/show {:type :regenerate-mcp-key})))
 
+        handle-refresh-diagnostics
+        (mf/use-fn
+         #(st/emit! (dmcp/fetch-diagnostics)))
+
         handle-delete
         (mf/use-fn
          (mf/deps mcp-key)
@@ -469,6 +582,10 @@
                                 :timeout notification-timeout})
                      (ev/event {::ev/name "copy-mcp-url"
                                 ::ev/origin "integrations"}))))]
+
+    (mf/with-effect [show-enabled?]
+      (when show-enabled?
+        (st/emit! (dmcp/fetch-diagnostics))))
 
     [:section {:class (stl/css :mcp-server-section)}
      [:div
@@ -544,6 +661,10 @@
                            :name (:name mcp-key)
                            :expires-at (:expires-at mcp-key)
                            :on-delete handle-delete}]]]])
+
+     (when (some? mcp-key)
+       [:> mcp-diagnostics* {:mcp-state mcp-state
+                             :on-refresh handle-refresh-diagnostics}])
 
      [:> notification-pill* {:level :default
                              :type :context}

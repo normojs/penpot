@@ -2198,6 +2198,42 @@ msgstr "Clave MCP"
 msgid "integrations.mcp-server.mcp-keys.tootip"
 msgstr "La clave MCP es necesaria para la configuración del cliente MCP"
 
+msgid "integrations.mcp-server.diagnostics.title"
+msgstr "Diagnóstico"
+
+msgid "integrations.mcp-server.diagnostics.refresh"
+msgstr "Actualizar"
+
+msgid "integrations.mcp-server.diagnostics.connection"
+msgstr "Conexión"
+
+msgid "integrations.mcp-server.diagnostics.plugin"
+msgstr "Plugin"
+
+msgid "integrations.mcp-server.diagnostics.file-context"
+msgstr "Contexto de archivo"
+
+msgid "integrations.mcp-server.diagnostics.logs"
+msgstr "Registros"
+
+msgid "integrations.mcp-server.diagnostics.last-error"
+msgstr "Último error"
+
+msgid "integrations.mcp-server.diagnostics.updated"
+msgstr "Actualizado"
+
+msgid "integrations.mcp-server.diagnostics.loading"
+msgstr "Cargando"
+
+msgid "integrations.mcp-server.diagnostics.unavailable"
+msgstr "No disponible"
+
+msgid "integrations.mcp-server.diagnostics.no-file"
+msgstr "Sin archivo activo"
+
+msgid "integrations.mcp-server.diagnostics.logs.console-only"
+msgstr "Solo consola"
+
 #: src/app/main/ui/settings/integrations.cljs:124
 msgid "integrations.name.label"
 msgstr "Nombre"

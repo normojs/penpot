@@ -161,6 +161,37 @@
   inset-inline: 0;
 }
 
+.mcp-diagnostics {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-m);
+}
+
+.mcp-diagnostics-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--sp-m);
+}
+
+.mcp-diagnostics-grid {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-xs);
+}
+
+.mcp-diagnostics-row {
+  display: grid;
+  grid-template-columns: minmax($sz-120, 35%) minmax(0, 1fr);
+  gap: var(--sp-m);
+  align-items: start;
+  min-block-size: $sz-24;
+}
+
+.mcp-diagnostics-value {
+  overflow-wrap: anywhere;
+}
+
 .separator {
   border: $b-1 solid var(--color-background-quaternary);
   margin: var(--sp-s) 0;

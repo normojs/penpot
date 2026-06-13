@@ -17,6 +17,7 @@
    [app.main.repo :as rp]
    [app.main.store :as st]
    [app.plugins.register :refer [mcp-plugin-id]]
+   [app.util.http :as http]
    [app.util.i18n :refer [tr]]
    [app.util.timers :as ts]
    [beicon.v2.core :as rx]
@@ -53,6 +54,24 @@
   (or (:full cf/version)
       cf/version-tag
       "unknown"))
+
+(defn- now-iso
+  []
+  (.toISOString (js/Date.)))
+
+(defn- error-message
+  [cause]
+  (cond
+    (instance? js/Error cause) (.-message cause)
+    (string? cause) cause
+    :else (str cause)))
+
+(defn- normalize-status-details
+  [details]
+  (cond
+    (nil? details) nil
+    (map? details) details
+    :else (js->clj details :keywordize-keys true)))
 
 (defn set-mcp-active
   [value]
@@ -137,16 +156,69 @@
          nil)))))
 
 (defn update-mcp-connection-status
+  ([value]
+   (update-mcp-connection-status value nil))
+  ([value details]
+   (let [details (normalize-status-details details)]
+     (ptk/reify ::update-mcp-plugin-connection
+       ptk/UpdateEvent
+       (update [_ state]
+         (cond-> (update state :mcp assoc
+                         :connection-status value
+                         :connection-status-detail details)
+           (= value "error")
+           (assoc-in [:mcp :last-error] {:scope "connection"
+                                         :message (or (:error details)
+                                                      (:label details)
+                                                      "MCP connection error")
+                                         :updated-at (now-iso)})
+
+           (contains? #{"connected" "connecting"} value)
+           (update :mcp dissoc :last-error)))
+
+       ptk/WatchEvent
+       (watch [_ _ _]
+         (rx/of (manage-mcp-notification)
+                (mbc/event :mcp/pong {:connection-status value})))))))
+
+(defn update-mcp-diagnostics
   [value]
-  (ptk/reify ::update-mcp-plugin-connection
+  (ptk/reify ::update-mcp-diagnostics
     ptk/UpdateEvent
     (update [_ state]
-      (update state :mcp assoc :connection-status value))
+      (cond-> (update state :mcp assoc :diagnostics value)
+        (= "error" (:status value))
+        (assoc-in [:mcp :last-error] {:scope "diagnostics"
+                                      :message (get-in value [:error :message])
+                                      :updated-at (:updated-at value)})))))
+
+(defn fetch-diagnostics
+  []
+  (ptk/reify ::fetch-diagnostics
+    ptk/UpdateEvent
+    (update [_ state]
+      (update state :mcp assoc-in [:diagnostics :status] "loading"))
 
     ptk/WatchEvent
     (watch [_ _ _]
-      (rx/of (manage-mcp-notification)
-             (mbc/event :mcp/pong {:connection-status value})))))
+      (->> (http/send! {:method :get
+                        :uri (cf/mcp-public-url "status")
+                        :credentials "include"
+                        :response-type :json})
+           (rx/mapcat
+            (fn [{:keys [status body]}]
+              (if (= status 200)
+                (rx/of body)
+                (rx/throw (ex-info "MCP status request failed" {:status status})))))
+           (rx/map #(js->clj % :keywordize-keys true))
+           (rx/map #(update-mcp-diagnostics {:status "ok"
+                                             :updated-at (now-iso)
+                                             :data %}))
+           (rx/catch
+            (fn [cause]
+              (rx/of (update-mcp-diagnostics {:status "error"
+                                              :updated-at (now-iso)
+                                              :error {:message (error-message cause)}}))))))))
 
 (defn update-mcp-file-context-status
   [value]
@@ -244,11 +316,11 @@
                     :getServerUrl #(str cf/mcp-ws-uri)
                     :getFrontendVersion frontend-version
                     :setMcpStatus
-                    (fn [status]
+                    (fn [status details]
                       (when (= status "connected")
                         (start-reconnect-watcher!))
-                      (st/emit! (update-mcp-connection-status status))
-                      (log/info :hint "MCP STATUS" :status status))
+                      (st/emit! (update-mcp-connection-status status details))
+                      (log/info :hint "MCP STATUS" :status status :details details))
                     :setFileContextStatus
                     (fn [status]
                       (st/emit! (update-mcp-file-context-status (js->clj status :keywordize-keys true)))
