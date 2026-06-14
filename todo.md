@@ -58,7 +58,8 @@ manual MCP connection configuration, and P9.4 wired the global lifecycle to the
 saved auto-connect preference while preserving manual connect/disconnect.
 P10.1 refreshed the overall architecture baseline in
 `mcp/docs/penpot-cli-overall-blueprint.md`. The current implementation focus is
-P9.5: aligning CLI config terminology with the persisted MCP model.
+P9.5: aligning CLI config terminology with the persisted MCP model. The
+Detailed Upcoming Task Queue below is the current ordered plan after P9.4.
 
 ## Feature Roadmap
 
@@ -88,6 +89,68 @@ remain the execution plan.
 | F19 | todo | File open and bind handoff | Phase 12 | Agents can move cleanly between headless edits and visual workspace binding | CLI/MCP can open a file URL and guide binding when live context is required |
 | F20 | todo | Packaging and distribution | Phase 13 | Developers and self-hosted operators have one documented install/setup path | `penpot-cli` build/install and MCP gateway setup are documented and repeatable |
 | F21 | todo | Release verification matrix | Phase 14 | Critical MCP/CLI flows have repeatable checks | Config, global connect, bind, headless edit, and export smoke flows run or have documented manual fallback |
+
+## Detailed Upcoming Task Queue
+
+Use this queue when continuing development. Complete the first unchecked item
+before moving to the next, update this section and the phase tables after each
+task, and commit each completed step with `git commit -s`.
+
+### Wave A: Finish Manual MCP Configuration
+
+| Order | Task | Modules | Output | Verification |
+| --- | --- | --- | --- | --- |
+| A1 | Complete P9.5 CLI config terminology alignment | `penpot-cli`, `mcp/docs`, `todo.md` | `penpot-cli mcp config` and docs describe built-in/custom/local modes using the same field names as `profile.props.mcp-config` while preserving env var compatibility | CLI config text/JSON smoke output matches documented fields |
+| A2 | Complete P9.6 config and lifecycle regression coverage | `frontend`, `mcp/packages/plugin`, `penpot-cli` | Tests cover default built-in config, custom/local URL derivation, reset, save-triggered reconfigure, auto-connect false, and manual connect fallback | Frontend tests are added even if local `clojure` remains unavailable; MCP/CLI TypeScript tests pass |
+| A3 | Complete P9.7 migration and fallback polish | `frontend`, `backend`, `mcp/docs` | Invalid/partial `:mcp-config` values fall back safely, existing users with only `:mcp-enabled` keep built-in defaults, and token values remain out of profile props | Focused tests cover missing mode, unknown mode, blank URLs, nil reset, and legacy profile props |
+| A4 | Close Wave A docs | `todo.md`, `CHANGES.md`, `mcp/docs` | Manual MCP configuration is marked complete, current limitations are explicit, and next focus moves to command runtime consolidation | `rg` shows no stale "not yet applied" auto-connect/config notes |
+
+### Wave B: Consolidate MCP And CLI Command Runtime
+
+| Order | Task | Modules | Output | Verification |
+| --- | --- | --- | --- | --- |
+| B1 | Audit existing MCP tools and CLI commands | `mcp/packages/server`, `penpot-cli`, `mcp/docs` | Inventory maps each command/tool to name, input schema, adapter, response shape, and test coverage | Audit document identifies duplicate metadata and first migration slice |
+| B2 | Move status/config/file/page descriptors into command runtime | `mcp/packages/command-runtime`, `mcp/packages/server`, `penpot-cli` | Shared descriptors define names, input metadata, adapter hints, and transport labels for low-risk commands | MCP and CLI keep existing public names; descriptor tests pass |
+| B3 | Add shared request/result envelopes | `command-runtime`, `mcp`, `penpot-cli` | MCP tools and CLI commands use the same internal envelope for adapter, target, auth, and diagnostics metadata | Existing CLI JSON output and MCP tool responses remain backward compatible |
+| B4 | Centralize adapter errors and selection reasons | `command-runtime`, `mcp`, `penpot-cli` | Backend unavailable, auth missing, file context required, unsupported adapter, and destructive confirmation errors use shared codes | MCP server tests and CLI no-service smoke tests pass |
+| B5 | Move shape/export descriptors after envelope migration | `command-runtime`, `mcp`, `penpot-cli`, `exporter` | Higher-risk write/export commands use shared descriptors without changing behavior | Shape/create/update/delete and export dry-run tests pass |
+
+### Wave C: Expand Headless Authoring
+
+| Order | Task | Modules | Output | Verification |
+| --- | --- | --- | --- | --- |
+| C1 | Add headless page rename metadata path | `backend`, `common`, `mcp`, `penpot-cli` | Page rename works through backend-command for explicit file/page targets | Backend/common tests plus MCP/CLI command tests cover success and permission errors |
+| C2 | Expand headless shape styling and hierarchy | `backend`, `common`, `mcp`, `penpot-cli` | Frame/rect/text updates cover richer fills, strokes, radius, parent/frame placement, and selected layout metadata | Common helper tests and MCP/CLI adapter tests pass |
+| C3 | Add headless image/media insertion path | `backend`, `common`, `mcp`, `penpot-cli` | Image-backed rectangles can be created without a live plugin context using existing media upload/storage paths | Tests cover media validation, permission errors, and exported preview metadata |
+| C4 | Add backend-supported prototype helpers | `backend`, `common`, `mcp`, `penpot-cli` | Basic flows and navigate interactions work headlessly where Penpot data structures allow it | Multi-screen prototype smoke flow creates pages, shapes, and interactions |
+| C5 | Expand exporter-backed preview commands | `exporter`, `mcp`, `penpot-cli` | Explicit file/page/object previews return consistent artifact metadata in MCP and CLI | CLI output write path and MCP base64/resource metadata are covered |
+
+### Wave D: Improve File Open, Bind, And User Handoff
+
+| Order | Task | Modules | Output | Verification |
+| --- | --- | --- | --- | --- |
+| D1 | Define handoff UX and command contract | `mcp/docs`, `frontend`, `penpot-cli` | User-facing flow covers create/find file, open URL, bind context, live-only tool guidance, and release | Design doc links dashboard/settings/workspace/CLI/MCP states |
+| D2 | Add reliable CLI/MCP file open handoff | `penpot-cli`, `mcp`, `frontend` | CLI/MCP can return or open a browser URL for target file/page and guide users to bind if needed | URL generation tests cover team/project/file/page variants |
+| D3 | Show file context outside workspace | `frontend` | Dashboard/settings show current available/bound/stale context enough for agents and users to orient | Frontend state tests cover unbound, available, bound, stale, and expired token states |
+| D4 | Add live-only bind guidance | `mcp`, `penpot-cli`, `frontend` | Live-only tool errors include precise open/bind/retry actions | Structured `file_context_required` responses include actionable next steps |
+
+### Wave E: Package And Distribute
+
+| Order | Task | Modules | Output | Verification |
+| --- | --- | --- | --- | --- |
+| E1 | Define CLI build/install strategy | `penpot-cli`, root docs | Decision covers private fork usage, package naming, binary name, versioning, and install commands | Fresh checkout can build and run `penpot-cli --help` |
+| E2 | Package MCP plugin assets with frontend builds | `frontend`, `mcp/packages/plugin`, `docker` | Frontend build includes matching MCP plugin assets and version metadata | Plugin build, frontend asset path check, and Docker gateway docs pass |
+| E3 | Document self-hosted MCP gateway setup | `docker`, `mcp/docs`, `penpot-cli` | Operators can enable built-in/custom/local MCP with one documented path | Docs cover env vars, ports, reverse proxy paths, tokens, and diagnostics |
+| E4 | Add migration notes for existing MCP users | docs, `CHANGES.md` | Existing token/profile/env behavior and new settings are explained | Release notes cover users with only `:mcp-enabled` and no `:mcp-config` |
+
+### Wave F: Release Verification
+
+| Order | Task | Modules | Output | Verification |
+| --- | --- | --- | --- | --- |
+| F1 | Add config/global connection smoke flow | `frontend`, `mcp`, `penpot-cli` | Repeatable flow covers enable, mode change, auto-connect off/on, manual connect, status, and disable | Automated where possible, manual fallback documented for missing Clojure tooling |
+| F2 | Add headless edit/export smoke flow | `backend`, `mcp`, `penpot-cli`, `exporter` | One flow creates file/page/shapes and exports a useful artifact without live workspace context | CLI/MCP commands return expected adapter diagnostics and artifact output |
+| F3 | Add live bind smoke flow | `frontend`, `mcp` | Flow opens file, binds context, runs plugin-live command, releases context, and checks multi-tab behavior | Smoke docs preserve single write-capable owner tab rules |
+| F4 | Normalize CI-friendly check commands | root, `frontend`, `backend`, `mcp`, `penpot-cli` | Exact commands for TS, CLJ, CLJS, backend, frontend, MCP, CLI, and smoke flows are documented | Local missing-tool failures are separated from product failures |
 
 ## Phase 0: Baseline, Planning, And Rules
 
@@ -287,13 +350,15 @@ Goal: make critical MCP/CLI flows repeatable and safe to change.
 ## Next Recommended Sprint
 
 Use `mcp/docs/penpot-cli-overall-blueprint.md` as the current architecture
-baseline. Continue with Wave A, starting with P9.5 CLI terminology alignment:
+baseline and the Detailed Upcoming Task Queue as the execution order. Continue
+with Wave A:
 
-1. Audit `penpot-cli mcp config` output and docs against the persisted
-   `:mcp-config` fields.
-2. Rename or group CLI config output around built-in/custom/local terminology
-   while preserving existing environment variable support.
-3. Update MCP docs so frontend settings and CLI diagnostics describe the same
-   product model.
-4. Follow immediately with P9.6 config/lifecycle
-   tests before starting Phase 10 command-runtime consolidation.
+1. Complete A1/P9.5: audit and align `penpot-cli mcp config` output/docs with
+   the persisted `:mcp-config` model.
+2. Complete A2/P9.6: add regression coverage for config persistence,
+   reconfigure, auto-connect, and manual connect fallback.
+3. Complete A3/P9.7: polish migration and fallback behavior for legacy,
+   missing, invalid, and partial MCP config values.
+4. Complete A4: close Wave A docs and mark F2/F3 progress accurately.
+5. Start Wave B with B1: inventory current MCP tools and CLI commands before
+   moving descriptors into the shared command runtime.
