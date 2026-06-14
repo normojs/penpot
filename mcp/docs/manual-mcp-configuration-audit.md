@@ -94,12 +94,12 @@ the only persisted gate:
 The workspace menu reads the same `:mcp-enabled` profile prop and current
 ephemeral `:mcp` state for connect/disconnect and bind/release controls.
 
-## Gaps
+## Remaining Gaps
 
-- Frontend URL derivation and CLI URL derivation are similar but not shared as a
-  documented product model.
 - `penpot-cli mcp config` still derives URLs from environment variables rather
   than persisted user profile props.
+- Frontend and CLI URL derivation are aligned on terminology but not yet shared
+  as one implementation.
 
 ## Proposed Persistent Model
 
@@ -160,5 +160,6 @@ URLs directly.
    preview.
 3. Done in P9.4: apply `auto-connect` to global MCP lifecycle while preserving
    manual connect/disconnect and file-context controls.
-4. Update `penpot-cli mcp config` docs so the CLI env names match the same
-   product model.
+4. Done in P9.5: update `penpot-cli mcp config` output and docs so CLI mode,
+   auto-connect, and endpoint names match `profile.props.mcp-config` while
+   preserving existing environment variable URL derivation.

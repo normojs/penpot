@@ -39,10 +39,14 @@ node penpot-cli/dist/index.js mcp status --format json
 node penpot-cli/dist/index.js mcp status --url http://localhost:3449/mcp/status
 ```
 
-Print the derived MCP URLs used by local clients:
+Print the effective MCP connection config used by local clients. The JSON
+output keeps the legacy camelCase URL fields for scripts and also includes a
+`profileProps.mcp-config` view whose field names match the persisted
+`profile.props.mcp-config` model.
 
 ```bash
 node penpot-cli/dist/index.js mcp config
+node penpot-cli/dist/index.js mcp config --mode local
 node penpot-cli/dist/index.js mcp config --format json
 ```
 
@@ -59,12 +63,22 @@ MCP URL environment variables:
 
 | Variable | Purpose | Default |
 | --- | --- | --- |
+| `PENPOT_MCP_MODE` | MCP config mode: `builtin`, `custom`, or `local` | `builtin` |
+| `PENPOT_MCP_AUTO_CONNECT` | Persisted-model auto-connect value shown by config output | `true` |
 | `PENPOT_MCP_PUBLIC_URI` | Public Penpot base URL for MCP routes | `http://localhost:3449` |
 | `PENPOT_MCP_STREAM_URI` | Explicit streamable HTTP URL | `<public>/mcp/stream` |
 | `PENPOT_MCP_SSE_URI` | Explicit SSE URL | `<public>/mcp/sse` |
 | `PENPOT_MCP_WEBSOCKET_URI` | Explicit WebSocket URL | `<public>/mcp/ws` |
 | `PENPOT_MCP_STATUS_URI` | Explicit status URL | `<public>/mcp/status` |
 | `PENPOT_MCP_LOG_DIR` | Directory containing MCP `.log` files | Not configured |
+
+Mode defaults:
+
+| Mode | Default endpoints |
+| --- | --- |
+| `builtin` | `<public>/mcp/stream`, `<public>/mcp/sse`, `<public>/mcp/ws`, `<public>/mcp/status` |
+| `custom` | Same derivation as `builtin`, usually with explicit `PENPOT_MCP_*_URI` overrides |
+| `local` | `http://localhost:4401/mcp`, `http://localhost:4401/sse`, `ws://localhost:4402`, `http://localhost:4401/status` |
 
 ## Development Orchestration
 

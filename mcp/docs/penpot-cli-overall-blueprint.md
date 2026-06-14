@@ -171,7 +171,8 @@ Tasks:
 - Persist settings through `update-profile-props`.
 - Apply `auto-connect` to startup, reconnect, and manual disconnect behavior.
 - Show effective stream/WebSocket/status endpoints in diagnostics.
-- Align `penpot-cli mcp config` docs with persisted product terminology.
+- Done: align `penpot-cli mcp config` output and docs with persisted product
+  terminology while preserving environment-derived URL compatibility.
 - Add focused frontend/backend/CLI tests for config and lifecycle.
 
 Acceptance:

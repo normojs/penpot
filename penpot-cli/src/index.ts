@@ -10,6 +10,8 @@ import type { CommandAdapterSelection, RequestedCommandAdapter } from "@penpot/c
 
 const VERSION = "0.1.0";
 const DEFAULT_PUBLIC_URI = "http://localhost:3449";
+const DEFAULT_LOCAL_MCP_PUBLIC_URI = "http://localhost:4401";
+const DEFAULT_LOCAL_MCP_WEBSOCKET_URI = "ws://localhost:4402";
 const DEFAULT_EXPORTER_URI = "http://localhost:6061";
 
 const HELP_TEXT = `penpot-cli ${VERSION}
@@ -18,7 +20,7 @@ Usage:
   penpot-cli --help
   penpot-cli --version
   penpot-cli mcp status [--url <status-url>] [--format text|json]
-  penpot-cli mcp config [--format text|json]
+  penpot-cli mcp config [--mode builtin|custom|local] [--format text|json]
   penpot-cli mcp logs [--dir <path>] [--follow] [--format text|json]
   penpot-cli dev up --mcp [--mode devenv] [--dry-run] [--format text|json]
   penpot-cli file list --project-id <id> [--format text|json]
@@ -37,11 +39,13 @@ const MCP_HELP_TEXT = `penpot-cli mcp
 
 Usage:
   penpot-cli mcp status [--url <status-url>] [--format text|json]
-  penpot-cli mcp config [--format text|json]
+  penpot-cli mcp config [--mode builtin|custom|local] [--format text|json]
   penpot-cli mcp logs [--dir <path>] [--follow] [--format text|json]
 
 Environment:
   PENPOT_MCP_PUBLIC_URI      Public Penpot base URL, default http://localhost:3449
+  PENPOT_MCP_MODE            MCP config mode: builtin, custom, or local
+  PENPOT_MCP_AUTO_CONNECT    Whether saved profile config should auto-connect, default true
   PENPOT_MCP_STREAM_URI      Explicit MCP stream URL
   PENPOT_MCP_WEBSOCKET_URI   Explicit MCP WebSocket URL
   PENPOT_MCP_STATUS_URI      Explicit MCP status URL
@@ -138,13 +142,30 @@ interface CliIO {
     stderr: Writable;
 }
 
+type McpMode = "builtin" | "custom" | "local";
+
+interface McpProfileConfig {
+    mode: McpMode;
+    "auto-connect": boolean;
+    "public-uri": string;
+    "stream-uri": string;
+    "sse-uri": string;
+    "websocket-uri": string;
+    "status-uri": string;
+}
+
 interface McpConfig {
+    mode: McpMode;
+    autoConnect: boolean;
     publicUri: string;
     streamUri: string;
     sseUri: string;
     websocketUri: string;
     statusUri: string;
     logDir: string | null;
+    profileProps: {
+        "mcp-config": McpProfileConfig;
+    };
 }
 
 interface LogFile {
@@ -356,27 +377,88 @@ function appendPath(baseUri: string, path: string): string {
     return `${trimTrailingSlash(baseUri)}${path}`;
 }
 
-function getMcpConfig(args: string[], env: NodeJS.ProcessEnv): McpConfig {
-    const publicUri = trimTrailingSlash(
-        readOption(args, ["--public-uri"]) ?? env.PENPOT_MCP_PUBLIC_URI ?? DEFAULT_PUBLIC_URI
+function normalizeMcpMode(value: string | undefined): McpMode {
+    switch (value) {
+        case "built-in":
+        case "builtin":
+            return "builtin";
+        case "custom":
+        case "local":
+            return value;
+        default:
+            return "builtin";
+    }
+}
+
+function readBooleanConfig(value: string | undefined, fallback: boolean): boolean {
+    if (value === undefined) {
+        return fallback;
+    }
+    switch (value.trim().toLowerCase()) {
+        case "0":
+        case "false":
+        case "no":
+        case "off":
+            return false;
+        case "1":
+        case "true":
+        case "yes":
+        case "on":
+            return true;
+        default:
+            return fallback;
+    }
+}
+
+function getMcpConfig(args: string[], env: NodeJS.ProcessEnv, options: { allowModeAlias?: boolean } = {}): McpConfig {
+    const modeOptionNames = options.allowModeAlias ? ["--mode", "--mcp-mode"] : ["--mcp-mode"];
+    const mode = normalizeMcpMode(readOption(args, modeOptionNames) ?? env.PENPOT_MCP_MODE);
+    const autoConnect = readBooleanConfig(
+        readOption(args, ["--auto-connect"]) ?? env.PENPOT_MCP_AUTO_CONNECT,
+        true
     );
-    const streamUri = readOption(args, ["--stream-uri"]) ?? env.PENPOT_MCP_STREAM_URI ?? appendPath(publicUri, "/mcp/stream");
-    const sseUri = readOption(args, ["--sse-uri"]) ?? env.PENPOT_MCP_SSE_URI ?? appendPath(publicUri, "/mcp/sse");
+    const defaultPublicUri = mode === "local" ? DEFAULT_LOCAL_MCP_PUBLIC_URI : DEFAULT_PUBLIC_URI;
+    const publicUri = trimTrailingSlash(
+        readOption(args, ["--public-uri"]) ?? env.PENPOT_MCP_PUBLIC_URI ?? defaultPublicUri
+    );
+    const streamUri =
+        readOption(args, ["--stream-uri"]) ??
+        env.PENPOT_MCP_STREAM_URI ??
+        appendPath(publicUri, mode === "local" ? "/mcp" : "/mcp/stream");
+    const sseUri =
+        readOption(args, ["--sse-uri"]) ??
+        env.PENPOT_MCP_SSE_URI ??
+        appendPath(publicUri, mode === "local" ? "/sse" : "/mcp/sse");
     const websocketUri =
         readOption(args, ["--websocket-uri", "--ws-uri"]) ??
         env.PENPOT_MCP_WEBSOCKET_URI ??
-        appendPath(publicUri, "/mcp/ws");
+        (mode === "local" ? DEFAULT_LOCAL_MCP_WEBSOCKET_URI : appendPath(publicUri, "/mcp/ws"));
     const statusUri =
-        readOption(args, ["--status-uri", "--url"]) ?? env.PENPOT_MCP_STATUS_URI ?? appendPath(publicUri, "/mcp/status");
+        readOption(args, ["--status-uri", "--url"]) ??
+        env.PENPOT_MCP_STATUS_URI ??
+        appendPath(publicUri, mode === "local" ? "/status" : "/mcp/status");
     const logDir = readOption(args, ["--dir", "--log-dir"]) ?? env.PENPOT_MCP_LOG_DIR ?? null;
 
     return {
+        mode,
+        autoConnect,
         publicUri,
         streamUri,
         sseUri,
         websocketUri,
         statusUri,
         logDir,
+        profileProps: {
+            "mcp-config": {
+                mode,
+                "auto-connect": autoConnect,
+                "public-uri": publicUri,
+                "stream-uri": streamUri,
+                "sse-uri": sseUri,
+                "websocket-uri": websocketUri,
+                "status-uri": statusUri,
+            },
+        },
     };
 }
 
@@ -1352,12 +1434,14 @@ function exportErrorResponse(io: CliIO, format: Format, plan: ExportPagePlan, ca
 
 function writeConfigText(io: CliIO, config: McpConfig): void {
     writeLine(io.stdout, "MCP config");
-    writeLine(io.stdout, `public: ${config.publicUri}`);
-    writeLine(io.stdout, `stream: ${config.streamUri}`);
-    writeLine(io.stdout, `sse: ${config.sseUri}`);
-    writeLine(io.stdout, `websocket: ${config.websocketUri}`);
-    writeLine(io.stdout, `status: ${config.statusUri}`);
-    writeLine(io.stdout, `logDir: ${config.logDir ?? "<not configured>"}`);
+    writeLine(io.stdout, `mode: ${config.mode}`);
+    writeLine(io.stdout, `auto-connect: ${String(config.autoConnect)}`);
+    writeLine(io.stdout, `public-uri: ${config.publicUri}`);
+    writeLine(io.stdout, `stream-uri: ${config.streamUri}`);
+    writeLine(io.stdout, `sse-uri: ${config.sseUri}`);
+    writeLine(io.stdout, `websocket-uri: ${config.websocketUri}`);
+    writeLine(io.stdout, `status-uri: ${config.statusUri}`);
+    writeLine(io.stdout, `log-dir: ${config.logDir ?? "<not configured>"}`);
 }
 
 function writeFilesText(io: CliIO, projectId: string, files: unknown): void {
@@ -1593,7 +1677,7 @@ function handleMcpConfig(args: string[], io: CliIO, env: NodeJS.ProcessEnv): num
         return 2;
     }
 
-    const config = getMcpConfig(args, env);
+    const config = getMcpConfig(args, env, { allowModeAlias: true });
     if (format === "json") {
         writeJson(io.stdout, {
             status: "ok",

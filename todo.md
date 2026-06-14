@@ -56,10 +56,12 @@ defined the persisted MCP config model plus frontend effective URL derivation.
 P9.3 added Integrations settings controls for saving, previewing, and resetting
 manual MCP connection configuration, and P9.4 wired the global lifecycle to the
 saved auto-connect preference while preserving manual connect/disconnect.
-P10.1 refreshed the overall architecture baseline in
+P9.5 aligned `penpot-cli mcp config` terminology and JSON output with the
+persisted MCP config model while preserving environment-derived URL
+compatibility. P10.1 refreshed the overall architecture baseline in
 `mcp/docs/penpot-cli-overall-blueprint.md`. The current implementation focus is
-P9.5: aligning CLI config terminology with the persisted MCP model. The
-Detailed Upcoming Task Queue below is the current ordered plan after P9.4.
+P9.6: adding config and lifecycle regression coverage. The Detailed Upcoming
+Task Queue below is the current ordered plan after P9.5.
 
 ## Feature Roadmap
 
@@ -284,8 +286,8 @@ setup.
 | P9.2 | done | Define persistent manual MCP config model | `frontend`, `backend`, `mcp` | Config model covers mode, enabled, auto-connect, stream URL, WebSocket URL, status URL, and reset-to-built-in | Completed 2026-06-13; backend profile props accept optional `:mcp-config`, frontend computes effective built-in/custom/local URLs, diagnostics/plugin/client URLs consume it, and focused tests cover persistence and derivation |
 | P9.3 | done | Add Integrations settings controls for MCP config | `frontend` | Users can toggle MCP and edit/reset endpoint settings | Completed 2026-06-14; Integrations now saves built-in/custom/local mode, auto-connect, and endpoint overrides, previews effective endpoints, resets with `{:mcp-config nil}`, and covers pure config transforms with frontend tests |
 | P9.4 | done | Wire global MCP lifecycle to manual config | `frontend`, `mcp` | Global plugin connects/disconnects according to saved config | Completed 2026-06-14; enabled MCP now loads the hidden plugin for manual controls, honors `:auto-connect false` by avoiding automatic tab ownership/WebSocket startup, and reconfigures live settings after save/reset |
-| P9.5 | in_progress | Align CLI config terminology with persisted model | `penpot-cli`, `mcp/docs` | CLI config output and docs use built-in/custom/local terminology | Started 2026-06-14; keep CLI env derivation but name fields consistently with `:mcp-config` |
-| P9.6 | todo | Add config and lifecycle tests | `frontend`, `backend`, `penpot-cli` | Settings persistence, derived URLs, reset, and auto-connect are covered | Record frontend/backend checks that remain blocked locally |
+| P9.5 | done | Align CLI config terminology with persisted model | `penpot-cli`, `mcp/docs` | CLI config output and docs use built-in/custom/local terminology | Completed 2026-06-14; `mcp config` now reports mode, auto-connect, local-mode defaults, and a `profileProps.mcp-config` view while preserving legacy camelCase URL fields and env overrides |
+| P9.6 | in_progress | Add config and lifecycle tests | `frontend`, `backend`, `penpot-cli` | Settings persistence, derived URLs, reset, and auto-connect are covered | Started 2026-06-14; add regression coverage for config persistence, reconfigure, auto-connect false, and manual connect fallback; record frontend/backend checks that remain blocked locally |
 | P9.7 | todo | Polish config migration and fallback behavior | `frontend`, `backend`, `mcp/docs` | Existing users without `:mcp-config` keep built-in defaults | Cover invalid/partial custom config fallback and token separation |
 
 ## Phase 10: Command Runtime Consolidation
@@ -353,12 +355,10 @@ Use `mcp/docs/penpot-cli-overall-blueprint.md` as the current architecture
 baseline and the Detailed Upcoming Task Queue as the execution order. Continue
 with Wave A:
 
-1. Complete A1/P9.5: audit and align `penpot-cli mcp config` output/docs with
-   the persisted `:mcp-config` model.
-2. Complete A2/P9.6: add regression coverage for config persistence,
+1. Complete A2/P9.6: add regression coverage for config persistence,
    reconfigure, auto-connect, and manual connect fallback.
-3. Complete A3/P9.7: polish migration and fallback behavior for legacy,
+2. Complete A3/P9.7: polish migration and fallback behavior for legacy,
    missing, invalid, and partial MCP config values.
-4. Complete A4: close Wave A docs and mark F2/F3 progress accurately.
-5. Start Wave B with B1: inventory current MCP tools and CLI commands before
+3. Complete A4: close Wave A docs and mark F2/F3 progress accurately.
+4. Start Wave B with B1: inventory current MCP tools and CLI commands before
    moving descriptors into the shared command runtime.

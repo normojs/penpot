@@ -67,12 +67,45 @@ test("mcp config derives stable public MCP surfaces from environment", async () 
     assert.equal(result.stderr, "");
     assert.equal(body.status, "ok");
     assert.deepEqual(body.data, {
+        mode: "builtin",
+        autoConnect: true,
         publicUri: "https://penpot.example.test",
         streamUri: "https://penpot.example.test/mcp/stream",
         sseUri: "https://penpot.example.test/mcp/sse",
         websocketUri: "https://penpot.example.test/mcp/ws",
         statusUri: "https://penpot.example.test/mcp/status",
         logDir: "/tmp/penpot-mcp-logs",
+        profileProps: {
+            "mcp-config": {
+                mode: "builtin",
+                "auto-connect": true,
+                "public-uri": "https://penpot.example.test",
+                "stream-uri": "https://penpot.example.test/mcp/stream",
+                "sse-uri": "https://penpot.example.test/mcp/sse",
+                "websocket-uri": "https://penpot.example.test/mcp/ws",
+                "status-uri": "https://penpot.example.test/mcp/status",
+            },
+        },
+    });
+});
+
+test("mcp config reports local mode using persisted config field names", async () => {
+    const result = await runCli(["mcp", "config", "--mode", "local", "--format", "json"]);
+    const body = parseJson(result.stdout);
+
+    assert.equal(result.exitCode, 0);
+    assert.equal(result.stderr, "");
+    assert.equal(body.status, "ok");
+    assert.equal(body.data.mode, "local");
+    assert.equal(body.data.publicUri, "http://localhost:4401");
+    assert.deepEqual(body.data.profileProps["mcp-config"], {
+        mode: "local",
+        "auto-connect": true,
+        "public-uri": "http://localhost:4401",
+        "stream-uri": "http://localhost:4401/mcp",
+        "sse-uri": "http://localhost:4401/sse",
+        "websocket-uri": "ws://localhost:4402",
+        "status-uri": "http://localhost:4401/status",
     });
 });
 
