@@ -178,6 +178,16 @@
                           :mode mode
                           :auto-connect auto-connect?)})))
 
+(defn config-save-events
+  [config]
+  [(du/update-profile-props (editable-config->profile-props config))
+   (mbc/event :mcp/reconfigure {})])
+
+(defn config-reset-events
+  []
+  [(du/update-profile-props {:mcp-config nil})
+   (mbc/event :mcp/reconfigure {})])
+
 (defn- now-iso
   []
   (.toISOString (js/Date.)))

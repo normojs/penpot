@@ -61,7 +61,7 @@ persisted MCP config model while preserving environment-derived URL
 compatibility. P10.1 refreshed the overall architecture baseline in
 `mcp/docs/penpot-cli-overall-blueprint.md`. The current implementation focus is
 P9.6: adding config and lifecycle regression coverage. The Detailed Upcoming
-Task Queue below is the current ordered plan after P9.5.
+Task Queue below is the current ordered plan after P9.6.
 
 ## Feature Roadmap
 
@@ -287,8 +287,8 @@ setup.
 | P9.3 | done | Add Integrations settings controls for MCP config | `frontend` | Users can toggle MCP and edit/reset endpoint settings | Completed 2026-06-14; Integrations now saves built-in/custom/local mode, auto-connect, and endpoint overrides, previews effective endpoints, resets with `{:mcp-config nil}`, and covers pure config transforms with frontend tests |
 | P9.4 | done | Wire global MCP lifecycle to manual config | `frontend`, `mcp` | Global plugin connects/disconnects according to saved config | Completed 2026-06-14; enabled MCP now loads the hidden plugin for manual controls, honors `:auto-connect false` by avoiding automatic tab ownership/WebSocket startup, and reconfigures live settings after save/reset |
 | P9.5 | done | Align CLI config terminology with persisted model | `penpot-cli`, `mcp/docs` | CLI config output and docs use built-in/custom/local terminology | Completed 2026-06-14; `mcp config` now reports mode, auto-connect, local-mode defaults, and a `profileProps.mcp-config` view while preserving legacy camelCase URL fields and env overrides |
-| P9.6 | in_progress | Add config and lifecycle tests | `frontend`, `backend`, `penpot-cli` | Settings persistence, derived URLs, reset, and auto-connect are covered | Started 2026-06-14; add regression coverage for config persistence, reconfigure, auto-connect false, and manual connect fallback; record frontend/backend checks that remain blocked locally |
-| P9.7 | todo | Polish config migration and fallback behavior | `frontend`, `backend`, `mcp/docs` | Existing users without `:mcp-config` keep built-in defaults | Cover invalid/partial custom config fallback and token separation |
+| P9.6 | done | Add config and lifecycle tests | `frontend`, `backend`, `penpot-cli` | Settings persistence, derived URLs, reset, and auto-connect are covered | Completed 2026-06-14; added frontend regression tests for config save/reset reconfigure events, CLI custom/local config coverage, and retained existing backend profile-prop persistence/reset tests; frontend/backend focused checks remain blocked locally because `clojure` is unavailable |
+| P9.7 | in_progress | Polish config migration and fallback behavior | `frontend`, `backend`, `mcp/docs` | Existing users without `:mcp-config` keep built-in defaults | Started 2026-06-14; cover invalid/partial custom config fallback and token separation |
 
 ## Phase 10: Command Runtime Consolidation
 
@@ -355,10 +355,8 @@ Use `mcp/docs/penpot-cli-overall-blueprint.md` as the current architecture
 baseline and the Detailed Upcoming Task Queue as the execution order. Continue
 with Wave A:
 
-1. Complete A2/P9.6: add regression coverage for config persistence,
-   reconfigure, auto-connect, and manual connect fallback.
-2. Complete A3/P9.7: polish migration and fallback behavior for legacy,
+1. Complete A3/P9.7: polish migration and fallback behavior for legacy,
    missing, invalid, and partial MCP config values.
-3. Complete A4: close Wave A docs and mark F2/F3 progress accurately.
-4. Start Wave B with B1: inventory current MCP tools and CLI commands before
+2. Complete A4: close Wave A docs and mark F2/F3 progress accurately.
+3. Start Wave B with B1: inventory current MCP tools and CLI commands before
    moving descriptors into the shared command runtime.

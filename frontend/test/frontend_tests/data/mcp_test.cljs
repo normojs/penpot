@@ -6,7 +6,9 @@
 
 (ns frontend-tests.data.mcp-test
   (:require
+   [app.main.broadcast :as mbc]
    [app.main.data.mcp :as mcp]
+   [app.main.data.profile :as du]
    [cljs.test :as t]
    [potok.v2.core :as ptk]))
 
@@ -151,6 +153,45 @@
             {:mode "local"
              :auto-connect true
              :status-uri " http://localhost:4401/status "}))))
+
+(t/deftest config-save-events-update-profile-and-broadcast-reconfigure
+  (let [[profile-event reconfigure-event :as events]
+        (mcp/config-save-events
+         {:mode "custom"
+          :auto-connect false
+          :public-uri "https://mcp.example"
+          :stream-uri "https://stream.example/mcp"})
+
+        result
+        (ptk/update profile-event (state-with-props {:mcp-enabled true}))]
+
+    (t/is (= 2 (count events)))
+    (t/is (= ::du/update-profile-props (ptk/type profile-event)))
+    (t/is (= ::mbc/event (ptk/type reconfigure-event)))
+    (t/is (= {:mcp-enabled true
+              :mcp-config {:mode "custom"
+                           :auto-connect false
+                           :public-uri "https://mcp.example"
+                           :stream-uri "https://stream.example/mcp"}}
+             (get-in result [:profile :props])))))
+
+(t/deftest config-reset-events-reset-profile-and-broadcast-reconfigure
+  (let [[profile-event reconfigure-event :as events]
+        (mcp/config-reset-events)
+
+        result
+        (ptk/update profile-event
+                    (state-with-props
+                     {:mcp-enabled true
+                      :mcp-config {:mode "custom"
+                                   :public-uri "https://mcp.example"}}))]
+
+    (t/is (= 2 (count events)))
+    (t/is (= ::du/update-profile-props (ptk/type profile-event)))
+    (t/is (= ::mbc/event (ptk/type reconfigure-event)))
+    (t/is (= {:mcp-enabled true
+              :mcp-config nil}
+             (get-in result [:profile :props])))))
 
 (t/deftest auto-connect-defaults-to-enabled
   (t/is (true? (mcp/auto-connect? {}))))

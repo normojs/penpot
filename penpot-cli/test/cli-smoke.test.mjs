@@ -109,6 +109,29 @@ test("mcp config reports local mode using persisted config field names", async (
     });
 });
 
+test("mcp config reports custom mode and auto-connect override", async () => {
+    const result = await runCli(["mcp", "config", "--mode", "custom", "--auto-connect", "false", "--format", "json"], {
+        PENPOT_MCP_PUBLIC_URI: "https://external-mcp.example",
+        PENPOT_MCP_STREAM_URI: "https://stream.external.example/mcp",
+    });
+    const body = parseJson(result.stdout);
+
+    assert.equal(result.exitCode, 0);
+    assert.equal(result.stderr, "");
+    assert.equal(body.status, "ok");
+    assert.equal(body.data.mode, "custom");
+    assert.equal(body.data.autoConnect, false);
+    assert.deepEqual(body.data.profileProps["mcp-config"], {
+        mode: "custom",
+        "auto-connect": false,
+        "public-uri": "https://external-mcp.example",
+        "stream-uri": "https://stream.external.example/mcp",
+        "sse-uri": "https://external-mcp.example/mcp/sse",
+        "websocket-uri": "https://external-mcp.example/mcp/ws",
+        "status-uri": "https://external-mcp.example/mcp/status",
+    });
+});
+
 test("dev up dry-run reports MCP surfaces without starting services", async () => {
     const result = await runCli(["dev", "up", "--mcp", "--dry-run", "--format", "json"], {
         PENPOT_MCP_PUBLIC_URI: "http://127.0.0.1:3449",

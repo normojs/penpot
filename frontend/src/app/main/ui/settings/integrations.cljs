@@ -700,10 +700,10 @@
         (mf/use-fn
          (mf/deps editable-config)
          (fn []
-           (let [profile-props (dmcp/editable-config->profile-props editable-config)]
-             (st/emit! (du/update-profile-props profile-props)
+           (let [[profile-event reconfigure-event] (dmcp/config-save-events editable-config)]
+             (st/emit! profile-event
                        (ntf/success (tr "integrations.notification.success.mcp-config-saved"))
-                       (mbc/event :mcp/reconfigure {})
+                       reconfigure-event
                        (ev/event {::ev/name "save-mcp-config"
                                   ::ev/origin "integrations"
                                   :mode (:mode editable-config)})))))
@@ -712,11 +712,12 @@
         (mf/use-fn
          (fn []
            (reset! editable-config* (dmcp/editable-config {}))
-           (st/emit! (du/update-profile-props {:mcp-config nil})
-                     (ntf/success (tr "integrations.notification.success.mcp-config-reset"))
-                     (mbc/event :mcp/reconfigure {})
-                     (ev/event {::ev/name "reset-mcp-config"
-                                ::ev/origin "integrations"}))))
+           (let [[profile-event reconfigure-event] (dmcp/config-reset-events)]
+             (st/emit! profile-event
+                       (ntf/success (tr "integrations.notification.success.mcp-config-reset"))
+                       reconfigure-event
+                       (ev/event {::ev/name "reset-mcp-config"
+                                  ::ev/origin "integrations"})))))
 
         handle-delete
         (mf/use-fn
