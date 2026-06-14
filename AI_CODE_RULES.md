@@ -14,7 +14,8 @@ Every AI coding task must follow this loop:
 2. Identify affected modules.
 3. Read only the affected module `AGENTS.md` files when they exist.
 4. Check `todo.md` and mark the current task as `in_progress`.
-5. Read the relevant architecture docs before changing code.
+5. Read `mcp/docs/penpot-cli-overall-blueprint.md`, then read the relevant
+   detailed architecture docs before changing code.
 6. Make the smallest coherent change.
 7. Run focused verification for the touched modules when practical.
 8. Update `todo.md` immediately after completing or blocking a step.
@@ -41,6 +42,10 @@ available.
 
 The fork goal is to make MCP a first-class Penpot automation capability and to
 prepare a future `penpot-cli` entry point.
+
+The current compact architecture baseline is
+`mcp/docs/penpot-cli-overall-blueprint.md`. Treat it as the first document to
+consult for module boundaries, delivery waves, and near-term priority.
 
 Preferred direction:
 
@@ -186,4 +191,3 @@ If verification cannot be run, record why in the final response and in
 - Do not rebrand the whole product in one broad change; split rename/branding
   into planned tasks.
 - Do not commit unless the user explicitly asks.
-

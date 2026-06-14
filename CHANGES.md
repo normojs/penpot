@@ -46,6 +46,7 @@
 - Add CLI smoke regression tests and MCP/CLI smoke-flow documentation for first-class MCP development.
 - Document the manual MCP configuration audit and proposed persisted profile config model.
 - Add persisted MCP connection configuration support with built-in, custom, and local effective URL derivation for frontend diagnostics, plugin WebSocket startup, and generated client URLs.
+- Add an updated `penpot-cli` overall blueprint covering the target architecture, runtime modes, delivery waves, and expanded MCP/CLI task queue.
 - Add rate limiting and concurrency safety for file snapshot operations [#9723](https://github.com/penpot/penpot/issues/9723) (PR: [#9722](https://github.com/penpot/penpot/pull/9722))
 - Prevent concurrent font uploads from causing excessive simultaneous requests [#9922](https://github.com/penpot/penpot/issues/9922) (PR: [#9921](https://github.com/penpot/penpot/pull/9921))
 

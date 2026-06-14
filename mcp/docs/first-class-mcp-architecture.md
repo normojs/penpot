@@ -11,6 +11,11 @@ Implementation progress is tracked in the repository root `todo.md`.
 AI coding agents should follow the fork-specific rules in the repository root
 `AI_CODE_RULES.md`.
 
+The current compact architecture and delivery baseline is
+[`penpot-cli-overall-blueprint.md`](penpot-cli-overall-blueprint.md). This
+document keeps the historical design notes, implementation decisions, and phase
+details that led to that baseline.
+
 Every implementation step should update the tracking files as follows:
 
 1. Mark the active task in `todo.md` before starting work.
@@ -1719,6 +1724,15 @@ P9.2 implementation note (2026-06-13):
   client URLs now read from a shared effective config helper.
 - Focused backend/frontend tests cover persistence, reset-to-built-in, and
   effective URL derivation for built-in, local, and custom modes.
+
+P10.1 planning note (2026-06-14):
+
+- Added `mcp/docs/penpot-cli-overall-blueprint.md` as the compact current
+  architecture baseline for `penpot-cli`.
+- The blueprint restates the target module boundaries, runtime modes,
+  configuration/connection/file-context/command flows, delivery waves, and
+  near-term priority queue.
+- This document remains the long-form historical architecture record.
 
 ## 10. Feature Backlog
 
