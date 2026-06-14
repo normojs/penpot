@@ -161,6 +161,52 @@
   inset-inline: 0;
 }
 
+.mcp-config {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-l);
+}
+
+.mcp-config-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--sp-m);
+}
+
+.mcp-config-actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: var(--sp-s);
+}
+
+.mcp-config-control {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-s);
+}
+
+.mcp-config-modes {
+  inline-size: 100%;
+}
+
+.mcp-config-switch {
+  inline-size: fit-content;
+}
+
+.mcp-config-fields {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--sp-m);
+}
+
+.mcp-config-effective {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-s);
+}
+
 .mcp-diagnostics {
   display: flex;
   flex-direction: column;
@@ -266,5 +312,25 @@
 
   &:focus-visible {
     outline: $b-1 solid var(--color-accent-primary);
+  }
+}
+
+@media (max-width: $sz-500) {
+  .integrations {
+    inline-size: calc(100% - var(--sp-xxxl));
+  }
+
+  .mcp-config-header {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .mcp-config-actions {
+    justify-content: flex-start;
+  }
+
+  .mcp-config-fields,
+  .mcp-diagnostics-row {
+    grid-template-columns: 1fr;
   }
 }

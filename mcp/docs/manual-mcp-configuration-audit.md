@@ -84,6 +84,8 @@ the only persisted gate:
 
 - generate/regenerate/delete MCP key
 - enable/disable switch
+- built-in/custom/local connection mode editing with endpoint preview
+- reset-to-built-in and save actions for `profile.props.mcp-config`
 - copied MCP stream URL with `?userToken=<token>` derived from the effective
   `:stream-uri`
 - diagnostics refresh panel
@@ -93,17 +95,13 @@ ephemeral `:mcp` state for connect/disconnect and bind/release controls.
 
 ## Gaps
 
-- No persisted connection mode exists. The app cannot distinguish built-in,
-  custom, or local MCP operation.
-- No persisted MCP URLs exist. Settings can only show runtime-derived values.
-- No `auto-connect` preference exists. Enabled MCP always attempts global
-  startup after login.
+- Persisted connection mode and URL preferences exist, but the global lifecycle
+  still treats enabled MCP as an immediate startup signal.
+- `auto-connect` is now persisted but not yet applied. Enabled MCP still
+  attempts global startup after login; P9.4 owns connection/disconnection
+  behavior.
 - Frontend URL derivation and CLI URL derivation are similar but not shared as a
   documented product model.
-- Settings UI controls do not yet edit `:mcp-config`; P9.3 owns the form,
-  validation, and reset action.
-- `auto-connect` is modeled but not yet applied to global lifecycle; P9.4 owns
-  connection/disconnection behavior.
 - `penpot-cli mcp config` still derives URLs from environment variables rather
   than persisted user profile props.
 
@@ -161,7 +159,9 @@ URLs directly.
 1. Done in P9.2: add backend schema support for `:mcp-config`, runtime
    SSE/status overrides, frontend runtime defaults/effective config helpers,
    diagnostics/plugin/client URL consumers, and focused backend/frontend tests.
-2. Wire settings UI controls to save mode, auto-connect, and URL overrides.
+2. Done in P9.3: wire settings UI controls to save mode, auto-connect, and URL
+   overrides, including a reset-to-built-in action and effective endpoint
+   preview.
 3. Apply `auto-connect` to global MCP lifecycle.
 4. Update `penpot-cli mcp config` docs so the CLI env names match the same
    product model.

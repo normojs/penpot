@@ -21,6 +21,7 @@
    [app.util.i18n :refer [tr]]
    [app.util.timers :as ts]
    [beicon.v2.core :as rx]
+   [cuerdas.core :as str]
    [potok.v2.core :as ptk]))
 
 (def retry-interval 10000)
@@ -64,10 +65,15 @@
    :websocket-uri "ws://localhost:4402"
    :status-uri "http://localhost:4401/status"})
 
+(def ^:private config-uri-keys
+  [:public-uri :stream-uri :sse-uri :websocket-uri :status-uri])
+
 (defn- non-empty-string
   [value]
-  (when (and (string? value) (not= "" value))
-    value))
+  (when (string? value)
+    (let [value (str/trim value)]
+      (when-not (str/blank? value)
+        value))))
 
 (defn- config-uri-overrides
   [config]
@@ -75,7 +81,7 @@
         (keep (fn [k]
                 (when-let [value (non-empty-string (get config k))]
                   [k value])))
-        [:public-uri :stream-uri :sse-uri :websocket-uri :status-uri]))
+        config-uri-keys))
 
 (defn- mcp-public-url
   [public-uri path]
@@ -134,6 +140,34 @@
        (assoc runtime-defaults
               :mode "builtin"
               :auto-connect auto-connect?)))))
+
+(defn editable-config
+  [profile-props]
+  (let [config (or (:mcp-config profile-props) {})]
+    (-> (into {} (map (fn [k] [k (or (get config k) "")])) config-uri-keys)
+        (assoc :mode (case (:mode config)
+                       "custom" "custom"
+                       "local"  "local"
+                       "builtin")
+               :auto-connect (not (false? (:auto-connect config)))))))
+
+(defn editable-config->profile-props
+  [config]
+  (let [mode          (case (:mode config)
+                        "custom" "custom"
+                        "local"  "local"
+                        "builtin")
+        auto-connect? (not (false? (:auto-connect config)))
+        uri-config    (if (= mode "builtin")
+                        {}
+                        (config-uri-overrides config))]
+    (if (and (= mode "builtin")
+             (true? auto-connect?)
+             (empty? uri-config))
+      {:mcp-config nil}
+      {:mcp-config (assoc uri-config
+                          :mode mode
+                          :auto-connect auto-connect?)})))
 
 (defn- now-iso
   []

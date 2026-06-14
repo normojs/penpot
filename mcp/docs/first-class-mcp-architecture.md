@@ -1725,6 +1725,18 @@ P9.2 implementation note (2026-06-13):
 - Focused backend/frontend tests cover persistence, reset-to-built-in, and
   effective URL derivation for built-in, local, and custom modes.
 
+P9.3 implementation note (2026-06-14):
+
+- Integrations settings now expose MCP connection controls for `builtin`,
+  `custom`, and `local` modes.
+- The form persists `:mcp-config` through profile props, trims empty URL
+  overrides, and resets to built-in defaults by sending `{:mcp-config nil}`.
+- Settings previews the effective stream, SSE, WebSocket, and status endpoints
+  from the same helper used by diagnostics, plugin startup, and copied client
+  URLs.
+- Focused frontend tests cover editable config defaults and profile-prop
+  serialization for built-in, custom, and local modes.
+
 P10.1 planning note (2026-06-14):
 
 - Added `mcp/docs/penpot-cli-overall-blueprint.md` as the compact current

@@ -83,6 +83,70 @@
     (t/is (= "wss://ws.example" (:websocket-uri result)))
     (t/is (= "https://status.example/status" (:status-uri result)))))
 
+(t/deftest editable-config-defaults-to-built-in-mode
+  (t/is (= {:mode "builtin"
+            :auto-connect true
+            :public-uri ""
+            :stream-uri ""
+            :sse-uri ""
+            :websocket-uri ""
+            :status-uri ""}
+           (mcp/editable-config {}))))
+
+(t/deftest editable-config-preserves-saved-connection-fields
+  (t/is (= {:mode "custom"
+            :auto-connect false
+            :public-uri "https://mcp.example"
+            :stream-uri "https://stream.example/mcp"
+            :sse-uri ""
+            :websocket-uri "wss://ws.example"
+            :status-uri ""}
+           (mcp/editable-config
+            {:mcp-config {:mode "custom"
+                          :auto-connect false
+                          :public-uri "https://mcp.example"
+                          :stream-uri "https://stream.example/mcp"
+                          :websocket-uri "wss://ws.example"}}))))
+
+(t/deftest editable-config-profile-props-reset-built-in-defaults
+  (t/is (= {:mcp-config nil}
+           (mcp/editable-config->profile-props
+            {:mode "builtin"
+             :auto-connect true
+             :public-uri "https://ignored.example"
+             :stream-uri "https://ignored.example/mcp"}))))
+
+(t/deftest editable-config-profile-props-keeps-built-in-auto-connect-override
+  (t/is (= {:mcp-config {:mode "builtin"
+                         :auto-connect false}}
+           (mcp/editable-config->profile-props
+            {:mode "builtin"
+             :auto-connect false}))))
+
+(t/deftest editable-config-profile-props-trims-custom-fields
+  (t/is (= {:mcp-config {:mode "custom"
+                         :auto-connect false
+                         :public-uri "https://mcp.example"
+                         :stream-uri "https://stream.example/mcp"
+                         :websocket-uri "wss://ws.example"}}
+           (mcp/editable-config->profile-props
+            {:mode "custom"
+             :auto-connect false
+             :public-uri " https://mcp.example "
+             :stream-uri " https://stream.example/mcp "
+             :sse-uri "   "
+             :websocket-uri " wss://ws.example "
+             :status-uri ""}))))
+
+(t/deftest editable-config-profile-props-keeps-local-overrides
+  (t/is (= {:mcp-config {:mode "local"
+                         :auto-connect true
+                         :status-uri "http://localhost:4401/status"}}
+           (mcp/editable-config->profile-props
+            {:mode "local"
+             :auto-connect true
+             :status-uri " http://localhost:4401/status "}))))
+
 (t/deftest initialize-keeps-mcp-disabled-without-workspace
   (let [result (ptk/update (mcp/initialize) (state false))]
     (t/is (false? (get-in result [:mcp :active])))

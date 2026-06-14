@@ -23,6 +23,7 @@
    [app.main.ui.ds.buttons.button :refer [button*]]
    [app.main.ui.ds.buttons.icon-button :refer [icon-button*]]
    [app.main.ui.ds.controls.input :refer [input*]]
+   [app.main.ui.ds.controls.radio-buttons :refer [radio-buttons*]]
    [app.main.ui.ds.controls.switch :refer [switch*]]
    [app.main.ui.ds.foundations.assets.icon :as i :refer [icon*]]
    [app.main.ui.ds.foundations.typography :as t]
@@ -54,6 +55,46 @@
 
 (def form-initial-data-mcp-key
   {:expiration-date "never"})
+
+(defn- input-event-value
+  [event]
+  (-> event dom/get-target dom/get-input-value))
+
+(defn- mcp-mode-label
+  [mode]
+  (case mode
+    "custom" (tr "integrations.mcp-server.config.mode.custom")
+    "local"  (tr "integrations.mcp-server.config.mode.local")
+    (tr "integrations.mcp-server.config.mode.builtin")))
+
+(defn- mcp-mode-options
+  []
+  [{:id "mcp-mode-builtin"
+    :label (tr "integrations.mcp-server.config.mode.builtin")
+    :value "builtin"}
+   {:id "mcp-mode-custom"
+    :label (tr "integrations.mcp-server.config.mode.custom")
+    :value "custom"}
+   {:id "mcp-mode-local"
+    :label (tr "integrations.mcp-server.config.mode.local")
+    :value "local"}])
+
+(defn- mcp-config-url-fields
+  [mode]
+  (cond-> []
+    (= mode "custom")
+    (conj {:key :public-uri
+           :label (tr "integrations.mcp-server.config.public-uri")})
+
+    (contains? #{"custom" "local"} mode)
+    (into [{:key :stream-uri
+            :label (tr "integrations.mcp-server.config.stream-uri")}
+           {:key :sse-uri
+            :label (tr "integrations.mcp-server.config.sse-uri")}
+           {:key :websocket-uri
+            :label (tr "integrations.mcp-server.config.websocket-uri")}
+           {:key :status-uri
+            :label (tr "integrations.mcp-server.config.status-uri")}])))
 
 (mf/defc input-copy*
   {::mf/private true}
@@ -470,6 +511,86 @@
               :class (stl/css :color-primary :mcp-diagnostics-value)}
     (text-value value)]])
 
+(mf/defc mcp-config-url-field*
+  {::mf/private true
+   ::mf/wrap [mf/memo]}
+  [{:keys [field value placeholder on-change]}]
+  (let [{:keys [key label]} field
+        field-id (dm/str "mcp-config-" (name key))]
+    [:> input* {:id field-id
+                :type "text"
+                :label label
+                :max-length 2048
+                :value (or value "")
+                :placeholder (or placeholder "")
+                :on-change #(on-change key (input-event-value %))}]))
+
+(mf/defc mcp-config-section*
+  {::mf/private true}
+  [{:keys [config effective-config on-change on-save on-reset]}]
+  (let [mode (:mode config)]
+    [:div {:class (stl/css :mcp-config)}
+     [:div {:class (stl/css :mcp-config-header)}
+      [:> text* {:as "h3"
+                 :typography t/headline-small
+                 :class (stl/css :color-primary)}
+       (tr "integrations.mcp-server.config.title")]
+      [:div {:class (stl/css :mcp-config-actions)}
+       [:> button* {:variant "secondary"
+                    :on-click (fn [event]
+                                (dom/prevent-default event)
+                                (on-reset))}
+        (tr "integrations.mcp-server.config.reset")]
+       [:> button* {:variant "primary"
+                    :on-click (fn [event]
+                                (dom/prevent-default event)
+                                (on-save))}
+        (tr "integrations.mcp-server.config.save")]]]
+
+     [:div {:class (stl/css :mcp-config-control)}
+      [:> text* {:as "div"
+                 :typography t/body-small
+                 :class (stl/css :color-primary)}
+       (tr "integrations.mcp-server.config.mode")]
+      [:> radio-buttons* {:class (stl/css :mcp-config-modes)
+                          :name "mcp-config-mode"
+                          :selected mode
+                          :extended true
+                          :options (mcp-mode-options)
+                          :on-change (fn [value _]
+                                       (on-change :mode value))}]]
+
+     [:div {:class (stl/css :mcp-config-switch)}
+      [:> switch* {:label (tr "integrations.mcp-server.config.auto-connect")
+                   :default-checked (:auto-connect config)
+                   :on-change #(on-change :auto-connect %)}]]
+
+     (when (not= mode "builtin")
+       [:div {:class (stl/css :mcp-config-fields)}
+        (for [{:keys [key] :as field} (mcp-config-url-fields mode)]
+          [:> mcp-config-url-field* {:key (name key)
+                                     :field field
+                                     :value (get config key)
+                                     :placeholder (get effective-config key)
+                                     :on-change on-change}])])
+
+     [:div {:class (stl/css :mcp-config-effective)}
+      [:> text* {:as "h4"
+                 :typography t/body-medium
+                 :class (stl/css :color-primary)}
+       (tr "integrations.mcp-server.config.effective")]
+      [:div {:class (stl/css :mcp-diagnostics-grid)}
+       [:> mcp-diagnostics-row* {:label (tr "integrations.mcp-server.config.mode")
+                                 :value (mcp-mode-label (:mode effective-config))}]
+       [:> mcp-diagnostics-row* {:label (tr "integrations.mcp-server.config.stream-uri")
+                                 :value (:stream-uri effective-config)}]
+       [:> mcp-diagnostics-row* {:label (tr "integrations.mcp-server.config.sse-uri")
+                                 :value (:sse-uri effective-config)}]
+       [:> mcp-diagnostics-row* {:label (tr "integrations.mcp-server.config.websocket-uri")
+                                 :value (:websocket-uri effective-config)}]
+       [:> mcp-diagnostics-row* {:label (tr "integrations.mcp-server.config.status-uri")
+                                 :value (:status-uri effective-config)}]]]]))
+
 (mf/defc mcp-diagnostics*
   {::mf/private true}
   [{:keys [mcp-state on-refresh]}]
@@ -522,8 +643,15 @@
 
         mcp-key      (some #(when (= (:type %) "mcp") %) tokens)
         mcp-token    (:token mcp-key "")
-        mcp-config   (dmcp/effective-config (:props profile))
-        mcp-url      (dm/str (:stream-uri mcp-config) "?userToken=" mcp-token)
+        saved-config (mf/with-memo [(-> profile :props :mcp-config)]
+                       (dmcp/editable-config (:props profile)))
+        editable-config* (mf/use-state saved-config)
+        editable-config @editable-config*
+        editable-profile-props (dmcp/editable-config->profile-props editable-config)
+        effective-config (dmcp/effective-config
+                          (assoc (:props profile)
+                                 :mcp-config (:mcp-config editable-profile-props)))
+        mcp-url      (dm/str (:stream-uri effective-config) "?userToken=" mcp-token)
         mcp-enabled? (true? (-> profile :props :mcp-enabled))
 
         expires-at  (:expires-at mcp-key)
@@ -563,6 +691,31 @@
         (mf/use-fn
          #(st/emit! (dmcp/fetch-diagnostics)))
 
+        handle-config-change
+        (mf/use-fn
+         (fn [key value]
+           (swap! editable-config* assoc key value)))
+
+        handle-save-config
+        (mf/use-fn
+         (mf/deps editable-config)
+         (fn []
+           (let [profile-props (dmcp/editable-config->profile-props editable-config)]
+             (st/emit! (du/update-profile-props profile-props)
+                       (ntf/success (tr "integrations.notification.success.mcp-config-saved"))
+                       (ev/event {::ev/name "save-mcp-config"
+                                  ::ev/origin "integrations"
+                                  :mode (:mode editable-config)})))))
+
+        handle-reset-config
+        (mf/use-fn
+         (fn []
+           (reset! editable-config* (dmcp/editable-config {}))
+           (st/emit! (du/update-profile-props {:mcp-config nil})
+                     (ntf/success (tr "integrations.notification.success.mcp-config-reset"))
+                     (ev/event {::ev/name "reset-mcp-config"
+                                ::ev/origin "integrations"}))))
+
         handle-delete
         (mf/use-fn
          (mf/deps mcp-key)
@@ -589,6 +742,9 @@
     (mf/with-effect [show-enabled?]
       (when show-enabled?
         (st/emit! (dmcp/fetch-diagnostics))))
+
+    (mf/with-effect [saved-config]
+      (reset! editable-config* saved-config))
 
     [:section {:class (stl/css :mcp-server-section)}
      [:div
@@ -640,6 +796,12 @@
         (when (true? expired?)
           [:div {:class (stl/css :mcp-server-switch-cover)
                  :on-click handle-regenerate-mcp-key}])]]]
+
+     [:> mcp-config-section* {:config editable-config
+                              :effective-config effective-config
+                              :on-change handle-config-change
+                              :on-save handle-save-config
+                              :on-reset handle-reset-config}]
 
      (when (some? mcp-key)
        [:div {:class (stl/css :mcp-server-key)}

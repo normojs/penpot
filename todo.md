@@ -53,9 +53,11 @@ configurable destructive action confirmations for `shape.delete`, and P8.6
 added CLI smoke regression tests plus MCP/CLI smoke-flow documentation. P9.1
 audited the manual MCP configuration settings and persistence path, and P9.2
 defined the persisted MCP config model plus frontend effective URL derivation.
-P10.1 refreshed the overall architecture baseline in
-`mcp/docs/penpot-cli-overall-blueprint.md`. The current implementation focus is
-P9.3: adding Integrations settings controls for manual MCP configuration.
+P9.3 added Integrations settings controls for saving, previewing, and resetting
+manual MCP connection configuration. P10.1 refreshed the overall architecture
+baseline in `mcp/docs/penpot-cli-overall-blueprint.md`. The current
+implementation focus is P9.4: wiring the global MCP lifecycle to the saved
+manual configuration.
 
 ## Feature Roadmap
 
@@ -216,8 +218,8 @@ setup.
 | --- | --- | --- | --- | --- | --- |
 | P9.1 | done | Audit existing MCP settings and persistence path | `frontend`, `backend`, `mcp` | Document current profile props, settings UI, env injection, and gaps | Completed 2026-06-13; documented current runtime URL sources, `:mcp-enabled` persistence, token separation, lifecycle usage, gaps, and proposed `:mcp-config` model in `mcp/docs/manual-mcp-configuration-audit.md` |
 | P9.2 | done | Define persistent manual MCP config model | `frontend`, `backend`, `mcp` | Config model covers mode, enabled, auto-connect, stream URL, WebSocket URL, status URL, and reset-to-built-in | Completed 2026-06-13; backend profile props accept optional `:mcp-config`, frontend computes effective built-in/custom/local URLs, diagnostics/plugin/client URLs consume it, and focused tests cover persistence and derivation |
-| P9.3 | in_progress | Add Integrations settings controls for MCP config | `frontend` | Users can toggle MCP and edit/reset endpoint settings | Started 2026-06-13; reuse existing diagnostics section and avoid project-specific setup |
-| P9.4 | todo | Wire global MCP lifecycle to manual config | `frontend`, `mcp` | Global plugin connects/disconnects according to saved config | Preserve multi-tab ownership and diagnostics |
+| P9.3 | done | Add Integrations settings controls for MCP config | `frontend` | Users can toggle MCP and edit/reset endpoint settings | Completed 2026-06-14; Integrations now saves built-in/custom/local mode, auto-connect, and endpoint overrides, previews effective endpoints, resets with `{:mcp-config nil}`, and covers pure config transforms with frontend tests |
+| P9.4 | in_progress | Wire global MCP lifecycle to manual config | `frontend`, `mcp` | Global plugin connects/disconnects according to saved config | Started 2026-06-14; preserve multi-tab ownership and diagnostics |
 | P9.5 | todo | Align CLI config terminology with persisted model | `penpot-cli`, `mcp/docs` | CLI config output and docs use built-in/custom/local terminology | Keep CLI env derivation but name fields consistently with `:mcp-config` |
 | P9.6 | todo | Add config and lifecycle tests | `frontend`, `backend`, `penpot-cli` | Settings persistence, derived URLs, reset, and auto-connect are covered | Record frontend/backend checks that remain blocked locally |
 | P9.7 | todo | Polish config migration and fallback behavior | `frontend`, `backend`, `mcp/docs` | Existing users without `:mcp-config` keep built-in defaults | Cover invalid/partial custom config fallback and token separation |
@@ -284,15 +286,13 @@ Goal: make critical MCP/CLI flows repeatable and safe to change.
 ## Next Recommended Sprint
 
 Use `mcp/docs/penpot-cli-overall-blueprint.md` as the current architecture
-baseline. Continue with Wave A, starting with P9.3 Integrations settings
-controls:
+baseline. Continue with Wave A, starting with P9.4 lifecycle wiring:
 
-1. Add a settings form for `builtin`, `custom`, and `local` MCP modes with an
-   auto-connect switch and URL fields for public, stream, SSE, WebSocket, and
-   status endpoints.
-2. Persist changes through `du/update-profile-props`, including
-   `{:mcp-config nil}` for reset-to-built-in.
-3. Show the effective stream/status/WebSocket values near diagnostics so users
-   can verify which endpoints MCP will use.
-4. Follow immediately with P9.4 lifecycle wiring and P9.6 config/lifecycle
+1. Wire P9.4 so global MCP startup honors `:mcp-config :auto-connect` while
+   preserving manual enable/disable behavior.
+2. Reconnect or stop MCP when saved endpoint settings change, using the
+   existing multi-tab owner and diagnostics paths.
+3. Keep generated client URLs, diagnostics, and plugin WebSocket startup on the
+   shared effective config helper.
+4. Follow immediately with P9.6 config/lifecycle
    tests before starting Phase 10 command-runtime consolidation.

@@ -2198,6 +2198,48 @@ msgstr "Clave MCP"
 msgid "integrations.mcp-server.mcp-keys.tootip"
 msgstr "La clave MCP es necesaria para la configuración del cliente MCP"
 
+msgid "integrations.mcp-server.config.title"
+msgstr "Configuración MCP"
+
+msgid "integrations.mcp-server.config.reset"
+msgstr "Restablecer"
+
+msgid "integrations.mcp-server.config.save"
+msgstr "Guardar"
+
+msgid "integrations.mcp-server.config.mode"
+msgstr "Modo"
+
+msgid "integrations.mcp-server.config.mode.builtin"
+msgstr "Incluido"
+
+msgid "integrations.mcp-server.config.mode.custom"
+msgstr "Personalizado"
+
+msgid "integrations.mcp-server.config.mode.local"
+msgstr "Local"
+
+msgid "integrations.mcp-server.config.auto-connect"
+msgstr "Conectar automáticamente"
+
+msgid "integrations.mcp-server.config.public-uri"
+msgstr "URL pública"
+
+msgid "integrations.mcp-server.config.stream-uri"
+msgstr "URL de flujo"
+
+msgid "integrations.mcp-server.config.sse-uri"
+msgstr "URL SSE"
+
+msgid "integrations.mcp-server.config.websocket-uri"
+msgstr "URL WebSocket"
+
+msgid "integrations.mcp-server.config.status-uri"
+msgstr "URL de estado"
+
+msgid "integrations.mcp-server.config.effective"
+msgstr "Puntos de conexión efectivos"
+
 msgid "integrations.mcp-server.diagnostics.title"
 msgstr "Diagnóstico"
 
@@ -2266,6 +2308,12 @@ msgstr "Servidor MCP deshabilitado"
 #: src/app/main/ui/settings/integrations.cljs:299
 msgid "integrations.notification.success.mcp-server-enabled"
 msgstr "Servidor MCP habilitado"
+
+msgid "integrations.notification.success.mcp-config-saved"
+msgstr "Configuración MCP guardada"
+
+msgid "integrations.notification.success.mcp-config-reset"
+msgstr "Configuración MCP restablecida"
 
 #: src/app/main/ui/settings/integrations.cljs:317
 msgid "integrations.regenerate-mcp-key.info"
