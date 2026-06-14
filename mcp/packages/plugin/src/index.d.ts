@@ -10,6 +10,7 @@ declare module "@penpot/plugin-types" {
 interface McpOptions {
     getToken(): string;
     getServerUrl(): string;
+    getAutoConnect?(): boolean;
     getFrontendVersion?(): string;
     setMcpStatus(status: string, details?: unknown);
     setFileContextStatus?(status: unknown);

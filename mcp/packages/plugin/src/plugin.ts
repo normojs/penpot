@@ -92,7 +92,17 @@ function extractVersionPrefix(version: string): string {
     return match ? match[1] : version;
 }
 
-mcp?.setMcpStatus("connecting");
+function shouldAutoConnect(): boolean {
+    return mcp?.getAutoConnect?.() !== false;
+}
+
+if (mcp) {
+    if (shouldAutoConnect()) {
+        mcp.setMcpStatus("connecting");
+    } else {
+        mcp.setMcpStatus("disconnected", { label: "Auto-connect disabled" });
+    }
+}
 
 /**
  * Registry of all available task handlers.
@@ -244,8 +254,8 @@ penpot.ui.onMessage<
                 penpotVersion: penpotVersionPrefix,
             });
         }
-        // Initiate connection to remote MCP server (if enabled)
-        if (mcp) {
+        // Initiate connection to remote MCP server when the user allows global auto-connect.
+        if (mcp && shouldAutoConnect()) {
             penpot.ui.sendMessage({
                 type: "start-server",
                 url: mcp?.getServerUrl(),
@@ -253,6 +263,8 @@ penpot.ui.onMessage<
                 hello: buildPluginHelloMessage(),
             });
             reportFileContext("ui-initialized");
+        } else if (mcp) {
+            reportFileContext("ui-initialized:auto-connect-disabled");
         }
     } else if (typeof message === "object" && message.type === "update-connection-status") {
         mcp?.setMcpStatus(message.status || "unknown", {

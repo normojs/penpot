@@ -703,6 +703,7 @@
            (let [profile-props (dmcp/editable-config->profile-props editable-config)]
              (st/emit! (du/update-profile-props profile-props)
                        (ntf/success (tr "integrations.notification.success.mcp-config-saved"))
+                       (mbc/event :mcp/reconfigure {})
                        (ev/event {::ev/name "save-mcp-config"
                                   ::ev/origin "integrations"
                                   :mode (:mode editable-config)})))))
@@ -713,6 +714,7 @@
            (reset! editable-config* (dmcp/editable-config {}))
            (st/emit! (du/update-profile-props {:mcp-config nil})
                      (ntf/success (tr "integrations.notification.success.mcp-config-reset"))
+                     (mbc/event :mcp/reconfigure {})
                      (ev/event {::ev/name "reset-mcp-config"
                                 ::ev/origin "integrations"}))))
 

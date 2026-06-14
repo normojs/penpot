@@ -15,6 +15,11 @@
   {:session-id "tab-1"
    :profile {:props {:mcp-enabled enabled?}}})
 
+(defn- state-with-props
+  [props]
+  {:session-id "tab-1"
+   :profile {:props props}})
+
 (defn- runtime-defaults
   []
   {:mode "builtin"
@@ -147,6 +152,13 @@
              :auto-connect true
              :status-uri " http://localhost:4401/status "}))))
 
+(t/deftest auto-connect-defaults-to-enabled
+  (t/is (true? (mcp/auto-connect? {}))))
+
+(t/deftest auto-connect-can-be-disabled-by-profile-config
+  (t/is (false? (mcp/auto-connect? {:mcp-config {:mode "builtin"
+                                                 :auto-connect false}}))))
+
 (t/deftest initialize-keeps-mcp-disabled-without-workspace
   (let [result (ptk/update (mcp/initialize) (state false))]
     (t/is (false? (get-in result [:mcp :active])))
@@ -162,6 +174,36 @@
     (t/is (true? (get-in result [:mcp :active])))
     (t/is (= "tab-1" (get-in result [:mcp :connected-tab])))
     (t/is (= "disconnected" (get-in result [:mcp :connection-status])))))
+
+(t/deftest initialize-does-not-auto-connect-when-disabled-by-config
+  (let [result (ptk/update (mcp/initialize)
+                           (state-with-props
+                            {:mcp-enabled true
+                             :mcp-config {:mode "builtin"
+                                          :auto-connect false}}))]
+    (t/is (false? (get-in result [:mcp :active])))
+    (t/is (nil? (get-in result [:mcp :connected-tab])))
+    (t/is (= "disconnected" (get-in result [:mcp :connection-status])))))
+
+(t/deftest initialize-clears-owned-tab-when-auto-connect-is-disabled
+  (let [result (ptk/update (mcp/initialize)
+                           (assoc (state-with-props
+                                   {:mcp-enabled true
+                                    :mcp-config {:mode "builtin"
+                                                 :auto-connect false}})
+                                  :mcp {:connected-tab "tab-1"
+                                        :connection-status "connected"}))]
+    (t/is (false? (get-in result [:mcp :active])))
+    (t/is (= "disconnected" (get-in result [:mcp :connection-status])))
+    (t/is (nil? (get-in result [:mcp :connected-tab])))))
+
+(t/deftest connect-mcp-still-claims-current-tab-when-auto-connect-disabled
+  (let [result (ptk/update (mcp/connect-mcp)
+                           (state-with-props
+                            {:mcp-enabled true
+                             :mcp-config {:mode "builtin"
+                                          :auto-connect false}}))]
+    (t/is (= "tab-1" (get-in result [:mcp :connected-tab])))))
 
 (t/deftest connection-status-update-keeps-legacy-ui-state
   (let [result (ptk/update (mcp/update-mcp-connection-status "connected")

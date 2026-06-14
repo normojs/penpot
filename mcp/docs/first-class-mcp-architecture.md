@@ -1737,6 +1737,20 @@ P9.3 implementation note (2026-06-14):
 - Focused frontend tests cover editable config defaults and profile-prop
   serialization for built-in, custom, and local modes.
 
+P9.4 implementation note (2026-06-14):
+
+- Global MCP initialization now separates the persisted enable switch from the
+  saved `auto-connect` preference.
+- When MCP is enabled with `auto-connect=false`, Penpot loads the hidden MCP
+  plugin and keeps manual connect/disconnect plus bind/release controls
+  available, but it does not claim tab ownership or start the MCP WebSocket
+  automatically.
+- Saving or resetting MCP connection settings emits a lifecycle reconfigure
+  broadcast so the current tab disconnects old endpoints and reinitializes with
+  the latest effective config.
+- The bundled MCP plugin exposes `getAutoConnect()` through its host bridge and
+  skips its initial `start-server` message when the preference is disabled.
+
 P10.1 planning note (2026-06-14):
 
 - Added `mcp/docs/penpot-cli-overall-blueprint.md` as the compact current

@@ -141,6 +141,15 @@
               :mode "builtin"
               :auto-connect auto-connect?)))))
 
+(defn auto-connect?
+  [profile-props]
+  (true? (:auto-connect (effective-config profile-props))))
+
+(defn- auto-connect-enabled?
+  [state]
+  (and (enabled? state)
+       (auto-connect? (get-in state [:profile :props]))))
+
 (defn editable-config
   [profile-props]
   (let [config (or (:mcp-config profile-props) {})]
@@ -261,11 +270,13 @@
       (update-in state [:profile :props] assoc :mcp-enabled value))
 
     ptk/WatchEvent
-    (watch [_ _ _]
+    (watch [_ state _]
       (rx/merge
        (rx/of (manage-mcp-notification))
        (case value
-         true  (rx/of (ptk/data-event ::connect))
+         true  (if (auto-connect? (get-in state [:profile :props]))
+                 (rx/of (ptk/data-event ::connect))
+                 (rx/empty))
          false (rx/of (ptk/data-event ::disconnect))
          nil)))))
 
@@ -431,6 +442,7 @@
                     #js
                      {:getToken (constantly token)
                       :getServerUrl #(str websocket-uri)
+                      :getAutoConnect #(auto-connect? profile-props)
                       :getFrontendVersion frontend-version
                       :setMcpStatus
                       (fn [status details]
@@ -465,12 +477,18 @@
   (ptk/reify ::initialize
     ptk/UpdateEvent
     (update [_ state]
-      (cond-> (update state :mcp assoc
-                      :active (enabled? state)
-                      :connection-status (get-in state [:mcp :connection-status] "disconnected")
-                      :file-context (get-in state [:mcp :file-context] {:status "unbound"}))
-        (enabled? state)
-        (update :mcp assoc :connected-tab (:session-id state))))
+      (let [auto-connect? (auto-connect-enabled? state)]
+        (cond-> (update state :mcp assoc
+                        :active auto-connect?
+                        :connection-status (if auto-connect?
+                                             (get-in state [:mcp :connection-status] "disconnected")
+                                             "disconnected")
+                        :file-context (get-in state [:mcp :file-context] {:status "unbound"}))
+          auto-connect?
+          (update :mcp assoc :connected-tab (:session-id state))
+
+          (not auto-connect?)
+          (update :mcp dissoc :connected-tab))))
 
     ptk/WatchEvent
     (watch [_ state stream]
@@ -484,7 +502,9 @@
                 (rx/merge
                  (init-mcp stream (get-in state [:profile :props]))
 
-                 (rx/of (mbc/event :mcp/ping {}))
+                 (if (auto-connect-enabled? state)
+                   (rx/of (mbc/event :mcp/ping {}))
+                   (rx/empty))
 
                  (->> mbc/stream
                       (rx/filter (mbc/type? :mcp/ping))
@@ -517,7 +537,13 @@
                    (rx/mapcat (fn [_]
                                 (rx/of (update-mcp-status false)
                                        (initialize)
-                                       (user-disconnect-mcp))))))
+                                       (user-disconnect-mcp)))))
+
+              (->> mbc/stream
+                   (rx/filter (mbc/type? :mcp/reconfigure))
+                   (rx/mapcat (fn [_]
+                                (rx/of (user-disconnect-mcp)
+                                       (initialize))))))
 
              (rx/take-until stoper-s))))))
 

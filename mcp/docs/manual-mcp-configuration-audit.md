@@ -74,11 +74,12 @@ the manual config should only store connection preferences.
 the only persisted gate:
 
 - app initialization starts MCP only when the `:mcp` feature flag is present
-  and `:mcp-enabled` is true
+  and both `:mcp-enabled` and `:mcp-config :auto-connect` are true
+- the bundled background plugin is still loaded when MCP is enabled so manual
+  connect/disconnect and bind/release commands remain available
 - `init-mcp` passes the effective `:websocket-uri` to the bundled plugin
 - diagnostics fetch the effective `:status-uri`
-- reconnect watcher activation follows the enabled state, not a separate
-  `auto-connect` setting
+- reconnect watcher activation follows a connected plugin session
 
 `frontend/src/app/main/ui/settings/integrations.cljs` currently exposes:
 
@@ -95,11 +96,6 @@ ephemeral `:mcp` state for connect/disconnect and bind/release controls.
 
 ## Gaps
 
-- Persisted connection mode and URL preferences exist, but the global lifecycle
-  still treats enabled MCP as an immediate startup signal.
-- `auto-connect` is now persisted but not yet applied. Enabled MCP still
-  attempts global startup after login; P9.4 owns connection/disconnection
-  behavior.
 - Frontend URL derivation and CLI URL derivation are similar but not shared as a
   documented product model.
 - `penpot-cli mcp config` still derives URLs from environment variables rather
@@ -162,6 +158,7 @@ URLs directly.
 2. Done in P9.3: wire settings UI controls to save mode, auto-connect, and URL
    overrides, including a reset-to-built-in action and effective endpoint
    preview.
-3. Apply `auto-connect` to global MCP lifecycle.
+3. Done in P9.4: apply `auto-connect` to global MCP lifecycle while preserving
+   manual connect/disconnect and file-context controls.
 4. Update `penpot-cli mcp config` docs so the CLI env names match the same
    product model.
