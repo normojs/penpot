@@ -1064,6 +1064,18 @@ P11.5 implementation note:
   download path as `export page`, fixes format to PNG, and supports dry-run
   request inspection plus real `--output` writes.
 
+P12.1 handoff contract:
+
+- `mcp/docs/file-open-bind-handoff.md` defines the user and agent flow for
+  moving from headless commands into a live workspace context.
+- All open/bind surfaces should use the same workspace URL shape:
+  `/#/workspace?file-id=<id>[&team-id=<id>][&page-id=<id>]`.
+- `file.open` and `penpot-cli file open` return URLs and handoff next actions;
+  they must not claim a bound context.
+- `file_context_required` responses should guide agents through `file.open`,
+  `file.get_context`, `file.bind_context`, and retrying the original tool when
+  enough target data is known.
+
 ## 6. User Configuration
 
 MCP settings should stay explicit and user-visible. P9.1 captured the current

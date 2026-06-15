@@ -260,6 +260,8 @@ Purpose: close the loop between headless automation and the visual editor.
 
 Tasks:
 
+- Done: define the file open/bind handoff UX and command contract in
+  `mcp/docs/file-open-bind-handoff.md`.
 - Add reliable `file.open` handoff from CLI/MCP to browser URL.
 - Add explicit bind/open actions that guide the user when a live context is
   required.
@@ -308,10 +310,10 @@ Acceptance:
 
 ## Near-Term Priority
 
-The next implementation slice should move into Wave D:
+The next implementation slice should continue Wave D:
 
-1. Define the file open/bind handoff UX and command contract across docs,
-   frontend, MCP, and `penpot-cli`.
+1. Add reliable CLI/MCP `file.open` handoff responses that use the documented
+   `workspaceUrl` and `handoff` contract.
 2. Keep page current/selection semantics in plugin-live until a backend-safe
    representation is defined.
 3. Add focused tests for URL generation, bind guidance, and live-only
