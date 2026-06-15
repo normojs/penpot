@@ -62,9 +62,11 @@ compatibility. P9.6 added config and lifecycle regression coverage, P9.7
 polished migration and fallback behavior for legacy, invalid, partial, and
 token-bearing profile configs, and P9.8 closed Wave A manual configuration
 docs. P10.1 refreshed the overall architecture baseline in
-`mcp/docs/penpot-cli-overall-blueprint.md`. The current implementation focus is
-B1/P10.2: auditing existing MCP tools and CLI commands before moving command
-descriptors into the shared runtime.
+`mcp/docs/penpot-cli-overall-blueprint.md`, and P10.2 audited the MCP/CLI
+command inventory for the first descriptor migration slice. The current
+implementation focus is B2/P10.3: moving status/config/file/page descriptors
+into the shared command runtime while preserving public names and output
+shapes.
 
 ## Feature Roadmap
 
@@ -116,6 +118,9 @@ aligned by terminology but not yet shared as one implementation.
 | A4 | Close Wave A docs | `todo.md`, `CHANGES.md`, `mcp/docs` | Manual MCP configuration is marked complete, current limitations are explicit, and next focus moves to command runtime consolidation | `rg` shows no stale "not yet applied" auto-connect/config notes |
 
 ### Wave B: Consolidate MCP And CLI Command Runtime
+
+B1/P10.2 completed on 2026-06-15 in
+`mcp/docs/command-runtime-inventory.md`. Continue with B2/P10.3.
 
 | Order | Task | Modules | Output | Verification |
 | --- | --- | --- | --- | --- |
@@ -307,8 +312,8 @@ adapter selection, and structured results.
 | ID | Status | Task | Modules | Verification | Notes |
 | --- | --- | --- | --- | --- | --- |
 | P10.1 | done | Refresh overall architecture baseline | `mcp/docs`, `todo.md` | Compact blueprint documents architecture, delivery waves, and task queue | Completed 2026-06-14 in `mcp/docs/penpot-cli-overall-blueprint.md` |
-| P10.2 | in_progress | Audit existing MCP tools and CLI commands | `mcp/packages/server`, `penpot-cli`, `mcp/docs` | Inventory maps each command/tool to name, input schema, adapter, response shape, and test coverage | Started 2026-06-15; identify duplicate metadata and the first low-risk descriptor migration slice |
-| P10.3 | todo | Move status/config/file/page descriptors into command runtime | `command-runtime`, `mcp`, `penpot-cli` | Low-risk command descriptors live in one package | Preserve existing tool/CLI names while moving metadata |
+| P10.2 | done | Audit existing MCP tools and CLI commands | `mcp/packages/server`, `penpot-cli`, `mcp/docs` | Inventory maps each command/tool to name, input schema, adapter, response shape, and test coverage | Completed 2026-06-15 in `mcp/docs/command-runtime-inventory.md`; identified duplicated metadata, coverage gaps, unregistered named tools, and the first low-risk descriptor migration slice |
+| P10.3 | in_progress | Move status/config/file/page descriptors into command runtime | `command-runtime`, `mcp`, `penpot-cli` | Low-risk command descriptors live in one package | Started 2026-06-15; preserve existing tool/CLI names and output shapes while moving metadata |
 | P10.4 | todo | Introduce shared request/result envelopes | `command-runtime`, `mcp`, `penpot-cli` | MCP and CLI return the same adapter/result diagnostics internally | Keep transport-specific formatting at the edges |
 | P10.5 | todo | Centralize adapter errors and selection reasons | `command-runtime`, `mcp`, `penpot-cli` | Unsupported/unavailable/auth/context errors are consistent | Extend current adapter-selection helper instead of replacing it abruptly |
 | P10.6 | todo | Move shape/export descriptors after envelope migration | `command-runtime`, `mcp`, `penpot-cli`, `exporter` | Higher-risk write/export descriptors use the shared catalog without changing behavior | Shape/create/update/delete and export dry-run tests pass |
@@ -366,7 +371,7 @@ Use `mcp/docs/penpot-cli-overall-blueprint.md` as the current architecture
 baseline and the Detailed Upcoming Task Queue as the execution order. Continue
 with Wave B:
 
-1. Complete B1/P10.2: inventory current MCP tools and CLI commands before
-   moving descriptors into the shared command runtime.
-2. Start B2/P10.3: move status/config/file/page descriptors into
+1. Complete B2/P10.3: move status/config/file/page descriptors into
    `command-runtime` while preserving public names and output shapes.
+2. Start B3/P10.4: introduce shared request/result envelopes once descriptor
+   metadata is stable.

@@ -6,7 +6,8 @@ Updated: 2026-06-15
 
 This document is the compact architecture and delivery plan for the fork. The
 larger historical notes remain in `first-class-mcp-architecture.md`,
-`headless-command-runtime.md`, and `manual-mcp-configuration-audit.md`.
+`headless-command-runtime.md`, `manual-mcp-configuration-audit.md`, and
+`command-runtime-inventory.md`.
 
 ## Product Goal
 
