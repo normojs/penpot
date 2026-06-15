@@ -11,6 +11,8 @@ import {
     createAdapterSelectionError,
     createCommandRequestEnvelope,
     createCommandResultEnvelope,
+    createFileOpenHandoff,
+    createWorkspaceUrl,
     getAdapterSelectionReason,
     getCommandDescriptor,
     selectCommandAdapter,
@@ -51,6 +53,7 @@ test("descriptor groups expose stable command ids", () => {
 
 test("descriptor lookup supports internal, MCP, and CLI command names", () => {
     assert.equal(getCommandDescriptor("mcp.get_status"), CommandDescriptors.MCP_STATUS);
+    assert.equal(getCommandDescriptor("file.open"), CommandDescriptors.FILE_OPEN);
     assert.equal(getCommandDescriptor("page rename"), CommandDescriptors.PAGE_RENAME);
     assert.equal(getCommandDescriptor("prototype create-flow"), CommandDescriptors.PROTOTYPE_CREATE_FLOW);
     assert.equal(getCommandDescriptor("prototype.create_interaction"), CommandDescriptors.PROTOTYPE_CREATE_INTERACTION);
@@ -59,6 +62,36 @@ test("descriptor lookup supports internal, MCP, and CLI command names", () => {
     assert.equal(getCommandDescriptor("export.page"), CommandDescriptors.EXPORT_PAGE);
     assert.equal(getCommandDescriptor("render preview"), CommandDescriptors.RENDER_PREVIEW);
     assert.equal(getCommandDescriptor("missing.command"), undefined);
+});
+
+test("file open helpers produce stable workspace URLs and handoff actions", () => {
+    const workspaceUrl = createWorkspaceUrl({
+        publicUri: "https://penpot.example.test/",
+        fileId: "file-1",
+        teamId: "team-1",
+        pageId: "page-1",
+    });
+
+    assert.equal(workspaceUrl, "https://penpot.example.test/#/workspace?file-id=file-1&team-id=team-1&page-id=page-1");
+    assert.deepEqual(
+        createFileOpenHandoff({
+            fileId: "file-1",
+            teamId: "team-1",
+            pageId: "page-1",
+            workspaceUrl,
+        }),
+        {
+            status: "url_returned",
+            requiresUserAction: true,
+            workspaceUrl,
+            nextActions: ["open_workspace_url", "file.get_context", "file.bind_context", "retry_original_tool"],
+            target: {
+                fileId: "file-1",
+                teamId: "team-1",
+                pageId: "page-1",
+            },
+        }
+    );
 });
 
 test("adapter selection prefers available candidates by priority", () => {

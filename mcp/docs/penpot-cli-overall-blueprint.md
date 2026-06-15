@@ -262,7 +262,8 @@ Tasks:
 
 - Done: define the file open/bind handoff UX and command contract in
   `mcp/docs/file-open-bind-handoff.md`.
-- Add reliable `file.open` handoff from CLI/MCP to browser URL.
+- Done: add reliable `file.open` handoff from CLI/MCP to browser URL with
+  shared `workspaceUrl` and `handoff` payloads.
 - Add explicit bind/open actions that guide the user when a live context is
   required.
 - Show file context state in dashboard/settings, not only workspace menu.
@@ -312,8 +313,8 @@ Acceptance:
 
 The next implementation slice should continue Wave D:
 
-1. Add reliable CLI/MCP `file.open` handoff responses that use the documented
-   `workspaceUrl` and `handoff` contract.
+1. Show file context state in dashboard/settings for unbound, available, bound,
+   stale, and expired-token states.
 2. Keep page current/selection semantics in plugin-live until a backend-safe
    representation is defined.
 3. Add focused tests for URL generation, bind guidance, and live-only

@@ -17,7 +17,8 @@ The current implementation already has these pieces:
 
 | Surface | Existing behavior |
 | --- | --- |
-| CLI `file open` | Builds a workspace URL from `--public-uri`, `--team-id`, `--page-id`, and the file id. It returns `boundContext: false` and does not open a browser. |
+| CLI `file open` | Builds a workspace URL from `--public-uri`, `--team-id`, `--page-id`, and the file id. It returns `workspaceUrl`, `handoff`, `boundContext: false`, and does not open a browser. |
+| MCP `file.open` | Builds the same workspace URL and handoff payload as CLI without binding context. |
 | MCP `file.get_context` | Returns token-scoped bound, available, stale, and unbound file context summaries. |
 | MCP `file.bind_context` | Binds an already reported workspace context by `contextId`, by `fileId` when unique, or by no selector when only one context exists. |
 | MCP `file.release_context` | Releases the bound context while keeping open contexts available. |
@@ -97,8 +98,8 @@ stateDiagram-v2
 | Dashboard | May show connected/global MCP state and available/bound/stale context summary outside the editor. | P12.3 |
 | Settings Integrations | Remains the configuration and diagnostics home; should expose enough handoff state to debug unbound/stale contexts. | P12.3 |
 | Workspace menu | Remains the manual connect/bind/release control for the currently open file. | Existing, polish in P12.4 if needed |
-| MCP `file.open` | Should return the same `workspaceUrl` and `handoff` data as CLI, without claiming a bound context. | P12.2 |
-| CLI `file open` | Should keep script-friendly text/JSON output and add handoff next actions without depending on MCP server internals. | P12.2 |
+| MCP `file.open` | Returns the same `workspaceUrl` and `handoff` data as CLI, without claiming a bound context. | Completed in P12.2 |
+| CLI `file open` | Keeps script-friendly text/JSON output and adds handoff next actions without depending on MCP server internals. | Completed in P12.2 |
 | Live-only MCP errors | Should include precise open/bind/retry actions and target-aware `handoff` data. | P12.4 |
 
 ## Command Contracts
@@ -156,14 +157,17 @@ client or user.
 
 ### CLI `file open`
 
-Current CLI output already includes `url` and `boundContext: false`. P12.2
-should add:
+CLI output includes `url`, `workspaceUrl`, `handoff`, and
+`boundContext: false`.
+
+P12.2 added:
 
 - `workspaceUrl` as an alias for `url` in JSON output.
 - `handoff.status: "url_returned"`.
 - `handoff.nextActions` with open, inspect, bind, and retry steps.
-- `--open` only if implemented through an explicit local-browser adapter and
-  guarded by clear errors when unavailable.
+
+`--open` remains a future option. It should only be added through an explicit
+local-browser adapter and guarded by clear errors when unavailable.
 
 The text output should stay short:
 
@@ -220,7 +224,7 @@ the agent to `file.list` or `file.get_recent`.
 
 ## Verification Targets
 
-P12.2 should prove:
+P12.2 proves:
 
 - CLI and MCP generate identical URLs for file-only, team+file, page+file, and
   team+page+file inputs.

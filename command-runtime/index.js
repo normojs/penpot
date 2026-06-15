@@ -108,12 +108,13 @@ export const CommandDescriptors = Object.freeze({
     }),
     FILE_OPEN: Object.freeze({
         id: "file.open",
+        mcpToolName: "file.open",
         cliCommand: "file open",
         title: "Open file",
-        description: "Builds a browser URL for a Penpot file without binding MCP file context.",
-        inputSchema: "fileId, teamId?, pageId?",
+        description: "Builds a browser URL and handoff actions for a Penpot file without binding MCP file context.",
+        inputSchema: "fileId, teamId?, pageId?, publicUri?, adapter?",
         adapters: Object.freeze(["browser-url"]),
-        responseShape: "status envelope with fileId, url, adapter, and boundContext=false",
+        responseShape: "status envelope with fileId, workspaceUrl, handoff actions, adapter, and boundContext=false",
     }),
     PAGE_LIST: Object.freeze({
         id: "page.list",
@@ -355,6 +356,35 @@ export function createCommandResultEnvelope(requestEnvelope, data, options = EMP
 
 export function getAdapterSelectionReason(code) {
     return AdapterSelectionReasonMessages[code] ?? String(code);
+}
+
+function trimTrailingSlash(value) {
+    return value.replace(/\/+$/, "");
+}
+
+export function createWorkspaceUrl({ publicUri, fileId, teamId, pageId }) {
+    const params = new URLSearchParams({ "file-id": fileId });
+    if (teamId) {
+        params.set("team-id", teamId);
+    }
+    if (pageId) {
+        params.set("page-id", pageId);
+    }
+    return `${trimTrailingSlash(publicUri)}/#/workspace?${params.toString()}`;
+}
+
+export function createFileOpenHandoff({ fileId, teamId, pageId, workspaceUrl, status = "url_returned" }) {
+    return {
+        status,
+        requiresUserAction: true,
+        workspaceUrl,
+        nextActions: ["open_workspace_url", "file.get_context", "file.bind_context", "retry_original_tool"],
+        target: {
+            fileId,
+            ...(teamId ? { teamId } : {}),
+            ...(pageId ? { pageId } : {}),
+        },
+    };
 }
 
 export function createCommandErrorPayload(code, message, options = EMPTY_OBJECT) {

@@ -12,6 +12,8 @@ import {
     createAdapterSelectionError,
     createCommandRequestEnvelope,
     createCommandResultEnvelope,
+    createFileOpenHandoff,
+    createWorkspaceUrl as createCommandWorkspaceUrl,
     getAdapterSelectionReason,
     selectCommandAdapter,
 } from "@penpot/command-runtime";
@@ -759,16 +761,12 @@ function createWorkspaceUrl(args: string[], env: NodeJS.ProcessEnv, fileId: stri
     const publicUri = trimTrailingSlash(
         readOption(args, ["--public-uri"]) ?? env.PENPOT_PUBLIC_URI ?? env.PENPOT_MCP_PUBLIC_URI ?? DEFAULT_PUBLIC_URI
     );
-    const params = new URLSearchParams({ "file-id": fileId });
-    const teamId = readOption(args, ["--team-id"]);
-    const pageId = readOption(args, ["--page-id", "--page"]);
-    if (teamId) {
-        params.set("team-id", teamId);
-    }
-    if (pageId) {
-        params.set("page-id", pageId);
-    }
-    return `${publicUri}/#/workspace?${params.toString()}`;
+    return createCommandWorkspaceUrl({
+        publicUri,
+        fileId,
+        teamId: readOption(args, ["--team-id"]),
+        pageId: readOption(args, ["--page-id", "--page"]),
+    });
 }
 
 function getDevPlan(args: string[], env: NodeJS.ProcessEnv, dryRun: boolean): DevPlan {
@@ -2351,7 +2349,10 @@ function writeFileCreatedText(io: CliIO, file: Record<string, unknown>, url: str
 function writeFileOpenText(io: CliIO, url: string): void {
     writeLine(io.stdout, "Workspace URL");
     writeLine(io.stdout, url);
-    writeLine(io.stdout, "This opens the file in the browser; it does not bind an MCP file context by itself.");
+    writeLine(
+        io.stdout,
+        "Open this URL, then run file.get_context and file.bind_context before live-only MCP tools."
+    );
 }
 
 function writePagesText(io: CliIO, fileId: string, pages: unknown): void {
@@ -2942,14 +2943,22 @@ function handleFileOpen(args: string[], io: CliIO, env: NodeJS.ProcessEnv): numb
         return 2;
     }
 
+    const teamId = readOption(args, ["--team-id"]);
+    const pageId = readOption(args, ["--page-id", "--page"]);
     const url = createWorkspaceUrl(args, env, fileId);
+    const handoff = createFileOpenHandoff({
+        fileId,
+        teamId,
+        pageId,
+        workspaceUrl: url,
+    });
     const requestEnvelope = createCliRequest(CommandDescriptors.FILE_OPEN, {
         input: {
             fileId,
-            teamId: readOption(args, ["--team-id"]),
-            pageId: readOption(args, ["--page-id", "--page"]),
+            teamId,
+            pageId,
         },
-        target: { fileId, url },
+        target: { fileId, teamId, pageId, workspaceUrl: url },
         auth: { userTokenPresent: false, source: "browser-url" },
         adapter: CommandDescriptors.FILE_OPEN.adapters[0],
     });
@@ -2958,8 +2967,10 @@ function handleFileOpen(args: string[], io: CliIO, env: NodeJS.ProcessEnv): numb
         {
             fileId,
             url,
+            workspaceUrl: url,
             adapter: CommandDescriptors.FILE_OPEN.adapters[0],
             boundContext: false,
+            handoff,
         }
     );
     writeOkEnvelope(

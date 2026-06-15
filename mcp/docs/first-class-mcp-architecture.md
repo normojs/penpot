@@ -1076,6 +1076,15 @@ P12.1 handoff contract:
   `file.get_context`, `file.bind_context`, and retrying the original tool when
   enough target data is known.
 
+P12.2 implementation note:
+
+- The shared command runtime now owns workspace URL generation and
+  `file.open` handoff payload construction.
+- MCP `file.open` returns a browser URL, `workspaceUrl`, `boundContext: false`,
+  adapter-selection metadata, and open/inspect/bind/retry handoff actions.
+- `penpot-cli file open` uses the same URL and handoff helpers while preserving
+  the existing `url` field for script compatibility.
+
 ## 6. User Configuration
 
 MCP settings should stay explicit and user-visible. P9.1 captured the current

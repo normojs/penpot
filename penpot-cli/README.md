@@ -130,8 +130,10 @@ node penpot-cli/dist/index.js file open <file-id>
 node penpot-cli/dist/index.js file open <file-id> --team-id <team-id> --page-id <page-id>
 ```
 
-`file open` only prints a browser URL. It does not bind an MCP file context;
-use the Penpot workspace MCP controls or MCP `file.bind_context` for binding.
+`file open` prints a browser URL plus handoff next actions in JSON output. It
+does not bind an MCP file context; open the URL, wait for `file.get_context` to
+show an available workspace context, then use the Penpot workspace MCP controls
+or MCP `file.bind_context` for binding.
 
 File command environment variables:
 

@@ -276,10 +276,23 @@ test("file open emits a workspace URL and does not claim to bind MCP context", a
     assert.equal(body.status, "ok");
     assert.equal(body.data.adapter, "browser-url");
     assert.equal(body.data.boundContext, false);
-    assert.equal(
-        body.data.url,
-        "https://penpot.example.test/#/workspace?file-id=00000000-0000-0000-0000-000000000001&team-id=team-1&page-id=00000000-0000-0000-0000-000000000002"
-    );
+    const expectedUrl =
+        "https://penpot.example.test/#/workspace?file-id=00000000-0000-0000-0000-000000000001&team-id=team-1&page-id=00000000-0000-0000-0000-000000000002";
+    assert.equal(body.data.url, expectedUrl);
+    assert.equal(body.data.workspaceUrl, expectedUrl);
+    assert.equal(body.data.handoff.status, "url_returned");
+    assert.equal(body.data.handoff.workspaceUrl, expectedUrl);
+    assert.deepEqual(body.data.handoff.nextActions, [
+        "open_workspace_url",
+        "file.get_context",
+        "file.bind_context",
+        "retry_original_tool",
+    ]);
+    assert.deepEqual(body.data.handoff.target, {
+        fileId: UUIDS.file,
+        teamId: "team-1",
+        pageId: UUIDS.page,
+    });
 });
 
 test("page rename calls backend-command RPC with trimmed name", async () => {

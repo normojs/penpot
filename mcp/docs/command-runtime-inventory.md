@@ -89,6 +89,7 @@ MCP server tool classes and `penpot-cli`.
 | `file.list` | `FileListArgs` | backend RPC `get-project-files` | JSON `{projectId,files}` | gap: no focused tool test |
 | `file.get_recent` | `FileGetRecentArgs` | backend RPC `get-team-recent-files` | JSON `{teamId,files}` | gap: no focused tool test |
 | `file.create` | `FileCreateArgs` | backend-command write RPC `create-file` | JSON `{file,nextActions}` plus warnings | `FileCreateTool.test.ts` |
+| `file.open` | `FileOpenArgs` | browser-url generation | JSON `{fileId,workspaceUrl,handoff,adapter,boundContext:false}` | `FileOpenTool.test.ts` |
 | `file.get_context` | `EmptyToolArgs` | server file-context registry | JSON `{fileContext,nextActions}` | registry coverage only |
 | `file.bind_context` | `FileBindContextArgs` | registry lookup plus backend RPC `get-file-summary` | JSON `{boundContext,verifiedFile,nextActions}` | registry coverage only |
 | `file.release_context` | `EmptyToolArgs` | server file-context registry | JSON `{released,releasedContext,fileContext,nextActions}` | registry coverage only |
@@ -142,7 +143,7 @@ registered or the descriptor explicitly marks them as planned/unavailable.
 | `dev up --mcp` | `dev.up` | local process orchestration | JSON/text dry-run plan or `manage.sh start-devenv` result | dry-run smoke test |
 | `file list` | `file.list` | backend-rpc `get-project-files` | JSON/text `{projectId,files,adapter}` | gap: auth/path only implicit |
 | `file create` | `file.create` | backend-rpc `create-file` | JSON/text `{file,url,adapter,nextActions}` | gap: no smoke test |
-| `file open` | `file.open` | browser-url generation | JSON/text `{fileId,url,adapter,boundContext:false}` | smoke test |
+| `file open` | `file.open` | browser-url generation | JSON/text `{fileId,url,workspaceUrl,handoff,adapter,boundContext:false}` | smoke test |
 | `page list` | `page.list` | backend-command RPC `get-file-pages` | JSON/text `{fileId,pages,adapter,adapterSelection}` | gap: no smoke test |
 | `page create` | `page.create` | backend-command RPC `create-file-page` | JSON/text `{fileId,page,revn,vern,adapter,adapterSelection}` | gap: no smoke test |
 | `page rename` | `page.rename` | backend-command RPC `rename-file-page` | JSON/text `{fileId,page,revn,vern,adapter,adapterSelection}` | RPC smoke test |

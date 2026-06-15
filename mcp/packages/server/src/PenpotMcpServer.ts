@@ -21,6 +21,7 @@ import {
     TeamListTool,
 } from "./tools/GlobalReadTools";
 import { FileCreateTool } from "./tools/FileCreateTool";
+import { FileOpenTool } from "./tools/FileOpenTool";
 import { FileBindContextTool, FileGetContextTool, FileReleaseContextTool } from "./tools/FileContextTools";
 import { PageCreateTool, PageListTool, PageRenameTool, PageSetCurrentTool } from "./tools/PageTools";
 import { PrototypeCreateFlowTool, PrototypeCreateInteractionTool } from "./tools/PrototypeTools";
@@ -258,6 +259,7 @@ export class PenpotMcpServer {
             new FileListTool(this),
             new FileGetRecentTool(this),
             new FileCreateTool(this),
+            new FileOpenTool(this),
             new FileGetContextTool(this),
             new FileBindContextTool(this),
             new FileReleaseContextTool(this),
