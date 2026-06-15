@@ -1085,6 +1085,17 @@ P12.2 implementation note:
 - `penpot-cli file open` uses the same URL and handoff helpers while preserving
   the existing `url` field for script compatibility.
 
+P12.3 implementation note:
+
+- Frontend MCP state now exposes a reusable file-context summary for
+  dashboard/settings surfaces, normalizing local plugin status, diagnostics
+  counts, target file/page labels, stale states, and expired-token overrides.
+- The dashboard sidebar shows the current MCP context outside the workspace
+  when MCP is enabled or a context exists.
+- Integrations diagnostics reuse the same summary so unbound, available, bound,
+  stale, and expired-token states are visible without opening the workspace
+  menu.
+
 ## 6. User Configuration
 
 MCP settings should stay explicit and user-visible. P9.1 captured the current

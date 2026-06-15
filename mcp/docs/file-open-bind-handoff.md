@@ -23,9 +23,10 @@ The current implementation already has these pieces:
 | MCP `file.bind_context` | Binds an already reported workspace context by `contextId`, by `fileId` when unique, or by no selector when only one context exists. |
 | MCP `file.release_context` | Releases the bound context while keeping open contexts available. |
 | Workspace menu | Lets the user connect/disconnect MCP and bind/unbind the current workspace file context. |
-| Settings diagnostics | Shows connection, plugin, file context, logs, last error, and refresh state. |
+| Dashboard sidebar | Shows the global MCP file-context state outside the editor when MCP is enabled or a context exists. |
+| Settings diagnostics | Shows connection, plugin, file context, logs, last error, refresh state, and token-expired handoff state. |
 
-The missing piece is a first-class, repeatable handoff that tells both humans
+The remaining handoff gap is live-only error guidance that tells both humans
 and agents exactly what to do when a headless command needs live workspace
 state.
 
@@ -95,8 +96,8 @@ stateDiagram-v2
 
 | Surface | P12.1 contract | Implementation slice |
 | --- | --- | --- |
-| Dashboard | May show connected/global MCP state and available/bound/stale context summary outside the editor. | P12.3 |
-| Settings Integrations | Remains the configuration and diagnostics home; should expose enough handoff state to debug unbound/stale contexts. | P12.3 |
+| Dashboard | Shows global MCP file-context state and available/bound/stale context summary outside the editor. | Completed in P12.3 |
+| Settings Integrations | Remains the configuration and diagnostics home and exposes enough handoff state to debug unbound/stale/expired-token contexts. | Completed in P12.3 |
 | Workspace menu | Remains the manual connect/bind/release control for the currently open file. | Existing, polish in P12.4 if needed |
 | MCP `file.open` | Returns the same `workspaceUrl` and `handoff` data as CLI, without claiming a bound context. | Completed in P12.2 |
 | CLI `file open` | Keeps script-friendly text/JSON output and adds handoff next actions without depending on MCP server internals. | Completed in P12.2 |
@@ -231,7 +232,7 @@ P12.2 proves:
 - `file.open` responses never claim a bound context.
 - `file.open` returns handoff next actions in both text and JSON outputs.
 
-P12.3 should prove:
+P12.3 proves:
 
 - Dashboard/settings can distinguish unbound, available, bound, stale, and
   token-expired states without opening the workspace menu.

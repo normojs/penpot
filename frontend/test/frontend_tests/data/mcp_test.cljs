@@ -363,6 +363,43 @@
     (t/is (= "bound" (get-in result [:mcp :file-context :status])))
     (t/is (= "file-1" (get-in result [:mcp :file-context :context :fileId])))))
 
+(t/deftest file-context-summary-covers-external-status-states
+  (let [unbound   (mcp/file-context-summary
+                   {:file-context {:status "unbound"}})
+        available (mcp/file-context-summary
+                   {:file-context {:status "available"
+                                   :context {:fileId "file-1"
+                                             :fileName "Prototype"
+                                             :pageId "page-1"
+                                             :pageName "Welcome"}}})
+        bound     (mcp/file-context-summary
+                   {:file-context {:status "bound"
+                                   :context {:fileId "file-1"
+                                             :fileName "Prototype"}}})
+        stale     (mcp/file-context-summary
+                   {:file-context {:status "unbound"}
+                    :diagnostics {:data {:fileContexts {:totalContexts 1
+                                                        :availableContexts 0
+                                                        :boundContexts 0
+                                                        :staleContexts 1}}}})
+        expired   (mcp/file-context-summary
+                   {:file-context {:status "bound"
+                                   :context {:fileId "file-1"
+                                             :fileName "Prototype"}}}
+                   {:token-expired? true})]
+    (t/is (= "unbound" (:status unbound)))
+    (t/is (= "integrations.mcp-server.context.unbound" (:label-key unbound)))
+    (t/is (= 0 (:context-count unbound)))
+    (t/is (= "available" (:status available)))
+    (t/is (= "Prototype / Welcome" (:target-label available)))
+    (t/is (= 1 (:context-count available)))
+    (t/is (= "bound" (:status bound)))
+    (t/is (true? (:bound? bound)))
+    (t/is (= "stale" (:status stale)))
+    (t/is (= 1 (:stale-count stale)))
+    (t/is (= "expired-token" (:status expired)))
+    (t/is (= "integrations.mcp-server.context.expired-token" (:label-key expired)))))
+
 (t/deftest disconnect-flow-resets-file-context-to-unbound
   (let [bound-state (assoc-in (state true) [:mcp :file-context {:status "bound"}])
         result (ptk/update (mcp/update-mcp-file-context-status {:status "unbound"})

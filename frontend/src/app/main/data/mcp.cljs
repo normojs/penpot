@@ -206,6 +206,113 @@
     (map? details) details
     :else (js->clj details :keywordize-keys true)))
 
+(def ^:private file-context-label-keys
+  {"available"     "integrations.mcp-server.context.available"
+   "binding"       "integrations.mcp-server.context.binding"
+   "bound"         "integrations.mcp-server.context.bound"
+   "error"         "integrations.mcp-server.context.error"
+   "expired-token" "integrations.mcp-server.context.expired-token"
+   "releasing"     "integrations.mcp-server.context.releasing"
+   "stale"         "integrations.mcp-server.context.stale"
+   "unbound"       "integrations.mcp-server.context.unbound"})
+
+(defn- positive-count?
+  [value]
+  (pos? (or value 0)))
+
+(defn- diagnostics-file-context-counts
+  [mcp-state]
+  (let [registry (get-in mcp-state [:diagnostics :data :fileContexts])
+        summary  (get-in mcp-state [:diagnostics :data :fileContext])
+        available-count (or (:availableContexts registry)
+                            (some-> (:availableContexts summary) count)
+                            0)
+        bound-count     (or (:boundContexts registry)
+                            (when (:boundContext summary) 1)
+                            0)
+        stale-count     (or (:staleContexts registry)
+                            (some-> (:staleContexts summary) count)
+                            0)]
+    {:available-count available-count
+     :bound-count     bound-count
+     :stale-count     stale-count
+     :context-count   (or (:totalContexts registry)
+                          (:contextCount summary)
+                          (+ available-count bound-count stale-count))}))
+
+(defn- diagnostics-file-context-status
+  [mcp-state]
+  (let [summary-status (get-in mcp-state [:diagnostics :data :fileContext :status])
+        {:keys [available-count bound-count stale-count context-count]} (diagnostics-file-context-counts mcp-state)]
+    (or summary-status
+        (cond
+          (positive-count? bound-count) "bound"
+          (positive-count? available-count) "available"
+          (positive-count? stale-count) "stale"
+          (positive-count? context-count) "available"
+          :else nil))))
+
+(defn- diagnostics-file-context
+  [mcp-state status]
+  (let [summary (get-in mcp-state [:diagnostics :data :fileContext])]
+    (case status
+      "bound"     (:boundContext summary)
+      "available" (first (:availableContexts summary))
+      "stale"     (or (:boundContext summary)
+                      (first (:staleContexts summary)))
+      nil)))
+
+(defn- file-context-target-label
+  [context]
+  (let [file (or (:fileName context) (:fileId context))
+        page (or (:pageName context) (:pageId context))]
+    (cond
+      (and file page) (str file " / " page)
+      file file
+      page page
+      :else nil)))
+
+(defn file-context-summary
+  ([mcp-state]
+   (file-context-summary mcp-state nil))
+  ([mcp-state {:keys [token-expired?]}]
+   (let [local-status      (get-in mcp-state [:file-context :status])
+         diagnostics-status (diagnostics-file-context-status mcp-state)
+         status            (cond
+                             token-expired?
+                             "expired-token"
+
+                             (and (or (nil? local-status)
+                                      (= "unbound" local-status))
+                                  (some? diagnostics-status)
+                                  (not= "unbound" diagnostics-status))
+                             diagnostics-status
+
+                             (some? local-status)
+                             local-status
+
+                             (some? diagnostics-status)
+                             diagnostics-status
+
+                             :else
+                             "unbound")
+         context           (or (get-in mcp-state [:file-context :context])
+                               (diagnostics-file-context mcp-state status))
+         counts            (diagnostics-file-context-counts mcp-state)
+         context-count     (if (positive-count? (:context-count counts))
+                             (:context-count counts)
+                             (if context 1 0))]
+     (assoc counts
+            :status status
+            :label-key (get file-context-label-keys status
+                            "integrations.mcp-server.context.unbound")
+            :target-label (file-context-target-label context)
+            :context-count context-count
+            :bound? (= status "bound")
+            :stale-reason (:staleReason context)
+            :updated-at (or (:updatedAt context)
+                            (get-in mcp-state [:file-context :updatedAt]))))))
+
 (defn set-mcp-active
   [value]
   (ptk/reify ::set-mcp-active

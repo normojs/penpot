@@ -2314,6 +2314,36 @@ msgstr "Unavailable"
 msgid "integrations.mcp-server.diagnostics.no-file"
 msgstr "No active file"
 
+msgid "integrations.mcp-server.context.title"
+msgstr "MCP context"
+
+msgid "integrations.mcp-server.context.available"
+msgstr "Ready to bind"
+
+msgid "integrations.mcp-server.context.binding"
+msgstr "Binding"
+
+msgid "integrations.mcp-server.context.bound"
+msgstr "Bound"
+
+msgid "integrations.mcp-server.context.count"
+msgstr "%s contexts"
+
+msgid "integrations.mcp-server.context.error"
+msgstr "Context error"
+
+msgid "integrations.mcp-server.context.expired-token"
+msgstr "MCP key expired"
+
+msgid "integrations.mcp-server.context.releasing"
+msgstr "Releasing"
+
+msgid "integrations.mcp-server.context.stale"
+msgstr "Stale"
+
+msgid "integrations.mcp-server.context.unbound"
+msgstr "No active file"
+
 msgid "integrations.mcp-server.diagnostics.logs.console-only"
 msgstr "Console only"
 

@@ -474,14 +474,20 @@
   (first (get-in diagnostics [:data :transports :webSocket :clients])))
 
 (defn- diagnostic-file-context-label
-  [mcp-state]
-  (let [status  (get-in mcp-state [:file-context :status] "unbound")
-        context (get-in mcp-state [:file-context :context])
-        file    (or (:fileName context) (:fileId context))
-        page    (:pageName context)]
-    (if file
-      (dm/str file (when page (dm/str " / " page)) " (" status ")")
-      (dm/str (tr "integrations.mcp-server.diagnostics.no-file") " (" status ")"))))
+  [mcp-state token-expired?]
+  (let [{:keys [label-key target-label context-count]} (dmcp/file-context-summary
+                                                        mcp-state
+                                                        {:token-expired? token-expired?})
+        label (tr label-key)]
+    (cond
+      target-label
+      (dm/str label " / " target-label)
+
+      (pos? context-count)
+      (dm/str label " (" context-count ")")
+
+      :else
+      label)))
 
 (defn- diagnostic-log-label
   [diagnostics]
@@ -593,7 +599,7 @@
 
 (mf/defc mcp-diagnostics*
   {::mf/private true}
-  [{:keys [mcp-state on-refresh]}]
+  [{:keys [mcp-state token-expired? on-refresh]}]
   (let [diagnostics       (:diagnostics mcp-state)
         connection-status (or (:connection-status mcp-state) "disconnected")
         plugin-status     (diagnostic-plugin-status diagnostics)
@@ -626,7 +632,7 @@
       [:> mcp-diagnostics-row* {:label (tr "integrations.mcp-server.diagnostics.plugin")
                                 :value plugin-label}]
       [:> mcp-diagnostics-row* {:label (tr "integrations.mcp-server.diagnostics.file-context")
-                                :value (diagnostic-file-context-label mcp-state)}]
+                                :value (diagnostic-file-context-label mcp-state token-expired?)}]
       [:> mcp-diagnostics-row* {:label (tr "integrations.mcp-server.diagnostics.logs")
                                 :value (diagnostic-log-label diagnostics)}]
       [:> mcp-diagnostics-row* {:label (tr "integrations.mcp-server.diagnostics.last-error")
@@ -832,6 +838,7 @@
 
      (when (some? mcp-key)
        [:> mcp-diagnostics* {:mcp-state mcp-state
+                             :token-expired? expired?
                              :on-refresh handle-refresh-diagnostics}])
 
      [:> notification-pill* {:level :default

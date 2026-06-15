@@ -357,6 +357,57 @@
   --sidebar-search-foreground-color: var(--search-bar-icon-foreground-color-hover);
 }
 
+// MCP context
+.mcp-context-status {
+  display: grid;
+  gap: var(--sp-xxs);
+  margin: 0 var(--sp-l);
+  padding: var(--sp-s) var(--sp-m);
+  border: $b-1 solid var(--color-background-quaternary);
+  border-inline-start: $b-2 solid var(--color-foreground-secondary);
+  border-radius: $br-8;
+  background-color: var(--color-background-secondary);
+}
+
+.mcp-context-status-bound {
+  border-inline-start-color: var(--color-accent-primary);
+}
+
+.mcp-context-status-stale {
+  border-inline-start-color: var(--color-accent-tertiary);
+}
+
+.mcp-context-status-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--sp-s);
+  min-width: 0;
+}
+
+.mcp-context-status-title {
+  @include t.use-typography("body-small");
+  color: var(--color-foreground-secondary);
+}
+
+.mcp-context-status-state,
+.mcp-context-status-detail {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.mcp-context-status-state {
+  @include t.use-typography("body-small");
+  color: var(--color-foreground-primary);
+}
+
+.mcp-context-status-detail {
+  @include t.use-typography("title-small");
+  color: var(--color-foreground-primary);
+}
+
 // Profile
 .profile-section {
   position: relative;

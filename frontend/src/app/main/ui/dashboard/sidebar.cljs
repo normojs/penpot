@@ -9,6 +9,7 @@
   (:require
    [app.common.data :as d]
    [app.common.data.macros :as dm]
+   [app.common.time :as ct]
    [app.common.uuid :as uuid]
    [app.config :as cf]
    [app.main.data.auth :as da]
@@ -16,6 +17,7 @@
    [app.main.data.dashboard :as dd]
    [app.main.data.event :as ev]
    [app.main.data.modal :as modal]
+   [app.main.data.mcp :as dmcp]
    [app.main.data.notifications :as ntf]
    [app.main.data.team :as dtm]
    [app.main.refs :as refs]
@@ -72,6 +74,45 @@
 
 (def ^:private exit-icon
   (deprecated-icon/icon-xref :exit (stl/css :exit-icon)))
+
+(defn- mcp-token-expired?
+  [tokens]
+  (let [mcp-key    (some #(when (= (:type %) "mcp") %) tokens)
+        expires-at (:expires-at mcp-key)]
+    (and (some? expires-at) (> (ct/now) expires-at))))
+
+(defn- mcp-context-detail
+  [{:keys [target-label context-count]}]
+  (cond
+    target-label
+    target-label
+
+    (pos? context-count)
+    (tr "integrations.mcp-server.context.count" context-count)
+
+    :else
+    nil))
+
+(mf/defc mcp-context-status*
+  {::mf/private true}
+  [{:keys [mcp-state enabled? token-expired?]}]
+  (let [{:keys [status label-key] :as summary} (dmcp/file-context-summary
+                                                mcp-state
+                                                {:token-expired? token-expired?})
+        detail (mcp-context-detail summary)]
+    (when (or enabled? (not= "unbound" status))
+      [:div {:class (stl/css-case :mcp-context-status true
+                                  :mcp-context-status-bound (= status "bound")
+                                  :mcp-context-status-stale (contains? #{"error" "expired-token" "stale"} status))}
+       [:div {:class (stl/css :mcp-context-status-header)}
+        [:span {:class (stl/css :mcp-context-status-title)}
+         (tr "integrations.mcp-server.context.title")]
+        [:span {:class (stl/css :mcp-context-status-state)}
+         (tr label-key)]]
+       (when detail
+         [:span {:class (stl/css :mcp-context-status-detail)
+                 :title detail}
+          detail])])))
 
 (mf/defc sidebar-project*
   {::mf/private true}
@@ -693,6 +734,8 @@
         (get default-project :id)
 
         team-id     (get team :id)
+        mcp-state   (mf/deref refs/mcp)
+        tokens      (mf/deref refs/access-tokens)
 
         projects?   (= section :dashboard-recent)
         fonts?      (= section :dashboard-fonts)
@@ -800,6 +843,11 @@
 
       [:> sidebar-search* {:search-term search-term
                            :team-id (:id team)}]
+
+      (when (contains? cf/flags :mcp)
+        [:> mcp-context-status* {:mcp-state mcp-state
+                                 :enabled? (true? (-> profile :props :mcp-enabled))
+                                 :token-expired? (mcp-token-expired? tokens)}])
 
       [:div {:class (stl/css :sidebar-content-section)}
        [:ul {:class (stl/css :sidebar-nav)}
@@ -1172,4 +1220,3 @@
    [:> profile-section*
     {:profile profile
      :team team}]])
-
