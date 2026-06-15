@@ -9,6 +9,52 @@ const DEFAULT_PRIORITIES = Object.freeze({
 
 const EMPTY_OBJECT = Object.freeze({});
 
+export const CommandErrorCodes = Object.freeze({
+    AUTHENTICATION_REQUIRED: "authentication_required",
+    BACKEND_CONFIG_INVALID: "penpot_backend_config_invalid",
+    BACKEND_UNAVAILABLE: "penpot_backend_unavailable",
+    OBJECT_NOT_FOUND_OR_FORBIDDEN: "object_not_found_or_forbidden",
+    PERMISSION_DENIED: "permission_denied",
+    PENPOT_RPC_ERROR: "penpot_rpc_error",
+    RATE_LIMIT_REACHED: "rate_limit_reached",
+    ADAPTER_NOT_AVAILABLE: "adapter_not_available",
+    ADAPTER_NOT_SUPPORTED: "adapter_not_supported",
+    FILE_CONTEXT_REQUIRED: "file_context_required",
+    MCP_WRITE_CONCURRENCY_LIMIT: "mcp_write_concurrency_limit",
+    MCP_WRITE_RATE_LIMIT: "mcp_write_rate_limit",
+    DESTRUCTIVE_ACTION_CONFIRMATION_REQUIRED: "destructive_action_confirmation_required",
+});
+
+export const AdapterSelectionReasonCodes = Object.freeze({
+    BACKEND_COMMAND_FILE_ID_REQUIRED: "backend_command_file_id_required",
+    BACKEND_COMMAND_FILE_PAGE_REQUIRED: "backend_command_file_page_required",
+    BACKEND_COMMAND_LAYOUT_UNSUPPORTED: "backend_command_layout_unsupported",
+    PLUGIN_LIVE_OMIT_FILE_ID: "plugin_live_omit_file_id",
+    PLUGIN_LIVE_OMIT_FILE_PAGE: "plugin_live_omit_file_page",
+    CLI_PLUGIN_LIVE_UNSUPPORTED: "cli_plugin_live_unsupported",
+    CLI_EXPORT_PLUGIN_LIVE_UNSUPPORTED: "cli_export_plugin_live_unsupported",
+    CLI_SHAPE_PLUGIN_LIVE_UNSUPPORTED: "cli_shape_plugin_live_unsupported",
+});
+
+const AdapterSelectionReasonMessages = Object.freeze({
+    [AdapterSelectionReasonCodes.BACKEND_COMMAND_FILE_ID_REQUIRED]:
+        "backend-command requires an explicit fileId.",
+    [AdapterSelectionReasonCodes.BACKEND_COMMAND_FILE_PAGE_REQUIRED]:
+        "backend-command requires explicit fileId and pageId.",
+    [AdapterSelectionReasonCodes.BACKEND_COMMAND_LAYOUT_UNSUPPORTED]:
+        "backend-command does not support layout updates yet.",
+    [AdapterSelectionReasonCodes.PLUGIN_LIVE_OMIT_FILE_ID]:
+        "plugin-live uses the bound workspace context; omit fileId to request it.",
+    [AdapterSelectionReasonCodes.PLUGIN_LIVE_OMIT_FILE_PAGE]:
+        "plugin-live uses the bound workspace context; omit fileId and pageId to request it.",
+    [AdapterSelectionReasonCodes.CLI_PLUGIN_LIVE_UNSUPPORTED]:
+        "CLI commands do not execute live workspace plugin tasks.",
+    [AdapterSelectionReasonCodes.CLI_EXPORT_PLUGIN_LIVE_UNSUPPORTED]:
+        "CLI export planning requires explicit file/page/object ids and does not use live selection.",
+    [AdapterSelectionReasonCodes.CLI_SHAPE_PLUGIN_LIVE_UNSUPPORTED]:
+        "CLI shape commands require explicit backend targets and do not use live workspace state.",
+});
+
 export const CommandDescriptors = Object.freeze({
     MCP_STATUS: Object.freeze({
         id: "mcp.status",
@@ -142,6 +188,35 @@ export function createCommandResultEnvelope(requestEnvelope, data, options = EMP
     };
 }
 
+export function getAdapterSelectionReason(code) {
+    return AdapterSelectionReasonMessages[code] ?? String(code);
+}
+
+export function createCommandErrorPayload(code, message, options = EMPTY_OBJECT) {
+    return {
+        code,
+        message,
+        actions: options.actions ?? [],
+        data: compactRecord(options.data),
+    };
+}
+
+export function createAdapterSelectionError(selection, options = EMPTY_OBJECT) {
+    return createCommandErrorPayload(
+        selection.status === "unsupported"
+            ? CommandErrorCodes.ADAPTER_NOT_SUPPORTED
+            : CommandErrorCodes.ADAPTER_NOT_AVAILABLE,
+        `No available adapter matched ${formatRequestedAdapter(selection.requested)} for ${selection.command}.`,
+        {
+            actions: options.actions,
+            data: {
+                adapterSelection: selection,
+                ...(options.data ?? EMPTY_OBJECT),
+            },
+        }
+    );
+}
+
 export function selectCommandAdapter(options) {
     const requested = options.requestedAdapter ?? "auto";
     const candidates = normalizeCandidates(options.candidates);
@@ -166,6 +241,10 @@ export function selectCommandAdapter(options) {
         selectedCandidate ? "selected" : "unavailable",
         candidates
     );
+}
+
+function formatRequestedAdapter(requested) {
+    return requested === "auto" ? "auto" : `'${requested}'`;
 }
 
 function resolveCommandDescriptor(command) {

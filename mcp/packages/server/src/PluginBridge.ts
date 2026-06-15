@@ -17,6 +17,7 @@ import {
 import { getPluginClientInfo, negotiatePluginCompatibility } from "./PluginCompatibility";
 import { createLogger } from "./logger";
 import type { PenpotMcpServer } from "./PenpotMcpServer";
+import { CommandErrorCodes } from "@penpot/command-runtime";
 
 const KEEP_ALIVE_TIME = 30000; // 30 seconds
 
@@ -298,7 +299,7 @@ export class PluginBridge {
                 action: "bind",
                 success: false,
                 error: {
-                    code: "file_context_required",
+                    code: CommandErrorCodes.FILE_CONTEXT_REQUIRED,
                     message: "No current Penpot file context is available to bind.",
                 },
             });

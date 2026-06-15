@@ -1,7 +1,8 @@
 import type { FileContextSnapshot } from "@penpot/mcp-common";
+import { CommandErrorCodes } from "@penpot/command-runtime";
 
 export const FileContextErrorCodes = {
-    FILE_CONTEXT_REQUIRED: "file_context_required",
+    FILE_CONTEXT_REQUIRED: CommandErrorCodes.FILE_CONTEXT_REQUIRED,
     FILE_CONTEXT_AMBIGUOUS: "file_context_ambiguous",
     FILE_CONTEXT_NOT_FOUND: "file_context_not_found",
     FILE_CONTEXT_STALE: "file_context_stale",

@@ -15,9 +15,10 @@ shared command runtime.
 
 ## Current Shared Runtime State
 
-As of P10.4, `@penpot/command-runtime` exposes adapter-selection helpers, a
-low-risk command descriptor catalog, and shared request/result envelope helpers
-for status/config/file/page migration.
+As of P10.5, `@penpot/command-runtime` exposes adapter-selection helpers, a
+low-risk command descriptor catalog, shared request/result envelope helpers,
+and centralized command error/reason metadata for status/config/file/page
+migration.
 
 Adapter-selection helpers:
 
@@ -45,10 +46,22 @@ Envelope helpers:
 - token handling: auth metadata intentionally records presence/source/mode only
   and does not copy token values
 
+Error and reason helpers:
+
+- error codes: `CommandErrorCodes` covers auth, backend config/unavailable,
+  permission/not-found, rate limits, adapter unsupported/unavailable, file
+  context required, write limits, and destructive confirmation
+- adapter reasons: `AdapterSelectionReasonCodes` plus
+  `getAdapterSelectionReason(code)` centralizes backend target requirements,
+  plugin-live fallback conflicts, and CLI plugin-live unsupported reasons
+- adapter failure payloads:
+  `createAdapterSelectionError(selection, {actions,data})` returns the same
+  `code`, `message`, `actions`, and `data.adapterSelection` shape used by MCP
+  tools and CLI JSON output
+
 It still does not own executable input schemas, CLI help metadata, transport
-edge formatting, RPC method names, centralized error codes, or full coverage
-snapshots. Those fields remain duplicated between MCP server tool classes and
-`penpot-cli`.
+edge formatting, RPC method names, or full coverage snapshots. Those fields
+remain duplicated between MCP server tool classes and `penpot-cli`.
 
 ## MCP Registered Tool Inventory
 
@@ -130,7 +143,8 @@ registered or the descriptor explicitly marks them as planned/unavailable.
   handler switch statements, and ad hoc `command` fields in JSON payloads.
 - Input metadata is duplicated between Zod tool schemas and CLI option parsing.
 - Adapter candidates are repeated in MCP page/shape tools and CLI page/shape
-  handlers, with only selection mechanics shared.
+  handlers, but candidate failure codes, common reason text, and selection
+  failure payloads now come from `command-runtime`.
 - Response envelopes now share internal request/result metadata for the
   low-risk slice, but public `data`, `error`, `warnings`, `nextActions`, and
   `adapterSelection` formatting is still constructed at the MCP/CLI edges.
@@ -172,3 +186,15 @@ payloads, destructive confirmation, or live context semantics.
   continue to parse the same JSON/text payloads.
 - Add smoke coverage for descriptor lookup, adapter selection, token-safe auth
   metadata, and result payload preservation.
+
+## P10.5 Acceptance Targets
+
+- Add shared command error codes for adapter, auth, backend, file-context,
+  rate-limit, write-limit, and destructive confirmation cases.
+- Add shared adapter-selection reason codes and reason text for backend target
+  requirements, plugin-live conflicts, and CLI plugin-live unsupported paths.
+- Route MCP page/shape adapter failures and CLI adapter failures through the
+  same `createAdapterSelectionError` helper while preserving existing public
+  error payload shape.
+- Align MCP backend/auth/context/destructive error code constants with
+  `CommandErrorCodes`.

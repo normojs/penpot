@@ -1,11 +1,15 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import {
+    AdapterSelectionReasonCodes,
     CommandDescriptors,
+    CommandErrorCodes,
     LowRiskCommandDescriptors,
+    createAdapterSelectionError,
     createCommandRequestEnvelope,
     createCommandResultEnvelope,
     getCommandDescriptor,
+    getAdapterSelectionReason,
     selectCommandAdapter,
 } from "@penpot/command-runtime";
 import { run } from "../dist/index.js";
@@ -101,6 +105,28 @@ test("command runtime creates token-safe request and result envelopes", () => {
     assert.equal(result.adapterSelection.selected, "backend-command");
     assert.deepEqual(result.data, { pages: [] });
     assert.deepEqual(result.warnings, ["none"]);
+});
+
+test("command runtime centralizes adapter error payloads and reason text", () => {
+    const selection = selectCommandAdapter({
+        command: "page.list",
+        requestedAdapter: "exporter",
+        candidates: [
+            {
+                kind: "backend-command",
+                available: false,
+                reason: getAdapterSelectionReason(AdapterSelectionReasonCodes.BACKEND_COMMAND_FILE_ID_REQUIRED),
+            },
+        ],
+    });
+    const error = createAdapterSelectionError(selection, { actions: ["Use --adapter auto."] });
+
+    assert.equal(selection.status, "unsupported");
+    assert.equal(selection.candidates[0].reason, "backend-command requires an explicit fileId.");
+    assert.equal(error.code, CommandErrorCodes.ADAPTER_NOT_SUPPORTED);
+    assert.equal(error.message, "No available adapter matched 'exporter' for page.list.");
+    assert.deepEqual(error.actions, ["Use --adapter auto."]);
+    assert.equal(error.data.adapterSelection, selection);
 });
 
 test("mcp config derives stable public MCP surfaces from environment", async () => {

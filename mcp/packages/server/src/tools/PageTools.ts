@@ -7,9 +7,12 @@ import { requireBoundFileContext } from "./FileContextGuard.js";
 import { PenpotRpcTool } from "./PenpotRpcTool.js";
 import type { PageTaskParams } from "@penpot/mcp-common";
 import {
+    AdapterSelectionReasonCodes,
     CommandDescriptors,
+    createAdapterSelectionError,
     createCommandRequestEnvelope,
     createCommandResultEnvelope,
+    getAdapterSelectionReason,
     selectCommandAdapter,
 } from "@penpot/command-runtime";
 import type { CommandAdapterSelection } from "@penpot/command-runtime";
@@ -32,14 +35,16 @@ abstract class PageTool<TArgs extends object> extends PenpotRpcTool<TArgs> {
                     kind: "backend-command",
                     available: hasFileId,
                     priority: 10,
-                    reason: hasFileId ? null : "backend-command requires an explicit fileId.",
+                    reason: hasFileId
+                        ? null
+                        : getAdapterSelectionReason(AdapterSelectionReasonCodes.BACKEND_COMMAND_FILE_ID_REQUIRED),
                 },
                 {
                     kind: "plugin-live",
                     available: !hasFileId,
                     priority: 50,
                     reason: hasFileId
-                        ? "plugin-live uses the bound workspace context; omit fileId to request it."
+                        ? getAdapterSelectionReason(AdapterSelectionReasonCodes.PLUGIN_LIVE_OMIT_FILE_ID)
                         : null,
                 },
             ],
@@ -47,17 +52,13 @@ abstract class PageTool<TArgs extends object> extends PenpotRpcTool<TArgs> {
     }
 
     protected adapterSelectionFailure(selection: CommandAdapterSelection): ToolResponse {
-        return this.error(
-            selection.status === "unsupported" ? "adapter_not_supported" : "adapter_not_available",
-            `No available adapter matched '${selection.requested}' for ${selection.command}.`,
-            [
+        const error = createAdapterSelectionError(selection, {
+            actions: [
                 "Use adapter: 'auto' to let MCP choose the first available adapter.",
                 "Inspect adapterSelection for available candidates and fallback reasons.",
             ],
-            {
-                adapterSelection: selection,
-            }
-        );
+        });
+        return this.error(error.code, error.message, error.actions, error.data);
     }
 
     protected async executePageTask(

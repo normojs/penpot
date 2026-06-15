@@ -1,3 +1,5 @@
+import { CommandErrorCodes } from "@penpot/command-runtime";
+
 type RpcParamValue = string | number | boolean | string[] | number[] | boolean[] | object | null | undefined;
 
 export type RpcParams = Record<string, RpcParamValue>;
@@ -16,7 +18,7 @@ export class PenpotRpcError extends Error {
     constructor(
         public readonly status: number,
         message: string,
-        public readonly code: string = "penpot_rpc_error",
+        public readonly code: string = CommandErrorCodes.PENPOT_RPC_ERROR,
         public readonly data: unknown = null
     ) {
         super(message);
@@ -218,20 +220,20 @@ export class PenpotRpcClient {
 
     private normalizeErrorCode(status: number, backendCode?: string): string {
         if (status === 401) {
-            return "authentication_required";
+            return CommandErrorCodes.AUTHENTICATION_REQUIRED;
         }
         if (status === 403) {
-            return "permission_denied";
+            return CommandErrorCodes.PERMISSION_DENIED;
         }
         if (status === 404 && backendCode === "object-not-found") {
-            return "object_not_found_or_forbidden";
+            return CommandErrorCodes.OBJECT_NOT_FOUND_OR_FORBIDDEN;
         }
         if (status === 429) {
-            return "rate_limit_reached";
+            return CommandErrorCodes.RATE_LIMIT_REACHED;
         }
         if (backendCode) {
             return backendCode.replaceAll("-", "_");
         }
-        return "penpot_rpc_error";
+        return CommandErrorCodes.PENPOT_RPC_ERROR;
     }
 }

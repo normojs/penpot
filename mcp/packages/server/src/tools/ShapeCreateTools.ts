@@ -6,7 +6,12 @@ import { ToolNames } from "../ToolNames.js";
 import { requireBoundFileContext } from "./FileContextGuard.js";
 import { PenpotRpcTool, ToolErrorCodes } from "./PenpotRpcTool.js";
 import type { ShapeTaskParams } from "@penpot/mcp-common";
-import { selectCommandAdapter } from "@penpot/command-runtime";
+import {
+    AdapterSelectionReasonCodes,
+    createAdapterSelectionError,
+    getAdapterSelectionReason,
+    selectCommandAdapter,
+} from "@penpot/command-runtime";
 import type { CommandAdapterSelection } from "@penpot/command-runtime";
 
 const coordinateSchema = z.number().min(-100000).max(100000);
@@ -78,14 +83,16 @@ abstract class ShapeTool<TArgs extends object> extends PenpotRpcTool<TArgs> {
                     kind: "backend-command",
                     available: hasBackendTarget,
                     priority: 10,
-                    reason: hasBackendTarget ? null : "backend-command requires explicit fileId and pageId.",
+                    reason: hasBackendTarget
+                        ? null
+                        : getAdapterSelectionReason(AdapterSelectionReasonCodes.BACKEND_COMMAND_FILE_PAGE_REQUIRED),
                 },
                 {
                     kind: "plugin-live",
                     available: !hasExplicitTarget,
                     priority: 50,
                     reason: hasExplicitTarget
-                        ? "plugin-live uses the bound workspace context; omit fileId and pageId to request it."
+                        ? getAdapterSelectionReason(AdapterSelectionReasonCodes.PLUGIN_LIVE_OMIT_FILE_PAGE)
                         : null,
                 },
             ],
@@ -104,15 +111,15 @@ abstract class ShapeTool<TArgs extends object> extends PenpotRpcTool<TArgs> {
                     available: hasBackendTarget,
                     priority: 10,
                     reason: args.fileId
-                        ? "backend-command does not support layout updates yet."
-                        : "backend-command requires explicit fileId.",
+                        ? getAdapterSelectionReason(AdapterSelectionReasonCodes.BACKEND_COMMAND_LAYOUT_UNSUPPORTED)
+                        : getAdapterSelectionReason(AdapterSelectionReasonCodes.BACKEND_COMMAND_FILE_ID_REQUIRED),
                 },
                 {
                     kind: "plugin-live",
                     available: !hasExplicitTarget,
                     priority: 50,
                     reason: hasExplicitTarget
-                        ? "plugin-live uses the bound workspace context; omit fileId and pageId to request it."
+                        ? getAdapterSelectionReason(AdapterSelectionReasonCodes.PLUGIN_LIVE_OMIT_FILE_PAGE)
                         : null,
                 },
             ],
@@ -120,17 +127,13 @@ abstract class ShapeTool<TArgs extends object> extends PenpotRpcTool<TArgs> {
     }
 
     protected adapterSelectionFailure(selection: CommandAdapterSelection): ToolResponse {
-        return this.error(
-            selection.status === "unsupported" ? "adapter_not_supported" : "adapter_not_available",
-            `No available adapter matched '${selection.requested}' for ${selection.command}.`,
-            [
+        const error = createAdapterSelectionError(selection, {
+            actions: [
                 "Use adapter: 'auto' to let MCP choose the first available adapter.",
                 "Pass the backend-command target ids, or omit fileId and pageId to use plugin-live.",
             ],
-            {
-                adapterSelection: selection,
-            }
-        );
+        });
+        return this.error(error.code, error.message, error.actions, error.data);
     }
 
     protected destructiveConfirmationRequired(

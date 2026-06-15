@@ -6,9 +6,13 @@ import { access, mkdir, readdir, stat, writeFile } from "node:fs/promises";
 import { delimiter, dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import {
+    AdapterSelectionReasonCodes,
     CommandDescriptors,
+    CommandErrorCodes,
+    createAdapterSelectionError,
     createCommandRequestEnvelope,
     createCommandResultEnvelope,
+    getAdapterSelectionReason,
     selectCommandAdapter,
 } from "@penpot/command-runtime";
 import type {
@@ -524,7 +528,7 @@ function selectCliBackendCommandAdapter(command: string, args: string[]): Comman
                 kind: "plugin-live",
                 available: false,
                 priority: 50,
-                reason: "CLI commands do not execute live workspace plugin tasks.",
+                reason: getAdapterSelectionReason(AdapterSelectionReasonCodes.CLI_PLUGIN_LIVE_UNSUPPORTED),
             },
         ],
     });
@@ -540,7 +544,7 @@ function selectCliExporterAdapter(args: string[]): CommandAdapterSelection {
                 kind: "plugin-live",
                 available: false,
                 priority: 50,
-                reason: "CLI export planning requires explicit file/page/object ids and does not use live selection.",
+                reason: getAdapterSelectionReason(AdapterSelectionReasonCodes.CLI_EXPORT_PLUGIN_LIVE_UNSUPPORTED),
             },
         ],
     });
@@ -556,7 +560,7 @@ function selectCliShapeAdapter(command: string, args: string[]): CommandAdapterS
                 kind: "plugin-live",
                 available: false,
                 priority: 50,
-                reason: "CLI shape commands require explicit backend targets and do not use live workspace state.",
+                reason: getAdapterSelectionReason(AdapterSelectionReasonCodes.CLI_SHAPE_PLUGIN_LIVE_UNSUPPORTED),
             },
         ],
     });
@@ -987,21 +991,13 @@ function writeError(
 }
 
 function adapterSelectionFailure(io: CliIO, format: Format, selection: CommandAdapterSelection): number {
-    const code = selection.status === "unsupported" ? "adapter_not_supported" : "adapter_not_available";
-    const requested = selection.requested === "auto" ? "auto" : `'${selection.requested}'`;
-    writeError(
-        io,
-        format,
-        code,
-        `No available adapter matched ${requested} for ${selection.command}.`,
-        [
+    const error = createAdapterSelectionError(selection, {
+        actions: [
             "Use --adapter auto to let penpot-cli choose the first available adapter.",
             "Inspect adapterSelection in JSON output for available candidates and fallback reasons.",
         ],
-        {
-            adapterSelection: selection,
-        }
-    );
+    });
+    writeError(io, format, error.code, error.message, error.actions, error.data);
     return 2;
 }
 
@@ -1045,7 +1041,7 @@ function rpcAuthenticationRequired(io: CliIO, format: Format): number {
     writeError(
         io,
         format,
-        "authentication_required",
+        CommandErrorCodes.AUTHENTICATION_REQUIRED,
         "This command requires a Penpot access token.",
         [
             "Pass --token <token>.",
@@ -1417,7 +1413,10 @@ async function downloadExporterResource(
 async function executeExportPagePlan(plan: ExportPagePlan, args: string[], env: NodeJS.ProcessEnv): Promise<ExportPageResult> {
     const rawToken = getRpcConfig(args, env).token;
     if (!rawToken) {
-        throw createCliError("authentication_required", "Exporter execution requires a Penpot auth-token/session token.");
+        throw createCliError(
+            CommandErrorCodes.AUTHENTICATION_REQUIRED,
+            "Exporter execution requires a Penpot auth-token/session token."
+        );
     }
 
     const token = extractAuthTokenValue(rawToken);
@@ -1448,7 +1447,7 @@ function exportErrorResponse(io: CliIO, format: Format, plan: ExportPagePlan, ca
     const status = typeof error.status === "number" ? error.status : 0;
     const message = cause instanceof Error ? cause.message : "Unable to execute exporter-backed page output.";
     const actions =
-        code === "authentication_required" || code === "profile_id_required"
+        code === CommandErrorCodes.AUTHENTICATION_REQUIRED || code === "profile_id_required"
             ? [
                   "Pass --token with a Penpot auth-token/session token.",
                   "Pass --profile-id or set PENPOT_PROFILE_ID if profile resolution is not available.",

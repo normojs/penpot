@@ -218,8 +218,10 @@ Current state:
 - Done: low-risk MCP and CLI paths use shared request/result envelopes for
   command, transport, adapter, target, auth-present, diagnostics, payload data,
   and warnings metadata.
-- Next: centralize adapter errors and selection reason codes before migrating
-  shape/export descriptors.
+- Done: common command error codes, adapter-selection failure payloads, and
+  adapter reason text are centralized in `@penpot/command-runtime`.
+- Next: migrate higher-risk shape/export descriptors now that envelopes and
+  errors are stable.
 
 ### Wave C: Headless Authoring Expansion
 
@@ -295,15 +297,14 @@ Acceptance:
 
 The next implementation slice should continue Wave B:
 
-1. Define shared adapter/error code metadata in `command-runtime` for
-   unsupported adapter, unavailable adapter, missing auth, missing file context,
-   backend unavailable, and destructive confirmation cases.
-2. Keep MCP tool responses and CLI JSON/text formatting backward compatible at
-   the transport edges.
-3. Move duplicated adapter-selection failure construction from MCP page tools
-   and `penpot-cli` into the shared runtime.
-4. Leave shape/export descriptor migration for the following P10.6 slice once
-   errors and selection reasons are centralized.
+1. Move shape/create/update/delete descriptors into `command-runtime` while
+   keeping current MCP tool names, CLI command names, and response shapes.
+2. Move `export.page` descriptor metadata after confirming exporter dry-run and
+   execution payloads keep their current public structure.
+3. Reuse the shared request/result envelopes and centralized adapter errors for
+   every migrated shape/export path.
+4. Leave executable schema generation and full descriptor snapshots for the
+   following P10.7 test-hardening slice.
 
 Keep manual configuration behavior stable while moving command metadata and
 envelopes; transport-specific formatting should stay at the MCP/CLI edges.

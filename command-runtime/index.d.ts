@@ -45,6 +45,49 @@ export interface SelectCommandAdapterOptions {
     candidates: CommandAdapterCandidate[];
 }
 
+export interface CommandErrorCodeCatalog {
+    AUTHENTICATION_REQUIRED: "authentication_required";
+    BACKEND_CONFIG_INVALID: "penpot_backend_config_invalid";
+    BACKEND_UNAVAILABLE: "penpot_backend_unavailable";
+    OBJECT_NOT_FOUND_OR_FORBIDDEN: "object_not_found_or_forbidden";
+    PERMISSION_DENIED: "permission_denied";
+    PENPOT_RPC_ERROR: "penpot_rpc_error";
+    RATE_LIMIT_REACHED: "rate_limit_reached";
+    ADAPTER_NOT_AVAILABLE: "adapter_not_available";
+    ADAPTER_NOT_SUPPORTED: "adapter_not_supported";
+    FILE_CONTEXT_REQUIRED: "file_context_required";
+    MCP_WRITE_CONCURRENCY_LIMIT: "mcp_write_concurrency_limit";
+    MCP_WRITE_RATE_LIMIT: "mcp_write_rate_limit";
+    DESTRUCTIVE_ACTION_CONFIRMATION_REQUIRED: "destructive_action_confirmation_required";
+}
+
+export interface AdapterSelectionReasonCodeCatalog {
+    BACKEND_COMMAND_FILE_ID_REQUIRED: "backend_command_file_id_required";
+    BACKEND_COMMAND_FILE_PAGE_REQUIRED: "backend_command_file_page_required";
+    BACKEND_COMMAND_LAYOUT_UNSUPPORTED: "backend_command_layout_unsupported";
+    PLUGIN_LIVE_OMIT_FILE_ID: "plugin_live_omit_file_id";
+    PLUGIN_LIVE_OMIT_FILE_PAGE: "plugin_live_omit_file_page";
+    CLI_PLUGIN_LIVE_UNSUPPORTED: "cli_plugin_live_unsupported";
+    CLI_EXPORT_PLUGIN_LIVE_UNSUPPORTED: "cli_export_plugin_live_unsupported";
+    CLI_SHAPE_PLUGIN_LIVE_UNSUPPORTED: "cli_shape_plugin_live_unsupported";
+}
+
+export type CommandErrorCode = CommandErrorCodeCatalog[keyof CommandErrorCodeCatalog];
+export type AdapterSelectionReasonCode =
+    AdapterSelectionReasonCodeCatalog[keyof AdapterSelectionReasonCodeCatalog];
+
+export interface CreateCommandErrorPayloadOptions {
+    actions?: string[];
+    data?: Record<string, unknown>;
+}
+
+export interface CommandErrorPayload {
+    code: CommandErrorCode | string;
+    message: string;
+    actions: string[];
+    data: Record<string, unknown>;
+}
+
 export type CommandTransportKind = "cli" | "mcp" | "http" | "internal";
 export type CommandResultStatus = "ok" | "error";
 
@@ -129,6 +172,8 @@ export interface LowRiskCommandDescriptorCatalog {
     PAGE_CREATE: CommandDescriptor & { id: "page.create"; mcpToolName: "page.create"; cliCommand: "page create" };
 }
 
+export const CommandErrorCodes: CommandErrorCodeCatalog;
+export const AdapterSelectionReasonCodes: AdapterSelectionReasonCodeCatalog;
 export const CommandDescriptors: LowRiskCommandDescriptorCatalog;
 export const LowRiskCommandDescriptors: readonly CommandDescriptor[];
 export function getCommandDescriptor(id: string): CommandDescriptor | undefined;
@@ -141,4 +186,14 @@ export function createCommandResultEnvelope<TData = unknown>(
     data: TData,
     options?: CreateCommandResultEnvelopeOptions
 ): CommandResultEnvelope<TData>;
+export function getAdapterSelectionReason(code: AdapterSelectionReasonCode | string): string;
+export function createCommandErrorPayload(
+    code: CommandErrorCode | string,
+    message: string,
+    options?: CreateCommandErrorPayloadOptions
+): CommandErrorPayload;
+export function createAdapterSelectionError(
+    selection: CommandAdapterSelection,
+    options?: CreateCommandErrorPayloadOptions
+): CommandErrorPayload;
 export function selectCommandAdapter(options: SelectCommandAdapterOptions): CommandAdapterSelection;

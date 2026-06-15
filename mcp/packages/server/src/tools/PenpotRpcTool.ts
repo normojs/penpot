@@ -5,20 +5,21 @@ import { JsonResponse } from "../ToolResponse.js";
 import { PenpotMcpServer } from "../PenpotMcpServer.js";
 import { PenpotRpcError, RpcParams } from "../PenpotRpcClient.js";
 import type { PenpotRpcRequestContext } from "../PenpotRpcClient.js";
+import { CommandErrorCodes } from "@penpot/command-runtime";
 
 export const ToolErrorCodes = {
-    AUTHENTICATION_REQUIRED: "authentication_required",
-    BACKEND_CONFIG_INVALID: "penpot_backend_config_invalid",
-    BACKEND_UNAVAILABLE: "penpot_backend_unavailable",
-    OBJECT_NOT_FOUND_OR_FORBIDDEN: "object_not_found_or_forbidden",
-    PERMISSION_DENIED: "permission_denied",
-    PENPOT_RPC_ERROR: "penpot_rpc_error",
-    RATE_LIMIT_REACHED: "rate_limit_reached",
-    ADAPTER_NOT_AVAILABLE: "adapter_not_available",
-    ADAPTER_NOT_SUPPORTED: "adapter_not_supported",
-    MCP_WRITE_CONCURRENCY_LIMIT: "mcp_write_concurrency_limit",
-    MCP_WRITE_RATE_LIMIT: "mcp_write_rate_limit",
-    DESTRUCTIVE_ACTION_CONFIRMATION_REQUIRED: "destructive_action_confirmation_required",
+    AUTHENTICATION_REQUIRED: CommandErrorCodes.AUTHENTICATION_REQUIRED,
+    BACKEND_CONFIG_INVALID: CommandErrorCodes.BACKEND_CONFIG_INVALID,
+    BACKEND_UNAVAILABLE: CommandErrorCodes.BACKEND_UNAVAILABLE,
+    OBJECT_NOT_FOUND_OR_FORBIDDEN: CommandErrorCodes.OBJECT_NOT_FOUND_OR_FORBIDDEN,
+    PERMISSION_DENIED: CommandErrorCodes.PERMISSION_DENIED,
+    PENPOT_RPC_ERROR: CommandErrorCodes.PENPOT_RPC_ERROR,
+    RATE_LIMIT_REACHED: CommandErrorCodes.RATE_LIMIT_REACHED,
+    ADAPTER_NOT_AVAILABLE: CommandErrorCodes.ADAPTER_NOT_AVAILABLE,
+    ADAPTER_NOT_SUPPORTED: CommandErrorCodes.ADAPTER_NOT_SUPPORTED,
+    MCP_WRITE_CONCURRENCY_LIMIT: CommandErrorCodes.MCP_WRITE_CONCURRENCY_LIMIT,
+    MCP_WRITE_RATE_LIMIT: CommandErrorCodes.MCP_WRITE_RATE_LIMIT,
+    DESTRUCTIVE_ACTION_CONFIRMATION_REQUIRED: CommandErrorCodes.DESTRUCTIVE_ACTION_CONFIRMATION_REQUIRED,
 } as const;
 
 export abstract class PenpotRpcTool<TArgs extends object> extends Tool<TArgs> {
