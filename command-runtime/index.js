@@ -128,6 +128,99 @@ export const CommandDescriptors = Object.freeze({
         adapters: Object.freeze(["backend-command", "plugin-live"]),
         responseShape: "status envelope with page summary and adapterSelection metadata",
     }),
+    SHAPE_CREATE_FRAME: Object.freeze({
+        id: "shape.create_frame",
+        mcpToolName: "shape.create_frame",
+        cliCommand: "shape create-frame",
+        title: "Create frame",
+        description:
+            "Creates a frame using backend-command when explicit file/page targets are supplied or plugin-live otherwise.",
+        inputSchema: "fileId?, pageId?, shapeId?, parentId?, name?, x, y, width, height, fill?, stroke?, borderRadius?",
+        adapters: Object.freeze(["backend-command", "plugin-live"]),
+        responseShape: "status envelope with shape summary, revision metadata, and adapterSelection metadata",
+    }),
+    SHAPE_CREATE_RECT: Object.freeze({
+        id: "shape.create_rect",
+        mcpToolName: "shape.create_rect",
+        cliCommand: "shape create-rect",
+        title: "Create rectangle",
+        description:
+            "Creates a rectangle using backend-command when explicit file/page targets are supplied or plugin-live otherwise.",
+        inputSchema: "fileId?, pageId?, shapeId?, parentId?, name?, x, y, width, height, fill?, stroke?, borderRadius?",
+        adapters: Object.freeze(["backend-command", "plugin-live"]),
+        responseShape: "status envelope with shape summary, revision metadata, and adapterSelection metadata",
+    }),
+    SHAPE_CREATE_TEXT: Object.freeze({
+        id: "shape.create_text",
+        mcpToolName: "shape.create_text",
+        cliCommand: "shape create-text",
+        title: "Create text",
+        description:
+            "Creates a text layer using backend-command when explicit file/page targets are supplied or plugin-live otherwise.",
+        inputSchema: "fileId?, pageId?, shapeId?, parentId?, name?, x, y, width?, height?, content, fill?, fontSize?",
+        adapters: Object.freeze(["backend-command", "plugin-live"]),
+        responseShape: "status envelope with shape summary, revision metadata, and adapterSelection metadata",
+    }),
+    SHAPE_CREATE_IMAGE: Object.freeze({
+        id: "shape.create_image",
+        mcpToolName: "shape.create_image",
+        title: "Create image",
+        description: "Creates an image-backed rectangle in the bound live Penpot workspace context.",
+        inputSchema: "parentId?, name?, x, y, width?, height?, imageBase64, mimeType",
+        adapters: Object.freeze(["plugin-live"]),
+        responseShape: "status envelope with plugin-live shape task result data",
+    }),
+    SHAPE_UPDATE: Object.freeze({
+        id: "shape.update",
+        mcpToolName: "shape.update",
+        cliCommand: "shape update",
+        title: "Update shape",
+        description:
+            "Updates geometry, style, text, or supported layout fields using backend-command or plugin-live adapters.",
+        inputSchema:
+            "fileId?, pageId?, shapeId, name?, x?, y?, width?, height?, fill?, stroke?, borderRadius?, content?, fontSize?, layout?",
+        adapters: Object.freeze(["backend-command", "plugin-live"]),
+        responseShape: "status envelope with shape summary, revision metadata, and adapterSelection metadata",
+    }),
+    SHAPE_DELETE: Object.freeze({
+        id: "shape.delete",
+        mcpToolName: "shape.delete",
+        cliCommand: "shape delete",
+        title: "Delete shape",
+        description: "Deletes a shape using backend-command or plugin-live adapters, with optional confirmation policy.",
+        inputSchema: "fileId?, pageId?, shapeId, adapter?, confirm?",
+        adapters: Object.freeze(["backend-command", "plugin-live"]),
+        responseShape: "status envelope with deleted shape summary, revision metadata, and adapterSelection metadata",
+    }),
+    EXPORT_SHAPE: Object.freeze({
+        id: "export.shape",
+        mcpToolName: "export.shape",
+        title: "Export shape",
+        description: "Exports an explicit shape or current selection from the bound live Penpot workspace context.",
+        inputSchema: "shapeId?, format?, scale?, skipChildren?",
+        adapters: Object.freeze(["plugin-live"]),
+        responseShape: "status envelope with base64 export data and export metadata",
+    }),
+    EXPORT_PAGE: Object.freeze({
+        id: "export.page",
+        mcpToolName: "export.page",
+        cliCommand: "export page",
+        title: "Export page",
+        description:
+            "Exports a page through plugin-live for bound workspace context or exporter for explicit CLI targets.",
+        inputSchema: "fileId?, pageId?, objectId?, format?, scale?, output?, dryRun?",
+        adapters: Object.freeze(["exporter", "plugin-live"]),
+        responseShape: "status envelope with export plan, resource metadata, or base64 export data",
+    }),
+    RENDER_PREVIEW: Object.freeze({
+        id: "render.preview",
+        mcpToolName: "render.preview",
+        title: "Render preview",
+        description: "Renders a PNG preview for a page, shape, or selection in the bound live Penpot workspace context.",
+        inputSchema: "target?, shapeId?, pageId?, scale?",
+        adapters: Object.freeze(["plugin-live"]),
+        responseShape: "status envelope with base64 PNG preview data",
+    }),
 });
 
 export const LowRiskCommandDescriptors = Object.freeze([
@@ -140,8 +233,25 @@ export const LowRiskCommandDescriptors = Object.freeze([
     CommandDescriptors.PAGE_CREATE,
 ]);
 
+export const ShapeExportCommandDescriptors = Object.freeze([
+    CommandDescriptors.SHAPE_CREATE_FRAME,
+    CommandDescriptors.SHAPE_CREATE_RECT,
+    CommandDescriptors.SHAPE_CREATE_TEXT,
+    CommandDescriptors.SHAPE_CREATE_IMAGE,
+    CommandDescriptors.SHAPE_UPDATE,
+    CommandDescriptors.SHAPE_DELETE,
+    CommandDescriptors.EXPORT_SHAPE,
+    CommandDescriptors.EXPORT_PAGE,
+    CommandDescriptors.RENDER_PREVIEW,
+]);
+
+export const MigratedCommandDescriptors = Object.freeze([
+    ...LowRiskCommandDescriptors,
+    ...ShapeExportCommandDescriptors,
+]);
+
 export function getCommandDescriptor(id) {
-    return LowRiskCommandDescriptors.find(
+    return MigratedCommandDescriptors.find(
         (descriptor) => descriptor.id === id || descriptor.mcpToolName === id || descriptor.cliCommand === id
     );
 }

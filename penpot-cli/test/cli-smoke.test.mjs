@@ -5,6 +5,8 @@ import {
     CommandDescriptors,
     CommandErrorCodes,
     LowRiskCommandDescriptors,
+    MigratedCommandDescriptors,
+    ShapeExportCommandDescriptors,
     createAdapterSelectionError,
     createCommandRequestEnvelope,
     createCommandResultEnvelope,
@@ -76,6 +78,28 @@ test("command runtime exposes low-risk command descriptors", () => {
     assert.equal(CommandDescriptors.MCP_STATUS.mcpToolName, "mcp.get_status");
     assert.equal(getCommandDescriptor("mcp.get_status").id, "mcp.status");
     assert.equal(getCommandDescriptor("page.list").cliCommand, "page list");
+});
+
+test("command runtime exposes migrated shape and export descriptors", () => {
+    assert.deepEqual(
+        ShapeExportCommandDescriptors.map((descriptor) => descriptor.id),
+        [
+            "shape.create_frame",
+            "shape.create_rect",
+            "shape.create_text",
+            "shape.create_image",
+            "shape.update",
+            "shape.delete",
+            "export.shape",
+            "export.page",
+            "render.preview",
+        ]
+    );
+    assert.equal(MigratedCommandDescriptors.length, 16);
+    assert.equal(CommandDescriptors.SHAPE_DELETE.cliCommand, "shape delete");
+    assert.equal(CommandDescriptors.EXPORT_PAGE.mcpToolName, "export.page");
+    assert.equal(getCommandDescriptor("shape create-frame").id, "shape.create_frame");
+    assert.equal(getCommandDescriptor("render.preview").title, "Render preview");
 });
 
 test("command runtime creates token-safe request and result envelopes", () => {

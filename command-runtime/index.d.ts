@@ -172,10 +172,48 @@ export interface LowRiskCommandDescriptorCatalog {
     PAGE_CREATE: CommandDescriptor & { id: "page.create"; mcpToolName: "page.create"; cliCommand: "page create" };
 }
 
+export interface CommandDescriptorCatalog extends LowRiskCommandDescriptorCatalog {
+    SHAPE_CREATE_FRAME: CommandDescriptor & {
+        id: "shape.create_frame";
+        mcpToolName: "shape.create_frame";
+        cliCommand: "shape create-frame";
+    };
+    SHAPE_CREATE_RECT: CommandDescriptor & {
+        id: "shape.create_rect";
+        mcpToolName: "shape.create_rect";
+        cliCommand: "shape create-rect";
+    };
+    SHAPE_CREATE_TEXT: CommandDescriptor & {
+        id: "shape.create_text";
+        mcpToolName: "shape.create_text";
+        cliCommand: "shape create-text";
+    };
+    SHAPE_CREATE_IMAGE: CommandDescriptor & { id: "shape.create_image"; mcpToolName: "shape.create_image" };
+    SHAPE_UPDATE: CommandDescriptor & {
+        id: "shape.update";
+        mcpToolName: "shape.update";
+        cliCommand: "shape update";
+    };
+    SHAPE_DELETE: CommandDescriptor & {
+        id: "shape.delete";
+        mcpToolName: "shape.delete";
+        cliCommand: "shape delete";
+    };
+    EXPORT_SHAPE: CommandDescriptor & { id: "export.shape"; mcpToolName: "export.shape" };
+    EXPORT_PAGE: CommandDescriptor & {
+        id: "export.page";
+        mcpToolName: "export.page";
+        cliCommand: "export page";
+    };
+    RENDER_PREVIEW: CommandDescriptor & { id: "render.preview"; mcpToolName: "render.preview" };
+}
+
 export const CommandErrorCodes: CommandErrorCodeCatalog;
 export const AdapterSelectionReasonCodes: AdapterSelectionReasonCodeCatalog;
-export const CommandDescriptors: LowRiskCommandDescriptorCatalog;
+export const CommandDescriptors: CommandDescriptorCatalog;
 export const LowRiskCommandDescriptors: readonly CommandDescriptor[];
+export const ShapeExportCommandDescriptors: readonly CommandDescriptor[];
+export const MigratedCommandDescriptors: readonly CommandDescriptor[];
 export function getCommandDescriptor(id: string): CommandDescriptor | undefined;
 export function createCommandRequestEnvelope<TInput = unknown>(
     command: string | CommandDescriptor,

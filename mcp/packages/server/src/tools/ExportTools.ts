@@ -4,9 +4,9 @@ import type { ToolResponse } from "../ToolResponse.js";
 import { JsonResponse } from "../ToolResponse.js";
 import { PenpotMcpServer } from "../PenpotMcpServer.js";
 import { ExportPluginTask } from "../tasks/ExportPluginTask.js";
-import { ToolNames } from "../ToolNames.js";
 import { requireBoundFileContext } from "./FileContextGuard.js";
 import type { ExportTaskParams, ExportTaskResultData, PluginTaskResult } from "@penpot/mcp-common";
+import { CommandDescriptors } from "@penpot/command-runtime";
 
 const uuidSchema = z.string().uuid();
 const formatSchema = z.enum(["png", "jpeg", "svg", "pdf"]);
@@ -62,11 +62,11 @@ export class ExportShapeDataTool extends ExportTool<ExportShapeArgs> {
     }
 
     public getToolName(): string {
-        return ToolNames.EXPORT_SHAPE;
+        return CommandDescriptors.EXPORT_SHAPE.mcpToolName;
     }
 
     public getToolDescription(): string {
-        return "Exports an explicit shape or the current selection from the bound Penpot file context as base64 data.";
+        return CommandDescriptors.EXPORT_SHAPE.description;
     }
 
     protected async executeCore(args: ExportShapeArgs): Promise<ToolResponse> {
@@ -100,11 +100,11 @@ export class ExportPageTool extends ExportTool<ExportPageArgs> {
     }
 
     public getToolName(): string {
-        return ToolNames.EXPORT_PAGE;
+        return CommandDescriptors.EXPORT_PAGE.mcpToolName;
     }
 
     public getToolDescription(): string {
-        return "Exports a page from the bound Penpot file context as base64 data.";
+        return CommandDescriptors.EXPORT_PAGE.description;
     }
 
     protected async executeCore(args: ExportPageArgs): Promise<ToolResponse> {
@@ -141,11 +141,11 @@ export class RenderPreviewTool extends ExportTool<RenderPreviewArgs> {
     }
 
     public getToolName(): string {
-        return ToolNames.RENDER_PREVIEW;
+        return CommandDescriptors.RENDER_PREVIEW.mcpToolName;
     }
 
     public getToolDescription(): string {
-        return "Renders a PNG preview for a page, shape, or selection in the bound Penpot file context.";
+        return CommandDescriptors.RENDER_PREVIEW.description;
     }
 
     protected async executeCore(args: RenderPreviewArgs): Promise<ToolResponse> {

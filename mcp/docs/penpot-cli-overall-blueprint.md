@@ -220,8 +220,10 @@ Current state:
   and warnings metadata.
 - Done: common command error codes, adapter-selection failure payloads, and
   adapter reason text are centralized in `@penpot/command-runtime`.
-- Next: migrate higher-risk shape/export descriptors now that envelopes and
-  errors are stable.
+- Done: shape/create/update/delete, export.shape, export.page, and
+  render.preview descriptors are part of the migrated command catalog.
+- Next: harden descriptor snapshots and adapter-selection tests before moving
+  into the next authoring wave.
 
 ### Wave C: Headless Authoring Expansion
 
@@ -295,16 +297,15 @@ Acceptance:
 
 ## Near-Term Priority
 
-The next implementation slice should continue Wave B:
+The next implementation slice should finish Wave B:
 
-1. Move shape/create/update/delete descriptors into `command-runtime` while
-   keeping current MCP tool names, CLI command names, and response shapes.
-2. Move `export.page` descriptor metadata after confirming exporter dry-run and
-   execution payloads keep their current public structure.
-3. Reuse the shared request/result envelopes and centralized adapter errors for
-   every migrated shape/export path.
-4. Leave executable schema generation and full descriptor snapshots for the
-   following P10.7 test-hardening slice.
+1. Add descriptor snapshot coverage for low-risk and shape/export descriptor
+   groups.
+2. Add adapter-selection tests for auto, explicit unsupported, explicit
+   unavailable, and fallback reason metadata.
+3. Keep MCP tool responses and CLI JSON/text formatting backward compatible at
+   the transport edges.
+4. After P10.7, move into Wave C headless authoring expansion.
 
 Keep manual configuration behavior stable while moving command metadata and
 envelopes; transport-specific formatting should stay at the MCP/CLI edges.

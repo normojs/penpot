@@ -2,12 +2,12 @@ import { z } from "zod";
 import type { ToolResponse } from "../ToolResponse.js";
 import { PenpotMcpServer } from "../PenpotMcpServer.js";
 import { ShapePluginTask } from "../tasks/ShapePluginTask.js";
-import { ToolNames } from "../ToolNames.js";
 import { requireBoundFileContext } from "./FileContextGuard.js";
 import { PenpotRpcTool, ToolErrorCodes } from "./PenpotRpcTool.js";
 import type { ShapeTaskParams } from "@penpot/mcp-common";
 import {
     AdapterSelectionReasonCodes,
+    CommandDescriptors,
     createAdapterSelectionError,
     getAdapterSelectionReason,
     selectCommandAdapter,
@@ -374,15 +374,15 @@ export class ShapeCreateFrameTool extends ShapeTool<ShapeCreateFrameArgs> {
     }
 
     public getToolName(): string {
-        return ToolNames.SHAPE_CREATE_FRAME;
+        return CommandDescriptors.SHAPE_CREATE_FRAME.mcpToolName;
     }
 
     public getToolDescription(): string {
-        return "Creates a frame in the currently bound Penpot file context.";
+        return CommandDescriptors.SHAPE_CREATE_FRAME.description;
     }
 
     protected async executeCore(args: ShapeCreateFrameArgs): Promise<ToolResponse> {
-        const adapterSelection = this.selectShapeCreateAdapter(ToolNames.SHAPE_CREATE_FRAME, args);
+        const adapterSelection = this.selectShapeCreateAdapter(CommandDescriptors.SHAPE_CREATE_FRAME.id, args);
         if (adapterSelection.status !== "selected") {
             return this.adapterSelectionFailure(adapterSelection);
         }
@@ -447,15 +447,15 @@ export class ShapeCreateRectTool extends ShapeTool<ShapeCreateRectArgs> {
     }
 
     public getToolName(): string {
-        return ToolNames.SHAPE_CREATE_RECT;
+        return CommandDescriptors.SHAPE_CREATE_RECT.mcpToolName;
     }
 
     public getToolDescription(): string {
-        return "Creates a rectangle in the currently bound Penpot file context.";
+        return CommandDescriptors.SHAPE_CREATE_RECT.description;
     }
 
     protected async executeCore(args: ShapeCreateRectArgs): Promise<ToolResponse> {
-        const adapterSelection = this.selectShapeCreateAdapter(ToolNames.SHAPE_CREATE_RECT, args);
+        const adapterSelection = this.selectShapeCreateAdapter(CommandDescriptors.SHAPE_CREATE_RECT.id, args);
         if (adapterSelection.status !== "selected") {
             return this.adapterSelectionFailure(adapterSelection);
         }
@@ -520,15 +520,15 @@ export class ShapeCreateTextTool extends ShapeTool<ShapeCreateTextArgs> {
     }
 
     public getToolName(): string {
-        return ToolNames.SHAPE_CREATE_TEXT;
+        return CommandDescriptors.SHAPE_CREATE_TEXT.mcpToolName;
     }
 
     public getToolDescription(): string {
-        return "Creates a text layer in the currently bound Penpot file context.";
+        return CommandDescriptors.SHAPE_CREATE_TEXT.description;
     }
 
     protected async executeCore(args: ShapeCreateTextArgs): Promise<ToolResponse> {
-        const adapterSelection = this.selectShapeCreateAdapter(ToolNames.SHAPE_CREATE_TEXT, args);
+        const adapterSelection = this.selectShapeCreateAdapter(CommandDescriptors.SHAPE_CREATE_TEXT.id, args);
         if (adapterSelection.status !== "selected") {
             return this.adapterSelectionFailure(adapterSelection);
         }
@@ -589,11 +589,11 @@ export class ShapeCreateImageTool extends ShapeTool<ShapeCreateImageArgs> {
     }
 
     public getToolName(): string {
-        return ToolNames.SHAPE_CREATE_IMAGE;
+        return CommandDescriptors.SHAPE_CREATE_IMAGE.mcpToolName;
     }
 
     public getToolDescription(): string {
-        return "Creates an image-backed rectangle in the currently bound Penpot file context.";
+        return CommandDescriptors.SHAPE_CREATE_IMAGE.description;
     }
 
     protected async executeCore(args: ShapeCreateImageArgs): Promise<ToolResponse> {
@@ -653,15 +653,15 @@ export class ShapeUpdateTool extends ShapeTool<ShapeUpdateArgs> {
     }
 
     public getToolName(): string {
-        return ToolNames.SHAPE_UPDATE;
+        return CommandDescriptors.SHAPE_UPDATE.mcpToolName;
     }
 
     public getToolDescription(): string {
-        return "Updates geometry, style, text, or basic layout for a shape in the currently bound Penpot file context.";
+        return CommandDescriptors.SHAPE_UPDATE.description;
     }
 
     protected async executeCore(args: ShapeUpdateArgs): Promise<ToolResponse> {
-        const adapterSelection = this.selectShapeEditAdapter(ToolNames.SHAPE_UPDATE, args);
+        const adapterSelection = this.selectShapeEditAdapter(CommandDescriptors.SHAPE_UPDATE.id, args);
         if (adapterSelection.status !== "selected") {
             return this.adapterSelectionFailure(adapterSelection);
         }
@@ -716,21 +716,21 @@ export class ShapeDeleteTool extends ShapeTool<ShapeDeleteArgs> {
     }
 
     public getToolName(): string {
-        return ToolNames.SHAPE_DELETE;
+        return CommandDescriptors.SHAPE_DELETE.mcpToolName;
     }
 
     public getToolDescription(): string {
-        return "Deletes a shape in the currently bound Penpot file context.";
+        return CommandDescriptors.SHAPE_DELETE.description;
     }
 
     protected async executeCore(args: ShapeDeleteArgs): Promise<ToolResponse> {
-        const adapterSelection = this.selectShapeEditAdapter(ToolNames.SHAPE_DELETE, args);
+        const adapterSelection = this.selectShapeEditAdapter(CommandDescriptors.SHAPE_DELETE.id, args);
         if (adapterSelection.status !== "selected") {
             return this.adapterSelectionFailure(adapterSelection);
         }
 
         const confirmationError = this.destructiveConfirmationRequired(
-            ToolNames.SHAPE_DELETE,
+            CommandDescriptors.SHAPE_DELETE.id,
             "delete_shape",
             args,
             adapterSelection

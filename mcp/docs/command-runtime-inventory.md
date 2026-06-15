@@ -15,10 +15,10 @@ shared command runtime.
 
 ## Current Shared Runtime State
 
-As of P10.5, `@penpot/command-runtime` exposes adapter-selection helpers, a
+As of P10.6, `@penpot/command-runtime` exposes adapter-selection helpers, a
 low-risk command descriptor catalog, shared request/result envelope helpers,
 and centralized command error/reason metadata for status/config/file/page
-migration.
+migration plus shape/export/render descriptor metadata.
 
 Adapter-selection helpers:
 
@@ -32,8 +32,13 @@ Descriptor catalog:
 
 - descriptors: `mcp.status`, `mcp.config`, `file.list`, `file.create`,
   `file.open`, `page.list`, `page.create`
+- shape/export descriptors: `shape.create_frame`, `shape.create_rect`,
+  `shape.create_text`, `shape.create_image`, `shape.update`, `shape.delete`,
+  `export.shape`, `export.page`, `render.preview`
 - lookup helper: `getCommandDescriptor(id)` by internal id, MCP tool name, or
   CLI command string
+- descriptor groups: `LowRiskCommandDescriptors`,
+  `ShapeExportCommandDescriptors`, and `MigratedCommandDescriptors`
 
 Envelope helpers:
 
@@ -140,7 +145,9 @@ registered or the descriptor explicitly marks them as planned/unavailable.
 ## Duplicated Metadata To Move
 
 - Command/tool names are split across `ToolNames.ts`, CLI help strings, CLI
-  handler switch statements, and ad hoc `command` fields in JSON payloads.
+  handler switch statements, and some ad hoc `command` fields in JSON payloads;
+  status/config/file/page/shape/export/render migrated paths now use shared
+  descriptors for command ids and tool descriptions.
 - Input metadata is duplicated between Zod tool schemas and CLI option parsing.
 - Adapter candidates are repeated in MCP page/shape tools and CLI page/shape
   handlers, but candidate failure codes, common reason text, and selection
@@ -198,3 +205,16 @@ payloads, destructive confirmation, or live context semantics.
   error payload shape.
 - Align MCP backend/auth/context/destructive error code constants with
   `CommandErrorCodes`.
+
+## P10.6 Acceptance Targets
+
+- Add descriptors for implemented typed shape tools:
+  `shape.create_frame`, `shape.create_rect`, `shape.create_text`,
+  `shape.create_image`, `shape.update`, and `shape.delete`.
+- Add descriptors for implemented export/render tools: `export.shape`,
+  `export.page`, and `render.preview`.
+- Keep `LowRiskCommandDescriptors` stable while adding
+  `ShapeExportCommandDescriptors` and `MigratedCommandDescriptors`.
+- Wire MCP shape/export tool names and descriptions plus CLI shape/export
+  command ids to `CommandDescriptors` without changing execution behavior or
+  public output shapes.

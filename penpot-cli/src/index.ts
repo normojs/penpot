@@ -536,7 +536,7 @@ function selectCliBackendCommandAdapter(command: string, args: string[]): Comman
 
 function selectCliExporterAdapter(args: string[]): CommandAdapterSelection {
     return selectCommandAdapter({
-        command: "export.page",
+        command: CommandDescriptors.EXPORT_PAGE.id,
         requestedAdapter: readRequestedAdapter(args),
         candidates: [
             { kind: "exporter", available: true, priority: 20 },
@@ -635,7 +635,7 @@ function createExportPagePlan(args: string[], env: NodeJS.ProcessEnv): ExportPag
     ].filter((value): value is string => typeof value === "string");
 
     return {
-        command: "export.page",
+        command: CommandDescriptors.EXPORT_PAGE.id,
         adapter: adapterSelection.selected,
         adapterSelection,
         fileId,
@@ -2342,7 +2342,7 @@ async function handleShapeUpdate(args: string[], io: CliIO, env: NodeJS.ProcessE
         return 2;
     }
 
-    const adapterSelection = selectCliShapeAdapter("shape.update", args);
+    const adapterSelection = selectCliShapeAdapter(CommandDescriptors.SHAPE_UPDATE.id, args);
     if (adapterSelection.status !== "selected" || adapterSelection.selected !== "backend-command") {
         return adapterSelectionFailure(io, format, adapterSelection);
     }
@@ -2404,7 +2404,7 @@ async function handleShapeDelete(args: string[], io: CliIO, env: NodeJS.ProcessE
         return 2;
     }
 
-    const adapterSelection = selectCliShapeAdapter("shape.delete", args);
+    const adapterSelection = selectCliShapeAdapter(CommandDescriptors.SHAPE_DELETE.id, args);
     if (adapterSelection.status !== "selected" || adapterSelection.selected !== "backend-command") {
         return adapterSelectionFailure(io, format, adapterSelection);
     }
@@ -2461,11 +2461,11 @@ async function handleShapeCommand(args: string[], io: CliIO, env: NodeJS.Process
 
     switch (subcommand) {
         case "create-frame":
-            return await handleShapeCreate("frame", "shape.create_frame", rest, io, env);
+            return await handleShapeCreate("frame", CommandDescriptors.SHAPE_CREATE_FRAME.id, rest, io, env);
         case "create-rect":
-            return await handleShapeCreate("rect", "shape.create_rect", rest, io, env);
+            return await handleShapeCreate("rect", CommandDescriptors.SHAPE_CREATE_RECT.id, rest, io, env);
         case "create-text":
-            return await handleShapeCreate("text", "shape.create_text", rest, io, env);
+            return await handleShapeCreate("text", CommandDescriptors.SHAPE_CREATE_TEXT.id, rest, io, env);
         case "update":
             return await handleShapeUpdate(rest, io, env);
         case "delete":
