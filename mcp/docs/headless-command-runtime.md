@@ -303,8 +303,8 @@ they already exist in MCP, CLI, or both.
 | `shape.create_text` | file | MCP plugin task, backend `create-file-shape` RPC | `backend-command`, fallback `plugin-live` |
 | `shape.update` | file | MCP plugin task, backend `update-file-shape` RPC | `backend-command`, fallback `plugin-live` |
 | `shape.delete` | file | MCP plugin task, backend `delete-file-shape` RPC | `backend-command`, fallback `plugin-live` |
-| `export.page` | file | MCP plugin task, CLI exporter dry-run | `exporter`, fallback `plugin-live` |
-| `render.preview` | file | MCP plugin task | `exporter`, fallback `plugin-live` |
+| `export.page` | file | MCP plugin task, CLI exporter execution | `exporter`, fallback `plugin-live` |
+| `render.preview` | file | MCP plugin task, MCP/CLI exporter preview execution | `exporter`, fallback `plugin-live` |
 
 ## Schema Strategy
 
@@ -709,3 +709,13 @@ P7.9 is complete when:
 - JSON/text output reports adapter metadata and exporter resource metadata.
 - `--output` downloads the returned resource bytes when the public asset route
   serves them.
+
+P11.5 extends the exporter adapter to previews:
+
+- `render.preview` selects exporter for explicit MCP `fileId`/`pageId`/`objectId`
+  targets and keeps plugin-live for bound workspace page, shape, or selection
+  previews.
+- `penpot-cli render preview` uses exporter `export-shapes` with PNG output,
+  reports `artifact.kind: "preview"`, and writes bytes with `--output`.
+- MCP tests cover exporter resource metadata, plugin-live base64 metadata, and
+  partial-target adapter errors.

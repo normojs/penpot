@@ -1,5 +1,5 @@
 import assert from "node:assert/strict";
-import { mkdtempSync, rmSync, writeFileSync } from "node:fs";
+import { mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import test from "node:test";
@@ -74,6 +74,7 @@ test("top-level help lists first-class MCP, shape, and export commands", async (
     assert.match(result.stdout, /penpot-cli shape delete/);
     assert.match(result.stdout, /penpot-cli prototype create-flow/);
     assert.match(result.stdout, /penpot-cli export page/);
+    assert.match(result.stdout, /penpot-cli render preview/);
 });
 
 test("command runtime exposes low-risk command descriptors", () => {
@@ -121,6 +122,7 @@ test("command runtime exposes migrated shape and export descriptors", () => {
     assert.equal(getCommandDescriptor("shape create-frame").id, "shape.create_frame");
     assert.equal(getCommandDescriptor("shape create-image").id, "shape.create_image");
     assert.equal(getCommandDescriptor("render.preview").title, "Render preview");
+    assert.equal(getCommandDescriptor("render preview").cliCommand, "render preview");
 });
 
 test("command runtime creates token-safe request and result envelopes", () => {
@@ -820,6 +822,126 @@ test("export page dry-run rejects plugin-live adapter with structured error", as
     assert.equal(body.error.code, "adapter_not_available");
     assert.equal(body.error.data.adapterSelection.command, "export.page");
     assert.equal(body.error.data.adapterSelection.requested, "plugin-live");
+});
+
+test("render preview dry-run returns exporter adapter plan and artifact metadata", async () => {
+    const result = await runCli(
+        [
+            "render",
+            "preview",
+            "--file",
+            UUIDS.file,
+            "--page",
+            UUIDS.page,
+            "--object",
+            UUIDS.object,
+            "--profile-id",
+            UUIDS.profile,
+            "--scale",
+            "1.5",
+            "--dry-run",
+            "--format",
+            "json",
+        ],
+        {
+            PENPOT_EXPORTER_URI: "http://127.0.0.1:6061",
+        }
+    );
+    const body = parseJson(result.stdout);
+
+    assert.equal(result.exitCode, 0);
+    assert.equal(body.status, "ok");
+    assert.equal(body.data.command, "render.preview");
+    assert.equal(body.data.adapter, "exporter");
+    assert.equal(body.data.artifact.kind, "preview");
+    assert.equal(body.data.artifact.mimeType, "image/png");
+    assert.equal(body.data.artifact.target.objectId, UUIDS.object);
+    assert.equal(body.data.request.cmd, "export-shapes");
+    assert.equal(body.data.request.exports[0].type, "png");
+    assert.equal(body.data.request.exports[0].scale, 1.5);
+});
+
+test("render preview executes exporter request and writes output artifact", async () => {
+    const originalFetch = globalThis.fetch;
+    const tempDir = mkdtempSync(join(tmpdir(), "penpot-cli-preview-"));
+    const outputPath = join(tempDir, "preview.png");
+    const calls = [];
+
+    globalThis.fetch = async (url, options = {}) => {
+        calls.push({ url: String(url), options });
+        if (String(url) === "http://127.0.0.1:6061") {
+            return {
+                ok: true,
+                status: 200,
+                statusText: "OK",
+                headers: {
+                    get: (name) => (name.toLowerCase() === "content-type" ? "application/json" : null),
+                },
+                text: async () =>
+                    JSON.stringify({
+                        id: "resource-1",
+                        uri: "http://127.0.0.1:6061/resource/1",
+                        mtype: "image/png",
+                        filename: "preview.png",
+                    }),
+            };
+        }
+
+        return {
+            ok: true,
+            status: 200,
+            statusText: "OK",
+            headers: {
+                get: (name) => (name.toLowerCase() === "content-type" ? "image/png" : null),
+                has: () => false,
+            },
+            arrayBuffer: async () => new Uint8Array([137, 80, 78, 71]).buffer,
+        };
+    };
+
+    try {
+        const result = await runCli(
+            [
+                "render",
+                "preview",
+                "--file",
+                UUIDS.file,
+                "--page",
+                UUIDS.page,
+                "--object",
+                UUIDS.object,
+                "--profile-id",
+                UUIDS.profile,
+                "--output",
+                outputPath,
+                "--format",
+                "json",
+            ],
+            {
+                PENPOT_EXPORTER_URI: "http://127.0.0.1:6061",
+                PENPOT_CLI_TOKEN: "token-1",
+            }
+        );
+        const body = parseJson(result.stdout);
+
+        assert.equal(result.exitCode, 0);
+        assert.equal(result.stderr, "");
+        assert.equal(calls.length, 2);
+        assert.equal(calls[0].options.method, "POST");
+        assert.equal(calls[0].options.headers.cookie, "auth-token=token-1");
+        assert.match(calls[0].options.body, /~:export-shapes/);
+        assert.match(calls[0].options.body, /~:type/);
+        assert.equal(calls[1].url, "http://127.0.0.1:6061/resource/1");
+        assert.deepEqual([...readFileSync(outputPath)], [137, 80, 78, 71]);
+        assert.equal(body.status, "ok");
+        assert.equal(body.data.command, "render.preview");
+        assert.equal(body.data.artifact.kind, "preview");
+        assert.equal(body.data.downloadedResource.path, outputPath);
+        assert.equal(body.data.downloadedResource.contentType, "image/png");
+    } finally {
+        globalThis.fetch = originalFetch;
+        rmSync(tempDir, { recursive: true, force: true });
+    }
 });
 
 test("shape update validates that at least one update field is present before RPC", async () => {

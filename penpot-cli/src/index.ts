@@ -54,7 +54,8 @@ Usage:
   penpot-cli shape delete --file <file-id> --shape <shape-id> [--page <page-id>] [--format text|json]
   penpot-cli prototype create-flow --file <file-id> --name <name> --starting-board <frame-id> [--page <page-id>] [--flow-id <id>] [--format text|json]
   penpot-cli prototype create-interaction --file <file-id> --source <shape-id> --destination <frame-id> [--page <page-id>] [--trigger click|mouse-enter|mouse-leave|after-delay] [--format text|json]
-  penpot-cli export page --file <file-id> --page <page-id> --object <object-id> [--adapter auto|exporter] [--output <path>] [--dry-run] [--format text|json]`;
+  penpot-cli export page --file <file-id> --page <page-id> --object <object-id> [--adapter auto|exporter] [--output <path>] [--dry-run] [--format text|json]
+  penpot-cli render preview --file <file-id> --page <page-id> --object <object-id> [--adapter auto|exporter] [--output <path>] [--dry-run] [--format text|json]`;
 
 const MCP_HELP_TEXT = `penpot-cli mcp
 
@@ -165,6 +166,23 @@ Environment:
   PENPOT_MCP_USER_TOKEN    Penpot MCP user token fallback for exporter execution
   PENPOT_ACCESS_TOKEN      Generic Penpot access token fallback`;
 
+const RENDER_HELP_TEXT = `penpot-cli render
+
+Usage:
+  penpot-cli render preview --file <file-id> --page <page-id> --object <object-id> [--scale <n>] [--output <path>] [--exporter-uri <uri>] [--backend-uri <uri>] [--token <token>] [--adapter auto|exporter] [--dry-run] [--format text|json]
+
+Notes:
+  Preview rendering uses the exporter adapter and always requests PNG output.
+  It requires explicit file, page, and object ids because CLI commands cannot infer live selection state.
+
+Environment:
+  PENPOT_EXPORTER_URI      Exporter HTTP URI, default http://localhost:6061
+  PENPOT_BACKEND_URI       Backend RPC base URI used to resolve profile id
+  PENPOT_PROFILE_ID        Optional profile id for the direct exporter request
+  PENPOT_CLI_TOKEN         Penpot auth-token/session token for exporter execution
+  PENPOT_MCP_USER_TOKEN    Penpot MCP user token fallback for exporter execution
+  PENPOT_ACCESS_TOKEN      Generic Penpot access token fallback`;
+
 type Format = "text" | "json";
 type RpcParamValue =
     | string
@@ -236,10 +254,27 @@ interface RpcConfig {
     token: string | null;
 }
 
+type ExportArtifactKind = "export" | "preview";
+
+interface ExportArtifactMetadata {
+    kind: ExportArtifactKind;
+    format: string;
+    mimeType: string;
+    name: string;
+    scale: number;
+    target: {
+        fileId: string | null;
+        pageId: string | null;
+        objectId: string | null;
+    };
+    output: string | null;
+}
+
 interface ExportPagePlan {
     command: string;
     adapter: string | null;
     adapterSelection: CommandAdapterSelection;
+    artifact: ExportArtifactMetadata;
     fileId: string | null;
     pageId: string | null;
     objectId: string | null;
@@ -283,6 +318,7 @@ interface ExportPageResult {
     command: string;
     adapter: string | null;
     adapterSelection: CommandAdapterSelection;
+    artifact: ExportArtifactMetadata;
     fileId: string;
     pageId: string;
     objectId: string;
@@ -671,9 +707,9 @@ function selectCliBackendCommandAdapter(command: string, args: string[]): Comman
     });
 }
 
-function selectCliExporterAdapter(args: string[]): CommandAdapterSelection {
+function selectCliExporterAdapter(command: string, args: string[]): CommandAdapterSelection {
     return selectCommandAdapter({
-        command: CommandDescriptors.EXPORT_PAGE.id,
+        command,
         requestedAdapter: readRequestedAdapter(args),
         candidates: [
             { kind: "exporter", available: true, priority: 20 },
@@ -767,19 +803,48 @@ function getDevPlan(args: string[], env: NodeJS.ProcessEnv, dryRun: boolean): De
     };
 }
 
-function createExportPagePlan(args: string[], env: NodeJS.ProcessEnv): ExportPagePlan {
+function mimeTypeForExportFormat(format: string): string {
+    switch (format) {
+        case "png":
+            return "image/png";
+        case "jpeg":
+            return "image/jpeg";
+        case "svg":
+            return "image/svg+xml";
+        case "pdf":
+            return "application/pdf";
+        default:
+            return "application/octet-stream";
+    }
+}
+
+function createExporterArtifactPlan(
+    args: string[],
+    env: NodeJS.ProcessEnv,
+    options: {
+        command: string;
+        artifactKind: ExportArtifactKind;
+        defaultName: string;
+        defaultFormat: string;
+        allowExportFormat: boolean;
+        outputMode: string;
+    }
+): ExportPagePlan {
     const fileId = readOption(args, ["--file", "--file-id"]) ?? null;
     const pageId = readOption(args, ["--page", "--page-id"]) ?? null;
     const objectId = readOption(args, ["--object", "--object-id", "--frame", "--frame-id"]) ?? null;
     const profileId = readOption(args, ["--profile-id"]) ?? env.PENPOT_PROFILE_ID ?? null;
     const scaleValue = readOption(args, ["--scale"]);
-    const exportFormat = readOption(args, ["--export-format"]) ?? "png";
+    const exportFormat = options.allowExportFormat
+        ? (readOption(args, ["--export-format"]) ?? options.defaultFormat)
+        : options.defaultFormat;
     const scale = scaleValue ? Number(scaleValue) : 1;
-    const name = readOption(args, ["--name"])?.trim() || "page";
+    const name = readOption(args, ["--name"])?.trim() || options.defaultName;
     const suffix = readOption(args, ["--suffix"]) ?? "";
     const skipChildren = hasFlag(args, "--skip-children");
+    const output = readOption(args, ["--output"]) ?? null;
     const exporterUri = getExporterUri(args, env);
-    const adapterSelection = selectCliExporterAdapter(args);
+    const adapterSelection = selectCliExporterAdapter(options.command, args);
     const requires = [
         fileId ? null : "fileId",
         pageId ? null : "pageId",
@@ -788,9 +853,18 @@ function createExportPagePlan(args: string[], env: NodeJS.ProcessEnv): ExportPag
     ].filter((value): value is string => typeof value === "string");
 
     return {
-        command: CommandDescriptors.EXPORT_PAGE.id,
+        command: options.command,
         adapter: adapterSelection.selected,
         adapterSelection,
+        artifact: {
+            kind: options.artifactKind,
+            format: exportFormat,
+            mimeType: mimeTypeForExportFormat(exportFormat),
+            name,
+            scale,
+            target: { fileId, pageId, objectId },
+            output,
+        },
         fileId,
         pageId,
         objectId,
@@ -800,7 +874,7 @@ function createExportPagePlan(args: string[], env: NodeJS.ProcessEnv): ExportPag
         scale,
         suffix,
         skipChildren,
-        output: readOption(args, ["--output"]) ?? null,
+        output,
         dryRun: hasFlag(args, "--dry-run"),
         status: "planned",
         exporter: {
@@ -831,15 +905,37 @@ function createExportPagePlan(args: string[], env: NodeJS.ProcessEnv): ExportPag
         nextActions: [
             "Pass explicit file, page, and object ids; the exporter cannot infer live selection state.",
             "Provide a profile id directly or let execution resolve it from the authenticated user token.",
-            "Run without --dry-run to call the exporter; pass --output <path> to download the resource bytes.",
+            `Run without --dry-run to call the exporter; pass --output <path> to download the ${options.artifactKind} bytes.`,
         ],
         diagnostics: {
             transitKeywordFields: ["cmd", "exports[].type"],
             authCookie: "auth-token",
-            outputMode: "exporter-resource-upload",
+            outputMode: options.outputMode,
             profileResolution: "profile-id option, PENPOT_PROFILE_ID, or backend get-profile with an auth-token/session token",
         },
     };
+}
+
+function createExportPagePlan(args: string[], env: NodeJS.ProcessEnv): ExportPagePlan {
+    return createExporterArtifactPlan(args, env, {
+        command: CommandDescriptors.EXPORT_PAGE.id,
+        artifactKind: "export",
+        defaultName: "page",
+        defaultFormat: "png",
+        allowExportFormat: true,
+        outputMode: "exporter-resource-upload",
+    });
+}
+
+function createRenderPreviewPlan(args: string[], env: NodeJS.ProcessEnv): ExportPagePlan {
+    return createExporterArtifactPlan(args, env, {
+        command: CommandDescriptors.RENDER_PREVIEW.id,
+        artifactKind: "preview",
+        defaultName: "preview",
+        defaultFormat: "png",
+        allowExportFormat: false,
+        outputMode: "exporter-preview-resource-upload",
+    });
 }
 
 function createSolidFill(args: string[]): Record<string, unknown> | undefined {
@@ -2156,6 +2252,14 @@ async function executeExportPagePlan(plan: ExportPagePlan, args: string[], env: 
         command: plan.command,
         adapter: plan.adapter,
         adapterSelection: plan.adapterSelection,
+        artifact: {
+            ...plan.artifact,
+            target: {
+                fileId: plan.fileId as string,
+                pageId: plan.pageId as string,
+                objectId: plan.objectId as string,
+            },
+        },
         fileId: plan.fileId as string,
         pageId: plan.pageId as string,
         objectId: plan.objectId as string,
@@ -2338,7 +2442,8 @@ function writePrototypeInteractionCreatedText(io: CliIO, fileId: string, interac
 }
 
 function writeExportPlanText(io: CliIO, plan: ExportPagePlan): void {
-    writeLine(io.stdout, "Export page plan");
+    const label = plan.artifact.kind === "preview" ? "Render preview" : "Export page";
+    writeLine(io.stdout, `${label} plan`);
     writeLine(io.stdout, `command: ${plan.command}`);
     writeLine(io.stdout, `adapter: ${plan.adapter ?? "<none>"}`);
     writeLine(io.stdout, `requestedAdapter: ${plan.adapterSelection.requested}`);
@@ -2350,6 +2455,8 @@ function writeExportPlanText(io: CliIO, plan: ExportPagePlan): void {
     writeLine(io.stdout, `objectId: ${plan.objectId ?? "<missing>"}`);
     writeLine(io.stdout, `profileId: ${plan.profileId ?? "<resolve from user before execution>"}`);
     writeLine(io.stdout, `name: ${plan.name}`);
+    writeLine(io.stdout, `artifactKind: ${plan.artifact.kind}`);
+    writeLine(io.stdout, `mimeType: ${plan.artifact.mimeType}`);
     writeLine(io.stdout, `exportFormat: ${plan.exportFormat}`);
     writeLine(io.stdout, `scale: ${plan.scale}`);
     writeLine(io.stdout, `suffix: ${plan.suffix || "<none>"}`);
@@ -2377,8 +2484,9 @@ function writeExportPlanText(io: CliIO, plan: ExportPagePlan): void {
 function writeExportResultText(io: CliIO, result: ExportPageResult): void {
     const resourceId = result.resource.id ?? result.resource["resource-id"] ?? "<unknown>";
     const resourceUri = result.resource.uri ?? result.resource["resource-uri"] ?? "<unknown>";
+    const label = result.artifact.kind === "preview" ? "Render preview" : "Export page";
 
-    writeLine(io.stdout, "Export page completed");
+    writeLine(io.stdout, `${label} completed`);
     writeLine(io.stdout, `command: ${result.command}`);
     writeLine(io.stdout, `adapter: ${result.adapter ?? "<none>"}`);
     writeLine(io.stdout, `exporter: ${result.exporter.method} ${result.exporter.endpoint}`);
@@ -2386,6 +2494,8 @@ function writeExportResultText(io: CliIO, result: ExportPageResult): void {
     writeLine(io.stdout, `pageId: ${result.pageId}`);
     writeLine(io.stdout, `objectId: ${result.objectId}`);
     writeLine(io.stdout, `profileId: ${result.profileId}`);
+    writeLine(io.stdout, `artifactKind: ${result.artifact.kind}`);
+    writeLine(io.stdout, `mimeType: ${result.artifact.mimeType}`);
     writeLine(io.stdout, `resourceId: ${String(resourceId)}`);
     writeLine(io.stdout, `resourceUri: ${String(resourceUri)}`);
     writeLine(io.stdout, `mtype: ${String(result.resource.mtype ?? "<unknown>")}`);
@@ -3606,6 +3716,60 @@ async function handleExportPage(args: string[], io: CliIO, env: NodeJS.ProcessEn
     }
 }
 
+async function handleRenderPreview(args: string[], io: CliIO, env: NodeJS.ProcessEnv): Promise<number> {
+    const format = parseFormat(args, io);
+    if (!format) {
+        return 2;
+    }
+
+    const plan = createRenderPreviewPlan(args, env);
+    if (!plan.fileId) {
+        writeError(io, format, "file_id_required", "render preview requires --file <file-id>.", [
+            "Open or list files first, then pass --file <file-id>.",
+        ]);
+        return 2;
+    }
+
+    if (!plan.pageId) {
+        writeError(io, format, "page_id_required", "render preview requires --page <page-id>.", [
+            "Run penpot-cli page list --file <file-id> first, then pass --page <page-id>.",
+        ]);
+        return 2;
+    }
+
+    if (!plan.objectId) {
+        writeError(io, format, "object_id_required", "render preview requires --object <object-id>.", [
+            "Pass the page root frame or another renderable object id.",
+            "Headless preview cannot use the current live selection.",
+        ]);
+        return 2;
+    }
+
+    if (plan.adapterSelection.status !== "selected" || plan.adapterSelection.selected !== "exporter") {
+        return adapterSelectionFailure(io, format, plan.adapterSelection);
+    }
+
+    if (!Number.isFinite(plan.scale) || plan.scale <= 0 || plan.scale > 16) {
+        writeError(io, format, "export_scale_invalid", "Preview scale must be greater than 0 and at most 16.", [
+            "Use --scale <number> greater than 0 and at most 16.",
+        ]);
+        return 2;
+    }
+
+    if (plan.dryRun) {
+        writeOk(io, format, plan, () => writeExportPlanText(io, plan));
+        return 0;
+    }
+
+    try {
+        const result = await executeExportPagePlan(plan, args, env);
+        writeOk(io, format, result, () => writeExportResultText(io, result));
+        return 0;
+    } catch (cause) {
+        return exportErrorResponse(io, format, plan, cause);
+    }
+}
+
 async function handleExportCommand(args: string[], io: CliIO, env: NodeJS.ProcessEnv): Promise<number> {
     const [subcommand, ...rest] = args;
 
@@ -3620,6 +3784,24 @@ async function handleExportCommand(args: string[], io: CliIO, env: NodeJS.Proces
         default:
             writeLine(io.stderr, `Unknown export command: ${subcommand}`);
             writeLine(io.stderr, 'Run "penpot-cli export --help" for usage.');
+            return 2;
+    }
+}
+
+async function handleRenderCommand(args: string[], io: CliIO, env: NodeJS.ProcessEnv): Promise<number> {
+    const [subcommand, ...rest] = args;
+
+    if (isHelpFlag(subcommand)) {
+        writeLine(io.stdout, RENDER_HELP_TEXT);
+        return 0;
+    }
+
+    switch (subcommand) {
+        case "preview":
+            return await handleRenderPreview(rest, io, env);
+        default:
+            writeLine(io.stderr, `Unknown render command: ${subcommand}`);
+            writeLine(io.stderr, 'Run "penpot-cli render --help" for usage.');
             return 2;
     }
 }
@@ -3667,6 +3849,10 @@ export async function run(
 
     if (first === "export") {
         return await handleExportCommand(argv.slice(1), io, env);
+    }
+
+    if (first === "render") {
+        return await handleRenderCommand(argv.slice(1), io, env);
     }
 
     writeLine(io.stderr, `Unknown command: ${first}`);

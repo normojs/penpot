@@ -57,6 +57,7 @@ test("descriptor lookup supports internal, MCP, and CLI command names", () => {
     assert.equal(getCommandDescriptor("shape create-frame"), CommandDescriptors.SHAPE_CREATE_FRAME);
     assert.equal(getCommandDescriptor("shape create-image"), CommandDescriptors.SHAPE_CREATE_IMAGE);
     assert.equal(getCommandDescriptor("export.page"), CommandDescriptors.EXPORT_PAGE);
+    assert.equal(getCommandDescriptor("render preview"), CommandDescriptors.RENDER_PREVIEW);
     assert.equal(getCommandDescriptor("missing.command"), undefined);
 });
 
@@ -117,6 +118,10 @@ test("adapter selection errors share codes, messages, and payload shape", () => 
     assert.equal(
         getAdapterSelectionReason(AdapterSelectionReasonCodes.PLUGIN_LIVE_BACKEND_ONLY_SHAPE_FIELDS_UNSUPPORTED),
         "plugin-live does not support backend-only shape style or hierarchy fields; pass fileId to use backend-command."
+    );
+    assert.equal(
+        getAdapterSelectionReason(AdapterSelectionReasonCodes.EXPORTER_EXPLICIT_TARGET_REQUIRED),
+        "exporter requires explicit fileId, pageId, and objectId."
     );
 });
 

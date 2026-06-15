@@ -32,6 +32,8 @@ export const AdapterSelectionReasonCodes = Object.freeze({
     PLUGIN_LIVE_BACKEND_ONLY_SHAPE_FIELDS_UNSUPPORTED: "plugin_live_backend_only_shape_fields_unsupported",
     PLUGIN_LIVE_OMIT_FILE_ID: "plugin_live_omit_file_id",
     PLUGIN_LIVE_OMIT_FILE_PAGE: "plugin_live_omit_file_page",
+    EXPORTER_EXPLICIT_TARGET_REQUIRED: "exporter_explicit_target_required",
+    PLUGIN_LIVE_OMIT_EXPLICIT_TARGET: "plugin_live_omit_explicit_target",
     CLI_PLUGIN_LIVE_UNSUPPORTED: "cli_plugin_live_unsupported",
     CLI_EXPORT_PLUGIN_LIVE_UNSUPPORTED: "cli_export_plugin_live_unsupported",
     CLI_SHAPE_PLUGIN_LIVE_UNSUPPORTED: "cli_shape_plugin_live_unsupported",
@@ -50,6 +52,10 @@ const AdapterSelectionReasonMessages = Object.freeze({
         "plugin-live uses the bound workspace context; omit fileId to request it.",
     [AdapterSelectionReasonCodes.PLUGIN_LIVE_OMIT_FILE_PAGE]:
         "plugin-live uses the bound workspace context; omit fileId and pageId to request it.",
+    [AdapterSelectionReasonCodes.EXPORTER_EXPLICIT_TARGET_REQUIRED]:
+        "exporter requires explicit fileId, pageId, and objectId.",
+    [AdapterSelectionReasonCodes.PLUGIN_LIVE_OMIT_EXPLICIT_TARGET]:
+        "plugin-live uses the bound workspace context; omit fileId, pageId, and objectId to request it.",
     [AdapterSelectionReasonCodes.CLI_PLUGIN_LIVE_UNSUPPORTED]:
         "CLI commands do not execute live workspace plugin tasks.",
     [AdapterSelectionReasonCodes.CLI_EXPORT_PLUGIN_LIVE_UNSUPPORTED]:
@@ -255,11 +261,13 @@ export const CommandDescriptors = Object.freeze({
     RENDER_PREVIEW: Object.freeze({
         id: "render.preview",
         mcpToolName: "render.preview",
+        cliCommand: "render preview",
         title: "Render preview",
-        description: "Renders a PNG preview for a page, shape, or selection in the bound live Penpot workspace context.",
-        inputSchema: "target?, shapeId?, pageId?, scale?",
-        adapters: Object.freeze(["plugin-live"]),
-        responseShape: "status envelope with base64 PNG preview data",
+        description:
+            "Renders a PNG preview through plugin-live for bound workspace context or exporter for explicit targets.",
+        inputSchema: "fileId?, pageId?, objectId?, target?, shapeId?, scale?, output?, dryRun?",
+        adapters: Object.freeze(["exporter", "plugin-live"]),
+        responseShape: "status envelope with preview plan, resource metadata, or base64 PNG preview data",
     }),
 });
 

@@ -63,6 +63,7 @@
 - Add backend-safe headless frame layout updates for `shape.update`, covering `layout none` and flex direction, wrap, alignment, gap, and padding through common/backend, MCP, and `penpot-cli`.
 - Add headless image/media insertion through common/backend `create-file-image-shape`, MCP `shape.create_image` backend-command mode, and `penpot-cli shape create-image`.
 - Add headless prototype flow and navigate interaction creation through common/backend prototype helpers, MCP backend-command routing, and `penpot-cli prototype create-*` commands.
+- Add exporter-backed `render.preview` support for explicit file/page/object targets in MCP plus `penpot-cli render preview` with artifact metadata and `--output` downloads.
 - Add rate limiting and concurrency safety for file snapshot operations [#9723](https://github.com/penpot/penpot/issues/9723) (PR: [#9722](https://github.com/penpot/penpot/pull/9722))
 - Prevent concurrent font uploads from causing excessive simultaneous requests [#9922](https://github.com/penpot/penpot/issues/9922) (PR: [#9921](https://github.com/penpot/penpot/pull/9921))
 

@@ -461,6 +461,10 @@ P6.5 implementation note:
   posts the Transit request to exporter, resolves `profileId` from backend
   `get-profile` when needed, returns exporter resource metadata, and downloads
   bytes when `--output` is supplied.
+- `penpot-cli render preview` reuses the exporter-backed output path for PNG
+  previews of explicit file/page/object targets, reports `artifact.kind:
+  "preview"` metadata, and writes returned resource bytes when `--output` is
+  supplied.
 - P7.5 adds the first shared `@penpot/command-runtime` adapter-selection helper
   and wires it into `penpot-cli` page/export commands plus MCP page tools.
   Responses keep the legacy `adapter` field and add `adapterSelection` with
@@ -1043,6 +1047,22 @@ P11.4 implementation note:
 - Overlay creation, interaction listing, interaction deletion, current page
   state, selection state, and other live workspace semantics remain
   plugin-live until dedicated backend-safe contracts are defined.
+
+P11.5 implementation note:
+
+- `render.preview` now advertises both `exporter` and `plugin-live` adapters in
+  the shared command runtime catalog, with `render preview` as the matching
+  CLI command name.
+- MCP `render.preview` selects the exporter adapter when callers provide
+  explicit `fileId`, `pageId`, and `objectId` targets, posts the existing
+  exporter `export-shapes` Transit request, and returns resource metadata plus
+  consistent preview artifact metadata.
+- MCP `render.preview` keeps the plugin-live path for bound workspace page,
+  shape, or selection previews, returning the plugin-provided base64 PNG data
+  and adapter-selection metadata.
+- `penpot-cli render preview` uses the same exporter request and output
+  download path as `export page`, fixes format to PNG, and supports dry-run
+  request inspection plus real `--output` writes.
 
 ## 6. User Configuration
 

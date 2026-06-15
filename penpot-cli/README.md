@@ -284,6 +284,20 @@ Without `--output`, the command returns the uploaded exporter resource
 metadata. With `--output`, it downloads the returned resource URI and writes the
 bytes to the requested path.
 
+`render preview` uses the same exporter adapter but fixes the output format to
+PNG and reports `artifact.kind: "preview"` in JSON output.
+
+```bash
+node penpot-cli/dist/index.js render preview \
+  --file <file-id> \
+  --page <page-id> \
+  --object <frame-or-shape-id> \
+  --scale 2 \
+  --output ./out/preview.png \
+  --token "$PENPOT_CLI_TOKEN" \
+  --format json
+```
+
 Exporter execution needs the normal Penpot frontend, backend, and exporter
 services running. For local development, use an auth-token/session token in
 `--token`, `PENPOT_CLI_TOKEN`, or `PENPOT_MCP_USER_TOKEN`; pass `--profile-id`

@@ -106,7 +106,7 @@ MCP server tool classes and `penpot-cli`.
 | `prototype.create_interaction` | `PrototypeCreateInteractionArgs` | plugin-live task | JSON plugin task data | `PrototypePluginTask.test.ts` |
 | `export.shape` | `ExportShapeArgs` | plugin-live task | JSON/base64 export task data | `ExportPluginTask.test.ts` serialization only |
 | `export.page` | `ExportPageArgs` | plugin-live task | JSON/base64 export task data | `ExportPluginTask.test.ts` serialization only |
-| `render.preview` | `RenderPreviewArgs` | plugin-live task | JSON/base64 render task data | `ExportPluginTask.test.ts` serialization only |
+| `render.preview` | `RenderPreviewArgs` | exporter HTTP service for explicit targets; plugin-live task for bound workspace context | JSON exporter resource metadata or JSON/base64 render task data | `ExportTools.test.ts` covers exporter/plugin-live/adapter errors; `ExportPluginTask.test.ts` covers serialization |
 | `execute_code` | `ExecuteCodeArgs` | plugin-live task, disabled unless `PENPOT_MCP_ENABLE_EXECUTE_CODE=true` | JSON disabled error or text execution result | `ExecuteCodeTool.test.ts` |
 | `high_level_overview` | `EmptyToolArgs` | local static overview | text overview | gap: no focused test |
 | `penpot_api_info` | `PenpotApiInfoArgs` | local API docs index | text/JSON API info | gap: no focused test |
@@ -152,6 +152,7 @@ registered or the descriptor explicitly marks them as planned/unavailable.
 | `shape update` | `shape.update` | backend-command RPC `update-file-shape` | JSON/text `{fileId,shape,revn,vern,adapter,adapterSelection}` | validation and rich field RPC smoke tests |
 | `shape delete` | `shape.delete` | backend-command RPC `delete-file-shape` | JSON/text `{fileId,shape,revn,vern,deleted,adapter,adapterSelection}` | gap: no smoke test |
 | `export page` | `export.page` | exporter HTTP service | JSON/text dry-run plan or exporter resource metadata/output path | dry-run and adapter-error smoke tests |
+| `render preview` | `render.preview` | exporter HTTP service | JSON/text dry-run plan or exporter preview resource metadata/output path | dry-run and output-write smoke tests |
 
 ## Duplicated Metadata To Move
 

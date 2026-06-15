@@ -68,6 +68,8 @@ export interface AdapterSelectionReasonCodeCatalog {
     PLUGIN_LIVE_BACKEND_ONLY_SHAPE_FIELDS_UNSUPPORTED: "plugin_live_backend_only_shape_fields_unsupported";
     PLUGIN_LIVE_OMIT_FILE_ID: "plugin_live_omit_file_id";
     PLUGIN_LIVE_OMIT_FILE_PAGE: "plugin_live_omit_file_page";
+    EXPORTER_EXPLICIT_TARGET_REQUIRED: "exporter_explicit_target_required";
+    PLUGIN_LIVE_OMIT_EXPLICIT_TARGET: "plugin_live_omit_explicit_target";
     CLI_PLUGIN_LIVE_UNSUPPORTED: "cli_plugin_live_unsupported";
     CLI_EXPORT_PLUGIN_LIVE_UNSUPPORTED: "cli_export_plugin_live_unsupported";
     CLI_SHAPE_PLUGIN_LIVE_UNSUPPORTED: "cli_shape_plugin_live_unsupported";
@@ -221,7 +223,11 @@ export interface CommandDescriptorCatalog extends LowRiskCommandDescriptorCatalo
         mcpToolName: "export.page";
         cliCommand: "export page";
     };
-    RENDER_PREVIEW: CommandDescriptor & { id: "render.preview"; mcpToolName: "render.preview" };
+    RENDER_PREVIEW: CommandDescriptor & {
+        id: "render.preview";
+        mcpToolName: "render.preview";
+        cliCommand: "render preview";
+    };
 }
 
 export const CommandErrorCodes: CommandErrorCodeCatalog;

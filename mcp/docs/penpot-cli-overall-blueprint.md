@@ -242,11 +242,12 @@ Tasks:
   existing backend media upload/storage paths.
 - Done: add backend-supported prototype flow and navigate interaction helpers
   for explicit file/page targets, with MCP and CLI adapter routing.
+- Done: expand exporter-backed preview/render commands for explicit
+  file/page/object targets, with shared artifact metadata for MCP and CLI.
 - Keep set-current as a live workspace operation unless a future backend
   metadata use case becomes meaningful.
 - Keep grid/full layout metadata in plugin-live until backend-command owns
   tracks, cells, and related layout structures.
-- Expand exporter-backed preview/render commands for explicit targets.
 
 Acceptance:
 
@@ -307,14 +308,14 @@ Acceptance:
 
 ## Near-Term Priority
 
-The next implementation slice should continue Wave C:
+The next implementation slice should move into Wave D:
 
-1. Expand exporter-backed preview/render commands for explicit file/page/object
-   targets.
+1. Define the file open/bind handoff UX and command contract across docs,
+   frontend, MCP, and `penpot-cli`.
 2. Keep page current/selection semantics in plugin-live until a backend-safe
    representation is defined.
-3. Add focused tests for export-preview metadata, artifact handling, and MCP/CLI
-   adapter selection.
+3. Add focused tests for URL generation, bind guidance, and live-only
+   file-context errors.
 
 Keep manual configuration behavior stable while moving command metadata and
 envelopes; transport-specific formatting should stay at the MCP/CLI edges.
