@@ -214,14 +214,25 @@ test("ShapeUpdateTool uses backend RPC when fileId is provided", async () => {
         fileId: "00000000-0000-0000-0000-000000000001",
         pageId: "00000000-0000-0000-0000-000000000002",
         shapeId: "00000000-0000-0000-0000-000000000003",
+        parentId: "00000000-0000-0000-0000-000000000004",
+        index: 0,
         name: " CTA ",
         x: 24,
         y: 32,
         width: 180,
         height: 48,
         fill: { color: "#3366ff", opacity: 0.8 },
+        fills: [{ color: "#3366ff", opacity: 0.8 }, { color: "#ffffff" }],
         stroke: { color: "#2244aa", width: 2, alignment: "inner" },
+        strokes: [
+            { color: "#2244aa", width: 2, alignment: "inner" },
+            { color: "#112244", opacity: 0.5 },
+        ],
         borderRadius: 8,
+        r1: 4,
+        r2: 6,
+        r3: 8,
+        r4: 10,
     });
     const body = parseJsonResponse(response);
 
@@ -232,14 +243,25 @@ test("ShapeUpdateTool uses backend RPC when fileId is provided", async () => {
                 id: "00000000-0000-0000-0000-000000000001",
                 "page-id": "00000000-0000-0000-0000-000000000002",
                 "shape-id": "00000000-0000-0000-0000-000000000003",
+                "parent-id": "00000000-0000-0000-0000-000000000004",
+                index: 0,
                 name: "CTA",
                 x: 24,
                 y: 32,
                 width: 180,
                 height: 48,
                 fill: { color: "#3366ff", opacity: 0.8 },
+                fills: [{ color: "#3366ff", opacity: 0.8 }, { color: "#ffffff" }],
                 stroke: { color: "#2244aa", width: 2, alignment: "inner" },
+                strokes: [
+                    { color: "#2244aa", width: 2, alignment: "inner" },
+                    { color: "#112244", opacity: 0.5 },
+                ],
                 "border-radius": 8,
+                r1: 4,
+                r2: 6,
+                r3: 8,
+                r4: 10,
                 content: undefined,
                 "font-size": undefined,
             },
@@ -258,6 +280,34 @@ test("ShapeUpdateTool uses backend RPC when fileId is provided", async () => {
     assert.equal(body.data.adapter, "backend-command");
     assert.equal(body.data.adapterSelection.selected, "backend-command");
     assert.deepEqual(body.data.shape, { id: "00000000-0000-0000-0000-000000000003", type: "rect", name: "CTA" });
+});
+
+test("ShapeUpdateTool rejects backend-only fields without fileId", async () => {
+    const calls: RpcCall[] = [];
+    const tool = new ShapeUpdateTool(
+        mcpServerWithRpc({
+            post: async (methodName: string, params: Record<string, unknown>, userToken: string) => {
+                calls.push({ methodName, params, userToken });
+                return { shape: null };
+            },
+        })
+    );
+
+    const response = await tool.execute({
+        shapeId: "00000000-0000-0000-0000-000000000003",
+        parentId: "00000000-0000-0000-0000-000000000004",
+    });
+    const body = parseJsonResponse(response);
+
+    assert.deepEqual(calls, []);
+    assert.equal(body.status, "error");
+    assert.equal(body.error.code, "adapter_not_available");
+    assert.equal(body.error.data.adapterSelection.command, "shape.update");
+    assert.equal(body.error.data.adapterSelection.selected, null);
+    assert.equal(
+        body.error.data.adapterSelection.candidates[1].reason,
+        "plugin-live does not support backend-only shape style or hierarchy fields; pass fileId to use backend-command."
+    );
 });
 
 test("ShapeDeleteTool uses backend RPC when fileId is provided", async () => {

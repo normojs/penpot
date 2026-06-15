@@ -59,6 +59,7 @@
 - Add shared command descriptors for typed shape, export, and render command metadata without changing MCP or CLI behavior.
 - Add focused command-runtime tests for descriptor groups, adapter selection, errors, and token-safe envelopes.
 - Add headless page rename support through common/backend `rename-file-page`, MCP `page.rename` backend-command mode, and `penpot-cli page rename`.
+- Expand headless `shape.update` styling and hierarchy support with fill/stroke stacks, independent corner radii, and parent frame movement through common/backend, MCP, and `penpot-cli`.
 - Add rate limiting and concurrency safety for file snapshot operations [#9723](https://github.com/penpot/penpot/issues/9723) (PR: [#9722](https://github.com/penpot/penpot/pull/9722))
 - Prevent concurrent font uploads from causing excessive simultaneous requests [#9922](https://github.com/penpot/penpot/issues/9922) (PR: [#9921](https://github.com/penpot/penpot/pull/9921))
 

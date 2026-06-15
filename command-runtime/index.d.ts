@@ -65,6 +65,7 @@ export interface AdapterSelectionReasonCodeCatalog {
     BACKEND_COMMAND_FILE_ID_REQUIRED: "backend_command_file_id_required";
     BACKEND_COMMAND_FILE_PAGE_REQUIRED: "backend_command_file_page_required";
     BACKEND_COMMAND_LAYOUT_UNSUPPORTED: "backend_command_layout_unsupported";
+    PLUGIN_LIVE_BACKEND_ONLY_SHAPE_FIELDS_UNSUPPORTED: "plugin_live_backend_only_shape_fields_unsupported";
     PLUGIN_LIVE_OMIT_FILE_ID: "plugin_live_omit_file_id";
     PLUGIN_LIVE_OMIT_FILE_PAGE: "plugin_live_omit_file_page";
     CLI_PLUGIN_LIVE_UNSUPPORTED: "cli_plugin_live_unsupported";

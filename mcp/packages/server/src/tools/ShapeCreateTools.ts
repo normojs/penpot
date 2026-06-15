@@ -19,22 +19,22 @@ const dimensionSchema = z.number().positive().max(100000);
 const hexColorSchema = z.string().regex(/^#(?:[0-9a-fA-F]{3}|[0-9a-fA-F]{4}|[0-9a-fA-F]{6}|[0-9a-fA-F]{8})$/);
 const uuidSchema = z.string().uuid();
 
-const fillSchema = z
-    .object({
-        color: hexColorSchema.describe("Solid fill color as #RGB, #RGBA, #RRGGBB, or #RRGGBBAA."),
-        opacity: z.number().min(0).max(1).optional().describe("Fill opacity from 0 to 1. Defaults to 1."),
-    })
-    .optional();
+const solidFillSchema = z.object({
+    color: hexColorSchema.describe("Solid fill color as #RGB, #RGBA, #RRGGBB, or #RRGGBBAA."),
+    opacity: z.number().min(0).max(1).optional().describe("Fill opacity from 0 to 1. Defaults to 1."),
+});
+const fillSchema = solidFillSchema.optional();
+const fillsSchema = z.array(solidFillSchema).optional();
 
-const strokeSchema = z
-    .object({
-        color: hexColorSchema.describe("Stroke color as #RGB, #RGBA, #RRGGBB, or #RRGGBBAA."),
-        opacity: z.number().min(0).max(1).optional().describe("Stroke opacity from 0 to 1. Defaults to 1."),
-        width: z.number().positive().max(1000).optional().describe("Stroke width in pixels. Defaults to 1."),
-        style: z.enum(["solid", "dotted", "dashed"]).optional().describe("Stroke style. Defaults to solid."),
-        alignment: z.enum(["center", "inner", "outer"]).optional().describe("Stroke alignment. Defaults to center."),
-    })
-    .optional();
+const solidStrokeSchema = z.object({
+    color: hexColorSchema.describe("Stroke color as #RGB, #RGBA, #RRGGBB, or #RRGGBBAA."),
+    opacity: z.number().min(0).max(1).optional().describe("Stroke opacity from 0 to 1. Defaults to 1."),
+    width: z.number().positive().max(1000).optional().describe("Stroke width in pixels. Defaults to 1."),
+    style: z.enum(["solid", "dotted", "dashed"]).optional().describe("Stroke style. Defaults to solid."),
+    alignment: z.enum(["center", "inner", "outer"]).optional().describe("Stroke alignment. Defaults to center."),
+});
+const strokeSchema = solidStrokeSchema.optional();
+const strokesSchema = z.array(solidStrokeSchema).optional();
 
 const layoutSchema = z
     .object({
@@ -64,8 +64,36 @@ const parentIdSchema = z
 type PenpotRecord = Record<string, unknown>;
 type BackendShapeType = "frame" | "rect" | "text";
 type ShapeCreateAdapterArgs = { fileId?: string; pageId?: string; adapter?: string };
-type ShapeEditAdapterArgs = { fileId?: string; pageId?: string; adapter?: string; layout?: ShapeTaskParams["layout"] };
+type ShapeStyleUpdateFieldArgs = {
+    parentId?: string;
+    index?: number;
+    fills?: NonNullable<ShapeTaskParams["fill"]>[];
+    strokes?: NonNullable<ShapeTaskParams["stroke"]>[];
+    r1?: number;
+    r2?: number;
+    r3?: number;
+    r4?: number;
+};
+type ShapeEditAdapterArgs = {
+    fileId?: string;
+    pageId?: string;
+    adapter?: string;
+    layout?: ShapeTaskParams["layout"];
+} & ShapeStyleUpdateFieldArgs;
 type DestructiveShapeArgs = ShapeEditAdapterArgs & { shapeId: string; confirm?: boolean };
+
+function hasBackendOnlyShapeUpdateFields(args: ShapeStyleUpdateFieldArgs): boolean {
+    return Boolean(
+        args.parentId ||
+        args.index !== undefined ||
+        args.fills !== undefined ||
+        args.strokes !== undefined ||
+        args.r1 !== undefined ||
+        args.r2 !== undefined ||
+        args.r3 !== undefined ||
+        args.r4 !== undefined
+    );
+}
 
 abstract class ShapeTool<TArgs extends object> extends PenpotRpcTool<TArgs> {
     protected constructor(mcpServer: PenpotMcpServer, inputSchema: z.ZodRawShape) {
@@ -101,6 +129,7 @@ abstract class ShapeTool<TArgs extends object> extends PenpotRpcTool<TArgs> {
 
     protected selectShapeEditAdapter(command: string, args: ShapeEditAdapterArgs): CommandAdapterSelection {
         const hasExplicitTarget = Boolean(args.fileId || args.pageId);
+        const hasBackendOnlyFields = hasBackendOnlyShapeUpdateFields(args);
         const hasBackendTarget = Boolean(args.fileId && !args.layout);
         return selectCommandAdapter({
             command,
@@ -110,17 +139,23 @@ abstract class ShapeTool<TArgs extends object> extends PenpotRpcTool<TArgs> {
                     kind: "backend-command",
                     available: hasBackendTarget,
                     priority: 10,
-                    reason: args.fileId
-                        ? getAdapterSelectionReason(AdapterSelectionReasonCodes.BACKEND_COMMAND_LAYOUT_UNSUPPORTED)
-                        : getAdapterSelectionReason(AdapterSelectionReasonCodes.BACKEND_COMMAND_FILE_ID_REQUIRED),
+                    reason: hasBackendTarget
+                        ? null
+                        : args.fileId
+                          ? getAdapterSelectionReason(AdapterSelectionReasonCodes.BACKEND_COMMAND_LAYOUT_UNSUPPORTED)
+                          : getAdapterSelectionReason(AdapterSelectionReasonCodes.BACKEND_COMMAND_FILE_ID_REQUIRED),
                 },
                 {
                     kind: "plugin-live",
-                    available: !hasExplicitTarget,
+                    available: !hasExplicitTarget && !hasBackendOnlyFields,
                     priority: 50,
                     reason: hasExplicitTarget
                         ? getAdapterSelectionReason(AdapterSelectionReasonCodes.PLUGIN_LIVE_OMIT_FILE_PAGE)
-                        : null,
+                        : hasBackendOnlyFields
+                          ? getAdapterSelectionReason(
+                                AdapterSelectionReasonCodes.PLUGIN_LIVE_BACKEND_ONLY_SHAPE_FIELDS_UNSUPPORTED
+                            )
+                          : null,
                 },
             ],
         });
@@ -260,14 +295,22 @@ abstract class ShapeTool<TArgs extends object> extends PenpotRpcTool<TArgs> {
                     id: args.fileId,
                     "page-id": args.pageId,
                     "shape-id": args.shapeId,
+                    "parent-id": args.parentId,
+                    index: args.index,
                     name: this.nonEmptyString(args.name),
                     x: args.x,
                     y: args.y,
                     width: args.width,
                     height: args.height,
                     fill: args.fill,
+                    fills: args.fills,
                     stroke: args.stroke,
+                    strokes: args.strokes,
                     "border-radius": args.borderRadius,
+                    r1: args.r1,
+                    r2: args.r2,
+                    r3: args.r3,
+                    r4: args.r4,
                     content: args.content,
                     "font-size": args.fontSize,
                 },
@@ -617,14 +660,22 @@ export class ShapeUpdateArgs {
         pageId: uuidSchema.optional().describe("Optional page id for backend-command headless shape updates."),
         shapeId: z.string().uuid().describe("Shape id to update."),
         adapter: z.string().optional().describe("Optional adapter request: auto, backend-command, or plugin-live."),
+        parentId: parentIdSchema.describe("Optional backend-command target parent frame/root id for moving the shape."),
+        index: z.number().int().min(0).optional().describe("Optional backend-command child index when moving parent."),
         name: z.string().min(1).max(250).optional().describe("Optional new shape name."),
         x: coordinateSchema.optional().describe("Optional new x position. Uses parent-relative coordinates."),
         y: coordinateSchema.optional().describe("Optional new y position. Uses parent-relative coordinates."),
         width: dimensionSchema.optional().describe("Optional new width in pixels."),
         height: dimensionSchema.optional().describe("Optional new height in pixels."),
         fill: fillSchema,
+        fills: fillsSchema.describe("Optional backend-command fill stack. Overrides fill when supplied."),
         stroke: strokeSchema,
+        strokes: strokesSchema.describe("Optional backend-command stroke stack. Overrides stroke when supplied."),
         borderRadius: z.number().min(0).max(10000).optional().describe("Optional corner radius in pixels."),
+        r1: z.number().min(0).max(10000).optional().describe("Optional backend-command top-left corner radius."),
+        r2: z.number().min(0).max(10000).optional().describe("Optional backend-command top-right corner radius."),
+        r3: z.number().min(0).max(10000).optional().describe("Optional backend-command bottom-right corner radius."),
+        r4: z.number().min(0).max(10000).optional().describe("Optional backend-command bottom-left corner radius."),
         content: z.string().min(1).max(10000).optional().describe("Optional text content for text shapes."),
         fontSize: z.number().positive().max(512).optional().describe("Optional font size for text shapes."),
         layout: layoutSchema,
@@ -634,14 +685,22 @@ export class ShapeUpdateArgs {
     pageId?: string;
     shapeId!: string;
     adapter?: string;
+    parentId?: string;
+    index?: number;
     name?: string;
     x?: number;
     y?: number;
     width?: number;
     height?: number;
     fill?: ShapeTaskParams["fill"];
+    fills?: NonNullable<ShapeTaskParams["fill"]>[];
     stroke?: ShapeTaskParams["stroke"];
+    strokes?: NonNullable<ShapeTaskParams["stroke"]>[];
     borderRadius?: number;
+    r1?: number;
+    r2?: number;
+    r3?: number;
+    r4?: number;
     content?: string;
     fontSize?: number;
     layout?: ShapeTaskParams["layout"];

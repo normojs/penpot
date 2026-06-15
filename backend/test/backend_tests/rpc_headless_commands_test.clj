@@ -271,3 +271,115 @@
         (t/is (= "18" (get-in text [:content :children 0 :children 0 :font-size])))
         (t/is (= [{:fill-color "#112233" :fill-opacity 1}]
                  (get-in text [:content :children 0 :children 0 :fills])))))))
+
+(t/deftest update-file-shape-supports-rich-style-and-parent-move
+  (let [profile    (th/create-profile* 1 {:is-active true})
+        file       (th/create-file* 1 {:profile-id (:id profile)
+                                       :project-id (:default-project-id profile)
+                                       :is-shared false})
+        page-id    (get-in file [:data :pages 0])
+        frame-a-id (uuid/next)
+        frame-b-id (uuid/next)
+        rect-id    (uuid/next)]
+
+    (doseq [[shape-id x name] [[frame-a-id 0 "A"]
+                               [frame-b-id 360 "B"]]]
+      (let [out {::th/type :create-file-shape
+                 ::rpc/profile-id (:id profile)
+                 :id (:id file)
+                 :page-id page-id
+                 :shape-id shape-id
+                 :type :frame
+                 :name name
+                 :x x
+                 :y 0
+                 :width 320
+                 :height 640
+                 :features cfeat/supported-features}
+            out (th/command! out)]
+        (t/is (nil? (:error out)))))
+
+    (let [out {::th/type :create-file-shape
+               ::rpc/profile-id (:id profile)
+               :id (:id file)
+               :page-id page-id
+               :shape-id rect-id
+               :parent-id frame-a-id
+               :type :rect
+               :x 24
+               :y 32
+               :width 120
+               :height 40
+               :features cfeat/supported-features}
+          out (th/command! out)]
+      (t/is (nil? (:error out))))
+
+    (t/testing "rich style and parent move update through the backend command"
+      (let [out {::th/type :update-file-shape
+                 ::rpc/profile-id (:id profile)
+                 :id (:id file)
+                 :page-id page-id
+                 :shape-id rect-id
+                 :parent-id frame-b-id
+                 :index 0
+                 :fills [{:color "#abcdef"
+                          :opacity 0.8}
+                         {:color "#112233"}]
+                 :strokes [{:color "#111111"
+                            :width 2}
+                           {:color "#222222"
+                            :opacity 0.5
+                            :style :dotted
+                            :alignment :outer}]
+                 :border-radius 6
+                 :r2 8
+                 :r3 10
+                 :r4 12
+                 :features cfeat/supported-features}
+            out (th/command! out)]
+        (t/is (nil? (:error out)))
+        (t/is (= {:id rect-id
+                  :name "Rectangle"
+                  :type :rect
+                  :page-id page-id
+                  :parent-id frame-b-id
+                  :frame-id frame-b-id
+                  :x 24
+                  :y 32
+                  :width 120
+                  :height 40}
+                 (get-in out [:result :shape])))
+        (t/is (= 4 (get-in out [:result :revn])))))
+
+    (t/testing "rich style and moved hierarchy are persisted"
+      (let [out {::th/type :get-file
+                 ::rpc/profile-id (:id profile)
+                 :id (:id file)
+                 :features cfeat/supported-features}
+            out (th/command! out)
+            data (:data (:result out))
+            objects (get-in data [:pages-index page-id :objects])
+            rect (get objects rect-id)]
+        (t/is (nil? (:error out)))
+        (t/is (= [] (get-in objects [frame-a-id :shapes])))
+        (t/is (= [rect-id] (get-in objects [frame-b-id :shapes])))
+        (t/is (= frame-b-id (:parent-id rect)))
+        (t/is (= frame-b-id (:frame-id rect)))
+        (t/is (= [{:fill-color "#abcdef" :fill-opacity 0.8}
+                  {:fill-color "#112233" :fill-opacity 1}]
+                 (:fills rect)))
+        (t/is (= [{:stroke-color "#111111"
+                   :stroke-opacity 1
+                   :stroke-width 2
+                   :stroke-style :solid
+                   :stroke-alignment :center}
+                  {:stroke-color "#222222"
+                   :stroke-opacity 0.5
+                   :stroke-width 1
+                   :stroke-style :dotted
+                   :stroke-alignment :outer}]
+                 (:strokes rect)))
+        (t/is (= 6 (:r1 rect)))
+        (t/is (= 8 (:r2 rect)))
+        (t/is (= 10 (:r3 rect)))
+        (t/is (= 12 (:r4 rect)))))))

@@ -49,7 +49,7 @@ Usage:
   penpot-cli shape create-frame --file <file-id> --page <page-id> --x <n> --y <n> --width <n> --height <n> [--format text|json]
   penpot-cli shape create-rect --file <file-id> --page <page-id> --parent <frame-id> --x <n> --y <n> --width <n> --height <n> [--format text|json]
   penpot-cli shape create-text --file <file-id> --page <page-id> --parent <frame-id> --x <n> --y <n> --width <n> --height <n> --content <text> [--format text|json]
-  penpot-cli shape update --file <file-id> --shape <shape-id> [--page <page-id>] [--x <n>] [--y <n>] [--width <n>] [--height <n>] [--fill <hex>] [--format text|json]
+  penpot-cli shape update --file <file-id> --shape <shape-id> [--page <page-id>] [--parent <frame-id>] [--x <n>] [--y <n>] [--width <n>] [--height <n>] [--fill <hex>] [--format text|json]
   penpot-cli shape delete --file <file-id> --shape <shape-id> [--page <page-id>] [--format text|json]
   penpot-cli export page --file <file-id> --page <page-id> --object <object-id> [--adapter auto|exporter] [--output <path>] [--dry-run] [--format text|json]`;
 
@@ -113,8 +113,12 @@ Usage:
   penpot-cli shape create-frame --file <file-id> --page <page-id> --x <n> --y <n> --width <n> --height <n> [--name <name>] [--shape-id <id>] [--fill <hex>] [--format text|json]
   penpot-cli shape create-rect --file <file-id> --page <page-id> --parent <frame-id> --x <n> --y <n> --width <n> --height <n> [--name <name>] [--shape-id <id>] [--fill <hex>] [--border-radius <n>] [--format text|json]
   penpot-cli shape create-text --file <file-id> --page <page-id> --parent <frame-id> --x <n> --y <n> --width <n> --height <n> --content <text> [--name <name>] [--shape-id <id>] [--font-size <n>] [--fill <hex>] [--format text|json]
-  penpot-cli shape update --file <file-id> --shape <shape-id> [--page <page-id>] [--name <name>] [--x <n>] [--y <n>] [--width <n>] [--height <n>] [--fill <hex>] [--stroke <hex>] [--border-radius <n>] [--content <text>] [--font-size <n>] [--format text|json]
+  penpot-cli shape update --file <file-id> --shape <shape-id> [--page <page-id>] [--parent <frame-id>] [--index <n>] [--name <name>] [--x <n>] [--y <n>] [--width <n>] [--height <n>] [--fill <hex>] [--stroke <hex>] [--border-radius <n>] [--r1 <n>] [--r2 <n>] [--r3 <n>] [--r4 <n>] [--content <text>] [--font-size <n>] [--format text|json]
   penpot-cli shape delete --file <file-id> --shape <shape-id> [--page <page-id>] [--format text|json]
+
+Notes:
+  Repeat --fill and --stroke to send backend-command fill/stroke stacks.
+  Repeated --fill-opacity, --stroke-opacity, --stroke-width, --stroke-style, and --stroke-alignment values align by index.
 
 Environment:
   PENPOT_BACKEND_URI       Backend RPC base URI, default http://localhost:6060
@@ -148,6 +152,7 @@ type RpcParamValue =
     | number[]
     | boolean[]
     | Record<string, unknown>
+    | Record<string, unknown>[]
     | null
     | undefined;
 type RpcParams = Record<string, RpcParamValue>;
@@ -296,6 +301,8 @@ interface ShapeUpdateParams {
     fileId: string;
     shapeId: string;
     pageId?: string;
+    parentId?: string;
+    index?: number;
     name?: string;
     x?: number;
     y?: number;
@@ -303,8 +310,14 @@ interface ShapeUpdateParams {
     height?: number;
     content?: string;
     fill?: Record<string, unknown>;
+    fills?: Record<string, unknown>[];
     stroke?: Record<string, unknown>;
+    strokes?: Record<string, unknown>[];
     borderRadius?: number;
+    r1?: number;
+    r2?: number;
+    r3?: number;
+    r4?: number;
     fontSize?: number;
 }
 
@@ -356,6 +369,27 @@ function readOption(args: string[], names: string[]): string | undefined {
     return undefined;
 }
 
+function readOptions(args: string[], names: string[]): string[] {
+    const values: string[] = [];
+    for (let index = 0; index < args.length; index++) {
+        const arg = args[index];
+        for (const name of names) {
+            if (arg === name) {
+                const value = args[index + 1];
+                if (value && !value.startsWith("--")) {
+                    values.push(value);
+                }
+                continue;
+            }
+            const prefix = `${name}=`;
+            if (arg.startsWith(prefix)) {
+                values.push(arg.slice(prefix.length));
+            }
+        }
+    }
+    return values;
+}
+
 function readFirstPositional(args: string[]): string | undefined {
     for (let index = 0; index < args.length; index++) {
         const arg = args[index];
@@ -377,6 +411,13 @@ function readNumberOption(args: string[], names: string[]): number | undefined {
     }
     const number = Number(value);
     return Number.isFinite(number) ? number : Number.NaN;
+}
+
+function readNumberOptions(args: string[], names: string[]): number[] {
+    return readOptions(args, names).map((value) => {
+        const number = Number(value);
+        return Number.isFinite(number) ? number : Number.NaN;
+    });
 }
 
 function parseFormat(args: string[], io: CliIO): Format | null {
@@ -703,6 +744,18 @@ function createSolidFill(args: string[]): Record<string, unknown> | undefined {
     };
 }
 
+function createSolidFills(args: string[]): Record<string, unknown>[] | undefined {
+    const colors = readOptions(args, ["--fill", "--fill-color"]);
+    if (colors.length < 2) {
+        return undefined;
+    }
+    const opacities = readNumberOptions(args, ["--fill-opacity"]);
+    return colors.map((color, index) => ({
+        color,
+        ...(opacities[index] !== undefined ? { opacity: opacities[index] } : {}),
+    }));
+}
+
 function createSolidStroke(args: string[]): Record<string, unknown> | undefined {
     const color = readOption(args, ["--stroke", "--stroke-color"]);
     if (!color) {
@@ -719,6 +772,24 @@ function createSolidStroke(args: string[]): Record<string, unknown> | undefined 
         ...(style ? { style } : {}),
         ...(alignment ? { alignment } : {}),
     };
+}
+
+function createSolidStrokes(args: string[]): Record<string, unknown>[] | undefined {
+    const colors = readOptions(args, ["--stroke", "--stroke-color"]);
+    if (colors.length < 2) {
+        return undefined;
+    }
+    const opacities = readNumberOptions(args, ["--stroke-opacity"]);
+    const widths = readNumberOptions(args, ["--stroke-width"]);
+    const styles = readOptions(args, ["--stroke-style"]);
+    const alignments = readOptions(args, ["--stroke-alignment"]);
+    return colors.map((color, index) => ({
+        color,
+        ...(opacities[index] !== undefined ? { opacity: opacities[index] } : {}),
+        ...(widths[index] !== undefined ? { width: widths[index] } : {}),
+        ...(styles[index] ? { style: styles[index] } : {}),
+        ...(alignments[index] ? { alignment: alignments[index] } : {}),
+    }));
 }
 
 function parseShapeCreateParams(kind: ShapeCreateKind, args: string[], io: CliIO, format: Format): ShapeCreateParams | null {
@@ -827,13 +898,39 @@ function validateOptionalShapeNumbers(args: string[], io: CliIO, format: Format)
         width: readNumberOption(args, ["--width", "--w"]),
         height: readNumberOption(args, ["--height", "--h"]),
         borderRadius: readNumberOption(args, ["--border-radius", "--radius"]),
+        r1: readNumberOption(args, ["--r1"]),
+        r2: readNumberOption(args, ["--r2"]),
+        r3: readNumberOption(args, ["--r3"]),
+        r4: readNumberOption(args, ["--r4"]),
         fontSize: readNumberOption(args, ["--font-size"]),
+        index: readNumberOption(args, ["--index"]),
     };
 
     for (const [name, value] of Object.entries(values)) {
         if (value !== undefined && !Number.isFinite(value)) {
             writeError(io, format, "shape_numeric_option_invalid", `Invalid numeric value for ${name}.`, [
                 "Pass finite numeric optional shape values.",
+            ]);
+            return null;
+        }
+    }
+
+    if (values.index !== undefined && (!Number.isInteger(values.index) || values.index < 0)) {
+        writeError(io, format, "shape_numeric_option_invalid", "Invalid numeric value for index.", [
+            "Pass a non-negative integer index.",
+        ]);
+        return null;
+    }
+
+    const repeatedValues = {
+        fillOpacity: readNumberOptions(args, ["--fill-opacity"]),
+        strokeOpacity: readNumberOptions(args, ["--stroke-opacity"]),
+        strokeWidth: readNumberOptions(args, ["--stroke-width"]),
+    };
+    for (const [name, numbers] of Object.entries(repeatedValues)) {
+        if (numbers.some((value) => !Number.isFinite(value))) {
+            writeError(io, format, "shape_numeric_option_invalid", `Invalid numeric value for ${name}.`, [
+                "Pass finite numeric repeated style values.",
             ]);
             return null;
         }
@@ -850,9 +947,17 @@ function hasShapeUpdateField(params: ShapeUpdateParams): boolean {
         params.width,
         params.height,
         params.content,
+        params.parentId,
+        params.index,
         params.fill,
+        params.fills,
         params.stroke,
+        params.strokes,
         params.borderRadius,
+        params.r1,
+        params.r2,
+        params.r3,
+        params.r4,
         params.fontSize,
     ].some((value) => value !== undefined);
 }
@@ -877,6 +982,8 @@ function parseShapeUpdateParams(args: string[], io: CliIO, format: Format): Shap
         fileId,
         shapeId,
         pageId: readOption(args, ["--page", "--page-id"]),
+        parentId: readOption(args, ["--parent", "--parent-id", "--frame", "--frame-id"]),
+        index: numbers.index,
         name: readOption(args, ["--name"])?.trim() || undefined,
         x: numbers.x,
         y: numbers.y,
@@ -884,14 +991,27 @@ function parseShapeUpdateParams(args: string[], io: CliIO, format: Format): Shap
         height: numbers.height,
         content: readOption(args, ["--content", "--text"]),
         fill: createSolidFill(args),
+        fills: createSolidFills(args),
         stroke: createSolidStroke(args),
+        strokes: createSolidStrokes(args),
         borderRadius: numbers.borderRadius,
+        r1: numbers.r1,
+        r2: numbers.r2,
+        r3: numbers.r3,
+        r4: numbers.r4,
         fontSize: numbers.fontSize,
     };
 
+    if (params.index !== undefined && !params.parentId) {
+        writeError(io, format, "shape_parent_id_required", "shape update requires --parent when --index is provided.", [
+            "Pass --parent <frame-id> together with --index <n>.",
+        ]);
+        return null;
+    }
+
     if (!hasShapeUpdateField(params)) {
         writeError(io, format, "shape_update_empty", "shape update requires at least one update option.", [
-            "Pass --name, geometry, fill, stroke, border radius, content, or font size.",
+            "Pass --name, geometry, parent, fill, stroke, corner radius, content, or font size.",
         ]);
         return null;
     }
@@ -1572,6 +1692,7 @@ function writeShapeUpdatedText(io: CliIO, fileId: string, shape: unknown): void 
     writeLine(io.stdout, `type: ${String(record.type ?? "<unknown>")}`);
     writeLine(io.stdout, `name: ${String(record.name ?? "<unnamed>")}`);
     writeLine(io.stdout, `pageId: ${String(record.pageId ?? record["page-id"] ?? "<unknown>")}`);
+    writeLine(io.stdout, `parentId: ${String(record.parentId ?? record["parent-id"] ?? "<unknown>")}`);
 }
 
 function writeShapeDeletedText(io: CliIO, fileId: string, shape: unknown): void {
@@ -2461,6 +2582,8 @@ async function handleShapeUpdate(args: string[], io: CliIO, env: NodeJS.ProcessE
                 id: shapeParams.fileId,
                 "page-id": shapeParams.pageId,
                 "shape-id": shapeParams.shapeId,
+                "parent-id": shapeParams.parentId,
+                index: shapeParams.index,
                 name: shapeParams.name,
                 x: shapeParams.x,
                 y: shapeParams.y,
@@ -2468,8 +2591,14 @@ async function handleShapeUpdate(args: string[], io: CliIO, env: NodeJS.ProcessE
                 height: shapeParams.height,
                 content: shapeParams.content,
                 fill: shapeParams.fill,
+                fills: shapeParams.fills,
                 stroke: shapeParams.stroke,
+                strokes: shapeParams.strokes,
                 "border-radius": shapeParams.borderRadius,
+                r1: shapeParams.r1,
+                r2: shapeParams.r2,
+                r3: shapeParams.r3,
+                r4: shapeParams.r4,
                 "font-size": shapeParams.fontSize,
             },
             rpc.token

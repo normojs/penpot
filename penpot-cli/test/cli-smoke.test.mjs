@@ -331,6 +331,139 @@ test("page rename calls backend-command RPC with trimmed name", async () => {
     }
 });
 
+test("shape update sends rich style and hierarchy fields to backend-command RPC", async () => {
+    const originalFetch = globalThis.fetch;
+    const calls = [];
+    globalThis.fetch = async (url, options) => {
+        calls.push({ url: String(url), options });
+        return {
+            ok: true,
+            status: 200,
+            statusText: "OK",
+            text: async () =>
+                JSON.stringify({
+                    shape: {
+                        id: UUIDS.object,
+                        name: "CTA",
+                        type: "rect",
+                        pageId: UUIDS.page,
+                        parentId: UUIDS.profile,
+                    },
+                    revn: 3,
+                    vern: 0,
+                }),
+        };
+    };
+
+    try {
+        const result = await runCli(
+            [
+                "shape",
+                "update",
+                "--file",
+                UUIDS.file,
+                "--page",
+                UUIDS.page,
+                "--shape",
+                UUIDS.object,
+                "--parent",
+                UUIDS.profile,
+                "--index",
+                "0",
+                "--fill",
+                "#3366ff",
+                "--fill-opacity",
+                "0.8",
+                "--fill",
+                "#ffffff",
+                "--stroke",
+                "#2244aa",
+                "--stroke-opacity",
+                "1",
+                "--stroke-width",
+                "2",
+                "--stroke-style",
+                "solid",
+                "--stroke-alignment",
+                "inner",
+                "--stroke",
+                "#112244",
+                "--stroke-opacity",
+                "0.5",
+                "--stroke-style",
+                "dotted",
+                "--stroke-alignment",
+                "outer",
+                "--border-radius",
+                "8",
+                "--r1",
+                "4",
+                "--r2",
+                "6",
+                "--r3",
+                "8",
+                "--r4",
+                "10",
+                "--format",
+                "json",
+            ],
+            {
+                PENPOT_BACKEND_URI: "http://127.0.0.1:6060",
+                PENPOT_CLI_TOKEN: "token-1",
+            }
+        );
+        const body = parseJson(result.stdout);
+
+        assert.equal(result.exitCode, 0);
+        assert.equal(result.stderr, "");
+        assert.equal(calls.length, 1);
+        assert.match(calls[0].url, /\/api\/main\/methods\/update-file-shape\?_fmt=json$/);
+        assert.equal(calls[0].options.method, "POST");
+        assert.deepEqual(JSON.parse(calls[0].options.body), {
+            id: UUIDS.file,
+            "page-id": UUIDS.page,
+            "shape-id": UUIDS.object,
+            "parent-id": UUIDS.profile,
+            index: 0,
+            fill: { color: "#3366ff", opacity: 0.8 },
+            fills: [{ color: "#3366ff", opacity: 0.8 }, { color: "#ffffff" }],
+            stroke: {
+                color: "#2244aa",
+                opacity: 1,
+                width: 2,
+                style: "solid",
+                alignment: "inner",
+            },
+            strokes: [
+                {
+                    color: "#2244aa",
+                    opacity: 1,
+                    width: 2,
+                    style: "solid",
+                    alignment: "inner",
+                },
+                {
+                    color: "#112244",
+                    opacity: 0.5,
+                    style: "dotted",
+                    alignment: "outer",
+                },
+            ],
+            "border-radius": 8,
+            r1: 4,
+            r2: 6,
+            r3: 8,
+            r4: 10,
+        });
+        assert.equal(body.status, "ok");
+        assert.equal(body.data.adapter, "backend-command");
+        assert.equal(body.data.adapterSelection.command, "shape.update");
+        assert.equal(body.data.shape.parentId, UUIDS.profile);
+    } finally {
+        globalThis.fetch = originalFetch;
+    }
+});
+
 test("export page dry-run returns exporter adapter plan and request payload", async () => {
     const result = await runCli(
         [

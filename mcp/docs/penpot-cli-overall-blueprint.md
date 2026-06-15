@@ -234,9 +234,12 @@ Tasks:
 
 - Done: add backend/common, MCP, and CLI support for page rename through the
   backend-command adapter.
+- Done: expand backend-command `shape.update` style and hierarchy fields with
+  fill/stroke stacks, independent corner radii, and parent frame movement.
 - Keep set-current as a live workspace operation unless a future backend
   metadata use case becomes meaningful.
-- Expand headless shape styling and hierarchy operations.
+- Keep flex/grid layout metadata in plugin-live until a backend-safe layout
+  write contract is defined.
 - Add image/media upload path for headless shape creation.
 - Add backend-supported prototype flow and interaction helpers.
 - Expand exporter-backed preview/render commands for explicit targets.
@@ -302,15 +305,14 @@ Acceptance:
 
 The next implementation slice should continue Wave C:
 
-1. Expand backend/common shape styling and hierarchy updates for generated
-   frame, rect, and text shapes.
-2. Wire MCP and `penpot-cli` shape update adapters to any newly supported
-   fields while preserving plugin-live fallback for unsupported live-only
-   operations.
+1. Define the backend-safe layout metadata subset, or explicitly defer it and
+   move to the image/media insertion path.
+2. Add headless image/media insertion for generated rectangles using existing
+   media upload/storage paths.
 3. Keep page current/selection semantics in plugin-live until a backend-safe
    representation is defined.
-4. Add focused tests for style, hierarchy, validation, permission, and adapter
-   selection behavior.
+4. Add focused tests for media validation, permission, adapter selection, and
+   export-preview behavior.
 
 Keep manual configuration behavior stable while moving command metadata and
 envelopes; transport-specific formatting should stay at the MCP/CLI edges.

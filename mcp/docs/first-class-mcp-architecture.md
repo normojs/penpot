@@ -979,6 +979,11 @@ P7.3 implementation note:
   targets keep using the plugin-live bound workspace path.
 - `penpot-cli shape update` and `shape delete` call `update-file-shape` and
   `delete-file-shape` directly and report `adapterSelection` in JSON output.
+- P11.2 expands backend-command `shape.update` with `fills`, `strokes`,
+  independent `r1` through `r4` corner radii, and `parentId`/`index` movement
+  through the existing `:mov-objects` change path. These richer style and
+  hierarchy fields require explicit `fileId`; plugin-live continues to handle
+  layout edits and bound-workspace updates.
 - `penpot-cli export page` now executes the exporter adapter without a live
   workspace tab for explicit file/page/object targets, returning resource
   metadata or writing the downloaded output bytes to `--output`.
@@ -988,6 +993,19 @@ P11.1 implementation note:
 - The backend exposes `rename-file-page` for headless page metadata updates.
   It persists a standard `:mod-page` change through the normal file update
   pipeline and shares the existing MCP/headless write limit bucket.
+
+P11.2 implementation note:
+
+- `update-file-shape` now supports richer backend-command style and hierarchy
+  fields for generated frame, rectangle, and text shapes: fill stacks, stroke
+  stacks, independent corner radii, and parent frame/root movement.
+- MCP `shape.update` maps those fields to backend-command when `fileId` is
+  supplied and returns a shared adapter error if callers try to use
+  backend-only fields without an explicit file target.
+- `penpot-cli shape update` exposes the same fields with repeatable `--fill`
+  and `--stroke` flags, `--r1` through `--r4`, `--parent`, and `--index`.
+- Flex/grid layout metadata remains plugin-live until a backend-safe layout
+  write contract is defined.
 - MCP `page.rename` now selects backend-command when callers provide an
   explicit `fileId`, and keeps the plugin-live path for bound workspace
   renames.

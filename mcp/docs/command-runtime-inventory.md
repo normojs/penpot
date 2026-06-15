@@ -100,7 +100,7 @@ MCP server tool classes and `penpot-cli`.
 | `shape.create_rect` | `ShapeCreateRectArgs` | backend-command RPC `create-file-shape` when `fileId`/`pageId`; otherwise plugin-live task | JSON `{adapter,adapterSelection,fileId,shape,revn,vern}` or plugin task data | `ShapeCreateTools.test.ts`, `ShapePluginTask.test.ts` |
 | `shape.create_text` | `ShapeCreateTextArgs` | backend-command RPC `create-file-shape` when `fileId`/`pageId`; otherwise plugin-live task | JSON `{adapter,adapterSelection,fileId,shape,revn,vern}` or plugin task data | `ShapeCreateTools.test.ts`, `ShapePluginTask.test.ts` |
 | `shape.create_image` | `ShapeCreateImageArgs` | plugin-live task | JSON plugin task data | `ShapePluginTask.test.ts` serialization only |
-| `shape.update` | `ShapeUpdateArgs` | backend-command RPC `update-file-shape` when `fileId`; otherwise plugin-live task | JSON `{adapter,adapterSelection,fileId,shape,revn,vern}` or plugin task data | `ShapeCreateTools.test.ts`, `ShapePluginTask.test.ts` |
+| `shape.update` | `ShapeUpdateArgs` | backend-command RPC `update-file-shape` when `fileId`; otherwise plugin-live task; backend-only rich style/hierarchy fields require `fileId` | JSON `{adapter,adapterSelection,fileId,shape,revn,vern}` or plugin task data | `ShapeCreateTools.test.ts`, `ShapePluginTask.test.ts` |
 | `shape.delete` | `ShapeDeleteArgs` | backend-command RPC `delete-file-shape` when `fileId`; otherwise plugin-live task | JSON `{adapter,adapterSelection,fileId,shape,revn,vern,deleted}` or confirmation error | `ShapeCreateTools.test.ts`, `ShapePluginTask.test.ts` |
 | `prototype.create_flow` | `PrototypeCreateFlowArgs` | plugin-live task | JSON plugin task data | `PrototypePluginTask.test.ts` |
 | `prototype.create_interaction` | `PrototypeCreateInteractionArgs` | plugin-live task | JSON plugin task data | `PrototypePluginTask.test.ts` |
@@ -149,7 +149,7 @@ registered or the descriptor explicitly marks them as planned/unavailable.
 | `shape create-frame` | `shape.create_frame` | backend-command RPC `create-file-shape` | JSON/text `{fileId,shape,revn,vern,adapter,adapterSelection}` | gap: no smoke test |
 | `shape create-rect` | `shape.create_rect` | backend-command RPC `create-file-shape` | JSON/text `{fileId,shape,revn,vern,adapter,adapterSelection}` | gap: no smoke test |
 | `shape create-text` | `shape.create_text` | backend-command RPC `create-file-shape` | JSON/text `{fileId,shape,revn,vern,adapter,adapterSelection}` | gap: no smoke test |
-| `shape update` | `shape.update` | backend-command RPC `update-file-shape` | JSON/text `{fileId,shape,revn,vern,adapter,adapterSelection}` | validation smoke test only |
+| `shape update` | `shape.update` | backend-command RPC `update-file-shape` | JSON/text `{fileId,shape,revn,vern,adapter,adapterSelection}` | validation and rich field RPC smoke tests |
 | `shape delete` | `shape.delete` | backend-command RPC `delete-file-shape` | JSON/text `{fileId,shape,revn,vern,deleted,adapter,adapterSelection}` | gap: no smoke test |
 | `export page` | `export.page` | exporter HTTP service | JSON/text dry-run plan or exporter resource metadata/output path | dry-run and adapter-error smoke tests |
 

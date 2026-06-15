@@ -215,6 +215,143 @@
              (:strokes shape)))
     (t/is (= 12 (:r1 shape) (:r2 shape) (:r3 shape) (:r4 shape)))))
 
+(t/deftest update-shape-request-updates-rich-style-fields
+  (let [file-id  (uuid/next)
+        page-id  (uuid/next)
+        frame-id (uuid/next)
+        rect-id  (uuid/next)
+        data     (ctf/make-file-data file-id page-id)
+        frame    (headless/create-shape-request data {:page-id page-id
+                                                      :shape-id frame-id
+                                                      :type :frame
+                                                      :x 0
+                                                      :y 0
+                                                      :width 320
+                                                      :height 640})
+        data     (cpc/process-changes data (:changes frame))
+        rect     (headless/create-shape-request data {:page-id page-id
+                                                     :shape-id rect-id
+                                                     :parent-id frame-id
+                                                     :type :rect
+                                                     :x 24
+                                                     :y 32
+                                                     :width 120
+                                                     :height 40})
+        data     (cpc/process-changes data (:changes rect))
+        update   (headless/update-shape-request data {:shape-id rect-id
+                                                      :fills [{:color "#abcdef"
+                                                               :opacity 0.8}
+                                                              {:color "#112233"}]
+                                                      :strokes [{:color "#111111"
+                                                                 :width 2}
+                                                                {:color "#222222"
+                                                                 :opacity 0.5
+                                                                 :style :dotted
+                                                                 :alignment :outer}]
+                                                      :border-radius 6
+                                                      :r2 8
+                                                      :r3 10
+                                                      :r4 12})
+        data'    (cpc/process-changes data (:changes update))
+        shape    (get-in data' [:pages-index page-id :objects rect-id])]
+    (t/is (= [{:fill-color "#abcdef" :fill-opacity 0.8}
+              {:fill-color "#112233" :fill-opacity 1}]
+             (:fills shape)))
+    (t/is (= [{:stroke-color "#111111"
+               :stroke-opacity 1
+               :stroke-width 2
+               :stroke-style :solid
+               :stroke-alignment :center}
+              {:stroke-color "#222222"
+               :stroke-opacity 0.5
+               :stroke-width 1
+               :stroke-style :dotted
+               :stroke-alignment :outer}]
+             (:strokes shape)))
+    (t/is (= 6 (:r1 shape)))
+    (t/is (= 8 (:r2 shape)))
+    (t/is (= 10 (:r3 shape)))
+    (t/is (= 12 (:r4 shape)))))
+
+(t/deftest update-shape-request-moves-shape-between-frames
+  (let [file-id    (uuid/next)
+        page-id    (uuid/next)
+        frame-a-id (uuid/next)
+        frame-b-id (uuid/next)
+        rect-id    (uuid/next)
+        data       (ctf/make-file-data file-id page-id)
+        frame-a    (headless/create-shape-request data {:page-id page-id
+                                                        :shape-id frame-a-id
+                                                        :type :frame
+                                                        :name "A"
+                                                        :x 0
+                                                        :y 0
+                                                        :width 320
+                                                        :height 640})
+        data       (cpc/process-changes data (:changes frame-a))
+        frame-b    (headless/create-shape-request data {:page-id page-id
+                                                        :shape-id frame-b-id
+                                                        :type :frame
+                                                        :name "B"
+                                                        :x 360
+                                                        :y 0
+                                                        :width 320
+                                                        :height 640})
+        data       (cpc/process-changes data (:changes frame-b))
+        rect       (headless/create-shape-request data {:page-id page-id
+                                                       :shape-id rect-id
+                                                       :parent-id frame-a-id
+                                                       :type :rect
+                                                       :x 24
+                                                       :y 32
+                                                       :width 120
+                                                       :height 40})
+        data       (cpc/process-changes data (:changes rect))
+        update     (headless/update-shape-request data {:shape-id rect-id
+                                                        :parent-id frame-b-id
+                                                        :index 0})
+        data'      (cpc/process-changes data (:changes update))
+        shape      (get-in data' [:pages-index page-id :objects rect-id])]
+    (t/is (= frame-b-id (get-in update [:shape :parent-id])))
+    (t/is (= frame-b-id (get-in update [:shape :frame-id])))
+    (t/is (= [{:type :mov-objects
+               :parent-id frame-b-id
+               :shapes [rect-id]
+               :ignore-touched true
+               :index 0
+               :page-id page-id}]
+             (:changes update)))
+    (t/is (= [] (get-in data' [:pages-index page-id :objects frame-a-id :shapes])))
+    (t/is (= [rect-id] (get-in data' [:pages-index page-id :objects frame-b-id :shapes])))
+    (t/is (= frame-b-id (:parent-id shape)))
+    (t/is (= frame-b-id (:frame-id shape)))))
+
+(t/deftest update-shape-request-rejects-frame-reparenting
+  (let [file-id    (uuid/next)
+        page-id    (uuid/next)
+        frame-a-id (uuid/next)
+        frame-b-id (uuid/next)
+        data       (ctf/make-file-data file-id page-id)
+        frame-a    (headless/create-shape-request data {:page-id page-id
+                                                        :shape-id frame-a-id
+                                                        :type :frame
+                                                        :x 0
+                                                        :y 0
+                                                        :width 320
+                                                        :height 640})
+        data       (cpc/process-changes data (:changes frame-a))
+        frame-b    (headless/create-shape-request data {:page-id page-id
+                                                        :shape-id frame-b-id
+                                                        :type :frame
+                                                        :x 360
+                                                        :y 0
+                                                        :width 320
+                                                        :height 640})
+        data       (cpc/process-changes data (:changes frame-b))]
+    (t/is (thrown? #?(:clj Exception :cljs :default)
+                   (headless/update-shape-request data {:shape-id frame-a-id
+                                                        :parent-id frame-b-id})))))
+
 (t/deftest update-shape-request-updates-text-content
   (let [file-id (uuid/next)
         page-id (uuid/next)

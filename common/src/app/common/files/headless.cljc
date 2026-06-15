@@ -186,6 +186,14 @@
    :stroke-style (or style :solid)
    :stroke-alignment (or alignment :center)})
 
+(defn- solid-fills
+  [fills]
+  (mapv solid-fill fills))
+
+(defn- solid-strokes
+  [strokes]
+  (mapv solid-stroke strokes))
+
 (defn- apply-border-radius
   [shape border-radius]
   (cond-> shape
@@ -194,6 +202,18 @@
            :r2 border-radius
            :r3 border-radius
            :r4 border-radius)))
+
+(def ^:private radius-attrs
+  [:r1 :r2 :r3 :r4])
+
+(defn- apply-corner-radii
+  [shape params]
+  (reduce (fn [shape attr]
+            (cond-> shape
+              (contains? params attr)
+              (assoc attr (get params attr))))
+          shape
+          radius-attrs))
 
 (defn- apply-text-content
   [shape {:keys [content font-size fill]}]
@@ -236,8 +256,15 @@
    :width
    :height
    :fill
+   :fills
    :stroke
+   :strokes
    :border-radius
+   :r1
+   :r2
+   :r3
+   :r4
+   :parent-id
    :content
    :font-size])
 
@@ -260,9 +287,9 @@
           (cts/setup-shape)))))
 
 (defn- apply-text-update
-  [shape {:keys [content font-size fill] :as params}]
+  [shape {:keys [content font-size fill fills] :as params}]
   (if (= :text (:type shape))
-    (if-not (requested? params [:content :font-size :fill])
+    (if-not (requested? params [:content :font-size :fill :fills])
       shape
       (let [content (if (contains? params :content)
                       (some-> content str/trim)
@@ -275,7 +302,10 @@
                        (some? font-size)
                        (assoc :font-size (str font-size))
 
-                       (some? fill)
+                       (contains? params :fills)
+                       (assoc :fills (solid-fills fills))
+
+                       (and (not (contains? params :fills)) (some? fill))
                        (assoc :fills [(solid-fill fill)]))]
           (assoc shape :content (apply cttx/change-text (:content shape) content (mapcat identity styles))))))
     (do
@@ -287,20 +317,34 @@
                   :shape-type (:type shape)))
       shape)))
 
+(defn- apply-shape-style-update
+  [shape {:keys [fill fills stroke strokes border-radius] :as params}]
+  (cond-> shape
+    (and (contains? params :fills) (not= (:type shape) :text))
+    (assoc :fills (solid-fills fills))
+
+    (and (not (contains? params :fills)) (some? fill) (not= (:type shape) :text))
+    (assoc :fills [(solid-fill fill)])
+
+    (contains? params :strokes)
+    (assoc :strokes (solid-strokes strokes))
+
+    (and (not (contains? params :strokes)) (some? stroke))
+    (assoc :strokes [(solid-stroke stroke)])
+
+    (some? border-radius)
+    (apply-border-radius border-radius)
+
+    (requested? params radius-attrs)
+    (apply-corner-radii params)))
+
 (defn- apply-shape-update
-  [shape {:keys [name fill stroke border-radius] :as params}]
+  [shape {:keys [name] :as params}]
   (-> shape
       (cond-> (contains? params :name)
         (assoc :name (normalize-updated-shape-name name)))
       (apply-geometry-update params)
-      (cond-> (and (some? fill) (not= (:type shape) :text))
-        (assoc :fills [(solid-fill fill)])
-
-        (some? stroke)
-        (assoc :strokes [(solid-stroke stroke)])
-
-        (some? border-radius)
-        (apply-border-radius border-radius))
+      (apply-shape-style-update params)
       (apply-text-update params)
       (cts/check-shape)))
 
@@ -315,6 +359,68 @@
                      :attr attr
                      :val new-val}))))
         operation-attrs))
+
+(defn- descendant-of?
+  [objects root-id target-id]
+  (some (fn [child-id]
+          (or (= child-id target-id)
+              (descendant-of? objects child-id target-id)))
+        (get-in objects [root-id :shapes])))
+
+(defn- require-move-parent
+  [objects shape parent-id]
+  (let [parent-id (or parent-id uuid/zero)
+        parent    (get objects parent-id)]
+    (when-not parent
+      (ex/raise :type :validation
+                :code :parent-shape-not-found
+                :hint "The target parent shape does not exist."
+                :parent-id parent-id))
+    (when-not (cfh/frame-shape? parent)
+      (ex/raise :type :validation
+                :code :unsupported-parent-shape
+                :hint "Headless shape updates currently support frame parents only."
+                :parent-id parent-id
+                :parent-type (:type parent)))
+    (when (and (= :frame (:type shape))
+               (not= parent-id uuid/zero))
+      (ex/raise :type :validation
+                :code :unsupported-frame-parent
+                :hint "Headless frame updates currently support top-level frames only."
+                :parent-id parent-id))
+    (when (or (= (:id shape) parent-id)
+              (descendant-of? objects (:id shape) parent-id))
+      (ex/raise :type :validation
+                :code :invalid-parent-shape
+                :hint "A shape cannot be moved into itself or one of its descendants."
+                :shape-id (:id shape)
+                :parent-id parent-id))
+    parent))
+
+(defn- frame-id-for-parent
+  [parent]
+  (if (cfh/frame-shape? parent)
+    (:id parent)
+    (:frame-id parent)))
+
+(defn- shape-move-change
+  [objects shape {:keys [parent-id index] :as params}]
+  (when (and (contains? params :index)
+             (not (contains? params :parent-id)))
+    (ex/raise :type :validation
+              :code :parent-id-required
+              :hint "Headless shape hierarchy updates require parent-id when index is provided."
+              :shape-id (:id shape)))
+  (when (contains? params :parent-id)
+    (let [parent    (require-move-parent objects shape parent-id)
+          parent-id (:id parent)]
+      (when (not= (:parent-id shape) parent-id)
+        (cond-> {:type :mov-objects
+                 :parent-id parent-id
+                 :shapes [(:id shape)]
+                 :ignore-touched true}
+          (contains? params :index)
+          (assoc :index index))))))
 
 (defn- frame-id-for
   [type parent-id]
@@ -377,16 +483,27 @@
     (ex/raise :type :validation
               :code :empty-shape-update
               :hint "Headless shape updates require at least one supported field."))
-  (let [[page-id _page shape] (require-supported-shape file-data page-id shape-id)
-        updated-shape         (apply-shape-update shape params)
-        operations            (shape-update-operations shape updated-shape)]
-    {:shape (shape-summary updated-shape page-id)
+  (let [[page-id page shape] (require-supported-shape file-data page-id shape-id)
+        objects              (:objects page)
+        updated-shape        (apply-shape-update shape params)
+        operations           (shape-update-operations shape updated-shape)
+        move-change          (shape-move-change objects updated-shape params)
+        summary-shape        (if move-change
+                               (let [parent (get objects (:parent-id move-change))]
+                                 (assoc updated-shape
+                                        :parent-id (:id parent)
+                                        :frame-id (frame-id-for-parent parent)))
+                               updated-shape)]
+    {:shape (shape-summary summary-shape page-id)
      :changes (cond-> []
                 (seq operations)
                 (conj {:type :mod-obj
                        :id shape-id
                        :page-id page-id
-                       :operations operations}))}))
+                       :operations operations})
+
+                move-change
+                (conj (assoc move-change :page-id page-id)))}))
 
 (defn delete-shape-request
   [file-data {:keys [page-id shape-id]}]

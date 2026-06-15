@@ -601,13 +601,17 @@ shapes without a live workspace tab:
 - backend RPC `delete-file-shape`
 
 `update-file-shape` supports `frame`, `rect`, and `text` targets. It accepts a
-file id, a shape id, an optional page id, and simple patch fields for `name`,
-`x`, `y`, `width`, `height`, `fill`, `stroke`, `borderRadius`, `content`, and
-`fontSize`. The common helper resolves a missing page id by scanning the file's
-page order, rejects unsupported/root shapes, recalculates `selrect` and
-`points` for geometry patches, and persists through the normal `:mod-obj`
-change path. Text `content`, `fontSize`, and `fill` updates rewrite the text
-content tree while preserving existing text when only style fields are passed.
+file id, a shape id, an optional page id, and patch fields for `name`, `x`, `y`,
+`width`, `height`, `fill`, `stroke`, `borderRadius`, `content`, and `fontSize`.
+P11.2 expands the same command with `fills`, `strokes`, `r1`, `r2`, `r3`,
+`r4`, `parentId`, and `index` for backend-command style stacks, independent
+corner radii, and parent frame movement. The common helper resolves a missing
+page id by scanning the file's page order, rejects unsupported/root shapes,
+recalculates `selrect` and `points` for geometry patches, persists style/text
+updates through the normal `:mod-obj` change path, and emits `:mov-objects` for
+parent changes. Text `content`, `fontSize`, `fill`, and `fills` updates rewrite
+the text content tree while preserving existing text when only style fields are
+passed.
 
 `delete-file-shape` resolves the same target shape and persists a standard
 `:del-obj` change, allowing the existing file-change processor to remove the
@@ -641,9 +645,16 @@ fileId + shapeId + optional pageId + at least one simple update field
 ```
 
 Supported update fields are `name`, `x`, `y`, `width`, `height`, `fill`,
-`stroke`, `borderRadius`, `content`, and `fontSize`. Layout updates remain
-plugin-live because the backend/common P7.7 slice deliberately supports only
-simple generated shapes and simple patches.
+`fills`, `stroke`, `strokes`, `borderRadius`, `r1`, `r2`, `r3`, `r4`,
+`parentId`, `index`, `content`, and `fontSize`. Layout updates remain
+plugin-live because the backend/common headless path still deliberately avoids
+partial flex/grid writes.
+
+When `fills` or `strokes` are supplied, they override the legacy single `fill`
+or `stroke` value. `borderRadius` sets all four corners first, and explicit
+`r1` through `r4` values override individual corners. `parentId` moves a shape
+to another frame/root through `:mov-objects`; `index` is only meaningful
+together with `parentId`. Headless frame updates remain top-level only.
 
 P7.8 is complete when:
 
