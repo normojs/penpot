@@ -50,6 +50,7 @@
 - Wire the global MCP lifecycle to the saved auto-connect preference so users can keep MCP enabled without connecting automatically.
 - Add an updated `penpot-cli` overall blueprint covering the target architecture, runtime modes, delivery waves, and expanded MCP/CLI task queue.
 - Align `penpot-cli mcp config` output and documentation with the persisted MCP config model, including built-in/custom/local modes and profile-prop field names.
+- Polish MCP configuration fallback so missing, unknown, partial, or reset profile configs keep built-in defaults and profile-prop reads/writes ignore nested token fields.
 - Add rate limiting and concurrency safety for file snapshot operations [#9723](https://github.com/penpot/penpot/issues/9723) (PR: [#9722](https://github.com/penpot/penpot/pull/9722))
 - Prevent concurrent font uploads from causing excessive simultaneous requests [#9922](https://github.com/penpot/penpot/issues/9922) (PR: [#9921](https://github.com/penpot/penpot/pull/9921))
 

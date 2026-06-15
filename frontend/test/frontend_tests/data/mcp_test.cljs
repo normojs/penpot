@@ -40,6 +40,23 @@
   (t/is (= (runtime-defaults)
            (mcp/effective-config (runtime-defaults) {:mcp-config nil}))))
 
+(t/deftest effective-config-missing-mode-falls-back-to-built-in
+  (let [result (mcp/effective-config
+                (runtime-defaults)
+                {:mcp-config {:public-uri "https://ignored.example"
+                              :stream-uri "https://ignored.example/mcp"}})]
+    (t/is (= (runtime-defaults) result))))
+
+(t/deftest effective-config-unknown-mode-falls-back-to-built-in
+  (let [result (mcp/effective-config
+                (runtime-defaults)
+                {:mcp-config {:mode "sidecar"
+                              :auto-connect false
+                              :public-uri "https://ignored.example"
+                              :stream-uri "https://ignored.example/mcp"}})]
+    (t/is (= (assoc (runtime-defaults) :auto-connect false)
+             result))))
+
 (t/deftest effective-config-builtin-ignores-url-overrides
   (let [result (mcp/effective-config
                 (runtime-defaults)
@@ -89,6 +106,21 @@
     (t/is (= "https://mcp.example/mcp/sse" (:sse-uri result)))
     (t/is (= "wss://ws.example" (:websocket-uri result)))
     (t/is (= "https://status.example/status" (:status-uri result)))))
+
+(t/deftest effective-config-custom-blank-and-partial-fields-fall-back
+  (let [result (mcp/effective-config
+                (runtime-defaults)
+                {:mcp-config {:mode "custom"
+                              :public-uri " "
+                              :stream-uri ""
+                              :sse-uri "https://sse.example/sse"
+                              :websocket-uri "   "
+                              :status-uri nil}})]
+    (t/is (= "https://penpot.example" (:public-uri result)))
+    (t/is (= "https://penpot.example/mcp/stream" (:stream-uri result)))
+    (t/is (= "https://sse.example/sse" (:sse-uri result)))
+    (t/is (= "https://penpot.example/mcp/ws" (:websocket-uri result)))
+    (t/is (= "https://penpot.example/mcp/status" (:status-uri result)))))
 
 (t/deftest editable-config-defaults-to-built-in-mode
   (t/is (= {:mode "builtin"

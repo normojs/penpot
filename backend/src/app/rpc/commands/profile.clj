@@ -55,6 +55,37 @@
    [:websocket-uri {:optional true} [:maybe [::sm/text {:max 2048}]]]
    [:status-uri {:optional true} [:maybe [::sm/text {:max 2048}]]]])
 
+(def ^:private mcp-config-modes
+  #{"builtin" "custom" "local"})
+
+(def ^:private mcp-config-uri-keys
+  [:public-uri :stream-uri :sse-uri :websocket-uri :status-uri])
+
+(defn- non-blank-string
+  [value]
+  (when (string? value)
+    (let [value (str/trim value)]
+      (when-not (str/blank? value)
+        value))))
+
+(defn- sanitize-mcp-config
+  [config]
+  (when (map? config)
+    (let [mode  (:mode config)
+          props (cond-> {}
+                  (contains? mcp-config-modes mode)
+                  (assoc :mode mode)
+
+                  (boolean? (:auto-connect config))
+                  (assoc :auto-connect (:auto-connect config)))]
+      (-> (reduce (fn [props key]
+                    (if-let [value (non-blank-string (get config key))]
+                      (assoc props key value)
+                      props))
+                  props
+                  mcp-config-uri-keys)
+          (not-empty)))))
+
 (def schema:props
   [:map {:title "ProfileProps"}
    [:plugins {:optional true} schema:plugin-registry]
@@ -427,11 +458,20 @@
   (let [profile (get-profile conn profile-id ::db/for-update true)
         props   (reduce-kv (fn [props k v]
                              ;; We don't accept namespaced keys
-                             (if (simple-ident? k)
-                               (if (nil? v)
-                                 (dissoc props k)
-                                 (assoc props k v))
-                               props))
+                             (cond
+                               (not (simple-ident? k))
+                               props
+
+                               (nil? v)
+                               (dissoc props k)
+
+                               (= :mcp-config k)
+                               (if-let [config (sanitize-mcp-config v)]
+                                 (assoc props k config)
+                                 (dissoc props k))
+
+                               :else
+                               (assoc props k v)))
                            (:props profile)
                            props)]
 
@@ -563,7 +603,14 @@
 (defn filter-props
   "Removes all namespace qualified props from `props` attr."
   [props]
-  (into {} (filter (fn [[k _]] (simple-ident? k))) props))
+  (into {}
+        (keep (fn [[k v]]
+                (when (simple-ident? k)
+                  (if (= :mcp-config k)
+                    (when-let [config (sanitize-mcp-config v)]
+                      [k config])
+                    [k v]))))
+        props))
 
 (defn decode-row
   [{:keys [props] :as row}]

@@ -94,7 +94,8 @@ Penpot Core
 
 `profile.props.mcp-enabled` remains the compatibility on/off switch. Optional
 `profile.props.mcp-config` stores mode, auto-connect, public, stream, SSE,
-WebSocket, and status preferences. Tokens stay in access-token rows.
+WebSocket, and status preferences. Tokens stay in access-token rows, and
+profile-prop reads and writes keep only the public connection fields.
 
 ## Core Data Flows
 
@@ -108,8 +109,10 @@ Docker/runtime env
   -> settings copy URL, diagnostics URL, plugin WebSocket URL
 ```
 
-Missing `mcp-config` means built-in defaults. `{:mcp-config nil}` resets the
-user to built-in defaults.
+Missing `mcp-config` means built-in defaults. Unknown modes fall back to
+built-in behavior in the frontend, partial custom URLs derive from the public
+base or runtime defaults, and `{:mcp-config nil}` resets the user to built-in
+defaults.
 
 ### Connection Flow
 

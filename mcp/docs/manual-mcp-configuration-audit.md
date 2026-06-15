@@ -60,8 +60,11 @@ settings page and MCP key modals. Backend accepts both `:mcp-enabled` and
 `schema:props`.
 
 `update-profile-props` merges simple profile props into the profile row, removes
-keys whose value is `nil`, and ignores namespaced keys. Reset-to-built-in can
-therefore remove the whole config by sending `{:mcp-config nil}`.
+keys whose value is `nil`, and ignores namespaced keys. For `:mcp-config`, the
+backend also keeps only the public connection preference keys, trims blank URL
+values, drops empty configs, and never persists or returns nested token-like
+keys. Reset to built-in can therefore remove the whole config by sending
+`{:mcp-config nil}`.
 
 MCP access tokens are stored separately as access-token rows with
 `type = "mcp"`. `get-current-mcp-token` returns the first non-expired MCP token
@@ -122,6 +125,8 @@ Guidelines:
 - Treat `:mcp-enabled` as the master on/off value for backward compatibility.
 - Treat `:mcp-config` as optional; missing config means built-in defaults.
 - Store only user preferences, never MCP token values.
+- Ignore unknown nested `:mcp-config` keys on write; tokens stay in access-token
+  rows and do not belong in profile props.
 - Use strings for `:mode` and URLs to match existing profile-prop schemas and
   JSON/Transit clients.
 - Omit unset nested URL fields from `:mcp-config`; reset-to-built-in can remove
@@ -163,3 +168,7 @@ URLs directly.
 4. Done in P9.5: update `penpot-cli mcp config` output and docs so CLI mode,
    auto-connect, and endpoint names match `profile.props.mcp-config` while
    preserving existing environment variable URL derivation.
+5. Done in P9.7: keep legacy users on built-in defaults when `:mcp-config` is
+   missing, fall back from unknown modes and partial custom URLs in the
+   frontend, and sanitize backend profile-prop reads/writes so token fields and
+   empty endpoint overrides are not persisted or returned.

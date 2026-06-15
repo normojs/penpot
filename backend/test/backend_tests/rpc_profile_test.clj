@@ -75,6 +75,61 @@
     (t/is (true? (get-in reset-out [:result :mcp-enabled])))
     (t/is (not (contains? (:result reset-out) :mcp-config)))))
 
+(t/deftest update-profile-props-sanitizes-mcp-config
+  (let [profile (th/create-profile* 1)
+        data    {::th/type :update-profile-props
+                 ::rpc/profile-id (:id profile)
+                 :props {:mcp-config {:mode "custom"
+                                       :auto-connect false
+                                       :public-uri " https://mcp.example "
+                                       :stream-uri " "
+                                       :sse-uri "https://mcp.example/sse"
+                                       :websocket-uri "wss://mcp.example/ws"
+                                       :status-uri nil
+                                       :token "profile-token"
+                                       :user-token "user-token"
+                                       :authorization "Bearer secret"
+                                       ::private-token "private"}}}
+        out     (th/command! data)]
+    (t/is (nil? (:error out)))
+    (t/is (= {:mode "custom"
+              :auto-connect false
+              :public-uri "https://mcp.example"
+              :sse-uri "https://mcp.example/sse"
+              :websocket-uri "wss://mcp.example/ws"}
+             (get-in out [:result :mcp-config])))))
+
+(t/deftest update-profile-props-drops-empty-mcp-config
+  (let [profile (th/create-profile* 1)
+        seed    {::th/type :update-profile-props
+                 ::rpc/profile-id (:id profile)
+                 :props {:mcp-config {:mode "local"
+                                       :stream-uri "http://localhost:4401/mcp"}}}
+        reset   {::th/type :update-profile-props
+                 ::rpc/profile-id (:id profile)
+                 :props {:mcp-config {:public-uri " "
+                                       :stream-uri nil
+                                       :token "profile-token"}}}
+        seed-out  (th/command! seed)
+        reset-out (th/command! reset)]
+    (t/is (nil? (:error seed-out)))
+    (t/is (nil? (:error reset-out)))
+    (t/is (not (contains? (:result reset-out) :mcp-config)))))
+
+(t/deftest filter-props-sanitizes-existing-mcp-config
+  (t/is (= {:mcp-enabled true
+            :mcp-config {:mode "custom"
+                         :public-uri "https://mcp.example"}}
+           (profile/filter-props
+            {:mcp-enabled true
+             :mcp-config {:mode "custom"
+                          :public-uri " https://mcp.example "
+                          :stream-uri ""
+                          :token "profile-token"
+                          :authorization "Bearer secret"
+                          ::private-token "private"}
+             ::private-prop true}))))
+
 ;; Test with wrong credentials
 (t/deftest profile-login-failed-1
   (let [profile (th/create-profile* 1)
