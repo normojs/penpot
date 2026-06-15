@@ -49,7 +49,7 @@ Usage:
   penpot-cli shape create-frame --file <file-id> --page <page-id> --x <n> --y <n> --width <n> --height <n> [--format text|json]
   penpot-cli shape create-rect --file <file-id> --page <page-id> --parent <frame-id> --x <n> --y <n> --width <n> --height <n> [--format text|json]
   penpot-cli shape create-text --file <file-id> --page <page-id> --parent <frame-id> --x <n> --y <n> --width <n> --height <n> --content <text> [--format text|json]
-  penpot-cli shape update --file <file-id> --shape <shape-id> [--page <page-id>] [--parent <frame-id>] [--x <n>] [--y <n>] [--width <n>] [--height <n>] [--fill <hex>] [--format text|json]
+  penpot-cli shape update --file <file-id> --shape <shape-id> [--page <page-id>] [--parent <frame-id>] [--x <n>] [--y <n>] [--width <n>] [--height <n>] [--fill <hex>] [--layout none|flex] [--format text|json]
   penpot-cli shape delete --file <file-id> --shape <shape-id> [--page <page-id>] [--format text|json]
   penpot-cli export page --file <file-id> --page <page-id> --object <object-id> [--adapter auto|exporter] [--output <path>] [--dry-run] [--format text|json]`;
 
@@ -113,12 +113,13 @@ Usage:
   penpot-cli shape create-frame --file <file-id> --page <page-id> --x <n> --y <n> --width <n> --height <n> [--name <name>] [--shape-id <id>] [--fill <hex>] [--format text|json]
   penpot-cli shape create-rect --file <file-id> --page <page-id> --parent <frame-id> --x <n> --y <n> --width <n> --height <n> [--name <name>] [--shape-id <id>] [--fill <hex>] [--border-radius <n>] [--format text|json]
   penpot-cli shape create-text --file <file-id> --page <page-id> --parent <frame-id> --x <n> --y <n> --width <n> --height <n> --content <text> [--name <name>] [--shape-id <id>] [--font-size <n>] [--fill <hex>] [--format text|json]
-  penpot-cli shape update --file <file-id> --shape <shape-id> [--page <page-id>] [--parent <frame-id>] [--index <n>] [--name <name>] [--x <n>] [--y <n>] [--width <n>] [--height <n>] [--fill <hex>] [--stroke <hex>] [--border-radius <n>] [--r1 <n>] [--r2 <n>] [--r3 <n>] [--r4 <n>] [--content <text>] [--font-size <n>] [--format text|json]
+  penpot-cli shape update --file <file-id> --shape <shape-id> [--page <page-id>] [--parent <frame-id>] [--index <n>] [--name <name>] [--x <n>] [--y <n>] [--width <n>] [--height <n>] [--fill <hex>] [--stroke <hex>] [--border-radius <n>] [--r1 <n>] [--r2 <n>] [--r3 <n>] [--r4 <n>] [--content <text>] [--font-size <n>] [--layout none|flex] [--layout-direction row|column] [--layout-wrap wrap|nowrap] [--layout-align-items start|center|end|stretch] [--layout-justify-content start|center|end|space-between|space-around|space-evenly|stretch] [--layout-gap <n>] [--layout-row-gap <n>] [--layout-column-gap <n>] [--layout-padding <n>] [--format text|json]
   penpot-cli shape delete --file <file-id> --shape <shape-id> [--page <page-id>] [--format text|json]
 
 Notes:
   Repeat --fill and --stroke to send backend-command fill/stroke stacks.
   Repeated --fill-opacity, --stroke-opacity, --stroke-width, --stroke-style, and --stroke-alignment values align by index.
+  Backend-command layout updates support --layout none and --layout flex. Grid layout remains live-workspace only.
 
 Environment:
   PENPOT_BACKEND_URI       Backend RPC base URI, default http://localhost:6060
@@ -278,6 +279,29 @@ interface ExportPageResult {
 }
 
 type ShapeCreateKind = "frame" | "rect" | "text";
+type ShapeLayoutType = "none" | "flex";
+type ShapeLayoutDirection = "row" | "row-reverse" | "column" | "column-reverse";
+type ShapeLayoutWrap = "wrap" | "nowrap";
+type ShapeLayoutAlignItems = "start" | "end" | "center" | "stretch";
+type ShapeLayoutJustifyContent =
+    | "start"
+    | "center"
+    | "end"
+    | "space-between"
+    | "space-around"
+    | "space-evenly"
+    | "stretch";
+
+interface ShapeLayoutParams {
+    type: ShapeLayoutType;
+    direction?: ShapeLayoutDirection;
+    wrap?: ShapeLayoutWrap;
+    alignItems?: ShapeLayoutAlignItems;
+    justifyContent?: ShapeLayoutJustifyContent;
+    rowGap?: number;
+    columnGap?: number;
+    padding?: number;
+}
 
 interface ShapeCreateParams {
     fileId: string;
@@ -319,6 +343,7 @@ interface ShapeUpdateParams {
     r3?: number;
     r4?: number;
     fontSize?: number;
+    layout?: ShapeLayoutParams;
 }
 
 interface ShapeDeleteParams {
@@ -792,6 +817,146 @@ function createSolidStrokes(args: string[]): Record<string, unknown>[] | undefin
     }));
 }
 
+function readEnumOption<T extends string>(
+    args: string[],
+    names: string[],
+    allowed: readonly T[],
+    io: CliIO,
+    format: Format,
+    errorName: string
+): T | null | undefined {
+    const value = readOption(args, names);
+    if (!value) {
+        return undefined;
+    }
+    if ((allowed as readonly string[]).includes(value)) {
+        return value as T;
+    }
+    writeError(io, format, "shape_layout_option_invalid", `Invalid ${errorName} value: ${value}.`, [
+        `Expected one of: ${allowed.join(", ")}.`,
+    ]);
+    return null;
+}
+
+function validateLayoutNumber(
+    value: number | undefined,
+    name: string,
+    io: CliIO,
+    format: Format
+): number | null | undefined {
+    if (value === undefined) {
+        return undefined;
+    }
+    if (!Number.isFinite(value) || value < 0 || value > 10000) {
+        writeError(io, format, "shape_numeric_option_invalid", `Invalid numeric value for ${name}.`, [
+            "Pass a finite layout value from 0 to 10000.",
+        ]);
+        return null;
+    }
+    return value;
+}
+
+function parseShapeLayoutParams(args: string[], io: CliIO, format: Format): ShapeLayoutParams | null | undefined {
+    const layoutOptionNames = [
+        "--layout",
+        "--layout-type",
+        "--layout-direction",
+        "--layout-wrap",
+        "--layout-align-items",
+        "--layout-justify-content",
+        "--layout-gap",
+        "--layout-row-gap",
+        "--layout-column-gap",
+        "--layout-padding",
+    ];
+    const hasLayoutOption = layoutOptionNames.some((name) => readOption(args, [name]) !== undefined);
+    if (!hasLayoutOption) {
+        return undefined;
+    }
+
+    const type = readEnumOption(args, ["--layout", "--layout-type"], ["none", "flex"], io, format, "--layout");
+    if (type === null) {
+        return null;
+    }
+    if (!type) {
+        writeError(io, format, "shape_layout_type_required", "shape update layout options require --layout <type>.", [
+            "Pass --layout none or --layout flex.",
+        ]);
+        return null;
+    }
+
+    const direction = readEnumOption(
+        args,
+        ["--layout-direction"],
+        ["row", "row-reverse", "column", "column-reverse"],
+        io,
+        format,
+        "--layout-direction"
+    );
+    const wrap = readEnumOption(args, ["--layout-wrap"], ["wrap", "nowrap"], io, format, "--layout-wrap");
+    const alignItems = readEnumOption(
+        args,
+        ["--layout-align-items"],
+        ["start", "end", "center", "stretch"],
+        io,
+        format,
+        "--layout-align-items"
+    );
+    const justifyContent = readEnumOption(
+        args,
+        ["--layout-justify-content"],
+        ["start", "center", "end", "space-between", "space-around", "space-evenly", "stretch"],
+        io,
+        format,
+        "--layout-justify-content"
+    );
+
+    if (direction === null || wrap === null || alignItems === null || justifyContent === null) {
+        return null;
+    }
+
+    const gap = validateLayoutNumber(readNumberOption(args, ["--layout-gap"]), "--layout-gap", io, format);
+    const rowGap = validateLayoutNumber(readNumberOption(args, ["--layout-row-gap"]), "--layout-row-gap", io, format);
+    const columnGap = validateLayoutNumber(
+        readNumberOption(args, ["--layout-column-gap"]),
+        "--layout-column-gap",
+        io,
+        format
+    );
+    const padding = validateLayoutNumber(readNumberOption(args, ["--layout-padding"]), "--layout-padding", io, format);
+
+    if (gap === null || rowGap === null || columnGap === null || padding === null) {
+        return null;
+    }
+
+    return {
+        type,
+        ...(direction ? { direction } : {}),
+        ...(wrap ? { wrap } : {}),
+        ...(alignItems ? { alignItems } : {}),
+        ...(justifyContent ? { justifyContent } : {}),
+        ...(rowGap !== undefined || gap !== undefined ? { rowGap: rowGap ?? gap } : {}),
+        ...(columnGap !== undefined || gap !== undefined ? { columnGap: columnGap ?? gap } : {}),
+        ...(padding !== undefined ? { padding } : {}),
+    };
+}
+
+function toRpcShapeLayout(layout: ShapeLayoutParams | undefined): Record<string, unknown> | undefined {
+    if (!layout) {
+        return undefined;
+    }
+    return {
+        type: layout.type,
+        ...(layout.direction ? { direction: layout.direction } : {}),
+        ...(layout.wrap ? { wrap: layout.wrap } : {}),
+        ...(layout.alignItems ? { "align-items": layout.alignItems } : {}),
+        ...(layout.justifyContent ? { "justify-content": layout.justifyContent } : {}),
+        ...(layout.rowGap !== undefined ? { "row-gap": layout.rowGap } : {}),
+        ...(layout.columnGap !== undefined ? { "column-gap": layout.columnGap } : {}),
+        ...(layout.padding !== undefined ? { padding: layout.padding } : {}),
+    };
+}
+
 function parseShapeCreateParams(kind: ShapeCreateKind, args: string[], io: CliIO, format: Format): ShapeCreateParams | null {
     const fileId = readOption(args, ["--file", "--file-id"]);
     if (!fileId) {
@@ -959,6 +1124,7 @@ function hasShapeUpdateField(params: ShapeUpdateParams): boolean {
         params.r3,
         params.r4,
         params.fontSize,
+        params.layout,
     ].some((value) => value !== undefined);
 }
 
@@ -975,6 +1141,11 @@ function parseShapeUpdateParams(args: string[], io: CliIO, format: Format): Shap
 
     const numbers = validateOptionalShapeNumbers(args, io, format);
     if (!numbers) {
+        return null;
+    }
+
+    const layout = parseShapeLayoutParams(args, io, format);
+    if (layout === null) {
         return null;
     }
 
@@ -1000,6 +1171,7 @@ function parseShapeUpdateParams(args: string[], io: CliIO, format: Format): Shap
         r3: numbers.r3,
         r4: numbers.r4,
         fontSize: numbers.fontSize,
+        layout,
     };
 
     if (params.index !== undefined && !params.parentId) {
@@ -1011,7 +1183,7 @@ function parseShapeUpdateParams(args: string[], io: CliIO, format: Format): Shap
 
     if (!hasShapeUpdateField(params)) {
         writeError(io, format, "shape_update_empty", "shape update requires at least one update option.", [
-            "Pass --name, geometry, parent, fill, stroke, corner radius, content, or font size.",
+            "Pass --name, geometry, parent, fill, stroke, corner radius, content, font size, or layout.",
         ]);
         return null;
     }
@@ -2600,6 +2772,7 @@ async function handleShapeUpdate(args: string[], io: CliIO, env: NodeJS.ProcessE
                 r3: shapeParams.r3,
                 r4: shapeParams.r4,
                 "font-size": shapeParams.fontSize,
+                layout: toRpcShapeLayout(shapeParams.layout),
             },
             rpc.token
         );

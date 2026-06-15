@@ -236,10 +236,12 @@ Tasks:
   backend-command adapter.
 - Done: expand backend-command `shape.update` style and hierarchy fields with
   fill/stroke stacks, independent corner radii, and parent frame movement.
+- Done: add backend-safe frame layout updates for `shape.update`, covering
+  `layout none` and flex direction, wrap, alignment, gap, and padding.
 - Keep set-current as a live workspace operation unless a future backend
   metadata use case becomes meaningful.
-- Keep flex/grid layout metadata in plugin-live until a backend-safe layout
-  write contract is defined.
+- Keep grid/full layout metadata in plugin-live until backend-command owns
+  tracks, cells, and related layout structures.
 - Add image/media upload path for headless shape creation.
 - Add backend-supported prototype flow and interaction helpers.
 - Expand exporter-backed preview/render commands for explicit targets.
@@ -305,13 +307,11 @@ Acceptance:
 
 The next implementation slice should continue Wave C:
 
-1. Define the backend-safe layout metadata subset, or explicitly defer it and
-   move to the image/media insertion path.
-2. Add headless image/media insertion for generated rectangles using existing
+1. Add headless image/media insertion for generated rectangles using existing
    media upload/storage paths.
-3. Keep page current/selection semantics in plugin-live until a backend-safe
+2. Keep page current/selection semantics in plugin-live until a backend-safe
    representation is defined.
-4. Add focused tests for media validation, permission, adapter selection, and
+3. Add focused tests for media validation, permission, adapter selection, and
    export-preview behavior.
 
 Keep manual configuration behavior stable while moving command metadata and

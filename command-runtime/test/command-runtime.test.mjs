@@ -107,7 +107,10 @@ test("adapter selection errors share codes, messages, and payload shape", () => 
 
     assert.equal(unavailable.status, "unavailable");
     assert.equal(unavailableError.code, CommandErrorCodes.ADAPTER_NOT_AVAILABLE);
-    assert.equal(unavailable.candidates[0].reason, "backend-command does not support layout updates yet.");
+    assert.equal(
+        unavailable.candidates[0].reason,
+        "backend-command supports layout none/flex only; use plugin-live for grid layout updates."
+    );
     assert.equal(
         getAdapterSelectionReason(AdapterSelectionReasonCodes.PLUGIN_LIVE_BACKEND_ONLY_SHAPE_FIELDS_UNSUPPORTED),
         "plugin-live does not support backend-only shape style or hierarchy fields; pass fileId to use backend-command."

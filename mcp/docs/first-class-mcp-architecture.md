@@ -961,10 +961,11 @@ P7.3 implementation note:
   text creation on a target page. It validates page/parent frame targets,
   creates canonical shape data through common shape constructors, and persists
   the result through the normal `update-file` path.
-- The first shape slice intentionally omitted image upload, arbitrary layout
-  setup, shape update, and delete. P7.7 adds backend/common coverage for simple
-  shape update/delete; image upload and arbitrary layout still stay on
-  plugin-live tools until dedicated backend coverage is added.
+- The first shape slice intentionally omitted image upload, layout setup, shape
+  update, and delete. P7.7 adds backend/common coverage for simple shape
+  update/delete, and P11.2 adds backend-safe frame layout `none`/`flex`
+  updates. Image upload and grid/full layout editing still stay on plugin-live
+  tools until dedicated backend coverage is added.
 - MCP `shape.create_frame`, `shape.create_rect`, and `shape.create_text` now
   choose backend-command when callers provide explicit `fileId` and `pageId`.
   Calls without explicit file/page targets keep using the plugin-live bound
@@ -981,9 +982,14 @@ P7.3 implementation note:
   `delete-file-shape` directly and report `adapterSelection` in JSON output.
 - P11.2 expands backend-command `shape.update` with `fills`, `strokes`,
   independent `r1` through `r4` corner radii, and `parentId`/`index` movement
-  through the existing `:mov-objects` change path. These richer style and
-  hierarchy fields require explicit `fileId`; plugin-live continues to handle
-  layout edits and bound-workspace updates.
+  through the existing `:mov-objects` change path.
+- P11.2 also adds a backend-safe layout subset for frame targets:
+  `layout.type` can be `none` or `flex`, and flex updates support direction,
+  wrap, align-items, justify-content, row/column gaps, and uniform padding.
+  Grid layout remains plugin-live until the backend command owns tracks/cells.
+- These richer style, hierarchy, and supported layout fields require explicit
+  `fileId`; plugin-live continues to handle grid layout edits and
+  bound-workspace updates.
 - `penpot-cli export page` now executes the exporter adapter without a live
   workspace tab for explicit file/page/object targets, returning resource
   metadata or writing the downloaded output bytes to `--output`.
@@ -999,13 +1005,17 @@ P11.2 implementation note:
 - `update-file-shape` now supports richer backend-command style and hierarchy
   fields for generated frame, rectangle, and text shapes: fill stacks, stroke
   stacks, independent corner radii, and parent frame/root movement.
+- `update-file-shape` now supports backend-safe frame layout metadata for
+  `layout.type = none | flex`; flex supports direction, wrap, alignment,
+  row/column gap, and uniform padding. Grid remains plugin-live.
 - MCP `shape.update` maps those fields to backend-command when `fileId` is
   supplied and returns a shared adapter error if callers try to use
-  backend-only fields without an explicit file target.
+  backend-only fields without an explicit file target or request grid layout on
+  the backend-command path.
 - `penpot-cli shape update` exposes the same fields with repeatable `--fill`
-  and `--stroke` flags, `--r1` through `--r4`, `--parent`, and `--index`.
-- Flex/grid layout metadata remains plugin-live until a backend-safe layout
-  write contract is defined.
+  and `--stroke` flags, `--r1` through `--r4`, `--parent`, `--index`, and
+  `--layout none|flex` with flex direction, wrap, alignment, gap, and padding
+  flags.
 - MCP `page.rename` now selects backend-command when callers provide an
   explicit `fileId`, and keeps the plugin-live path for bound workspace
   renames.

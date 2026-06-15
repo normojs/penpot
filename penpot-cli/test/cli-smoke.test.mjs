@@ -331,7 +331,7 @@ test("page rename calls backend-command RPC with trimmed name", async () => {
     }
 });
 
-test("shape update sends rich style and hierarchy fields to backend-command RPC", async () => {
+test("shape update sends rich style, hierarchy, and layout fields to backend-command RPC", async () => {
     const originalFetch = globalThis.fetch;
     const calls = [];
     globalThis.fetch = async (url, options) => {
@@ -404,6 +404,22 @@ test("shape update sends rich style and hierarchy fields to backend-command RPC"
                 "8",
                 "--r4",
                 "10",
+                "--layout",
+                "flex",
+                "--layout-direction",
+                "column",
+                "--layout-wrap",
+                "wrap",
+                "--layout-align-items",
+                "center",
+                "--layout-justify-content",
+                "space-between",
+                "--layout-row-gap",
+                "12",
+                "--layout-column-gap",
+                "8",
+                "--layout-padding",
+                "16",
                 "--format",
                 "json",
             ],
@@ -454,6 +470,16 @@ test("shape update sends rich style and hierarchy fields to backend-command RPC"
             r2: 6,
             r3: 8,
             r4: 10,
+            layout: {
+                type: "flex",
+                direction: "column",
+                wrap: "wrap",
+                "align-items": "center",
+                "justify-content": "space-between",
+                "row-gap": 12,
+                "column-gap": 8,
+                padding: 16,
+            },
         });
         assert.equal(body.status, "ok");
         assert.equal(body.data.adapter, "backend-command");

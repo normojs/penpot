@@ -38,7 +38,9 @@ const strokesSchema = z.array(solidStrokeSchema).optional();
 
 const layoutSchema = z
     .object({
-        type: z.enum(["none", "flex", "grid"]).describe("Container layout mode."),
+        type: z
+            .enum(["none", "flex", "grid"])
+            .describe("Container layout mode. Backend-command supports none and flex; grid uses plugin-live."),
         direction: z
             .enum(["row", "row-reverse", "column", "column-reverse"])
             .optional()
@@ -95,6 +97,27 @@ function hasBackendOnlyShapeUpdateFields(args: ShapeStyleUpdateFieldArgs): boole
     );
 }
 
+function isBackendShapeLayoutSupported(layout?: ShapeTaskParams["layout"]): boolean {
+    return !layout || layout.type === "none" || layout.type === "flex";
+}
+
+function toBackendShapeLayout(layout?: ShapeTaskParams["layout"]): PenpotRecord | undefined {
+    if (!layout) {
+        return undefined;
+    }
+
+    return {
+        type: layout.type,
+        direction: layout.direction,
+        wrap: layout.wrap,
+        "align-items": layout.alignItems,
+        "justify-content": layout.justifyContent,
+        "row-gap": layout.rowGap,
+        "column-gap": layout.columnGap,
+        padding: layout.padding,
+    };
+}
+
 abstract class ShapeTool<TArgs extends object> extends PenpotRpcTool<TArgs> {
     protected constructor(mcpServer: PenpotMcpServer, inputSchema: z.ZodRawShape) {
         super(mcpServer, inputSchema);
@@ -130,7 +153,8 @@ abstract class ShapeTool<TArgs extends object> extends PenpotRpcTool<TArgs> {
     protected selectShapeEditAdapter(command: string, args: ShapeEditAdapterArgs): CommandAdapterSelection {
         const hasExplicitTarget = Boolean(args.fileId || args.pageId);
         const hasBackendOnlyFields = hasBackendOnlyShapeUpdateFields(args);
-        const hasBackendTarget = Boolean(args.fileId && !args.layout);
+        const hasBackendLayout = isBackendShapeLayoutSupported(args.layout);
+        const hasBackendTarget = Boolean(args.fileId && hasBackendLayout);
         return selectCommandAdapter({
             command,
             requestedAdapter: args.adapter ?? "auto",
@@ -141,7 +165,7 @@ abstract class ShapeTool<TArgs extends object> extends PenpotRpcTool<TArgs> {
                     priority: 10,
                     reason: hasBackendTarget
                         ? null
-                        : args.fileId
+                        : args.fileId && !hasBackendLayout
                           ? getAdapterSelectionReason(AdapterSelectionReasonCodes.BACKEND_COMMAND_LAYOUT_UNSUPPORTED)
                           : getAdapterSelectionReason(AdapterSelectionReasonCodes.BACKEND_COMMAND_FILE_ID_REQUIRED),
                 },
@@ -313,6 +337,7 @@ abstract class ShapeTool<TArgs extends object> extends PenpotRpcTool<TArgs> {
                     r4: args.r4,
                     content: args.content,
                     "font-size": args.fontSize,
+                    layout: toBackendShapeLayout(args.layout),
                 },
                 userToken,
                 {

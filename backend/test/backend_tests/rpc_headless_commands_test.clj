@@ -383,3 +383,97 @@
         (t/is (= 8 (:r2 rect)))
         (t/is (= 10 (:r3 rect)))
         (t/is (= 12 (:r4 rect)))))))
+
+(t/deftest update-file-shape-supports-frame-flex-layout
+  (let [profile      (th/create-profile* 1 {:is-active true})
+        file         (th/create-file* 1 {:profile-id (:id profile)
+                                         :project-id (:default-project-id profile)
+                                         :is-shared false})
+        page-id      (get-in file [:data :pages 0])
+        frame-id     (uuid/next)
+        layout-attrs [:layout
+                      :layout-flex-dir
+                      :layout-gap
+                      :layout-gap-type
+                      :layout-wrap-type
+                      :layout-padding-type
+                      :layout-padding
+                      :layout-justify-content
+                      :layout-align-content
+                      :layout-align-items]]
+
+    (let [out {::th/type :create-file-shape
+               ::rpc/profile-id (:id profile)
+               :id (:id file)
+               :page-id page-id
+               :shape-id frame-id
+               :type :frame
+               :x 0
+               :y 0
+               :width 320
+               :height 640
+               :features cfeat/supported-features}
+          out (th/command! out)]
+      (t/is (nil? (:error out)))
+      (t/is (= 1 (get-in out [:result :revn]))))
+
+    (t/testing "set frame flex layout through the backend command"
+      (let [out {::th/type :update-file-shape
+                 ::rpc/profile-id (:id profile)
+                 :id (:id file)
+                 :shape-id frame-id
+                 :layout {:type :flex
+                          :direction :column
+                          :wrap :wrap
+                          :align-items :center
+                          :justify-content :space-between
+                          :row-gap 12
+                          :column-gap 8
+                          :padding 16}
+                 :features cfeat/supported-features}
+            out (th/command! out)]
+        (t/is (nil? (:error out)))
+        (t/is (= frame-id (get-in out [:result :shape :id])))
+        (t/is (= 2 (get-in out [:result :revn])))))
+
+    (t/testing "frame flex layout is persisted"
+      (let [out {::th/type :get-file
+                 ::rpc/profile-id (:id profile)
+                 :id (:id file)
+                 :features cfeat/supported-features}
+            out (th/command! out)
+            data (:data (:result out))
+            frame (get-in data [:pages-index page-id :objects frame-id])]
+        (t/is (nil? (:error out)))
+        (t/is (= :flex (:layout frame)))
+        (t/is (= :column (:layout-flex-dir frame)))
+        (t/is (= :wrap (:layout-wrap-type frame)))
+        (t/is (= :center (:layout-align-items frame)))
+        (t/is (= :space-between (:layout-justify-content frame)))
+        (t/is (= :stretch (:layout-align-content frame)))
+        (t/is (= :multiple (:layout-gap-type frame)))
+        (t/is (= {:row-gap 12 :column-gap 8} (:layout-gap frame)))
+        (t/is (= :simple (:layout-padding-type frame)))
+        (t/is (= {:p1 16 :p2 16 :p3 16 :p4 16} (:layout-padding frame)))))
+
+    (t/testing "remove frame layout through the backend command"
+      (let [out {::th/type :update-file-shape
+                 ::rpc/profile-id (:id profile)
+                 :id (:id file)
+                 :shape-id frame-id
+                 :layout {:type :none}
+                 :features cfeat/supported-features}
+            out (th/command! out)]
+        (t/is (nil? (:error out)))
+        (t/is (= 3 (get-in out [:result :revn])))))
+
+    (t/testing "layout removal is persisted"
+      (let [out {::th/type :get-file
+                 ::rpc/profile-id (:id profile)
+                 :id (:id file)
+                 :features cfeat/supported-features}
+            out (th/command! out)
+            data (:data (:result out))
+            frame (get-in data [:pages-index page-id :objects frame-id])]
+        (t/is (nil? (:error out)))
+        (t/is (every? #(not (contains? frame %)) layout-attrs))))))

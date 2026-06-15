@@ -233,6 +233,16 @@ test("ShapeUpdateTool uses backend RPC when fileId is provided", async () => {
         r2: 6,
         r3: 8,
         r4: 10,
+        layout: {
+            type: "flex",
+            direction: "column",
+            wrap: "wrap",
+            alignItems: "center",
+            justifyContent: "space-between",
+            rowGap: 12,
+            columnGap: 8,
+            padding: 16,
+        },
     });
     const body = parseJsonResponse(response);
 
@@ -264,6 +274,16 @@ test("ShapeUpdateTool uses backend RPC when fileId is provided", async () => {
                 r4: 10,
                 content: undefined,
                 "font-size": undefined,
+                layout: {
+                    type: "flex",
+                    direction: "column",
+                    wrap: "wrap",
+                    "align-items": "center",
+                    "justify-content": "space-between",
+                    "row-gap": 12,
+                    "column-gap": 8,
+                    padding: 16,
+                },
             },
             userToken: "token-1",
             context: {
@@ -442,7 +462,7 @@ test("ShapeDeleteTool executes confirmed destructive backend delete when configu
     assert.equal(body.data.deleted, true);
 });
 
-test("ShapeUpdateTool reports adapter error for backend layout updates", async () => {
+test("ShapeUpdateTool reports adapter error for backend grid layout updates", async () => {
     const calls: RpcCall[] = [];
     const tool = new ShapeUpdateTool(
         mcpServerWithRpc({
@@ -456,7 +476,7 @@ test("ShapeUpdateTool reports adapter error for backend layout updates", async (
     const response = await tool.execute({
         fileId: "00000000-0000-0000-0000-000000000001",
         shapeId: "00000000-0000-0000-0000-000000000003",
-        layout: { type: "flex" },
+        layout: { type: "grid" },
     });
     const body = parseJsonResponse(response);
 
@@ -464,6 +484,10 @@ test("ShapeUpdateTool reports adapter error for backend layout updates", async (
     assert.equal(body.status, "error");
     assert.equal(body.error.code, "adapter_not_available");
     assert.equal(body.error.data.adapterSelection.selected, null);
+    assert.equal(
+        body.error.data.adapterSelection.candidates[0].reason,
+        "backend-command supports layout none/flex only; use plugin-live for grid layout updates."
+    );
 });
 
 test("ShapeUpdateTool rejects concurrent writes to the same file and releases after completion", async () => {

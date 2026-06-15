@@ -10,6 +10,7 @@
    [app.common.exceptions :as ex]
    [app.common.files.helpers :as cfh]
    [app.common.types.shape :as cts]
+   [app.common.types.shape.layout :as ctsl]
    [app.common.types.text :as cttx]
    [app.common.uuid :as uuid]
    [cuerdas.core :as str]))
@@ -233,21 +234,51 @@
 (def ^:private geometry-attrs
   [:x :y :width :height])
 
+(def ^:private layout-container-attrs
+  [:layout
+   :layout-flex-dir
+   :layout-gap
+   :layout-gap-type
+   :layout-wrap-type
+   :layout-padding-type
+   :layout-padding
+   :layout-justify-content
+   :layout-justify-items
+   :layout-align-content
+   :layout-align-items
+   :layout-grid-dir
+   :layout-grid-rows
+   :layout-grid-columns
+   :layout-grid-cells])
+
+(def ^:private flex-layout-defaults
+  {:layout                 :flex
+   :layout-flex-dir        :row
+   :layout-gap-type        :multiple
+   :layout-gap             {:row-gap 0 :column-gap 0}
+   :layout-align-items     :start
+   :layout-justify-content :start
+   :layout-align-content   :stretch
+   :layout-wrap-type       :nowrap
+   :layout-padding-type    :simple
+   :layout-padding         {:p1 0 :p2 0 :p3 0 :p4 0}})
+
 (def ^:private operation-attrs
-  [:name
-   :x
-   :y
-   :width
-   :height
-   :selrect
-   :points
-   :fills
-   :strokes
-   :r1
-   :r2
-   :r3
-   :r4
-   :content])
+  (into [:name
+         :x
+         :y
+         :width
+         :height
+         :selrect
+         :points
+         :fills
+         :strokes
+         :r1
+         :r2
+         :r3
+         :r4
+         :content]
+        layout-container-attrs))
 
 (def ^:private update-attrs
   [:name
@@ -266,7 +297,8 @@
    :r4
    :parent-id
    :content
-   :font-size])
+   :font-size
+   :layout])
 
 (defn- requested?
   [params attrs]
@@ -338,6 +370,126 @@
     (requested? params radius-attrs)
     (apply-corner-radii params)))
 
+(def ^:private missing-layout-value ::missing-layout-value)
+
+(defn- normalize-layout-keyword
+  [value]
+  (cond
+    (keyword? value) value
+    (string? value) (keyword value)
+    :else value))
+
+(defn- layout-param
+  [layout & keys]
+  (reduce (fn [value key]
+            (if (contains? layout key)
+              (reduced (get layout key))
+              value))
+          missing-layout-value
+          keys))
+
+(defn- layout-keyword
+  [layout default allowed code hint keys]
+  (let [value (apply layout-param layout keys)]
+    (if (= missing-layout-value value)
+      default
+      (let [value (normalize-layout-keyword value)]
+        (when-not (contains? allowed value)
+          (ex/raise :type :validation
+                    :code code
+                    :hint hint
+                    :value value))
+        value))))
+
+(defn- layout-number
+  [layout default keys]
+  (let [value (apply layout-param layout keys)]
+    (if (= missing-layout-value value)
+      default
+      value)))
+
+(defn- remove-layout-container-data
+  [shape]
+  (reduce dissoc shape layout-container-attrs))
+
+(defn- require-layout-frame
+  [shape]
+  (when-not (cfh/frame-shape? shape)
+    (ex/raise :type :validation
+              :code :unsupported-layout-shape
+              :hint "Headless layout updates currently support frame shapes only."
+              :shape-id (:id shape)
+              :shape-type (:type shape))))
+
+(defn- flex-layout-base
+  [shape]
+  (if (= :flex (:layout shape))
+    (merge flex-layout-defaults (select-keys shape layout-container-attrs))
+    flex-layout-defaults))
+
+(defn- apply-flex-layout-update
+  [shape layout]
+  (let [base    (flex-layout-base shape)
+        row-gap (layout-number layout
+                               (get-in base [:layout-gap :row-gap])
+                               [:row-gap :rowGap])
+        col-gap (layout-number layout
+                               (get-in base [:layout-gap :column-gap])
+                               [:column-gap :columnGap])
+        padding (layout-number layout (get-in base [:layout-padding :p1]) [:padding])
+        updated (assoc base
+                       :layout :flex
+                       :layout-flex-dir
+                       (layout-keyword layout (:layout-flex-dir base) ctsl/flex-direction-types
+                                       :unsupported-layout-direction
+                                       "Unsupported flex layout direction."
+                                       [:direction])
+                       :layout-wrap-type
+                       (layout-keyword layout (:layout-wrap-type base) ctsl/wrap-types
+                                       :unsupported-layout-wrap
+                                       "Unsupported flex layout wrap value."
+                                       [:wrap])
+                       :layout-align-items
+                       (layout-keyword layout (:layout-align-items base) ctsl/align-items-types
+                                       :unsupported-layout-align-items
+                                       "Unsupported flex layout align-items value."
+                                       [:align-items :alignItems])
+                       :layout-justify-content
+                       (layout-keyword layout (:layout-justify-content base) ctsl/justify-content-types
+                                       :unsupported-layout-justify-content
+                                       "Unsupported flex layout justify-content value."
+                                       [:justify-content :justifyContent])
+                       :layout-align-content (:layout-align-content base)
+                       :layout-gap-type :multiple
+                       :layout-gap {:row-gap row-gap :column-gap col-gap}
+                       :layout-padding-type :simple
+                       :layout-padding {:p1 padding :p2 padding :p3 padding :p4 padding})]
+    (merge (remove-layout-container-data shape) updated)))
+
+(defn- apply-layout-update
+  [shape {:keys [layout] :as params}]
+  (if-not (contains? params :layout)
+    shape
+    (do
+      (when-not (map? layout)
+        (ex/raise :type :validation
+                  :code :layout-required
+                  :hint "Headless layout updates require a layout map."))
+      (require-layout-frame shape)
+      (let [layout-type (normalize-layout-keyword (:type layout))]
+        (case layout-type
+          :none
+          (remove-layout-container-data shape)
+
+          :flex
+          (apply-flex-layout-update shape layout)
+
+          (ex/raise :type :validation
+                    :code :unsupported-layout-type
+                    :hint "Headless backend layout updates currently support none and flex only."
+                    :layout-type layout-type
+                    :shape-id (:id shape)))))))
+
 (defn- apply-shape-update
   [shape {:keys [name] :as params}]
   (-> shape
@@ -345,6 +497,7 @@
         (assoc :name (normalize-updated-shape-name name)))
       (apply-geometry-update params)
       (apply-shape-style-update params)
+      (apply-layout-update params)
       (apply-text-update params)
       (cts/check-shape)))
 

@@ -43,7 +43,7 @@ const AdapterSelectionReasonMessages = Object.freeze({
     [AdapterSelectionReasonCodes.BACKEND_COMMAND_FILE_PAGE_REQUIRED]:
         "backend-command requires explicit fileId and pageId.",
     [AdapterSelectionReasonCodes.BACKEND_COMMAND_LAYOUT_UNSUPPORTED]:
-        "backend-command does not support layout updates yet.",
+        "backend-command supports layout none/flex only; use plugin-live for grid layout updates.",
     [AdapterSelectionReasonCodes.PLUGIN_LIVE_BACKEND_ONLY_SHAPE_FIELDS_UNSUPPORTED]:
         "plugin-live does not support backend-only shape style or hierarchy fields; pass fileId to use backend-command.",
     [AdapterSelectionReasonCodes.PLUGIN_LIVE_OMIT_FILE_ID]:
@@ -192,7 +192,7 @@ export const CommandDescriptors = Object.freeze({
         description:
             "Updates geometry, style, text, or supported layout fields using backend-command or plugin-live adapters.",
         inputSchema:
-            "fileId?, pageId?, shapeId, parentId?, index?, name?, x?, y?, width?, height?, fill?, fills?, stroke?, strokes?, borderRadius?, r1?, r2?, r3?, r4?, content?, fontSize?, layout?",
+            "fileId?, pageId?, shapeId, parentId?, index?, name?, x?, y?, width?, height?, fill?, fills?, stroke?, strokes?, borderRadius?, r1?, r2?, r3?, r4?, content?, fontSize?, layout(type none|flex backend-command; grid plugin-live)?",
         adapters: Object.freeze(["backend-command", "plugin-live"]),
         responseShape: "status envelope with shape summary, revision metadata, and adapterSelection metadata",
     }),

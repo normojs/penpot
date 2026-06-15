@@ -467,9 +467,10 @@ The P7.3 backend/common slice adds the first headless shape write command:
 explicit page. It validates the target page and parent frame, creates canonical
 Penpot shape data through `app.common.types.shape/setup-shape`, and persists the
 result through the normal `update-file` pipeline with a single `:add-obj`
-change. The first slice deliberately excludes image upload, arbitrary layout,
+change. The first slice deliberately excludes image upload, layout setup,
 shape updates, and deletes. P7.7 adds simple backend/common update/delete
-coverage; image upload and arbitrary layout remain plugin-live until dedicated
+coverage; P11.2 adds the backend-safe frame layout subset (`none` and `flex`).
+Image upload and grid/full layout editing remain plugin-live until dedicated
 backend coverage exists.
 
 P7.3 is complete when:
@@ -605,12 +606,16 @@ file id, a shape id, an optional page id, and patch fields for `name`, `x`, `y`,
 `width`, `height`, `fill`, `stroke`, `borderRadius`, `content`, and `fontSize`.
 P11.2 expands the same command with `fills`, `strokes`, `r1`, `r2`, `r3`,
 `r4`, `parentId`, and `index` for backend-command style stacks, independent
-corner radii, and parent frame movement. The common helper resolves a missing
-page id by scanning the file's page order, rejects unsupported/root shapes,
-recalculates `selrect` and `points` for geometry patches, persists style/text
-updates through the normal `:mod-obj` change path, and emits `:mov-objects` for
-parent changes. Text `content`, `fontSize`, `fill`, and `fills` updates rewrite
-the text content tree while preserving existing text when only style fields are
+corner radii, and parent frame movement. It also supports backend-safe frame
+layout updates for `layout.type = none | flex`, including flex direction, wrap,
+align-items, justify-content, row/column gap, and uniform padding. Grid layout
+metadata remains plugin-live because it requires track and cell structures that
+need a dedicated backend contract. The common helper resolves a missing page id
+by scanning the file's page order, rejects unsupported/root shapes, recalculates
+`selrect` and `points` for geometry patches, persists style/text/layout updates
+through the normal `:mod-obj` change path, and emits `:mov-objects` for parent
+changes. Text `content`, `fontSize`, `fill`, and `fills` updates rewrite the
+text content tree while preserving existing text when only style fields are
 passed.
 
 `delete-file-shape` resolves the same target shape and persists a standard

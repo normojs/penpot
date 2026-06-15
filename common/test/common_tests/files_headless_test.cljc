@@ -273,6 +273,69 @@
     (t/is (= 10 (:r3 shape)))
     (t/is (= 12 (:r4 shape)))))
 
+(t/deftest update-shape-request-updates-frame-flex-layout
+  (let [file-id      (uuid/next)
+        page-id      (uuid/next)
+        frame-id     (uuid/next)
+        rect-id      (uuid/next)
+        layout-attrs [:layout
+                      :layout-flex-dir
+                      :layout-gap
+                      :layout-gap-type
+                      :layout-wrap-type
+                      :layout-padding-type
+                      :layout-padding
+                      :layout-justify-content
+                      :layout-align-content
+                      :layout-align-items]
+        data         (ctf/make-file-data file-id page-id)
+        frame        (headless/create-shape-request data {:page-id page-id
+                                                          :shape-id frame-id
+                                                          :type :frame
+                                                          :x 0
+                                                          :y 0
+                                                          :width 320
+                                                          :height 640})
+        data         (cpc/process-changes data (:changes frame))
+        rect         (headless/create-shape-request data {:page-id page-id
+                                                         :shape-id rect-id
+                                                         :parent-id frame-id
+                                                         :type :rect
+                                                         :x 24
+                                                         :y 32
+                                                         :width 120
+                                                         :height 40})
+        data         (cpc/process-changes data (:changes rect))
+        update       (headless/update-shape-request data {:shape-id frame-id
+                                                          :layout {:type "flex"
+                                                                   :direction "column"
+                                                                   :wrap "wrap"
+                                                                   :alignItems "center"
+                                                                   :justifyContent "space-between"
+                                                                   :rowGap 12
+                                                                   :columnGap 8
+                                                                   :padding 16}})
+        data'        (cpc/process-changes data (:changes update))
+        frame'       (get-in data' [:pages-index page-id :objects frame-id])
+        remove       (headless/update-shape-request data' {:shape-id frame-id
+                                                           :layout {:type :none}})
+        data''       (cpc/process-changes data' (:changes remove))
+        frame''      (get-in data'' [:pages-index page-id :objects frame-id])]
+    (t/is (= :flex (:layout frame')))
+    (t/is (= :column (:layout-flex-dir frame')))
+    (t/is (= :wrap (:layout-wrap-type frame')))
+    (t/is (= :center (:layout-align-items frame')))
+    (t/is (= :space-between (:layout-justify-content frame')))
+    (t/is (= :stretch (:layout-align-content frame')))
+    (t/is (= :multiple (:layout-gap-type frame')))
+    (t/is (= {:row-gap 12 :column-gap 8} (:layout-gap frame')))
+    (t/is (= :simple (:layout-padding-type frame')))
+    (t/is (= {:p1 16 :p2 16 :p3 16 :p4 16} (:layout-padding frame')))
+    (t/is (every? #(not (contains? frame'' %)) layout-attrs))
+    (t/is (thrown? #?(:clj Exception :cljs :default)
+                   (headless/update-shape-request data {:shape-id rect-id
+                                                        :layout {:type :flex}})))))
+
 (t/deftest update-shape-request-moves-shape-between-frames
   (let [file-id    (uuid/next)
         page-id    (uuid/next)

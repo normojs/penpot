@@ -139,6 +139,19 @@
    [:alignment {:optional true} [::sm/one-of #{:center :inner :outer}]]])
 
 (def ^:private
+  schema:headless-layout
+  [:map {:title "HeadlessShapeLayout"}
+   [:type [::sm/one-of #{:none :flex}]]
+   [:direction {:optional true} [::sm/one-of #{:row :row-reverse :column :column-reverse}]]
+   [:wrap {:optional true} [::sm/one-of #{:wrap :nowrap}]]
+   [:align-items {:optional true} [::sm/one-of #{:start :end :center :stretch}]]
+   [:justify-content {:optional true}
+    [::sm/one-of #{:start :center :end :space-between :space-around :space-evenly :stretch}]]
+   [:row-gap {:optional true} [::sm/number {:min 0 :max 10000}]]
+   [:column-gap {:optional true} [::sm/number {:min 0 :max 10000}]]
+   [:padding {:optional true} [::sm/number {:min 0 :max 10000}]]])
+
+(def ^:private
   schema:create-file-shape
   [:map {:title "create-file-shape"}
    [:id ::sm/uuid]
@@ -205,6 +218,7 @@
    [:r3 {:optional true} [::sm/number {:min 0 :max 10000}]]
    [:r4 {:optional true} [::sm/number {:min 0 :max 10000}]]
    [:font-size {:optional true} [::sm/number {:min 0.01 :max 512}]]
+   [:layout {:optional true} schema:headless-layout]
    [:session-id {:optional true} ::sm/uuid]
    [:features {:optional true} ::cfeat/features]])
 

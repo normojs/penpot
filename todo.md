@@ -71,12 +71,11 @@ errors, and adapter reason text. P10.6 moved shape/export/render descriptors
 into the shared command runtime. P10.7 added focused command-runtime descriptor
 and adapter-selection tests, completing Wave B command runtime consolidation.
 C1/P11.1 added backend-command page rename metadata through common/backend,
-MCP, and `penpot-cli`. C2/P11.2 now has a completed style/hierarchy slice:
-backend-command `shape.update` supports fill/stroke stacks, independent corner
-radii, and parent frame movement through common/backend, MCP, and
-`penpot-cli`. The remaining P11.2 decision is whether to add a backend-safe
-layout metadata subset or explicitly defer layout to plugin-live before moving
-to C3/P11.3 image/media insertion.
+MCP, and `penpot-cli`. C2/P11.2 is complete: backend-command `shape.update`
+supports fill/stroke stacks, independent corner radii, parent frame movement,
+and backend-safe frame layout updates for `none` and `flex` through
+common/backend, MCP, and `penpot-cli`. Grid/full layout editing remains
+plugin-live. Current active work is C3/P11.3 image/media insertion.
 
 ## Feature Roadmap
 
@@ -102,7 +101,7 @@ remain the execution plan.
 | F15 | done | Audit, limits, and confirmations | Phase 8 | MCP is safer for real deployments | Completed 2026-06-13; write operations are auditable and limited, plugin compatibility is negotiated, diagnostics are exposed, and `shape.delete` can require explicit confirmation |
 | F16 | done | MCP/CLI smoke coverage | Phase 8 | Developers can catch first-class MCP regressions quickly | Completed 2026-06-13; MCP server tests, CLI no-service smoke tests, and documented running-stack smoke flows cover the critical regression paths |
 | F17 | done | Shared command descriptors | Phase 10 | MCP and CLI expose the same command catalog and internal result envelope from one runtime layer | Completed 2026-06-15; descriptors, envelopes, centralized adapter errors, and runtime tests cover status/config/file/page plus shape/export/render commands |
-| F18 | in_progress | Expanded headless authoring | Phase 11 | Scripts and agents can create richer prototypes without a live workspace | P11.1 page rename is complete; P11.2 style/hierarchy updates now cover fill/stroke stacks, corner radii, and parent movement; layout metadata remains the next decision |
+| F18 | in_progress | Expanded headless authoring | Phase 11 | Scripts and agents can create richer prototypes without a live workspace | P11.1 page rename and P11.2 style/hierarchy/layout updates are complete; next acceptance target is P11.3 image/media insertion |
 | F19 | todo | File open and bind handoff | Phase 12 | Agents can move cleanly between headless edits and visual workspace binding | CLI/MCP can open a file URL and guide binding when live context is required |
 | F20 | todo | Packaging and distribution | Phase 13 | Developers and self-hosted operators have one documented install/setup path | `penpot-cli` build/install and MCP gateway setup are documented and repeatable |
 | F21 | todo | Release verification matrix | Phase 14 | Critical MCP/CLI flows have repeatable checks | Config, global connect, bind, headless edit, and export smoke flows run or have documented manual fallback |
@@ -151,8 +150,8 @@ complete as of 2026-06-15.
 | Order | Task | Modules | Output | Verification |
 | --- | --- | --- | --- | --- |
 | C1 | Add headless page rename metadata path | `backend`, `common`, `mcp`, `penpot-cli` | Completed 2026-06-15; page rename works through backend-command for explicit file/page targets | Backend/common tests plus MCP/CLI command tests cover success and permission errors |
-| C2 | Expand headless shape styling and hierarchy | `backend`, `common`, `mcp`, `penpot-cli` | In progress; completed 2026-06-15 style/hierarchy slice for fill/stroke stacks, independent radius, parent/frame placement, MCP/CLI mapping, and adapter errors; selected layout metadata remains undecided | Common helper tests plus MCP/CLI adapter tests pass for completed slice; layout decision still pending |
-| C3 | Add headless image/media insertion path | `backend`, `common`, `mcp`, `penpot-cli` | Image-backed rectangles can be created without a live plugin context using existing media upload/storage paths | Tests cover media validation, permission errors, and exported preview metadata |
+| C2 | Expand headless shape styling and hierarchy | `backend`, `common`, `mcp`, `penpot-cli` | Completed 2026-06-15; backend-command `shape.update` covers fill/stroke stacks, independent radius, parent/frame placement, and frame layout `none|flex`; grid remains plugin-live | Common/backend plus MCP/CLI tests cover style, hierarchy, supported layout mapping, and unsupported grid adapter errors |
+| C3 | Add headless image/media insertion path | `backend`, `common`, `mcp`, `penpot-cli` | In progress; image-backed rectangles should be creatable without a live plugin context using existing media upload/storage paths | Tests cover media validation, permission errors, and exported preview metadata |
 | C4 | Add backend-supported prototype helpers | `backend`, `common`, `mcp`, `penpot-cli` | Basic flows and navigate interactions work headlessly where Penpot data structures allow it | Multi-screen prototype smoke flow creates pages, shapes, and interactions |
 | C5 | Expand exporter-backed preview commands | `exporter`, `mcp`, `penpot-cli` | Explicit file/page/object previews return consistent artifact metadata in MCP and CLI | CLI output write path and MCP base64/resource metadata are covered |
 
@@ -343,8 +342,8 @@ for supported operations.
 | ID | Status | Task | Modules | Verification | Notes |
 | --- | --- | --- | --- | --- | --- |
 | P11.1 | done | Expand headless page operations | `backend`, `common`, `mcp`, `penpot-cli` | Completed 2026-06-15; page rename works headlessly through backend-command and live fallback remains available in MCP | Added `rename-page-request`, `rename-file-page`, shared `page.rename` descriptor, MCP/CLI adapters, limit config, docs, and regression tests; page current/selection semantics remain plugin-live |
-| P11.2 | in_progress | Expand headless shape styling and hierarchy | `backend`, `common`, `mcp`, `penpot-cli` | Completed 2026-06-15 style/hierarchy slice; generated frames/rect/text support fill/stroke stacks, independent corner radii, and parent changes through backend-command | Layout metadata remains plugin-live until a backend-safe subset is chosen; preserve common data constructors and backend permissions |
-| P11.3 | todo | Add headless image/media insertion path | `backend`, `common`, `mcp`, `penpot-cli` | Image-backed shapes can be created without plugin-live context | Reuse existing media upload/storage paths |
+| P11.2 | done | Expand headless shape styling and hierarchy | `backend`, `common`, `mcp`, `penpot-cli` | Completed 2026-06-15; generated frames/rect/text support fill/stroke stacks, independent corner radii, parent changes, and frame layout `none|flex` through backend-command | Grid/full layout remains plugin-live until a dedicated backend track/cell contract exists |
+| P11.3 | in_progress | Add headless image/media insertion path | `backend`, `common`, `mcp`, `penpot-cli` | Image-backed shapes can be created without plugin-live context | Reuse existing media upload/storage paths |
 | P11.4 | todo | Add backend-supported prototype helpers | `backend`, `common`, `mcp`, `penpot-cli` | Basic flows and navigate interactions work headlessly | Keep plugin-live fallback for unsupported interactions |
 | P11.5 | todo | Expand exporter-backed preview commands | `exporter`, `mcp`, `penpot-cli` | Explicit file/page/object previews return useful artifacts | Align output metadata between CLI and MCP |
 
@@ -387,10 +386,10 @@ Use `mcp/docs/penpot-cli-overall-blueprint.md` as the current architecture
 baseline and the Detailed Upcoming Task Queue as the execution order. Continue
 with Wave C:
 
-1. Finish the remaining C2/P11.2 decision: define a backend-safe layout
-   metadata subset or defer layout to plugin-live and mark C2 complete.
-2. If layout is deferred, start C3/P11.3 image/media insertion using existing
-   media upload/storage paths.
-3. Keep page current/selection semantics in plugin-live until a backend-safe
+1. Continue C3/P11.3 image/media insertion using existing media upload/storage
+   paths.
+2. Keep page current/selection semantics in plugin-live until a backend-safe
    representation is defined.
+3. Keep grid/full layout metadata in plugin-live until backend-command owns
+   tracks, cells, and related layout structures.
 4. Add focused common, backend, MCP, and CLI tests for the next chosen slice.
