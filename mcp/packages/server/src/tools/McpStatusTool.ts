@@ -3,7 +3,7 @@ import "reflect-metadata";
 import type { ToolResponse } from "../ToolResponse";
 import { JsonResponse } from "../ToolResponse";
 import { PenpotMcpServer } from "../PenpotMcpServer";
-import { CommandDescriptors } from "@penpot/command-runtime";
+import { CommandDescriptors, createCommandRequestEnvelope, createCommandResultEnvelope } from "@penpot/command-runtime";
 
 export class McpStatusTool extends Tool<EmptyToolArgs> {
     constructor(mcpServer: PenpotMcpServer) {
@@ -32,10 +32,20 @@ export class McpStatusTool extends Tool<EmptyToolArgs> {
                     ? "negotiating"
                     : "disconnected";
         const fileContext = this.mcpServer.fileContextRegistry.getSessionSummary(sessionContext?.userToken);
-
-        return new JsonResponse({
-            status: "ok",
-            data: {
+        const requestEnvelope = createCommandRequestEnvelope(CommandDescriptors.MCP_STATUS, {
+            transport: "mcp",
+            target: { mcpSessionId: sessionContext?.mcpSessionId },
+            auth: {
+                userTokenPresent,
+                mode: status.server.multiUserMode ? "multi-user" : "single-user",
+                source: "mcp-session",
+            },
+            adapter: "local",
+            diagnostics: { fileContextStatus: fileContext.status },
+        });
+        const resultEnvelope = createCommandResultEnvelope(
+            requestEnvelope,
+            {
                 server: status.server,
                 transports: status.transports,
                 session: {
@@ -57,10 +67,18 @@ export class McpStatusTool extends Tool<EmptyToolArgs> {
                 logging: status.logging,
                 fileContext,
             },
-            warnings:
-                fileContext.status === "unbound"
-                    ? ["Open a Penpot file in this browser session before using file-scoped MCP tools."]
-                    : [],
+            {
+                warnings:
+                    fileContext.status === "unbound"
+                        ? ["Open a Penpot file in this browser session before using file-scoped MCP tools."]
+                        : [],
+            }
+        );
+
+        return new JsonResponse({
+            status: resultEnvelope.status,
+            data: resultEnvelope.data,
+            warnings: resultEnvelope.warnings,
         });
     }
 }

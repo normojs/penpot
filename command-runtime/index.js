@@ -7,6 +7,8 @@ const DEFAULT_PRIORITIES = Object.freeze({
     "plugin-live": 50,
 });
 
+const EMPTY_OBJECT = Object.freeze({});
+
 export const CommandDescriptors = Object.freeze({
     MCP_STATUS: Object.freeze({
         id: "mcp.status",
@@ -98,6 +100,48 @@ export function getCommandDescriptor(id) {
     );
 }
 
+export function createCommandRequestEnvelope(command, options = EMPTY_OBJECT) {
+    const descriptor = resolveCommandDescriptor(command);
+    const adapterSelection = options.adapterSelection ?? null;
+
+    return {
+        command: descriptor?.id ?? resolveCommandId(command),
+        descriptor: descriptor ? summarizeDescriptor(descriptor) : null,
+        transport: options.transport ?? "internal",
+        input: options.input ?? EMPTY_OBJECT,
+        target: compactRecord(options.target),
+        auth: normalizeAuthMetadata(options.auth),
+        adapter: options.adapter ?? adapterSelection?.selected ?? null,
+        adapterSelection,
+        diagnostics: compactRecord(options.diagnostics),
+    };
+}
+
+export function createCommandResultEnvelope(requestEnvelope, data, options = EMPTY_OBJECT) {
+    const request =
+        typeof requestEnvelope === "string" || isCommandDescriptor(requestEnvelope)
+            ? createCommandRequestEnvelope(requestEnvelope, options)
+            : requestEnvelope;
+    const adapterSelection = options.adapterSelection ?? request.adapterSelection ?? null;
+
+    return {
+        status: options.status ?? "ok",
+        command: request.command,
+        descriptor: request.descriptor ?? null,
+        transport: options.transport ?? request.transport,
+        adapter: options.adapter ?? request.adapter ?? adapterSelection?.selected ?? null,
+        target: options.target === undefined ? request.target : compactRecord(options.target),
+        auth: request.auth ?? EMPTY_OBJECT,
+        diagnostics: compactRecord({
+            ...(request.diagnostics ?? EMPTY_OBJECT),
+            ...(options.diagnostics ?? EMPTY_OBJECT),
+        }),
+        adapterSelection,
+        data,
+        warnings: options.warnings ?? [],
+    };
+}
+
 export function selectCommandAdapter(options) {
     const requested = options.requestedAdapter ?? "auto";
     const candidates = normalizeCandidates(options.candidates);
@@ -122,6 +166,54 @@ export function selectCommandAdapter(options) {
         selectedCandidate ? "selected" : "unavailable",
         candidates
     );
+}
+
+function resolveCommandDescriptor(command) {
+    if (isCommandDescriptor(command)) {
+        return command;
+    }
+    return getCommandDescriptor(command);
+}
+
+function resolveCommandId(command) {
+    if (isCommandDescriptor(command)) {
+        return command.id;
+    }
+    return String(command);
+}
+
+function isCommandDescriptor(value) {
+    return Boolean(value && typeof value === "object" && typeof value.id === "string");
+}
+
+function summarizeDescriptor(descriptor) {
+    return compactRecord({
+        id: descriptor.id,
+        mcpToolName: descriptor.mcpToolName,
+        cliCommand: descriptor.cliCommand,
+        title: descriptor.title,
+        adapters: descriptor.adapters,
+    });
+}
+
+function normalizeAuthMetadata(auth) {
+    if (!auth || typeof auth !== "object") {
+        return EMPTY_OBJECT;
+    }
+
+    return compactRecord({
+        userTokenPresent: typeof auth.userTokenPresent === "boolean" ? auth.userTokenPresent : undefined,
+        mode: auth.mode,
+        source: auth.source,
+    });
+}
+
+function compactRecord(record) {
+    if (!record || typeof record !== "object" || Array.isArray(record)) {
+        return {};
+    }
+
+    return Object.fromEntries(Object.entries(record).filter(([, value]) => value !== undefined));
 }
 
 function normalizeCandidates(candidates) {

@@ -45,6 +45,9 @@ export interface SelectCommandAdapterOptions {
     candidates: CommandAdapterCandidate[];
 }
 
+export type CommandTransportKind = "cli" | "mcp" | "http" | "internal";
+export type CommandResultStatus = "ok" | "error";
+
 export interface CommandDescriptor {
     id: string;
     mcpToolName?: string;
@@ -54,6 +57,66 @@ export interface CommandDescriptor {
     inputSchema: string;
     adapters: readonly string[];
     responseShape: string;
+}
+
+export interface CommandDescriptorSummary {
+    id: string;
+    mcpToolName?: string;
+    cliCommand?: string;
+    title: string;
+    adapters: readonly string[];
+}
+
+export interface CommandAuthMetadata {
+    userTokenPresent?: boolean;
+    mode?: string;
+    source?: string;
+}
+
+export interface CreateCommandRequestEnvelopeOptions<TInput = unknown> {
+    transport?: CommandTransportKind | string;
+    input?: TInput;
+    target?: Record<string, unknown>;
+    auth?: CommandAuthMetadata;
+    adapter?: CommandAdapterKind | string | null;
+    adapterSelection?: CommandAdapterSelection | null;
+    diagnostics?: Record<string, unknown>;
+}
+
+export interface CommandRequestEnvelope<TInput = unknown> {
+    command: string;
+    descriptor: CommandDescriptorSummary | null;
+    transport: CommandTransportKind | string;
+    input: TInput;
+    target: Record<string, unknown>;
+    auth: CommandAuthMetadata;
+    adapter: CommandAdapterKind | string | null;
+    adapterSelection: CommandAdapterSelection | null;
+    diagnostics: Record<string, unknown>;
+}
+
+export interface CreateCommandResultEnvelopeOptions {
+    status?: CommandResultStatus;
+    transport?: CommandTransportKind | string;
+    target?: Record<string, unknown>;
+    adapter?: CommandAdapterKind | string | null;
+    adapterSelection?: CommandAdapterSelection | null;
+    diagnostics?: Record<string, unknown>;
+    warnings?: string[];
+}
+
+export interface CommandResultEnvelope<TData = unknown> {
+    status: CommandResultStatus;
+    command: string;
+    descriptor: CommandDescriptorSummary | null;
+    transport: CommandTransportKind | string;
+    adapter: CommandAdapterKind | string | null;
+    target: Record<string, unknown>;
+    auth: CommandAuthMetadata;
+    diagnostics: Record<string, unknown>;
+    adapterSelection: CommandAdapterSelection | null;
+    data: TData;
+    warnings: string[];
 }
 
 export interface LowRiskCommandDescriptorCatalog {
@@ -69,4 +132,13 @@ export interface LowRiskCommandDescriptorCatalog {
 export const CommandDescriptors: LowRiskCommandDescriptorCatalog;
 export const LowRiskCommandDescriptors: readonly CommandDescriptor[];
 export function getCommandDescriptor(id: string): CommandDescriptor | undefined;
+export function createCommandRequestEnvelope<TInput = unknown>(
+    command: string | CommandDescriptor,
+    options?: CreateCommandRequestEnvelopeOptions<TInput>
+): CommandRequestEnvelope<TInput>;
+export function createCommandResultEnvelope<TData = unknown>(
+    requestEnvelope: string | CommandDescriptor | CommandRequestEnvelope,
+    data: TData,
+    options?: CreateCommandResultEnvelopeOptions
+): CommandResultEnvelope<TData>;
 export function selectCommandAdapter(options: SelectCommandAdapterOptions): CommandAdapterSelection;

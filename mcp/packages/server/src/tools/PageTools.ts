@@ -6,7 +6,12 @@ import { ToolNames } from "../ToolNames.js";
 import { requireBoundFileContext } from "./FileContextGuard.js";
 import { PenpotRpcTool } from "./PenpotRpcTool.js";
 import type { PageTaskParams } from "@penpot/mcp-common";
-import { CommandDescriptors, selectCommandAdapter } from "@penpot/command-runtime";
+import {
+    CommandDescriptors,
+    createCommandRequestEnvelope,
+    createCommandResultEnvelope,
+    selectCommandAdapter,
+} from "@penpot/command-runtime";
 import type { CommandAdapterSelection } from "@penpot/command-runtime";
 
 type PenpotRecord = Record<string, unknown>;
@@ -69,12 +74,25 @@ abstract class PageTool<TArgs extends object> extends PenpotRpcTool<TArgs> {
         }
 
         const task = new PagePluginTask(params);
-        const result = await this.mcpServer.pluginBridge.executePluginTask(task);
-        return this.ok({
-            ...result.data,
-            adapter: adapterSelection.selected,
+        const requestEnvelope = createCommandRequestEnvelope(adapterSelection.command, {
+            transport: "mcp",
+            input: params,
+            target: { fileContext: "bound" },
+            auth: { userTokenPresent: Boolean(this.getUserToken()), source: "mcp-session" },
             adapterSelection,
+            diagnostics: { execution: "plugin-task" },
         });
+        const result = await this.mcpServer.pluginBridge.executePluginTask(task);
+        const resultEnvelope = createCommandResultEnvelope(
+            requestEnvelope,
+            {
+                ...result.data,
+                adapter: adapterSelection.selected,
+                adapterSelection,
+            },
+            { adapterSelection }
+        );
+        return this.ok(resultEnvelope.data, resultEnvelope.warnings);
     }
 
     protected async executeBackendPageList(
@@ -86,14 +104,28 @@ abstract class PageTool<TArgs extends object> extends PenpotRpcTool<TArgs> {
             return this.authenticationRequired();
         }
 
+        const requestEnvelope = createCommandRequestEnvelope(adapterSelection.command, {
+            transport: "mcp",
+            input: { fileId },
+            target: { fileId },
+            auth: { userTokenPresent: true, source: "mcp-session" },
+            adapterSelection,
+            diagnostics: { rpcCommand: "get-file-pages" },
+        });
+
         try {
             const result = await this.rpcGet<PenpotRecord>("get-file-pages", { id: fileId }, userToken);
-            return this.ok({
-                adapter: adapterSelection.selected,
-                adapterSelection,
-                fileId,
-                pages: result.pages ?? [],
-            });
+            const resultEnvelope = createCommandResultEnvelope(
+                requestEnvelope,
+                {
+                    adapter: adapterSelection.selected,
+                    adapterSelection,
+                    fileId,
+                    pages: result.pages ?? [],
+                },
+                { adapterSelection }
+            );
+            return this.ok(resultEnvelope.data, resultEnvelope.warnings);
         } catch (cause) {
             return this.rpcFailure(cause);
         }
@@ -107,6 +139,20 @@ abstract class PageTool<TArgs extends object> extends PenpotRpcTool<TArgs> {
         if (!userToken) {
             return this.authenticationRequired();
         }
+
+        const requestEnvelope = createCommandRequestEnvelope(adapterSelection.command, {
+            transport: "mcp",
+            input: {
+                fileId: args.fileId,
+                pageId: args.pageId,
+                name: this.nonEmptyString(args.name),
+                makeCurrent: args.makeCurrent,
+            },
+            target: { fileId: args.fileId, pageId: args.pageId },
+            auth: { userTokenPresent: true, source: "mcp-session" },
+            adapterSelection,
+            diagnostics: { rpcCommand: "create-file-page" },
+        });
 
         try {
             const result = await this.rpcWritePost<PenpotRecord>(
@@ -123,7 +169,8 @@ abstract class PageTool<TArgs extends object> extends PenpotRpcTool<TArgs> {
                     mcpPageId: args.pageId,
                 }
             );
-            return this.ok(
+            const resultEnvelope = createCommandResultEnvelope(
+                requestEnvelope,
                 {
                     adapter: adapterSelection.selected,
                     adapterSelection,
@@ -132,12 +179,16 @@ abstract class PageTool<TArgs extends object> extends PenpotRpcTool<TArgs> {
                     revn: result.revn,
                     vern: result.vern,
                 },
-                args.makeCurrent
-                    ? [
-                          "makeCurrent requires a live bound workspace; backend-command created the page without switching UI state.",
-                      ]
-                    : []
+                {
+                    adapterSelection,
+                    warnings: args.makeCurrent
+                        ? [
+                              "makeCurrent requires a live bound workspace; backend-command created the page without switching UI state.",
+                          ]
+                        : [],
+                }
             );
+            return this.ok(resultEnvelope.data, resultEnvelope.warnings);
         } catch (cause) {
             return this.rpcFailure(cause);
         }

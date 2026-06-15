@@ -5,8 +5,21 @@ import { constants } from "node:fs";
 import { access, mkdir, readdir, stat, writeFile } from "node:fs/promises";
 import { delimiter, dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
-import { CommandDescriptors, selectCommandAdapter } from "@penpot/command-runtime";
-import type { CommandAdapterSelection, RequestedCommandAdapter } from "@penpot/command-runtime";
+import {
+    CommandDescriptors,
+    createCommandRequestEnvelope,
+    createCommandResultEnvelope,
+    selectCommandAdapter,
+} from "@penpot/command-runtime";
+import type {
+    CommandAdapterSelection,
+    CommandDescriptor,
+    CommandRequestEnvelope,
+    CommandResultEnvelope,
+    CreateCommandRequestEnvelopeOptions,
+    CreateCommandResultEnvelopeOptions,
+    RequestedCommandAdapter,
+} from "@penpot/command-runtime";
 
 const VERSION = "0.1.0";
 const DEFAULT_PUBLIC_URI = "http://localhost:3449";
@@ -1004,6 +1017,30 @@ function writeOk(io: CliIO, format: Format, data: unknown, textWriter: () => voi
     textWriter();
 }
 
+function createCliRequest<TInput = unknown>(
+    command: string | CommandDescriptor,
+    options: CreateCommandRequestEnvelopeOptions<TInput> = {}
+): CommandRequestEnvelope<TInput> {
+    return createCommandRequestEnvelope(command, { ...options, transport: "cli" });
+}
+
+function createCliResult<TData>(
+    requestEnvelope: CommandRequestEnvelope,
+    data: TData,
+    options: CreateCommandResultEnvelopeOptions = {}
+): CommandResultEnvelope<TData> {
+    return createCommandResultEnvelope(requestEnvelope, data, { ...options, transport: "cli" });
+}
+
+function writeOkEnvelope<TData>(
+    io: CliIO,
+    format: Format,
+    envelope: CommandResultEnvelope<TData>,
+    textWriter: () => void
+): void {
+    writeOk(io, format, envelope.data, textWriter);
+}
+
 function rpcAuthenticationRequired(io: CliIO, format: Format): number {
     writeError(
         io,
@@ -1629,6 +1666,12 @@ async function handleMcpStatus(args: string[], io: CliIO, env: NodeJS.ProcessEnv
     }
 
     const config = getMcpConfig(args, env);
+    const requestEnvelope = createCliRequest(CommandDescriptors.MCP_STATUS, {
+        target: { statusUri: config.statusUri },
+        auth: { userTokenPresent: false, source: "status-endpoint" },
+        adapter: "http",
+        diagnostics: { mode: config.mode },
+    });
     try {
         const response = await fetch(config.statusUri, {
             headers: {
@@ -1641,16 +1684,19 @@ async function handleMcpStatus(args: string[], io: CliIO, env: NodeJS.ProcessEnv
         }
 
         const data = (await response.json()) as unknown;
+        const resultEnvelope = createCliResult(requestEnvelope, data, {
+            diagnostics: { statusUri: config.statusUri },
+        });
         if (format === "json") {
             writeJson(io.stdout, {
                 status: "ok",
                 source: {
                     statusUri: config.statusUri,
                 },
-                data,
+                data: resultEnvelope.data,
             });
         } else {
-            formatStatusText(io, config.statusUri, data);
+            formatStatusText(io, config.statusUri, resultEnvelope.data);
         }
         return 0;
     } catch (cause) {
@@ -1678,13 +1724,21 @@ function handleMcpConfig(args: string[], io: CliIO, env: NodeJS.ProcessEnv): num
     }
 
     const config = getMcpConfig(args, env, { allowModeAlias: true });
+    const requestEnvelope = createCliRequest(CommandDescriptors.MCP_CONFIG, {
+        input: { mode: config.mode, autoConnect: config.autoConnect },
+        target: { publicUri: config.publicUri, statusUri: config.statusUri },
+        auth: { userTokenPresent: false, source: "local-config" },
+        adapter: "local",
+        diagnostics: { logDirConfigured: Boolean(config.logDir) },
+    });
+    const resultEnvelope = createCliResult(requestEnvelope, config);
     if (format === "json") {
         writeJson(io.stdout, {
             status: "ok",
-            data: config,
+            data: resultEnvelope.data,
         });
     } else {
-        writeConfigText(io, config);
+        writeConfigText(io, resultEnvelope.data);
     }
     return 0;
 }
@@ -1915,6 +1969,13 @@ async function handleFileList(args: string[], io: CliIO, env: NodeJS.ProcessEnv)
         return rpcAuthenticationRequired(io, format);
     }
 
+    const requestEnvelope = createCliRequest(CommandDescriptors.FILE_LIST, {
+        input: { projectId },
+        target: { projectId, backendUri: rpc.backendUri },
+        auth: { userTokenPresent: true, source: "cli-token" },
+        adapter: "backend-rpc",
+    });
+
     try {
         const files = await rpcRequest<unknown[]>(
             "GET",
@@ -1923,7 +1984,8 @@ async function handleFileList(args: string[], io: CliIO, env: NodeJS.ProcessEnv)
             { "project-id": projectId },
             rpc.token
         );
-        writeOk(io, format, { projectId, files, adapter: "backend-rpc" }, () => writeFilesText(io, projectId, files));
+        const resultEnvelope = createCliResult(requestEnvelope, { projectId, files, adapter: "backend-rpc" });
+        writeOkEnvelope(io, format, resultEnvelope, () => writeFilesText(io, projectId, files));
         return 0;
     } catch (cause) {
         return rpcErrorResponse(io, format, "get-project-files", rpc.backendUri, cause);
@@ -1951,6 +2013,12 @@ async function handleFileCreate(args: string[], io: CliIO, env: NodeJS.ProcessEn
 
     const name = readOption(args, ["--name"])?.trim() || "Untitled";
     const isShared = hasFlag(args, "--shared") || hasFlag(args, "--is-shared");
+    const requestEnvelope = createCliRequest(CommandDescriptors.FILE_CREATE, {
+        input: { projectId, name, isShared },
+        target: { projectId, backendUri: rpc.backendUri },
+        auth: { userTokenPresent: true, source: "cli-token" },
+        adapter: "backend-rpc",
+    });
 
     try {
         const created = await rpcRequest<unknown>(
@@ -1967,15 +2035,19 @@ async function handleFileCreate(args: string[], io: CliIO, env: NodeJS.ProcessEn
         const file = summarizeFile(created, projectId, name);
         const fileId = typeof file.id === "string" ? file.id : "";
         const url = fileId ? createWorkspaceUrl(args, env, fileId) : "";
-        writeOk(
-            io,
-            format,
+        const resultEnvelope = createCliResult(
+            requestEnvelope,
             {
                 file,
                 url,
                 adapter: "backend-rpc",
                 nextActions: ["Open the workspace URL before using file-scoped MCP tools.", CommandDescriptors.FILE_OPEN.id],
-            },
+            }
+        );
+        writeOkEnvelope(
+            io,
+            format,
+            resultEnvelope,
             () => writeFileCreatedText(io, file, url)
         );
         return 0;
@@ -1999,15 +2071,29 @@ function handleFileOpen(args: string[], io: CliIO, env: NodeJS.ProcessEnv): numb
     }
 
     const url = createWorkspaceUrl(args, env, fileId);
-    writeOk(
-        io,
-        format,
+    const requestEnvelope = createCliRequest(CommandDescriptors.FILE_OPEN, {
+        input: {
+            fileId,
+            teamId: readOption(args, ["--team-id"]),
+            pageId: readOption(args, ["--page-id", "--page"]),
+        },
+        target: { fileId, url },
+        auth: { userTokenPresent: false, source: "browser-url" },
+        adapter: CommandDescriptors.FILE_OPEN.adapters[0],
+    });
+    const resultEnvelope = createCliResult(
+        requestEnvelope,
         {
             fileId,
             url,
             adapter: CommandDescriptors.FILE_OPEN.adapters[0],
             boundContext: false,
-        },
+        }
+    );
+    writeOkEnvelope(
+        io,
+        format,
+        resultEnvelope,
         () => writeFileOpenText(io, url)
     );
     return 0;
@@ -2059,6 +2145,13 @@ async function handlePageList(args: string[], io: CliIO, env: NodeJS.ProcessEnv)
         return rpcAuthenticationRequired(io, format);
     }
 
+    const requestEnvelope = createCliRequest(CommandDescriptors.PAGE_LIST, {
+        input: { fileId, adapter: readRequestedAdapter(args) },
+        target: { fileId, backendUri: rpc.backendUri },
+        auth: { userTokenPresent: true, source: "cli-token" },
+        adapterSelection,
+    });
+
     try {
         const result = await rpcRequest<Record<string, unknown>>(
             "GET",
@@ -2068,10 +2161,15 @@ async function handlePageList(args: string[], io: CliIO, env: NodeJS.ProcessEnv)
             rpc.token
         );
         const pages = Array.isArray(result.pages) ? result.pages : [];
-        writeOk(
+        const resultEnvelope = createCliResult(
+            requestEnvelope,
+            { fileId, pages, adapter: adapterSelection.selected, adapterSelection },
+            { adapterSelection }
+        );
+        writeOkEnvelope(
             io,
             format,
-            { fileId, pages, adapter: adapterSelection.selected, adapterSelection },
+            resultEnvelope,
             () => writePagesText(io, fileId, pages)
         );
         return 0;
@@ -2106,6 +2204,12 @@ async function handlePageCreate(args: string[], io: CliIO, env: NodeJS.ProcessEn
 
     const name = readOption(args, ["--name"])?.trim();
     const pageId = readOption(args, ["--page-id", "--page"]);
+    const requestEnvelope = createCliRequest(CommandDescriptors.PAGE_CREATE, {
+        input: { fileId, pageId, name, adapter: readRequestedAdapter(args) },
+        target: { fileId, pageId, backendUri: rpc.backendUri },
+        auth: { userTokenPresent: true, source: "cli-token" },
+        adapterSelection,
+    });
 
     try {
         const result = await rpcRequest<Record<string, unknown>>(
@@ -2119,9 +2223,8 @@ async function handlePageCreate(args: string[], io: CliIO, env: NodeJS.ProcessEn
             },
             rpc.token
         );
-        writeOk(
-            io,
-            format,
+        const resultEnvelope = createCliResult(
+            requestEnvelope,
             {
                 fileId,
                 page: result.page,
@@ -2130,6 +2233,12 @@ async function handlePageCreate(args: string[], io: CliIO, env: NodeJS.ProcessEn
                 adapter: adapterSelection.selected,
                 adapterSelection,
             },
+            { adapterSelection }
+        );
+        writeOkEnvelope(
+            io,
+            format,
+            resultEnvelope,
             () => writePageCreatedText(io, fileId, result.page)
         );
         return 0;

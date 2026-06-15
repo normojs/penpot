@@ -3,7 +3,7 @@ import type { ToolResponse } from "../ToolResponse.js";
 import { PenpotMcpServer } from "../PenpotMcpServer.js";
 import { ToolNames } from "../ToolNames.js";
 import { PenpotRpcTool } from "./PenpotRpcTool.js";
-import { CommandDescriptors } from "@penpot/command-runtime";
+import { CommandDescriptors, createCommandRequestEnvelope, createCommandResultEnvelope } from "@penpot/command-runtime";
 
 type PenpotRecord = Record<string, unknown>;
 
@@ -54,6 +54,13 @@ export class FileCreateTool extends PenpotRpcTool<FileCreateArgs> {
         }
 
         const name = typeof args.name === "string" && args.name.trim() !== "" ? args.name.trim() : "Untitled";
+        const requestEnvelope = createCommandRequestEnvelope(CommandDescriptors.FILE_CREATE, {
+            transport: "mcp",
+            input: { projectId: args.projectId, name, isShared: args.isShared ?? false },
+            target: { projectId: args.projectId },
+            auth: { userTokenPresent: true, source: "mcp-session" },
+            adapter: "backend-command",
+        });
 
         try {
             const file = await this.rpcWritePost<PenpotRecord>(
@@ -69,8 +76,8 @@ export class FileCreateTool extends PenpotRpcTool<FileCreateArgs> {
                     mcpProjectId: args.projectId,
                 }
             );
-
-            return this.ok(
+            const resultEnvelope = createCommandResultEnvelope(
+                requestEnvelope,
                 {
                     file: this.summarizeFile(file, args.projectId, name),
                     nextActions: [
@@ -78,8 +85,10 @@ export class FileCreateTool extends PenpotRpcTool<FileCreateArgs> {
                         ToolNames.FILE_LIST,
                     ],
                 },
-                ["file.open and file.bind_context are planned for Phase 4."]
+                { warnings: ["file.open and file.bind_context are planned for Phase 4."] }
             );
+
+            return this.ok(resultEnvelope.data, resultEnvelope.warnings);
         } catch (cause) {
             return this.rpcFailure(cause);
         }

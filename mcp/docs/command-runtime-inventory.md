@@ -15,8 +15,9 @@ shared command runtime.
 
 ## Current Shared Runtime State
 
-As of P10.3, `@penpot/command-runtime` exposes adapter-selection helpers and a
-low-risk command descriptor catalog for status/config/file/page migration.
+As of P10.4, `@penpot/command-runtime` exposes adapter-selection helpers, a
+low-risk command descriptor catalog, and shared request/result envelope helpers
+for status/config/file/page migration.
 
 Adapter-selection helpers:
 
@@ -33,9 +34,21 @@ Descriptor catalog:
 - lookup helper: `getCommandDescriptor(id)` by internal id, MCP tool name, or
   CLI command string
 
-It still does not own executable input schemas, response envelopes, CLI help
-metadata, transport labels, RPC method names, or full coverage snapshots. Those
-fields remain duplicated between MCP server tool classes and `penpot-cli`.
+Envelope helpers:
+
+- request helper: `createCommandRequestEnvelope(command, options)` records the
+  command descriptor summary, transport, input, target, token-safe auth
+  presence, adapter, adapter selection, and diagnostics metadata
+- result helper: `createCommandResultEnvelope(requestEnvelope, data, options)`
+  carries status, command, descriptor, transport, adapter, target, auth,
+  diagnostics, adapter selection, payload data, and warnings
+- token handling: auth metadata intentionally records presence/source/mode only
+  and does not copy token values
+
+It still does not own executable input schemas, CLI help metadata, transport
+edge formatting, RPC method names, centralized error codes, or full coverage
+snapshots. Those fields remain duplicated between MCP server tool classes and
+`penpot-cli`.
 
 ## MCP Registered Tool Inventory
 
@@ -118,8 +131,9 @@ registered or the descriptor explicitly marks them as planned/unavailable.
 - Input metadata is duplicated between Zod tool schemas and CLI option parsing.
 - Adapter candidates are repeated in MCP page/shape tools and CLI page/shape
   handlers, with only selection mechanics shared.
-- Response envelopes all use `status: "ok" | "error"` but construct
-  `data`, `error`, `warnings`, `nextActions`, and `adapterSelection` locally.
+- Response envelopes now share internal request/result metadata for the
+  low-risk slice, but public `data`, `error`, `warnings`, `nextActions`, and
+  `adapterSelection` formatting is still constructed at the MCP/CLI edges.
 - Backend RPC method names live inside each command implementation instead of
   descriptor metadata.
 - Test coverage is command-specific and not descriptor-driven; there is no
@@ -146,3 +160,15 @@ payloads, destructive confirmation, or live context semantics.
 - Keep current JSON/text response shapes backward compatible.
 - Add descriptor snapshot tests before moving behavior.
 - Preserve `selectCommandAdapter` output fields exactly.
+
+## P10.4 Acceptance Targets
+
+- Add token-safe request/result envelope helpers without changing public MCP or
+  CLI output shapes.
+- Wire low-risk `mcp.status`, `mcp.config`, `file.list`, `file.create`,
+  `file.open`, `page.list`, and `page.create` paths through the shared
+  internal envelope.
+- Keep transport-specific formatting at the MCP/CLI edges so existing clients
+  continue to parse the same JSON/text payloads.
+- Add smoke coverage for descriptor lookup, adapter selection, token-safe auth
+  metadata, and result payload preservation.

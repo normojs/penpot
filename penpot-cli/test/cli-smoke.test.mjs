@@ -1,6 +1,13 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { CommandDescriptors, LowRiskCommandDescriptors, getCommandDescriptor } from "@penpot/command-runtime";
+import {
+    CommandDescriptors,
+    LowRiskCommandDescriptors,
+    createCommandRequestEnvelope,
+    createCommandResultEnvelope,
+    getCommandDescriptor,
+    selectCommandAdapter,
+} from "@penpot/command-runtime";
 import { run } from "../dist/index.js";
 
 const UUIDS = {
@@ -65,6 +72,35 @@ test("command runtime exposes low-risk command descriptors", () => {
     assert.equal(CommandDescriptors.MCP_STATUS.mcpToolName, "mcp.get_status");
     assert.equal(getCommandDescriptor("mcp.get_status").id, "mcp.status");
     assert.equal(getCommandDescriptor("page.list").cliCommand, "page list");
+});
+
+test("command runtime creates token-safe request and result envelopes", () => {
+    const adapterSelection = selectCommandAdapter({
+        command: CommandDescriptors.PAGE_LIST.id,
+        requestedAdapter: "auto",
+        candidates: [{ kind: "backend-command", available: true }],
+    });
+    const request = createCommandRequestEnvelope(CommandDescriptors.PAGE_LIST, {
+        transport: "cli",
+        input: { fileId: UUIDS.file },
+        target: { fileId: UUIDS.file, unused: undefined },
+        auth: { userTokenPresent: true, source: "test", token: "secret-value" },
+        adapterSelection,
+        diagnostics: { rpcCommand: "get-file-pages" },
+    });
+    const result = createCommandResultEnvelope(request, { pages: [] }, { warnings: ["none"] });
+
+    assert.equal(request.command, "page.list");
+    assert.equal(request.transport, "cli");
+    assert.equal(request.descriptor.cliCommand, "page list");
+    assert.equal(request.adapter, "backend-command");
+    assert.deepEqual(request.target, { fileId: UUIDS.file });
+    assert.deepEqual(request.auth, { userTokenPresent: true, source: "test" });
+    assert.equal(Object.hasOwn(request.auth, "token"), false);
+    assert.equal(result.status, "ok");
+    assert.equal(result.adapterSelection.selected, "backend-command");
+    assert.deepEqual(result.data, { pages: [] });
+    assert.deepEqual(result.warnings, ["none"]);
 });
 
 test("mcp config derives stable public MCP surfaces from environment", async () => {

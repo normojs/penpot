@@ -211,6 +211,16 @@ Acceptance:
 - Adding a command descriptor once makes the command available to both MCP and
   CLI entry adapters, subject to transport-specific formatting.
 
+Current state:
+
+- Done: low-risk status/config/file/page descriptors live in
+  `@penpot/command-runtime`.
+- Done: low-risk MCP and CLI paths use shared request/result envelopes for
+  command, transport, adapter, target, auth-present, diagnostics, payload data,
+  and warnings metadata.
+- Next: centralize adapter errors and selection reason codes before migrating
+  shape/export descriptors.
+
 ### Wave C: Headless Authoring Expansion
 
 Purpose: reduce dependency on a live browser tab for normal prototype creation.
@@ -283,14 +293,17 @@ Acceptance:
 
 ## Near-Term Priority
 
-The next implementation slice should start Wave B:
+The next implementation slice should continue Wave B:
 
-1. Introduce shared request/result envelope types in `command-runtime`.
+1. Define shared adapter/error code metadata in `command-runtime` for
+   unsupported adapter, unavailable adapter, missing auth, missing file context,
+   backend unavailable, and destructive confirmation cases.
 2. Keep MCP tool responses and CLI JSON/text formatting backward compatible at
    the transport edges.
-3. Move adapter/result diagnostics into the shared envelope without changing
-   public tool names, CLI command names, or output shapes.
-4. Prepare centralized adapter error codes for the following P10.5 slice.
+3. Move duplicated adapter-selection failure construction from MCP page tools
+   and `penpot-cli` into the shared runtime.
+4. Leave shape/export descriptor migration for the following P10.6 slice once
+   errors and selection reasons are centralized.
 
 Keep manual configuration behavior stable while moving command metadata and
 envelopes; transport-specific formatting should stay at the MCP/CLI edges.

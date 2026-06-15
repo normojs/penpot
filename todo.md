@@ -64,8 +64,10 @@ token-bearing profile configs, and P9.8 closed Wave A manual configuration
 docs. P10.1 refreshed the overall architecture baseline in
 `mcp/docs/penpot-cli-overall-blueprint.md`, P10.2 audited the MCP/CLI command
 inventory for the first descriptor migration slice, and P10.3 added low-risk
-shared descriptors for status/config/file/page metadata. The current
-implementation focus is B3/P10.4: introducing shared request/result envelopes.
+shared descriptors for status/config/file/page metadata. P10.4 added shared
+request/result envelopes for low-risk MCP and CLI paths while preserving public
+output shapes. The current implementation focus is B4/P10.5: centralizing
+adapter errors and selection reasons.
 
 ## Feature Roadmap
 
@@ -90,7 +92,7 @@ remain the execution plan.
 | F14 | done | Headless automation runtime | Phase 7 | Selected operations work without an open browser tab | Completed 2026-06-13; page list/create, simple shape create/update/delete, adapter selection, and exporter-backed CLI output execute without a live workspace tab |
 | F15 | done | Audit, limits, and confirmations | Phase 8 | MCP is safer for real deployments | Completed 2026-06-13; write operations are auditable and limited, plugin compatibility is negotiated, diagnostics are exposed, and `shape.delete` can require explicit confirmation |
 | F16 | done | MCP/CLI smoke coverage | Phase 8 | Developers can catch first-class MCP regressions quickly | Completed 2026-06-13; MCP server tests, CLI no-service smoke tests, and documented running-stack smoke flows cover the critical regression paths |
-| F17 | todo | Shared command descriptors | Phase 10 | MCP and CLI expose the same command catalog from one descriptor layer | Adding a command descriptor once makes it visible to MCP and CLI adapters |
+| F17 | in_progress | Shared command descriptors | Phase 10 | MCP and CLI expose the same command catalog and internal result envelope from one runtime layer | Completed descriptors and envelopes for low-risk status/config/file/page commands; remaining work centralizes errors and expands higher-risk descriptors |
 | F18 | todo | Expanded headless authoring | Phase 11 | Scripts and agents can create richer prototypes without a live workspace | Multi-screen prototype creation works headlessly for supported shapes and interactions |
 | F19 | todo | File open and bind handoff | Phase 12 | Agents can move cleanly between headless edits and visual workspace binding | CLI/MCP can open a file URL and guide binding when live context is required |
 | F20 | todo | Packaging and distribution | Phase 13 | Developers and self-hosted operators have one documented install/setup path | `penpot-cli` build/install and MCP gateway setup are documented and repeatable |
@@ -120,13 +122,14 @@ aligned by terminology but not yet shared as one implementation.
 
 B1/P10.2 completed on 2026-06-15 in
 `mcp/docs/command-runtime-inventory.md`. B2/P10.3 added the first descriptor
-catalog in `command-runtime`. Continue with B3/P10.4.
+catalog in `command-runtime`, and B3/P10.4 added shared request/result
+envelopes. Continue with B4/P10.5.
 
 | Order | Task | Modules | Output | Verification |
 | --- | --- | --- | --- | --- |
 | B1 | Audit existing MCP tools and CLI commands | `mcp/packages/server`, `penpot-cli`, `mcp/docs` | Inventory maps each command/tool to name, input schema, adapter, response shape, and test coverage | Audit document identifies duplicate metadata and first migration slice |
 | B2 | Move status/config/file/page descriptors into command runtime | `mcp/packages/command-runtime`, `mcp/packages/server`, `penpot-cli` | Shared descriptors define names, input metadata, adapter hints, and transport labels for low-risk commands | MCP and CLI keep existing public names; descriptor tests pass |
-| B3 | Add shared request/result envelopes | `command-runtime`, `mcp`, `penpot-cli` | MCP tools and CLI commands use the same internal envelope for adapter, target, auth, and diagnostics metadata | Existing CLI JSON output and MCP tool responses remain backward compatible |
+| B3 | Add shared request/result envelopes | `command-runtime`, `mcp`, `penpot-cli` | Completed 2026-06-15; MCP tools and CLI commands use the same internal envelope for adapter, target, auth, and diagnostics metadata | Existing CLI JSON output and MCP tool responses remain backward compatible |
 | B4 | Centralize adapter errors and selection reasons | `command-runtime`, `mcp`, `penpot-cli` | Backend unavailable, auth missing, file context required, unsupported adapter, and destructive confirmation errors use shared codes | MCP server tests and CLI no-service smoke tests pass |
 | B5 | Move shape/export descriptors after envelope migration | `command-runtime`, `mcp`, `penpot-cli`, `exporter` | Higher-risk write/export commands use shared descriptors without changing behavior | Shape/create/update/delete and export dry-run tests pass |
 
@@ -314,8 +317,8 @@ adapter selection, and structured results.
 | P10.1 | done | Refresh overall architecture baseline | `mcp/docs`, `todo.md` | Compact blueprint documents architecture, delivery waves, and task queue | Completed 2026-06-14 in `mcp/docs/penpot-cli-overall-blueprint.md` |
 | P10.2 | done | Audit existing MCP tools and CLI commands | `mcp/packages/server`, `penpot-cli`, `mcp/docs` | Inventory maps each command/tool to name, input schema, adapter, response shape, and test coverage | Completed 2026-06-15 in `mcp/docs/command-runtime-inventory.md`; identified duplicated metadata, coverage gaps, unregistered named tools, and the first low-risk descriptor migration slice |
 | P10.3 | done | Move status/config/file/page descriptors into command runtime | `command-runtime`, `mcp`, `penpot-cli` | Low-risk command descriptors live in one package | Completed 2026-06-15; added `CommandDescriptors`, descriptor lookup, CLI descriptor smoke coverage, and MCP/CLI wiring for status/config/file/page metadata while preserving public names and output shapes |
-| P10.4 | in_progress | Introduce shared request/result envelopes | `command-runtime`, `mcp`, `penpot-cli` | MCP and CLI return the same adapter/result diagnostics internally | Started 2026-06-15; keep transport-specific formatting at the edges |
-| P10.5 | todo | Centralize adapter errors and selection reasons | `command-runtime`, `mcp`, `penpot-cli` | Unsupported/unavailable/auth/context errors are consistent | Extend current adapter-selection helper instead of replacing it abruptly |
+| P10.4 | done | Introduce shared request/result envelopes | `command-runtime`, `mcp`, `penpot-cli` | MCP and CLI return the same adapter/result diagnostics internally | Completed 2026-06-15; added token-safe `createCommandRequestEnvelope` / `createCommandResultEnvelope`, wired low-risk status/config/file/page paths, and kept transport-specific formatting at the edges |
+| P10.5 | in_progress | Centralize adapter errors and selection reasons | `command-runtime`, `mcp`, `penpot-cli` | Unsupported/unavailable/auth/context errors are consistent | Started 2026-06-15; extend current adapter-selection helper instead of replacing it abruptly |
 | P10.6 | todo | Move shape/export descriptors after envelope migration | `command-runtime`, `mcp`, `penpot-cli`, `exporter` | Higher-risk write/export descriptors use the shared catalog without changing behavior | Shape/create/update/delete and export dry-run tests pass |
 | P10.7 | todo | Add command runtime descriptor tests | `command-runtime`, `mcp`, `penpot-cli` | Descriptor snapshots and adapter-selection tests pass | Include CLI and MCP no-service smoke coverage |
 
@@ -372,5 +375,5 @@ baseline and the Detailed Upcoming Task Queue as the execution order. Continue
 with Wave B:
 
 1. Complete B3/P10.4: introduce shared request/result envelopes once descriptor
-   metadata is stable.
-2. Start B4/P10.5: centralize adapter errors and selection reasons.
+   metadata is stable. Completed 2026-06-15.
+2. Continue B4/P10.5: centralize adapter errors and selection reasons.

@@ -4,7 +4,7 @@ import type { ToolResponse } from "../ToolResponse";
 import { PenpotMcpServer } from "../PenpotMcpServer";
 import { ToolNames } from "../ToolNames";
 import { PenpotRpcTool } from "./PenpotRpcTool";
-import { CommandDescriptors } from "@penpot/command-runtime";
+import { CommandDescriptors, createCommandRequestEnvelope, createCommandResultEnvelope } from "@penpot/command-runtime";
 
 type PenpotRecord = Record<string, unknown>;
 
@@ -158,7 +158,15 @@ export class FileListTool extends PenpotRpcTool<FileListArgs> {
                 { "project-id": args.projectId },
                 userToken
             );
-            return this.ok({ projectId: args.projectId, files });
+            const requestEnvelope = createCommandRequestEnvelope(CommandDescriptors.FILE_LIST, {
+                transport: "mcp",
+                input: { projectId: args.projectId },
+                target: { projectId: args.projectId },
+                auth: { userTokenPresent: true, source: "mcp-session" },
+                adapter: "backend-rpc",
+            });
+            const resultEnvelope = createCommandResultEnvelope(requestEnvelope, { projectId: args.projectId, files });
+            return this.ok(resultEnvelope.data, resultEnvelope.warnings);
         } catch (cause) {
             return this.rpcFailure(cause);
         }
