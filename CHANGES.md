@@ -57,6 +57,7 @@
 - Add shared token-safe request/result envelopes for low-risk MCP and CLI command paths while keeping transport-specific output shapes unchanged.
 - Add shared command error codes and adapter-selection reason helpers for MCP and CLI command runtime paths.
 - Add shared command descriptors for typed shape, export, and render command metadata without changing MCP or CLI behavior.
+- Add focused command-runtime tests for descriptor groups, adapter selection, errors, and token-safe envelopes.
 - Add rate limiting and concurrency safety for file snapshot operations [#9723](https://github.com/penpot/penpot/issues/9723) (PR: [#9722](https://github.com/penpot/penpot/pull/9722))
 - Prevent concurrent font uploads from causing excessive simultaneous requests [#9922](https://github.com/penpot/penpot/issues/9922) (PR: [#9921](https://github.com/penpot/penpot/pull/9921))
 

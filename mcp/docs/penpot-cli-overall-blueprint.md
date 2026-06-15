@@ -222,8 +222,9 @@ Current state:
   adapter reason text are centralized in `@penpot/command-runtime`.
 - Done: shape/create/update/delete, export.shape, export.page, and
   render.preview descriptors are part of the migrated command catalog.
-- Next: harden descriptor snapshots and adapter-selection tests before moving
-  into the next authoring wave.
+- Done: focused command-runtime tests cover descriptor groups, lookup,
+  adapter-selection priority/error cases, and token-safe envelopes.
+- Next: move into Wave C headless authoring expansion.
 
 ### Wave C: Headless Authoring Expansion
 
@@ -297,15 +298,16 @@ Acceptance:
 
 ## Near-Term Priority
 
-The next implementation slice should finish Wave B:
+The next implementation slice should start Wave C:
 
-1. Add descriptor snapshot coverage for low-risk and shape/export descriptor
-   groups.
-2. Add adapter-selection tests for auto, explicit unsupported, explicit
-   unavailable, and fallback reason metadata.
-3. Keep MCP tool responses and CLI JSON/text formatting backward compatible at
-   the transport edges.
-4. After P10.7, move into Wave C headless authoring expansion.
+1. Add backend-command page rename support for explicit file/page targets.
+2. Wire MCP `page.rename` and a matching `penpot-cli page rename` command to
+   the backend path while preserving plugin-live fallback for bound workspace
+   usage.
+3. Keep page current/selection semantics in plugin-live until a backend-safe
+   representation is defined.
+4. Add focused tests for success, auth/permission failures, and adapter
+   selection behavior.
 
 Keep manual configuration behavior stable while moving command metadata and
 envelopes; transport-specific formatting should stay at the MCP/CLI edges.

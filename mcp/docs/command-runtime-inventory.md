@@ -15,7 +15,7 @@ shared command runtime.
 
 ## Current Shared Runtime State
 
-As of P10.6, `@penpot/command-runtime` exposes adapter-selection helpers, a
+As of P10.7, `@penpot/command-runtime` exposes adapter-selection helpers, a
 low-risk command descriptor catalog, shared request/result envelope helpers,
 and centralized command error/reason metadata for status/config/file/page
 migration plus shape/export/render descriptor metadata.
@@ -64,9 +64,16 @@ Error and reason helpers:
   `code`, `message`, `actions`, and `data.adapterSelection` shape used by MCP
   tools and CLI JSON output
 
+Runtime tests:
+
+- package script: `pnpm --filter @penpot/command-runtime test`
+- coverage: descriptor groups, descriptor lookup by internal/MCP/CLI names,
+  adapter selection priority, unsupported/unavailable adapter error payloads,
+  adapter reason text, and token-safe request/result envelopes
+
 It still does not own executable input schemas, CLI help metadata, transport
-edge formatting, RPC method names, or full coverage snapshots. Those fields
-remain duplicated between MCP server tool classes and `penpot-cli`.
+edge formatting, or RPC method names. Those fields remain duplicated between
+MCP server tool classes and `penpot-cli`.
 
 ## MCP Registered Tool Inventory
 
@@ -218,3 +225,12 @@ payloads, destructive confirmation, or live context semantics.
 - Wire MCP shape/export tool names and descriptions plus CLI shape/export
   command ids to `CommandDescriptors` without changing execution behavior or
   public output shapes.
+
+## P10.7 Acceptance Targets
+
+- Add focused command-runtime tests for descriptor groups and lookup.
+- Cover adapter-selection priority, explicit unsupported adapters, explicit
+  unavailable adapters, shared reason text, and adapter error payload shape.
+- Cover token-safe request/result envelope behavior outside the CLI smoke
+  tests.
+- Preserve CLI and MCP no-service smoke coverage for migrated commands.

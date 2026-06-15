@@ -1,11 +1,14 @@
 {
   "name": "@penpot/command-runtime",
   "version": "0.1.0",
-  "description": "Shared command adapter selection helpers for Penpot automation entry points.",
+  "description": "Shared command descriptors, envelopes, and adapter helpers for Penpot automation entry points.",
   "private": true,
   "type": "module",
   "main": "./index.js",
   "types": "./index.d.ts",
+  "scripts": {
+    "test": "node --test test/*.test.mjs"
+  },
   "exports": {
     ".": {
       "types": "./index.d.ts",
