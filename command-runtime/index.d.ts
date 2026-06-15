@@ -175,6 +175,16 @@ export interface LowRiskCommandDescriptorCatalog {
 
 export interface CommandDescriptorCatalog extends LowRiskCommandDescriptorCatalog {
     PAGE_RENAME: CommandDescriptor & { id: "page.rename"; mcpToolName: "page.rename"; cliCommand: "page rename" };
+    PROTOTYPE_CREATE_FLOW: CommandDescriptor & {
+        id: "prototype.create_flow";
+        mcpToolName: "prototype.create_flow";
+        cliCommand: "prototype create-flow";
+    };
+    PROTOTYPE_CREATE_INTERACTION: CommandDescriptor & {
+        id: "prototype.create_interaction";
+        mcpToolName: "prototype.create_interaction";
+        cliCommand: "prototype create-interaction";
+    };
     SHAPE_CREATE_FRAME: CommandDescriptor & {
         id: "shape.create_frame";
         mcpToolName: "shape.create_frame";

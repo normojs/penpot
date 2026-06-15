@@ -1024,6 +1024,26 @@ P11.2 implementation note:
   calls `rename-file-page` directly and reports `adapterSelection` in JSON
   output.
 
+P11.4 implementation note:
+
+- Common/backend now expose `create-prototype-flow-request`,
+  `create-prototype-interaction-request`, `create-file-prototype-flow`, and
+  `create-file-prototype-interaction` for the backend-safe prototype subset.
+- The backend-command prototype subset persists page `:flows` through
+  `:set-flow` and shape navigate interactions through `:mod-obj` updates to
+  `:interactions`. It supports explicit flow ids, source/destination ids,
+  click/mouse-enter/mouse-leave/after-delay triggers, preserve-scroll, and
+  dissolve/slide/push animation metadata.
+- MCP `prototype.create_flow` and `prototype.create_interaction` now select
+  backend-command when callers provide `fileId`; calls without explicit
+  file/page targets keep using the plugin-live bound workspace path.
+- `penpot-cli prototype create-flow` and `prototype create-interaction` call
+  the new backend commands directly and report `adapterSelection` in JSON
+  output.
+- Overlay creation, interaction listing, interaction deletion, current page
+  state, selection state, and other live workspace semantics remain
+  plugin-live until dedicated backend-safe contracts are defined.
+
 ## 6. User Configuration
 
 MCP settings should stay explicit and user-visible. P9.1 captured the current
@@ -1539,7 +1559,9 @@ Phase 5.4 implementation note:
 
 - `prototype.create_flow` and `prototype.create_interaction` are implemented as
   first-class typed MCP tools backed by a typed `prototype` plugin task.
-- The tools require a bound file context through the shared file context guard.
+- In the original typed-tool slice, the tools required a bound file context
+  through the shared file context guard. P11.4 adds backend-command routing for
+  explicit `fileId` targets while preserving that plugin-live path.
 - `prototype.create_flow` creates a page flow from an explicit starting
   board/frame id.
 - `prototype.create_interaction` creates a navigate-to interaction from an

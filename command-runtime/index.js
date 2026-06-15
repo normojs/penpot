@@ -142,6 +142,29 @@ export const CommandDescriptors = Object.freeze({
         adapters: Object.freeze(["backend-command", "plugin-live"]),
         responseShape: "status envelope with page summary, revision metadata, and adapterSelection metadata",
     }),
+    PROTOTYPE_CREATE_FLOW: Object.freeze({
+        id: "prototype.create_flow",
+        mcpToolName: "prototype.create_flow",
+        cliCommand: "prototype create-flow",
+        title: "Create prototype flow",
+        description:
+            "Creates a prototype flow using backend-command when a file id is supplied or plugin-live otherwise.",
+        inputSchema: "fileId?, pageId?, flowId?, name, startingBoardId, adapter?",
+        adapters: Object.freeze(["backend-command", "plugin-live"]),
+        responseShape: "status envelope with flow summary, revision metadata, and adapterSelection metadata",
+    }),
+    PROTOTYPE_CREATE_INTERACTION: Object.freeze({
+        id: "prototype.create_interaction",
+        mcpToolName: "prototype.create_interaction",
+        cliCommand: "prototype create-interaction",
+        title: "Create prototype interaction",
+        description:
+            "Creates a navigate-to prototype interaction using backend-command when a file id is supplied or plugin-live otherwise.",
+        inputSchema:
+            "fileId?, pageId?, sourceShapeId, destinationBoardId, trigger?, delay?, preserveScrollPosition?, animation?, adapter?",
+        adapters: Object.freeze(["backend-command", "plugin-live"]),
+        responseShape: "status envelope with interaction summary, revision metadata, and adapterSelection metadata",
+    }),
     SHAPE_CREATE_FRAME: Object.freeze({
         id: "shape.create_frame",
         mcpToolName: "shape.create_frame",
@@ -252,6 +275,8 @@ export const LowRiskCommandDescriptors = Object.freeze([
 
 export const HeadlessAuthoringCommandDescriptors = Object.freeze([
     CommandDescriptors.PAGE_RENAME,
+    CommandDescriptors.PROTOTYPE_CREATE_FLOW,
+    CommandDescriptors.PROTOTYPE_CREATE_INTERACTION,
 ]);
 
 export const ShapeExportCommandDescriptors = Object.freeze([

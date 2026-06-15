@@ -52,6 +52,8 @@ Usage:
   penpot-cli shape create-image --file <file-id> --page <page-id> --image <path> --x <n> --y <n> [--width <n>] [--height <n>] [--format text|json]
   penpot-cli shape update --file <file-id> --shape <shape-id> [--page <page-id>] [--parent <frame-id>] [--x <n>] [--y <n>] [--width <n>] [--height <n>] [--fill <hex>] [--layout none|flex] [--format text|json]
   penpot-cli shape delete --file <file-id> --shape <shape-id> [--page <page-id>] [--format text|json]
+  penpot-cli prototype create-flow --file <file-id> --name <name> --starting-board <frame-id> [--page <page-id>] [--flow-id <id>] [--format text|json]
+  penpot-cli prototype create-interaction --file <file-id> --source <shape-id> --destination <frame-id> [--page <page-id>] [--trigger click|mouse-enter|mouse-leave|after-delay] [--format text|json]
   penpot-cli export page --file <file-id> --page <page-id> --object <object-id> [--adapter auto|exporter] [--output <path>] [--dry-run] [--format text|json]`;
 
 const MCP_HELP_TEXT = `penpot-cli mcp
@@ -122,6 +124,23 @@ Notes:
   Repeat --fill and --stroke to send backend-command fill/stroke stacks.
   Repeated --fill-opacity, --stroke-opacity, --stroke-width, --stroke-style, and --stroke-alignment values align by index.
   Backend-command layout updates support --layout none and --layout flex. Grid layout remains live-workspace only.
+
+Environment:
+  PENPOT_BACKEND_URI       Backend RPC base URI, default http://localhost:6060
+  PENPOT_PUBLIC_URI        Public Penpot base URI used as backend fallback
+  PENPOT_CLI_TOKEN         Penpot access token for backend RPC
+  PENPOT_MCP_USER_TOKEN    Penpot MCP user token fallback for backend RPC
+  PENPOT_ACCESS_TOKEN      Generic Penpot access token fallback`;
+
+const PROTOTYPE_HELP_TEXT = `penpot-cli prototype
+
+Usage:
+  penpot-cli prototype create-flow --file <file-id> --name <name> --starting-board <frame-id> [--page <page-id>] [--flow-id <id>] [--adapter auto|backend-command] [--backend-uri <uri>] [--token <token>] [--format text|json]
+  penpot-cli prototype create-interaction --file <file-id> --source <shape-id> --destination <frame-id> [--page <page-id>] [--trigger click|mouse-enter|mouse-leave|after-delay] [--delay <ms>] [--preserve-scroll] [--animation dissolve|slide|push] [--animation-duration <ms>] [--format text|json]
+
+Notes:
+  Backend-command prototype helpers currently support basic flows and navigate-to interactions.
+  Overlay creation, interaction listing, and interaction deletion remain live-workspace MCP tools.
 
 Environment:
   PENPOT_BACKEND_URI       Backend RPC base URI, default http://localhost:6060
@@ -366,6 +385,40 @@ interface ShapeDeleteParams {
     fileId: string;
     shapeId: string;
     pageId?: string;
+}
+
+type PrototypeTrigger = "click" | "mouse-enter" | "mouse-leave" | "after-delay";
+type PrototypeAnimationType = "dissolve" | "slide" | "push";
+type PrototypeAnimationEasing = "linear" | "ease" | "ease-in" | "ease-out" | "ease-in-out";
+type PrototypeAnimationDirection = "right" | "left" | "up" | "down";
+type PrototypeAnimationWay = "in" | "out";
+
+interface PrototypeAnimationParams {
+    type: PrototypeAnimationType;
+    duration: number;
+    easing?: PrototypeAnimationEasing;
+    direction?: PrototypeAnimationDirection;
+    way?: PrototypeAnimationWay;
+    offsetEffect?: boolean;
+}
+
+interface PrototypeFlowParams {
+    fileId: string;
+    name: string;
+    startingBoardId: string;
+    pageId?: string;
+    flowId?: string;
+}
+
+interface PrototypeInteractionParams {
+    fileId: string;
+    sourceShapeId: string;
+    destinationBoardId: string;
+    pageId?: string;
+    trigger?: PrototypeTrigger;
+    delay?: number;
+    preserveScrollPosition?: boolean;
+    animation?: PrototypeAnimationParams;
 }
 
 const DEFAULT_IO: CliIO = {
@@ -645,6 +698,22 @@ function selectCliShapeAdapter(command: string, args: string[]): CommandAdapterS
                 available: false,
                 priority: 50,
                 reason: getAdapterSelectionReason(AdapterSelectionReasonCodes.CLI_SHAPE_PLUGIN_LIVE_UNSUPPORTED),
+            },
+        ],
+    });
+}
+
+function selectCliPrototypeAdapter(command: string, args: string[]): CommandAdapterSelection {
+    return selectCommandAdapter({
+        command,
+        requestedAdapter: readRequestedAdapter(args),
+        candidates: [
+            { kind: "backend-command", available: true, priority: 10 },
+            {
+                kind: "plugin-live",
+                available: false,
+                priority: 50,
+                reason: getAdapterSelectionReason(AdapterSelectionReasonCodes.CLI_PLUGIN_LIVE_UNSUPPORTED),
             },
         ],
     });
@@ -1332,6 +1401,248 @@ function parseShapeDeleteParams(args: string[], io: CliIO, format: Format): Shap
     };
 }
 
+function readPrototypeEnumOption<T extends string>(
+    args: string[],
+    names: string[],
+    allowed: readonly T[],
+    io: CliIO,
+    format: Format,
+    optionName: string
+): T | null | undefined {
+    const value = readOption(args, names);
+    if (!value) {
+        return undefined;
+    }
+    if ((allowed as readonly string[]).includes(value)) {
+        return value as T;
+    }
+    writeError(io, format, "prototype_option_invalid", `Invalid ${optionName} value: ${value}.`, [
+        `Expected one of: ${allowed.join(", ")}.`,
+    ]);
+    return null;
+}
+
+function readOptionalBooleanFlag(args: string[], names: string[]): boolean | undefined {
+    const value = readOption(args, names);
+    if (value !== undefined) {
+        return readBooleanConfig(value, true);
+    }
+    return names.some((name) => hasFlag(args, name)) ? true : undefined;
+}
+
+function parsePrototypeAnimationParams(
+    args: string[],
+    io: CliIO,
+    format: Format
+): PrototypeAnimationParams | null | undefined {
+    const animationOptionNames = [
+        "--animation",
+        "--animation-type",
+        "--animation-duration",
+        "--duration",
+        "--animation-easing",
+        "--animation-direction",
+        "--animation-way",
+        "--offset-effect",
+    ];
+    const hasAnimationOption = animationOptionNames.some((name) => readOption(args, [name]) !== undefined || hasFlag(args, name));
+    if (!hasAnimationOption) {
+        return undefined;
+    }
+
+    const type = readPrototypeEnumOption(
+        args,
+        ["--animation", "--animation-type"],
+        ["dissolve", "slide", "push"],
+        io,
+        format,
+        "--animation"
+    );
+    if (type === null) {
+        return null;
+    }
+    if (!type) {
+        writeError(io, format, "prototype_animation_type_required", "prototype animation options require --animation <type>.", [
+            "Use --animation dissolve, --animation slide, or --animation push.",
+        ]);
+        return null;
+    }
+
+    const duration = readNumberOption(args, ["--animation-duration", "--duration"]);
+    if (duration === undefined) {
+        writeError(
+            io,
+            format,
+            "prototype_animation_duration_required",
+            "prototype animation requires --animation-duration <ms>.",
+            ["Pass a duration in milliseconds from 0 to 60000."]
+        );
+        return null;
+    }
+    if (!Number.isFinite(duration) || duration < 0 || duration > 60000) {
+        writeError(io, format, "prototype_numeric_option_invalid", "Invalid animation duration.", [
+            "Pass a finite animation duration from 0 to 60000.",
+        ]);
+        return null;
+    }
+
+    const easing = readPrototypeEnumOption(
+        args,
+        ["--animation-easing", "--easing"],
+        ["linear", "ease", "ease-in", "ease-out", "ease-in-out"],
+        io,
+        format,
+        "--animation-easing"
+    );
+    const direction = readPrototypeEnumOption(
+        args,
+        ["--animation-direction", "--direction"],
+        ["right", "left", "up", "down"],
+        io,
+        format,
+        "--animation-direction"
+    );
+    const way = readPrototypeEnumOption(args, ["--animation-way", "--way"], ["in", "out"], io, format, "--animation-way");
+    if (easing === null || direction === null || way === null) {
+        return null;
+    }
+
+    const offsetEffect = readOptionalBooleanFlag(args, ["--offset-effect"]);
+
+    return {
+        type,
+        duration,
+        ...(easing ? { easing } : {}),
+        ...(direction ? { direction } : {}),
+        ...(way ? { way } : {}),
+        ...(offsetEffect !== undefined ? { offsetEffect } : {}),
+    };
+}
+
+function parsePrototypeFlowParams(args: string[], io: CliIO, format: Format): PrototypeFlowParams | null {
+    const fileId = readOption(args, ["--file", "--file-id"]);
+    if (!fileId) {
+        writeError(io, format, "file_id_required", "prototype create-flow requires --file <file-id>.", [
+            "Use penpot-cli file list first, then pass --file <file-id>.",
+        ]);
+        return null;
+    }
+
+    const name = readOption(args, ["--name"])?.trim();
+    if (!name) {
+        writeError(io, format, "prototype_name_required", "prototype create-flow requires --name <name>.", [
+            "Pass a non-empty flow name.",
+        ]);
+        return null;
+    }
+
+    const startingBoardId = readOption(args, ["--starting-board", "--starting-board-id", "--board", "--frame"]);
+    if (!startingBoardId) {
+        writeError(io, format, "prototype_starting_board_required", "prototype create-flow requires --starting-board <frame-id>.", [
+            "Pass the frame id that starts the prototype flow.",
+        ]);
+        return null;
+    }
+
+    return {
+        fileId,
+        name,
+        startingBoardId,
+        pageId: readOption(args, ["--page", "--page-id"]),
+        flowId: readOption(args, ["--flow-id", "--id"]),
+    };
+}
+
+function parsePrototypeInteractionParams(args: string[], io: CliIO, format: Format): PrototypeInteractionParams | null {
+    const fileId = readOption(args, ["--file", "--file-id"]);
+    if (!fileId) {
+        writeError(io, format, "file_id_required", "prototype create-interaction requires --file <file-id>.", [
+            "Use penpot-cli file list first, then pass --file <file-id>.",
+        ]);
+        return null;
+    }
+
+    const sourceShapeId = readOption(args, ["--source", "--source-shape", "--source-shape-id", "--shape", "--shape-id"]);
+    if (!sourceShapeId) {
+        writeError(
+            io,
+            format,
+            "prototype_source_shape_required",
+            "prototype create-interaction requires --source <shape-id>.",
+            ["Pass the shape id that owns the interaction."]
+        );
+        return null;
+    }
+
+    const destinationBoardId = readOption(args, [
+        "--destination",
+        "--destination-board",
+        "--destination-board-id",
+        "--target",
+        "--target-board",
+    ]);
+    if (!destinationBoardId) {
+        writeError(
+            io,
+            format,
+            "prototype_destination_board_required",
+            "prototype create-interaction requires --destination <frame-id>.",
+            ["Pass the destination board/frame id for navigate-to."]
+        );
+        return null;
+    }
+
+    const delay = readNumberOption(args, ["--delay"]);
+    if (delay !== undefined && (!Number.isFinite(delay) || delay < 0 || delay > 60000)) {
+        writeError(io, format, "prototype_numeric_option_invalid", "Invalid prototype delay.", [
+            "Pass a finite delay from 0 to 60000.",
+        ]);
+        return null;
+    }
+
+    const trigger = readPrototypeEnumOption(
+        args,
+        ["--trigger"],
+        ["click", "mouse-enter", "mouse-leave", "after-delay"],
+        io,
+        format,
+        "--trigger"
+    );
+    if (trigger === null) {
+        return null;
+    }
+
+    const animation = parsePrototypeAnimationParams(args, io, format);
+    if (animation === null) {
+        return null;
+    }
+
+    return {
+        fileId,
+        sourceShapeId,
+        destinationBoardId,
+        pageId: readOption(args, ["--page", "--page-id"]),
+        trigger: trigger ?? (delay !== undefined ? "after-delay" : undefined),
+        delay,
+        preserveScrollPosition: readOptionalBooleanFlag(args, ["--preserve-scroll", "--preserve-scroll-position"]),
+        animation,
+    };
+}
+
+function toRpcPrototypeAnimation(animation: PrototypeAnimationParams | undefined): Record<string, unknown> | undefined {
+    if (!animation) {
+        return undefined;
+    }
+    return {
+        type: animation.type,
+        duration: animation.duration,
+        ...(animation.easing ? { easing: animation.easing } : {}),
+        ...(animation.direction ? { direction: animation.direction } : {}),
+        ...(animation.way ? { way: animation.way } : {}),
+        ...(animation.offsetEffect !== undefined ? { "offset-effect": animation.offsetEffect } : {}),
+    };
+}
+
 function writeDevPlanText(io: CliIO, plan: DevPlan): void {
     writeLine(io.stdout, "Penpot dev MCP plan");
     writeLine(io.stdout, `mode: ${plan.mode}`);
@@ -1998,6 +2309,32 @@ function writeShapeDeletedText(io: CliIO, fileId: string, shape: unknown): void 
     writeLine(io.stdout, `type: ${String(record.type ?? "<unknown>")}`);
     writeLine(io.stdout, `name: ${String(record.name ?? "<unnamed>")}`);
     writeLine(io.stdout, `pageId: ${String(record.pageId ?? record["page-id"] ?? "<unknown>")}`);
+}
+
+function writePrototypeFlowCreatedText(io: CliIO, fileId: string, flow: unknown): void {
+    const record = asRecord(flow);
+    writeLine(io.stdout, "Prototype flow created");
+    writeLine(io.stdout, `fileId: ${fileId}`);
+    writeLine(io.stdout, `id: ${String(record.id ?? "<unknown>")}`);
+    writeLine(io.stdout, `name: ${String(record.name ?? "<unnamed>")}`);
+    writeLine(io.stdout, `pageId: ${String(record.pageId ?? record["page-id"] ?? "<unknown>")}`);
+    writeLine(
+        io.stdout,
+        `startingBoardId: ${String(record.startingBoardId ?? record["starting-board-id"] ?? "<unknown>")}`
+    );
+}
+
+function writePrototypeInteractionCreatedText(io: CliIO, fileId: string, interaction: unknown): void {
+    const record = asRecord(interaction);
+    writeLine(io.stdout, "Prototype interaction created");
+    writeLine(io.stdout, `fileId: ${fileId}`);
+    writeLine(io.stdout, `sourceShapeId: ${String(record.sourceShapeId ?? record["source-shape-id"] ?? "<unknown>")}`);
+    writeLine(
+        io.stdout,
+        `destinationBoardId: ${String(record.destinationBoardId ?? record["destination-board-id"] ?? "<unknown>")}`
+    );
+    writeLine(io.stdout, `actionType: ${String(record.actionType ?? record["action-type"] ?? "navigate-to")}`);
+    writeLine(io.stdout, `index: ${String(record.index ?? "<unknown>")}`);
 }
 
 function writeExportPlanText(io: CliIO, plan: ExportPagePlan): void {
@@ -3076,6 +3413,137 @@ async function handleShapeCommand(args: string[], io: CliIO, env: NodeJS.Process
     }
 }
 
+async function handlePrototypeCreateFlow(args: string[], io: CliIO, env: NodeJS.ProcessEnv): Promise<number> {
+    const format = parseFormat(args, io);
+    if (!format) {
+        return 2;
+    }
+
+    const adapterSelection = selectCliPrototypeAdapter(CommandDescriptors.PROTOTYPE_CREATE_FLOW.id, args);
+    if (adapterSelection.status !== "selected" || adapterSelection.selected !== "backend-command") {
+        return adapterSelectionFailure(io, format, adapterSelection);
+    }
+
+    const prototypeParams = parsePrototypeFlowParams(args, io, format);
+    if (!prototypeParams) {
+        return 2;
+    }
+
+    const rpc = getRpcConfig(args, env);
+    if (!rpc.token) {
+        return rpcAuthenticationRequired(io, format);
+    }
+
+    try {
+        const result = await rpcRequest<Record<string, unknown>>(
+            "POST",
+            rpc.backendUri,
+            "create-file-prototype-flow",
+            {
+                id: prototypeParams.fileId,
+                "page-id": prototypeParams.pageId,
+                "flow-id": prototypeParams.flowId,
+                name: prototypeParams.name,
+                "starting-board-id": prototypeParams.startingBoardId,
+            },
+            rpc.token
+        );
+        writeOk(
+            io,
+            format,
+            {
+                fileId: prototypeParams.fileId,
+                flow: result.flow,
+                revn: result.revn,
+                vern: result.vern,
+                adapter: adapterSelection.selected,
+                adapterSelection,
+            },
+            () => writePrototypeFlowCreatedText(io, prototypeParams.fileId, result.flow)
+        );
+        return 0;
+    } catch (cause) {
+        return rpcErrorResponse(io, format, "create-file-prototype-flow", rpc.backendUri, cause);
+    }
+}
+
+async function handlePrototypeCreateInteraction(args: string[], io: CliIO, env: NodeJS.ProcessEnv): Promise<number> {
+    const format = parseFormat(args, io);
+    if (!format) {
+        return 2;
+    }
+
+    const adapterSelection = selectCliPrototypeAdapter(CommandDescriptors.PROTOTYPE_CREATE_INTERACTION.id, args);
+    if (adapterSelection.status !== "selected" || adapterSelection.selected !== "backend-command") {
+        return adapterSelectionFailure(io, format, adapterSelection);
+    }
+
+    const prototypeParams = parsePrototypeInteractionParams(args, io, format);
+    if (!prototypeParams) {
+        return 2;
+    }
+
+    const rpc = getRpcConfig(args, env);
+    if (!rpc.token) {
+        return rpcAuthenticationRequired(io, format);
+    }
+
+    try {
+        const result = await rpcRequest<Record<string, unknown>>(
+            "POST",
+            rpc.backendUri,
+            "create-file-prototype-interaction",
+            {
+                id: prototypeParams.fileId,
+                "page-id": prototypeParams.pageId,
+                "source-shape-id": prototypeParams.sourceShapeId,
+                "destination-board-id": prototypeParams.destinationBoardId,
+                trigger: prototypeParams.trigger,
+                delay: prototypeParams.delay,
+                "preserve-scroll-position": prototypeParams.preserveScrollPosition,
+                animation: toRpcPrototypeAnimation(prototypeParams.animation),
+            },
+            rpc.token
+        );
+        writeOk(
+            io,
+            format,
+            {
+                fileId: prototypeParams.fileId,
+                interaction: result.interaction,
+                revn: result.revn,
+                vern: result.vern,
+                adapter: adapterSelection.selected,
+                adapterSelection,
+            },
+            () => writePrototypeInteractionCreatedText(io, prototypeParams.fileId, result.interaction)
+        );
+        return 0;
+    } catch (cause) {
+        return rpcErrorResponse(io, format, "create-file-prototype-interaction", rpc.backendUri, cause);
+    }
+}
+
+async function handlePrototypeCommand(args: string[], io: CliIO, env: NodeJS.ProcessEnv): Promise<number> {
+    const [subcommand, ...rest] = args;
+
+    if (isHelpFlag(subcommand)) {
+        writeLine(io.stdout, PROTOTYPE_HELP_TEXT);
+        return 0;
+    }
+
+    switch (subcommand) {
+        case "create-flow":
+            return await handlePrototypeCreateFlow(rest, io, env);
+        case "create-interaction":
+            return await handlePrototypeCreateInteraction(rest, io, env);
+        default:
+            writeLine(io.stderr, `Unknown prototype command: ${subcommand}`);
+            writeLine(io.stderr, 'Run "penpot-cli prototype --help" for usage.');
+            return 2;
+    }
+}
+
 async function handleExportPage(args: string[], io: CliIO, env: NodeJS.ProcessEnv): Promise<number> {
     const format = parseFormat(args, io);
     if (!format) {
@@ -3191,6 +3659,10 @@ export async function run(
 
     if (first === "shape") {
         return await handleShapeCommand(argv.slice(1), io, env);
+    }
+
+    if (first === "prototype") {
+        return await handlePrototypeCommand(argv.slice(1), io, env);
     }
 
     if (first === "export") {

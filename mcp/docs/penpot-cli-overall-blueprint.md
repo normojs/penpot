@@ -240,11 +240,12 @@ Tasks:
   `layout none` and flex direction, wrap, alignment, gap, and padding.
 - Done: add headless image/media insertion for image-backed rectangles through
   existing backend media upload/storage paths.
+- Done: add backend-supported prototype flow and navigate interaction helpers
+  for explicit file/page targets, with MCP and CLI adapter routing.
 - Keep set-current as a live workspace operation unless a future backend
   metadata use case becomes meaningful.
 - Keep grid/full layout metadata in plugin-live until backend-command owns
   tracks, cells, and related layout structures.
-- Add backend-supported prototype flow and interaction helpers.
 - Expand exporter-backed preview/render commands for explicit targets.
 
 Acceptance:
@@ -308,12 +309,12 @@ Acceptance:
 
 The next implementation slice should continue Wave C:
 
-1. Add backend-supported prototype flow and interaction helpers for the
-   simplest multi-screen navigation cases.
+1. Expand exporter-backed preview/render commands for explicit file/page/object
+   targets.
 2. Keep page current/selection semantics in plugin-live until a backend-safe
    representation is defined.
-3. Add focused tests for prototype persistence, permission checks, adapter
-   selection, and export-preview behavior.
+3. Add focused tests for export-preview metadata, artifact handling, and MCP/CLI
+   adapter selection.
 
 Keep manual configuration behavior stable while moving command metadata and
 envelopes; transport-specific formatting should stay at the MCP/CLI edges.

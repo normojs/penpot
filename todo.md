@@ -76,8 +76,11 @@ supports fill/stroke stacks, independent corner radii, parent frame movement,
 and backend-safe frame layout updates for `none` and `flex` through
 common/backend, MCP, and `penpot-cli`. C3/P11.3 is complete: image-backed
 rectangles can be created through backend-command media upload/storage paths
-from MCP and `penpot-cli`. Grid/full layout editing remains plugin-live.
-Current active work is C4/P11.4 backend-supported prototype helpers.
+from MCP and `penpot-cli`. C4/P11.4 is complete: backend-command can create
+prototype flows and navigate interactions from MCP and `penpot-cli` while
+plugin-live remains available for live-only prototype operations. Grid/full
+layout editing remains plugin-live. Current active work moves to C5/P11.5
+exporter-backed preview commands for explicit targets.
 
 ## Feature Roadmap
 
@@ -103,7 +106,7 @@ remain the execution plan.
 | F15 | done | Audit, limits, and confirmations | Phase 8 | MCP is safer for real deployments | Completed 2026-06-13; write operations are auditable and limited, plugin compatibility is negotiated, diagnostics are exposed, and `shape.delete` can require explicit confirmation |
 | F16 | done | MCP/CLI smoke coverage | Phase 8 | Developers can catch first-class MCP regressions quickly | Completed 2026-06-13; MCP server tests, CLI no-service smoke tests, and documented running-stack smoke flows cover the critical regression paths |
 | F17 | done | Shared command descriptors | Phase 10 | MCP and CLI expose the same command catalog and internal result envelope from one runtime layer | Completed 2026-06-15; descriptors, envelopes, centralized adapter errors, and runtime tests cover status/config/file/page plus shape/export/render commands |
-| F18 | in_progress | Expanded headless authoring | Phase 11 | Scripts and agents can create richer prototypes without a live workspace | P11.1 page rename, P11.2 style/hierarchy/layout updates, and P11.3 image/media insertion are complete; next acceptance target is P11.4 prototype helpers |
+| F18 | in_progress | Expanded headless authoring | Phase 11 | Scripts and agents can create richer prototypes without a live workspace | P11.1 page rename, P11.2 style/hierarchy/layout updates, P11.3 image/media insertion, and P11.4 prototype helpers are complete; next acceptance target is P11.5 exporter-backed previews |
 | F19 | todo | File open and bind handoff | Phase 12 | Agents can move cleanly between headless edits and visual workspace binding | CLI/MCP can open a file URL and guide binding when live context is required |
 | F20 | todo | Packaging and distribution | Phase 13 | Developers and self-hosted operators have one documented install/setup path | `penpot-cli` build/install and MCP gateway setup are documented and repeatable |
 | F21 | todo | Release verification matrix | Phase 14 | Critical MCP/CLI flows have repeatable checks | Config, global connect, bind, headless edit, and export smoke flows run or have documented manual fallback |
@@ -154,7 +157,7 @@ complete as of 2026-06-15.
 | C1 | Add headless page rename metadata path | `backend`, `common`, `mcp`, `penpot-cli` | Completed 2026-06-15; page rename works through backend-command for explicit file/page targets | Backend/common tests plus MCP/CLI command tests cover success and permission errors |
 | C2 | Expand headless shape styling and hierarchy | `backend`, `common`, `mcp`, `penpot-cli` | Completed 2026-06-15; backend-command `shape.update` covers fill/stroke stacks, independent radius, parent/frame placement, and frame layout `none|flex`; grid remains plugin-live | Common/backend plus MCP/CLI tests cover style, hierarchy, supported layout mapping, and unsupported grid adapter errors |
 | C3 | Add headless image/media insertion path | `backend`, `common`, `mcp`, `penpot-cli` | Completed 2026-06-15; image-backed rectangles are creatable without a live plugin context using existing media upload/storage paths | Common/backend plus MCP/CLI tests cover media validation, permission errors, adapter selection, and persisted preview metadata |
-| C4 | Add backend-supported prototype helpers | `backend`, `common`, `mcp`, `penpot-cli` | In progress; basic flows and navigate interactions should work headlessly where Penpot data structures allow it | Multi-screen prototype smoke flow creates pages, shapes, and interactions |
+| C4 | Add backend-supported prototype helpers | `backend`, `common`, `mcp`, `penpot-cli` | Completed 2026-06-15; backend-command creates prototype flows and navigate interactions for explicit targets while plugin-live remains available for live-only prototype tools | Common/backend plus MCP/CLI tests cover flow persistence, navigate interaction mapping, and adapter selection |
 | C5 | Expand exporter-backed preview commands | `exporter`, `mcp`, `penpot-cli` | Explicit file/page/object previews return consistent artifact metadata in MCP and CLI | CLI output write path and MCP base64/resource metadata are covered |
 
 ### Wave D: Improve File Open, Bind, And User Handoff
@@ -346,8 +349,8 @@ for supported operations.
 | P11.1 | done | Expand headless page operations | `backend`, `common`, `mcp`, `penpot-cli` | Completed 2026-06-15; page rename works headlessly through backend-command and live fallback remains available in MCP | Added `rename-page-request`, `rename-file-page`, shared `page.rename` descriptor, MCP/CLI adapters, limit config, docs, and regression tests; page current/selection semantics remain plugin-live |
 | P11.2 | done | Expand headless shape styling and hierarchy | `backend`, `common`, `mcp`, `penpot-cli` | Completed 2026-06-15; generated frames/rect/text support fill/stroke stacks, independent corner radii, parent changes, and frame layout `none|flex` through backend-command | Grid/full layout remains plugin-live until a dedicated backend track/cell contract exists |
 | P11.3 | done | Add headless image/media insertion path | `backend`, `common`, `mcp`, `penpot-cli` | Completed 2026-06-15; image-backed rectangles can be created without plugin-live context through backend media upload/storage paths | Added common `create-image-shape-request`, backend `create-file-image-shape`, MCP backend-command routing, `penpot-cli shape create-image`, docs, and focused tests |
-| P11.4 | in_progress | Add backend-supported prototype helpers | `backend`, `common`, `mcp`, `penpot-cli` | Basic flows and navigate interactions work headlessly | Keep plugin-live fallback for unsupported interactions |
-| P11.5 | todo | Expand exporter-backed preview commands | `exporter`, `mcp`, `penpot-cli` | Explicit file/page/object previews return useful artifacts | Align output metadata between CLI and MCP |
+| P11.4 | done | Add backend-supported prototype helpers | `backend`, `common`, `mcp`, `penpot-cli` | Completed 2026-06-15; basic flows and navigate interactions work headlessly through backend-command | Added common prototype requests, backend `create-file-prototype-flow` / `create-file-prototype-interaction`, MCP backend-command routing, `penpot-cli prototype create-*`, docs, and focused tests; overlay/list/delete remain plugin-live |
+| P11.5 | in_progress | Expand exporter-backed preview commands | `exporter`, `mcp`, `penpot-cli` | Explicit file/page/object previews return useful artifacts | Align output metadata between CLI and MCP |
 
 ## Phase 12: File Open, Bind, And User Handoff
 
@@ -388,10 +391,10 @@ Use `mcp/docs/penpot-cli-overall-blueprint.md` as the current architecture
 baseline and the Detailed Upcoming Task Queue as the execution order. Continue
 with Wave C:
 
-1. Continue C4/P11.4 backend-supported prototype helpers for the simplest
-   flow and navigate interaction data paths.
+1. Continue C5/P11.5 exporter-backed preview commands for explicit
+   file/page/object targets.
 2. Keep page current/selection semantics in plugin-live until a backend-safe
    representation is defined.
 3. Keep grid/full layout metadata in plugin-live until backend-command owns
    tracks, cells, and related layout structures.
-4. Add focused common, backend, MCP, and CLI tests for the next chosen slice.
+4. Add focused exporter, MCP, and CLI tests for the next chosen slice.

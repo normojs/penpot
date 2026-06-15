@@ -114,6 +114,7 @@
   [:map {:title "GenericInteractionAttrs"}
    [:action-type {:optional true} [::sm/one-of action-types]]
    [:event-type {:optional true} [::sm/one-of event-types]]
+   [:delay {:optional true} ::sm/safe-int]
    [:destination {:optional true} [:maybe ::sm/uuid]]
    [:preserve-scroll {:optional true} :boolean]
    [:animation {:optional true} schema:animation]
@@ -125,9 +126,10 @@
    [:url {:optional true} :string]])
 
 (def schema:navigate-interaction
-  [:map {:title "NavigateInteraction"}
+   [:map {:title "NavigateInteraction"}
    [:action-type [:= :navigate]]
    [:event-type [::sm/one-of event-types]]
+   [:delay {:optional true} ::sm/safe-int]
    [:destination {:optional true} [:maybe ::sm/uuid]]
    [:preserve-scroll {:optional true} :boolean]
    [:animation {:optional true} schema:animation]])

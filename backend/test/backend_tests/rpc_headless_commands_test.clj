@@ -394,6 +394,120 @@
         (t/is (th/ex-info? error))
         (t/is (th/ex-with-code? error :invalid-image-data))))))
 
+(t/deftest create-file-prototype-flow-and-interaction
+  (let [profile  (th/create-profile* 1 {:is-active true})
+        file     (th/create-file* 1 {:profile-id (:id profile)
+                                     :project-id (:default-project-id profile)
+                                     :is-shared false})
+        page-id  (get-in file [:data :pages 0])
+        frame-a  (uuid/next)
+        frame-b  (uuid/next)
+        rect-id  (uuid/next)
+        flow-id  (uuid/next)]
+
+    (doseq [[shape-id x name] [[frame-a 0 "Start"]
+                               [frame-b 360 "Done"]]]
+      (let [out {::th/type :create-file-shape
+                 ::rpc/profile-id (:id profile)
+                 :id (:id file)
+                 :page-id page-id
+                 :shape-id shape-id
+                 :type :frame
+                 :name name
+                 :x x
+                 :y 0
+                 :width 320
+                 :height 640
+                 :features cfeat/supported-features}
+            out (th/command! out)]
+        (t/is (nil? (:error out)))))
+
+    (let [out {::th/type :create-file-shape
+               ::rpc/profile-id (:id profile)
+               :id (:id file)
+               :page-id page-id
+               :shape-id rect-id
+               :parent-id frame-a
+               :type :rect
+               :name "CTA"
+               :x 24
+               :y 32
+               :width 120
+               :height 40
+               :features cfeat/supported-features}
+          out (th/command! out)]
+      (t/is (nil? (:error out))))
+
+    (t/testing "create a prototype flow through the backend command"
+      (let [out {::th/type :create-file-prototype-flow
+                 ::rpc/profile-id (:id profile)
+                 :id (:id file)
+                 :page-id page-id
+                 :flow-id flow-id
+                 :name "  Checkout flow  "
+                 :starting-board-id frame-a
+                 :features cfeat/supported-features}
+            out (th/command! out)]
+        (t/is (nil? (:error out)))
+        (t/is (= {:id flow-id
+                  :name "Checkout flow"
+                  :page-id page-id
+                  :starting-board-id frame-a
+                  :starting-board-name "Start"}
+                 (get-in out [:result :flow])))
+        (t/is (= 4 (get-in out [:result :revn])))))
+
+    (t/testing "create a navigate prototype interaction through the backend command"
+      (let [out {::th/type :create-file-prototype-interaction
+                 ::rpc/profile-id (:id profile)
+                 :id (:id file)
+                 :page-id page-id
+                 :source-shape-id rect-id
+                 :destination-board-id frame-b
+                 :trigger :click
+                 :preserve-scroll-position true
+                 :animation {:type :dissolve
+                             :duration 300
+                             :easing :ease-in-out}
+                 :features cfeat/supported-features}
+            out (th/command! out)]
+        (t/is (nil? (:error out)))
+        (t/is (= {:source-shape-id rect-id
+                  :source-shape-name "CTA"
+                  :index 0
+                  :trigger :click
+                  :delay nil
+                  :action-type :navigate-to
+                  :destination-board-id frame-b
+                  :destination-board-name "Done"}
+                 (get-in out [:result :interaction])))
+        (t/is (= 5 (get-in out [:result :revn])))))
+
+    (t/testing "prototype data is persisted in file data"
+      (let [out {::th/type :get-file
+                 ::rpc/profile-id (:id profile)
+                 :id (:id file)
+                 :features cfeat/supported-features}
+            out (th/command! out)
+            data (:data (:result out))
+            flow (get-in data [:pages-index page-id :flows flow-id])
+            interaction (-> data
+                            (get-in [:pages-index page-id :objects rect-id :interactions])
+                            first)]
+        (t/is (nil? (:error out)))
+        (t/is (= {:id flow-id
+                  :name "Checkout flow"
+                  :starting-frame frame-a}
+                 flow))
+        (t/is (= :click (:event-type interaction)))
+        (t/is (= :navigate (:action-type interaction)))
+        (t/is (= frame-b (:destination interaction)))
+        (t/is (= true (:preserve-scroll interaction)))
+        (t/is (= {:animation-type :dissolve
+                  :duration 300
+                  :easing :ease-in-out}
+                 (:animation interaction)))))))
+
 (t/deftest update-file-shape-supports-rich-style-and-parent-move
   (let [profile    (th/create-profile* 1 {:is-active true})
         file       (th/create-file* 1 {:profile-id (:id profile)

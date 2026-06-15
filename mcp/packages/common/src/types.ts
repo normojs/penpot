@@ -348,6 +348,7 @@ export interface ShapeTaskResultData {
 }
 
 export interface PrototypeFlowSummary {
+    id?: string;
     name: string;
     pageId?: string;
     pageName?: string;

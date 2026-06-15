@@ -1,12 +1,18 @@
 import { z } from "zod";
-import { Tool } from "../Tool.js";
 import type { ToolResponse } from "../ToolResponse.js";
-import { JsonResponse } from "../ToolResponse.js";
 import { PenpotMcpServer } from "../PenpotMcpServer.js";
 import { PrototypePluginTask } from "../tasks/PrototypePluginTask.js";
-import { ToolNames } from "../ToolNames.js";
 import { requireBoundFileContext } from "./FileContextGuard.js";
-import type { PluginTaskResult, PrototypeTaskParams, PrototypeTaskResultData } from "@penpot/mcp-common";
+import type { PrototypeTaskParams } from "@penpot/mcp-common";
+import { PenpotRpcTool } from "./PenpotRpcTool.js";
+import {
+    AdapterSelectionReasonCodes,
+    CommandDescriptors,
+    createAdapterSelectionError,
+    getAdapterSelectionReason,
+    selectCommandAdapter,
+} from "@penpot/command-runtime";
+import type { CommandAdapterSelection } from "@penpot/command-runtime";
 
 const uuidSchema = z.string().uuid();
 
@@ -24,12 +30,69 @@ const animationSchema = z
     })
     .optional();
 
-abstract class PrototypeTool<TArgs extends object> extends Tool<TArgs> {
+type PenpotRecord = Record<string, unknown>;
+type PrototypeAdapterArgs = { fileId?: string; pageId?: string; adapter?: string };
+
+function toBackendAnimation(animation?: PrototypeTaskParams["animation"]): PenpotRecord | undefined {
+    if (!animation) {
+        return undefined;
+    }
+    return {
+        type: animation.type,
+        duration: animation.duration,
+        easing: animation.easing,
+        direction: animation.direction,
+        way: animation.way,
+        "offset-effect": animation.offsetEffect,
+    };
+}
+
+abstract class PrototypeTool<TArgs extends object> extends PenpotRpcTool<TArgs> {
     protected constructor(mcpServer: PenpotMcpServer, inputSchema: z.ZodRawShape) {
         super(mcpServer, inputSchema);
     }
 
-    protected async executePrototypeTask(params: PrototypeTaskParams): Promise<ToolResponse> {
+    protected selectPrototypeAdapter(command: string, args: PrototypeAdapterArgs): CommandAdapterSelection {
+        const hasExplicitTarget = Boolean(args.fileId || args.pageId);
+        const hasBackendTarget = Boolean(args.fileId);
+        return selectCommandAdapter({
+            command,
+            requestedAdapter: args.adapter ?? "auto",
+            candidates: [
+                {
+                    kind: "backend-command",
+                    available: hasBackendTarget,
+                    priority: 10,
+                    reason: hasBackendTarget
+                        ? null
+                        : getAdapterSelectionReason(AdapterSelectionReasonCodes.BACKEND_COMMAND_FILE_ID_REQUIRED),
+                },
+                {
+                    kind: "plugin-live",
+                    available: !hasExplicitTarget,
+                    priority: 50,
+                    reason: hasExplicitTarget
+                        ? getAdapterSelectionReason(AdapterSelectionReasonCodes.PLUGIN_LIVE_OMIT_FILE_ID)
+                        : null,
+                },
+            ],
+        });
+    }
+
+    protected adapterSelectionFailure(selection: CommandAdapterSelection): ToolResponse {
+        const error = createAdapterSelectionError(selection, {
+            actions: [
+                "Use adapter: 'auto' to let MCP choose the first available adapter.",
+                "Pass fileId for backend-command, or omit fileId and pageId to use plugin-live.",
+            ],
+        });
+        return this.error(error.code, error.message, error.actions, error.data);
+    }
+
+    protected async executePrototypeTask(
+        params: PrototypeTaskParams,
+        adapterSelection: CommandAdapterSelection
+    ): Promise<ToolResponse> {
         const contextError = requireBoundFileContext(
             this.mcpServer,
             this.getSessionContext()?.userToken,
@@ -41,27 +104,126 @@ abstract class PrototypeTool<TArgs extends object> extends Tool<TArgs> {
 
         const task = new PrototypePluginTask(params);
         const result = await this.mcpServer.pluginBridge.executePluginTask(task);
-        return this.ok(result);
+        return this.ok({
+            ...result.data,
+            adapter: adapterSelection.selected,
+            adapterSelection,
+        });
+    }
+
+    protected async executeBackendPrototypeFlow(
+        args: PrototypeCreateFlowArgs,
+        adapterSelection: CommandAdapterSelection
+    ): Promise<ToolResponse> {
+        const userToken = this.getUserToken();
+        if (!userToken) {
+            return this.authenticationRequired();
+        }
+
+        const name = this.nonEmptyString(args.name);
+        if (!name) {
+            return this.error("prototype_name_required", "prototype.create_flow requires a non-empty name.", [
+                "Pass a non-empty name.",
+            ]);
+        }
+
+        try {
+            const result = await this.rpcWritePost<PenpotRecord>(
+                "create-file-prototype-flow",
+                {
+                    id: args.fileId,
+                    "page-id": args.pageId,
+                    "flow-id": args.flowId,
+                    name,
+                    "starting-board-id": args.startingBoardId,
+                },
+                userToken,
+                {
+                    mcpAdapter: adapterSelection.selected,
+                    mcpFileId: args.fileId,
+                    mcpPageId: args.pageId,
+                    mcpShapeId: args.startingBoardId,
+                }
+            );
+            return this.ok({
+                adapter: adapterSelection.selected,
+                adapterSelection,
+                fileId: args.fileId,
+                flow: result.flow,
+                revn: result.revn,
+                vern: result.vern,
+            });
+        } catch (cause) {
+            return this.rpcFailure(cause);
+        }
+    }
+
+    protected async executeBackendPrototypeInteraction(
+        args: PrototypeCreateInteractionArgs,
+        adapterSelection: CommandAdapterSelection
+    ): Promise<ToolResponse> {
+        const userToken = this.getUserToken();
+        if (!userToken) {
+            return this.authenticationRequired();
+        }
+
+        try {
+            const result = await this.rpcWritePost<PenpotRecord>(
+                "create-file-prototype-interaction",
+                {
+                    id: args.fileId,
+                    "page-id": args.pageId,
+                    "source-shape-id": args.sourceShapeId,
+                    "destination-board-id": args.destinationBoardId,
+                    trigger: args.trigger,
+                    delay: args.delay,
+                    "preserve-scroll-position": args.preserveScrollPosition,
+                    animation: toBackendAnimation(args.animation),
+                },
+                userToken,
+                {
+                    mcpAdapter: adapterSelection.selected,
+                    mcpFileId: args.fileId,
+                    mcpPageId: args.pageId,
+                    mcpShapeId: args.sourceShapeId,
+                }
+            );
+            return this.ok({
+                adapter: adapterSelection.selected,
+                adapterSelection,
+                fileId: args.fileId,
+                interaction: result.interaction,
+                revn: result.revn,
+                vern: result.vern,
+            });
+        } catch (cause) {
+            return this.rpcFailure(cause);
+        }
     }
 
     protected nonEmptyString(value: unknown): string | undefined {
         return typeof value === "string" && value.trim() !== "" ? value.trim() : undefined;
     }
-
-    private ok(result: PluginTaskResult<PrototypeTaskResultData>): ToolResponse {
-        return new JsonResponse({
-            status: "ok",
-            data: result.data,
-        });
-    }
 }
 
 export class PrototypeCreateFlowArgs {
     static schema = {
+        fileId: uuidSchema
+            .optional()
+            .describe("Optional file id for backend-command headless prototype flow creation."),
+        pageId: uuidSchema
+            .optional()
+            .describe("Optional page id for backend-command headless prototype flow creation."),
+        flowId: uuidSchema.optional().describe("Optional flow id for backend-command prototype flow creation."),
+        adapter: z.string().optional().describe("Optional adapter request: auto, backend-command, or plugin-live."),
         name: z.string().min(1).max(250).describe("Flow name."),
         startingBoardId: uuidSchema.describe("Board/frame id that starts the flow."),
     };
 
+    fileId?: string;
+    pageId?: string;
+    flowId?: string;
+    adapter?: string;
     name!: string;
     startingBoardId!: string;
 }
@@ -72,24 +234,43 @@ export class PrototypeCreateFlowTool extends PrototypeTool<PrototypeCreateFlowAr
     }
 
     public getToolName(): string {
-        return ToolNames.PROTOTYPE_CREATE_FLOW;
+        return CommandDescriptors.PROTOTYPE_CREATE_FLOW.mcpToolName;
     }
 
     public getToolDescription(): string {
-        return "Creates a prototype flow on a board in the currently bound Penpot file context.";
+        return CommandDescriptors.PROTOTYPE_CREATE_FLOW.description;
     }
 
     protected async executeCore(args: PrototypeCreateFlowArgs): Promise<ToolResponse> {
-        return this.executePrototypeTask({
-            action: "createFlow",
-            name: this.nonEmptyString(args.name),
-            startingBoardId: args.startingBoardId,
-        });
+        const adapterSelection = this.selectPrototypeAdapter(CommandDescriptors.PROTOTYPE_CREATE_FLOW.id, args);
+        if (adapterSelection.status !== "selected") {
+            return this.adapterSelectionFailure(adapterSelection);
+        }
+
+        if (adapterSelection.selected === "backend-command") {
+            return this.executeBackendPrototypeFlow(args, adapterSelection);
+        }
+
+        return this.executePrototypeTask(
+            {
+                action: "createFlow",
+                name: this.nonEmptyString(args.name),
+                startingBoardId: args.startingBoardId,
+            },
+            adapterSelection
+        );
     }
 }
 
 export class PrototypeCreateInteractionArgs {
     static schema = {
+        fileId: uuidSchema
+            .optional()
+            .describe("Optional file id for backend-command headless prototype interaction creation."),
+        pageId: uuidSchema
+            .optional()
+            .describe("Optional page id for backend-command headless prototype interaction creation."),
+        adapter: z.string().optional().describe("Optional adapter request: auto, backend-command, or plugin-live."),
         sourceShapeId: uuidSchema.describe("Shape id that owns the interaction."),
         destinationBoardId: uuidSchema.describe("Destination board/frame id for navigate-to."),
         trigger: z
@@ -104,6 +285,9 @@ export class PrototypeCreateInteractionArgs {
         animation: animationSchema,
     };
 
+    fileId?: string;
+    pageId?: string;
+    adapter?: string;
     sourceShapeId!: string;
     destinationBoardId!: string;
     trigger?: PrototypeTaskParams["trigger"];
@@ -118,22 +302,34 @@ export class PrototypeCreateInteractionTool extends PrototypeTool<PrototypeCreat
     }
 
     public getToolName(): string {
-        return ToolNames.PROTOTYPE_CREATE_INTERACTION;
+        return CommandDescriptors.PROTOTYPE_CREATE_INTERACTION.mcpToolName;
     }
 
     public getToolDescription(): string {
-        return "Creates a navigate-to prototype interaction in the currently bound Penpot file context.";
+        return CommandDescriptors.PROTOTYPE_CREATE_INTERACTION.description;
     }
 
     protected async executeCore(args: PrototypeCreateInteractionArgs): Promise<ToolResponse> {
-        return this.executePrototypeTask({
-            action: "createInteraction",
-            sourceShapeId: args.sourceShapeId,
-            destinationBoardId: args.destinationBoardId,
-            trigger: args.trigger,
-            delay: args.delay,
-            preserveScrollPosition: args.preserveScrollPosition,
-            animation: args.animation,
-        });
+        const adapterSelection = this.selectPrototypeAdapter(CommandDescriptors.PROTOTYPE_CREATE_INTERACTION.id, args);
+        if (adapterSelection.status !== "selected") {
+            return this.adapterSelectionFailure(adapterSelection);
+        }
+
+        if (adapterSelection.selected === "backend-command") {
+            return this.executeBackendPrototypeInteraction(args, adapterSelection);
+        }
+
+        return this.executePrototypeTask(
+            {
+                action: "createInteraction",
+                sourceShapeId: args.sourceShapeId,
+                destinationBoardId: args.destinationBoardId,
+                trigger: args.trigger,
+                delay: args.delay,
+                preserveScrollPosition: args.preserveScrollPosition,
+                animation: args.animation,
+            },
+            adapterSelection
+        );
     }
 }

@@ -10,6 +10,7 @@
    [app.common.exceptions :as ex]
    [app.common.files.helpers :as cfh]
    [app.common.types.shape :as cts]
+   [app.common.types.shape.interactions :as ctsi]
    [app.common.types.shape.layout :as ctsl]
    [app.common.types.text :as cttx]
    [app.common.uuid :as uuid]
@@ -72,6 +73,25 @@
    :y (:y shape)
    :width (:width shape)
    :height (:height shape)})
+
+(defn prototype-flow-summary
+  [flow page-id starting-board]
+  {:id (:id flow)
+   :name (:name flow)
+   :page-id page-id
+   :starting-board-id (:starting-frame flow)
+   :starting-board-name (:name starting-board)})
+
+(defn prototype-interaction-summary
+  [source interaction destination index]
+  {:source-shape-id (:id source)
+   :source-shape-name (:name source)
+   :index index
+   :trigger (:event-type interaction)
+   :delay (:delay interaction)
+   :action-type :navigate-to
+   :destination-board-id (:id destination)
+   :destination-board-name (:name destination)})
 
 (defn- default-shape-name
   [type]
@@ -159,6 +179,29 @@
                 :hint "Headless shape operations support frame, rect, and text shapes."
                 :shape-type (:type shape)
                 :shape-id shape-id))
+    [page-id page shape]))
+
+(defn- require-prototype-shape
+  [file-data page-id shape-id field-name]
+  (let [[page-id page shape] (require-shape file-data page-id shape-id)]
+    (when (= shape-id uuid/zero)
+      (ex/raise :type :validation
+                :code :unsupported-root-shape
+                :hint "Headless prototype operations cannot target the root shape."
+                :shape-id shape-id
+                :field field-name))
+    [page-id page shape]))
+
+(defn- require-prototype-board
+  [file-data page-id shape-id field-name]
+  (let [[page-id page shape] (require-prototype-shape file-data page-id shape-id field-name)]
+    (when-not (cfh/frame-shape? shape)
+      (ex/raise :type :validation
+                :code :unsupported-prototype-board
+                :hint "Headless prototype flows and navigate interactions require board/frame shapes."
+                :shape-id shape-id
+                :shape-type (:type shape)
+                :field field-name))
     [page-id page shape]))
 
 (defn- require-frame-parent
@@ -727,6 +770,123 @@
                 :frame-id (:frame-id shape)
                 :ignore-touched true
                 :obj shape}]}))
+
+(defn- normalize-prototype-name
+  [name]
+  (let [name (some-> name str/trim)]
+    (when-not (seq name)
+      (ex/raise :type :validation
+                :code :prototype-name-required
+                :hint "Headless prototype flow creation requires a non-empty name."))
+    name))
+
+(defn create-prototype-flow-request
+  [file-data {:keys [page-id flow-id name starting-board-id starting-frame] :as _params}]
+  (let [starting-board-id (or starting-board-id starting-frame)
+        [page-id _page starting-board] (require-prototype-board file-data page-id starting-board-id :starting-board-id)
+        flow-id (or flow-id (uuid/next))
+        flow {:id flow-id
+              :name (normalize-prototype-name name)
+              :starting-frame starting-board-id}]
+    {:flow (prototype-flow-summary flow page-id starting-board)
+     :changes [{:type :set-flow
+                :page-id page-id
+                :id flow-id
+                :params flow}]}))
+
+(defn- normalize-prototype-trigger
+  [trigger]
+  (let [trigger (normalize-layout-keyword (or trigger :click))]
+    (when-not (contains? ctsi/event-types trigger)
+      (ex/raise :type :validation
+                :code :unsupported-prototype-trigger
+                :hint "Headless prototype interactions support click, mouse-enter, mouse-leave, and after-delay triggers."
+                :trigger trigger))
+    trigger))
+
+(defn- ensure-after-delay-source!
+  [source trigger]
+  (when (and (= trigger :after-delay)
+             (not (cfh/frame-shape? source)))
+    (ex/raise :type :validation
+              :code :unsupported-prototype-trigger
+              :hint "Headless after-delay prototype interactions require a board/frame source shape."
+              :shape-id (:id source)
+              :shape-type (:type source)
+              :trigger trigger)))
+
+(defn- animation-type
+  [animation]
+  (when (map? animation)
+    (normalize-layout-keyword (or (get animation :type)
+                                  (get animation :animation-type)
+                                  (get animation :animationType)))))
+
+(defn- apply-prototype-animation
+  [interaction animation]
+  (if-not (some? animation)
+    interaction
+    (do
+      (when-not (map? animation)
+        (ex/raise :type :validation
+                  :code :prototype-animation-required
+                  :hint "Headless prototype interaction animation must be a map."))
+      (let [animation-type (animation-type animation)
+            duration (layout-number animation nil [:duration])
+            easing (layout-param animation :easing)
+            direction (layout-param animation :direction)
+            way (layout-param animation :way)
+            offset-effect (layout-param animation :offset-effect :offsetEffect)]
+        (when-not (contains? ctsi/animation-types animation-type)
+          (ex/raise :type :validation
+                    :code :unsupported-prototype-animation
+                    :hint "Headless prototype interactions support dissolve, slide, and push animations."
+                    :animation-type animation-type))
+        (-> interaction
+            (ctsi/set-animation-type animation-type)
+            (cond-> (some? duration)
+              (ctsi/set-duration duration)
+
+              (not= missing-layout-value easing)
+              (ctsi/set-easing (normalize-layout-keyword easing))
+
+              (not= missing-layout-value way)
+              (ctsi/set-way (normalize-layout-keyword way))
+
+              (not= missing-layout-value direction)
+              (ctsi/set-direction (normalize-layout-keyword direction))
+
+              (not= missing-layout-value offset-effect)
+              (ctsi/set-offset-effect offset-effect)))))))
+
+(defn- create-navigate-interaction
+  [source destination {:keys [trigger delay animation] :as params}]
+  (let [trigger (normalize-prototype-trigger trigger)]
+    (ensure-after-delay-source! source trigger)
+    (-> ctsi/default-interaction
+        (ctsi/set-event-type trigger source)
+        (ctsi/set-action-type :navigate)
+        (ctsi/set-destination (:id destination))
+        (ctsi/set-preserve-scroll (boolean (or (:preserve-scroll-position params)
+                                               (:preserveScrollPosition params))))
+        (cond-> (some? delay)
+          (ctsi/set-delay delay))
+        (apply-prototype-animation animation))))
+
+(defn create-prototype-interaction-request
+  [file-data {:keys [page-id source-shape-id destination-board-id] :as params}]
+  (let [[page-id _page source] (require-prototype-shape file-data page-id source-shape-id :source-shape-id)
+        [_page-id _page destination] (require-prototype-board file-data page-id destination-board-id :destination-board-id)
+        interaction (create-navigate-interaction source destination params)
+        interactions (ctsi/add-interaction (:interactions source) interaction)
+        index (dec (count interactions))]
+    {:interaction (prototype-interaction-summary source interaction destination index)
+     :changes [{:type :mod-obj
+                :id source-shape-id
+                :page-id page-id
+                :operations [{:type :set
+                              :attr :interactions
+                              :val interactions}]}]}))
 
 (defn update-shape-request
   [file-data {:keys [page-id shape-id] :as params}]

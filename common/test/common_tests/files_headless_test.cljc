@@ -216,6 +216,115 @@
     (t/is (= image-ref (:metadata shape)))
     (t/is (= [image-id] (get-in data' [:pages-index page-id :objects frame-id :shapes])))))
 
+(t/deftest create-prototype-flow-request-adds-page-flow
+  (let [file-id  (uuid/next)
+        page-id  (uuid/next)
+        frame-id (uuid/next)
+        flow-id  (uuid/next)
+        data     (ctf/make-file-data file-id page-id)
+        frame    (headless/create-shape-request data {:page-id page-id
+                                                      :shape-id frame-id
+                                                      :type :frame
+                                                      :name "Checkout"
+                                                      :x 0
+                                                      :y 0
+                                                      :width 320
+                                                      :height 640})
+        data     (cpc/process-changes data (:changes frame))
+        result   (headless/create-prototype-flow-request data {:page-id page-id
+                                                               :flow-id flow-id
+                                                               :name "  Checkout flow  "
+                                                               :starting-board-id frame-id})
+        data'    (cpc/process-changes data (:changes result))
+        flow     {:id flow-id
+                  :name "Checkout flow"
+                  :starting-frame frame-id}]
+    (t/is (= {:id flow-id
+              :name "Checkout flow"
+              :page-id page-id
+              :starting-board-id frame-id
+              :starting-board-name "Checkout"}
+             (:flow result)))
+    (t/is (= [{:type :set-flow
+               :page-id page-id
+               :id flow-id
+               :params flow}]
+             (:changes result)))
+    (t/is (= flow (get-in data' [:pages-index page-id :flows flow-id])))))
+
+(t/deftest create-prototype-interaction-request-adds-navigate-interaction
+  (let [file-id  (uuid/next)
+        page-id  (uuid/next)
+        frame-a  (uuid/next)
+        frame-b  (uuid/next)
+        rect-id  (uuid/next)
+        data     (ctf/make-file-data file-id page-id)
+        frame-a-result (headless/create-shape-request data {:page-id page-id
+                                                            :shape-id frame-a
+                                                            :type :frame
+                                                            :name "Start"
+                                                            :x 0
+                                                            :y 0
+                                                            :width 320
+                                                            :height 640})
+        data     (cpc/process-changes data (:changes frame-a-result))
+        frame-b-result (headless/create-shape-request data {:page-id page-id
+                                                            :shape-id frame-b
+                                                            :type :frame
+                                                            :name "Done"
+                                                            :x 360
+                                                            :y 0
+                                                            :width 320
+                                                            :height 640})
+        data     (cpc/process-changes data (:changes frame-b-result))
+        rect     (headless/create-shape-request data {:page-id page-id
+                                                     :shape-id rect-id
+                                                     :parent-id frame-a
+                                                     :type :rect
+                                                     :name "CTA"
+                                                     :x 24
+                                                     :y 32
+                                                     :width 120
+                                                     :height 40})
+        data     (cpc/process-changes data (:changes rect))
+        result   (headless/create-prototype-interaction-request
+                  data
+                  {:page-id page-id
+                   :source-shape-id rect-id
+                   :destination-board-id frame-b
+                   :trigger "mouse-enter"
+                   :preserve-scroll-position true
+                   :animation {:type "slide"
+                               :duration 250
+                               :easing "ease-in-out"
+                               :direction "right"
+                               :way "in"
+                               :offsetEffect true}})
+        data'    (cpc/process-changes data (:changes result))
+        interactions (get-in data' [:pages-index page-id :objects rect-id :interactions])
+        interaction  (first interactions)]
+    (t/is (= {:source-shape-id rect-id
+              :source-shape-name "CTA"
+              :index 0
+              :trigger :mouse-enter
+              :delay nil
+              :action-type :navigate-to
+              :destination-board-id frame-b
+              :destination-board-name "Done"}
+             (:interaction result)))
+    (t/is (= 1 (count interactions)))
+    (t/is (= :mouse-enter (:event-type interaction)))
+    (t/is (= :navigate (:action-type interaction)))
+    (t/is (= frame-b (:destination interaction)))
+    (t/is (= true (:preserve-scroll interaction)))
+    (t/is (= {:animation-type :slide
+              :duration 250
+              :easing :ease-in-out
+              :way :in
+              :direction :right
+              :offset-effect true}
+             (:animation interaction)))))
+
 (t/deftest update-shape-request-updates-geometry-and-style
   (let [file-id  (uuid/next)
         page-id  (uuid/next)

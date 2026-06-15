@@ -72,6 +72,7 @@ test("top-level help lists first-class MCP, shape, and export commands", async (
     assert.match(result.stdout, /penpot-cli mcp config/);
     assert.match(result.stdout, /penpot-cli page rename/);
     assert.match(result.stdout, /penpot-cli shape delete/);
+    assert.match(result.stdout, /penpot-cli prototype create-flow/);
     assert.match(result.stdout, /penpot-cli export page/);
 });
 
@@ -88,11 +89,14 @@ test("command runtime exposes low-risk command descriptors", () => {
 test("command runtime exposes headless authoring descriptors", () => {
     assert.deepEqual(
         HeadlessAuthoringCommandDescriptors.map((descriptor) => descriptor.id),
-        ["page.rename"]
+        ["page.rename", "prototype.create_flow", "prototype.create_interaction"]
     );
     assert.equal(CommandDescriptors.PAGE_RENAME.cliCommand, "page rename");
     assert.equal(CommandDescriptors.PAGE_RENAME.mcpToolName, "page.rename");
+    assert.equal(CommandDescriptors.PROTOTYPE_CREATE_FLOW.cliCommand, "prototype create-flow");
+    assert.equal(CommandDescriptors.PROTOTYPE_CREATE_INTERACTION.mcpToolName, "prototype.create_interaction");
     assert.equal(getCommandDescriptor("page rename").id, "page.rename");
+    assert.equal(getCommandDescriptor("prototype create-flow").id, "prototype.create_flow");
 });
 
 test("command runtime exposes migrated shape and export descriptors", () => {
@@ -110,7 +114,7 @@ test("command runtime exposes migrated shape and export descriptors", () => {
             "render.preview",
         ]
     );
-    assert.equal(MigratedCommandDescriptors.length, 17);
+    assert.equal(MigratedCommandDescriptors.length, 19);
     assert.equal(CommandDescriptors.SHAPE_DELETE.cliCommand, "shape delete");
     assert.equal(CommandDescriptors.SHAPE_CREATE_IMAGE.cliCommand, "shape create-image");
     assert.equal(CommandDescriptors.EXPORT_PAGE.mcpToolName, "export.page");
@@ -586,6 +590,166 @@ test("shape create-image reads a local image and sends backend-command RPC", asy
     } finally {
         globalThis.fetch = originalFetch;
         rmSync(tempDir, { recursive: true, force: true });
+    }
+});
+
+test("prototype create-flow sends backend-command RPC", async () => {
+    const originalFetch = globalThis.fetch;
+    const calls = [];
+    globalThis.fetch = async (url, options) => {
+        calls.push({ url: String(url), options });
+        return {
+            ok: true,
+            status: 200,
+            statusText: "OK",
+            text: async () =>
+                JSON.stringify({
+                    flow: {
+                        id: UUIDS.profile,
+                        name: "Checkout",
+                        pageId: UUIDS.page,
+                        startingBoardId: UUIDS.object,
+                    },
+                    revn: 5,
+                    vern: 0,
+                }),
+        };
+    };
+
+    try {
+        const result = await runCli(
+            [
+                "prototype",
+                "create-flow",
+                "--file",
+                UUIDS.file,
+                "--page",
+                UUIDS.page,
+                "--flow-id",
+                UUIDS.profile,
+                "--name",
+                " Checkout ",
+                "--starting-board",
+                UUIDS.object,
+                "--format",
+                "json",
+            ],
+            {
+                PENPOT_BACKEND_URI: "http://127.0.0.1:6060",
+                PENPOT_CLI_TOKEN: "token-1",
+            }
+        );
+        const body = parseJson(result.stdout);
+
+        assert.equal(result.exitCode, 0);
+        assert.equal(result.stderr, "");
+        assert.equal(calls.length, 1);
+        assert.match(calls[0].url, /\/api\/main\/methods\/create-file-prototype-flow\?_fmt=json$/);
+        assert.deepEqual(JSON.parse(calls[0].options.body), {
+            id: UUIDS.file,
+            "page-id": UUIDS.page,
+            "flow-id": UUIDS.profile,
+            name: "Checkout",
+            "starting-board-id": UUIDS.object,
+        });
+        assert.equal(body.status, "ok");
+        assert.equal(body.data.adapter, "backend-command");
+        assert.equal(body.data.adapterSelection.command, "prototype.create_flow");
+        assert.equal(body.data.flow.name, "Checkout");
+        assert.equal(body.data.revn, 5);
+    } finally {
+        globalThis.fetch = originalFetch;
+    }
+});
+
+test("prototype create-interaction sends navigate interaction backend-command RPC", async () => {
+    const originalFetch = globalThis.fetch;
+    const calls = [];
+    globalThis.fetch = async (url, options) => {
+        calls.push({ url: String(url), options });
+        return {
+            ok: true,
+            status: 200,
+            statusText: "OK",
+            text: async () =>
+                JSON.stringify({
+                    interaction: {
+                        sourceShapeId: UUIDS.object,
+                        destinationBoardId: UUIDS.profile,
+                        index: 0,
+                        actionType: "navigate-to",
+                    },
+                    revn: 6,
+                    vern: 0,
+                }),
+        };
+    };
+
+    try {
+        const result = await runCli(
+            [
+                "prototype",
+                "create-interaction",
+                "--file",
+                UUIDS.file,
+                "--page",
+                UUIDS.page,
+                "--source",
+                UUIDS.object,
+                "--destination",
+                UUIDS.profile,
+                "--delay",
+                "1200",
+                "--preserve-scroll",
+                "--animation",
+                "slide",
+                "--animation-duration",
+                "250",
+                "--animation-easing",
+                "ease-in-out",
+                "--animation-direction",
+                "right",
+                "--animation-way",
+                "in",
+                "--offset-effect",
+                "--format",
+                "json",
+            ],
+            {
+                PENPOT_BACKEND_URI: "http://127.0.0.1:6060",
+                PENPOT_CLI_TOKEN: "token-1",
+            }
+        );
+        const body = parseJson(result.stdout);
+
+        assert.equal(result.exitCode, 0);
+        assert.equal(result.stderr, "");
+        assert.equal(calls.length, 1);
+        assert.match(calls[0].url, /\/api\/main\/methods\/create-file-prototype-interaction\?_fmt=json$/);
+        assert.deepEqual(JSON.parse(calls[0].options.body), {
+            id: UUIDS.file,
+            "page-id": UUIDS.page,
+            "source-shape-id": UUIDS.object,
+            "destination-board-id": UUIDS.profile,
+            trigger: "after-delay",
+            delay: 1200,
+            "preserve-scroll-position": true,
+            animation: {
+                type: "slide",
+                duration: 250,
+                easing: "ease-in-out",
+                direction: "right",
+                way: "in",
+                "offset-effect": true,
+            },
+        });
+        assert.equal(body.status, "ok");
+        assert.equal(body.data.adapter, "backend-command");
+        assert.equal(body.data.adapterSelection.command, "prototype.create_interaction");
+        assert.equal(body.data.interaction.actionType, "navigate-to");
+        assert.equal(body.data.revn, 6);
+    } finally {
+        globalThis.fetch = originalFetch;
     }
 });
 
