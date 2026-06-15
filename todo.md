@@ -58,12 +58,13 @@ manual MCP connection configuration, and P9.4 wired the global lifecycle to the
 saved auto-connect preference while preserving manual connect/disconnect.
 P9.5 aligned `penpot-cli mcp config` terminology and JSON output with the
 persisted MCP config model while preserving environment-derived URL
-compatibility. P9.6 added config and lifecycle regression coverage, and P9.7
+compatibility. P9.6 added config and lifecycle regression coverage, P9.7
 polished migration and fallback behavior for legacy, invalid, partial, and
-token-bearing profile configs. P10.1 refreshed the overall architecture
-baseline in `mcp/docs/penpot-cli-overall-blueprint.md`. The current
-implementation focus is A4: closing Wave A documentation before command
-runtime consolidation.
+token-bearing profile configs, and P9.8 closed Wave A manual configuration
+docs. P10.1 refreshed the overall architecture baseline in
+`mcp/docs/penpot-cli-overall-blueprint.md`. The current implementation focus is
+B1/P10.2: auditing existing MCP tools and CLI commands before moving command
+descriptors into the shared runtime.
 
 ## Feature Roadmap
 
@@ -73,8 +74,8 @@ remain the execution plan.
 | ID | Status | Capability | Target phases | User outcome | First acceptance check |
 | --- | --- | --- | --- | --- | --- |
 | F1 | done | Built-in MCP gateway | Phase 1 | Users see one MCP URL instead of several internal ports | Settings and generated client config point to `/mcp/stream` |
-| F2 | in_progress | Manual MCP configuration | Phase 1, Phase 2, Phase 9 | Users can choose built-in, custom, or local MCP settings | Settings persist mode, stream URL, WebSocket URL, and auto-connect |
-| F3 | in_progress | Global background MCP agent | Phase 2 | MCP can connect after login without opening a file | Connection reaches `connected-global` from dashboard/settings |
+| F2 | done | Manual MCP configuration | Phase 1, Phase 2, Phase 9 | Users can choose built-in, custom, or local MCP settings | Completed 2026-06-15; settings persist built-in/custom/local mode, stream/SSE/WebSocket/status URLs, reset-to-built-in, auto-connect, fallback, and token separation |
+| F3 | in_progress | Global background MCP agent | Phase 2 | MCP can connect after login without opening a file | Global lifecycle and manual connect are implemented; remaining work is a normalized connected-global status/smoke flow in Phase 14 |
 | F4 | done | MCP status and diagnostics | Phase 2, Phase 8 | Users and agents can inspect connection health | Completed 2026-06-13; `mcp.get_status` and Integrations settings now report server, plugin compatibility, session/file context, write limits, logs, and last-error state |
 | F5 | done | Global resource tools | Phase 3 | Agents can list teams, projects, and files before a workspace opens | Completed 2026-06-11; MCP can list teams, projects, project files, and recent files through backend permissions |
 | F6 | in_progress | File creation and opening | Phase 3, Phase 4 | Agents can create a file and ask Penpot to open or bind it | `file.create` returns a file summary; open/bind remains Phase 4 |
@@ -100,7 +101,12 @@ Use this queue when continuing development. Complete the first unchecked item
 before moving to the next, update this section and the phase tables after each
 task, and commit each completed step with `git commit -s`.
 
-### Wave A: Finish Manual MCP Configuration
+### Wave A: Finish Manual MCP Configuration (Complete)
+
+Wave A is complete as of 2026-06-15. Remaining configuration limitations are
+tracked after Wave A: CLI config still derives from environment/runtime inputs
+instead of reading persisted profile props, and frontend/CLI URL derivation is
+aligned by terminology but not yet shared as one implementation.
 
 | Order | Task | Modules | Output | Verification |
 | --- | --- | --- | --- | --- |
@@ -291,7 +297,7 @@ setup.
 | P9.5 | done | Align CLI config terminology with persisted model | `penpot-cli`, `mcp/docs` | CLI config output and docs use built-in/custom/local terminology | Completed 2026-06-14; `mcp config` now reports mode, auto-connect, local-mode defaults, and a `profileProps.mcp-config` view while preserving legacy camelCase URL fields and env overrides |
 | P9.6 | done | Add config and lifecycle tests | `frontend`, `backend`, `penpot-cli` | Settings persistence, derived URLs, reset, and auto-connect are covered | Completed 2026-06-14; added frontend regression tests for config save/reset reconfigure events, CLI custom/local config coverage, and retained existing backend profile-prop persistence/reset tests; frontend/backend focused checks remain blocked locally because `clojure` is unavailable |
 | P9.7 | done | Polish config migration and fallback behavior | `frontend`, `backend`, `mcp/docs` | Existing users without `:mcp-config` keep built-in defaults | Completed 2026-06-15; frontend fallback tests cover unknown modes and partial custom URLs, backend profile-prop reads/writes trim/drop empty URL values and ignore nested token fields, and docs explain migration behavior |
-| P9.8 | in_progress | Close Wave A manual configuration docs | `todo.md`, `CHANGES.md`, `mcp/docs` | Manual MCP configuration is marked complete and Wave B becomes the next active focus | Started 2026-06-15; close remaining stale Wave A wording, mark F2/F3 progress accurately, and move the next sprint to command runtime consolidation |
+| P9.8 | done | Close Wave A manual configuration docs | `todo.md`, `CHANGES.md`, `mcp/docs` | Manual MCP configuration is marked complete and Wave B becomes the next active focus | Completed 2026-06-15; Wave A is marked complete, F2 is done, F3 keeps its connected-global smoke/status follow-up, current limitations are explicit, and Wave B/P10.2 is the next focus |
 
 ## Phase 10: Command Runtime Consolidation
 
@@ -301,10 +307,12 @@ adapter selection, and structured results.
 | ID | Status | Task | Modules | Verification | Notes |
 | --- | --- | --- | --- | --- | --- |
 | P10.1 | done | Refresh overall architecture baseline | `mcp/docs`, `todo.md` | Compact blueprint documents architecture, delivery waves, and task queue | Completed 2026-06-14 in `mcp/docs/penpot-cli-overall-blueprint.md` |
-| P10.2 | todo | Move command descriptors into command runtime | `command-runtime`, `mcp`, `penpot-cli` | File/page/shape/export/status descriptors live in one package | Preserve existing tool/CLI names while moving metadata |
-| P10.3 | todo | Introduce shared request/result envelopes | `command-runtime`, `mcp`, `penpot-cli` | MCP and CLI return the same adapter/result diagnostics internally | Keep transport-specific formatting at the edges |
-| P10.4 | todo | Centralize adapter errors and selection reasons | `command-runtime`, `mcp`, `penpot-cli` | Unsupported/unavailable/auth/context errors are consistent | Extend current adapter-selection helper instead of replacing it abruptly |
-| P10.5 | todo | Add command runtime descriptor tests | `command-runtime`, `mcp`, `penpot-cli` | Descriptor snapshots and adapter-selection tests pass | Include CLI and MCP no-service smoke coverage |
+| P10.2 | in_progress | Audit existing MCP tools and CLI commands | `mcp/packages/server`, `penpot-cli`, `mcp/docs` | Inventory maps each command/tool to name, input schema, adapter, response shape, and test coverage | Started 2026-06-15; identify duplicate metadata and the first low-risk descriptor migration slice |
+| P10.3 | todo | Move status/config/file/page descriptors into command runtime | `command-runtime`, `mcp`, `penpot-cli` | Low-risk command descriptors live in one package | Preserve existing tool/CLI names while moving metadata |
+| P10.4 | todo | Introduce shared request/result envelopes | `command-runtime`, `mcp`, `penpot-cli` | MCP and CLI return the same adapter/result diagnostics internally | Keep transport-specific formatting at the edges |
+| P10.5 | todo | Centralize adapter errors and selection reasons | `command-runtime`, `mcp`, `penpot-cli` | Unsupported/unavailable/auth/context errors are consistent | Extend current adapter-selection helper instead of replacing it abruptly |
+| P10.6 | todo | Move shape/export descriptors after envelope migration | `command-runtime`, `mcp`, `penpot-cli`, `exporter` | Higher-risk write/export descriptors use the shared catalog without changing behavior | Shape/create/update/delete and export dry-run tests pass |
+| P10.7 | todo | Add command runtime descriptor tests | `command-runtime`, `mcp`, `penpot-cli` | Descriptor snapshots and adapter-selection tests pass | Include CLI and MCP no-service smoke coverage |
 
 ## Phase 11: Headless Authoring Expansion
 
@@ -356,8 +364,9 @@ Goal: make critical MCP/CLI flows repeatable and safe to change.
 
 Use `mcp/docs/penpot-cli-overall-blueprint.md` as the current architecture
 baseline and the Detailed Upcoming Task Queue as the execution order. Continue
-with Wave A:
+with Wave B:
 
-1. Complete A4: close Wave A docs and mark F2/F3 progress accurately.
-2. Start Wave B with B1: inventory current MCP tools and CLI commands before
+1. Complete B1/P10.2: inventory current MCP tools and CLI commands before
    moving descriptors into the shared command runtime.
+2. Start B2/P10.3: move status/config/file/page descriptors into
+   `command-runtime` while preserving public names and output shapes.

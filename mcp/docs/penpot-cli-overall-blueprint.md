@@ -2,7 +2,7 @@
 
 Status: current planning baseline
 Target fork: Penpot `2.15.4` reworked as `penpot-cli`
-Updated: 2026-06-14
+Updated: 2026-06-15
 
 This document is the compact architecture and delivery plan for the fork. The
 larger historical notes remain in `first-class-mcp-architecture.md`,
@@ -168,15 +168,22 @@ MCP tool or CLI command
 
 Purpose: make MCP easy to enable, configure, inspect, and run globally.
 
+Status: complete as of 2026-06-15. The remaining configuration limitations are
+post-Wave-A work: `penpot-cli mcp config` still derives from environment/runtime
+inputs instead of persisted profile props, and frontend/CLI URL derivation is
+aligned by terminology but not shared as one implementation.
+
 Tasks:
 
-- Build Integrations settings controls for built-in/custom/local config.
-- Persist settings through `update-profile-props`.
-- Apply `auto-connect` to startup, reconnect, and manual disconnect behavior.
-- Show effective stream/WebSocket/status endpoints in diagnostics.
+- Done: build Integrations settings controls for built-in/custom/local config.
+- Done: persist settings through `update-profile-props`.
+- Done: apply `auto-connect` to startup, reconnect, and manual disconnect
+  behavior.
+- Done: show effective stream/WebSocket/status endpoints in diagnostics.
 - Done: align `penpot-cli mcp config` output and docs with persisted product
   terminology while preserving environment-derived URL compatibility.
-- Add focused frontend/backend/CLI tests for config and lifecycle.
+- Done: add focused frontend/backend/CLI tests for config, lifecycle, fallback,
+  reset, and token separation.
 
 Acceptance:
 
@@ -275,15 +282,18 @@ Acceptance:
 
 ## Near-Term Priority
 
-The next implementation slice should stay in Wave A:
+The next implementation slice should start Wave B:
 
-1. Add the Integrations settings form for MCP mode and endpoint settings.
-2. Save/reset `profile.props.mcp-config`.
-3. Wire `auto-connect` into global lifecycle.
-4. Add focused tests around settings persistence and lifecycle transitions.
+1. Audit existing MCP tools and `penpot-cli` commands.
+2. Record each command/tool name, input schema, adapter path, response shape,
+   and current test coverage.
+3. Identify duplicate metadata and choose the first low-risk descriptor
+   migration slice.
+4. Move status/config/file/page descriptors into `command-runtime` while
+   preserving public tool names, CLI command names, and output shapes.
 
-Do not start a second command runtime refactor until the manual config path is
-usable from the UI.
+Keep manual configuration behavior stable while moving command metadata; do not
+change transport-specific formatting during the inventory step.
 
 ## Decisions To Keep Stable
 

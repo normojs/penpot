@@ -97,7 +97,10 @@ the only persisted gate:
 The workspace menu reads the same `:mcp-enabled` profile prop and current
 ephemeral `:mcp` state for connect/disconnect and bind/release controls.
 
-## Remaining Gaps
+## Post-Wave-A Limitations
+
+Manual MCP configuration is complete for the Penpot UI path as of P9.8. The
+remaining limitations are follow-up consolidation and distribution work:
 
 - `penpot-cli mcp config` still derives URLs from environment variables rather
   than persisted user profile props.
@@ -172,3 +175,6 @@ URLs directly.
    missing, fall back from unknown modes and partial custom URLs in the
    frontend, and sanitize backend profile-prop reads/writes so token fields and
    empty endpoint overrides are not persisted or returned.
+6. Done in P9.8: close Wave A docs, mark the manual configuration capability
+   complete, keep the connected-global status/smoke follow-up explicit, and
+   move the next implementation focus to Wave B command runtime consolidation.
