@@ -15,10 +15,11 @@ shared command runtime.
 
 ## Current Shared Runtime State
 
-As of P10.7, `@penpot/command-runtime` exposes adapter-selection helpers, a
+As of P11.1, `@penpot/command-runtime` exposes adapter-selection helpers, a
 low-risk command descriptor catalog, shared request/result envelope helpers,
 and centralized command error/reason metadata for status/config/file/page
-migration plus shape/export/render descriptor metadata.
+migration plus headless page rename and shape/export/render descriptor
+metadata.
 
 Adapter-selection helpers:
 
@@ -32,12 +33,14 @@ Descriptor catalog:
 
 - descriptors: `mcp.status`, `mcp.config`, `file.list`, `file.create`,
   `file.open`, `page.list`, `page.create`
+- headless authoring descriptors: `page.rename`
 - shape/export descriptors: `shape.create_frame`, `shape.create_rect`,
   `shape.create_text`, `shape.create_image`, `shape.update`, `shape.delete`,
   `export.shape`, `export.page`, `render.preview`
 - lookup helper: `getCommandDescriptor(id)` by internal id, MCP tool name, or
   CLI command string
 - descriptor groups: `LowRiskCommandDescriptors`,
+  `HeadlessAuthoringCommandDescriptors`,
   `ShapeExportCommandDescriptors`, and `MigratedCommandDescriptors`
 
 Envelope helpers:
@@ -91,7 +94,7 @@ MCP server tool classes and `penpot-cli`.
 | `file.release_context` | `EmptyToolArgs` | server file-context registry | JSON `{released,releasedContext,fileContext,nextActions}` | registry coverage only |
 | `page.list` | `PageListArgs` | backend-command RPC `get-file-pages` when `fileId`; otherwise plugin-live task | JSON `{adapter,adapterSelection,fileId,pages}` or plugin task data | `PageTools.test.ts`, `PagePluginTask.test.ts` |
 | `page.create` | `PageCreateArgs` | backend-command RPC `create-file-page` when `fileId`; otherwise plugin-live task | JSON `{adapter,adapterSelection,fileId,page,revn,vern}` or plugin task data | `PageTools.test.ts`, `PagePluginTask.test.ts` |
-| `page.rename` | `PageRenameArgs` | plugin-live task | JSON plugin task data plus adapter metadata | `PagePluginTask.test.ts` serialization only |
+| `page.rename` | `PageRenameArgs` | backend-command RPC `rename-file-page` when `fileId`; otherwise plugin-live task | JSON `{adapter,adapterSelection,fileId,page,revn,vern}` or plugin task data | `PageTools.test.ts`, `PagePluginTask.test.ts` |
 | `page.set_current` | `PageSetCurrentArgs` | plugin-live task | JSON plugin task data plus adapter metadata | `PagePluginTask.test.ts` serialization only |
 | `shape.create_frame` | `ShapeCreateFrameArgs` | backend-command RPC `create-file-shape` when `fileId`/`pageId`; otherwise plugin-live task | JSON `{adapter,adapterSelection,fileId,shape,revn,vern}` or plugin task data | `ShapeCreateTools.test.ts`, `ShapePluginTask.test.ts` |
 | `shape.create_rect` | `ShapeCreateRectArgs` | backend-command RPC `create-file-shape` when `fileId`/`pageId`; otherwise plugin-live task | JSON `{adapter,adapterSelection,fileId,shape,revn,vern}` or plugin task data | `ShapeCreateTools.test.ts`, `ShapePluginTask.test.ts` |
@@ -142,6 +145,7 @@ registered or the descriptor explicitly marks them as planned/unavailable.
 | `file open` | `file.open` | browser-url generation | JSON/text `{fileId,url,adapter,boundContext:false}` | smoke test |
 | `page list` | `page.list` | backend-command RPC `get-file-pages` | JSON/text `{fileId,pages,adapter,adapterSelection}` | gap: no smoke test |
 | `page create` | `page.create` | backend-command RPC `create-file-page` | JSON/text `{fileId,page,revn,vern,adapter,adapterSelection}` | gap: no smoke test |
+| `page rename` | `page.rename` | backend-command RPC `rename-file-page` | JSON/text `{fileId,page,revn,vern,adapter,adapterSelection}` | RPC smoke test |
 | `shape create-frame` | `shape.create_frame` | backend-command RPC `create-file-shape` | JSON/text `{fileId,shape,revn,vern,adapter,adapterSelection}` | gap: no smoke test |
 | `shape create-rect` | `shape.create_rect` | backend-command RPC `create-file-shape` | JSON/text `{fileId,shape,revn,vern,adapter,adapterSelection}` | gap: no smoke test |
 | `shape create-text` | `shape.create_text` | backend-command RPC `create-file-shape` | JSON/text `{fileId,shape,revn,vern,adapter,adapterSelection}` | gap: no smoke test |

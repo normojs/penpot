@@ -173,6 +173,7 @@ export interface LowRiskCommandDescriptorCatalog {
 }
 
 export interface CommandDescriptorCatalog extends LowRiskCommandDescriptorCatalog {
+    PAGE_RENAME: CommandDescriptor & { id: "page.rename"; mcpToolName: "page.rename"; cliCommand: "page rename" };
     SHAPE_CREATE_FRAME: CommandDescriptor & {
         id: "shape.create_frame";
         mcpToolName: "shape.create_frame";
@@ -212,6 +213,7 @@ export const CommandErrorCodes: CommandErrorCodeCatalog;
 export const AdapterSelectionReasonCodes: AdapterSelectionReasonCodeCatalog;
 export const CommandDescriptors: CommandDescriptorCatalog;
 export const LowRiskCommandDescriptors: readonly CommandDescriptor[];
+export const HeadlessAuthoringCommandDescriptors: readonly CommandDescriptor[];
 export const ShapeExportCommandDescriptors: readonly CommandDescriptor[];
 export const MigratedCommandDescriptors: readonly CommandDescriptor[];
 export function getCommandDescriptor(id: string): CommandDescriptor | undefined;

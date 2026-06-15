@@ -4,6 +4,7 @@ import {
     AdapterSelectionReasonCodes,
     CommandDescriptors,
     CommandErrorCodes,
+    HeadlessAuthoringCommandDescriptors,
     LowRiskCommandDescriptors,
     MigratedCommandDescriptors,
     ShapeExportCommandDescriptors,
@@ -66,6 +67,7 @@ test("top-level help lists first-class MCP, shape, and export commands", async (
     assert.equal(result.exitCode, 0);
     assert.equal(result.stderr, "");
     assert.match(result.stdout, /penpot-cli mcp config/);
+    assert.match(result.stdout, /penpot-cli page rename/);
     assert.match(result.stdout, /penpot-cli shape delete/);
     assert.match(result.stdout, /penpot-cli export page/);
 });
@@ -78,6 +80,16 @@ test("command runtime exposes low-risk command descriptors", () => {
     assert.equal(CommandDescriptors.MCP_STATUS.mcpToolName, "mcp.get_status");
     assert.equal(getCommandDescriptor("mcp.get_status").id, "mcp.status");
     assert.equal(getCommandDescriptor("page.list").cliCommand, "page list");
+});
+
+test("command runtime exposes headless authoring descriptors", () => {
+    assert.deepEqual(
+        HeadlessAuthoringCommandDescriptors.map((descriptor) => descriptor.id),
+        ["page.rename"]
+    );
+    assert.equal(CommandDescriptors.PAGE_RENAME.cliCommand, "page rename");
+    assert.equal(CommandDescriptors.PAGE_RENAME.mcpToolName, "page.rename");
+    assert.equal(getCommandDescriptor("page rename").id, "page.rename");
 });
 
 test("command runtime exposes migrated shape and export descriptors", () => {
@@ -95,7 +107,7 @@ test("command runtime exposes migrated shape and export descriptors", () => {
             "render.preview",
         ]
     );
-    assert.equal(MigratedCommandDescriptors.length, 16);
+    assert.equal(MigratedCommandDescriptors.length, 17);
     assert.equal(CommandDescriptors.SHAPE_DELETE.cliCommand, "shape delete");
     assert.equal(CommandDescriptors.EXPORT_PAGE.mcpToolName, "export.page");
     assert.equal(getCommandDescriptor("shape create-frame").id, "shape.create_frame");
@@ -257,6 +269,66 @@ test("file open emits a workspace URL and does not claim to bind MCP context", a
         body.data.url,
         "https://penpot.example.test/#/workspace?file-id=00000000-0000-0000-0000-000000000001&team-id=team-1&page-id=00000000-0000-0000-0000-000000000002"
     );
+});
+
+test("page rename calls backend-command RPC with trimmed name", async () => {
+    const originalFetch = globalThis.fetch;
+    const calls = [];
+    globalThis.fetch = async (url, options) => {
+        calls.push({ url: String(url), options });
+        return {
+            ok: true,
+            status: 200,
+            statusText: "OK",
+            text: async () =>
+                JSON.stringify({
+                    page: { id: UUIDS.page, name: "Renamed" },
+                    revn: 2,
+                    vern: 0,
+                }),
+        };
+    };
+
+    try {
+        const result = await runCli(
+            [
+                "page",
+                "rename",
+                "--file",
+                UUIDS.file,
+                "--page",
+                UUIDS.page,
+                "--name",
+                " Renamed ",
+                "--format",
+                "json",
+            ],
+            {
+                PENPOT_BACKEND_URI: "http://127.0.0.1:6060",
+                PENPOT_CLI_TOKEN: "token-1",
+            }
+        );
+        const body = parseJson(result.stdout);
+
+        assert.equal(result.exitCode, 0);
+        assert.equal(result.stderr, "");
+        assert.equal(calls.length, 1);
+        assert.match(calls[0].url, /\/api\/main\/methods\/rename-file-page\?_fmt=json$/);
+        assert.equal(calls[0].options.method, "POST");
+        assert.equal(calls[0].options.headers.authorization, "Token token-1");
+        assert.deepEqual(JSON.parse(calls[0].options.body), {
+            id: UUIDS.file,
+            "page-id": UUIDS.page,
+            name: "Renamed",
+        });
+        assert.equal(body.status, "ok");
+        assert.equal(body.data.adapter, "backend-command");
+        assert.equal(body.data.adapterSelection.command, "page.rename");
+        assert.deepEqual(body.data.page, { id: UUIDS.page, name: "Renamed" });
+        assert.equal(body.data.revn, 2);
+    } finally {
+        globalThis.fetch = originalFetch;
+    }
 });
 
 test("export page dry-run returns exporter adapter plan and request payload", async () => {

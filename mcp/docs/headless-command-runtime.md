@@ -418,6 +418,24 @@ and call the same backend RPC commands. This is an incremental adapter slice:
 responses disclose `backend-command` or `plugin-live`, while the future
 `command-runtime/` package still needs to centralize descriptors and selection.
 
+## P11.1 Headless Page Rename Slice
+
+P11.1 extends the page command surface with headless page rename metadata:
+
+- `app.common.files.headless/rename-page-request`
+- backend RPC `rename-file-page`
+- MCP `page.rename` selects `backend-command` when callers provide `fileId`
+  and keeps `plugin-live` for the currently bound workspace context.
+- CLI `penpot-cli page rename --file <file-id> --page <page-id> --name <name>`
+  calls backend `rename-file-page` directly.
+
+The common helper trims the requested name, rejects blank names with
+`:page-name-required`, validates the target page, and emits a standard
+`:mod-page` change. The backend command reuses the normal update pipeline, so
+permission checks, file locks, feature validation, revision changes,
+file-change rows, notifications, and audit context stay aligned with other
+headless writes.
+
 ## Acceptance Checks
 
 P7.1 is complete when:

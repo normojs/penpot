@@ -45,6 +45,28 @@
     (t/is (= "Page 2" (get-in result [:page :name])))
     (t/is (uuid? (get-in result [:page :id])))))
 
+(t/deftest rename-page-request-trims-name-and-updates-page
+  (let [file-id (uuid/next)
+        page-a  (uuid/next)
+        data    (ctf/make-file-data file-id page-a)
+        result  (headless/rename-page-request data {:page-id page-a
+                                                    :name "  Renamed page  "})
+        data'   (cpc/process-changes data (:changes result))]
+    (t/is (= {:id page-a :name "Renamed page"} (:page result)))
+    (t/is (= [{:type :mod-page
+               :id page-a
+               :name "Renamed page"}]
+             (:changes result)))
+    (t/is (= "Renamed page" (get-in data' [:pages-index page-a :name])))))
+
+(t/deftest rename-page-request-rejects-blank-name
+  (let [file-id (uuid/next)
+        page-a  (uuid/next)
+        data    (ctf/make-file-data file-id page-a)]
+    (t/is (thrown? #?(:clj Exception :cljs :default)
+                   (headless/rename-page-request data {:page-id page-a
+                                                       :name "  "})))))
+
 (t/deftest create-shape-request-adds-top-level-frame
   (let [file-id  (uuid/next)
         page-id  (uuid/next)

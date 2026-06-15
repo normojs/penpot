@@ -54,6 +54,19 @@
                  (get-in out [:result :page])))
         (t/is (= 1 (get-in out [:result :revn])))))
 
+    (t/testing "rename the page through the headless backend command"
+      (let [out {::th/type :rename-file-page
+                 ::rpc/profile-id (:id profile)
+                 :id (:id file)
+                 :page-id page-id
+                 :name "  Renamed Prototype  "
+                 :features cfeat/supported-features}
+            out (th/command! out)]
+        (t/is (nil? (:error out)))
+        (t/is (= {:id page-id :name "Renamed Prototype"}
+                 (get-in out [:result :page])))
+        (t/is (= 2 (get-in out [:result :revn])))))
+
     (t/testing "created page is persisted in file data"
       (let [out {::th/type :get-file-pages
                  ::rpc/profile-id (:id profile)
@@ -63,8 +76,25 @@
         (t/is (= [{:id (get-in file [:data :pages 0])
                    :name "Page 1"}
                   {:id page-id
-                   :name "Prototype"}]
+                   :name "Renamed Prototype"}]
                  (get-in out [:result :pages])))))))
+
+(t/deftest rename-file-page-requires-edit-permissions
+  (let [owner   (th/create-profile* 1 {:is-active true})
+        other   (th/create-profile* 2 {:is-active true})
+        file    (th/create-file* 1 {:profile-id (:id owner)
+                                    :project-id (:default-project-id owner)
+                                    :is-shared false})
+        page-id (get-in file [:data :pages 0])
+        out     (th/command! {::th/type :rename-file-page
+                              ::rpc/profile-id (:id other)
+                              :id (:id file)
+                              :page-id page-id
+                              :name "Forbidden"
+                              :features cfeat/supported-features})
+        error   (:error out)]
+    (t/is (th/ex-info? error))
+    (t/is (th/ex-of-type? error :not-found))))
 
 (t/deftest create-file-shape
   (let [profile  (th/create-profile* 1 {:is-active true})

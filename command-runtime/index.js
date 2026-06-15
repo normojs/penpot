@@ -128,6 +128,17 @@ export const CommandDescriptors = Object.freeze({
         adapters: Object.freeze(["backend-command", "plugin-live"]),
         responseShape: "status envelope with page summary and adapterSelection metadata",
     }),
+    PAGE_RENAME: Object.freeze({
+        id: "page.rename",
+        mcpToolName: "page.rename",
+        cliCommand: "page rename",
+        title: "Rename page",
+        description:
+            "Renames a page in a Penpot file, using backend-command when fileId is supplied or the bound live context otherwise.",
+        inputSchema: "fileId?, pageId, name, adapter?",
+        adapters: Object.freeze(["backend-command", "plugin-live"]),
+        responseShape: "status envelope with page summary, revision metadata, and adapterSelection metadata",
+    }),
     SHAPE_CREATE_FRAME: Object.freeze({
         id: "shape.create_frame",
         mcpToolName: "shape.create_frame",
@@ -233,6 +244,10 @@ export const LowRiskCommandDescriptors = Object.freeze([
     CommandDescriptors.PAGE_CREATE,
 ]);
 
+export const HeadlessAuthoringCommandDescriptors = Object.freeze([
+    CommandDescriptors.PAGE_RENAME,
+]);
+
 export const ShapeExportCommandDescriptors = Object.freeze([
     CommandDescriptors.SHAPE_CREATE_FRAME,
     CommandDescriptors.SHAPE_CREATE_RECT,
@@ -247,6 +262,7 @@ export const ShapeExportCommandDescriptors = Object.freeze([
 
 export const MigratedCommandDescriptors = Object.freeze([
     ...LowRiskCommandDescriptors,
+    ...HeadlessAuthoringCommandDescriptors,
     ...ShapeExportCommandDescriptors,
 ]);
 

@@ -45,6 +45,7 @@ Usage:
   penpot-cli file open <file-id> [--team-id <id>] [--page-id <id>] [--format text|json]
   penpot-cli page list --file <file-id> [--adapter auto|backend-command] [--format text|json]
   penpot-cli page create --file <file-id> [--name <name>] [--adapter auto|backend-command] [--format text|json]
+  penpot-cli page rename --file <file-id> --page <page-id> --name <name> [--adapter auto|backend-command] [--format text|json]
   penpot-cli shape create-frame --file <file-id> --page <page-id> --x <n> --y <n> --width <n> --height <n> [--format text|json]
   penpot-cli shape create-rect --file <file-id> --page <page-id> --parent <frame-id> --x <n> --y <n> --width <n> --height <n> [--format text|json]
   penpot-cli shape create-text --file <file-id> --page <page-id> --parent <frame-id> --x <n> --y <n> --width <n> --height <n> --content <text> [--format text|json]
@@ -97,6 +98,7 @@ const PAGE_HELP_TEXT = `penpot-cli page
 Usage:
   penpot-cli page list --file <file-id> [--adapter auto|backend-command] [--backend-uri <uri>] [--token <token>] [--format text|json]
   penpot-cli page create --file <file-id> [--name <name>] [--page-id <id>] [--adapter auto|backend-command] [--backend-uri <uri>] [--token <token>] [--format text|json]
+  penpot-cli page rename --file <file-id> --page <page-id> --name <name> [--adapter auto|backend-command] [--backend-uri <uri>] [--token <token>] [--format text|json]
 
 Environment:
   PENPOT_BACKEND_URI       Backend RPC base URI, default http://localhost:6060
@@ -1543,6 +1545,14 @@ function writePageCreatedText(io: CliIO, fileId: string, page: unknown): void {
     writeLine(io.stdout, `name: ${String(record.name ?? "<unnamed>")}`);
 }
 
+function writePageRenamedText(io: CliIO, fileId: string, page: unknown): void {
+    const record = asRecord(page);
+    writeLine(io.stdout, "Page renamed");
+    writeLine(io.stdout, `fileId: ${fileId}`);
+    writeLine(io.stdout, `id: ${String(record.id ?? "<unknown>")}`);
+    writeLine(io.stdout, `name: ${String(record.name ?? "<unnamed>")}`);
+}
+
 function writeShapeCreatedText(io: CliIO, fileId: string, shape: unknown): void {
     const record = asRecord(shape);
     writeLine(io.stdout, "Shape created");
@@ -2246,6 +2256,89 @@ async function handlePageCreate(args: string[], io: CliIO, env: NodeJS.ProcessEn
     }
 }
 
+async function handlePageRename(args: string[], io: CliIO, env: NodeJS.ProcessEnv): Promise<number> {
+    const format = parseFormat(args, io);
+    if (!format) {
+        return 2;
+    }
+
+    const fileId = readOption(args, ["--file-id", "--file"]);
+    if (!fileId) {
+        writeError(io, format, "file_id_required", "page rename requires --file <file-id>.", [
+            "Use penpot-cli file list first, then pass --file <file-id>.",
+        ]);
+        return 2;
+    }
+
+    const pageId = readOption(args, ["--page-id", "--page"]);
+    if (!pageId) {
+        writeError(io, format, "page_id_required", "page rename requires --page <page-id>.", [
+            "Use penpot-cli page list --file <file-id> first, then pass --page <page-id>.",
+        ]);
+        return 2;
+    }
+
+    const name = readOption(args, ["--name"])?.trim();
+    if (!name) {
+        writeError(io, format, "page_name_required", "page rename requires --name <name>.", [
+            "Pass a non-empty page name.",
+        ]);
+        return 2;
+    }
+
+    const adapterSelection = selectCliBackendCommandAdapter(CommandDescriptors.PAGE_RENAME.id, args);
+    if (adapterSelection.status !== "selected" || adapterSelection.selected !== "backend-command") {
+        return adapterSelectionFailure(io, format, adapterSelection);
+    }
+
+    const rpc = getRpcConfig(args, env);
+    if (!rpc.token) {
+        return rpcAuthenticationRequired(io, format);
+    }
+
+    const requestEnvelope = createCliRequest(CommandDescriptors.PAGE_RENAME, {
+        input: { fileId, pageId, name, adapter: readRequestedAdapter(args) },
+        target: { fileId, pageId, backendUri: rpc.backendUri },
+        auth: { userTokenPresent: true, source: "cli-token" },
+        adapterSelection,
+    });
+
+    try {
+        const result = await rpcRequest<Record<string, unknown>>(
+            "POST",
+            rpc.backendUri,
+            "rename-file-page",
+            {
+                id: fileId,
+                "page-id": pageId,
+                name,
+            },
+            rpc.token
+        );
+        const resultEnvelope = createCliResult(
+            requestEnvelope,
+            {
+                fileId,
+                page: result.page,
+                revn: result.revn,
+                vern: result.vern,
+                adapter: adapterSelection.selected,
+                adapterSelection,
+            },
+            { adapterSelection }
+        );
+        writeOkEnvelope(
+            io,
+            format,
+            resultEnvelope,
+            () => writePageRenamedText(io, fileId, result.page)
+        );
+        return 0;
+    } catch (cause) {
+        return rpcErrorResponse(io, format, "rename-file-page", rpc.backendUri, cause);
+    }
+}
+
 async function handlePageCommand(args: string[], io: CliIO, env: NodeJS.ProcessEnv): Promise<number> {
     const [subcommand, ...rest] = args;
 
@@ -2259,6 +2352,8 @@ async function handlePageCommand(args: string[], io: CliIO, env: NodeJS.ProcessE
             return await handlePageList(rest, io, env);
         case "create":
             return await handlePageCreate(rest, io, env);
+        case "rename":
+            return await handlePageRename(rest, io, env);
         default:
             writeLine(io.stderr, `Unknown page command: ${subcommand}`);
             writeLine(io.stderr, 'Run "penpot-cli page --help" for usage.');

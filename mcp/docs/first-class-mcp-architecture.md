@@ -983,6 +983,18 @@ P7.3 implementation note:
   workspace tab for explicit file/page/object targets, returning resource
   metadata or writing the downloaded output bytes to `--output`.
 
+P11.1 implementation note:
+
+- The backend exposes `rename-file-page` for headless page metadata updates.
+  It persists a standard `:mod-page` change through the normal file update
+  pipeline and shares the existing MCP/headless write limit bucket.
+- MCP `page.rename` now selects backend-command when callers provide an
+  explicit `fileId`, and keeps the plugin-live path for bound workspace
+  renames.
+- `penpot-cli page rename --file <file-id> --page <page-id> --name <name>`
+  calls `rename-file-page` directly and reports `adapterSelection` in JSON
+  output.
+
 ## 6. User Configuration
 
 MCP settings should stay explicit and user-visible. P9.1 captured the current

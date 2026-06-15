@@ -195,6 +195,62 @@ abstract class PageTool<TArgs extends object> extends PenpotRpcTool<TArgs> {
         }
     }
 
+    protected async executeBackendPageRename(
+        args: PageRenameArgs,
+        adapterSelection: CommandAdapterSelection
+    ): Promise<ToolResponse> {
+        const userToken = this.getUserToken();
+        if (!userToken) {
+            return this.authenticationRequired();
+        }
+
+        const name = args.name.trim();
+        const requestEnvelope = createCommandRequestEnvelope(adapterSelection.command, {
+            transport: "mcp",
+            input: {
+                fileId: args.fileId,
+                pageId: args.pageId,
+                name,
+            },
+            target: { fileId: args.fileId, pageId: args.pageId },
+            auth: { userTokenPresent: true, source: "mcp-session" },
+            adapterSelection,
+            diagnostics: { rpcCommand: "rename-file-page" },
+        });
+
+        try {
+            const result = await this.rpcWritePost<PenpotRecord>(
+                "rename-file-page",
+                {
+                    id: args.fileId,
+                    "page-id": args.pageId,
+                    name,
+                },
+                userToken,
+                {
+                    mcpAdapter: adapterSelection.selected,
+                    mcpFileId: args.fileId,
+                    mcpPageId: args.pageId,
+                }
+            );
+            const resultEnvelope = createCommandResultEnvelope(
+                requestEnvelope,
+                {
+                    adapter: adapterSelection.selected,
+                    adapterSelection,
+                    fileId: args.fileId,
+                    page: result.page,
+                    revn: result.revn,
+                    vern: result.vern,
+                },
+                { adapterSelection }
+            );
+            return this.ok(resultEnvelope.data, resultEnvelope.warnings);
+        } catch (cause) {
+            return this.rpcFailure(cause);
+        }
+    }
+
     protected nonEmptyString(value: unknown): string | undefined {
         return typeof value === "string" && value.trim() !== "" ? value.trim() : undefined;
     }
@@ -294,13 +350,19 @@ export class PageCreateTool extends PageTool<PageCreateArgs> {
 
 export class PageRenameArgs {
     static schema = {
+        fileId: z.string().uuid().optional().describe("Optional file id for backend-command headless page rename."),
         pageId: z.string().uuid().describe("Page id to rename."),
         name: z.string().min(1).max(250).describe("New page name."),
+        adapter: z.string().optional().describe("Optional adapter request: auto, backend-command, or plugin-live."),
     };
+
+    fileId?: string;
 
     pageId!: string;
 
     name!: string;
+
+    adapter?: string;
 }
 
 export class PageRenameTool extends PageTool<PageRenameArgs> {
@@ -309,17 +371,21 @@ export class PageRenameTool extends PageTool<PageRenameArgs> {
     }
 
     public getToolName(): string {
-        return ToolNames.PAGE_RENAME;
+        return CommandDescriptors.PAGE_RENAME.mcpToolName;
     }
 
     public getToolDescription(): string {
-        return "Renames a page in the currently bound Penpot file context.";
+        return CommandDescriptors.PAGE_RENAME.description;
     }
 
     protected async executeCore(args: PageRenameArgs): Promise<ToolResponse> {
-        const adapterSelection = this.selectPageAdapter(ToolNames.PAGE_RENAME, {});
+        const adapterSelection = this.selectPageAdapter(CommandDescriptors.PAGE_RENAME.id, args);
         if (adapterSelection.status !== "selected") {
             return this.adapterSelectionFailure(adapterSelection);
+        }
+
+        if (adapterSelection.selected === "backend-command" && args.fileId) {
+            return this.executeBackendPageRename(args, adapterSelection);
         }
 
         return this.executePageTask(

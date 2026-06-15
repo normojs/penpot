@@ -13,6 +13,7 @@
  [[:headless-file-create :bucket "60/10/1m"]]
 
  #{:main/create-file-page
+   :main/rename-file-page
    :main/create-file-shape
    :main/update-file-shape
    :main/delete-file-shape}

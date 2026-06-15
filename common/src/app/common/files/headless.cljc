@@ -40,6 +40,15 @@
       name
       (next-page-name file-data))))
 
+(defn- normalize-updated-page-name
+  [name]
+  (let [name (some-> name str/trim)]
+    (when-not (seq name)
+      (ex/raise :type :validation
+                :code :page-name-required
+                :hint "Headless page rename requires a non-empty name."))
+    name))
+
 (defn create-page-request
   [file-data {:keys [page-id name]}]
   (let [page-id (or page-id (uuid/next))
@@ -96,6 +105,15 @@
                 :hint "The target page does not exist."
                 :page-id page-id))
     [page-id page]))
+
+(defn rename-page-request
+  [file-data {:keys [page-id name]}]
+  (let [[page-id _page] (require-page file-data page-id)
+        name            (normalize-updated-page-name name)]
+    {:page {:id page-id :name name}
+     :changes [{:type :mod-page
+                :id page-id
+                :name name}]}))
 
 (defn- require-shape
   [file-data page-id shape-id]

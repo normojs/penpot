@@ -4,6 +4,7 @@ import {
     AdapterSelectionReasonCodes,
     CommandDescriptors,
     CommandErrorCodes,
+    HeadlessAuthoringCommandDescriptors,
     LowRiskCommandDescriptors,
     MigratedCommandDescriptors,
     ShapeExportCommandDescriptors,
@@ -16,6 +17,7 @@ import {
 } from "../index.js";
 
 const LOW_RISK_IDS = ["mcp.status", "mcp.config", "file.list", "file.create", "file.open", "page.list", "page.create"];
+const HEADLESS_AUTHORING_IDS = ["page.rename"];
 const SHAPE_EXPORT_IDS = [
     "shape.create_frame",
     "shape.create_rect",
@@ -38,13 +40,18 @@ test("descriptor groups expose stable command ids", () => {
         SHAPE_EXPORT_IDS
     );
     assert.deepEqual(
+        HeadlessAuthoringCommandDescriptors.map((descriptor) => descriptor.id),
+        HEADLESS_AUTHORING_IDS
+    );
+    assert.deepEqual(
         MigratedCommandDescriptors.map((descriptor) => descriptor.id),
-        [...LOW_RISK_IDS, ...SHAPE_EXPORT_IDS]
+        [...LOW_RISK_IDS, ...HEADLESS_AUTHORING_IDS, ...SHAPE_EXPORT_IDS]
     );
 });
 
 test("descriptor lookup supports internal, MCP, and CLI command names", () => {
     assert.equal(getCommandDescriptor("mcp.get_status"), CommandDescriptors.MCP_STATUS);
+    assert.equal(getCommandDescriptor("page rename"), CommandDescriptors.PAGE_RENAME);
     assert.equal(getCommandDescriptor("shape create-frame"), CommandDescriptors.SHAPE_CREATE_FRAME);
     assert.equal(getCommandDescriptor("export.page"), CommandDescriptors.EXPORT_PAGE);
     assert.equal(getCommandDescriptor("missing.command"), undefined);

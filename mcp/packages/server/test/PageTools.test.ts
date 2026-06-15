@@ -4,7 +4,7 @@ import { FileContextRegistry, FileContextErrorCodes } from "../src/FileContextRe
 import { McpWriteLimiter } from "../src/McpWriteLimiter.js";
 import type { PenpotRpcRequestContext } from "../src/PenpotRpcClient.js";
 import type { PenpotMcpServer } from "../src/PenpotMcpServer.js";
-import { PageCreateTool, PageListTool } from "../src/tools/PageTools.js";
+import { PageCreateTool, PageListTool, PageRenameTool } from "../src/tools/PageTools.js";
 
 type RpcCall = {
     methodName: string;
@@ -119,6 +119,59 @@ test("PageCreateTool uses backend RPC when fileId is provided", async () => {
         body.warnings[0],
         "makeCurrent requires a live bound workspace; backend-command created the page without switching UI state."
     );
+});
+
+test("PageRenameTool uses backend RPC when fileId is provided", async () => {
+    const calls: RpcCall[] = [];
+    const tool = new PageRenameTool(
+        mcpServerWithRpc({
+            post: async (
+                methodName: string,
+                params: Record<string, unknown>,
+                userToken: string,
+                context?: PenpotRpcRequestContext
+            ) => {
+                calls.push({ methodName, params, userToken, context });
+                return {
+                    page: { id: "00000000-0000-0000-0000-000000000003", name: "Renamed Flow" },
+                    revn: 2,
+                    vern: 0,
+                };
+            },
+        })
+    );
+
+    const response = await tool.execute({
+        fileId: "00000000-0000-0000-0000-000000000001",
+        pageId: "00000000-0000-0000-0000-000000000003",
+        name: " Renamed Flow ",
+    });
+    const body = parseJsonResponse(response);
+
+    assert.deepEqual(calls, [
+        {
+            methodName: "rename-file-page",
+            params: {
+                id: "00000000-0000-0000-0000-000000000001",
+                "page-id": "00000000-0000-0000-0000-000000000003",
+                name: "Renamed Flow",
+            },
+            userToken: "token-1",
+            context: {
+                mcpToolName: "page.rename",
+                mcpSessionId: "session-1",
+                mcpAdapter: "backend-command",
+                mcpFileId: "00000000-0000-0000-0000-000000000001",
+                mcpPageId: "00000000-0000-0000-0000-000000000003",
+            },
+        },
+    ]);
+    assert.equal(body.status, "ok");
+    assert.equal(body.data.adapter, "backend-command");
+    assert.equal(body.data.adapterSelection.selected, "backend-command");
+    assert.equal(body.data.adapterSelection.requested, "auto");
+    assert.deepEqual(body.data.page, { id: "00000000-0000-0000-0000-000000000003", name: "Renamed Flow" });
+    assert.equal(body.data.revn, 2);
 });
 
 test("PageListTool returns adapter selection error for unsupported explicit adapter", async () => {

@@ -232,8 +232,10 @@ Purpose: reduce dependency on a live browser tab for normal prototype creation.
 
 Tasks:
 
-- Add backend/common support for page rename and set-current metadata where
-  meaningful.
+- Done: add backend/common, MCP, and CLI support for page rename through the
+  backend-command adapter.
+- Keep set-current as a live workspace operation unless a future backend
+  metadata use case becomes meaningful.
 - Expand headless shape styling and hierarchy operations.
 - Add image/media upload path for headless shape creation.
 - Add backend-supported prototype flow and interaction helpers.
@@ -298,15 +300,16 @@ Acceptance:
 
 ## Near-Term Priority
 
-The next implementation slice should start Wave C:
+The next implementation slice should continue Wave C:
 
-1. Add backend-command page rename support for explicit file/page targets.
-2. Wire MCP `page.rename` and a matching `penpot-cli page rename` command to
-   the backend path while preserving plugin-live fallback for bound workspace
-   usage.
+1. Expand backend/common shape styling and hierarchy updates for generated
+   frame, rect, and text shapes.
+2. Wire MCP and `penpot-cli` shape update adapters to any newly supported
+   fields while preserving plugin-live fallback for unsupported live-only
+   operations.
 3. Keep page current/selection semantics in plugin-live until a backend-safe
    representation is defined.
-4. Add focused tests for success, auth/permission failures, and adapter
+4. Add focused tests for style, hierarchy, validation, permission, and adapter
    selection behavior.
 
 Keep manual configuration behavior stable while moving command metadata and
