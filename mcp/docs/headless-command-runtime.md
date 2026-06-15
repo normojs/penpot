@@ -467,11 +467,13 @@ The P7.3 backend/common slice adds the first headless shape write command:
 explicit page. It validates the target page and parent frame, creates canonical
 Penpot shape data through `app.common.types.shape/setup-shape`, and persists the
 result through the normal `update-file` pipeline with a single `:add-obj`
-change. The first slice deliberately excludes image upload, layout setup,
+change. The first slice deliberately excluded image upload, layout setup,
 shape updates, and deletes. P7.7 adds simple backend/common update/delete
-coverage; P11.2 adds the backend-safe frame layout subset (`none` and `flex`).
-Image upload and grid/full layout editing remain plugin-live until dedicated
-backend coverage exists.
+coverage; P11.2 adds the backend-safe frame layout subset (`none` and `flex`);
+P11.3 adds `create-file-image-shape`, which decodes base64 image bytes, reuses
+the existing media upload/storage path, persists `:add-media` plus `:add-obj`,
+and returns both shape and media metadata. Grid/full layout editing remains
+plugin-live until dedicated backend coverage exists.
 
 P7.3 is complete when:
 

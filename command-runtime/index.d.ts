@@ -190,7 +190,11 @@ export interface CommandDescriptorCatalog extends LowRiskCommandDescriptorCatalo
         mcpToolName: "shape.create_text";
         cliCommand: "shape create-text";
     };
-    SHAPE_CREATE_IMAGE: CommandDescriptor & { id: "shape.create_image"; mcpToolName: "shape.create_image" };
+    SHAPE_CREATE_IMAGE: CommandDescriptor & {
+        id: "shape.create_image";
+        mcpToolName: "shape.create_image";
+        cliCommand: "shape create-image";
+    };
     SHAPE_UPDATE: CommandDescriptor & {
         id: "shape.update";
         mcpToolName: "shape.update";

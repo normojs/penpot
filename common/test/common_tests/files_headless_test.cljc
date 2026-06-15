@@ -152,6 +152,70 @@
     (t/is (= [{:fill-color "#112233" :fill-opacity 1}]
              (get-in shape [:content :children 0 :children 0 :fills])))))
 
+(t/deftest create-image-shape-request-adds-media-backed-rect
+  (let [file-id   (uuid/next)
+        page-id   (uuid/next)
+        frame-id  (uuid/next)
+        image-id  (uuid/next)
+        media-id  (uuid/next)
+        object-id (uuid/next)
+        media     {:id media-id
+                   :file-id file-id
+                   :is-local true
+                   :name "hero.png"
+                   :width 400
+                   :height 200
+                   :mtype "image/png"
+                   :media-id object-id}
+        data      (ctf/make-file-data file-id page-id)
+        frame     (headless/create-shape-request data {:page-id page-id
+                                                       :shape-id frame-id
+                                                       :type :frame
+                                                       :x 0
+                                                       :y 0
+                                                       :width 320
+                                                       :height 640})
+        data      (cpc/process-changes data (:changes frame))
+        result    (headless/create-image-shape-request data {:page-id page-id
+                                                             :shape-id image-id
+                                                             :parent-id frame-id
+                                                             :name "  Hero image  "
+                                                             :x 12
+                                                             :y 24
+                                                             :width 100
+                                                             :media media})
+        data'     (cpc/process-changes data (:changes result))
+        shape     (get-in data' [:pages-index page-id :objects image-id])
+        image-ref {:id media-id
+                   :name "hero.png"
+                   :width 400
+                   :height 200
+                   :mtype "image/png"}]
+    (t/is (= {:id image-id
+              :name "Hero image"
+              :type :rect
+              :page-id page-id
+              :parent-id frame-id
+              :frame-id frame-id
+              :x 12
+              :y 24
+              :width 100
+              :height 50}
+             (:shape result)))
+    (t/is (= [{:type :add-media :object media}
+              {:type :add-obj
+               :id image-id
+               :page-id page-id
+               :parent-id frame-id
+               :frame-id frame-id
+               :ignore-touched true
+               :obj shape}]
+             (:changes result)))
+    (t/is (= media (get-in data' [:media media-id])))
+    (t/is (= [{:fill-opacity 1 :fill-image image-ref}] (:fills shape)))
+    (t/is (= image-ref (:metadata shape)))
+    (t/is (= [image-id] (get-in data' [:pages-index page-id :objects frame-id :shapes])))))
+
 (t/deftest update-shape-request-updates-geometry-and-style
   (let [file-id  (uuid/next)
         page-id  (uuid/next)

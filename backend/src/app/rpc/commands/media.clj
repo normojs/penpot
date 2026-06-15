@@ -148,7 +148,7 @@
       :always
       (assoc ::image (process-main-image info)))))
 
-(defn- create-file-media-object
+(defn create-file-media-object
   [{:keys [::sto/storage ::db/conn] :as cfg}
    {:keys [id file-id is-local name content from-url? from-chunks?]}]
 
@@ -460,4 +460,3 @@
                       :file-id   file-id
                       :is-local  is-local
                       :mtype     mtype}})))))
-

@@ -178,11 +178,14 @@ export const CommandDescriptors = Object.freeze({
     SHAPE_CREATE_IMAGE: Object.freeze({
         id: "shape.create_image",
         mcpToolName: "shape.create_image",
+        cliCommand: "shape create-image",
         title: "Create image",
-        description: "Creates an image-backed rectangle in the bound live Penpot workspace context.",
-        inputSchema: "parentId?, name?, x, y, width?, height?, imageBase64, mimeType",
-        adapters: Object.freeze(["plugin-live"]),
-        responseShape: "status envelope with plugin-live shape task result data",
+        description:
+            "Creates an image-backed rectangle using backend-command when explicit file/page targets are supplied or plugin-live otherwise.",
+        inputSchema:
+            "fileId?, pageId?, shapeId?, parentId?, name?, x, y, width?, height?, imageBase64, mimeType, adapter?",
+        adapters: Object.freeze(["backend-command", "plugin-live"]),
+        responseShape: "status envelope with shape summary, media metadata, revision metadata, and adapterSelection metadata",
     }),
     SHAPE_UPDATE: Object.freeze({
         id: "shape.update",

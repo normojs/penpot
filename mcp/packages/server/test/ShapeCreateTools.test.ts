@@ -6,6 +6,7 @@ import type { PenpotRpcRequestContext } from "../src/PenpotRpcClient.js";
 import type { PenpotMcpServer } from "../src/PenpotMcpServer.js";
 import {
     ShapeCreateFrameTool,
+    ShapeCreateImageTool,
     ShapeCreateTextTool,
     ShapeDeleteTool,
     ShapeUpdateTool,
@@ -162,6 +163,74 @@ test("ShapeCreateTextTool maps backend text parameters", async () => {
     });
     assert.equal(body.status, "ok");
     assert.equal(body.data.adapter, "backend-command");
+});
+
+test("ShapeCreateImageTool uses backend RPC when fileId and pageId are provided", async () => {
+    const calls: RpcCall[] = [];
+    const tool = new ShapeCreateImageTool(
+        mcpServerWithRpc({
+            post: async (
+                methodName: string,
+                params: Record<string, unknown>,
+                userToken: string,
+                context?: PenpotRpcRequestContext
+            ) => {
+                calls.push({ methodName, params, userToken, context });
+                return {
+                    shape: { id: "00000000-0000-0000-0000-000000000005", type: "rect", name: "Hero" },
+                    media: { id: "00000000-0000-0000-0000-000000000006", width: 575, height: 416 },
+                    revn: 3,
+                    vern: 0,
+                };
+            },
+        })
+    );
+
+    const response = await tool.execute({
+        fileId: "00000000-0000-0000-0000-000000000001",
+        pageId: "00000000-0000-0000-0000-000000000002",
+        shapeId: "00000000-0000-0000-0000-000000000005",
+        parentId: "00000000-0000-0000-0000-000000000003",
+        name: " Hero ",
+        x: 12,
+        y: 24,
+        width: 575,
+        imageBase64: "aGVsbG8=",
+        mimeType: "image/png",
+    });
+    const body = parseJsonResponse(response);
+
+    assert.deepEqual(calls, [
+        {
+            methodName: "create-file-image-shape",
+            params: {
+                id: "00000000-0000-0000-0000-000000000001",
+                "page-id": "00000000-0000-0000-0000-000000000002",
+                "shape-id": "00000000-0000-0000-0000-000000000005",
+                "parent-id": "00000000-0000-0000-0000-000000000003",
+                name: "Hero",
+                x: 12,
+                y: 24,
+                width: 575,
+                height: undefined,
+                "image-base64": "aGVsbG8=",
+                "mime-type": "image/png",
+            },
+            userToken: "token-1",
+            context: {
+                mcpToolName: "shape.create_image",
+                mcpSessionId: "session-1",
+                mcpAdapter: "backend-command",
+                mcpFileId: "00000000-0000-0000-0000-000000000001",
+                mcpPageId: "00000000-0000-0000-0000-000000000002",
+                mcpShapeId: "00000000-0000-0000-0000-000000000005",
+            },
+        },
+    ]);
+    assert.equal(body.status, "ok");
+    assert.equal(body.data.adapter, "backend-command");
+    assert.equal(body.data.adapterSelection.selected, "backend-command");
+    assert.deepEqual(body.data.media, { id: "00000000-0000-0000-0000-000000000006", width: 575, height: 416 });
 });
 
 test("ShapeCreateFrameTool reports adapter error when backend target is incomplete", async () => {

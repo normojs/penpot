@@ -963,15 +963,16 @@ P7.3 implementation note:
   the result through the normal `update-file` path.
 - The first shape slice intentionally omitted image upload, layout setup, shape
   update, and delete. P7.7 adds backend/common coverage for simple shape
-  update/delete, and P11.2 adds backend-safe frame layout `none`/`flex`
-  updates. Image upload and grid/full layout editing still stay on plugin-live
-  tools until dedicated backend coverage is added.
-- MCP `shape.create_frame`, `shape.create_rect`, and `shape.create_text` now
-  choose backend-command when callers provide explicit `fileId` and `pageId`.
-  Calls without explicit file/page targets keep using the plugin-live bound
-  workspace path.
-- `penpot-cli shape create-frame`, `shape create-rect`, and
-  `shape create-text` call backend `create-file-shape` directly and report
+  update/delete, P11.2 adds backend-safe frame layout `none`/`flex` updates,
+  and P11.3 adds `create-file-image-shape` for image-backed rectangles using
+  the existing media upload/storage path. Grid/full layout editing still stays
+  on plugin-live tools until dedicated backend coverage is added.
+- MCP `shape.create_frame`, `shape.create_rect`, `shape.create_text`, and
+  `shape.create_image` now choose backend-command when callers provide
+  explicit `fileId` and `pageId`. Calls without explicit file/page targets keep
+  using the plugin-live bound workspace path.
+- `penpot-cli shape create-frame`, `shape create-rect`, `shape create-text`,
+  and `shape create-image` call backend commands directly and report
   `adapterSelection` in JSON output.
 - The backend now also exposes `update-file-shape` and `delete-file-shape` for
   simple frame, rectangle, and text targets.

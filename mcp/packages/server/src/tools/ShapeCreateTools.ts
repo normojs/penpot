@@ -118,6 +118,10 @@ function toBackendShapeLayout(layout?: ShapeTaskParams["layout"]): PenpotRecord 
     };
 }
 
+function normalizeImageMimeType(mimeType: string): string {
+    return mimeType === "image/jpg" ? "image/jpeg" : mimeType;
+}
+
 abstract class ShapeTool<TArgs extends object> extends PenpotRpcTool<TArgs> {
     protected constructor(mcpServer: PenpotMcpServer, inputSchema: z.ZodRawShape) {
         super(mcpServer, inputSchema);
@@ -295,6 +299,53 @@ abstract class ShapeTool<TArgs extends object> extends PenpotRpcTool<TArgs> {
                 adapterSelection,
                 fileId: args.fileId,
                 shape: result.shape,
+                revn: result.revn,
+                vern: result.vern,
+            });
+        } catch (cause) {
+            return this.rpcFailure(cause);
+        }
+    }
+
+    protected async executeBackendShapeCreateImage(
+        args: ShapeCreateImageArgs,
+        adapterSelection: CommandAdapterSelection
+    ): Promise<ToolResponse> {
+        const userToken = this.getUserToken();
+        if (!userToken) {
+            return this.authenticationRequired();
+        }
+
+        try {
+            const result = await this.rpcWritePost<PenpotRecord>(
+                "create-file-image-shape",
+                {
+                    id: args.fileId,
+                    "page-id": args.pageId,
+                    "shape-id": args.shapeId,
+                    "parent-id": args.parentId,
+                    name: this.nonEmptyString(args.name),
+                    x: args.x,
+                    y: args.y,
+                    width: args.width,
+                    height: args.height,
+                    "image-base64": args.imageBase64,
+                    "mime-type": normalizeImageMimeType(args.mimeType),
+                },
+                userToken,
+                {
+                    mcpAdapter: adapterSelection.selected,
+                    mcpFileId: args.fileId,
+                    mcpPageId: args.pageId,
+                    mcpShapeId: args.shapeId,
+                }
+            );
+            return this.ok({
+                adapter: adapterSelection.selected,
+                adapterSelection,
+                fileId: args.fileId,
+                shape: result.shape,
+                media: result.media,
                 revn: result.revn,
                 vern: result.vern,
             });
@@ -625,6 +676,10 @@ export class ShapeCreateTextTool extends ShapeTool<ShapeCreateTextArgs> {
 
 export class ShapeCreateImageArgs {
     static schema = {
+        fileId: uuidSchema.optional().describe("Optional file id for backend-command headless image creation."),
+        pageId: uuidSchema.optional().describe("Optional page id for backend-command headless image creation."),
+        shapeId: uuidSchema.optional().describe("Optional shape id for backend-command image creation."),
+        adapter: z.string().optional().describe("Optional adapter request: auto, backend-command, or plugin-live."),
         parentId: parentIdSchema,
         name: z.string().min(1).max(250).optional().describe("Optional image layer name."),
         x: coordinateSchema.describe("Image x position. Relative to parentId when provided."),
@@ -641,6 +696,10 @@ export class ShapeCreateImageArgs {
             .describe("Image MIME type."),
     };
 
+    fileId?: string;
+    pageId?: string;
+    shapeId?: string;
+    adapter?: string;
     parentId?: string;
     name?: string;
     x!: number;
@@ -665,17 +724,29 @@ export class ShapeCreateImageTool extends ShapeTool<ShapeCreateImageArgs> {
     }
 
     protected async executeCore(args: ShapeCreateImageArgs): Promise<ToolResponse> {
-        return this.executeShapeTask({
-            action: "createImage",
-            parentId: args.parentId,
-            name: this.nonEmptyString(args.name),
-            x: args.x,
-            y: args.y,
-            width: args.width,
-            height: args.height,
-            imageBase64: args.imageBase64,
-            mimeType: args.mimeType,
-        });
+        const adapterSelection = this.selectShapeCreateAdapter(CommandDescriptors.SHAPE_CREATE_IMAGE.id, args);
+        if (adapterSelection.status !== "selected") {
+            return this.adapterSelectionFailure(adapterSelection);
+        }
+
+        if (adapterSelection.selected === "backend-command") {
+            return this.executeBackendShapeCreateImage(args, adapterSelection);
+        }
+
+        return this.executeShapeTask(
+            {
+                action: "createImage",
+                parentId: args.parentId,
+                name: this.nonEmptyString(args.name),
+                x: args.x,
+                y: args.y,
+                width: args.width,
+                height: args.height,
+                imageBase64: args.imageBase64,
+                mimeType: normalizeImageMimeType(args.mimeType),
+            },
+            adapterSelection
+        );
     }
 }
 

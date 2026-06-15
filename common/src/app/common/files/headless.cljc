@@ -80,12 +80,22 @@
     :rect "Rectangle"
     :text "Text"))
 
+(def ^:private default-image-shape-name
+  "Image")
+
 (defn normalize-shape-name
   [type name]
   (let [name (some-> name str/trim)]
     (if (seq name)
       name
       (default-shape-name type))))
+
+(defn- normalize-image-shape-name
+  [name]
+  (let [name (some-> name str/trim)]
+    (if (seq name)
+      name
+      default-image-shape-name)))
 
 (defn- normalize-updated-shape-name
   [name]
@@ -607,6 +617,62 @@
                    (apply-text-content params))]
     (cts/check-shape shape)))
 
+(defn- media-image-metadata
+  [media]
+  {:id (:id media)
+   :name (:name media)
+   :width (:width media)
+   :height (:height media)
+   :mtype (:mtype media)})
+
+(defn- require-image-media
+  [media]
+  (when-not (map? media)
+    (ex/raise :type :validation
+              :code :image-media-required
+              :hint "Headless image shape creation requires a media object."))
+  (doseq [attr [:id :width :height :mtype :media-id]]
+    (when-not (contains? media attr)
+      (ex/raise :type :validation
+                :code :invalid-image-media
+                :hint "Headless image shape creation received an incomplete media object."
+                :attr attr)))
+  (let [width  (:width media)
+        height (:height media)]
+    (when-not (and (number? width)
+                   (number? height)
+                   (pos? width)
+                   (pos? height))
+      (ex/raise :type :validation
+                :code :invalid-image-dimensions
+                :hint "Headless image shape creation requires positive media dimensions."
+                :media-id (:id media)
+                :width width
+                :height height)))
+  media)
+
+(defn- scale-dimension
+  [value source target]
+  (let [value (/ (* value target) source)]
+    (if (integer? value)
+      value
+      (double value))))
+
+(defn- infer-image-size
+  [{media-width :width media-height :height} width height]
+  (cond
+    (and (some? width) (some? height))
+    [width height]
+
+    (some? width)
+    [width (scale-dimension width media-width media-height)]
+
+    (some? height)
+    [(scale-dimension height media-height media-width) height]
+
+    :else
+    [media-width media-height]))
+
 (defn create-shape-request
   [file-data {:keys [page-id parent-id type] :as params}]
   (when-not (contains? supported-shape-types type)
@@ -623,6 +689,38 @@
         shape          (create-shape params)]
     {:shape (shape-summary shape page-id)
      :changes [{:type :add-obj
+                :id (:id shape)
+                :page-id page-id
+                :parent-id parent-id
+                :frame-id (:frame-id shape)
+                :ignore-touched true
+                :obj shape}]}))
+
+(defn create-image-shape-request
+  [file-data {:keys [page-id parent-id media width height name] :as params}]
+  (let [media           (require-image-media media)
+        [page-id page]  (require-page file-data page-id)
+        objects         (:objects page)
+        parent-id       (require-frame-parent objects :rect parent-id)
+        [width height]  (infer-image-size media width height)
+        image-metadata  (media-image-metadata media)
+        params          (assoc params
+                               :page-id page-id
+                               :parent-id parent-id
+                               :type :rect
+                               :name (normalize-image-shape-name name)
+                               :width width
+                               :height height)
+        shape           (-> (create-shape params)
+                            (assoc :fills [{:fill-opacity 1
+                                            :fill-image image-metadata}])
+                            (assoc :metadata image-metadata)
+                            (cts/check-shape))]
+    {:shape (shape-summary shape page-id)
+     :media media
+     :changes [{:type :add-media
+                :object media}
+               {:type :add-obj
                 :id (:id shape)
                 :page-id page-id
                 :parent-id parent-id

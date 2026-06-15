@@ -53,6 +53,7 @@ test("descriptor lookup supports internal, MCP, and CLI command names", () => {
     assert.equal(getCommandDescriptor("mcp.get_status"), CommandDescriptors.MCP_STATUS);
     assert.equal(getCommandDescriptor("page rename"), CommandDescriptors.PAGE_RENAME);
     assert.equal(getCommandDescriptor("shape create-frame"), CommandDescriptors.SHAPE_CREATE_FRAME);
+    assert.equal(getCommandDescriptor("shape create-image"), CommandDescriptors.SHAPE_CREATE_IMAGE);
     assert.equal(getCommandDescriptor("export.page"), CommandDescriptors.EXPORT_PAGE);
     assert.equal(getCommandDescriptor("missing.command"), undefined);
 });

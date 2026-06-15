@@ -1,4 +1,7 @@
 import assert from "node:assert/strict";
+import { mkdtempSync, rmSync, writeFileSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
 import test from "node:test";
 import {
     AdapterSelectionReasonCodes,
@@ -109,8 +112,10 @@ test("command runtime exposes migrated shape and export descriptors", () => {
     );
     assert.equal(MigratedCommandDescriptors.length, 17);
     assert.equal(CommandDescriptors.SHAPE_DELETE.cliCommand, "shape delete");
+    assert.equal(CommandDescriptors.SHAPE_CREATE_IMAGE.cliCommand, "shape create-image");
     assert.equal(CommandDescriptors.EXPORT_PAGE.mcpToolName, "export.page");
     assert.equal(getCommandDescriptor("shape create-frame").id, "shape.create_frame");
+    assert.equal(getCommandDescriptor("shape create-image").id, "shape.create_image");
     assert.equal(getCommandDescriptor("render.preview").title, "Render preview");
 });
 
@@ -487,6 +492,100 @@ test("shape update sends rich style, hierarchy, and layout fields to backend-com
         assert.equal(body.data.shape.parentId, UUIDS.profile);
     } finally {
         globalThis.fetch = originalFetch;
+    }
+});
+
+test("shape create-image reads a local image and sends backend-command RPC", async () => {
+    const originalFetch = globalThis.fetch;
+    const calls = [];
+    const tempDir = mkdtempSync(join(tmpdir(), "penpot-cli-image-"));
+    const imagePath = join(tempDir, "hero.png");
+    writeFileSync(imagePath, Buffer.from("hello"));
+
+    globalThis.fetch = async (url, options) => {
+        calls.push({ url: String(url), options });
+        return {
+            ok: true,
+            status: 200,
+            statusText: "OK",
+            text: async () =>
+                JSON.stringify({
+                    shape: {
+                        id: UUIDS.object,
+                        name: "Hero",
+                        type: "rect",
+                        pageId: UUIDS.page,
+                    },
+                    media: {
+                        id: UUIDS.profile,
+                        name: "Hero",
+                        width: 575,
+                        height: 416,
+                        mtype: "image/png",
+                    },
+                    revn: 4,
+                    vern: 0,
+                }),
+        };
+    };
+
+    try {
+        const result = await runCli(
+            [
+                "shape",
+                "create-image",
+                "--file",
+                UUIDS.file,
+                "--page",
+                UUIDS.page,
+                "--shape-id",
+                UUIDS.object,
+                "--parent",
+                UUIDS.profile,
+                "--image",
+                imagePath,
+                "--name",
+                "Hero",
+                "--x",
+                "12",
+                "--y",
+                "24",
+                "--width",
+                "575",
+                "--format",
+                "json",
+            ],
+            {
+                PENPOT_BACKEND_URI: "http://127.0.0.1:6060",
+                PENPOT_CLI_TOKEN: "token-1",
+            }
+        );
+        const body = parseJson(result.stdout);
+
+        assert.equal(result.exitCode, 0);
+        assert.equal(result.stderr, "");
+        assert.equal(calls.length, 1);
+        assert.match(calls[0].url, /\/api\/main\/methods\/create-file-image-shape\?_fmt=json$/);
+        assert.deepEqual(JSON.parse(calls[0].options.body), {
+            id: UUIDS.file,
+            "page-id": UUIDS.page,
+            "shape-id": UUIDS.object,
+            "parent-id": UUIDS.profile,
+            name: "Hero",
+            x: 12,
+            y: 24,
+            width: 575,
+            "image-base64": "aGVsbG8=",
+            "mime-type": "image/png",
+        });
+        assert.equal(body.status, "ok");
+        assert.equal(body.data.adapter, "backend-command");
+        assert.equal(body.data.adapterSelection.command, "shape.create_image");
+        assert.equal(body.data.source.name, "hero.png");
+        assert.equal(body.data.media.mtype, "image/png");
+    } finally {
+        globalThis.fetch = originalFetch;
+        rmSync(tempDir, { recursive: true, force: true });
     }
 });
 

@@ -13,7 +13,10 @@
    [app.rpc.climit :as-alias climit]
    [app.rpc.commands.files-create :as files.create]
    [backend-tests.helpers :as th]
-   [clojure.test :as t]))
+   [clojure.test :as t]
+   [datoteka.io :as io])
+  (:import
+   java.util.Base64))
 
 (t/use-fixtures :once th/state-init)
 (t/use-fixtures :each th/database-reset)
@@ -95,6 +98,11 @@
         error   (:error out)]
     (t/is (th/ex-info? error))
     (t/is (th/ex-of-type? error :not-found))))
+
+(defn- sample-image-base64
+  []
+  (let [bytes (io/read* (th/tempfile "backend_tests/test_files/sample.png"))]
+    (.encodeToString (Base64/getEncoder) bytes)))
 
 (t/deftest create-file-shape
   (let [profile  (th/create-profile* 1 {:is-active true})
@@ -271,6 +279,120 @@
         (t/is (= "18" (get-in text [:content :children 0 :children 0 :font-size])))
         (t/is (= [{:fill-color "#112233" :fill-opacity 1}]
                  (get-in text [:content :children 0 :children 0 :fills])))))))
+
+(t/deftest create-file-image-shape
+  (let [profile  (th/create-profile* 1 {:is-active true})
+        file     (th/create-file* 1 {:profile-id (:id profile)
+                                     :project-id (:default-project-id profile)
+                                     :is-shared false})
+        page-id  (get-in file [:data :pages 0])
+        frame-id (uuid/next)
+        image-id (uuid/next)]
+
+    (let [out {::th/type :create-file-shape
+               ::rpc/profile-id (:id profile)
+               :id (:id file)
+               :page-id page-id
+               :shape-id frame-id
+               :type :frame
+               :x 0
+               :y 0
+               :width 640
+               :height 480
+               :features cfeat/supported-features}
+          out (th/command! out)]
+      (t/is (nil? (:error out))))
+
+    (t/testing "create an image-backed rectangle through the backend command"
+      (let [out {::th/type :create-file-image-shape
+                 ::rpc/profile-id (:id profile)
+                 :id (:id file)
+                 :page-id page-id
+                 :shape-id image-id
+                 :parent-id frame-id
+                 :name "  Hero PNG  "
+                 :x 32
+                 :y 48
+                 :width 575
+                 :image-base64 (sample-image-base64)
+                 :mime-type "image/png"
+                 :features cfeat/supported-features}
+            out (th/command! out)
+            media (get-in out [:result :media])]
+        (t/is (nil? (:error out)))
+        (t/is (= {:id image-id
+                  :name "Hero PNG"
+                  :type :rect
+                  :page-id page-id
+                  :parent-id frame-id
+                  :frame-id frame-id
+                  :x 32
+                  :y 48
+                  :width 575
+                  :height 416}
+                 (get-in out [:result :shape])))
+        (t/is (= (:id file) (:file-id media)))
+        (t/is (= "Hero PNG" (:name media)))
+        (t/is (= 575 (:width media)))
+        (t/is (= 416 (:height media)))
+        (t/is (= "image/png" (:mtype media)))
+        (t/is (uuid? (:media-id media)))
+        (t/is (= 2 (get-in out [:result :revn])))))
+
+    (t/testing "image media and preview metadata are persisted in file data"
+      (let [out {::th/type :get-file
+                 ::rpc/profile-id (:id profile)
+                 :id (:id file)
+                 :features cfeat/supported-features}
+            out (th/command! out)
+            data (:data (:result out))
+            shape (get-in data [:pages-index page-id :objects image-id])
+            media-id (get-in shape [:fills 0 :fill-image :id])
+            media (get-in data [:media media-id])
+            image-ref (select-keys media [:id :name :width :height :mtype])]
+        (t/is (nil? (:error out)))
+        (t/is (= media-id (:id media)))
+        (t/is (= image-ref (get-in shape [:fills 0 :fill-image])))
+        (t/is (= image-ref (:metadata shape)))
+        (t/is (= [image-id] (get-in data [:pages-index page-id :objects frame-id :shapes])))))))
+
+(t/deftest create-file-image-shape-validates-media-and-permissions
+  (let [owner   (th/create-profile* 1 {:is-active true})
+        other   (th/create-profile* 2 {:is-active true})
+        file    (th/create-file* 1 {:profile-id (:id owner)
+                                    :project-id (:default-project-id owner)
+                                    :is-shared false})
+        page-id (get-in file [:data :pages 0])
+        base    {::th/type :create-file-image-shape
+                 :id (:id file)
+                 :page-id page-id
+                 :x 0
+                 :y 0
+                 :image-base64 (sample-image-base64)
+                 :mime-type "image/png"
+                 :features cfeat/supported-features}]
+
+    (t/testing "requires edit permissions"
+      (let [out   (th/command! (assoc base ::rpc/profile-id (:id other)))
+            error (:error out)]
+        (t/is (th/ex-info? error))
+        (t/is (th/ex-of-type? error :not-found))))
+
+    (t/testing "rejects unsupported media types"
+      (let [out   (th/command! (assoc base
+                                      ::rpc/profile-id (:id owner)
+                                      :mime-type "text/plain"))
+            error (:error out)]
+        (t/is (th/ex-info? error))
+        (t/is (th/ex-with-code? error :media-type-not-allowed))))
+
+    (t/testing "rejects invalid image base64"
+      (let [out   (th/command! (assoc base
+                                      ::rpc/profile-id (:id owner)
+                                      :image-base64 "%%%"))
+            error (:error out)]
+        (t/is (th/ex-info? error))
+        (t/is (th/ex-with-code? error :invalid-image-data))))))
 
 (t/deftest update-file-shape-supports-rich-style-and-parent-move
   (let [profile    (th/create-profile* 1 {:is-active true})

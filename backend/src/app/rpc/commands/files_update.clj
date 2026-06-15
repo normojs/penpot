@@ -18,6 +18,7 @@
    [app.common.schema :as sm]
    [app.common.time :as ct]
    [app.common.types.color :as ctc]
+   [app.common.types.file :as ctf]
    [app.common.uuid :as uuid]
    [app.config :as cf]
    [app.db :as db]
@@ -28,18 +29,25 @@
    [app.loggers.audit :as audit]
    [app.loggers.webhooks :as webhooks]
    [app.metrics :as mtx]
+   [app.media :as media]
    [app.msgbus :as mbus]
    [app.redis :as rds]
    [app.rpc :as-alias rpc]
    [app.rpc.climit :as climit]
    [app.rpc.commands.files :as files]
+   [app.rpc.commands.media :as media-cmd]
    [app.rpc.commands.teams :as teams]
    [app.rpc.doc :as-alias doc]
    [app.rpc.helpers :as rph]
+   [app.storage.tmp :as tmp]
    [app.util.blob :as blob]
    [app.util.pointer-map :as pmap]
    [app.util.services :as sv]
-   [clojure.set :as set]))
+   [clojure.set :as set]
+   [clojure.string :as str]
+   [datoteka.io :as io])
+  (:import
+   java.util.Base64))
 
 (declare ^:private get-lagged-changes)
 (declare ^:private send-notifications!)
@@ -195,6 +203,32 @@
    [:vern {:min 0} ::sm/int]])
 
 (def ^:private
+  schema:create-file-image-shape
+  [:map {:title "create-file-image-shape"}
+   [:id ::sm/uuid]
+   [:page-id {:optional true} ::sm/uuid]
+   [:shape-id {:optional true} ::sm/uuid]
+   [:parent-id {:optional true} ::sm/uuid]
+   [:name {:optional true} [:string {:max 250}]]
+   [:x [::sm/number {:min -100000 :max 100000}]]
+   [:y [::sm/number {:min -100000 :max 100000}]]
+   [:width {:optional true} [::sm/number {:min 0.01 :max 100000}]]
+   [:height {:optional true} [::sm/number {:min 0.01 :max 100000}]]
+   [:image-base64 [:string {:min 1 :max 20000000}]]
+   [:mime-type [:string {:max 120}]]
+   [:session-id {:optional true} ::sm/uuid]
+   [:features {:optional true} ::cfeat/features]])
+
+(def ^:private
+  schema:create-file-image-shape-result
+  [:map {:title "create-file-image-shape-result"}
+   [:file-id ::sm/uuid]
+   [:shape schema:shape-summary]
+   [:media ctf/schema:media]
+   [:revn {:min 0} ::sm/int]
+   [:vern {:min 0} ::sm/int]])
+
+(def ^:private
   schema:update-file-shape
   [:map {:title "update-file-shape"}
    [:id ::sm/uuid]
@@ -278,6 +312,50 @@
   [{:keys [type] :as change}]
   (or (contains? library-change-types type)
       (contains? file-change-types type)))
+
+(defn- normalize-image-name
+  [name]
+  (let [name (some-> name str/trim)]
+    (if (seq name)
+      name
+      "Image")))
+
+(defn- strip-base64-data-url
+  [image-base64]
+  (let [image-base64 (str/trim image-base64)]
+    (if (str/starts-with? image-base64 "data:")
+      (if-let [idx (str/index-of image-base64 ",")]
+        (subs image-base64 (inc idx))
+        "")
+      image-base64)))
+
+(defn- decode-image-base64
+  [image-base64]
+  (let [image-base64 (-> image-base64
+                         (strip-base64-data-url)
+                         (str/replace #"\s+" ""))]
+    (when-not (seq image-base64)
+      (ex/raise :type :validation
+                :code :invalid-image-data
+                :hint "Headless image shape creation requires non-empty base64 image data."))
+    (try
+      (.decode (Base64/getDecoder) ^String image-base64)
+      (catch IllegalArgumentException _
+        (ex/raise :type :validation
+                  :code :invalid-image-data
+                  :hint "Headless image shape creation received invalid base64 image data.")))))
+
+(defn- prepare-headless-image-upload
+  [{:keys [image-base64 mime-type name]}]
+  (let [bytes (decode-image-base64 image-base64)
+        path  (tmp/tempfile :prefix "penpot.headless.image.")]
+    (io/write* path bytes)
+    (-> {:filename (normalize-image-name name)
+         :path path
+         :mtype mime-type
+         :size (alength ^bytes bytes)}
+        (media/validate-media-type!)
+        (media/validate-media-size!))))
 
 ;; If features are specified from params and the final feature
 ;; set is different than the persisted one, update it on the
@@ -520,6 +598,70 @@
 
     (with-meta {:file-id id
                 :shape (:shape shape-request)
+                :revn (inc (:revn file))
+                :vern (:vern file)}
+      {::audit/replace-props
+       {:id         (:id file)
+        :name       (:name file)
+        :features   (:features file)
+        :project-id (:project-id file)
+        :team-id    (:team-id file)}})))
+
+(sv/defmethod ::create-file-image-shape
+  {::climit/id [[:update-file/by-profile ::rpc/profile-id]
+                [:update-file/global]]
+
+   ::webhooks/event? true
+   ::webhooks/batch-timeout (ct/duration "2m")
+   ::webhooks/batch-key (webhooks/key-fn ::rpc/profile-id :id)
+
+   ::sm/params schema:create-file-image-shape
+   ::sm/result schema:create-file-image-shape-result
+   ::doc/module :files
+   ::doc/added "2.15.4"
+   ::db/transaction true}
+  [{:keys [::mtx/metrics ::db/conn] :as cfg}
+   {:keys [::rpc/profile-id id session-id] :as params}]
+
+  (files/check-edition-permissions! conn profile-id id)
+  (db/xact-lock! conn id)
+
+  (let [file          (get-file cfg id)
+        team          (teams/get-team conn
+                                      :profile-id profile-id
+                                      :team-id (:team-id file))
+        features      (-> (cfeat/get-team-enabled-features cf/flags team)
+                          (cfeat/check-client-features! (:features params))
+                          (cfeat/check-file-features! (:features file)))
+        content       (prepare-headless-image-upload params)
+        media-object  (media-cmd/create-file-media-object
+                       cfg
+                       {:file-id id
+                        :is-local true
+                        :name (normalize-image-name (:name params))
+                        :content content})
+        shape-request (headless/create-image-shape-request
+                       (blob/decode (:data file))
+                       (assoc params :media media-object))
+        changes       (:changes shape-request)
+        session-id    (or session-id (uuid/next))
+        cfg           (assoc cfg ::timestamp (ct/now))
+        update-args   {:id id
+                       :revn (:revn file)
+                       :vern (:vern file)
+                       :file file
+                       :team team
+                       :features (set/difference features cfeat/frontend-only-features)
+                       :changes changes
+                       :session-id session-id
+                       :profile-id profile-id}]
+
+    (mtx/run! metrics {:id :update-file-changes :inc (count changes)})
+    (update-file* cfg update-args)
+
+    (with-meta {:file-id id
+                :shape (:shape shape-request)
+                :media (:media shape-request)
                 :revn (inc (:revn file))
                 :vern (:vern file)}
       {::audit/replace-props

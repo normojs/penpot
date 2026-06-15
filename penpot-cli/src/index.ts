@@ -2,8 +2,8 @@
 
 import { spawn } from "node:child_process";
 import { constants } from "node:fs";
-import { access, mkdir, readdir, stat, writeFile } from "node:fs/promises";
-import { delimiter, dirname, join, resolve } from "node:path";
+import { access, mkdir, readFile, readdir, stat, writeFile } from "node:fs/promises";
+import { basename, delimiter, dirname, extname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import {
     AdapterSelectionReasonCodes,
@@ -49,6 +49,7 @@ Usage:
   penpot-cli shape create-frame --file <file-id> --page <page-id> --x <n> --y <n> --width <n> --height <n> [--format text|json]
   penpot-cli shape create-rect --file <file-id> --page <page-id> --parent <frame-id> --x <n> --y <n> --width <n> --height <n> [--format text|json]
   penpot-cli shape create-text --file <file-id> --page <page-id> --parent <frame-id> --x <n> --y <n> --width <n> --height <n> --content <text> [--format text|json]
+  penpot-cli shape create-image --file <file-id> --page <page-id> --image <path> --x <n> --y <n> [--width <n>] [--height <n>] [--format text|json]
   penpot-cli shape update --file <file-id> --shape <shape-id> [--page <page-id>] [--parent <frame-id>] [--x <n>] [--y <n>] [--width <n>] [--height <n>] [--fill <hex>] [--layout none|flex] [--format text|json]
   penpot-cli shape delete --file <file-id> --shape <shape-id> [--page <page-id>] [--format text|json]
   penpot-cli export page --file <file-id> --page <page-id> --object <object-id> [--adapter auto|exporter] [--output <path>] [--dry-run] [--format text|json]`;
@@ -113,6 +114,7 @@ Usage:
   penpot-cli shape create-frame --file <file-id> --page <page-id> --x <n> --y <n> --width <n> --height <n> [--name <name>] [--shape-id <id>] [--fill <hex>] [--format text|json]
   penpot-cli shape create-rect --file <file-id> --page <page-id> --parent <frame-id> --x <n> --y <n> --width <n> --height <n> [--name <name>] [--shape-id <id>] [--fill <hex>] [--border-radius <n>] [--format text|json]
   penpot-cli shape create-text --file <file-id> --page <page-id> --parent <frame-id> --x <n> --y <n> --width <n> --height <n> --content <text> [--name <name>] [--shape-id <id>] [--font-size <n>] [--fill <hex>] [--format text|json]
+  penpot-cli shape create-image --file <file-id> --page <page-id> --image <path> --x <n> --y <n> [--width <n>] [--height <n>] [--name <name>] [--shape-id <id>] [--parent <frame-id>] [--mime-type <type>] [--format text|json]
   penpot-cli shape update --file <file-id> --shape <shape-id> [--page <page-id>] [--parent <frame-id>] [--index <n>] [--name <name>] [--x <n>] [--y <n>] [--width <n>] [--height <n>] [--fill <hex>] [--stroke <hex>] [--border-radius <n>] [--r1 <n>] [--r2 <n>] [--r3 <n>] [--r4 <n>] [--content <text>] [--font-size <n>] [--layout none|flex] [--layout-direction row|column] [--layout-wrap wrap|nowrap] [--layout-align-items start|center|end|stretch] [--layout-justify-content start|center|end|space-between|space-around|space-evenly|stretch] [--layout-gap <n>] [--layout-row-gap <n>] [--layout-column-gap <n>] [--layout-padding <n>] [--format text|json]
   penpot-cli shape delete --file <file-id> --shape <shape-id> [--page <page-id>] [--format text|json]
 
@@ -319,6 +321,20 @@ interface ShapeCreateParams {
     stroke?: Record<string, unknown>;
     borderRadius?: number;
     fontSize?: number;
+}
+
+interface ShapeImageCreateParams {
+    fileId: string;
+    pageId: string;
+    imagePath: string;
+    mimeType: string;
+    x: number;
+    y: number;
+    width?: number;
+    height?: number;
+    shapeId?: string;
+    parentId?: string;
+    name?: string;
 }
 
 interface ShapeUpdateParams {
@@ -817,6 +833,40 @@ function createSolidStrokes(args: string[]): Record<string, unknown>[] | undefin
     }));
 }
 
+const IMAGE_MIME_TYPES: Record<string, string> = {
+    ".gif": "image/gif",
+    ".jpeg": "image/jpeg",
+    ".jpg": "image/jpeg",
+    ".png": "image/png",
+    ".svg": "image/svg+xml",
+    ".webp": "image/webp",
+};
+const IMAGE_MIME_ALIASES: Record<string, string> = {
+    "image/jpg": "image/jpeg",
+};
+
+function inferImageMimeType(path: string): string | undefined {
+    return IMAGE_MIME_TYPES[extname(path).toLowerCase()];
+}
+
+function readImageMimeType(args: string[], imagePath: string, io: CliIO, format: Format): string | null {
+    const rawMimeType = readOption(args, ["--mime-type", "--mtype"]) ?? inferImageMimeType(imagePath);
+    const mimeType = rawMimeType ? (IMAGE_MIME_ALIASES[rawMimeType] ?? rawMimeType) : undefined;
+    if (!mimeType) {
+        writeError(io, format, "image_mime_type_required", "shape create-image requires --mime-type for this file.", [
+            "Use --mime-type image/png, image/jpeg, image/webp, image/gif, or image/svg+xml.",
+        ]);
+        return null;
+    }
+    if (!Object.values(IMAGE_MIME_TYPES).includes(mimeType)) {
+        writeError(io, format, "image_mime_type_invalid", `Unsupported image MIME type: ${mimeType}.`, [
+            "Use image/png, image/jpeg, image/webp, image/gif, or image/svg+xml.",
+        ]);
+        return null;
+    }
+    return mimeType;
+}
+
 function readEnumOption<T extends string>(
     args: string[],
     names: string[],
@@ -1031,6 +1081,79 @@ function parseShapeCreateParams(kind: ShapeCreateKind, args: string[], io: CliIO
         stroke: createSolidStroke(args),
         borderRadius,
         fontSize,
+    };
+}
+
+function parseShapeCreateImageParams(args: string[], io: CliIO, format: Format): ShapeImageCreateParams | null {
+    const fileId = readOption(args, ["--file", "--file-id"]);
+    if (!fileId) {
+        writeError(io, format, "file_id_required", "shape create-image requires --file <file-id>.", [
+            "Use penpot-cli file list first, then pass --file <file-id>.",
+        ]);
+        return null;
+    }
+
+    const pageId = readOption(args, ["--page", "--page-id"]);
+    if (!pageId) {
+        writeError(io, format, "page_id_required", "shape create-image requires --page <page-id>.", [
+            "Use penpot-cli page list --file <file-id> first, then pass --page <page-id>.",
+        ]);
+        return null;
+    }
+
+    const imagePath = readOption(args, ["--image", "--image-path", "--input"]);
+    if (!imagePath) {
+        writeError(io, format, "image_path_required", "shape create-image requires --image <path>.", [
+            "Pass a local PNG, JPEG, WebP, GIF, or SVG file path.",
+        ]);
+        return null;
+    }
+
+    const x = readNumberOption(args, ["--x"]);
+    const y = readNumberOption(args, ["--y"]);
+    for (const [name, value] of Object.entries({ x, y })) {
+        if (value === undefined) {
+            writeError(io, format, "shape_numeric_option_required", `shape create-image requires --${name} <n>.`, [
+                "Pass numeric x and y values.",
+            ]);
+            return null;
+        }
+        if (!Number.isFinite(value)) {
+            writeError(io, format, "shape_numeric_option_invalid", `Invalid numeric value for --${name}.`, [
+                "Pass finite numeric x and y values.",
+            ]);
+            return null;
+        }
+    }
+
+    const width = readNumberOption(args, ["--width", "--w"]);
+    const height = readNumberOption(args, ["--height", "--h"]);
+    for (const [name, value] of Object.entries({ width, height })) {
+        if (value !== undefined && (!Number.isFinite(value) || value <= 0)) {
+            writeError(io, format, "shape_numeric_option_invalid", `Invalid numeric value for --${name}.`, [
+                "Pass positive finite image width and height values.",
+            ]);
+            return null;
+        }
+    }
+
+    const mimeType = readImageMimeType(args, imagePath, io, format);
+    if (!mimeType) {
+        return null;
+    }
+
+    return {
+        fileId,
+        pageId,
+        imagePath,
+        mimeType,
+        x: x as number,
+        y: y as number,
+        width,
+        height,
+        shapeId: readOption(args, ["--shape-id", "--id"]),
+        parentId: readOption(args, ["--parent", "--parent-id", "--frame", "--frame-id"]),
+        name: readOption(args, ["--name"])?.trim() || undefined,
     };
 }
 
@@ -2724,6 +2847,83 @@ async function handleShapeCreate(
     }
 }
 
+async function handleShapeCreateImage(args: string[], io: CliIO, env: NodeJS.ProcessEnv): Promise<number> {
+    const format = parseFormat(args, io);
+    if (!format) {
+        return 2;
+    }
+
+    const adapterSelection = selectCliShapeAdapter(CommandDescriptors.SHAPE_CREATE_IMAGE.id, args);
+    if (adapterSelection.status !== "selected" || adapterSelection.selected !== "backend-command") {
+        return adapterSelectionFailure(io, format, adapterSelection);
+    }
+
+    const shapeParams = parseShapeCreateImageParams(args, io, format);
+    if (!shapeParams) {
+        return 2;
+    }
+
+    const rpc = getRpcConfig(args, env);
+    if (!rpc.token) {
+        return rpcAuthenticationRequired(io, format);
+    }
+
+    let imageBase64: string;
+    try {
+        const imageBytes = await readFile(shapeParams.imagePath);
+        imageBase64 = imageBytes.toString("base64");
+    } catch (cause) {
+        writeError(io, format, "image_file_read_failed", `Unable to read image file: ${shapeParams.imagePath}.`, [
+            "Check that the path exists and is readable.",
+        ], { cause: cause instanceof Error ? cause.message : String(cause) });
+        return 2;
+    }
+
+    try {
+        const result = await rpcRequest<Record<string, unknown>>(
+            "POST",
+            rpc.backendUri,
+            "create-file-image-shape",
+            {
+                id: shapeParams.fileId,
+                "page-id": shapeParams.pageId,
+                "shape-id": shapeParams.shapeId,
+                "parent-id": shapeParams.parentId,
+                name: shapeParams.name,
+                x: shapeParams.x,
+                y: shapeParams.y,
+                width: shapeParams.width,
+                height: shapeParams.height,
+                "image-base64": imageBase64,
+                "mime-type": shapeParams.mimeType,
+            },
+            rpc.token
+        );
+        writeOk(
+            io,
+            format,
+            {
+                fileId: shapeParams.fileId,
+                shape: result.shape,
+                media: result.media,
+                source: {
+                    path: shapeParams.imagePath,
+                    name: basename(shapeParams.imagePath),
+                    mimeType: shapeParams.mimeType,
+                },
+                revn: result.revn,
+                vern: result.vern,
+                adapter: adapterSelection.selected,
+                adapterSelection,
+            },
+            () => writeShapeCreatedText(io, shapeParams.fileId, result.shape)
+        );
+        return 0;
+    } catch (cause) {
+        return rpcErrorResponse(io, format, "create-file-image-shape", rpc.backendUri, cause);
+    }
+}
+
 async function handleShapeUpdate(args: string[], io: CliIO, env: NodeJS.ProcessEnv): Promise<number> {
     const format = parseFormat(args, io);
     if (!format) {
@@ -2863,6 +3063,8 @@ async function handleShapeCommand(args: string[], io: CliIO, env: NodeJS.Process
             return await handleShapeCreate("rect", CommandDescriptors.SHAPE_CREATE_RECT.id, rest, io, env);
         case "create-text":
             return await handleShapeCreate("text", CommandDescriptors.SHAPE_CREATE_TEXT.id, rest, io, env);
+        case "create-image":
+            return await handleShapeCreateImage(rest, io, env);
         case "update":
             return await handleShapeUpdate(rest, io, env);
         case "delete":
