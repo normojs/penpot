@@ -6,7 +6,7 @@ import { ToolNames } from "../ToolNames.js";
 import { requireBoundFileContext } from "./FileContextGuard.js";
 import { PenpotRpcTool } from "./PenpotRpcTool.js";
 import type { PageTaskParams } from "@penpot/mcp-common";
-import { selectCommandAdapter } from "@penpot/command-runtime";
+import { CommandDescriptors, selectCommandAdapter } from "@penpot/command-runtime";
 import type { CommandAdapterSelection } from "@penpot/command-runtime";
 
 type PenpotRecord = Record<string, unknown>;
@@ -165,15 +165,15 @@ export class PageListTool extends PageTool<PageListArgs> {
     }
 
     public getToolName(): string {
-        return ToolNames.PAGE_LIST;
+        return CommandDescriptors.PAGE_LIST.mcpToolName;
     }
 
     public getToolDescription(): string {
-        return "Lists pages in a Penpot file, using backend-command when fileId is supplied or the bound live context otherwise.";
+        return CommandDescriptors.PAGE_LIST.description;
     }
 
     protected async executeCore(args: PageListArgs): Promise<ToolResponse> {
-        const adapterSelection = this.selectPageAdapter(ToolNames.PAGE_LIST, args);
+        const adapterSelection = this.selectPageAdapter(CommandDescriptors.PAGE_LIST.id, args);
         if (adapterSelection.status !== "selected") {
             return this.adapterSelectionFailure(adapterSelection);
         }
@@ -212,15 +212,15 @@ export class PageCreateTool extends PageTool<PageCreateArgs> {
     }
 
     public getToolName(): string {
-        return ToolNames.PAGE_CREATE;
+        return CommandDescriptors.PAGE_CREATE.mcpToolName;
     }
 
     public getToolDescription(): string {
-        return "Creates a page in a Penpot file, using backend-command when fileId is supplied or the bound live context otherwise.";
+        return CommandDescriptors.PAGE_CREATE.description;
     }
 
     protected async executeCore(args: PageCreateArgs): Promise<ToolResponse> {
-        const adapterSelection = this.selectPageAdapter(ToolNames.PAGE_CREATE, args);
+        const adapterSelection = this.selectPageAdapter(CommandDescriptors.PAGE_CREATE.id, args);
         if (adapterSelection.status !== "selected") {
             return this.adapterSelectionFailure(adapterSelection);
         }

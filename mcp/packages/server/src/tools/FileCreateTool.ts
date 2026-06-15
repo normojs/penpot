@@ -3,6 +3,7 @@ import type { ToolResponse } from "../ToolResponse.js";
 import { PenpotMcpServer } from "../PenpotMcpServer.js";
 import { ToolNames } from "../ToolNames.js";
 import { PenpotRpcTool } from "./PenpotRpcTool.js";
+import { CommandDescriptors } from "@penpot/command-runtime";
 
 type PenpotRecord = Record<string, unknown>;
 
@@ -31,11 +32,11 @@ export class FileCreateTool extends PenpotRpcTool<FileCreateArgs> {
     }
 
     public getToolName(): string {
-        return ToolNames.FILE_CREATE;
+        return CommandDescriptors.FILE_CREATE.mcpToolName;
     }
 
     public getToolDescription(): string {
-        return "Creates a new Penpot file in a project using the current user's permissions.";
+        return CommandDescriptors.FILE_CREATE.description;
     }
 
     protected async executeCore(args: FileCreateArgs): Promise<ToolResponse> {

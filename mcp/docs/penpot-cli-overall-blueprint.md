@@ -285,16 +285,15 @@ Acceptance:
 
 The next implementation slice should start Wave B:
 
-1. Audit existing MCP tools and `penpot-cli` commands.
-2. Record each command/tool name, input schema, adapter path, response shape,
-   and current test coverage.
-3. Identify duplicate metadata and choose the first low-risk descriptor
-   migration slice.
-4. Move status/config/file/page descriptors into `command-runtime` while
-   preserving public tool names, CLI command names, and output shapes.
+1. Introduce shared request/result envelope types in `command-runtime`.
+2. Keep MCP tool responses and CLI JSON/text formatting backward compatible at
+   the transport edges.
+3. Move adapter/result diagnostics into the shared envelope without changing
+   public tool names, CLI command names, or output shapes.
+4. Prepare centralized adapter error codes for the following P10.5 slice.
 
-Keep manual configuration behavior stable while moving command metadata; do not
-change transport-specific formatting during the inventory step.
+Keep manual configuration behavior stable while moving command metadata and
+envelopes; transport-specific formatting should stay at the MCP/CLI edges.
 
 ## Decisions To Keep Stable
 

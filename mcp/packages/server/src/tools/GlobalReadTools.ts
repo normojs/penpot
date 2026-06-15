@@ -4,6 +4,7 @@ import type { ToolResponse } from "../ToolResponse";
 import { PenpotMcpServer } from "../PenpotMcpServer";
 import { ToolNames } from "../ToolNames";
 import { PenpotRpcTool } from "./PenpotRpcTool";
+import { CommandDescriptors } from "@penpot/command-runtime";
 
 type PenpotRecord = Record<string, unknown>;
 
@@ -138,11 +139,11 @@ export class FileListTool extends PenpotRpcTool<FileListArgs> {
     }
 
     public getToolName(): string {
-        return ToolNames.FILE_LIST;
+        return CommandDescriptors.FILE_LIST.mcpToolName;
     }
 
     public getToolDescription(): string {
-        return "Lists files in a Penpot project using the current user's permissions.";
+        return CommandDescriptors.FILE_LIST.description;
     }
 
     protected async executeCore(args: FileListArgs): Promise<ToolResponse> {

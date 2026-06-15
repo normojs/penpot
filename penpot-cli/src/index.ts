@@ -5,7 +5,7 @@ import { constants } from "node:fs";
 import { access, mkdir, readdir, stat, writeFile } from "node:fs/promises";
 import { delimiter, dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
-import { selectCommandAdapter } from "@penpot/command-runtime";
+import { CommandDescriptors, selectCommandAdapter } from "@penpot/command-runtime";
 import type { CommandAdapterSelection, RequestedCommandAdapter } from "@penpot/command-runtime";
 
 const VERSION = "0.1.0";
@@ -1433,7 +1433,7 @@ function exportErrorResponse(io: CliIO, format: Format, plan: ExportPagePlan, ca
 }
 
 function writeConfigText(io: CliIO, config: McpConfig): void {
-    writeLine(io.stdout, "MCP config");
+    writeLine(io.stdout, CommandDescriptors.MCP_CONFIG.title);
     writeLine(io.stdout, `mode: ${config.mode}`);
     writeLine(io.stdout, `auto-connect: ${String(config.autoConnect)}`);
     writeLine(io.stdout, `public-uri: ${config.publicUri}`);
@@ -1610,7 +1610,7 @@ function formatStatusText(io: CliIO, statusUrl: string, data: unknown): void {
     const websocket = asRecord(transports.webSocket);
     const fileContexts = asRecord(body.fileContexts);
 
-    writeLine(io.stdout, `MCP status: ${String(body.status ?? "unknown")}`);
+    writeLine(io.stdout, `${CommandDescriptors.MCP_STATUS.title}: ${String(body.status ?? "unknown")}`);
     writeLine(io.stdout, `statusUrl: ${statusUrl}`);
     writeLine(io.stdout, `server: ${String(server.host ?? "unknown")}:${String(server.port ?? "unknown")}`);
     writeLine(io.stdout, `multiUserMode: ${String(server.multiUserMode ?? "unknown")}`);
@@ -1974,7 +1974,7 @@ async function handleFileCreate(args: string[], io: CliIO, env: NodeJS.ProcessEn
                 file,
                 url,
                 adapter: "backend-rpc",
-                nextActions: ["Open the workspace URL before using file-scoped MCP tools.", "file.open"],
+                nextActions: ["Open the workspace URL before using file-scoped MCP tools.", CommandDescriptors.FILE_OPEN.id],
             },
             () => writeFileCreatedText(io, file, url)
         );
@@ -2005,7 +2005,7 @@ function handleFileOpen(args: string[], io: CliIO, env: NodeJS.ProcessEnv): numb
         {
             fileId,
             url,
-            adapter: "browser-url",
+            adapter: CommandDescriptors.FILE_OPEN.adapters[0],
             boundContext: false,
         },
         () => writeFileOpenText(io, url)
@@ -2049,7 +2049,7 @@ async function handlePageList(args: string[], io: CliIO, env: NodeJS.ProcessEnv)
         return 2;
     }
 
-    const adapterSelection = selectCliBackendCommandAdapter("page.list", args);
+    const adapterSelection = selectCliBackendCommandAdapter(CommandDescriptors.PAGE_LIST.id, args);
     if (adapterSelection.status !== "selected" || adapterSelection.selected !== "backend-command") {
         return adapterSelectionFailure(io, format, adapterSelection);
     }
@@ -2094,7 +2094,7 @@ async function handlePageCreate(args: string[], io: CliIO, env: NodeJS.ProcessEn
         return 2;
     }
 
-    const adapterSelection = selectCliBackendCommandAdapter("page.create", args);
+    const adapterSelection = selectCliBackendCommandAdapter(CommandDescriptors.PAGE_CREATE.id, args);
     if (adapterSelection.status !== "selected" || adapterSelection.selected !== "backend-command") {
         return adapterSelectionFailure(io, format, adapterSelection);
     }

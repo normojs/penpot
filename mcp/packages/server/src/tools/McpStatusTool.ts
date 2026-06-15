@@ -3,7 +3,7 @@ import "reflect-metadata";
 import type { ToolResponse } from "../ToolResponse";
 import { JsonResponse } from "../ToolResponse";
 import { PenpotMcpServer } from "../PenpotMcpServer";
-import { ToolNames } from "../ToolNames";
+import { CommandDescriptors } from "@penpot/command-runtime";
 
 export class McpStatusTool extends Tool<EmptyToolArgs> {
     constructor(mcpServer: PenpotMcpServer) {
@@ -11,14 +11,11 @@ export class McpStatusTool extends Tool<EmptyToolArgs> {
     }
 
     public getToolName(): string {
-        return ToolNames.MCP_GET_STATUS;
+        return CommandDescriptors.MCP_STATUS.mcpToolName;
     }
 
     public getToolDescription(): string {
-        return (
-            "Returns token-safe MCP status for the current session, including server, transport, plugin, " +
-            "user-session, and file-context state."
-        );
+        return CommandDescriptors.MCP_STATUS.description;
     }
 
     protected async executeCore(args: EmptyToolArgs): Promise<ToolResponse> {

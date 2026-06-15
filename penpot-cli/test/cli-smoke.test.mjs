@@ -1,5 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
+import { CommandDescriptors, LowRiskCommandDescriptors, getCommandDescriptor } from "@penpot/command-runtime";
 import { run } from "../dist/index.js";
 
 const UUIDS = {
@@ -54,6 +55,16 @@ test("top-level help lists first-class MCP, shape, and export commands", async (
     assert.match(result.stdout, /penpot-cli mcp config/);
     assert.match(result.stdout, /penpot-cli shape delete/);
     assert.match(result.stdout, /penpot-cli export page/);
+});
+
+test("command runtime exposes low-risk command descriptors", () => {
+    assert.deepEqual(
+        LowRiskCommandDescriptors.map((descriptor) => descriptor.id),
+        ["mcp.status", "mcp.config", "file.list", "file.create", "file.open", "page.list", "page.create"]
+    );
+    assert.equal(CommandDescriptors.MCP_STATUS.mcpToolName, "mcp.get_status");
+    assert.equal(getCommandDescriptor("mcp.get_status").id, "mcp.status");
+    assert.equal(getCommandDescriptor("page.list").cliCommand, "page list");
 });
 
 test("mcp config derives stable public MCP surfaces from environment", async () => {

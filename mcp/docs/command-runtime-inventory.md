@@ -15,7 +15,10 @@ shared command runtime.
 
 ## Current Shared Runtime State
 
-`@penpot/command-runtime` currently exposes only adapter-selection helpers:
+As of P10.3, `@penpot/command-runtime` exposes adapter-selection helpers and a
+low-risk command descriptor catalog for status/config/file/page migration.
+
+Adapter-selection helpers:
 
 - adapter kinds: `backend-rpc`, `backend-command`, `plugin-live`, `exporter`,
   `browser-url`, `local-fs`
@@ -23,9 +26,16 @@ shared command runtime.
 - selection result metadata: `command`, `requested`, `selected`, `status`,
   `candidates`, and `fallbacks`
 
-It does not yet own command names, input schemas, response envelopes, CLI help
-metadata, transport labels, RPC method names, or coverage snapshots. Those
-fields are duplicated between MCP server tool classes and `penpot-cli`.
+Descriptor catalog:
+
+- descriptors: `mcp.status`, `mcp.config`, `file.list`, `file.create`,
+  `file.open`, `page.list`, `page.create`
+- lookup helper: `getCommandDescriptor(id)` by internal id, MCP tool name, or
+  CLI command string
+
+It still does not own executable input schemas, response envelopes, CLI help
+metadata, transport labels, RPC method names, or full coverage snapshots. Those
+fields remain duplicated between MCP server tool classes and `penpot-cli`.
 
 ## MCP Registered Tool Inventory
 
