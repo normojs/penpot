@@ -7,7 +7,8 @@ Updated: 2026-06-16
 This document is the compact architecture and delivery plan for the fork. The
 larger historical notes remain in `first-class-mcp-architecture.md`,
 `headless-command-runtime.md`, `manual-mcp-configuration-audit.md`, and
-`command-runtime-inventory.md`.
+`command-runtime-inventory.md`. The P16.1 authenticated CLI profile-config
+contract lives in `cli-profile-config-read-path.md`.
 
 ## Product Goal
 
@@ -380,8 +381,9 @@ stable configuration model.
 
 Tasks:
 
-- P16.1: audit the authenticated CLI profile-config read path and precedence
-  contract before code changes.
+- Done in P16.1: audit the authenticated CLI profile-config read path and
+  precedence contract before code changes. See
+  `cli-profile-config-read-path.md`.
 - P16.2: add an optional authenticated profile source to
   `penpot-cli mcp config`, preserving current env-derived/no-network behavior.
 - P16.3: add canonical MCP URL derivation contract fixtures for frontend and
@@ -401,17 +403,17 @@ Acceptance:
 ## Near-Term Priority
 
 Wave D, Wave E, Wave F, and Wave G are complete. P15.2 selected Wave H as the
-next implementation slice.
+next implementation slice, and P16.1 documented the profile-config read-path
+contract.
 
-The next active task is P16.1:
+The next active task is P16.2:
 
-1. Audit existing profile-prop read surfaces, CLI backend/token options,
-   frontend effective-config derivation, and current `mcp config` JSON/text
-   output.
-2. Define the precedence order for CLI flags, environment variables,
-   authenticated profile values, runtime defaults, and offline fallback.
-3. Record the command contract and fixture cases needed before implementing
-   authenticated profile-backed `penpot-cli mcp config`.
+1. Add an opt-in profile source for `penpot-cli mcp config` so the command can
+   read authenticated `profile.props.mcp-config` through backend `get-profile`.
+2. Preserve the current no-network default, environment compatibility, and
+   legacy JSON fields.
+3. Add source metadata, fallback/error behavior, and CLI smoke coverage from
+   `cli-profile-config-read-path.md`.
 
 Keep manual configuration behavior stable while moving command metadata and
 envelopes; transport-specific formatting should stay at the MCP/CLI edges.

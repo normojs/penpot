@@ -402,6 +402,25 @@ Planning decisions:
   compatible command-runtime package boundary. The private checkout link flow
   stays supported during fork development.
 
+### 3.10 CLI Profile Config Read Path (2026-06-16)
+
+P16.1 audited the read path for making `penpot-cli mcp config` aware of saved
+Penpot MCP settings. The contract is documented in
+`mcp/docs/cli-profile-config-read-path.md`.
+
+Architecture decisions:
+
+- Profile reads remain opt-in for P16.2 so existing scripts keep the current
+  local flag/env/default behavior without surprise backend calls.
+- The CLI should use existing backend `get-profile` with the same token and
+  backend URI options already used by file/export commands.
+- Effective config precedence is field-level: CLI flags, environment variables,
+  authenticated profile props, runtime defaults, then offline fallback.
+- Missing auth, backend failures, anonymous profiles, and malformed legacy
+  config have explicit `auto` fallback versus `backend` failure behavior.
+- P16.2 should preserve current JSON fields and add source metadata instead of
+  changing public output shape.
+
 ## 4. Target Architecture
 
 ```text

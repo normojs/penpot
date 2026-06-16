@@ -78,6 +78,7 @@
 - Document CI-friendly check commands for MCP/CLI release verification, separating TypeScript, Clojure, ClojureScript, packaging, smoke-flow, and missing-tool evidence.
 - Reconcile the MCP/CLI roadmap after release verification, documenting remaining product gaps and moving active planning to the next implementation wave.
 - Define the next MCP/CLI implementation wave around CLI configuration convergence, URL derivation parity, local orchestration hardening, and portable CLI packaging.
+- Document the authenticated CLI profile-config read-path contract for future `penpot-cli mcp config` profile-source support.
 - Add rate limiting and concurrency safety for file snapshot operations [#9723](https://github.com/penpot/penpot/issues/9723) (PR: [#9722](https://github.com/penpot/penpot/pull/9722))
 - Prevent concurrent font uploads from causing excessive simultaneous requests [#9922](https://github.com/penpot/penpot/issues/9922) (PR: [#9921](https://github.com/penpot/penpot/pull/9921))
 
