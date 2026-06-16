@@ -224,8 +224,8 @@ Current state:
   render.preview descriptors are part of the migrated command catalog.
 - Done: focused command-runtime tests cover descriptor groups, lookup,
   adapter-selection priority/error cases, and token-safe envelopes.
-- Status: complete. Later command coverage gaps are tracked by the P15.1 audit
-  findings and will be ordered in P15.2.
+- Status: complete. Later command coverage gaps were tracked by the P15.1
+  audit findings and ordered into Wave H by P15.2.
 
 ### Wave C: Headless Authoring Expansion
 
@@ -338,7 +338,7 @@ P15.1 reconciled the tracker and this blueprint after Waves A-F completed.
 The Feature Roadmap and phase tables now keep only one active task, and
 completed capabilities are no longer described as active work.
 
-Remaining gaps for P15.2 to order:
+P15.2 selected the next implementation wave from these remaining gaps:
 
 - `penpot-cli mcp config` still derives from environment/runtime inputs instead
   of reading persisted profile props.
@@ -355,19 +355,63 @@ Remaining gaps for P15.2 to order:
   account/team/project/file recents, file context, legacy tools, and planned
   tool names that are not executable descriptors yet.
 
+### Wave G: Roadmap Reconciliation And Next-Wave Planning
+
+Purpose: keep the delivery tracker accurate before expanding behavior again.
+
+Tasks:
+
+- Done in P15.1: reconcile `todo.md`, this blueprint, and architecture notes
+  so completed capabilities are not described as active work.
+- Done in P15.2: define Wave H / Phase 16 from the audited gaps, with ordered
+  tasks, affected modules, verification targets, and P16.1 as the first active
+  implementation task.
+
+Acceptance:
+
+- `todo.md` has one active phase task and the next implementation wave is
+  explicit enough to start without another planning pass.
+
+### Wave H: CLI Configuration Convergence And Distribution Hardening
+
+Purpose: make `penpot-cli` report the same effective MCP configuration that
+Penpot uses, then harden local development and portable packaging around that
+stable configuration model.
+
+Tasks:
+
+- P16.1: audit the authenticated CLI profile-config read path and precedence
+  contract before code changes.
+- P16.2: add an optional authenticated profile source to
+  `penpot-cli mcp config`, preserving current env-derived/no-network behavior.
+- P16.3: add canonical MCP URL derivation contract fixtures for frontend and
+  CLI parity across built-in, custom, local, partial, invalid, and reset cases.
+- P16.4: harden `dev up --mcp` host/hybrid dry-run planning with dependency,
+  port, service-surface, and unsupported-startup diagnostics.
+- P16.5: define a portable CLI release archive path that includes the CLI and
+  command-runtime dependency boundary without relying on global workspace links.
+
+Acceptance:
+
+- A developer can ask the CLI for MCP config and understand whether the values
+  came from flags, environment, authenticated Penpot profile props, or defaults.
+- Local orchestration and packaging docs/checks build on that stable config
+  contract instead of duplicating endpoint assumptions.
+
 ## Near-Term Priority
 
-Wave D, Wave E, and Wave F are complete. P15.1 reconciled roadmap status and
-grouped the remaining real product gaps.
+Wave D, Wave E, Wave F, and Wave G are complete. P15.2 selected Wave H as the
+next implementation slice.
 
-The next implementation slice is P15.2:
+The next active task is P16.1:
 
-1. Define the next development wave from the audited gaps, keeping
-   page current/selection semantics in plugin-live until a backend-safe
-   representation is defined.
-2. Order the new tasks by user-visible value and implementation dependency,
-   including affected modules, verification commands, and the first acceptance
-   check.
+1. Audit existing profile-prop read surfaces, CLI backend/token options,
+   frontend effective-config derivation, and current `mcp config` JSON/text
+   output.
+2. Define the precedence order for CLI flags, environment variables,
+   authenticated profile values, runtime defaults, and offline fallback.
+3. Record the command contract and fixture cases needed before implementing
+   authenticated profile-backed `penpot-cli mcp config`.
 
 Keep manual configuration behavior stable while moving command metadata and
 envelopes; transport-specific formatting should stay at the MCP/CLI edges.

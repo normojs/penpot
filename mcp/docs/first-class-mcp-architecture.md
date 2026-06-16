@@ -371,14 +371,36 @@ Documented planning decisions:
 
 - P14 release verification is complete, including config/global connection,
   headless edit/export, live bind, and CI-friendly check-command flows.
-- `todo.md` now keeps P15.2 as the only active phase task, and completed
-  capabilities are not marked active in the Feature Roadmap.
+- `todo.md` keeps one active phase task, and completed capabilities are not
+  marked active in the Feature Roadmap.
 - Wave B, Wave D, and Wave F blueprint language now describes completed work
   instead of older transition tasks.
 - Remaining gaps are grouped for P15.2 as configuration convergence,
   local orchestration and distribution hardening, live-only authoring
   semantics, command coverage, and planned descriptors that should not be
   exposed as executable commands until implemented.
+
+### 3.9 Next Implementation Wave (2026-06-16)
+
+P15.2 selected Wave H / Phase 16: CLI configuration convergence and
+distribution hardening.
+
+Planning decisions:
+
+- The next implementation wave starts with CLI profile-config convergence
+  because `penpot-cli mcp config` should be able to report the same saved MCP
+  settings that Penpot uses when an authenticated backend/profile source is
+  available.
+- CLI flags and environment variables must remain valid for scripts,
+  env-only self-hosted deployments, and offline/no-network diagnostics.
+- Frontend and CLI URL derivation should be aligned by canonical contract
+  fixtures. A single runtime helper is not required across ClojureScript and
+  TypeScript, but the tested cases must agree.
+- Host/hybrid `dev up --mcp` work should stay in planning/dry-run mode until
+  dependency, port ownership, and service-boundary diagnostics are explicit.
+- Portable CLI packaging remains behind a documented release archive or
+  compatible command-runtime package boundary. The private checkout link flow
+  stays supported during fork development.
 
 ## 4. Target Architecture
 
