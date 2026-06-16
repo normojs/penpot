@@ -83,8 +83,10 @@ complete: exporter-backed previews now work for explicit file/page/object
 targets from MCP and `penpot-cli`, with shared artifact metadata and CLI
 `--output` writes. Grid/full layout editing remains plugin-live. D3/P12.3 is
 complete: dashboard/settings now expose the current MCP file-context state
-outside the workspace menu. Current active work moves to D4/P12.4 live-only
-bind guidance.
+outside the workspace menu. D4/P12.4 is complete: live-only
+`file_context_required` errors now include target-aware open, inspect, bind,
+and retry guidance. Phase 12 file open/bind handoff is complete; current active
+work moves to P13.1 CLI build/install strategy.
 
 ## Feature Roadmap
 
@@ -111,8 +113,8 @@ remain the execution plan.
 | F16 | done | MCP/CLI smoke coverage | Phase 8 | Developers can catch first-class MCP regressions quickly | Completed 2026-06-13; MCP server tests, CLI no-service smoke tests, and documented running-stack smoke flows cover the critical regression paths |
 | F17 | done | Shared command descriptors | Phase 10 | MCP and CLI expose the same command catalog and internal result envelope from one runtime layer | Completed 2026-06-15; descriptors, envelopes, centralized adapter errors, and runtime tests cover status/config/file/page plus shape/export/render commands |
 | F18 | done | Expanded headless authoring | Phase 11 | Scripts and agents can create richer prototypes without a live workspace | Completed 2026-06-15; P11.1 page rename, P11.2 style/hierarchy/layout updates, P11.3 image/media insertion, P11.4 prototype helpers, and P11.5 exporter-backed previews are complete for explicit supported targets |
-| F19 | in_progress | File open and bind handoff | Phase 12 | Agents can move cleanly between headless edits and visual workspace binding | D1/P12.1 defined the UX and command contract, D2/P12.2 added shared CLI/MCP `file.open` handoff responses, and D3/P12.3 added dashboard/settings context visibility; next acceptance target is D4/P12.4 live-only bind guidance |
-| F20 | todo | Packaging and distribution | Phase 13 | Developers and self-hosted operators have one documented install/setup path | `penpot-cli` build/install and MCP gateway setup are documented and repeatable |
+| F19 | done | File open and bind handoff | Phase 12 | Agents can move cleanly between headless edits and visual workspace binding | Completed 2026-06-16; D1/P12.1 defined the UX and command contract, D2/P12.2 added shared CLI/MCP `file.open` handoff responses, D3/P12.3 added dashboard/settings context visibility, and D4/P12.4 added live-only bind guidance |
+| F20 | in_progress | Packaging and distribution | Phase 13 | Developers and self-hosted operators have one documented install/setup path | Next acceptance target is P13.1: document the `penpot-cli` build/install strategy and package boundary |
 | F21 | todo | Release verification matrix | Phase 14 | Critical MCP/CLI flows have repeatable checks | Config, global connect, bind, headless edit, and export smoke flows run or have documented manual fallback |
 
 ## Detailed Upcoming Task Queue
@@ -171,7 +173,7 @@ complete as of 2026-06-15.
 | D1 | Define handoff UX and command contract | `mcp/docs`, `frontend`, `penpot-cli` | Completed 2026-06-16; user-facing flow covers create/find file, open URL, bind context, live-only tool guidance, and release | `mcp/docs/file-open-bind-handoff.md` links dashboard/settings/workspace/CLI/MCP states and defines URL, response, and error contracts |
 | D2 | Add reliable CLI/MCP file open handoff | `penpot-cli`, `mcp`, `frontend` | Completed 2026-06-16; CLI/MCP return browser URLs plus handoff actions for target file/page and guide users to bind if needed | Shared URL helper plus command-runtime, MCP, and CLI tests cover URL generation and handoff payloads |
 | D3 | Show file context outside workspace | `frontend` | Completed 2026-06-16; dashboard/settings show current available/bound/stale/expired-token context enough for agents and users to orient | Frontend state tests cover unbound, available, bound, stale, and expired token states |
-| D4 | Add live-only bind guidance | `mcp`, `penpot-cli`, `frontend` | In progress; live-only tool errors include precise open/bind/retry actions | Structured `file_context_required` responses include actionable next steps |
+| D4 | Add live-only bind guidance | `mcp`, `mcp/docs` | Completed 2026-06-16; live-only tool errors include precise open/bind/retry actions | Structured `file_context_required` responses include target-aware `file.open`, handoff, bind, and retry metadata; unknown targets guide discovery through `file.list` and `file.get_recent` |
 
 ### Wave E: Package And Distribute
 
@@ -365,7 +367,7 @@ Goal: close the loop between headless automation and the visual editor.
 | P12.1 | done | Define file open/bind handoff UX | `mcp/docs`, `frontend`, `penpot-cli` | Completed 2026-06-16; plan covers dashboard, settings, workspace, CLI, and MCP actions | Added `mcp/docs/file-open-bind-handoff.md` with state machine, URL contract, MCP/CLI response shapes, live-only error contract, and verification targets |
 | P12.2 | done | Add reliable CLI/MCP file open actions | `penpot-cli`, `mcp`, `frontend` | Completed 2026-06-16; users receive a URL and handoff actions for opening the target file | Added shared URL/handoff helpers, MCP `file.open`, CLI `workspaceUrl`/`handoff` output, docs, and focused tests; browser URL fallback remains the supported local/remote path |
 | P12.3 | done | Show file context state outside workspace | `frontend` | Completed 2026-06-16; dashboard/settings can show available/bound/stale/expired-token context | Added shared frontend context summary, dashboard sidebar context status, settings diagnostics reuse, translations, and focused state tests; no workspace menu required to understand state |
-| P12.4 | in_progress | Add bind guidance for live-only tools | `mcp`, `frontend`, `penpot-cli` | Live-only tool errors include exact open/bind next actions | Preserve structured `file_context_required` responses |
+| P12.4 | done | Add bind guidance for live-only tools | `mcp`, `mcp/docs` | Completed 2026-06-16; live-only tool errors include exact open/bind next actions | Added target-aware `file_context_required` handoff payloads, inferred context targets, unknown-target discovery guidance, docs, and focused server tests |
 
 ## Phase 13: Packaging And Distribution
 
@@ -373,7 +375,7 @@ Goal: make the fork usable outside a developer checkout.
 
 | ID | Status | Task | Modules | Verification | Notes |
 | --- | --- | --- | --- | --- | --- |
-| P13.1 | todo | Define CLI build/install strategy | `penpot-cli`, docs | Install path and versioning decision are documented | Decide private fork package vs publishable package boundary |
+| P13.1 | in_progress | Define CLI build/install strategy | `penpot-cli`, docs | Install path and versioning decision are documented | Next active task: decide private fork package vs publishable package boundary |
 | P13.2 | todo | Package MCP plugin assets reliably | `frontend`, `mcp`, `docker` | Frontend build always contains matching plugin assets | Preserve protocol/version compatibility checks |
 | P13.3 | todo | Document self-hosted MCP gateway setup | `docker`, `mcp/docs`, `penpot-cli` | Operators can enable MCP with one documented path | Include built-in/custom/local mode guidance |
 | P13.4 | todo | Add migration notes for existing MCP users | docs, `CHANGES.md` | Existing token/profile/env behavior is explained | Cover users with only `:mcp-enabled` and no `:mcp-config` |
@@ -393,13 +395,14 @@ Goal: make critical MCP/CLI flows repeatable and safe to change.
 
 Use `mcp/docs/penpot-cli-overall-blueprint.md` as the current architecture
 baseline and the Detailed Upcoming Task Queue as the execution order. Continue
-with Wave D:
+with Wave E:
 
-1. Implement D4/P12.4 live-only bind guidance for `file_context_required`
-   errors, including open, inspect, bind, and retry actions.
-2. Keep page current/selection semantics in plugin-live until a backend-safe
-   representation is defined.
-3. Keep grid/full layout metadata in plugin-live until backend-command owns
-   tracks, cells, and related layout structures.
-4. Add focused bind guidance and live-only context error tests for the next
-   chosen slice.
+1. Implement E1/P13.1 CLI build/install strategy for `penpot-cli`, including
+   package name, binary name, versioning, private fork usage, and install
+   commands.
+2. Plan E2/P13.2 plugin asset packaging so frontend builds carry matching MCP
+   plugin assets and protocol/version metadata.
+3. Plan E3/P13.3 self-hosted MCP gateway setup docs for built-in, custom, and
+   local modes.
+4. Keep page current/selection semantics and grid/full layout metadata in
+   plugin-live until dedicated backend-safe representations are defined.

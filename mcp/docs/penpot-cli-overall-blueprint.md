@@ -311,13 +311,16 @@ Acceptance:
 
 ## Near-Term Priority
 
-The next implementation slice should continue Wave D:
+Wave D is complete. The next implementation slice should start Wave E:
 
-1. Add live-only bind guidance for `file_context_required` errors, including
-   open, inspect, bind, and retry actions.
-2. Keep page current/selection semantics in plugin-live until a backend-safe
+1. Define the CLI build/install strategy, including package name, binary name,
+   private fork usage, versioning, and local build commands.
+2. Package MCP plugin assets with frontend builds so the bundled plugin and
+   first-class MCP server stay protocol-compatible.
+3. Document self-hosted MCP gateway setup for built-in, custom, and local
+   modes.
+4. Keep page current/selection semantics in plugin-live until a backend-safe
    representation is defined.
-3. Add focused tests for bind guidance and live-only file-context errors.
 
 Keep manual configuration behavior stable while moving command metadata and
 envelopes; transport-specific formatting should stay at the MCP/CLI edges.

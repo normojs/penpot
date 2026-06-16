@@ -16,6 +16,8 @@ function context(): FileContextSnapshot {
         ownerTabId: "tab-1",
         fileId: "00000000-0000-0000-0000-000000000001",
         fileName: "Prototype",
+        pageId: "00000000-0000-0000-0000-000000000002",
+        teamId: "team-1",
         selectionIds: [],
         capabilities: ["shape.write"],
         updatedAt: "2026-06-11T00:00:00.000Z",
@@ -38,7 +40,17 @@ test("requireBoundFileContext returns structured file_context_required when unbo
     const body = parseJsonResponse(response);
     assert.equal(body.status, "error");
     assert.equal(body.error.code, FileContextErrorCodes.FILE_CONTEXT_REQUIRED);
-    assert.deepEqual(body.error.actions.slice(0, 2), ["file.get_context", "file.bind_context"]);
+    assert.deepEqual(body.error.actions, [
+        "file.list",
+        "file.get_recent",
+        "file.open",
+        "file.get_context",
+        "file.bind_context",
+        "retry_original_tool",
+    ]);
+    assert.equal(body.error.data.handoff, null);
+    assert.deepEqual(body.error.data.nextActions, body.error.actions);
+    assert.equal(body.error.data.retryTool, "export_shape");
 });
 
 test("requireBoundFileContext allows execution when a context is bound", () => {
@@ -62,6 +74,58 @@ test("requireBoundFileContext blocks file tools again after release", () => {
     assert.ok(response);
     const body = parseJsonResponse(response);
     assert.equal(body.error.code, FileContextErrorCodes.FILE_CONTEXT_REQUIRED);
+});
+
+test("requireBoundFileContext includes file open handoff when an available context can identify the target", () => {
+    const registry = new FileContextRegistry();
+    registry.upsertContext("token-1", context());
+
+    const response = requireBoundFileContext(mcpServerWithRegistry(registry), "token-1", "shape.create_rect");
+    assert.ok(response);
+    const body = parseJsonResponse(response);
+
+    assert.deepEqual(body.error.actions, ["file.open", "file.get_context", "file.bind_context", "retry_original_tool"]);
+    assert.equal(body.error.data.handoff.status, "context_required");
+    assert.equal(
+        body.error.data.handoff.workspaceUrl,
+        "http://localhost:3449/#/workspace?file-id=00000000-0000-0000-0000-000000000001&team-id=team-1&page-id=00000000-0000-0000-0000-000000000002"
+    );
+    assert.deepEqual(body.error.data.handoff.nextActions, [
+        "open_workspace_url",
+        "file.get_context",
+        "file.bind_context",
+        "retry_original_tool",
+    ]);
+    assert.deepEqual(body.error.data.handoff.target, {
+        fileId: "00000000-0000-0000-0000-000000000001",
+        teamId: "team-1",
+        pageId: "00000000-0000-0000-0000-000000000002",
+    });
+    assert.equal(body.error.data.retryTool, "shape.create_rect");
+});
+
+test("requireBoundFileContext accepts explicit target guidance for live-only tools", () => {
+    const registry = new FileContextRegistry();
+
+    const response = requireBoundFileContext(mcpServerWithRegistry(registry), "token-1", "prototype.create_flow", {
+        publicUri: "https://penpot.example/",
+        target: {
+            fileId: "00000000-0000-0000-0000-000000000003",
+            pageId: "00000000-0000-0000-0000-000000000004",
+        },
+    });
+    assert.ok(response);
+    const body = parseJsonResponse(response);
+
+    assert.deepEqual(body.error.actions, ["file.open", "file.get_context", "file.bind_context", "retry_original_tool"]);
+    assert.equal(
+        body.error.data.handoff.workspaceUrl,
+        "https://penpot.example/#/workspace?file-id=00000000-0000-0000-0000-000000000003&page-id=00000000-0000-0000-0000-000000000004"
+    );
+    assert.deepEqual(body.error.data.handoff.target, {
+        fileId: "00000000-0000-0000-0000-000000000003",
+        pageId: "00000000-0000-0000-0000-000000000004",
+    });
 });
 
 test("requireBoundFileContext blocks file tools after plugin disconnect marks context stale", () => {

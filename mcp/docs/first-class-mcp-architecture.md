@@ -1096,6 +1096,18 @@ P12.3 implementation note:
   stale, and expired-token states are visible without opening the workspace
   menu.
 
+P12.4 implementation note:
+
+- `file_context_required` errors now include target-aware open, inspect, bind,
+  and retry guidance for live-only MCP tools.
+- When the server can identify a target from an explicit option or the current
+  token-scoped file-context summary, the error includes the same
+  `workspaceUrl` and `handoff` shape used by `file.open`, with
+  `status: "context_required"`.
+- When no target is known, the error keeps `handoff: null` and guides agents
+  through `file.list`, `file.get_recent`, `file.open`, `file.get_context`,
+  `file.bind_context`, and `retry_original_tool`.
+
 ## 6. User Configuration
 
 MCP settings should stay explicit and user-visible. P9.1 captured the current
@@ -1270,7 +1282,14 @@ message, and optional `actions`:
 {
   "code": "file_context_required",
   "message": "A Penpot file must be opened or bound before this tool can run.",
-  "actions": ["file.list", "file.open", "file.bind_context"]
+  "actions": [
+    "file.list",
+    "file.get_recent",
+    "file.open",
+    "file.get_context",
+    "file.bind_context",
+    "retry_original_tool"
+  ]
 }
 ```
 

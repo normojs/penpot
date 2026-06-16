@@ -26,9 +26,9 @@ The current implementation already has these pieces:
 | Dashboard sidebar | Shows the global MCP file-context state outside the editor when MCP is enabled or a context exists. |
 | Settings diagnostics | Shows connection, plugin, file context, logs, last error, refresh state, and token-expired handoff state. |
 
-The remaining handoff gap is live-only error guidance that tells both humans
-and agents exactly what to do when a headless command needs live workspace
-state.
+P12.4 completes the initial handoff loop: live-only error guidance now tells
+both humans and agents exactly what to do when a headless command needs live
+workspace state.
 
 ## Terms
 
@@ -101,13 +101,13 @@ stateDiagram-v2
 | Workspace menu | Remains the manual connect/bind/release control for the currently open file. | Existing, polish in P12.4 if needed |
 | MCP `file.open` | Returns the same `workspaceUrl` and `handoff` data as CLI, without claiming a bound context. | Completed in P12.2 |
 | CLI `file open` | Keeps script-friendly text/JSON output and adds handoff next actions without depending on MCP server internals. | Completed in P12.2 |
-| Live-only MCP errors | Should include precise open/bind/retry actions and target-aware `handoff` data. | P12.4 |
+| Live-only MCP errors | Include precise open/bind/retry actions and target-aware `handoff` data when the target file is known. | Completed in P12.4 |
 
 ## Command Contracts
 
 ### MCP `file.open`
 
-Planned request:
+Request:
 
 ```json
 {
@@ -119,7 +119,7 @@ Planned request:
 }
 ```
 
-Planned response:
+Response:
 
 ```json
 {
@@ -195,23 +195,50 @@ Live-only tools should use this shape when they cannot run:
       "retry_original_tool"
     ],
     "data": {
+      "fileContext": {
+        "status": "available",
+        "bound": false,
+        "boundContext": null,
+        "availableContexts": [],
+        "staleContexts": [],
+        "contextCount": 0
+      },
       "handoff": {
         "status": "context_required",
         "workspaceUrl": "https://penpot.example/#/workspace?file-id=...",
+        "requiresUserAction": true,
+        "nextActions": [
+          "open_workspace_url",
+          "file.get_context",
+          "file.bind_context",
+          "retry_original_tool"
+        ],
         "target": {
           "fileId": "uuid?",
           "pageId": "uuid?"
-        },
-        "availableContexts": [],
-        "boundContext": null
-      }
+        }
+      },
+      "nextActions": [
+        "open_workspace_url",
+        "file.get_context",
+        "file.bind_context",
+        "retry_original_tool"
+      ],
+      "retryTool": "render.preview"
     }
   }
 }
 ```
 
-If the tool has no explicit file target, it should omit `workspaceUrl` and guide
-the agent to `file.list` or `file.get_recent`.
+If the tool has no explicit file target and no reported available/stale context
+can identify a file, the response omits the workspace URL by returning
+`handoff: null`; `actions` and `nextActions` then guide the agent through
+`file.list`, `file.get_recent`, `file.open`, `file.get_context`,
+`file.bind_context`, and `retry_original_tool`.
+
+When a tool call does not carry an explicit target, the server may infer the
+target from the current token-scoped file-context summary in this order:
+`boundContext`, first `availableContexts`, then first `staleContexts`.
 
 ## Status Mapping
 
@@ -237,9 +264,11 @@ P12.3 proves:
 - Dashboard/settings can distinguish unbound, available, bound, stale, and
   token-expired states without opening the workspace menu.
 
-P12.4 should prove:
+P12.4 proves:
 
 - `file_context_required` includes `file.open`, `file.get_context`,
   `file.bind_context`, and `retry_original_tool` when a target is known.
-- Live-only errors include a workspace URL when the tool call contains enough
-  target data.
+- Live-only errors include a workspace URL when the tool call or reported
+  context contains enough target data.
+- Unknown-target errors keep the discovery path explicit with `file.list`,
+  `file.get_recent`, `file.open`, inspect, bind, and retry actions.

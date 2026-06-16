@@ -67,6 +67,7 @@
 - Document the file open/bind handoff UX and command contract for moving from headless MCP/CLI edits into live workspace binding.
 - Add shared `file.open` workspace URL and handoff payload generation for MCP and `penpot-cli`.
 - Add dashboard and Integrations settings MCP file-context visibility for unbound, available, bound, stale, and expired-token handoff states.
+- Add target-aware `file_context_required` guidance for live-only MCP tools, including file open URLs, bind steps, and retry metadata.
 - Add rate limiting and concurrency safety for file snapshot operations [#9723](https://github.com/penpot/penpot/issues/9723) (PR: [#9722](https://github.com/penpot/penpot/pull/9722))
 - Prevent concurrent font uploads from causing excessive simultaneous requests [#9922](https://github.com/penpot/penpot/issues/9922) (PR: [#9921](https://github.com/penpot/penpot/pull/9921))
 
