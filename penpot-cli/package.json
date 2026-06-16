@@ -10,6 +10,7 @@
   "scripts": {
     "build": "tsc",
     "clean": "rm -rf dist",
+    "install:check": "pnpm run build && node dist/index.js --help",
     "lint": "pnpm run types:check",
     "smoke:help": "pnpm run build && node dist/index.js --help",
     "test": "pnpm run build && node --test test/*.test.mjs",

@@ -280,12 +280,14 @@ Purpose: make the fork usable outside a developer checkout.
 
 Tasks:
 
-- Define how `penpot-cli` is built, versioned, and installed.
+- Done in P13.1: define how `penpot-cli` is built, versioned, and installed
+  from a private fork checkout while workspace dependencies remain internal.
 - Package MCP plugin assets reliably with frontend builds.
 - Document Docker/self-hosted MCP gateway setup.
 - Add release notes and migration guidance for existing MCP users.
-- Decide whether CLI remains private during fork development or gets a
-  publishable package boundary.
+- Keep the CLI private during fork development until `@penpot/command-runtime`
+  is bundled, published with compatible versions, or shipped in a documented
+  release archive layout.
 
 Acceptance:
 
@@ -311,15 +313,14 @@ Acceptance:
 
 ## Near-Term Priority
 
-Wave D is complete. The next implementation slice should start Wave E:
+Wave D is complete and P13.1 has defined the CLI install path. The next
+implementation slice should continue Wave E:
 
-1. Define the CLI build/install strategy, including package name, binary name,
-   private fork usage, versioning, and local build commands.
-2. Package MCP plugin assets with frontend builds so the bundled plugin and
+1. Package MCP plugin assets with frontend builds so the bundled plugin and
    first-class MCP server stay protocol-compatible.
-3. Document self-hosted MCP gateway setup for built-in, custom, and local
+2. Document self-hosted MCP gateway setup for built-in, custom, and local
    modes.
-4. Keep page current/selection semantics in plugin-live until a backend-safe
+3. Keep page current/selection semantics in plugin-live until a backend-safe
    representation is defined.
 
 Keep manual configuration behavior stable while moving command metadata and

@@ -1108,6 +1108,20 @@ P12.4 implementation note:
   through `file.list`, `file.get_recent`, `file.open`, `file.get_context`,
   `file.bind_context`, and `retry_original_tool`.
 
+P13.1 build/install decision:
+
+- `penpot-cli` remains a private top-level workspace package with package name
+  `penpot-cli` and binary name `penpot-cli`.
+- The supported install path is a private fork checkout: run `pnpm install`
+  and `pnpm cli:install-check`, or build and link the workspace package with
+  `pnpm --dir penpot-cli link --global` for repeated local use.
+- The CLI package version stays independent from the Penpot product version;
+  fork releases tie product and CLI behavior together through git tags and
+  changelog entries.
+- Standalone tarballs or npm publishing are deferred until
+  `@penpot/command-runtime` is bundled, published with compatible versions, or
+  shipped in a documented release archive layout.
+
 ## 6. User Configuration
 
 MCP settings should stay explicit and user-visible. P9.1 captured the current

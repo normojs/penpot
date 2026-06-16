@@ -5,7 +5,9 @@ and automation work. It lives at the top level of the Penpot monorepo because it
 coordinates frontend, backend, exporter, MCP, and future shared command runtime
 surfaces.
 
-The current package is private and intended for local development.
+The current package is private and intended for private fork checkout usage.
+It is not published as a standalone npm package yet because it depends on the
+workspace `@penpot/command-runtime` package.
 
 ## Quick Start
 
@@ -22,12 +24,48 @@ Useful root shortcuts:
 ```bash
 pnpm cli:build
 pnpm cli:help
+pnpm cli:install-check
 pnpm --filter penpot-cli types:check
 pnpm --filter penpot-cli lint
 ```
 
 During development, rebuild before using `node penpot-cli/dist/index.js` if
 `penpot-cli/src/index.ts` has changed.
+
+## Build And Install Strategy
+
+Current packaging decisions:
+
+| Topic | Decision |
+| --- | --- |
+| Package name | `penpot-cli` |
+| Binary name | `penpot-cli` |
+| Package visibility | Private workspace package; no npm publish yet |
+| Versioning | CLI package semver is independent from the Penpot product version; fork releases are tied together by git tag and changelog |
+| Supported install path | Private checkout build or workspace global link |
+
+Fresh checkout verification:
+
+```bash
+pnpm install
+pnpm cli:install-check
+```
+
+Local workspace link for repeated terminal use:
+
+```bash
+pnpm --filter penpot-cli build
+pnpm --dir penpot-cli link --global
+penpot-cli --help
+```
+
+Do not treat `pnpm pack`, `npm publish`, or a copied `dist/` directory as a
+supported artifact yet. Standalone packaging should wait until
+`@penpot/command-runtime` is bundled, published with compatible versions, or
+shipped in a documented release archive layout.
+
+The full packaging decision is tracked in
+`mcp/docs/penpot-cli-build-install-strategy.md`.
 
 ## MCP Diagnostics
 
@@ -315,4 +353,5 @@ pnpm --filter penpot-cli lint
 pnpm --filter penpot-cli build
 pnpm --filter penpot-cli test
 pnpm --filter penpot-cli smoke:help
+pnpm cli:install-check
 ```

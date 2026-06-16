@@ -14,6 +14,7 @@
     "cli": "pnpm --filter penpot-cli",
     "cli:build": "pnpm --filter penpot-cli build",
     "cli:help": "pnpm --filter penpot-cli smoke:help",
+    "cli:install-check": "pnpm --filter penpot-cli install:check",
     "lint": "./scripts/lint",
     "check-fmt": "./scripts/check-fmt",
     "fmt": "./scripts/fmt"

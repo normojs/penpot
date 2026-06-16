@@ -86,7 +86,7 @@ complete: dashboard/settings now expose the current MCP file-context state
 outside the workspace menu. D4/P12.4 is complete: live-only
 `file_context_required` errors now include target-aware open, inspect, bind,
 and retry guidance. Phase 12 file open/bind handoff is complete; current active
-work moves to P13.1 CLI build/install strategy.
+work moves to P13.2 MCP plugin asset packaging.
 
 ## Feature Roadmap
 
@@ -114,7 +114,7 @@ remain the execution plan.
 | F17 | done | Shared command descriptors | Phase 10 | MCP and CLI expose the same command catalog and internal result envelope from one runtime layer | Completed 2026-06-15; descriptors, envelopes, centralized adapter errors, and runtime tests cover status/config/file/page plus shape/export/render commands |
 | F18 | done | Expanded headless authoring | Phase 11 | Scripts and agents can create richer prototypes without a live workspace | Completed 2026-06-15; P11.1 page rename, P11.2 style/hierarchy/layout updates, P11.3 image/media insertion, P11.4 prototype helpers, and P11.5 exporter-backed previews are complete for explicit supported targets |
 | F19 | done | File open and bind handoff | Phase 12 | Agents can move cleanly between headless edits and visual workspace binding | Completed 2026-06-16; D1/P12.1 defined the UX and command contract, D2/P12.2 added shared CLI/MCP `file.open` handoff responses, D3/P12.3 added dashboard/settings context visibility, and D4/P12.4 added live-only bind guidance |
-| F20 | in_progress | Packaging and distribution | Phase 13 | Developers and self-hosted operators have one documented install/setup path | Next acceptance target is P13.1: document the `penpot-cli` build/install strategy and package boundary |
+| F20 | in_progress | Packaging and distribution | Phase 13 | Developers and self-hosted operators have one documented install/setup path | P13.1 documented the private-checkout `penpot-cli` build/install strategy; next acceptance target is P13.2 plugin asset packaging |
 | F21 | todo | Release verification matrix | Phase 14 | Critical MCP/CLI flows have repeatable checks | Config, global connect, bind, headless edit, and export smoke flows run or have documented manual fallback |
 
 ## Detailed Upcoming Task Queue
@@ -179,7 +179,7 @@ complete as of 2026-06-15.
 
 | Order | Task | Modules | Output | Verification |
 | --- | --- | --- | --- | --- |
-| E1 | Define CLI build/install strategy | `penpot-cli`, root docs | Decision covers private fork usage, package naming, binary name, versioning, and install commands | Fresh checkout can build and run `penpot-cli --help` |
+| E1 | Define CLI build/install strategy | `penpot-cli`, root docs | Completed 2026-06-16; private checkout/workspace-link usage, package name, binary name, versioning, and install commands are documented | `pnpm cli:install-check` builds and runs the CLI help entry point |
 | E2 | Package MCP plugin assets with frontend builds | `frontend`, `mcp/packages/plugin`, `docker` | Frontend build includes matching MCP plugin assets and version metadata | Plugin build, frontend asset path check, and Docker gateway docs pass |
 | E3 | Document self-hosted MCP gateway setup | `docker`, `mcp/docs`, `penpot-cli` | Operators can enable built-in/custom/local MCP with one documented path | Docs cover env vars, ports, reverse proxy paths, tokens, and diagnostics |
 | E4 | Add migration notes for existing MCP users | docs, `CHANGES.md` | Existing token/profile/env behavior and new settings are explained | Release notes cover users with only `:mcp-enabled` and no `:mcp-config` |
@@ -375,8 +375,8 @@ Goal: make the fork usable outside a developer checkout.
 
 | ID | Status | Task | Modules | Verification | Notes |
 | --- | --- | --- | --- | --- | --- |
-| P13.1 | in_progress | Define CLI build/install strategy | `penpot-cli`, docs | Install path and versioning decision are documented | Next active task: decide private fork package vs publishable package boundary |
-| P13.2 | todo | Package MCP plugin assets reliably | `frontend`, `mcp`, `docker` | Frontend build always contains matching plugin assets | Preserve protocol/version compatibility checks |
+| P13.1 | done | Define CLI build/install strategy | `penpot-cli`, docs | Completed 2026-06-16; install path and versioning decision are documented | Added private-checkout build/install strategy, root install check script, workspace-link guidance, and publishable-package prerequisites |
+| P13.2 | in_progress | Package MCP plugin assets reliably | `frontend`, `mcp`, `docker` | Frontend build always contains matching plugin assets | Next active task: preserve protocol/version compatibility checks while bundling plugin assets |
 | P13.3 | todo | Document self-hosted MCP gateway setup | `docker`, `mcp/docs`, `penpot-cli` | Operators can enable MCP with one documented path | Include built-in/custom/local mode guidance |
 | P13.4 | todo | Add migration notes for existing MCP users | docs, `CHANGES.md` | Existing token/profile/env behavior is explained | Cover users with only `:mcp-enabled` and no `:mcp-config` |
 
@@ -397,12 +397,9 @@ Use `mcp/docs/penpot-cli-overall-blueprint.md` as the current architecture
 baseline and the Detailed Upcoming Task Queue as the execution order. Continue
 with Wave E:
 
-1. Implement E1/P13.1 CLI build/install strategy for `penpot-cli`, including
-   package name, binary name, versioning, private fork usage, and install
-   commands.
-2. Plan E2/P13.2 plugin asset packaging so frontend builds carry matching MCP
+1. Implement E2/P13.2 plugin asset packaging so frontend builds carry matching MCP
    plugin assets and protocol/version metadata.
-3. Plan E3/P13.3 self-hosted MCP gateway setup docs for built-in, custom, and
+2. Plan E3/P13.3 self-hosted MCP gateway setup docs for built-in, custom, and
    local modes.
-4. Keep page current/selection semantics and grid/full layout metadata in
+3. Keep page current/selection semantics and grid/full layout metadata in
    plugin-live until dedicated backend-safe representations are defined.
