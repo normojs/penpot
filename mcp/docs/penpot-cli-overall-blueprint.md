@@ -311,8 +311,9 @@ Tasks:
 - Done in P14.2: add a focused headless edit/export smoke flow covering
   file/page/shape creation, shape update, adapter diagnostics, exporter
   dry-runs, and artifact output without a live workspace.
-- Add an end-to-end smoke flow for file binding and live-only plugin-backed
-  operations.
+- Done in P14.3: add a focused live bind smoke flow covering file open
+  handoff, context inspection, context binding, plugin-live page switching,
+  release, stale recovery, and multi-tab owner behavior.
 - Add CI-friendly TypeScript, Clojure, ClojureScript, and smoke commands.
 - Track locally blocked Clojure tooling separately from product failures.
 - Add compatibility checks for old MCP clients and existing profile props.
@@ -327,14 +328,16 @@ Acceptance:
 Wave D and Wave E are complete. P13.1 has defined the CLI install path, P13.2
 packages the bundled MCP plugin with metadata, P13.3 documents the self-hosted
 gateway setup, and P13.4 documents migration guidance for existing MCP users.
-P14.1 documents the config/global connection release-verification flow, and
-P14.2 documents the headless edit/export release-verification flow. The next
-implementation slice should continue Wave F:
+P14.1 documents the config/global connection release-verification flow, P14.2
+documents the headless edit/export release-verification flow, and P14.3
+documents the live bind release-verification flow. The next implementation
+slice should continue Wave F:
 
-1. Add a live bind smoke flow covering file open handoff, context binding,
-   plugin-live command execution, context release, and multi-tab owner behavior.
+1. Normalize CI-friendly check commands for TypeScript, Clojure,
+   ClojureScript, backend, frontend, MCP, CLI, and smoke flows.
 2. Keep page current/selection semantics in plugin-live until a backend-safe
-   representation is defined.
+   representation is defined, and keep missing local tools separate from
+   product failures in release evidence.
 
 Keep manual configuration behavior stable while moving command metadata and
 envelopes; transport-specific formatting should stay at the MCP/CLI edges.

@@ -30,6 +30,9 @@ P12.4 completes the initial handoff loop: live-only error guidance now tells
 both humans and agents exactly what to do when a headless command needs live
 workspace state.
 
+For the release-verification flow that exercises this handoff end to end, see
+[`live-bind-smoke-flow.md`](live-bind-smoke-flow.md).
+
 ## Terms
 
 | Term | Meaning |

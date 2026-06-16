@@ -10,6 +10,8 @@ background connection lifecycle, see
 For the focused release check of headless file/page/shape edits and exporter
 artifacts, see
 [`headless-edit-export-smoke-flow.md`](headless-edit-export-smoke-flow.md).
+For the focused release check of live workspace binding and plugin-live
+handoff, see [`live-bind-smoke-flow.md`](live-bind-smoke-flow.md).
 
 ## Automated Locally
 
@@ -66,8 +68,10 @@ assets to be running:
    create a file, create a page, create/update frame/rectangle/text shapes,
    dry-run preview/export requests, and write at least one artifact without
    opening or binding a workspace.
-7. Open a workspace, bind the file context from the workspace MCP menu, and
-   verify `file.get_context` reports the bound file and page.
+7. Run the live bind flow in
+   [`live-bind-smoke-flow.md`](live-bind-smoke-flow.md): open a workspace URL,
+   inspect and bind the available context, run a plugin-live command, release,
+   check stale recovery, and verify multi-tab owner behavior.
 8. With `PENPOT_MCP_REQUIRE_DESTRUCTIVE_CONFIRMATION=true`, verify
    `shape.delete` rejects the first call and succeeds only with
    `confirm: true`.

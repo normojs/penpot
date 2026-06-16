@@ -315,6 +315,26 @@ Documented verification decisions:
   snapshots, exporter dry-run payloads, artifact paths, byte-size checks, and a
   note confirming no workspace was opened or bound.
 
+### 3.6 Live Bind Smoke Flow (2026-06-16)
+
+P14.3 added
+[`live-bind-smoke-flow.md`](live-bind-smoke-flow.md) as the focused
+release-verification path for moving from headless/global MCP operation into a
+live workspace plugin context.
+
+Documented verification decisions:
+
+- `file.open` returns a browser URL and handoff actions, but never claims a
+  bound context.
+- `file.get_context`, `file.bind_context`, and `file.release_context` are the
+  required inspect, bind, and cleanup steps around plugin-live work.
+- `page.set_current` is the canonical smoke command because page current and
+  selection semantics remain live workspace state.
+- Releasing or staling the bound context must make the same live-only command
+  return structured `file_context_required` recovery guidance.
+- Multi-tab verification must preserve a single write-capable MCP owner and
+  make ownership switches observable through context state or UI diagnostics.
+
 ## 4. Target Architecture
 
 ```text

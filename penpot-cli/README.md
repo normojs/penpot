@@ -127,6 +127,11 @@ explicit-id flow that creates a file, page, frame, rectangle, and text shape,
 updates a shape, dry-runs preview/export requests, and writes output files
 without opening or binding a workspace.
 
+For release verification of the handoff from CLI/headless edits into a live
+workspace MCP context, see `mcp/docs/live-bind-smoke-flow.md`. It opens the
+workspace URL, binds the plugin-reported context, runs a plugin-live command,
+releases the context, and checks multi-tab ownership.
+
 ## Development Orchestration
 
 Preview the MCP-enabled local development plan:

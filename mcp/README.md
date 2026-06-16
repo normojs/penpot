@@ -204,6 +204,11 @@ It covers explicit-id MCP and CLI flows that create a file, create a page,
 create and update shapes, dry-run exporter requests, and write preview/export
 artifacts without opening or binding a workspace.
 
+For release verification of live workspace binding and plugin-live handoff, see
+[`docs/live-bind-smoke-flow.md`](docs/live-bind-smoke-flow.md). It covers
+`file.open`, `file.get_context`, `file.bind_context`, one plugin-live command,
+`file.release_context`, stale recovery, and multi-tab owner behavior.
+
 When running this package standalone outside the Penpot gateway, the server
 runs on port `4401` by default and provides:
 
