@@ -132,6 +132,11 @@ workspace MCP context, see `mcp/docs/live-bind-smoke-flow.md`. It opens the
 workspace URL, binds the plugin-reported context, runs a plugin-live command,
 releases the context, and checks multi-tab ownership.
 
+For CI-friendly checks before committing CLI, MCP, frontend, backend, packaging,
+or smoke-flow changes, see `mcp/docs/ci-friendly-check-commands.md`. It lists
+the exact commands and how to classify missing local tools separately from
+product failures.
+
 ## Development Orchestration
 
 Preview the MCP-enabled local development plan:

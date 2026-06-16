@@ -12,15 +12,20 @@ artifacts, see
 [`headless-edit-export-smoke-flow.md`](headless-edit-export-smoke-flow.md).
 For the focused release check of live workspace binding and plugin-live
 handoff, see [`live-bind-smoke-flow.md`](live-bind-smoke-flow.md).
+For the normalized CI-friendly command matrix across TypeScript, Clojure,
+ClojureScript, packaging, and smoke tiers, see
+[`ci-friendly-check-commands.md`](ci-friendly-check-commands.md).
 
 ## Automated Locally
 
-Run these checks before committing MCP or CLI behavior changes:
+Run these checks before committing MCP or CLI behavior changes. The full
+command matrix and failure-classification rules live in
+[`ci-friendly-check-commands.md`](ci-friendly-check-commands.md).
 
 ```bash
 pnpm --dir mcp --filter mcp-server types:check
 pnpm --dir mcp --filter mcp-server test
-pnpm --dir mcp fmt:check
+pnpm --dir mcp run fmt:check
 pnpm --filter penpot-cli types:check
 pnpm --filter penpot-cli lint
 pnpm --filter penpot-cli test
@@ -84,15 +89,15 @@ assets to be running:
 
 ## Currently Blocked Locally
 
-The local desktop environment used for this development pass can run the MCP
-and CLI TypeScript checks. Full frontend and backend regression commands remain
-blocked until the Clojure and frontend toolchain are available:
+When a local desktop environment can run MCP and CLI TypeScript checks but not
+full frontend/backend regression commands, classify the following as missing
+local tools rather than product failures until the command executes product code
+and fails:
 
 - `clojure`
 - `cljfmt`
 - `clj-kondo`
 - frontend `node_modules` / frontend formatter dependencies
 
-When those are available, pair the TypeScript checks with the existing
-frontend MCP lifecycle tests and backend focused RPC tests for the touched
-commands.
+When those are available, pair the TypeScript checks with the frontend MCP
+lifecycle tests and backend focused RPC tests for the touched commands.

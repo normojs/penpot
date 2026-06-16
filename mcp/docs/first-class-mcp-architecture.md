@@ -335,6 +335,32 @@ Documented verification decisions:
 - Multi-tab verification must preserve a single write-capable MCP owner and
   make ownership switches observable through context state or UI diagnostics.
 
+### 3.7 CI-Friendly Check Commands (2026-06-16)
+
+P14.4 added
+[`ci-friendly-check-commands.md`](ci-friendly-check-commands.md) as the
+normalized command matrix for release verification across TypeScript, Clojure,
+ClojureScript, packaging, and smoke-flow tiers.
+
+Documented verification decisions:
+
+- Every change starts with `git diff --check`; docs changes that add release
+  links also run a focused `rg` discovery check.
+- MCP TypeScript checks are split into format, package-level type checks,
+  server tests, plugin asset package/check commands, and full workspace build
+  commands.
+- `penpot-cli` checks cover typecheck, tests, help smoke, build, and private
+  checkout install verification.
+- Backend and frontend commands are documented with their required working
+  directories, including focused backend Kaocha tests and frontend CLJS, JS,
+  and SCSS lint/format tiers.
+- Missing local tools, dependencies, browser automation, or unavailable running
+  services are classified separately from product failures until product code
+  actually executes and fails.
+- The matrix defines suggested CI profiles for docs-only, TypeScript
+  no-service, frontend CLJS, backend JVM, packaging, and running-stack smoke
+  jobs.
+
 ## 4. Target Architecture
 
 ```text

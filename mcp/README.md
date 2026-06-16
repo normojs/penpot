@@ -209,6 +209,12 @@ For release verification of live workspace binding and plugin-live handoff, see
 `file.open`, `file.get_context`, `file.bind_context`, one plugin-live command,
 `file.release_context`, stale recovery, and multi-tab owner behavior.
 
+For CI-friendly release checks across MCP, `penpot-cli`, frontend, backend,
+packaging, and smoke flows, see
+[`docs/ci-friendly-check-commands.md`](docs/ci-friendly-check-commands.md). It
+lists exact commands and the failure-classification rules for separating missing
+local tools from product failures.
+
 When running this package standalone outside the Penpot gateway, the server
 runs on port `4401` by default and provides:
 
