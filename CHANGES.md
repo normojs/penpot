@@ -69,6 +69,7 @@
 - Add dashboard and Integrations settings MCP file-context visibility for unbound, available, bound, stale, and expired-token handoff states.
 - Add target-aware `file_context_required` guidance for live-only MCP tools, including file open URLs, bind steps, and retry metadata.
 - Document the private-checkout `penpot-cli` build/install strategy, including package naming, binary naming, versioning, workspace-link usage, and install verification.
+- Package bundled MCP plugin assets with metadata and verification commands for frontend release builds.
 - Add rate limiting and concurrency safety for file snapshot operations [#9723](https://github.com/penpot/penpot/issues/9723) (PR: [#9722](https://github.com/penpot/penpot/pull/9722))
 - Prevent concurrent font uploads from causing excessive simultaneous requests [#9922](https://github.com/penpot/penpot/issues/9922) (PR: [#9921](https://github.com/penpot/penpot/pull/9921))
 

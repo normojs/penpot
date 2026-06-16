@@ -1,9 +1,13 @@
 import { defineConfig } from "vite";
 import livePreview from "vite-live-preview";
 import { createRequire } from "module";
+import fs from "node:fs";
+import path from "node:path";
+import { fileURLToPath } from "node:url";
 
 const require = createRequire(import.meta.url);
 const rootPkg = require("../../package.json");
+const pluginDir = path.dirname(fileURLToPath(import.meta.url));
 
 const MCP_PUBLIC_URI = process.env.PENPOT_MCP_PUBLIC_URI;
 
@@ -16,14 +20,25 @@ function buildMcpPublicUrl(path: string): string | undefined {
     return new URL(`mcp/${path}`, baseUrl).toString();
 }
 
+function readMcpProtocolVersion(): string {
+    const content = fs.readFileSync(path.resolve(pluginDir, "../common/src/types.ts"), "utf8");
+    const match = content.match(/export const MCP_PROTOCOL_VERSION = "([^"]+)";/);
+    if (!match) {
+        throw new Error("Unable to find MCP_PROTOCOL_VERSION in mcp/packages/common/src/types.ts");
+    }
+    return match[1];
+}
+
 const WS_URI =
     process.env.PENPOT_MCP_WEBSOCKET_URI || process.env.WS_URI || buildMcpPublicUrl("ws") || "http://localhost:4402";
 const SERVER_HOST = process.env.PENPOT_MCP_PLUGIN_SERVER_HOST ?? "localhost";
 const MCP_VERSION = JSON.stringify(rootPkg.version);
+const MCP_PROTOCOL_VERSION = JSON.stringify(readMcpProtocolVersion());
 
 console.log("PENPOT_MCP_PUBLIC_URI:", JSON.stringify(MCP_PUBLIC_URI));
 console.log("PENPOT_MCP_WEBSOCKET_URL:", JSON.stringify(WS_URI));
 console.log("PENPOT_MCP_VERSION:", MCP_VERSION);
+console.log("PENPOT_MCP_PROTOCOL_VERSION:", MCP_PROTOCOL_VERSION);
 
 export default defineConfig({
     base: "./",
@@ -57,5 +72,6 @@ export default defineConfig({
     define: {
         PENPOT_MCP_WEBSOCKET_URL: JSON.stringify(WS_URI),
         PENPOT_MCP_VERSION: MCP_VERSION,
+        PENPOT_MCP_PROTOCOL_VERSION: MCP_PROTOCOL_VERSION,
     },
 });

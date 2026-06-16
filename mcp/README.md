@@ -265,7 +265,8 @@ This repository is a monorepo containing four main components:
 3. **Penpot MCP Plugin** (`packages/plugin/`):
     - Connects to the MCP server via WebSocket
     - Executes tasks in Penpot using the Plugin API
-    - Sends structured responses back to the server#
+    - Sends structured responses back to the server
+    - Builds the bundled plugin assets served by Penpot at `/plugins/mcp/manifest.json`
 
 4. **Types Generator** (`types-generator/`):
     - Generates data on API types for the MCP server (development use)
@@ -304,6 +305,40 @@ The Penpot MCP server can be configured using environment variables.
 | `PENPOT_MCP_PUBLIC_URI`                   | Public Penpot base used to derive `/mcp/ws` for built-in/gateway deployments            | (unset)      |
 | `PENPOT_MCP_WEBSOCKET_URI`                | Explicit public WebSocket URL for the MCP plugin                                        | (unset)      |
 | `WS_URI`                                  | Legacy explicit WebSocket URL for local plugin builds                                   | `http://localhost:4402` |
+
+### Built-in Plugin Asset Packaging
+
+Local development can serve the MCP plugin from the Vite plugin server at
+`http://localhost:4400/manifest.json`. Built-in Penpot deployments instead
+serve the bundled plugin from the frontend static asset tree:
+
+```text
+/plugins/mcp/manifest.json
+```
+
+The source build lives in `packages/plugin/dist/`. The packaging helper
+`scripts/package-plugin-assets.mjs` validates the plugin bundle, writes
+`mcp-plugin.json` metadata, and copies the bundle into the frontend public
+assets or release bundle.
+
+From the repository root:
+
+```bash
+pnpm mcp:plugin:package
+pnpm mcp:plugin:check
+```
+
+From `mcp/`:
+
+```bash
+pnpm run plugin:package
+pnpm run plugin:check
+```
+
+The metadata file records MCP package version, plugin package version, protocol
+version, manifest version, code entry point, and icon. The frontend production
+build also uses this packaging helper so Docker/static frontend bundles contain
+matching MCP plugin assets.
 
 ### Status Endpoint
 
@@ -377,6 +412,11 @@ you may set the following environment variables to configure the two servers
   - Ensure that at least the major, minor and patch components of the version are always up-to-date.
   - The MCP plugin assumes that a mismatch between the MCP version and the Penpot version (as returned by the API)
     indicates incompatibility, resulting in the display of a warning message in the plugin UI.
+* Built-in plugin packaging:
+  - `pnpm run plugin:package` builds the MCP plugin and copies checked assets to
+    `../frontend/resources/public/plugins/mcp`.
+  - `pnpm run plugin:check` verifies the packaged plugin assets and
+    `mcp-plugin.json` metadata without rebuilding.
 * Packaging and publishing:
   1. Ensure release version is set correctly in package.json (call `bash scripts/set-version` to update it automatically)
   2. Create npm package: `bash scripts/pack` (creates `penpot-mcp-<version>.tgz` for publishing)

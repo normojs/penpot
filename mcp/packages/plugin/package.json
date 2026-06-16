@@ -6,7 +6,9 @@
   "scripts": {
     "start": "vite build --watch --config vite.config.ts",
     "start:multi-user": "pnpm run start",
-    "build": "tsc && vite build --config vite.release.config.ts",
+    "build": "tsc && vite build --config vite.release.config.ts && node ../../scripts/package-plugin-assets.mjs metadata",
+    "package:frontend": "pnpm run build && node ../../scripts/package-plugin-assets.mjs package",
+    "check:frontend": "node ../../scripts/package-plugin-assets.mjs check",
     "types:check": "tsc --noEmit",
     "clean": "rm -rf dist/"
   },

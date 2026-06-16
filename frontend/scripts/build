@@ -47,6 +47,5 @@ sed -i "s/\.\/render.js/.\/render.js?version=$VERSION_TAG/g" resources/public/js
 
 rsync -avr resources/public/ target/dist/
 
-# Include the MCP plugin on the bundle
-mkdir -p target/dist/plugins/mcp/;
-rsync -avr ../mcp/packages/plugin/dist/ target/dist/plugins/mcp/
+# Include the MCP plugin on the bundle with version metadata.
+node ../mcp/scripts/package-plugin-assets.mjs package --target target/dist/plugins/mcp

@@ -342,6 +342,12 @@ Supported modes:
 | MCP status | `http://localhost:3449/mcp/status` | MCP server `:4401/status` |
 | MCP plugin assets | `http://localhost:3449/plugins/mcp/manifest.json` | `mcp/packages/plugin/dist` |
 
+Release and Docker frontend bundles carry the same plugin under
+`/plugins/mcp/manifest.json`. The frontend production build packages the MCP
+plugin with `mcp/scripts/package-plugin-assets.mjs`, which writes
+`mcp-plugin.json` metadata and verifies `manifest.json`, `plugin.js`,
+`index.html`, and `icon.jpg` before copying assets into the bundle.
+
 Responsibilities:
 
 - Check required tools before starting: Docker for `devenv`, Node/pnpm and
@@ -366,6 +372,12 @@ status=http://localhost:3449/mcp/status
   - plugin manifest exists at `/plugins/mcp/manifest.json`
 - On failure, print the exact process or dependency that is missing instead of
   hiding the error.
+
+P13.2 implementation note: root commands `pnpm mcp:plugin:package` and
+`pnpm mcp:plugin:check` package and verify the bundled plugin outside the full
+frontend build. The metadata captures MCP package version, plugin package
+version, protocol version, manifest version, code entry point, and icon so
+version/protocol mismatches are visible before shipping the frontend bundle.
 
 Follow-up commands:
 
@@ -1907,6 +1919,19 @@ P10.1 planning note (2026-06-14):
   configuration/connection/file-context/command flows, delivery waves, and
   near-term priority queue.
 - This document remains the long-form historical architecture record.
+
+P13.2 implementation note (2026-06-16):
+
+- The bundled MCP plugin is now packaged through
+  `mcp/scripts/package-plugin-assets.mjs` instead of ad hoc frontend `rsync`
+  steps.
+- `mcp-plugin.json` is generated beside `manifest.json` and records package,
+  manifest, and protocol metadata for release verification.
+- The MCP plugin Vite build reads `MCP_PROTOCOL_VERSION` from
+  `packages/common/src/types.ts` and injects it into both plugin entry points.
+- Frontend release builds call the same packaging helper with
+  `--target target/dist/plugins/mcp`, so Docker/static frontend bundles expose
+  checked assets at `/plugins/mcp/manifest.json`.
 
 ## 10. Feature Backlog
 

@@ -60,7 +60,7 @@ type FileContextSnapshot = {
     updatedAt: string;
 };
 
-const MCP_PROTOCOL_VERSION = "1.0";
+const MCP_PROTOCOL_VERSION = PENPOT_MCP_PROTOCOL_VERSION;
 const MCP_PLUGIN_CAPABILITIES = [
     "file-context.read",
     "file-context.bind",
