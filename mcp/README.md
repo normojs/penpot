@@ -197,6 +197,13 @@ see
 It covers enablement, built-in/custom/local mode changes, auto-connect,
 manual connect/disconnect, status evidence, and disable.
 
+For release verification of headless file/page/shape edits and exporter
+artifacts, see
+[`docs/headless-edit-export-smoke-flow.md`](docs/headless-edit-export-smoke-flow.md).
+It covers explicit-id MCP and CLI flows that create a file, create a page,
+create and update shapes, dry-run exporter requests, and write preview/export
+artifacts without opening or binding a workspace.
+
 When running this package standalone outside the Penpot gateway, the server
 runs on port `4401` by default and provides:
 

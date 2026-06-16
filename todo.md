@@ -90,9 +90,10 @@ packaging and distribution is complete: P13.1 defined the private-checkout
 `penpot-cli` build/install path, P13.2 packages MCP plugin assets with metadata
 for frontend release bundles, P13.3 documented the self-hosted MCP gateway
 setup, and P13.4 documented migration notes for existing MCP users. P14.1
-documents the config/global connection smoke flow for release verification.
-Current active work moves to P14.2 headless edit/export smoke flow
-documentation.
+documents the config/global connection smoke flow for release verification, and
+P14.2 documents the headless edit/export smoke flow for file/page/shape edits
+and exporter artifact output without a live workspace. Current active work
+moves to P14.3 live bind smoke flow documentation.
 
 ## Feature Roadmap
 
@@ -121,7 +122,7 @@ remain the execution plan.
 | F18 | done | Expanded headless authoring | Phase 11 | Scripts and agents can create richer prototypes without a live workspace | Completed 2026-06-15; P11.1 page rename, P11.2 style/hierarchy/layout updates, P11.3 image/media insertion, P11.4 prototype helpers, and P11.5 exporter-backed previews are complete for explicit supported targets |
 | F19 | done | File open and bind handoff | Phase 12 | Agents can move cleanly between headless edits and visual workspace binding | Completed 2026-06-16; D1/P12.1 defined the UX and command contract, D2/P12.2 added shared CLI/MCP `file.open` handoff responses, D3/P12.3 added dashboard/settings context visibility, and D4/P12.4 added live-only bind guidance |
 | F20 | done | Packaging and distribution | Phase 13 | Developers and self-hosted operators have one documented install/setup path | Completed 2026-06-16; P13.1 documented private-checkout `penpot-cli` build/install, P13.2 packages MCP plugin assets, P13.3 documents self-hosted gateway setup, and P13.4 documents existing-user migration |
-| F21 | in_progress | Release verification matrix | Phase 14 | Critical MCP/CLI flows have repeatable checks | Current acceptance target is P14.2 headless edit/export smoke flow with documented manual fallback |
+| F21 | in_progress | Release verification matrix | Phase 14 | Critical MCP/CLI flows have repeatable checks | Current acceptance target is P14.3 live bind smoke flow with documented multi-tab owner behavior |
 
 ## Detailed Upcoming Task Queue
 
@@ -195,8 +196,8 @@ complete as of 2026-06-15.
 | Order | Task | Modules | Output | Verification |
 | --- | --- | --- | --- | --- |
 | F1 | Add config/global connection smoke flow | `frontend`, `mcp`, `penpot-cli` | Completed 2026-06-16; repeatable flow covers enable, mode change, auto-connect off/on, manual connect, status, and disable | Documented automated/static checks, running-stack checks, manual UI fallback, completion evidence, and common failure recovery |
-| F2 | Add headless edit/export smoke flow | `backend`, `mcp`, `penpot-cli`, `exporter` | In progress; one flow creates file/page/shapes and exports a useful artifact without live workspace context | CLI/MCP commands return expected adapter diagnostics and artifact output |
-| F3 | Add live bind smoke flow | `frontend`, `mcp` | Flow opens file, binds context, runs plugin-live command, releases context, and checks multi-tab behavior | Smoke docs preserve single write-capable owner tab rules |
+| F2 | Add headless edit/export smoke flow | `backend`, `mcp`, `penpot-cli`, `exporter` | Completed 2026-06-16; one flow creates file/page/shapes, updates a shape, dry-runs exporter requests, and writes artifact output without live workspace context | CLI/MCP commands return expected backend-command/exporter adapter diagnostics and artifact evidence |
+| F3 | Add live bind smoke flow | `frontend`, `mcp` | In progress; flow opens file, binds context, runs plugin-live command, releases context, and checks multi-tab behavior | Smoke docs preserve single write-capable owner tab rules |
 | F4 | Normalize CI-friendly check commands | root, `frontend`, `backend`, `mcp`, `penpot-cli` | Exact commands for TS, CLJ, CLJS, backend, frontend, MCP, CLI, and smoke flows are documented | Local missing-tool failures are separated from product failures |
 
 ## Phase 0: Baseline, Planning, And Rules
@@ -393,8 +394,8 @@ Goal: make critical MCP/CLI flows repeatable and safe to change.
 | ID | Status | Task | Modules | Verification | Notes |
 | --- | --- | --- | --- | --- | --- |
 | P14.1 | done | Add config/global connection smoke flow | `frontend`, `mcp`, `penpot-cli` | Manual or automated flow covers enable, connect, status, disable | Completed 2026-06-16 in `mcp/docs/config-global-connection-smoke-flow.md`; accounts for local Clojure tooling gaps |
-| P14.2 | in_progress | Add headless edit/export smoke flow | `backend`, `mcp`, `penpot-cli`, `exporter` | Create file/page/shape and export artifact in one flow | Prefer commands that can run without a live workspace |
-| P14.3 | todo | Add live bind smoke flow | `frontend`, `mcp` | Open file, bind context, run live-only command, release | Preserve multi-tab owner behavior |
+| P14.2 | done | Add headless edit/export smoke flow | `backend`, `mcp`, `penpot-cli`, `exporter` | Completed 2026-06-16; create file/page/shapes, update a shape, dry-run exporter requests, and export artifact in one flow | Added `mcp/docs/headless-edit-export-smoke-flow.md`; uses explicit ids and requires no live workspace |
+| P14.3 | in_progress | Add live bind smoke flow | `frontend`, `mcp` | Open file, bind context, run live-only command, release | Preserve multi-tab owner behavior |
 | P14.4 | todo | Normalize CI-friendly check commands | root, `frontend`, `backend`, `mcp`, `penpot-cli` | Document exact commands for TS, CLJ, CLJS, and smoke checks | Separate missing local tools from product failures |
 
 ## Next Recommended Sprint
@@ -403,8 +404,8 @@ Use `mcp/docs/penpot-cli-overall-blueprint.md` as the current architecture
 baseline and the Detailed Upcoming Task Queue as the execution order. Continue
 with Wave F:
 
-1. Add P14.2 headless edit/export smoke flow documentation covering file/page
-   creation, shape edits, adapter diagnostics, artifact output, and no live
-   workspace dependency.
+1. Add P14.3 live bind smoke flow documentation covering file open handoff,
+   context binding, plugin-live command execution, context release, and
+   multi-tab owner behavior.
 2. Keep page current/selection semantics and grid/full layout metadata in
    plugin-live until dedicated backend-safe representations are defined.

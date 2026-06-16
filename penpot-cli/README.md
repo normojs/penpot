@@ -121,6 +121,12 @@ Mode defaults:
 For Docker and reverse-proxy setup details, see
 `mcp/docs/self-hosted-mcp-gateway.md`.
 
+For release verification of headless CLI/MCP editing and exporter artifacts,
+see `mcp/docs/headless-edit-export-smoke-flow.md`. It walks through a complete
+explicit-id flow that creates a file, page, frame, rectangle, and text shape,
+updates a shape, dry-runs preview/export requests, and writes output files
+without opening or binding a workspace.
+
 ## Development Orchestration
 
 Preview the MCP-enabled local development plan:

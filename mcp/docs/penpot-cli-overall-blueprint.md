@@ -308,8 +308,11 @@ Tasks:
 - Done in P14.1: add a focused config and global connection smoke flow covering
   enable, built-in/custom/local mode changes, auto-connect off/on, manual
   connect/disconnect, status evidence, and disable.
-- Add end-to-end smoke flows for file binding, CLI headless creation, and
-  export.
+- Done in P14.2: add a focused headless edit/export smoke flow covering
+  file/page/shape creation, shape update, adapter diagnostics, exporter
+  dry-runs, and artifact output without a live workspace.
+- Add an end-to-end smoke flow for file binding and live-only plugin-backed
+  operations.
 - Add CI-friendly TypeScript, Clojure, ClojureScript, and smoke commands.
 - Track locally blocked Clojure tooling separately from product failures.
 - Add compatibility checks for old MCP clients and existing profile props.
@@ -324,11 +327,12 @@ Acceptance:
 Wave D and Wave E are complete. P13.1 has defined the CLI install path, P13.2
 packages the bundled MCP plugin with metadata, P13.3 documents the self-hosted
 gateway setup, and P13.4 documents migration guidance for existing MCP users.
-P14.1 documents the config/global connection release-verification flow. The
-next implementation slice should continue Wave F:
+P14.1 documents the config/global connection release-verification flow, and
+P14.2 documents the headless edit/export release-verification flow. The next
+implementation slice should continue Wave F:
 
-1. Add a headless edit/export smoke flow covering file/page/shape creation,
-   adapter diagnostics, artifact output, and no live workspace dependency.
+1. Add a live bind smoke flow covering file open handoff, context binding,
+   plugin-live command execution, context release, and multi-tab owner behavior.
 2. Keep page current/selection semantics in plugin-live until a backend-safe
    representation is defined.
 

@@ -291,6 +291,30 @@ Documented verification decisions:
   tooling limitation when the CLI/static and manual evidence are still
   collected.
 
+### 3.5 Headless Edit And Export Smoke Flow (2026-06-16)
+
+P14.2 added
+[`headless-edit-export-smoke-flow.md`](headless-edit-export-smoke-flow.md)
+as the focused release-verification path for explicit-id authoring and
+exporter-backed artifact output without a live workspace context.
+
+Documented verification decisions:
+
+- The flow treats file/page/object ids as the source of truth and does not use
+  `file.open`, `file.bind_context`, workspace MCP controls, selection state, or
+  plugin-live execution.
+- CLI checks create a file, create a page, create frame/rectangle/text shapes,
+  update a shape, dry-run preview/export requests, and write at least one
+  artifact to disk.
+- MCP checks mirror the same command sequence through `file.create`,
+  `page.create`, `shape.create_*`, `shape.update`, `render.preview`, and
+  `export.page` where available.
+- Page and shape writes must report `backend-command` adapter diagnostics, and
+  preview/export calls must report `exporter` adapter diagnostics.
+- Completion evidence includes JSON command responses, adapter-selection
+  snapshots, exporter dry-run payloads, artifact paths, byte-size checks, and a
+  note confirming no workspace was opened or bound.
+
 ## 4. Target Architecture
 
 ```text

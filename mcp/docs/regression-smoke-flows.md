@@ -7,6 +7,9 @@ the focused unit tests in `mcp/packages/server/test` and the CLI smoke tests in
 For the focused release check of saved MCP configuration and the global
 background connection lifecycle, see
 [`config-global-connection-smoke-flow.md`](config-global-connection-smoke-flow.md).
+For the focused release check of headless file/page/shape edits and exporter
+artifacts, see
+[`headless-edit-export-smoke-flow.md`](headless-edit-export-smoke-flow.md).
 
 ## Automated Locally
 
@@ -29,7 +32,9 @@ The CLI smoke suite runs without a live Penpot deployment. It verifies:
 - derived MCP stream, SSE, WebSocket, status, and log configuration
 - `dev up --mcp --dry-run` service surface planning
 - `file open` workspace URL generation without claiming MCP context binding
+- backend-command page and shape creation/update paths with adapter diagnostics
 - exporter-backed `export page --dry-run` adapter selection and request payload
+- exporter-backed `render preview` dry-run and output write paths
 - structured adapter errors for unsupported export adapters
 - pre-RPC validation for empty `shape update` commands
 
@@ -56,11 +61,13 @@ assets to be running:
    reports a compatible plugin connection.
 5. From an authenticated session, run `team.list`, `project.list`, `file.list`,
    and `file.get_recent`.
-6. Open a workspace, bind the file context from the workspace MCP menu, and
+6. Run the headless edit/export flow in
+   [`headless-edit-export-smoke-flow.md`](headless-edit-export-smoke-flow.md):
+   create a file, create a page, create/update frame/rectangle/text shapes,
+   dry-run preview/export requests, and write at least one artifact without
+   opening or binding a workspace.
+7. Open a workspace, bind the file context from the workspace MCP menu, and
    verify `file.get_context` reports the bound file and page.
-7. Run `page.list`, `page.create`, `shape.create_frame`,
-   `shape.create_rect`, `shape.create_text`, `shape.update`, and
-   `shape.delete` with explicit backend-command targets.
 8. With `PENPOT_MCP_REQUIRE_DESTRUCTIVE_CONFIRMATION=true`, verify
    `shape.delete` rejects the first call and succeeds only with
    `confirm: true`.
