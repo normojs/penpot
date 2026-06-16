@@ -361,6 +361,25 @@ Documented verification decisions:
   no-service, frontend CLJS, backend JVM, packaging, and running-stack smoke
   jobs.
 
+### 3.8 Roadmap Reconciliation (2026-06-16)
+
+P15.1 reconciled the delivery tracker and the compact blueprint after the
+manual configuration, command runtime, headless authoring, handoff, packaging,
+and release-verification waves completed.
+
+Documented planning decisions:
+
+- P14 release verification is complete, including config/global connection,
+  headless edit/export, live bind, and CI-friendly check-command flows.
+- `todo.md` now keeps P15.2 as the only active phase task, and completed
+  capabilities are not marked active in the Feature Roadmap.
+- Wave B, Wave D, and Wave F blueprint language now describes completed work
+  instead of older transition tasks.
+- Remaining gaps are grouped for P15.2 as configuration convergence,
+  local orchestration and distribution hardening, live-only authoring
+  semantics, command coverage, and planned descriptors that should not be
+  exposed as executable commands until implemented.
+
 ## 4. Target Architecture
 
 ```text

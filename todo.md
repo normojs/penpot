@@ -96,9 +96,10 @@ and exporter artifact output without a live workspace, and P14.3 documents the
 live bind smoke flow for file open handoff, plugin-live execution, release,
 stale recovery, and multi-tab owner behavior. P14.4 documents CI-friendly
 check commands for TypeScript, Clojure, ClojureScript, packaging, and smoke
-tiers while separating missing local tools from product failures. Current
-active work moves to P15.1 roadmap status reconciliation before the next
-implementation wave expands product behavior again.
+tiers while separating missing local tools from product failures. P15.1
+reconciled roadmap status, removed stale active blueprint language, and grouped
+the remaining product gaps. Current active work moves to P15.2 to define the
+next implementation wave before product behavior expands again.
 
 ## Feature Roadmap
 
@@ -128,7 +129,7 @@ remain the execution plan.
 | F19 | done | File open and bind handoff | Phase 12 | Agents can move cleanly between headless edits and visual workspace binding | Completed 2026-06-16; D1/P12.1 defined the UX and command contract, D2/P12.2 added shared CLI/MCP `file.open` handoff responses, D3/P12.3 added dashboard/settings context visibility, and D4/P12.4 added live-only bind guidance |
 | F20 | done | Packaging and distribution | Phase 13 | Developers and self-hosted operators have one documented install/setup path | Completed 2026-06-16; P13.1 documented private-checkout `penpot-cli` build/install, P13.2 packages MCP plugin assets, P13.3 documents self-hosted gateway setup, and P13.4 documents existing-user migration |
 | F21 | done | Release verification matrix | Phase 14 | Critical MCP/CLI flows have repeatable checks | Completed 2026-06-16; P14.1-P14.4 document config/global connection, headless edit/export, live bind, and CI-friendly command checks |
-| F22 | todo | Roadmap reconciliation and next-wave planning | Phase 15 | The fork has one accurate active task and a clean next development wave | P15.1 is the active task for auditing `todo.md`, architecture docs, and blueprint before this capability is marked done |
+| F22 | todo | Roadmap reconciliation and next-wave planning | Phase 15 | The fork has one accurate active task and a clean next development wave | P15.1 completed the roadmap audit; P15.2 now defines the next implementation wave before this capability is marked done |
 
 ## Detailed Upcoming Task Queue
 
@@ -212,10 +213,21 @@ Wave G keeps the development tracker honest before starting another product
 expansion wave. It should not change runtime behavior unless the audit reveals
 a broken doc or command reference that blocks planning.
 
+P15.1 audit findings:
+
+- Completed capabilities are no longer listed as active in the Feature Roadmap
+  or phase tables.
+- The blueprint now marks Wave B, Wave D, Wave F, and Near-Term Priority from
+  the current completed state instead of older transition language.
+- Remaining gaps are grouped as persisted CLI profile config access, shared URL
+  derivation, local `host` and `hybrid` orchestration modes, packaging/release
+  archive strategy, live-only page/selection/grid/prototype operations, command
+  coverage gaps, and planned descriptors that are not executable yet.
+
 | Order | Task | Modules | Output | Verification |
 | --- | --- | --- | --- | --- |
-| G1 | Reconcile roadmap status and remaining gaps | root docs, `mcp/docs` | Active via P15.1; stale roadmap states are corrected and the next product wave is defined from remaining real gaps | `todo.md` has exactly one `in_progress` task and no completed capabilities marked active |
-| G2 | Define next implementation wave from audited gaps | root docs, `mcp/docs`, affected future modules | Pending; next tasks are ordered by user-visible value and implementation dependency | New phase table lists modules, verification, and first task |
+| G1 | Reconcile roadmap status and remaining gaps | root docs, `mcp/docs` | Completed 2026-06-16; stale roadmap states are corrected and remaining real gaps are grouped for planning | `todo.md` has exactly one `in_progress` task and no completed capabilities marked active |
+| G2 | Define next implementation wave from audited gaps | root docs, `mcp/docs`, affected future modules | Active via P15.2; next tasks are ordered by user-visible value and implementation dependency | New phase table lists modules, verification, and first task |
 
 ## Phase 0: Baseline, Planning, And Rules
 
@@ -422,18 +434,18 @@ implementation plan without carrying stale active states forward.
 
 | ID | Status | Task | Modules | Verification | Notes |
 | --- | --- | --- | --- | --- | --- |
-| P15.1 | in_progress | Reconcile roadmap status and remaining gaps | root docs, `mcp/docs` | `todo.md` has exactly one `in_progress` task and completed capabilities are not marked active | Audit Feature Roadmap, Detailed Upcoming Task Queue, phase tables, and blueprint near-term priority |
-| P15.2 | todo | Define the next implementation wave | root docs, `mcp/docs`, affected future modules | Next wave has ordered tasks, modules, verification, and first acceptance checks | Use P15.1 findings to choose the next product-development slice |
+| P15.1 | done | Reconcile roadmap status and remaining gaps | root docs, `mcp/docs` | Completed 2026-06-16; `todo.md` has exactly one `in_progress` task and completed capabilities are not marked active | Audited Feature Roadmap, Detailed Upcoming Task Queue, phase tables, and blueprint near-term priority; grouped remaining gaps for P15.2 |
+| P15.2 | in_progress | Define the next implementation wave | root docs, `mcp/docs`, affected future modules | Next wave has ordered tasks, modules, verification, and first acceptance checks | Use P15.1 findings to choose the next product-development slice |
 
 ## Next Recommended Sprint
 
 Use `mcp/docs/penpot-cli-overall-blueprint.md` as the current architecture
 baseline and the Detailed Upcoming Task Queue as the execution order. Continue
-with Wave G / Phase 15:
+with P15.2 by turning the P15.1 audit findings into the next implementation
+wave:
 
-1. Complete P15.1 by auditing `todo.md`,
-   `mcp/docs/penpot-cli-overall-blueprint.md`, and
-   `mcp/docs/first-class-mcp-architecture.md` for stale active statuses,
-   completed capabilities still marked as active, and remaining product gaps.
-2. Start P15.2 by defining the next implementation wave with ordered tasks,
-   affected modules, verification commands, and the first acceptance check.
+1. Choose the next user-visible development slice from the audited gaps,
+   favoring work that makes first-class MCP and `penpot-cli` easier to use
+   outside a developer checkout.
+2. Add the next wave and phase table with ordered tasks, affected modules,
+   verification commands, and the first acceptance check.

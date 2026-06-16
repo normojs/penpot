@@ -2,7 +2,7 @@
 
 Status: current planning baseline
 Target fork: Penpot `2.15.4` reworked as `penpot-cli`
-Updated: 2026-06-15
+Updated: 2026-06-16
 
 This document is the compact architecture and delivery plan for the fork. The
 larger historical notes remain in `first-class-mcp-architecture.md`,
@@ -224,7 +224,8 @@ Current state:
   render.preview descriptors are part of the migrated command catalog.
 - Done: focused command-runtime tests cover descriptor groups, lookup,
   adapter-selection priority/error cases, and token-safe envelopes.
-- Next: move into Wave C headless authoring expansion.
+- Status: complete. Later command coverage gaps are tracked by the P15.1 audit
+  findings and will be ordered in P15.2.
 
 ### Wave C: Headless Authoring Expansion
 
@@ -265,8 +266,8 @@ Tasks:
 - Done: add reliable `file.open` handoff from CLI/MCP to browser URL with
   shared `workspaceUrl` and `handoff` payloads.
 - Done: show file context state in dashboard/settings, not only workspace menu.
-- Add explicit bind/open actions that guide the user when a live context is
-  required.
+- Done in P12.4: add explicit bind/open actions that guide the user when a
+  live context is required.
 - Preserve a single write-capable owner tab while allowing clear release.
 
 Acceptance:
@@ -320,32 +321,53 @@ Tasks:
   tiers.
 - Done in P14.4: track missing local tools, dependencies, browser automation,
   and unavailable running services separately from product failures.
-- Add compatibility checks for old MCP clients and existing profile props.
+- Done by P9.7, P13.4, and P14 smoke docs: preserve compatibility behavior for
+  old profile props, environment-derived configuration, direct-port local
+  users, and legacy SSE clients. Any new compatibility automation should be
+  planned as part of the next wave instead of being carried as active Wave F
+  work.
 
 Acceptance:
 
 - The critical MCP/CLI flows have repeatable checks and documented manual
   fallback steps when full local tooling is unavailable.
 
+## P15.1 Roadmap Audit Findings
+
+P15.1 reconciled the tracker and this blueprint after Waves A-F completed.
+The Feature Roadmap and phase tables now keep only one active task, and
+completed capabilities are no longer described as active work.
+
+Remaining gaps for P15.2 to order:
+
+- `penpot-cli mcp config` still derives from environment/runtime inputs instead
+  of reading persisted profile props.
+- Frontend and CLI URL derivation use aligned terminology but are not yet a
+  shared implementation.
+- `penpot-cli dev up --mcp` still has planned `host` and `hybrid` local modes.
+- The CLI remains private until command-runtime packaging, publishing, or a
+  documented release archive layout exists.
+- `local-fs` remains a later, local-mode-gated adapter.
+- Page current/selection semantics, grid/full layout editing, and prototype
+  overlay/list/delete behavior remain plugin-live until backend-safe data
+  representations are defined.
+- The command-runtime inventory still has coverage gaps for diagnostics,
+  account/team/project/file recents, file context, legacy tools, and planned
+  tool names that are not executable descriptors yet.
+
 ## Near-Term Priority
 
-Wave D, Wave E, and the current Wave F release-verification matrix are
-complete. P13.1 has defined the CLI install path, P13.2 packages the bundled
-MCP plugin with metadata, P13.3 documents the self-hosted gateway setup, and
-P13.4 documents migration guidance for existing MCP users. P14.1 documents the
-config/global connection release-verification flow, P14.2 documents the
-headless edit/export release-verification flow, P14.3 documents the live bind
-release-verification flow, and P14.4 documents CI-friendly check commands with
-missing-tool/product-failure separation.
+Wave D, Wave E, and Wave F are complete. P15.1 reconciled roadmap status and
+grouped the remaining real product gaps.
 
-The next implementation slice should reconcile the roadmap before expanding
-the product surface again:
+The next implementation slice is P15.2:
 
-1. Audit `todo.md`, this blueprint, and architecture notes for stale
-   `in_progress` rows or completed capabilities that still read as active.
-2. Define the next development wave from the remaining real product gaps,
-   keeping page current/selection semantics in plugin-live until a backend-safe
+1. Define the next development wave from the audited gaps, keeping
+   page current/selection semantics in plugin-live until a backend-safe
    representation is defined.
+2. Order the new tasks by user-visible value and implementation dependency,
+   including affected modules, verification commands, and the first acceptance
+   check.
 
 Keep manual configuration behavior stable while moving command metadata and
 envelopes; transport-specific formatting should stay at the MCP/CLI edges.
