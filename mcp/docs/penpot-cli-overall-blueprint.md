@@ -284,7 +284,8 @@ Tasks:
   from a private fork checkout while workspace dependencies remain internal.
 - Done in P13.2: package MCP plugin assets reliably with frontend builds,
   generate `mcp-plugin.json` metadata, and expose root package/check commands.
-- Document Docker/self-hosted MCP gateway setup.
+- Done in P13.3: document Docker/self-hosted MCP gateway setup for built-in,
+  custom, and local modes, including proxy requirements and diagnostics.
 - Add release notes and migration guidance for existing MCP users.
 - Keep the CLI private during fork development until `@penpot/command-runtime`
   is bundled, published with compatible versions, or shipped in a documented
@@ -314,15 +315,13 @@ Acceptance:
 
 ## Near-Term Priority
 
-Wave D is complete, P13.1 has defined the CLI install path, and P13.2 packages
-the bundled MCP plugin with metadata. The next implementation slice should
-continue Wave E:
+Wave D is complete. P13.1 has defined the CLI install path, P13.2 packages the
+bundled MCP plugin with metadata, and P13.3 documents the self-hosted gateway
+setup. The next implementation slice should continue Wave E:
 
-1. Document self-hosted MCP gateway setup for built-in, custom, and local
-   modes.
-2. Add migration notes for existing MCP users with legacy profile props and
+1. Add migration notes for existing MCP users with legacy profile props and
    project-local MCP setup habits.
-3. Keep page current/selection semantics in plugin-live until a backend-safe
+2. Keep page current/selection semantics in plugin-live until a backend-safe
    representation is defined.
 
 Keep manual configuration behavior stable while moving command metadata and

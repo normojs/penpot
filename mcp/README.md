@@ -182,6 +182,11 @@ The WebSocket endpoint is used by the bundled MCP plugin, not by normal MCP
 clients. Direct ports such as `4401` and `4402` are internal details in built-in
 and reverse-proxied deployments.
 
+For Docker/self-hosted deployments, see
+[`docs/self-hosted-mcp-gateway.md`](docs/self-hosted-mcp-gateway.md). It covers
+the recommended built-in gateway shape, custom endpoint overrides, local
+developer mode, reverse proxy requirements, and diagnostics.
+
 When running this package standalone outside the Penpot gateway, the server
 runs on port `4401` by default and provides:
 

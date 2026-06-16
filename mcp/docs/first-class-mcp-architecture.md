@@ -222,6 +222,29 @@ Phase 1 decisions:
 - `penpot-cli dev up --mcp` should initially wrap existing devenv behavior
   instead of replacing the tmux workflow.
 
+### 3.2 Self-Hosted Gateway Documentation (2026-06-16)
+
+P13.3 added [`self-hosted-mcp-gateway.md`](self-hosted-mcp-gateway.md) as the
+operator-facing setup guide for first-class MCP deployments.
+
+Documented deployment decisions:
+
+- Built-in gateway mode is the recommended self-hosted shape.
+- `enable-mcp` in `PENPOT_FLAGS` controls whether frontend nginx installs
+  `/mcp/stream`, `/mcp/sse`, `/mcp/ws`, and `/mcp/status` routes.
+- `penpot-frontend` should proxy to internal `penpot-mcp` upstreams through
+  `PENPOT_MCP_URI` and `PENPOT_MCP_URI_WS`; raw ports `4401` and `4402` stay
+  internal in normal deployments.
+- `PENPOT_PUBLIC_URI` and optional `PENPOT_MCP_PUBLIC_URI` define the public
+  base used by frontend settings, the bundled plugin, and CLI diagnostics.
+- `custom` mode is reserved for explicit endpoint overrides or external MCP
+  gateway experiments.
+- `local` mode remains a developer/package-debugging shape, not the default
+  self-hosted operator path.
+- Operators can verify the gateway with `/mcp/status`,
+  `/plugins/mcp/manifest.json`, `/plugins/mcp/mcp-plugin.json`, and
+  `penpot-cli mcp status --url <public>/mcp/status`.
+
 ## 4. Target Architecture
 
 ```text

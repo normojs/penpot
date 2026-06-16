@@ -118,6 +118,9 @@ Mode defaults:
 | `custom` | Same derivation as `builtin`, usually with explicit `PENPOT_MCP_*_URI` overrides |
 | `local` | `http://localhost:4401/mcp`, `http://localhost:4401/sse`, `ws://localhost:4402`, `http://localhost:4401/status` |
 
+For Docker and reverse-proxy setup details, see
+`mcp/docs/self-hosted-mcp-gateway.md`.
+
 ## Development Orchestration
 
 Preview the MCP-enabled local development plan:
