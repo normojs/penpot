@@ -7,6 +7,10 @@ This guide describes the supported self-hosted MCP deployment shape for this
 fork. The recommended path is built-in gateway mode: Penpot serves MCP under
 the same public origin as the frontend, while raw MCP ports stay internal.
 
+Existing MCP users upgrading from project-local configs, direct ports, or
+environment-only setup should also read
+[`existing-mcp-user-migration.md`](existing-mcp-user-migration.md).
+
 ## Supported Shape
 
 Public self-hosted Penpot should expose these paths:

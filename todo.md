@@ -85,11 +85,12 @@ targets from MCP and `penpot-cli`, with shared artifact metadata and CLI
 complete: dashboard/settings now expose the current MCP file-context state
 outside the workspace menu. D4/P12.4 is complete: live-only
 `file_context_required` errors now include target-aware open, inspect, bind,
-and retry guidance. Phase 12 file open/bind handoff is complete. P13.1 defined
-the private-checkout `penpot-cli` build/install path, P13.2 packages MCP
-plugin assets with metadata for frontend release bundles, and P13.3 documented
-the self-hosted MCP gateway setup. Current active work moves to P13.4 migration
-notes for existing MCP users.
+and retry guidance. Phase 12 file open/bind handoff is complete. Phase 13
+packaging and distribution is complete: P13.1 defined the private-checkout
+`penpot-cli` build/install path, P13.2 packages MCP plugin assets with metadata
+for frontend release bundles, P13.3 documented the self-hosted MCP gateway
+setup, and P13.4 documented migration notes for existing MCP users. Current
+active work moves to P14.1 config/global connection smoke flow documentation.
 
 ## Feature Roadmap
 
@@ -117,8 +118,8 @@ remain the execution plan.
 | F17 | done | Shared command descriptors | Phase 10 | MCP and CLI expose the same command catalog and internal result envelope from one runtime layer | Completed 2026-06-15; descriptors, envelopes, centralized adapter errors, and runtime tests cover status/config/file/page plus shape/export/render commands |
 | F18 | done | Expanded headless authoring | Phase 11 | Scripts and agents can create richer prototypes without a live workspace | Completed 2026-06-15; P11.1 page rename, P11.2 style/hierarchy/layout updates, P11.3 image/media insertion, P11.4 prototype helpers, and P11.5 exporter-backed previews are complete for explicit supported targets |
 | F19 | done | File open and bind handoff | Phase 12 | Agents can move cleanly between headless edits and visual workspace binding | Completed 2026-06-16; D1/P12.1 defined the UX and command contract, D2/P12.2 added shared CLI/MCP `file.open` handoff responses, D3/P12.3 added dashboard/settings context visibility, and D4/P12.4 added live-only bind guidance |
-| F20 | in_progress | Packaging and distribution | Phase 13 | Developers and self-hosted operators have one documented install/setup path | P13.1 documented the private-checkout `penpot-cli` build/install strategy, P13.2 packages MCP plugin assets into frontend bundles, and P13.3 documents self-hosted gateway setup; next acceptance target is P13.4 migration notes |
-| F21 | todo | Release verification matrix | Phase 14 | Critical MCP/CLI flows have repeatable checks | Config, global connect, bind, headless edit, and export smoke flows run or have documented manual fallback |
+| F20 | done | Packaging and distribution | Phase 13 | Developers and self-hosted operators have one documented install/setup path | Completed 2026-06-16; P13.1 documented private-checkout `penpot-cli` build/install, P13.2 packages MCP plugin assets, P13.3 documents self-hosted gateway setup, and P13.4 documents existing-user migration |
+| F21 | in_progress | Release verification matrix | Phase 14 | Critical MCP/CLI flows have repeatable checks | Current acceptance target is P14.1 config/global connection smoke flow with documented manual fallback |
 
 ## Detailed Upcoming Task Queue
 
@@ -185,7 +186,7 @@ complete as of 2026-06-15.
 | E1 | Define CLI build/install strategy | `penpot-cli`, root docs | Completed 2026-06-16; private checkout/workspace-link usage, package name, binary name, versioning, and install commands are documented | `pnpm cli:install-check` builds and runs the CLI help entry point |
 | E2 | Package MCP plugin assets with frontend builds | `frontend`, `mcp/packages/plugin`, `docker` | Completed 2026-06-16; frontend builds package matching MCP plugin assets and `mcp-plugin.json` metadata | Plugin build, frontend asset package/check commands, and release bundle path checks pass |
 | E3 | Document self-hosted MCP gateway setup | `docker`, `mcp/docs`, `penpot-cli` | Completed 2026-06-16; operators can enable built-in/custom/local MCP with one documented path | Docs cover env vars, ports, reverse proxy paths, tokens, diagnostics, and common failures |
-| E4 | Add migration notes for existing MCP users | docs, `CHANGES.md` | In progress; existing token/profile/env behavior and new settings are explained | Release notes cover users with only `:mcp-enabled` and no `:mcp-config` |
+| E4 | Add migration notes for existing MCP users | docs, `CHANGES.md` | Completed 2026-06-16; existing token/profile/env behavior and new settings are explained | Added migration notes for users with only `:mcp-enabled`, project-local MCP configs, environment-only deployments, direct-port URLs, existing tokens, bundled plugin behavior, and `execute_code` changes |
 
 ### Wave F: Release Verification
 
@@ -381,7 +382,7 @@ Goal: make the fork usable outside a developer checkout.
 | P13.1 | done | Define CLI build/install strategy | `penpot-cli`, docs | Completed 2026-06-16; install path and versioning decision are documented | Added private-checkout build/install strategy, root install check script, workspace-link guidance, and publishable-package prerequisites |
 | P13.2 | done | Package MCP plugin assets reliably | `frontend`, `mcp`, `docker` | Completed 2026-06-16; frontend build always contains matching plugin assets | Added checked plugin packaging helper, `mcp-plugin.json` metadata, root/package check commands, and frontend release bundle integration |
 | P13.3 | done | Document self-hosted MCP gateway setup | `docker`, `mcp/docs`, `penpot-cli` | Completed 2026-06-16; operators can enable MCP with one documented path | Added `mcp/docs/self-hosted-mcp-gateway.md` covering built-in/custom/local modes, env vars, reverse proxy paths, tokens, diagnostics, and common failures |
-| P13.4 | in_progress | Add migration notes for existing MCP users | docs, `CHANGES.md` | Existing token/profile/env behavior is explained | Cover users with only `:mcp-enabled` and no `:mcp-config` |
+| P13.4 | done | Add migration notes for existing MCP users | docs, `CHANGES.md` | Completed 2026-06-16; existing token/profile/env behavior is explained | Added `mcp/docs/existing-mcp-user-migration.md` covering users with only `:mcp-enabled`, project-local configs, env-only deployments, direct ports, tokens, bundled plugin behavior, and `execute_code` changes |
 
 ## Phase 14: Verification And Release Readiness
 
@@ -389,7 +390,7 @@ Goal: make critical MCP/CLI flows repeatable and safe to change.
 
 | ID | Status | Task | Modules | Verification | Notes |
 | --- | --- | --- | --- | --- | --- |
-| P14.1 | todo | Add config/global connection smoke flow | `frontend`, `mcp`, `penpot-cli` | Manual or automated flow covers enable, connect, status, disable | Account for local Clojure tooling gaps |
+| P14.1 | in_progress | Add config/global connection smoke flow | `frontend`, `mcp`, `penpot-cli` | Manual or automated flow covers enable, connect, status, disable | Account for local Clojure tooling gaps |
 | P14.2 | todo | Add headless edit/export smoke flow | `backend`, `mcp`, `penpot-cli`, `exporter` | Create file/page/shape and export artifact in one flow | Prefer commands that can run without a live workspace |
 | P14.3 | todo | Add live bind smoke flow | `frontend`, `mcp` | Open file, bind context, run live-only command, release | Preserve multi-tab owner behavior |
 | P14.4 | todo | Normalize CI-friendly check commands | root, `frontend`, `backend`, `mcp`, `penpot-cli` | Document exact commands for TS, CLJ, CLJS, and smoke checks | Separate missing local tools from product failures |
@@ -398,9 +399,9 @@ Goal: make critical MCP/CLI flows repeatable and safe to change.
 
 Use `mcp/docs/penpot-cli-overall-blueprint.md` as the current architecture
 baseline and the Detailed Upcoming Task Queue as the execution order. Continue
-with Wave E:
+with Wave F:
 
-1. Add E4/P13.4 migration notes for existing users with legacy profile props,
-   project-local MCP habits, or environment-only MCP configuration.
+1. Add P14.1 config/global connection smoke flow documentation covering MCP
+   enablement, mode changes, auto-connect, manual connect, status, and disable.
 2. Keep page current/selection semantics and grid/full layout metadata in
    plugin-live until dedicated backend-safe representations are defined.

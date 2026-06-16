@@ -286,7 +286,10 @@ Tasks:
   generate `mcp-plugin.json` metadata, and expose root package/check commands.
 - Done in P13.3: document Docker/self-hosted MCP gateway setup for built-in,
   custom, and local modes, including proxy requirements and diagnostics.
-- Add release notes and migration guidance for existing MCP users.
+- Done in P13.4: add migration notes for existing MCP users with legacy
+  profile props, project-local client configs, environment-only deployments,
+  direct-port URLs, existing tokens, bundled plugin behavior, and
+  `execute_code` changes.
 - Keep the CLI private during fork development until `@penpot/command-runtime`
   is bundled, published with compatible versions, or shipped in a documented
   release archive layout.
@@ -315,12 +318,13 @@ Acceptance:
 
 ## Near-Term Priority
 
-Wave D is complete. P13.1 has defined the CLI install path, P13.2 packages the
-bundled MCP plugin with metadata, and P13.3 documents the self-hosted gateway
-setup. The next implementation slice should continue Wave E:
+Wave D and Wave E are complete. P13.1 has defined the CLI install path, P13.2
+packages the bundled MCP plugin with metadata, P13.3 documents the self-hosted
+gateway setup, and P13.4 documents migration guidance for existing MCP users.
+The next implementation slice should move into Wave F:
 
-1. Add migration notes for existing MCP users with legacy profile props and
-   project-local MCP setup habits.
+1. Add a config and global connection smoke flow covering enable, connect,
+   status, mode changes, auto-connect, and disable.
 2. Keep page current/selection semantics in plugin-live until a backend-safe
    representation is defined.
 

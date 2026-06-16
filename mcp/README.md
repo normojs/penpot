@@ -187,6 +187,10 @@ For Docker/self-hosted deployments, see
 the recommended built-in gateway shape, custom endpoint overrides, local
 developer mode, reverse proxy requirements, and diagnostics.
 
+For existing MCP users upgrading from project-local client configs, direct
+ports, or environment-only setup, see
+[`docs/existing-mcp-user-migration.md`](docs/existing-mcp-user-migration.md).
+
 When running this package standalone outside the Penpot gateway, the server
 runs on port `4401` by default and provides:
 

@@ -245,6 +245,30 @@ Documented deployment decisions:
   `/plugins/mcp/manifest.json`, `/plugins/mcp/mcp-plugin.json`, and
   `penpot-cli mcp status --url <public>/mcp/status`.
 
+### 3.3 Existing MCP User Migration Notes (2026-06-16)
+
+P13.4 added
+[`existing-mcp-user-migration.md`](existing-mcp-user-migration.md) to explain
+the compatibility path for existing MCP users.
+
+Documented migration decisions:
+
+- Profiles with only `:mcp-enabled` need no data migration; missing
+  `:mcp-config` means built-in defaults.
+- `:mcp-enabled` remains the compatibility on/off switch, while
+  `:mcp-config` stores optional connection preferences only.
+- MCP tokens stay in access-token rows and must not be copied into
+  `:mcp-config` or shared project-local client config.
+- Existing project-local MCP client URLs should move to the public
+  `/mcp/stream?userToken=...` endpoint, or `/mcp/sse?userToken=...` for
+  SSE-only clients.
+- Environment-only self-hosted deployments remain supported, but raw `4401`
+  and `4402` ports are local/debug details in built-in gateway mode.
+- Manual plugin loading from `localhost:4400` remains a package development
+  path; normal deployments use bundled `/plugins/mcp` assets.
+- Legacy `execute_code` workflows should migrate to typed tools where possible
+  and require `PENPOT_MCP_ENABLE_EXECUTE_CODE=true` when still needed.
+
 ## 4. Target Architecture
 
 ```text
