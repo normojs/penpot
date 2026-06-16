@@ -89,8 +89,10 @@ and retry guidance. Phase 12 file open/bind handoff is complete. Phase 13
 packaging and distribution is complete: P13.1 defined the private-checkout
 `penpot-cli` build/install path, P13.2 packages MCP plugin assets with metadata
 for frontend release bundles, P13.3 documented the self-hosted MCP gateway
-setup, and P13.4 documented migration notes for existing MCP users. Current
-active work moves to P14.1 config/global connection smoke flow documentation.
+setup, and P13.4 documented migration notes for existing MCP users. P14.1
+documents the config/global connection smoke flow for release verification.
+Current active work moves to P14.2 headless edit/export smoke flow
+documentation.
 
 ## Feature Roadmap
 
@@ -101,7 +103,7 @@ remain the execution plan.
 | --- | --- | --- | --- | --- | --- |
 | F1 | done | Built-in MCP gateway | Phase 1 | Users see one MCP URL instead of several internal ports | Settings and generated client config point to `/mcp/stream` |
 | F2 | done | Manual MCP configuration | Phase 1, Phase 2, Phase 9 | Users can choose built-in, custom, or local MCP settings | Completed 2026-06-15; settings persist built-in/custom/local mode, stream/SSE/WebSocket/status URLs, reset-to-built-in, auto-connect, fallback, and token separation |
-| F3 | in_progress | Global background MCP agent | Phase 2 | MCP can connect after login without opening a file | Global lifecycle and manual connect are implemented; remaining work is a normalized connected-global status/smoke flow in Phase 14 |
+| F3 | done | Global background MCP agent | Phase 2 | MCP can connect after login without opening a file | Completed 2026-06-16; global lifecycle/manual connect are implemented and P14.1 documents connected-global status verification without opening a file |
 | F4 | done | MCP status and diagnostics | Phase 2, Phase 8 | Users and agents can inspect connection health | Completed 2026-06-13; `mcp.get_status` and Integrations settings now report server, plugin compatibility, session/file context, write limits, logs, and last-error state |
 | F5 | done | Global resource tools | Phase 3 | Agents can list teams, projects, and files before a workspace opens | Completed 2026-06-11; MCP can list teams, projects, project files, and recent files through backend permissions |
 | F6 | in_progress | File creation and opening | Phase 3, Phase 4 | Agents can create a file and ask Penpot to open or bind it | `file.create` returns a file summary; open/bind remains Phase 4 |
@@ -119,7 +121,7 @@ remain the execution plan.
 | F18 | done | Expanded headless authoring | Phase 11 | Scripts and agents can create richer prototypes without a live workspace | Completed 2026-06-15; P11.1 page rename, P11.2 style/hierarchy/layout updates, P11.3 image/media insertion, P11.4 prototype helpers, and P11.5 exporter-backed previews are complete for explicit supported targets |
 | F19 | done | File open and bind handoff | Phase 12 | Agents can move cleanly between headless edits and visual workspace binding | Completed 2026-06-16; D1/P12.1 defined the UX and command contract, D2/P12.2 added shared CLI/MCP `file.open` handoff responses, D3/P12.3 added dashboard/settings context visibility, and D4/P12.4 added live-only bind guidance |
 | F20 | done | Packaging and distribution | Phase 13 | Developers and self-hosted operators have one documented install/setup path | Completed 2026-06-16; P13.1 documented private-checkout `penpot-cli` build/install, P13.2 packages MCP plugin assets, P13.3 documents self-hosted gateway setup, and P13.4 documents existing-user migration |
-| F21 | in_progress | Release verification matrix | Phase 14 | Critical MCP/CLI flows have repeatable checks | Current acceptance target is P14.1 config/global connection smoke flow with documented manual fallback |
+| F21 | in_progress | Release verification matrix | Phase 14 | Critical MCP/CLI flows have repeatable checks | Current acceptance target is P14.2 headless edit/export smoke flow with documented manual fallback |
 
 ## Detailed Upcoming Task Queue
 
@@ -192,8 +194,8 @@ complete as of 2026-06-15.
 
 | Order | Task | Modules | Output | Verification |
 | --- | --- | --- | --- | --- |
-| F1 | Add config/global connection smoke flow | `frontend`, `mcp`, `penpot-cli` | Repeatable flow covers enable, mode change, auto-connect off/on, manual connect, status, and disable | Automated where possible, manual fallback documented for missing Clojure tooling |
-| F2 | Add headless edit/export smoke flow | `backend`, `mcp`, `penpot-cli`, `exporter` | One flow creates file/page/shapes and exports a useful artifact without live workspace context | CLI/MCP commands return expected adapter diagnostics and artifact output |
+| F1 | Add config/global connection smoke flow | `frontend`, `mcp`, `penpot-cli` | Completed 2026-06-16; repeatable flow covers enable, mode change, auto-connect off/on, manual connect, status, and disable | Documented automated/static checks, running-stack checks, manual UI fallback, completion evidence, and common failure recovery |
+| F2 | Add headless edit/export smoke flow | `backend`, `mcp`, `penpot-cli`, `exporter` | In progress; one flow creates file/page/shapes and exports a useful artifact without live workspace context | CLI/MCP commands return expected adapter diagnostics and artifact output |
 | F3 | Add live bind smoke flow | `frontend`, `mcp` | Flow opens file, binds context, runs plugin-live command, releases context, and checks multi-tab behavior | Smoke docs preserve single write-capable owner tab rules |
 | F4 | Normalize CI-friendly check commands | root, `frontend`, `backend`, `mcp`, `penpot-cli` | Exact commands for TS, CLJ, CLJS, backend, frontend, MCP, CLI, and smoke flows are documented | Local missing-tool failures are separated from product failures |
 
@@ -390,8 +392,8 @@ Goal: make critical MCP/CLI flows repeatable and safe to change.
 
 | ID | Status | Task | Modules | Verification | Notes |
 | --- | --- | --- | --- | --- | --- |
-| P14.1 | in_progress | Add config/global connection smoke flow | `frontend`, `mcp`, `penpot-cli` | Manual or automated flow covers enable, connect, status, disable | Account for local Clojure tooling gaps |
-| P14.2 | todo | Add headless edit/export smoke flow | `backend`, `mcp`, `penpot-cli`, `exporter` | Create file/page/shape and export artifact in one flow | Prefer commands that can run without a live workspace |
+| P14.1 | done | Add config/global connection smoke flow | `frontend`, `mcp`, `penpot-cli` | Manual or automated flow covers enable, connect, status, disable | Completed 2026-06-16 in `mcp/docs/config-global-connection-smoke-flow.md`; accounts for local Clojure tooling gaps |
+| P14.2 | in_progress | Add headless edit/export smoke flow | `backend`, `mcp`, `penpot-cli`, `exporter` | Create file/page/shape and export artifact in one flow | Prefer commands that can run without a live workspace |
 | P14.3 | todo | Add live bind smoke flow | `frontend`, `mcp` | Open file, bind context, run live-only command, release | Preserve multi-tab owner behavior |
 | P14.4 | todo | Normalize CI-friendly check commands | root, `frontend`, `backend`, `mcp`, `penpot-cli` | Document exact commands for TS, CLJ, CLJS, and smoke checks | Separate missing local tools from product failures |
 
@@ -401,7 +403,8 @@ Use `mcp/docs/penpot-cli-overall-blueprint.md` as the current architecture
 baseline and the Detailed Upcoming Task Queue as the execution order. Continue
 with Wave F:
 
-1. Add P14.1 config/global connection smoke flow documentation covering MCP
-   enablement, mode changes, auto-connect, manual connect, status, and disable.
+1. Add P14.2 headless edit/export smoke flow documentation covering file/page
+   creation, shape edits, adapter diagnostics, artifact output, and no live
+   workspace dependency.
 2. Keep page current/selection semantics and grid/full layout metadata in
    plugin-live until dedicated backend-safe representations are defined.

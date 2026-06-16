@@ -269,6 +269,28 @@ Documented migration decisions:
 - Legacy `execute_code` workflows should migrate to typed tools where possible
   and require `PENPOT_MCP_ENABLE_EXECUTE_CODE=true` when still needed.
 
+### 3.4 Config And Global Connection Smoke Flow (2026-06-16)
+
+P14.1 added
+[`config-global-connection-smoke-flow.md`](config-global-connection-smoke-flow.md)
+as the focused release-verification path for first-class MCP configuration and
+global connection behavior.
+
+Documented verification decisions:
+
+- The flow treats MCP as a global Penpot capability, so it does not require a
+  workspace file to be open.
+- Static CLI checks cover built-in, custom, and local effective URL derivation
+  plus token-safe `mcp status` output.
+- Running-stack checks verify the public `/mcp/status` route and bundled plugin
+  assets under `/plugins/mcp`.
+- Manual UI checks cover enablement, token availability, endpoint previews,
+  reset-to-built-in, auto-connect off/on, manual connect/disconnect, and
+  disable.
+- Missing local Clojure or frontend browser-test tooling is recorded as a local
+  tooling limitation when the CLI/static and manual evidence are still
+  collected.
+
 ## 4. Target Architecture
 
 ```text

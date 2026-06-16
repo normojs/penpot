@@ -191,6 +191,12 @@ For existing MCP users upgrading from project-local client configs, direct
 ports, or environment-only setup, see
 [`docs/existing-mcp-user-migration.md`](docs/existing-mcp-user-migration.md).
 
+For release verification of global MCP configuration and connection lifecycle,
+see
+[`docs/config-global-connection-smoke-flow.md`](docs/config-global-connection-smoke-flow.md).
+It covers enablement, built-in/custom/local mode changes, auto-connect,
+manual connect/disconnect, status evidence, and disable.
+
 When running this package standalone outside the Penpot gateway, the server
 runs on port `4401` by default and provides:
 

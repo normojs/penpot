@@ -72,6 +72,7 @@
 - Package bundled MCP plugin assets with metadata and verification commands for frontend release builds.
 - Document the self-hosted MCP gateway setup for built-in, custom, and local modes, including Docker env vars, reverse proxy paths, client URLs, diagnostics, and common failures.
 - Document migration guidance for existing MCP users, including legacy `:mcp-enabled` profiles, project-local client configs, environment-only deployments, direct ports, existing tokens, bundled plugin loading, and `execute_code` changes.
+- Document the MCP config/global connection smoke flow for release verification, covering enablement, mode changes, auto-connect, manual connect/disconnect, status evidence, and disable.
 - Add rate limiting and concurrency safety for file snapshot operations [#9723](https://github.com/penpot/penpot/issues/9723) (PR: [#9722](https://github.com/penpot/penpot/pull/9722))
 - Prevent concurrent font uploads from causing excessive simultaneous requests [#9922](https://github.com/penpot/penpot/issues/9922) (PR: [#9921](https://github.com/penpot/penpot/pull/9921))
 

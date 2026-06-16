@@ -4,6 +4,10 @@ This document tracks the smoke flows for the `penpot-cli` fork. It complements
 the focused unit tests in `mcp/packages/server/test` and the CLI smoke tests in
 `penpot-cli/test`.
 
+For the focused release check of saved MCP configuration and the global
+background connection lifecycle, see
+[`config-global-connection-smoke-flow.md`](config-global-connection-smoke-flow.md).
+
 ## Automated Locally
 
 Run these checks before committing MCP or CLI behavior changes:

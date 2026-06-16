@@ -305,8 +305,11 @@ Purpose: make the new architecture safe to change.
 
 Tasks:
 
-- Add end-to-end smoke flows for MCP config, global connection, file binding,
-  CLI headless creation, and export.
+- Done in P14.1: add a focused config and global connection smoke flow covering
+  enable, built-in/custom/local mode changes, auto-connect off/on, manual
+  connect/disconnect, status evidence, and disable.
+- Add end-to-end smoke flows for file binding, CLI headless creation, and
+  export.
 - Add CI-friendly TypeScript, Clojure, ClojureScript, and smoke commands.
 - Track locally blocked Clojure tooling separately from product failures.
 - Add compatibility checks for old MCP clients and existing profile props.
@@ -321,10 +324,11 @@ Acceptance:
 Wave D and Wave E are complete. P13.1 has defined the CLI install path, P13.2
 packages the bundled MCP plugin with metadata, P13.3 documents the self-hosted
 gateway setup, and P13.4 documents migration guidance for existing MCP users.
-The next implementation slice should move into Wave F:
+P14.1 documents the config/global connection release-verification flow. The
+next implementation slice should continue Wave F:
 
-1. Add a config and global connection smoke flow covering enable, connect,
-   status, mode changes, auto-connect, and disable.
+1. Add a headless edit/export smoke flow covering file/page/shape creation,
+   adapter diagnostics, artifact output, and no live workspace dependency.
 2. Keep page current/selection semantics in plugin-live until a backend-safe
    representation is defined.
 
