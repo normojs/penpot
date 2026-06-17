@@ -339,7 +339,7 @@ P15.1 reconciled the tracker and this blueprint after Waves A-F completed.
 The Feature Roadmap and phase tables now keep only one active task, and
 completed capabilities are no longer described as active work.
 
-P15.2 selected the next implementation wave from these remaining gaps:
+P15.2 selected Wave H from these then-remaining gaps:
 
 - `penpot-cli mcp config` still derives from environment/runtime inputs instead
   of reading persisted profile props.
@@ -355,6 +355,11 @@ P15.2 selected the next implementation wave from these remaining gaps:
 - The command-runtime inventory still has coverage gaps for diagnostics,
   account/team/project/file recents, file context, legacy tools, and planned
   tool names that are not executable descriptors yet.
+
+Wave H closed the first four items by adding authenticated CLI profile reads,
+canonical URL fixtures, hardened host/hybrid dry-run plans, and a verified
+private release archive. The next planning slice narrows the remaining work to
+live-only authoring semantics and command coverage gaps.
 
 ### Wave G: Roadmap Reconciliation And Next-Wave Planning
 
@@ -402,23 +407,47 @@ Acceptance:
 - Local orchestration and packaging docs/checks build on that stable config
   contract instead of duplicating endpoint assumptions.
 
+### Wave I: Headless Live-Gap Closure
+
+Purpose: turn the remaining plugin-live-only authoring gaps into explicit
+contracts, then move the backend-safe subset into headless MCP/CLI operations
+without pretending ephemeral workspace state is persisted document data.
+
+Tasks:
+
+- P17.1: audit page current/selection semantics, grid/full layout editing,
+  prototype overlay/list/delete behavior, diagnostic/read command gaps, and
+  legacy command-runtime gaps before changing runtime behavior.
+- P17.2: add read-only command descriptors for the selected live-gap commands
+  so CLI/MCP can expose adapter and capability boundaries consistently.
+- P17.3: add backend-command prototype read/list support for explicit
+  file/page targets where existing persisted data is sufficient.
+- P17.4: define a backend-safe grid layout subset or document structured
+  unsupported errors with exact live bind guidance.
+- P17.5: tighten live-only guidance for selection and current-page commands
+  across MCP responses, CLI output, and smoke docs.
+
+Acceptance:
+
+- `todo.md` has P17.1 as the single active task.
+- The first Wave I implementation step is blocked on an explicit audit rather
+  than implicit assumptions about plugin-live state.
+- Operations that remain live-only explain why and point agents through
+  `file.open`, `file.get_context`, `file.bind_context`, and retry steps.
+
 ## Near-Term Priority
 
-Wave D, Wave E, Wave F, Wave G, and Wave H are complete. P15.2 selected Wave H
-as the implementation slice for CLI configuration convergence and distribution
-hardening. P16.1 documented the profile-config read-path contract, P16.2
-implemented opt-in authenticated profile reads for `penpot-cli mcp config`,
-P16.3 added canonical MCP URL derivation fixtures and parity tests, P16.4
-hardened host/hybrid `dev up --mcp` dry-run planning, and P16.5 added a private
-portable CLI release archive check.
+Wave D, Wave E, Wave F, Wave G, and Wave H are complete. Wave I / Phase 17 is
+the active implementation slice for headless live-gap closure.
 
-The next active work should be a short roadmap reconciliation pass before
-starting Wave I:
+The next active task is P17.1:
 
-1. Re-audit the remaining product gaps after Wave H.
-2. Select the next user-visible implementation theme.
-3. Add the next ordered phase tasks to `todo.md` with affected modules,
-   acceptance checks, and the first task marked `in_progress`.
+1. Audit page current/selection, grid/full layout, prototype overlay/list/delete,
+   diagnostics/read command gaps, and legacy command-runtime gaps.
+2. Classify each candidate as backend-safe persisted data, exporter/read-only
+   data, plugin-live workspace state, or unsupported.
+3. Choose the first P17.2 descriptor slice with command names, adapter choices,
+   permission expectations, structured errors, and verification commands.
 
 Keep manual configuration behavior stable while moving command metadata and
 envelopes; transport-specific formatting should stay at the MCP/CLI edges.

@@ -469,6 +469,28 @@ Implementation decisions:
   endpoint overrides, so a local `public-uri` override does not re-derive the
   stream, SSE, WebSocket, or status URLs.
 
+### 3.13 Headless Live-Gap Planning (2026-06-17)
+
+Wave I / Phase 17 is selected after Wave H. The goal is to close the remaining
+gap between plugin-live authoring and headless MCP/CLI automation without
+blurring live workspace state with persisted document data.
+
+Planning decisions:
+
+- Start with an audit of page current/selection semantics, grid/full layout
+  editing, prototype overlay/list/delete behavior, diagnostic/read command
+  gaps, and legacy command-runtime gaps.
+- Classify each candidate operation as backend-safe persisted data,
+  exporter/read-only data, plugin-live workspace state, or unsupported.
+- Add read-only descriptors before new write behavior so MCP and CLI can report
+  adapter and capability boundaries consistently.
+- Keep selection and current-page state live-only unless the audit identifies a
+  backend-safe persisted model; those commands should guide agents through
+  `file.open`, `file.get_context`, `file.bind_context`, and retry steps.
+- Grid layout and advanced prototype mutations need an explicit backend data
+  contract before implementation; otherwise they should return structured
+  unsupported errors with live-bind guidance.
+
 ## 4. Target Architecture
 
 ```text

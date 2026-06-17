@@ -109,7 +109,9 @@ archive path. P16.5 is complete: the repository can build and verify a private
 portable `penpot-cli` release archive containing the CLI and
 `@penpot/command-runtime`. Current active work should move to a fresh roadmap
 reconciliation and Wave I planning pass before starting the next implementation
-slice.
+slice. Wave I / Phase 17 is now selected for headless live-gap closure,
+starting with an audit of remaining plugin-live-only command semantics before
+backend or CLI behavior changes.
 
 ## Feature Roadmap
 
@@ -141,6 +143,7 @@ remain the execution plan.
 | F21 | done | Release verification matrix | Phase 14 | Critical MCP/CLI flows have repeatable checks | Completed 2026-06-16; P14.1-P14.4 document config/global connection, headless edit/export, live bind, and CI-friendly command checks |
 | F22 | done | Roadmap reconciliation and next-wave planning | Phase 15 | The fork has one accurate active task and a clean next development wave | Completed 2026-06-16; P15.1 reconciled roadmap status and P15.2 defined Wave H / Phase 16 as the next implementation wave |
 | F23 | done | CLI configuration convergence and distribution hardening | Phase 16 | `penpot-cli` can inspect the same saved MCP config that Penpot uses and has a clearer path toward portable local use | Completed 2026-06-17; P16.1 completed the read-path contract; P16.2 completed opt-in authenticated profile-source support; P16.3 completed URL derivation fixtures; P16.4 completed host/hybrid planning; P16.5 added a verified private portable CLI release archive |
+| F24 | todo | Headless live-gap closure | Phase 17 | More authoring operations can run without a live workspace, while truly live-only state stays explicit | P17.1 audits page current/selection, grid/full layout, prototype overlay/list/delete, and command-runtime descriptor gaps before choosing backend-safe slices |
 
 ## Detailed Upcoming Task Queue
 
@@ -175,7 +178,7 @@ complete as of 2026-06-15.
 | Order | Task | Modules | Output | Verification |
 | --- | --- | --- | --- | --- |
 | B1 | Audit existing MCP tools and CLI commands | `mcp/packages/server`, `penpot-cli`, `mcp/docs` | Inventory maps each command/tool to name, input schema, adapter, response shape, and test coverage | Audit document identifies duplicate metadata and first migration slice |
-| B2 | Move status/config/file/page descriptors into command runtime | `mcp/packages/command-runtime`, `mcp/packages/server`, `penpot-cli` | Shared descriptors define names, input metadata, adapter hints, and transport labels for low-risk commands | MCP and CLI keep existing public names; descriptor tests pass |
+| B2 | Move status/config/file/page descriptors into command runtime | `command-runtime`, `mcp/packages/server`, `penpot-cli` | Shared descriptors define names, input metadata, adapter hints, and transport labels for low-risk commands | MCP and CLI keep existing public names; descriptor tests pass |
 | B3 | Add shared request/result envelopes | `command-runtime`, `mcp`, `penpot-cli` | Completed 2026-06-15; MCP tools and CLI commands use the same internal envelope for adapter, target, auth, and diagnostics metadata | Existing CLI JSON output and MCP tool responses remain backward compatible |
 | B4 | Centralize adapter errors and selection reasons | `command-runtime`, `mcp`, `penpot-cli` | Completed 2026-06-15; backend unavailable, auth missing, file context required, unsupported adapter, and destructive confirmation errors use shared codes | MCP server tests and CLI no-service smoke tests pass |
 | B5 | Move shape/export descriptors after envelope migration | `command-runtime`, `mcp`, `penpot-cli`, `exporter` | Completed 2026-06-15; higher-risk write/export commands use shared descriptors without changing behavior | Shape/create/update/delete and export dry-run tests pass |
@@ -263,6 +266,30 @@ Order rationale:
 | H3 | Add canonical MCP URL derivation contract fixtures | `frontend`, `penpot-cli`, `mcp/docs` | Completed 2026-06-17; frontend and CLI derivation stay aligned through canonical cases for built-in, custom, local, partial, invalid, and reset configs | CLI tests consume `mcp/docs/mcp-url-derivation-fixtures.json`; frontend tests mirror the same golden cases |
 | H4 | Harden `dev up --mcp` host/hybrid planning | `penpot-cli`, `mcp/docs` | Completed 2026-06-17; host and hybrid dry-runs report dependency checks, service plans, port ownership diagnostics, public/internal MCP surfaces, and unsupported startup boundaries | CLI smoke tests cover host/hybrid dry-runs, dependency diagnostics, service surfaces, port checks, and non-dry-run unsupported boundaries |
 | H5 | Define portable CLI release archive path | `penpot-cli`, `command-runtime`, root scripts, `mcp/docs` | Completed 2026-06-17; release archive includes CLI plus command-runtime dependency layout, install verification, and version compatibility notes | `pnpm cli:package-check` verifies archive contents and extracted execution without relying on global workspace links |
+
+### Wave I: Headless Live-Gap Closure
+
+Wave I turns the remaining plugin-live-only authoring gaps into explicit
+contracts, then moves the backend-safe subset into headless MCP/CLI operations.
+It should keep live workspace selection and current-page state honest instead
+of pretending those are ordinary persisted document mutations.
+
+Order rationale:
+
+- Start with an audit because page current state, selection, grid layout, and
+  prototype overlay/list/delete touch different ownership models.
+- Add read-only descriptors before write paths so CLI/MCP output can expose
+  capability and adapter boundaries consistently.
+- Move only backend-safe persisted data first; keep ephemeral live workspace
+  state behind plugin-live with better guidance and tests.
+
+| Order | Task | Modules | Output | Verification |
+| --- | --- | --- | --- | --- |
+| I1 | Audit remaining live-only command semantics | `mcp/docs`, `command-runtime`, `mcp`, `penpot-cli`, `backend`, `common` | Map page current/selection, grid/full layout, prototype overlay/list/delete, diagnostic/read commands, and legacy tools to backend-safe, exporter, plugin-live, or unsupported adapters | Audit document identifies command names, persisted data shape, adapter candidates, permission model, and first implementation slice |
+| I2 | Add read-only command descriptors for live-gap commands | `command-runtime`, `mcp`, `penpot-cli` | Command catalog exposes descriptor metadata for selected page/selection reads, prototype reads, and layout capability checks without changing behavior | Descriptor tests and CLI/MCP smoke tests keep transport output stable |
+| I3 | Add headless prototype read/list support | `backend`, `common`, `mcp`, `penpot-cli` | MCP and CLI can list prototype flows/interactions for explicit file/page targets through backend-command | Backend/common focused tests plus MCP/CLI adapter tests cover permissions, empty states, and unsupported live-only overlay mutation |
+| I4 | Define and implement backend-safe grid layout subset | `backend`, `common`, `mcp`, `penpot-cli`, `mcp/docs` | Grid layout writes either support a documented minimal track/cell contract or return structured unsupported details with exact live bind guidance | Tests cover supported grid payloads or explicit unsupported errors; docs explain when plugin-live remains required |
+| I5 | Tighten selection/current-page live-only guidance | `frontend`, `mcp`, `penpot-cli`, `mcp/docs` | Selection and current-page commands report why a live workspace is required and include file.open/bind/retry guidance aligned with smoke flows | MCP server tests and live-bind smoke docs cover unbound, stale, and bound workspace cases |
 
 ## Phase 0: Baseline, Planning, And Rules
 
@@ -486,13 +513,28 @@ stable configuration model.
 | P16.4 | done | Harden `dev up --mcp` host/hybrid planning | `penpot-cli`, `mcp/docs` | Completed 2026-06-17; CLI smoke tests cover host/hybrid dry-runs, dependency diagnostics, service surfaces, port checks, and unsupported startup boundaries | Host/hybrid real startup remains disabled and returns structured plan details in JSON errors |
 | P16.5 | done | Define portable CLI release archive path | `penpot-cli`, `command-runtime`, root scripts, `mcp/docs` | Completed 2026-06-17; `pnpm cli:package-check` builds, archives, extracts, and smoke-checks the portable CLI release without relying on global workspace links | Keeps private checkout and workspace-link install paths supported during fork development |
 
+## Phase 17: Headless Live-Gap Closure
+
+Goal: convert the remaining plugin-live-only authoring gaps into explicit
+contracts and implement the backend-safe subset without blurring live workspace
+state with persisted document data.
+
+| ID | Status | Task | Modules | Verification | Notes |
+| --- | --- | --- | --- | --- | --- |
+| P17.1 | in_progress | Audit remaining live-only command semantics | `mcp/docs`, `command-runtime`, `mcp`, `penpot-cli`, `backend`, `common` | Audit document maps each candidate command to persisted data, live workspace state, adapter candidates, permissions, errors, and first implementation slice | Start with page current/selection, grid/full layout, prototype overlay/list/delete, diagnostic/read commands, and legacy command-runtime gaps |
+| P17.2 | todo | Add read-only descriptors for live-gap commands | `command-runtime`, `mcp`, `penpot-cli` | Descriptor tests pass and CLI/MCP output stays backward compatible | Build on P17.1 command naming and adapter decisions |
+| P17.3 | todo | Add headless prototype read/list support | `backend`, `common`, `mcp`, `penpot-cli` | Backend/common focused tests plus MCP/CLI adapter tests cover explicit file/page targets | Keep overlay mutation and live selection behavior plugin-live unless P17.1 proves a backend-safe contract |
+| P17.4 | todo | Define backend-safe grid layout subset | `backend`, `common`, `mcp`, `penpot-cli`, `mcp/docs` | Supported grid payloads or structured unsupported errors are covered by tests | Avoid partial document mutations without a clear track/cell data contract |
+| P17.5 | todo | Tighten selection/current-page live-only guidance | `frontend`, `mcp`, `penpot-cli`, `mcp/docs` | MCP tests and live-bind smoke docs cover unbound, stale, and bound workspace cases | Keep ephemeral workspace state explicit and guide agents through file.open/bind/retry |
+
 ## Next Recommended Sprint
 
 Use `mcp/docs/penpot-cli-overall-blueprint.md` as the current architecture
-baseline. The next task is a short roadmap reconciliation pass before starting
-Wave I:
+baseline and start with P17.1:
 
-1. Re-audit the remaining product gaps after Wave H.
-2. Select the next user-visible implementation theme and phase.
-3. Add ordered tasks to this file with affected modules, acceptance checks, and
-   the first task marked `in_progress`.
+1. Create the live-gap audit document for page current/selection, grid/full
+   layout, prototype overlay/list/delete, and command-runtime descriptor gaps.
+2. Decide which operations are persisted backend-safe data, which are
+   ephemeral live workspace state, and which remain unsupported.
+3. Use the audit to pick the exact P17.2 descriptor slice before writing
+   runtime behavior.
