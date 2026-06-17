@@ -418,8 +418,25 @@ Architecture decisions:
   authenticated profile props, runtime defaults, then offline fallback.
 - Missing auth, backend failures, anonymous profiles, and malformed legacy
   config have explicit `auto` fallback versus `backend` failure behavior.
-- P16.2 should preserve current JSON fields and add source metadata instead of
+- P16.2 preserves current JSON fields and adds source metadata instead of
   changing public output shape.
+
+### 3.11 CLI Profile Source Implementation (2026-06-17)
+
+P16.2 implemented the authenticated profile source for
+`penpot-cli mcp config`.
+
+Implementation decisions:
+
+- `--profile-source off` remains the default and never contacts the backend.
+- `--profile-source backend` requires a token, reads backend `get-profile`,
+  rejects anonymous profiles, and fails clearly on auth/backend/network errors.
+- `--profile-source auto` reads the profile only when a token is present and
+  falls back to local config with warning metadata on missing auth or failures.
+- Output keeps the legacy `mode`, URL, `logDir`, and `profileProps.mcp-config`
+  fields and adds `configSource` plus per-field `fieldSources`.
+- Field precedence is `flag > env > profile > default/derived`; `logDir`
+  remains local-only.
 
 ## 4. Target Architecture
 

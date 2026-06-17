@@ -39,7 +39,7 @@ Usage:
   penpot-cli --help
   penpot-cli --version
   penpot-cli mcp status [--url <status-url>] [--format text|json]
-  penpot-cli mcp config [--mode builtin|custom|local] [--format text|json]
+  penpot-cli mcp config [--mode builtin|custom|local] [--profile-source off|auto|backend] [--format text|json]
   penpot-cli mcp logs [--dir <path>] [--follow] [--format text|json]
   penpot-cli dev up --mcp [--mode devenv] [--dry-run] [--format text|json]
   penpot-cli file list --project-id <id> [--format text|json]
@@ -63,7 +63,7 @@ const MCP_HELP_TEXT = `penpot-cli mcp
 
 Usage:
   penpot-cli mcp status [--url <status-url>] [--format text|json]
-  penpot-cli mcp config [--mode builtin|custom|local] [--format text|json]
+  penpot-cli mcp config [--mode builtin|custom|local] [--profile-source off|auto|backend] [--format text|json]
   penpot-cli mcp logs [--dir <path>] [--follow] [--format text|json]
 
 Environment:
@@ -73,7 +73,10 @@ Environment:
   PENPOT_MCP_STREAM_URI      Explicit MCP stream URL
   PENPOT_MCP_WEBSOCKET_URI   Explicit MCP WebSocket URL
   PENPOT_MCP_STATUS_URI      Explicit MCP status URL
-  PENPOT_MCP_LOG_DIR         MCP file log directory`;
+  PENPOT_MCP_LOG_DIR         MCP file log directory
+  PENPOT_MCP_PROFILE_SOURCE  Profile config source: off, auto, or backend
+  PENPOT_BACKEND_URI         Backend RPC base URI for profile-source backend/auto
+  PENPOT_CLI_TOKEN           Penpot auth-token/session token for profile reads`;
 
 const DEV_HELP_TEXT = `penpot-cli dev
 
@@ -209,6 +212,9 @@ interface CliIO {
 }
 
 type McpMode = "builtin" | "custom" | "local";
+type McpProfileSource = "off" | "auto" | "backend";
+type McpProfileReadStatus = "disabled" | "loaded" | "fallback";
+type McpFieldSource = "flag" | "env" | "profile" | "default" | "derived" | "unset" | "fallback";
 
 interface McpProfileConfig {
     mode: McpMode;
@@ -218,6 +224,16 @@ interface McpProfileConfig {
     "sse-uri": string;
     "websocket-uri": string;
     "status-uri": string;
+}
+
+type McpProfileConfigInput = Partial<McpProfileConfig>;
+
+interface McpConfigSource {
+    profileSource: McpProfileSource;
+    status: McpProfileReadStatus;
+    backendUri: string | null;
+    profileId: string | null;
+    warnings: string[];
 }
 
 interface McpConfig {
@@ -232,6 +248,8 @@ interface McpConfig {
     profileProps: {
         "mcp-config": McpProfileConfig;
     };
+    configSource: McpConfigSource;
+    fieldSources: Record<string, McpFieldSource>;
 }
 
 interface LogFile {
@@ -602,54 +620,183 @@ function readBooleanConfig(value: string | undefined, fallback: boolean): boolea
     }
 }
 
-function getMcpConfig(args: string[], env: NodeJS.ProcessEnv, options: { allowModeAlias?: boolean } = {}): McpConfig {
+function readBooleanConfigWithSource(
+    flagValue: string | undefined,
+    envValue: string | undefined,
+    profileValue: boolean | undefined,
+    fallback: boolean
+): { value: boolean; source: McpFieldSource } {
+    if (flagValue !== undefined) {
+        return { value: readBooleanConfig(flagValue, fallback), source: "flag" };
+    }
+    if (envValue !== undefined) {
+        return { value: readBooleanConfig(envValue, fallback), source: "env" };
+    }
+    if (profileValue !== undefined) {
+        return { value: profileValue, source: "profile" };
+    }
+    return { value: fallback, source: "default" };
+}
+
+function normalizeMcpProfileSource(value: string | undefined): McpProfileSource | null {
+    switch (value) {
+        case undefined:
+        case "off":
+            return "off";
+        case "auto":
+        case "backend":
+            return value;
+        default:
+            return null;
+    }
+}
+
+function readMcpProfileSource(args: string[], env: NodeJS.ProcessEnv): McpProfileSource | null {
+    return normalizeMcpProfileSource(readOption(args, ["--profile-source"]) ?? env.PENPOT_MCP_PROFILE_SOURCE);
+}
+
+function readStringConfigWithSource(
+    flagValue: string | undefined,
+    envValue: string | undefined,
+    profileValue: string | undefined,
+    fallbackValue: string,
+    fallbackSource: McpFieldSource = "default"
+): { value: string; source: McpFieldSource } {
+    if (flagValue !== undefined) {
+        return { value: flagValue, source: "flag" };
+    }
+    if (envValue !== undefined) {
+        return { value: envValue, source: "env" };
+    }
+    if (profileValue !== undefined) {
+        return { value: profileValue, source: "profile" };
+    }
+    return { value: fallbackValue, source: fallbackSource };
+}
+
+function normalizeMcpProfileConfig(value: unknown): McpProfileConfigInput {
+    const record = asRecord(value);
+    const config: McpProfileConfigInput = {};
+    if (
+        typeof record.mode === "string" &&
+        ["built-in", "builtin", "custom", "local"].includes(record.mode)
+    ) {
+        config.mode = normalizeMcpMode(record.mode);
+    }
+    if (typeof record["auto-connect"] === "boolean") {
+        config["auto-connect"] = record["auto-connect"];
+    }
+
+    const urlKeys = ["public-uri", "stream-uri", "sse-uri", "websocket-uri", "status-uri"] as const;
+    for (const key of urlKeys) {
+        const rawValue = record[key];
+        if (typeof rawValue === "string" && rawValue.trim()) {
+            config[key] = rawValue.trim();
+        }
+    }
+
+    return config;
+}
+
+function getMcpConfig(
+    args: string[],
+    env: NodeJS.ProcessEnv,
+    options: {
+        allowModeAlias?: boolean;
+        profileConfig?: McpProfileConfigInput;
+        configSource?: McpConfigSource;
+    } = {}
+): McpConfig {
     const modeOptionNames = options.allowModeAlias ? ["--mode", "--mcp-mode"] : ["--mcp-mode"];
-    const mode = normalizeMcpMode(readOption(args, modeOptionNames) ?? env.PENPOT_MCP_MODE);
-    const autoConnect = readBooleanConfig(
-        readOption(args, ["--auto-connect"]) ?? env.PENPOT_MCP_AUTO_CONNECT,
+    const profileConfig = options.profileConfig ?? {};
+    const modeFlag = readOption(args, modeOptionNames);
+    const modeEnv = env.PENPOT_MCP_MODE;
+    const modeSource =
+        modeFlag !== undefined ? "flag" : modeEnv !== undefined ? "env" : profileConfig.mode ? "profile" : "default";
+    const mode = normalizeMcpMode(modeFlag ?? modeEnv ?? profileConfig.mode);
+    const autoConnect = readBooleanConfigWithSource(
+        readOption(args, ["--auto-connect"]),
+        env.PENPOT_MCP_AUTO_CONNECT,
+        profileConfig["auto-connect"],
         true
     );
     const defaultPublicUri = mode === "local" ? DEFAULT_LOCAL_MCP_PUBLIC_URI : DEFAULT_PUBLIC_URI;
-    const publicUri = trimTrailingSlash(
-        readOption(args, ["--public-uri"]) ?? env.PENPOT_MCP_PUBLIC_URI ?? defaultPublicUri
+    const publicUriConfig = readStringConfigWithSource(
+        readOption(args, ["--public-uri"]),
+        env.PENPOT_MCP_PUBLIC_URI,
+        profileConfig["public-uri"],
+        defaultPublicUri
     );
-    const streamUri =
-        readOption(args, ["--stream-uri"]) ??
-        env.PENPOT_MCP_STREAM_URI ??
-        appendPath(publicUri, mode === "local" ? "/mcp" : "/mcp/stream");
-    const sseUri =
-        readOption(args, ["--sse-uri"]) ??
-        env.PENPOT_MCP_SSE_URI ??
-        appendPath(publicUri, mode === "local" ? "/sse" : "/mcp/sse");
-    const websocketUri =
-        readOption(args, ["--websocket-uri", "--ws-uri"]) ??
-        env.PENPOT_MCP_WEBSOCKET_URI ??
-        (mode === "local" ? DEFAULT_LOCAL_MCP_WEBSOCKET_URI : appendPath(publicUri, "/mcp/ws"));
-    const statusUri =
-        readOption(args, ["--status-uri", "--url"]) ??
-        env.PENPOT_MCP_STATUS_URI ??
-        appendPath(publicUri, mode === "local" ? "/status" : "/mcp/status");
-    const logDir = readOption(args, ["--dir", "--log-dir"]) ?? env.PENPOT_MCP_LOG_DIR ?? null;
+    const publicUri = trimTrailingSlash(publicUriConfig.value);
+    const streamUri = readStringConfigWithSource(
+        readOption(args, ["--stream-uri"]),
+        env.PENPOT_MCP_STREAM_URI,
+        profileConfig["stream-uri"],
+        appendPath(publicUri, mode === "local" ? "/mcp" : "/mcp/stream"),
+        "derived"
+    );
+    const sseUri = readStringConfigWithSource(
+        readOption(args, ["--sse-uri"]),
+        env.PENPOT_MCP_SSE_URI,
+        profileConfig["sse-uri"],
+        appendPath(publicUri, mode === "local" ? "/sse" : "/mcp/sse"),
+        "derived"
+    );
+    const websocketUri = readStringConfigWithSource(
+        readOption(args, ["--websocket-uri", "--ws-uri"]),
+        env.PENPOT_MCP_WEBSOCKET_URI,
+        profileConfig["websocket-uri"],
+        mode === "local" ? DEFAULT_LOCAL_MCP_WEBSOCKET_URI : appendPath(publicUri, "/mcp/ws"),
+        "derived"
+    );
+    const statusUri = readStringConfigWithSource(
+        readOption(args, ["--status-uri", "--url"]),
+        env.PENPOT_MCP_STATUS_URI,
+        profileConfig["status-uri"],
+        appendPath(publicUri, mode === "local" ? "/status" : "/mcp/status"),
+        "derived"
+    );
+    const logDirFlag = readOption(args, ["--dir", "--log-dir"]);
+    const logDir = logDirFlag ?? env.PENPOT_MCP_LOG_DIR ?? null;
+    const logDirSource = logDirFlag !== undefined ? "flag" : env.PENPOT_MCP_LOG_DIR !== undefined ? "env" : "unset";
+    const configSource = options.configSource ?? {
+        profileSource: "off",
+        status: "disabled",
+        backendUri: null,
+        profileId: null,
+        warnings: [],
+    };
 
     return {
         mode,
-        autoConnect,
+        autoConnect: autoConnect.value,
         publicUri,
-        streamUri,
-        sseUri,
-        websocketUri,
-        statusUri,
+        streamUri: streamUri.value,
+        sseUri: sseUri.value,
+        websocketUri: websocketUri.value,
+        statusUri: statusUri.value,
         logDir,
         profileProps: {
             "mcp-config": {
                 mode,
-                "auto-connect": autoConnect,
+                "auto-connect": autoConnect.value,
                 "public-uri": publicUri,
-                "stream-uri": streamUri,
-                "sse-uri": sseUri,
-                "websocket-uri": websocketUri,
-                "status-uri": statusUri,
+                "stream-uri": streamUri.value,
+                "sse-uri": sseUri.value,
+                "websocket-uri": websocketUri.value,
+                "status-uri": statusUri.value,
             },
+        },
+        configSource,
+        fieldSources: {
+            mode: modeSource,
+            autoConnect: autoConnect.source,
+            publicUri: publicUriConfig.source,
+            streamUri: streamUri.source,
+            sseUri: sseUri.source,
+            websocketUri: websocketUri.source,
+            statusUri: statusUri.source,
+            logDir: logDirSource,
         },
     };
 }
@@ -2148,6 +2295,54 @@ async function resolveExporterProfileId(
     return profileId;
 }
 
+async function readBackendMcpProfileConfig(
+    args: string[],
+    env: NodeJS.ProcessEnv,
+    token: string
+): Promise<{ backendUri: string; profileId: string; profileConfig: McpProfileConfigInput }> {
+    const rpc = getRpcConfig(args, env);
+    const url = createRpcUrl(rpc.backendUri, "get-profile");
+    let response: Response;
+    try {
+        response = await fetch(url, {
+            method: "GET",
+            headers: {
+                accept: "application/json",
+                authorization: `Bearer ${token}`,
+                cookie: authCookieHeader(token),
+                "x-client": "penpot-cli/0.1",
+            },
+        });
+    } catch (cause) {
+        throw createCliError(
+            "mcp_profile_read_failed",
+            `Unable to read MCP profile config from ${rpc.backendUri}: ${String(cause)}`,
+            0,
+            { backendUri: rpc.backendUri }
+        );
+    }
+
+    const data = await readStructuredResponse(response);
+    if (!response.ok) {
+        throw createHttpResponseError("mcp_profile_read_failed", "Unable to read MCP profile config.", response, data);
+    }
+
+    const profile = asRecord(data);
+    const profileId = typeof profile.id === "string" ? profile.id : "";
+    if (!isUuidString(profileId) || profileId === ZERO_UUID) {
+        throw createCliError(
+            "mcp_profile_auth_required",
+            "Unable to read MCP profile config from an authenticated Penpot profile.",
+            response.status,
+            { backendUri: rpc.backendUri }
+        );
+    }
+
+    const props = asRecord(profile.props);
+    const profileConfig = normalizeMcpProfileConfig(props["mcp-config"] ?? props.mcpConfig);
+    return { backendUri: rpc.backendUri, profileId, profileConfig };
+}
+
 async function postExporterRequest(plan: ExportPagePlan, profileId: string, token: string): Promise<Record<string, unknown>> {
     let response: Response;
     try {
@@ -2308,6 +2503,14 @@ function writeConfigText(io: CliIO, config: McpConfig): void {
     writeLine(io.stdout, `websocket-uri: ${config.websocketUri}`);
     writeLine(io.stdout, `status-uri: ${config.statusUri}`);
     writeLine(io.stdout, `log-dir: ${config.logDir ?? "<not configured>"}`);
+    writeLine(io.stdout, `profile-source: ${config.configSource.profileSource}`);
+    writeLine(io.stdout, `config-source: ${config.configSource.status}`);
+    if (config.configSource.profileId) {
+        writeLine(io.stdout, `profile-id: ${config.configSource.profileId}`);
+    }
+    for (const warning of config.configSource.warnings) {
+        writeLine(io.stdout, `warning: ${warning}`);
+    }
 }
 
 function writeFilesText(io: CliIO, projectId: string, files: unknown): void {
@@ -2590,19 +2793,101 @@ async function handleMcpStatus(args: string[], io: CliIO, env: NodeJS.ProcessEnv
     }
 }
 
-function handleMcpConfig(args: string[], io: CliIO, env: NodeJS.ProcessEnv): number {
+async function handleMcpConfig(args: string[], io: CliIO, env: NodeJS.ProcessEnv): Promise<number> {
     const format = parseFormat(args, io);
     if (!format) {
         return 2;
     }
 
-    const config = getMcpConfig(args, env, { allowModeAlias: true });
+    const profileSource = readMcpProfileSource(args, env);
+    if (!profileSource) {
+        writeError(
+            io,
+            format,
+            "invalid_mcp_profile_source",
+            "Invalid --profile-source value. Expected off, auto, or backend.",
+            ["Use --profile-source off, --profile-source auto, or --profile-source backend."]
+        );
+        return 2;
+    }
+
+    let profileConfig: McpProfileConfigInput = {};
+    let configSource: McpConfigSource = {
+        profileSource,
+        status: profileSource === "off" ? "disabled" : "fallback",
+        backendUri: null,
+        profileId: null,
+        warnings: [],
+    };
+
+    if (profileSource !== "off") {
+        const rpc = getRpcConfig(args, env);
+        configSource = { ...configSource, backendUri: rpc.backendUri };
+        if (!rpc.token) {
+            if (profileSource === "backend") {
+                writeError(
+                    io,
+                    format,
+                    CommandErrorCodes.AUTHENTICATION_REQUIRED,
+                    "Reading MCP config from a Penpot profile requires an auth-token/session token.",
+                    ["Pass --token <token> or set PENPOT_CLI_TOKEN, PENPOT_MCP_USER_TOKEN, or PENPOT_ACCESS_TOKEN."],
+                    { backendUri: rpc.backendUri, profileSource }
+                );
+                return 2;
+            }
+            configSource.warnings.push("profile-source auto skipped because no auth token was supplied");
+        } else {
+            try {
+                const result = await readBackendMcpProfileConfig(args, env, extractAuthTokenValue(rpc.token));
+                profileConfig = result.profileConfig;
+                configSource = {
+                    profileSource,
+                    status: "loaded",
+                    backendUri: result.backendUri,
+                    profileId: result.profileId,
+                    warnings: [],
+                };
+            } catch (cause) {
+                if (profileSource === "backend") {
+                    const error = asRecord(cause);
+                    const code = typeof error.code === "string" ? error.code : "mcp_profile_read_failed";
+                    const status = typeof error.status === "number" ? error.status : 0;
+                    const message =
+                        cause instanceof Error ? cause.message : "Unable to read MCP profile config from Penpot.";
+                    writeError(
+                        io,
+                        format,
+                        code,
+                        message,
+                        [
+                            "Check PENPOT_BACKEND_URI or --backend-uri.",
+                            "Check that the token belongs to a signed-in Penpot user.",
+                            "Use --profile-source off to keep local env/flag-only behavior.",
+                        ],
+                        {
+                            backendUri: rpc.backendUri,
+                            profileSource,
+                            status,
+                        }
+                    );
+                    return 2;
+                }
+                configSource.warnings.push(
+                    cause instanceof Error
+                        ? `profile-source auto fell back to local config: ${cause.message}`
+                        : "profile-source auto fell back to local config"
+                );
+            }
+        }
+    }
+
+    const config = getMcpConfig(args, env, { allowModeAlias: true, profileConfig, configSource });
     const requestEnvelope = createCliRequest(CommandDescriptors.MCP_CONFIG, {
         input: { mode: config.mode, autoConnect: config.autoConnect },
         target: { publicUri: config.publicUri, statusUri: config.statusUri },
-        auth: { userTokenPresent: false, source: "local-config" },
-        adapter: "local",
-        diagnostics: { logDirConfigured: Boolean(config.logDir) },
+        auth: { userTokenPresent: profileSource !== "off" && Boolean(getRpcConfig(args, env).token), source: "mcp-config" },
+        adapter: profileSource === "off" ? "local" : "backend-command",
+        diagnostics: { logDirConfigured: Boolean(config.logDir), configSource: config.configSource },
     });
     const resultEnvelope = createCliResult(requestEnvelope, config);
     if (format === "json") {
@@ -2717,7 +3002,7 @@ async function handleMcpCommand(args: string[], io: CliIO, env: NodeJS.ProcessEn
         case "status":
             return await handleMcpStatus(rest, io, env);
         case "config":
-            return handleMcpConfig(rest, io, env);
+            return await handleMcpConfig(rest, io, env);
         case "logs":
             return await handleMcpLogs(rest, io, env);
         default:

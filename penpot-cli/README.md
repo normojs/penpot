@@ -88,6 +88,36 @@ node penpot-cli/dist/index.js mcp config --mode local
 node penpot-cli/dist/index.js mcp config --format json
 ```
 
+By default `mcp config` does not contact the backend. Use an explicit
+profile source when the CLI should merge saved Penpot profile settings into
+the effective output:
+
+```bash
+node penpot-cli/dist/index.js mcp config \
+  --profile-source auto \
+  --backend-uri http://localhost:6060 \
+  --token <auth-token> \
+  --format json
+
+node penpot-cli/dist/index.js mcp config \
+  --profile-source backend \
+  --backend-uri http://localhost:6060 \
+  --token <auth-token>
+```
+
+Profile source modes:
+
+| Source | Behavior |
+| --- | --- |
+| `off` | Default. Use flags, environment variables, and runtime defaults only; no network request. |
+| `auto` | Read `profile.props.mcp-config` only when a token is present; fall back to local config with warning metadata on missing auth or backend failure. |
+| `backend` | Require a token, call backend `get-profile`, and fail clearly if auth, network, backend, or anonymous-profile resolution fails. |
+
+Field precedence is `flag > env > profile > default/derived`.
+`logDir` remains local-only through `--dir`, `--log-dir`, or
+`PENPOT_MCP_LOG_DIR`. JSON output includes `configSource` and `fieldSources`
+metadata and never prints token values.
+
 Inspect local MCP log files:
 
 ```bash
@@ -109,6 +139,9 @@ MCP URL environment variables:
 | `PENPOT_MCP_WEBSOCKET_URI` | Explicit WebSocket URL | `<public>/mcp/ws` |
 | `PENPOT_MCP_STATUS_URI` | Explicit status URL | `<public>/mcp/status` |
 | `PENPOT_MCP_LOG_DIR` | Directory containing MCP `.log` files | Not configured |
+| `PENPOT_MCP_PROFILE_SOURCE` | Config profile source: `off`, `auto`, or `backend` | `off` |
+| `PENPOT_BACKEND_URI` | Backend RPC URI for profile-source `auto`/`backend` | `http://localhost:6060` |
+| `PENPOT_CLI_TOKEN` | Penpot auth-token/session token for authenticated profile reads | Not configured |
 
 Mode defaults:
 

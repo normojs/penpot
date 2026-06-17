@@ -384,7 +384,7 @@ Tasks:
 - Done in P16.1: audit the authenticated CLI profile-config read path and
   precedence contract before code changes. See
   `cli-profile-config-read-path.md`.
-- P16.2: add an optional authenticated profile source to
+- Done in P16.2: add an optional authenticated profile source to
   `penpot-cli mcp config`, preserving current env-derived/no-network behavior.
 - P16.3: add canonical MCP URL derivation contract fixtures for frontend and
   CLI parity across built-in, custom, local, partial, invalid, and reset cases.
@@ -403,17 +403,18 @@ Acceptance:
 ## Near-Term Priority
 
 Wave D, Wave E, Wave F, and Wave G are complete. P15.2 selected Wave H as the
-next implementation slice, and P16.1 documented the profile-config read-path
-contract.
+next implementation slice. P16.1 documented the profile-config read-path
+contract, and P16.2 implemented opt-in authenticated profile reads for
+`penpot-cli mcp config`.
 
-The next active task is P16.2:
+The next active task is P16.3:
 
-1. Add an opt-in profile source for `penpot-cli mcp config` so the command can
-   read authenticated `profile.props.mcp-config` through backend `get-profile`.
-2. Preserve the current no-network default, environment compatibility, and
-   legacy JSON fields.
-3. Add source metadata, fallback/error behavior, and CLI smoke coverage from
-   `cli-profile-config-read-path.md`.
+1. Add canonical MCP URL derivation contract fixtures for frontend and CLI
+   parity across built-in, custom, local, partial, invalid, and reset configs.
+2. Keep the new `mcp config` profile-source behavior covered while adding
+   fixture-backed expectations for derived URL fields.
+3. Document which fixture cases are shared directly and which are mirrored
+   across TS and CLJS tests.
 
 Keep manual configuration behavior stable while moving command metadata and
 envelopes; transport-specific formatting should stay at the MCP/CLI edges.

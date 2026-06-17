@@ -177,36 +177,62 @@ test("command runtime centralizes adapter error payloads and reason text", () =>
 });
 
 test("mcp config derives stable public MCP surfaces from environment", async () => {
+    const originalFetch = globalThis.fetch;
+    globalThis.fetch = async () => {
+        throw new Error("mcp config should not read the backend unless profile-source is enabled");
+    };
     const result = await runCli(["mcp", "config", "--format", "json"], {
         PENPOT_MCP_PUBLIC_URI: "https://penpot.example.test/",
         PENPOT_MCP_LOG_DIR: "/tmp/penpot-mcp-logs",
     });
-    const body = parseJson(result.stdout);
 
-    assert.equal(result.exitCode, 0);
-    assert.equal(result.stderr, "");
-    assert.equal(body.status, "ok");
-    assert.deepEqual(body.data, {
-        mode: "builtin",
-        autoConnect: true,
-        publicUri: "https://penpot.example.test",
-        streamUri: "https://penpot.example.test/mcp/stream",
-        sseUri: "https://penpot.example.test/mcp/sse",
-        websocketUri: "https://penpot.example.test/mcp/ws",
-        statusUri: "https://penpot.example.test/mcp/status",
-        logDir: "/tmp/penpot-mcp-logs",
-        profileProps: {
-            "mcp-config": {
-                mode: "builtin",
-                "auto-connect": true,
-                "public-uri": "https://penpot.example.test",
-                "stream-uri": "https://penpot.example.test/mcp/stream",
-                "sse-uri": "https://penpot.example.test/mcp/sse",
-                "websocket-uri": "https://penpot.example.test/mcp/ws",
-                "status-uri": "https://penpot.example.test/mcp/status",
+    try {
+        const body = parseJson(result.stdout);
+
+        assert.equal(result.exitCode, 0);
+        assert.equal(result.stderr, "");
+        assert.equal(body.status, "ok");
+        assert.deepEqual(body.data, {
+            mode: "builtin",
+            autoConnect: true,
+            publicUri: "https://penpot.example.test",
+            streamUri: "https://penpot.example.test/mcp/stream",
+            sseUri: "https://penpot.example.test/mcp/sse",
+            websocketUri: "https://penpot.example.test/mcp/ws",
+            statusUri: "https://penpot.example.test/mcp/status",
+            logDir: "/tmp/penpot-mcp-logs",
+            profileProps: {
+                "mcp-config": {
+                    mode: "builtin",
+                    "auto-connect": true,
+                    "public-uri": "https://penpot.example.test",
+                    "stream-uri": "https://penpot.example.test/mcp/stream",
+                    "sse-uri": "https://penpot.example.test/mcp/sse",
+                    "websocket-uri": "https://penpot.example.test/mcp/ws",
+                    "status-uri": "https://penpot.example.test/mcp/status",
+                },
             },
-        },
-    });
+            configSource: {
+                profileSource: "off",
+                status: "disabled",
+                backendUri: null,
+                profileId: null,
+                warnings: [],
+            },
+            fieldSources: {
+                mode: "default",
+                autoConnect: "default",
+                publicUri: "env",
+                streamUri: "derived",
+                sseUri: "derived",
+                websocketUri: "derived",
+                statusUri: "derived",
+                logDir: "env",
+            },
+        });
+    } finally {
+        globalThis.fetch = originalFetch;
+    }
 });
 
 test("mcp config reports local mode using persisted config field names", async () => {
@@ -218,6 +244,9 @@ test("mcp config reports local mode using persisted config field names", async (
     assert.equal(body.status, "ok");
     assert.equal(body.data.mode, "local");
     assert.equal(body.data.publicUri, "http://localhost:4401");
+    assert.equal(body.data.configSource.profileSource, "off");
+    assert.equal(body.data.fieldSources.mode, "flag");
+    assert.equal(body.data.fieldSources.websocketUri, "derived");
     assert.deepEqual(body.data.profileProps["mcp-config"], {
         mode: "local",
         "auto-connect": true,
@@ -241,6 +270,10 @@ test("mcp config reports custom mode and auto-connect override", async () => {
     assert.equal(body.status, "ok");
     assert.equal(body.data.mode, "custom");
     assert.equal(body.data.autoConnect, false);
+    assert.equal(body.data.fieldSources.mode, "flag");
+    assert.equal(body.data.fieldSources.autoConnect, "flag");
+    assert.equal(body.data.fieldSources.publicUri, "env");
+    assert.equal(body.data.fieldSources.streamUri, "env");
     assert.deepEqual(body.data.profileProps["mcp-config"], {
         mode: "custom",
         "auto-connect": false,
@@ -250,6 +283,176 @@ test("mcp config reports custom mode and auto-connect override", async () => {
         "websocket-uri": "https://external-mcp.example/mcp/ws",
         "status-uri": "https://external-mcp.example/mcp/status",
     });
+});
+
+test("mcp config reads authenticated profile source from backend", async () => {
+    const originalFetch = globalThis.fetch;
+    const calls = [];
+    globalThis.fetch = async (url, options) => {
+        calls.push({ url: String(url), options });
+        return {
+            ok: true,
+            status: 200,
+            statusText: "OK",
+            headers: { get: () => "application/json" },
+            text: async () =>
+                JSON.stringify({
+                    id: UUIDS.profile,
+                    props: {
+                        "mcp-config": {
+                            mode: "custom",
+                            "auto-connect": false,
+                            "public-uri": "https://profile.example.test/",
+                            "status-uri": "https://status.profile.example.test/mcp/status",
+                            token: "secret-value",
+                        },
+                    },
+                }),
+        };
+    };
+
+    try {
+        const result = await runCli(["mcp", "config", "--profile-source", "backend", "--format", "json"], {
+            PENPOT_BACKEND_URI: "http://127.0.0.1:6060",
+            PENPOT_CLI_TOKEN: "token-1",
+        });
+        const body = parseJson(result.stdout);
+
+        assert.equal(result.exitCode, 0);
+        assert.equal(result.stderr, "");
+        assert.equal(calls.length, 1);
+        assert.match(calls[0].url, /\/api\/main\/methods\/get-profile\?_fmt=json$/);
+        assert.equal(calls[0].options.method, "GET");
+        assert.equal(calls[0].options.headers.authorization, "Bearer token-1");
+        assert.equal(calls[0].options.headers.cookie, "auth-token=token-1");
+        assert.equal(body.status, "ok");
+        assert.equal(body.data.mode, "custom");
+        assert.equal(body.data.autoConnect, false);
+        assert.equal(body.data.publicUri, "https://profile.example.test");
+        assert.equal(body.data.statusUri, "https://status.profile.example.test/mcp/status");
+        assert.equal(body.data.configSource.profileSource, "backend");
+        assert.equal(body.data.configSource.status, "loaded");
+        assert.equal(body.data.configSource.profileId, UUIDS.profile);
+        assert.equal(body.data.fieldSources.mode, "profile");
+        assert.equal(body.data.fieldSources.autoConnect, "profile");
+        assert.equal(body.data.fieldSources.publicUri, "profile");
+        assert.equal(body.data.fieldSources.streamUri, "derived");
+        assert.equal(JSON.stringify(body).includes("secret-value"), false);
+    } finally {
+        globalThis.fetch = originalFetch;
+    }
+});
+
+test("mcp config keeps flag and env precedence over profile source", async () => {
+    const originalFetch = globalThis.fetch;
+    globalThis.fetch = async () => ({
+        ok: true,
+        status: 200,
+        statusText: "OK",
+        headers: { get: () => "application/json" },
+        text: async () =>
+            JSON.stringify({
+                id: UUIDS.profile,
+                props: {
+                    "mcp-config": {
+                        mode: "local",
+                        "auto-connect": false,
+                        "public-uri": "https://profile.example.test",
+                    },
+                },
+            }),
+    });
+
+    try {
+        const result = await runCli(
+            ["mcp", "config", "--profile-source", "backend", "--mode", "builtin", "--auto-connect", "true", "--format", "json"],
+            {
+                PENPOT_BACKEND_URI: "http://127.0.0.1:6060",
+                PENPOT_CLI_TOKEN: "token-1",
+                PENPOT_MCP_PUBLIC_URI: "https://env.example.test",
+            }
+        );
+        const body = parseJson(result.stdout);
+
+        assert.equal(result.exitCode, 0);
+        assert.equal(result.stderr, "");
+        assert.equal(body.status, "ok");
+        assert.equal(body.data.mode, "builtin");
+        assert.equal(body.data.autoConnect, true);
+        assert.equal(body.data.publicUri, "https://env.example.test");
+        assert.equal(body.data.streamUri, "https://env.example.test/mcp/stream");
+        assert.equal(body.data.fieldSources.mode, "flag");
+        assert.equal(body.data.fieldSources.autoConnect, "flag");
+        assert.equal(body.data.fieldSources.publicUri, "env");
+        assert.equal(body.data.configSource.status, "loaded");
+    } finally {
+        globalThis.fetch = originalFetch;
+    }
+});
+
+test("mcp config backend profile source requires auth token", async () => {
+    const result = await runCli(["mcp", "config", "--profile-source", "backend", "--format", "json"], {
+        PENPOT_BACKEND_URI: "http://127.0.0.1:6060",
+    });
+    const body = parseJson(result.stdout);
+
+    assert.equal(result.exitCode, 2);
+    assert.equal(result.stderr, "");
+    assert.equal(body.status, "error");
+    assert.equal(body.error.code, CommandErrorCodes.AUTHENTICATION_REQUIRED);
+    assert.equal(body.error.data.profileSource, "backend");
+});
+
+test("mcp config auto profile source skips backend when token is missing", async () => {
+    const originalFetch = globalThis.fetch;
+    globalThis.fetch = async () => {
+        throw new Error("auto without token should not call backend");
+    };
+
+    try {
+        const result = await runCli(["mcp", "config", "--profile-source", "auto", "--format", "json"], {
+            PENPOT_BACKEND_URI: "http://127.0.0.1:6060",
+            PENPOT_MCP_PUBLIC_URI: "https://env.example.test",
+        });
+        const body = parseJson(result.stdout);
+
+        assert.equal(result.exitCode, 0);
+        assert.equal(result.stderr, "");
+        assert.equal(body.status, "ok");
+        assert.equal(body.data.publicUri, "https://env.example.test");
+        assert.equal(body.data.configSource.profileSource, "auto");
+        assert.equal(body.data.configSource.status, "fallback");
+        assert.match(body.data.configSource.warnings[0], /no auth token/);
+    } finally {
+        globalThis.fetch = originalFetch;
+    }
+});
+
+test("mcp config auto profile source falls back on backend failure", async () => {
+    const originalFetch = globalThis.fetch;
+    globalThis.fetch = async () => {
+        throw new Error("network down");
+    };
+
+    try {
+        const result = await runCli(["mcp", "config", "--profile-source", "auto", "--format", "json"], {
+            PENPOT_BACKEND_URI: "http://127.0.0.1:6060",
+            PENPOT_CLI_TOKEN: "token-1",
+            PENPOT_MCP_PUBLIC_URI: "https://env.example.test",
+        });
+        const body = parseJson(result.stdout);
+
+        assert.equal(result.exitCode, 0);
+        assert.equal(result.stderr, "");
+        assert.equal(body.status, "ok");
+        assert.equal(body.data.publicUri, "https://env.example.test");
+        assert.equal(body.data.configSource.profileSource, "auto");
+        assert.equal(body.data.configSource.status, "fallback");
+        assert.match(body.data.configSource.warnings[0], /network down/);
+        assert.equal(body.data.fieldSources.publicUri, "env");
+    } finally {
+        globalThis.fetch = originalFetch;
+    }
 });
 
 test("dev up dry-run reports MCP surfaces without starting services", async () => {

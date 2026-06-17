@@ -45,9 +45,9 @@ Frontend already treats `profile.props.mcp-config` as optional:
 
 ## P16.2 Command Contract
 
-Profile reading must be opt-in so existing scripts do not start making network
-requests. P16.2 should add a profile-source option to `mcp config`, for example
-`--profile-source auto|off|backend`, with `off` as the default.
+Profile reading is opt-in so existing scripts do not start making network
+requests. P16.2 adds `--profile-source auto|off|backend` to `mcp config`,
+with `off` as the default.
 
 Expected meanings:
 
@@ -57,9 +57,9 @@ Expected meanings:
 | `backend` | yes | require a token, call backend `get-profile`, fail clearly on auth/network/backend errors |
 | `auto` | maybe | call backend only when a token is present; otherwise report offline fallback without failing |
 
-The backend call should use the existing RPC helper shape:
+The backend call uses the existing CLI RPC URL helper shape:
 
-- URL: `<backend-uri>/api/rpc/command/get-profile`
+- URL: `<backend-uri>/api/main/methods/get-profile?_fmt=json`
 - method: `GET`
 - headers: `accept: application/json`, `authorization: Bearer <token>`,
   `cookie: auth-token=<token>`, `x-client: penpot-cli/0.1`
@@ -101,14 +101,14 @@ Current JSON fields should remain stable:
 - `logDir`
 - `profileProps["mcp-config"]`
 
-P16.2 should add diagnostic metadata without removing existing fields:
+P16.2 adds diagnostic metadata without removing existing fields:
 
 ```json
 {
   "configSource": {
     "profileSource": "off",
-    "profileRead": "skipped",
-    "backendUri": "http://localhost:6060",
+    "status": "disabled",
+    "backendUri": null,
     "profileId": null,
     "warnings": []
   },
@@ -128,17 +128,17 @@ P16.2 should add diagnostic metadata without removing existing fields:
 Recommended source labels are `flag`, `env`, `profile`, `default`, `derived`,
 `unset`, and `fallback`.
 
-Text output should stay human-readable and add short source lines only when
-profile reading is requested or when a warning exists.
+Text output stays human-readable and includes profile-source/config-source
+lines plus warnings when fallback behavior is involved.
 
 ## Error And Fallback Contract
 
 | Case | `off` | `auto` | `backend` |
 | --- | --- | --- | --- |
-| missing token | ok, skipped | ok, skipped with fallback metadata | fail with `auth_token_required` |
-| backend unavailable | not called | warn and use env/default fallback | fail with `backend_unavailable` |
+| missing token | ok, skipped | ok, skipped with fallback metadata | fail with `authentication_required` |
+| backend unavailable | not called | warn and use env/default fallback | fail with `mcp_profile_read_failed` |
 | non-OK profile response | not called | warn and use env/default fallback | fail with normalized backend error |
-| anonymous profile | not called | warn and use env/default fallback | fail with `authenticated_profile_required` |
+| anonymous profile | not called | warn and use env/default fallback | fail with `mcp_profile_auth_required` |
 | malformed legacy config | not possible from sanitized backend result; defensive CLI parsing should ignore invalid nested values and warn | same | same |
 | profile has only `mcp-enabled` | use env/default fallback | use env/default fallback | use env/default fallback |
 
@@ -147,7 +147,7 @@ inside a legacy profile config must be ignored if they appear in raw data.
 
 ## Fixture Matrix For P16.2 And P16.3
 
-P16.2 CLI smoke tests should cover:
+P16.2 CLI smoke tests cover:
 
 1. default `off` mode does not call backend and preserves current JSON output
    plus source metadata.
@@ -157,9 +157,9 @@ P16.2 CLI smoke tests should cover:
 4. flags override environment and profile values field by field.
 5. environment overrides profile values field by field.
 6. `auto` without token succeeds with skipped profile metadata.
-7. `backend` without token fails with `auth_token_required`.
+7. `backend` without token fails with `authentication_required`.
 8. `auto` backend network failure succeeds with warning and fallback.
-9. `backend` network failure fails with `backend_unavailable`.
+9. `backend` network failure fails with `mcp_profile_read_failed`.
 10. anonymous or zero-uuid profile fails in `backend` and falls back in `auto`.
 11. profile containing only `mcp-enabled` behaves like missing `mcp-config`.
 12. defensive parsing ignores unknown modes, blank URLs, unknown nested keys,
@@ -179,8 +179,7 @@ P16.3 should mirror frontend `effective-config` cases:
 
 ## Implementation Notes
 
-The first implementation should stay inside `penpot-cli/src/index.ts` and its
-existing smoke test file unless code growth justifies extraction. Do not add a
-backend RPC for this task; `get-profile` is sufficient. Do not make profile
-reading the default until scripts, CI, and self-hosted env-only deployments
-have a migration window.
+The P16.2 implementation stays inside `penpot-cli/src/index.ts` and its
+existing smoke test file. It reuses backend `get-profile`; no new backend RPC
+is required. Profile reading remains non-default until scripts, CI, and
+self-hosted env-only deployments have a migration window.
