@@ -120,10 +120,12 @@ container track subset for explicit file targets while cell/child placement
 remains out of scope. P17.5 is complete: live-only current-page/selection
 guidance now includes plugin-live recovery metadata, target-aware
 `page.set_current` handoff URLs, aligned CLI reason text, and smoke evidence.
-P18.1 and P18.2 are complete: `selection.get` and `selection.set` now run
+P18.1, P18.2, and P18.3 are complete: `selection.get` and `selection.set` now run
 through plugin-live for bound MCP workspaces, returning selected ids plus
 lightweight shape summaries while allowing explicit selection mutation and
-clearing. Current active work moves to P18.3 for live-bind smoke evidence.
+clearing, and the live-bind smoke flow plus CLI descriptor guidance now cover
+selection read/write evidence. Current active work moves to P19.1 for the
+prototype interaction mutation identity contract.
 
 ## Feature Roadmap
 
@@ -156,7 +158,8 @@ remain the execution plan.
 | F22 | done | Roadmap reconciliation and next-wave planning | Phase 15 | The fork has one accurate active task and a clean next development wave | Completed 2026-06-16; P15.1 reconciled roadmap status and P15.2 defined Wave H / Phase 16 as the next implementation wave |
 | F23 | done | CLI configuration convergence and distribution hardening | Phase 16 | `penpot-cli` can inspect the same saved MCP config that Penpot uses and has a clearer path toward portable local use | Completed 2026-06-17; P16.1 completed the read-path contract; P16.2 completed opt-in authenticated profile-source support; P16.3 completed URL derivation fixtures; P16.4 completed host/hybrid planning; P16.5 added a verified private portable CLI release archive |
 | F24 | done | Headless live-gap closure | Phase 17 | More authoring operations can run without a live workspace, while truly live-only state stays explicit | Completed 2026-06-17; P17.1-P17.5 audited live gaps, added descriptors, implemented persisted prototype reads, added backend-safe grid tracks, and tightened live-only binding guidance |
-| F25 | todo | Live workspace state commands | Phase 18 | Agents can intentionally read or change editor-local selection state through bound MCP plugin-live commands | P18.1 completed `selection.get`; P18.2 completed `selection.set`; next is smoke coverage |
+| F25 | done | Live workspace state commands | Phase 18 | Agents can intentionally read or change editor-local selection state through bound MCP plugin-live commands | Completed 2026-06-17; P18.1-P18.3 implemented `selection.get`, `selection.set`, clearing, and live-bind/CLI descriptor smoke evidence |
+| F26 | todo | Prototype mutation contracts | Phase 19 | Agents can safely mutate persisted prototype interactions only after target identity semantics are explicit | Start with P19.1 to define delete interaction identity before backend-command or plugin-live execution |
 
 ## Detailed Upcoming Task Queue
 
@@ -323,7 +326,29 @@ Order rationale:
 | --- | --- | --- | --- | --- |
 | J1 | Implement plugin-live `selection.get` | `mcp`, `mcp/docs` | Completed 2026-06-17; MCP returns selected shape ids and lightweight summaries from the bound workspace context | Plugin task serialization plus MCP tool tests cover plugin-live execution and unbound recovery |
 | J2 | Implement plugin-live `selection.set` | `mcp`, `mcp/docs` | Completed 2026-06-17; MCP can set or clear editor selection for explicit shape ids in the bound workspace | Plugin validates shape ids; tests cover empty selection, stale context recovery, and plugin task payloads |
-| J3 | Add selection smoke evidence | `mcp/docs`, `penpot-cli` | Live-bind smoke includes optional selection read/write evidence and CLI descriptor guidance stays explicit | Docs plus CLI/runtime descriptor tests |
+| J3 | Add selection smoke evidence | `mcp/docs`, `penpot-cli` | Completed 2026-06-17; live-bind smoke includes concrete selection read/write and empty-clear evidence, and CLI descriptor guidance stays explicit | Docs plus CLI/runtime descriptor tests |
+
+### Wave K: Prototype Mutation Contracts
+
+Wave K turns planned prototype mutation descriptors into executable behavior
+only after the persisted interaction target contract is explicit. It starts
+with delete semantics because interaction listing is already backend-safe, while
+overlay creation remains contract-first.
+
+Order rationale:
+
+- Define identity before mutation so agents can address interactions
+  predictably across backend-command, plugin-live, and future CLI surfaces.
+- Implement delete only after id/index/flow selector behavior is documented and
+  testable.
+- Keep overlay creation planned until delete proves the shared prototype
+  mutation envelope and error shape.
+
+| Order | Task | Modules | Output | Verification |
+| --- | --- | --- | --- | --- |
+| K1 | Define prototype interaction mutation identity contract | `mcp/docs`, `command-runtime`, `mcp`, `penpot-cli` | Contract chooses id/index/flow selector semantics for `prototype.delete_interaction` and documents unsupported overlay behavior | Docs plus descriptor/runtime tests |
+| K2 | Implement backend-command `prototype.delete_interaction` | `backend`, `common`, `mcp`, `penpot-cli`, `mcp/docs` | Persisted interaction delete works for explicit file/page/flow targets without a live workspace | Backend/common plus MCP/CLI tests cover success, not-found, and stale target errors |
+| K3 | Reassess prototype overlay creation contract | `mcp/docs`, `command-runtime`, `mcp` | Overlay creation has a documented target/action payload or remains explicitly unsupported | Audit docs and descriptors stay aligned |
 
 ## Phase 0: Baseline, Planning, And Rules
 
@@ -571,17 +596,28 @@ mutations.
 | --- | --- | --- | --- | --- | --- |
 | P18.1 | done | Implement plugin-live `selection.get` | `mcp`, `mcp/docs` | Completed 2026-06-17; plugin task serialization and MCP tool tests cover bound plugin-live execution, unbound recovery, and unsupported adapters | Returns selected shape ids and lightweight summaries from the bound workspace; CLI remains descriptor-only |
 | P18.2 | done | Implement plugin-live `selection.set` | `mcp`, `mcp/docs` | Completed 2026-06-17; plugin task serialization and MCP tool tests cover bound plugin-live execution, clearing selection, stale/unbound recovery, and unsupported adapters | Mutates only editor-local selection in the bound workspace; plugin validates requested shape ids before assignment |
-| P18.3 | in_progress | Add selection live-bind smoke evidence | `mcp/docs`, `penpot-cli` | Smoke docs cover optional selection read/write after `page.set_current`; CLI/runtime descriptor tests stay aligned | Keep recovery guidance identical to `page.set_current` |
+| P18.3 | done | Add selection live-bind smoke evidence | `mcp/docs`, `penpot-cli` | Completed 2026-06-17; smoke docs cover concrete selection read/write after `page.set_current`, empty selection clearing, and stale/unbound recovery; CLI/runtime descriptor tests stay aligned | Recovery guidance remains identical to `page.set_current`; CLI remains descriptor-only for editor-local selection |
+
+## Phase 19: Prototype Mutation Contracts
+
+Goal: turn planned prototype mutation descriptors into executable behavior only
+after target identity and error semantics are stable.
+
+| ID | Status | Task | Modules | Verification | Notes |
+| --- | --- | --- | --- | --- | --- |
+| P19.1 | in_progress | Define prototype interaction mutation identity contract | `mcp/docs`, `command-runtime`, `mcp`, `penpot-cli` | Docs plus descriptor/runtime tests define how `prototype.delete_interaction` addresses interactions | Decide id/index/flow selector semantics before implementation |
+| P19.2 | todo | Implement backend-command `prototype.delete_interaction` | `backend`, `common`, `mcp`, `penpot-cli`, `mcp/docs` | Backend/common plus MCP/CLI tests cover persisted delete success, not-found, and stale target errors | Keep plugin-live optional until backend-safe delete works |
+| P19.3 | todo | Reassess prototype overlay creation contract | `mcp/docs`, `command-runtime`, `mcp` | Audit docs and descriptors explain executable payload or unsupported status | Do not implement overlay creation without target/action payload contract |
 
 ## Next Recommended Sprint
 
 Use `mcp/docs/penpot-cli-overall-blueprint.md` and
 `mcp/docs/headless-live-gap-audit.md` as the current architecture baseline and
-continue with P18.3:
+continue with P19.1:
 
-1. Add concrete `selection.get` and `selection.set` calls to the live-bind
-   smoke flow after `page.set_current`.
-2. Document expected response evidence for selection mutation, empty selection
-   clearing, and stale/unbound recovery.
-3. Re-run CLI/runtime descriptor checks to confirm CLI remains descriptor-only
-   for editor-local selection state.
+1. Inspect existing prototype flow/interaction data shapes in backend/common,
+   MCP tools, and CLI descriptors.
+2. Choose the stable `prototype.delete_interaction` target identity contract:
+   interaction id, interaction index, or flow-scoped selector.
+3. Update descriptors, docs, and tests so delete remains planned until the
+   contract is explicit and verifiable.

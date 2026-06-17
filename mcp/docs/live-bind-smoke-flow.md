@@ -61,12 +61,16 @@ contracts used by this flow:
 
 ```bash
 pnpm --dir mcp --filter mcp-server test
+pnpm --filter @penpot/command-runtime test
+pnpm --filter penpot-cli test
 git diff --check
 ```
 
 The MCP server tests cover `file.open`, file-context registry lifecycle,
 required-context errors, release-after-bind behavior, stale disconnects, and
-plugin task serialization for page commands.
+plugin task serialization for page and selection commands. The
+command-runtime and `penpot-cli` tests keep live-only descriptor metadata and
+CLI guidance aligned with MCP binding semantics.
 
 Frontend CLJS lifecycle tests should be paired with this flow when the local
 toolchain is available. If `clojure`, `cljfmt`, `clj-kondo`, or frontend
@@ -170,7 +174,7 @@ Keep JSON responses from each step as release evidence.
    - `fileContext.bound: true`
    - `fileContext.boundContext.fileId` matches the target file
 
-7. Run one live-only command through the bound context.
+7. Run live-only commands through the bound context.
 
    Use `page.set_current`. The tool is inherently plugin-live and accepts only
    `pageId`, so do not add explicit file targets or adapter overrides:
@@ -192,11 +196,60 @@ Keep JSON responses from each step as release evidence.
    - the adapter evidence is plugin-live in the response metadata or through
      the page plugin task response
 
-   `selection.get` and `selection.set` can be used as additional live-only
-   evidence when the workspace has known shape ids. A successful response
-   should include `adapter: "plugin-live"`, `selectionIds`, and lightweight
-   `shapes` summaries. Passing `shapeIds: []` to `selection.set` should clear
-   the editor-local selection.
+   Then verify selection state through the same bound context. First read the
+   current editor-local selection:
+
+   ```json
+   {
+     "tool": "selection.get",
+     "arguments": {}
+   }
+   ```
+
+   Expected evidence:
+
+   - the command succeeds without `file_context_required`
+   - `adapter: "plugin-live"`
+   - `selectionIds` is present
+   - `shapes` contains lightweight summaries for selected shapes when any are
+     selected
+
+   If the workspace has known shape ids, set the selection explicitly:
+
+   ```json
+   {
+     "tool": "selection.set",
+     "arguments": {
+       "shapeIds": ["<SHAPE_ID>"]
+     }
+   }
+   ```
+
+   Expected evidence:
+
+   - `adapter: "plugin-live"`
+   - `selectionIds` matches the requested ids
+   - `shapes[].id` matches the requested ids and includes name/type/geometry
+     summary fields
+   - a follow-up `selection.get` returns the same ids
+
+   Finally verify that an empty list clears editor-local selection:
+
+   ```json
+   {
+     "tool": "selection.set",
+     "arguments": {
+       "shapeIds": []
+     }
+   }
+   ```
+
+   Expected evidence:
+
+   - the command succeeds without `file_context_required`
+   - `adapter: "plugin-live"`
+   - `selectionIds: []`
+   - `shapes: []`
 
 8. Release the bound context.
 
@@ -228,6 +281,11 @@ Keep JSON responses from each step as release evidence.
    - `error.data.target.pageId` matches `<SECOND_PAGE_ID>` when an available
      or stale context lets MCP infer the file target
 
+   Repeat the released-context retry with `selection.get` or `selection.set`
+   when selection smoke evidence is being collected. The expected recovery
+   shape is the same, except `error.data.retryTool` should be `selection.get`
+   or `selection.set` and no backend-command target should be suggested.
+
 ## Stale Recovery
 
 1. Bind the context as above.
@@ -241,7 +299,8 @@ Expected evidence:
 
 - stale or unavailable context is visible after the tab disconnects
 - the live-only command returns `file_context_required` with `liveOnly`
-  metadata and `retryTool`
+  metadata and the correct `retryTool` (`page.set_current`,
+  `selection.get`, or `selection.set`)
 - reopening the URL produces a fresh available context
 - binding the fresh context allows the plugin-live command to succeed again
 

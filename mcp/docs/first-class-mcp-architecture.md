@@ -534,6 +534,18 @@ P17.5 live-only guidance result:
   `file.get_context`, `file.bind_context`, and retry instead of suggesting the
   CLI can mutate editor-local state.
 
+P18 live workspace state result:
+
+- `selection.get` and `selection.set` are registered MCP plugin-live tools for
+  bound workspace contexts.
+- `selection.set` mutates editor-local selection only after the plugin resolves
+  all requested shape ids; `shapeIds: []` clears selection.
+- `live-bind-smoke-flow.md` now includes concrete `selection.get`,
+  `selection.set`, empty-clear, and released/stale recovery evidence.
+- CLI file-open handoff text names `selection.get` and `selection.set` as
+  live-only MCP retry targets while keeping selection state out of CLI
+  execution.
+
 ## 4. Target Architecture
 
 ```text

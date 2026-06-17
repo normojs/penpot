@@ -437,7 +437,7 @@ Tasks:
 
 Acceptance:
 
-- `todo.md` has Phase 18 as the next implementation wave.
+- `todo.md` has Phase 19 as the next implementation wave.
 - The Wave I audit documents the adapter boundary before runtime behavior
   changes.
 - Operations that remain live-only explain why and point agents through
@@ -445,18 +445,19 @@ Acceptance:
 
 ## Near-Term Priority
 
-Wave D, Wave E, Wave F, Wave G, Wave H, Wave I / Phase 17, P18.1, and P18.2
-are complete. Phase 18 continues turning descriptor-only live workspace state
-into explicit plugin-live commands without pretending it is backend-command
-data.
+Wave D, Wave E, Wave F, Wave G, Wave H, Wave I / Phase 17, and Phase 18 are
+complete. The selection live workspace state commands now have plugin-live MCP
+execution plus smoke-flow evidence, while CLI remains descriptor-only for
+editor-local state.
 
-The next active task is P18.3:
+The next active task is P19.1:
 
-1. Add smoke-flow evidence for `selection.get` and `selection.set` after
-   `page.set_current`.
-2. Document empty selection clearing and stale/unbound recovery expectations.
-3. Keep CLI behavior descriptor-only while command metadata points users to MCP
-   binding for editor-local selection state.
+1. Define a stable prototype interaction mutation identity contract before
+   enabling delete behavior.
+2. Decide whether deletes address interactions by id, index, or a flow-scoped
+   selector.
+3. Keep planned overlay and broader prototype mutations descriptor-only until
+   that contract exists.
 
 Keep manual configuration behavior stable while moving command metadata and
 envelopes; transport-specific formatting should stay at the MCP/CLI edges.

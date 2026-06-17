@@ -88,6 +88,8 @@ test("live-gap descriptors document live-only and planned command boundaries", (
     assert.equal(CommandDescriptors.PAGE_SET_CURRENT.cliCommand, undefined);
     assert.deepEqual(CommandDescriptors.PAGE_SET_CURRENT.adapters, ["plugin-live"]);
     assert.match(CommandDescriptors.SELECTION_GET.description, /live Penpot workspace/);
+    assert.match(CommandDescriptors.SELECTION_SET.description, /live Penpot workspace/);
+    assert.match(CommandDescriptors.SELECTION_SET.responseShape, /selected shape summaries/);
     assert.equal(CommandDescriptors.PROTOTYPE_LIST_INTERACTIONS.cliCommand, "prototype list-interactions");
     assert.deepEqual(CommandDescriptors.PROTOTYPE_LIST_INTERACTIONS.adapters, ["backend-command"]);
     assert.match(CommandDescriptors.PROTOTYPE_LIST_INTERACTIONS.responseShape, /flow and interaction summaries/);

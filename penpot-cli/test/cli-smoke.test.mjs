@@ -170,6 +170,8 @@ test("command runtime exposes live-gap descriptor boundaries", () => {
     assert.equal(CommandDescriptors.PAGE_SET_CURRENT.mcpToolName, "page.set_current");
     assert.equal(CommandDescriptors.PAGE_SET_CURRENT.cliCommand, undefined);
     assert.equal(getCommandDescriptor("selection.get").adapters[0], "plugin-live");
+    assert.equal(getCommandDescriptor("selection.set").adapters[0], "plugin-live");
+    assert.equal(getCommandDescriptor("selection.set").cliCommand, undefined);
     assert.equal(getCommandDescriptor("prototype list-interactions").id, "prototype.list_interactions");
     assert.equal(CommandDescriptors.PROTOTYPE_DELETE_INTERACTION.adapters.length, 0);
     assert.equal(
@@ -639,6 +641,20 @@ test("file open emits a workspace URL and does not claim to bind MCP context", a
         teamId: "team-1",
         pageId: UUIDS.page,
     });
+});
+
+test("file open text guidance names live-only selection MCP tools", async () => {
+    const result = await runCli(["file", "open", UUIDS.file], {
+        PENPOT_PUBLIC_URI: "https://penpot.example.test",
+    });
+
+    assert.equal(result.exitCode, 0);
+    assert.match(result.stdout, /Workspace URL/);
+    assert.match(result.stdout, /page\.set_current/);
+    assert.match(result.stdout, /selection\.get/);
+    assert.match(result.stdout, /selection\.set/);
+    assert.match(result.stdout, /file\.get_context/);
+    assert.match(result.stdout, /file\.bind_context/);
 });
 
 test("page rename calls backend-command RPC with trimmed name", async () => {
