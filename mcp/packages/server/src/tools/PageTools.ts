@@ -15,6 +15,7 @@ import {
     selectCommandAdapter,
 } from "@penpot/command-runtime";
 import type { CommandAdapterSelection } from "@penpot/command-runtime";
+import type { FileContextRequiredTarget } from "./FileContextGuard.js";
 
 type PenpotRecord = Record<string, unknown>;
 type PageAdapterArgs = { fileId?: string; adapter?: string };
@@ -62,12 +63,14 @@ abstract class PageTool<TArgs extends object> extends PenpotRpcTool<TArgs> {
 
     protected async executePageTask(
         params: PageTaskParams,
-        adapterSelection: CommandAdapterSelection
+        adapterSelection: CommandAdapterSelection,
+        target?: FileContextRequiredTarget
     ): Promise<ToolResponse> {
         const contextError = requireBoundFileContext(
             this.mcpServer,
             this.getSessionContext()?.userToken,
-            this.getToolName()
+            this.getToolName(),
+            { target }
         );
         if (contextError) {
             return contextError;
@@ -430,7 +433,8 @@ export class PageSetCurrentTool extends PageTool<PageSetCurrentArgs> {
                 action: "setCurrent",
                 pageId: args.pageId,
             },
-            adapterSelection
+            adapterSelection,
+            { pageId: args.pageId }
         );
     }
 }

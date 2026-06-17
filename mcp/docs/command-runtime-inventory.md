@@ -96,7 +96,7 @@ MCP server tool classes and `penpot-cli`.
 | `page.list` | `PageListArgs` | backend-command RPC `get-file-pages` when `fileId`; otherwise plugin-live task | JSON `{adapter,adapterSelection,fileId,pages}` or plugin task data | `PageTools.test.ts`, `PagePluginTask.test.ts` |
 | `page.create` | `PageCreateArgs` | backend-command RPC `create-file-page` when `fileId`; otherwise plugin-live task | JSON `{adapter,adapterSelection,fileId,page,revn,vern}` or plugin task data | `PageTools.test.ts`, `PagePluginTask.test.ts` |
 | `page.rename` | `PageRenameArgs` | backend-command RPC `rename-file-page` when `fileId`; otherwise plugin-live task | JSON `{adapter,adapterSelection,fileId,page,revn,vern}` or plugin task data | `PageTools.test.ts`, `PagePluginTask.test.ts` |
-| `page.set_current` | `PageSetCurrentArgs` | plugin-live task | JSON plugin task data plus adapter metadata | `PagePluginTask.test.ts` serialization only |
+| `page.set_current` | `PageSetCurrentArgs` | plugin-live task | JSON plugin task data plus adapter metadata; unbound errors include live-only recovery metadata and target-aware handoff when a context can identify the file | `PagePluginTask.test.ts`, `PageTools.test.ts`, `FileContextGuard.test.ts` |
 | `shape.create_frame` | `ShapeCreateFrameArgs` | backend-command RPC `create-file-shape` when `fileId`/`pageId`; otherwise plugin-live task | JSON `{adapter,adapterSelection,fileId,shape,revn,vern}` or plugin task data | `ShapeCreateTools.test.ts`, `ShapePluginTask.test.ts` |
 | `shape.create_rect` | `ShapeCreateRectArgs` | backend-command RPC `create-file-shape` when `fileId`/`pageId`; otherwise plugin-live task | JSON `{adapter,adapterSelection,fileId,shape,revn,vern}` or plugin task data | `ShapeCreateTools.test.ts`, `ShapePluginTask.test.ts` |
 | `shape.create_text` | `ShapeCreateTextArgs` | backend-command RPC `create-file-shape` when `fileId`/`pageId`; otherwise plugin-live task | JSON `{adapter,adapterSelection,fileId,shape,revn,vern}` or plugin task data | `ShapeCreateTools.test.ts`, `ShapePluginTask.test.ts` |
@@ -121,7 +121,7 @@ not register yet:
 
 - global/file: `file.search`, `file.duplicate`, `file.open`,
   `token.get_mcp_status`
-- file context: `selection.get`, `selection.set`
+- file context: `selection.get`, `selection.set`; `page.set_current` is implemented but remains plugin-live and now shares live-only recovery metadata with the same binding flow
 - design editing: `shape.group`, `shape.ungroup`, `shape.set_layout`,
   `shape.set_style`, `component.create`, `component.instantiate`,
   `tokens.list`, `tokens.apply`

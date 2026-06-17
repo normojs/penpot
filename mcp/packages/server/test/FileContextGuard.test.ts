@@ -102,6 +102,9 @@ test("requireBoundFileContext includes file open handoff when an available conte
         pageId: "00000000-0000-0000-0000-000000000002",
     });
     assert.equal(body.error.data.retryTool, "shape.create_rect");
+    assert.deepEqual(body.error.data.target, body.error.data.handoff.target);
+    assert.equal(body.error.data.liveOnly.adapter, "plugin-live");
+    assert.equal(body.error.data.liveOnly.state, "editor-local");
 });
 
 test("requireBoundFileContext accepts explicit target guidance for live-only tools", () => {
@@ -126,6 +129,36 @@ test("requireBoundFileContext accepts explicit target guidance for live-only too
         fileId: "00000000-0000-0000-0000-000000000003",
         pageId: "00000000-0000-0000-0000-000000000004",
     });
+});
+
+test("requireBoundFileContext merges partial live target guidance with an available context", () => {
+    const registry = new FileContextRegistry();
+    registry.upsertContext("token-1", context());
+
+    const response = requireBoundFileContext(mcpServerWithRegistry(registry), "token-1", "page.set_current", {
+        publicUri: "https://penpot.example/",
+        target: {
+            pageId: "00000000-0000-0000-0000-000000000004",
+        },
+    });
+    assert.ok(response);
+    const body = parseJsonResponse(response);
+
+    assert.equal(
+        body.error.data.handoff.workspaceUrl,
+        "https://penpot.example/#/workspace?file-id=00000000-0000-0000-0000-000000000001&team-id=team-1&page-id=00000000-0000-0000-0000-000000000004"
+    );
+    assert.deepEqual(body.error.data.target, {
+        fileId: "00000000-0000-0000-0000-000000000001",
+        teamId: "team-1",
+        pageId: "00000000-0000-0000-0000-000000000004",
+    });
+    assert.deepEqual(body.error.data.liveOnly.recovery, [
+        "open_workspace_url",
+        "file.get_context",
+        "file.bind_context",
+        "retry_original_tool",
+    ]);
 });
 
 test("requireBoundFileContext blocks file tools after plugin disconnect marks context stale", () => {

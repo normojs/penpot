@@ -76,7 +76,7 @@ const AdapterSelectionReasonMessages = Object.freeze({
     [AdapterSelectionReasonCodes.BACKEND_COMMAND_GRID_CONTRACT_UNSUPPORTED]:
         "backend-command grid cell and child placement updates are unsupported until a stable cell payload contract exists.",
     [AdapterSelectionReasonCodes.CLI_LIVE_WORKSPACE_STATE_UNSUPPORTED]:
-        "CLI commands do not read or mutate editor-local workspace state; use MCP with a bound live workspace.",
+        "CLI commands do not read or mutate editor-local workspace state; use MCP file.open, file.get_context, and file.bind_context before retrying the live-only tool.",
 });
 
 export const CommandDescriptors = Object.freeze({

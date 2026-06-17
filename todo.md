@@ -117,8 +117,11 @@ boundaries before runtime behavior changes. P17.3 is complete: persisted
 prototype flow/interaction listing now works through backend-command from MCP
 and `penpot-cli`. P17.4 is complete: backend-command now supports the grid
 container track subset for explicit file targets while cell/child placement
-remains out of scope. Current active work moves to P17.5 to tighten
-selection/current-page live-only guidance.
+remains out of scope. P17.5 is complete: live-only current-page/selection
+guidance now includes plugin-live recovery metadata, target-aware
+`page.set_current` handoff URLs, aligned CLI reason text, and smoke evidence.
+Current active work moves to Phase 18 / P18.1 to implement the first
+plugin-live selection command contract.
 
 ## Feature Roadmap
 
@@ -150,7 +153,8 @@ remain the execution plan.
 | F21 | done | Release verification matrix | Phase 14 | Critical MCP/CLI flows have repeatable checks | Completed 2026-06-16; P14.1-P14.4 document config/global connection, headless edit/export, live bind, and CI-friendly command checks |
 | F22 | done | Roadmap reconciliation and next-wave planning | Phase 15 | The fork has one accurate active task and a clean next development wave | Completed 2026-06-16; P15.1 reconciled roadmap status and P15.2 defined Wave H / Phase 16 as the next implementation wave |
 | F23 | done | CLI configuration convergence and distribution hardening | Phase 16 | `penpot-cli` can inspect the same saved MCP config that Penpot uses and has a clearer path toward portable local use | Completed 2026-06-17; P16.1 completed the read-path contract; P16.2 completed opt-in authenticated profile-source support; P16.3 completed URL derivation fixtures; P16.4 completed host/hybrid planning; P16.5 added a verified private portable CLI release archive |
-| F24 | todo | Headless live-gap closure | Phase 17 | More authoring operations can run without a live workspace, while truly live-only state stays explicit | P17.1-P17.3 completed 2026-06-17; `prototype.list_interactions` now reads persisted flows/interactions headlessly, and P17.4 is active for the grid layout contract decision |
+| F24 | done | Headless live-gap closure | Phase 17 | More authoring operations can run without a live workspace, while truly live-only state stays explicit | Completed 2026-06-17; P17.1-P17.5 audited live gaps, added descriptors, implemented persisted prototype reads, added backend-safe grid tracks, and tightened live-only binding guidance |
+| F25 | todo | Live workspace state commands | Phase 18 | Agents can intentionally read or change editor-local selection state through bound MCP plugin-live commands | P18.1 starts with `selection.get` plugin-live task/results, followed by `selection.set` and smoke coverage |
 
 ## Detailed Upcoming Task Queue
 
@@ -295,8 +299,29 @@ Order rationale:
 | I1 | Audit remaining live-only command semantics | `mcp/docs`, `command-runtime`, `mcp`, `penpot-cli`, `backend`, `common` | Completed 2026-06-17; `mcp/docs/headless-live-gap-audit.md` maps page current/selection, grid/full layout, prototype overlay/list/delete, diagnostic/read commands, and legacy tools to backend-safe, exporter, plugin-live, or unsupported adapters | Audit document identifies command names, persisted data shape, adapter candidates, permission model, and first implementation slice |
 | I2 | Add read-only command descriptors for live-gap commands | `command-runtime`, `mcp`, `penpot-cli` | Completed 2026-06-17; command catalog exposes descriptor metadata for selected page/selection reads, prototype reads, and layout capability checks without changing behavior | Descriptor tests and CLI/MCP smoke tests keep transport output stable |
 | I3 | Add headless prototype read/list support | `backend`, `common`, `mcp`, `penpot-cli` | Completed 2026-06-17; MCP and CLI can list prototype flows/interactions for explicit file/page targets through backend-command | Backend/common focused tests plus MCP/CLI adapter tests cover persisted flow/interaction summaries and adapter selection |
-| I4 | Define and implement backend-safe grid layout subset | `backend`, `common`, `mcp`, `penpot-cli`, `mcp/docs` | In progress; grid layout writes either support a documented minimal track/cell contract or return structured unsupported details with exact live bind guidance | Tests cover supported grid payloads or explicit unsupported errors; docs explain when plugin-live remains required |
-| I5 | Tighten selection/current-page live-only guidance | `frontend`, `mcp`, `penpot-cli`, `mcp/docs` | Selection and current-page commands report why a live workspace is required and include file.open/bind/retry guidance aligned with smoke flows | MCP server tests and live-bind smoke docs cover unbound, stale, and bound workspace cases |
+| I4 | Define and implement backend-safe grid layout subset | `backend`, `common`, `mcp`, `penpot-cli`, `mcp/docs` | Completed 2026-06-17; grid container tracks, gaps, padding, and alignment work through backend-command while cells/child placement remain out of scope | Common/backend plus MCP/CLI tests cover supported grid payloads; docs explain when plugin-live remains required |
+| I5 | Tighten selection/current-page live-only guidance | `mcp`, `penpot-cli`, `mcp/docs` | Completed 2026-06-17; live-only errors include plugin-live recovery metadata, target-aware `page.set_current` handoff URLs, retry tool data, and aligned CLI text | MCP server tests and live-bind smoke docs cover unbound, stale, and bound workspace cases |
+
+### Wave J: Live Workspace State Commands
+
+Wave J turns descriptor-only live workspace state into explicit plugin-live MCP
+commands. It keeps selection and current-page behavior bound to an open
+workspace tab, while making result payloads predictable enough for agents.
+
+Order rationale:
+
+- Start with `selection.get` because it is read-only and can validate result
+  shape without mutating editor state.
+- Add `selection.set` only after shape id validation and ownership behavior are
+  clear.
+- Keep CLI descriptor-only for these commands; editor-local state belongs to
+  MCP with a bound live context.
+
+| Order | Task | Modules | Output | Verification |
+| --- | --- | --- | --- | --- |
+| J1 | Implement plugin-live `selection.get` | `mcp`, `mcp/docs` | MCP returns selected shape ids and lightweight summaries from the bound workspace context | Plugin task serialization, MCP tool tests for bound/unbound/stale states, and live-bind smoke docs |
+| J2 | Implement plugin-live `selection.set` | `mcp`, `mcp/docs` | MCP can set editor selection for explicit shape ids in the bound workspace | Tests cover empty selection, invalid ids, stale context recovery, and plugin task payloads |
+| J3 | Add selection smoke evidence | `mcp/docs`, `penpot-cli` | Live-bind smoke includes optional selection read/write evidence and CLI descriptor guidance stays explicit | Docs plus CLI/runtime descriptor tests |
 
 ## Phase 0: Baseline, Planning, And Rules
 
@@ -532,18 +557,28 @@ state with persisted document data.
 | P17.2 | done | Add read-only descriptors for live-gap commands | `command-runtime`, `mcp`, `penpot-cli` | Completed 2026-06-17; command-runtime and CLI smoke tests cover the live-gap descriptor group, reason text, and stable MCP `page.set_current` metadata | Added descriptors and adapter reason text for `page.set_current`, `selection.get`, `selection.set`, `prototype.list_interactions`, prototype planned/unsupported gaps, and layout boundary metadata |
 | P17.3 | done | Add headless prototype read/list support | `backend`, `common`, `mcp`, `penpot-cli` | Completed 2026-06-17; backend/common focused tests plus MCP/CLI adapter tests cover explicit file/page targets | Added persisted flow/interaction summaries through `get-file-prototype-interactions`, MCP `prototype.list_interactions`, and `penpot-cli prototype list-interactions`; overlay mutation and live selection remain out of scope |
 | P17.4 | done | Define backend-safe grid layout subset | `backend`, `common`, `mcp`, `penpot-cli`, `mcp/docs` | Completed 2026-06-17; common/backend plus MCP/CLI tests cover grid container direction, rows/columns tracks, gaps, padding, and alignment | Cell placement, spans, and moving children into grid tracks remain out of scope until a stable cell payload contract exists |
-| P17.5 | in_progress | Tighten selection/current-page live-only guidance | `frontend`, `mcp`, `penpot-cli`, `mcp/docs` | MCP tests and live-bind smoke docs cover unbound, stale, and bound workspace cases | Keep ephemeral workspace state explicit and guide agents through file.open/bind/retry |
+| P17.5 | done | Tighten selection/current-page live-only guidance | `mcp`, `penpot-cli`, `mcp/docs` | Completed 2026-06-17; MCP guard/tool tests and live-bind smoke docs cover unbound, stale, and target-aware recovery cases | Added plugin-live/editor-local recovery metadata, target-aware `page.set_current` handoff URLs, retry tool data, and aligned CLI reason text |
+
+## Phase 18: Live Workspace State Commands
+
+Goal: implement explicit plugin-live commands for editor-local workspace state
+without converting current page or selection into backend-command document
+mutations.
+
+| ID | Status | Task | Modules | Verification | Notes |
+| --- | --- | --- | --- | --- | --- |
+| P18.1 | in_progress | Implement plugin-live `selection.get` | `mcp`, `mcp/docs` | Plugin task serialization plus MCP tool tests cover bound, unbound, and stale workspaces | Return selected shape ids and lightweight summaries from the bound workspace; CLI remains descriptor-only |
+| P18.2 | todo | Implement plugin-live `selection.set` | `mcp`, `mcp/docs` | Tests cover empty selection, invalid ids, stale context recovery, and plugin task payloads | Mutates only editor-local selection in the bound workspace |
+| P18.3 | todo | Add selection live-bind smoke evidence | `mcp/docs`, `penpot-cli` | Smoke docs cover optional selection read/write after `page.set_current`; CLI/runtime descriptor tests stay aligned | Keep recovery guidance identical to `page.set_current` |
 
 ## Next Recommended Sprint
 
 Use `mcp/docs/penpot-cli-overall-blueprint.md` and
 `mcp/docs/headless-live-gap-audit.md` as the current architecture baseline and
-continue with P17.5:
+continue with P18.1:
 
-1. Audit current `page.set_current`, `selection.get`, and `selection.set`
-   responses for unbound, stale, and bound workspace states.
-2. Tighten MCP response metadata and CLI guidance so live-only commands point
-   agents through `file.open`, `file.get_context`, `file.bind_context`, and
-   retry steps.
-3. Update smoke documentation and tests so P17.5 preserves the boundary between
-   persisted backend-command edits and editor-local workspace state.
+1. Define the `selection.get` plugin task payload/result contract.
+2. Register the MCP tool only for plugin-live with existing
+   `file_context_required` recovery behavior.
+3. Return selected shape ids and lightweight shape summaries from the bound
+   workspace, with docs and tests preserving the editor-local boundary.

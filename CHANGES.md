@@ -65,6 +65,7 @@
 - Add headless prototype flow and navigate interaction creation through common/backend prototype helpers, MCP backend-command routing, and `penpot-cli prototype create-*` commands.
 - Add headless prototype flow and interaction listing through common/backend `get-file-prototype-interactions`, MCP `prototype.list_interactions`, and `penpot-cli prototype list-interactions`.
 - Add backend-safe headless grid container layout updates for frames, covering grid direction, rows/columns tracks, gaps, padding, and alignment through common/backend, MCP, and `penpot-cli`.
+- Tighten live-only current-page/selection guidance with plugin-live recovery metadata, target-aware `page.set_current` handoff URLs, and aligned CLI reason text.
 - Add exporter-backed `render.preview` support for explicit file/page/object targets in MCP plus `penpot-cli render preview` with artifact metadata and `--output` downloads.
 - Document the file open/bind handoff UX and command contract for moving from headless MCP/CLI edits into live workspace binding.
 - Add shared `file.open` workspace URL and handoff payload generation for MCP and `penpot-cli`.

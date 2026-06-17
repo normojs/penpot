@@ -56,6 +56,7 @@ export function fileContextRequiredResponse(
     options: FileContextRequiredOptions = {}
 ): ToolResponse {
     const target = resolveFileOpenTarget(fileContext, options.target);
+    const requestedTarget = compactTarget(options.target);
     const publicUri = trimTrailingSlash(options.publicUri ?? defaultPublicUri());
     const handoff = target?.fileId
         ? createFileOpenHandoff({
@@ -82,8 +83,14 @@ export function fileContextRequiredResponse(
             data: {
                 fileContext,
                 handoff,
+                liveOnly: {
+                    adapter: "plugin-live",
+                    state: "editor-local",
+                    recovery: handoff?.nextActions ?? actions,
+                },
                 nextActions: handoff?.nextActions ?? actions,
                 retryTool: toolName,
+                target: handoff?.target ?? requestedTarget ?? null,
             },
         },
     });
@@ -94,7 +101,7 @@ function resolveFileOpenTarget(
     target: FileContextRequiredTarget | undefined
 ): FileContextRequiredTarget | null {
     if (target?.fileId) {
-        return target;
+        return compactTarget(target);
     }
 
     const context =
@@ -103,7 +110,11 @@ function resolveFileOpenTarget(
         return null;
     }
 
-    return targetFromStoredContext(context);
+    return compactTarget({
+        ...targetFromStoredContext(context),
+        ...(target?.teamId ? { teamId: target.teamId } : {}),
+        ...(target?.pageId ? { pageId: target.pageId } : {}),
+    });
 }
 
 function targetFromStoredContext(context: StoredFileContext): FileContextRequiredTarget {
@@ -112,6 +123,20 @@ function targetFromStoredContext(context: StoredFileContext): FileContextRequire
         teamId: context.teamId,
         pageId: context.pageId,
     };
+}
+
+function compactTarget(target: FileContextRequiredTarget | undefined): FileContextRequiredTarget | null {
+    if (!target) {
+        return null;
+    }
+
+    const compacted = {
+        ...(target.fileId ? { fileId: target.fileId } : {}),
+        ...(target.teamId ? { teamId: target.teamId } : {}),
+        ...(target.pageId ? { pageId: target.pageId } : {}),
+    };
+
+    return Object.keys(compacted).length > 0 ? compacted : null;
 }
 
 function trimTrailingSlash(value: string): string {

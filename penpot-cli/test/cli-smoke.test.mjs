@@ -174,7 +174,7 @@ test("command runtime exposes live-gap descriptor boundaries", () => {
     assert.equal(CommandDescriptors.PROTOTYPE_DELETE_INTERACTION.adapters.length, 0);
     assert.equal(
         getAdapterSelectionReason(AdapterSelectionReasonCodes.CLI_LIVE_WORKSPACE_STATE_UNSUPPORTED),
-        "CLI commands do not read or mutate editor-local workspace state; use MCP with a bound live workspace."
+        "CLI commands do not read or mutate editor-local workspace state; use MCP file.open, file.get_context, and file.bind_context before retrying the live-only tool."
     );
 });
 

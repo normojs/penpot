@@ -199,6 +199,10 @@ test("adapter selection errors share codes, messages, and payload shape", () => 
         getAdapterSelectionReason(AdapterSelectionReasonCodes.BACKEND_COMMAND_GRID_CONTRACT_UNSUPPORTED),
         "backend-command grid cell and child placement updates are unsupported until a stable cell payload contract exists."
     );
+    assert.equal(
+        getAdapterSelectionReason(AdapterSelectionReasonCodes.CLI_LIVE_WORKSPACE_STATE_UNSUPPORTED),
+        "CLI commands do not read or mutate editor-local workspace state; use MCP file.open, file.get_context, and file.bind_context before retrying the live-only tool."
+    );
 });
 
 test("request and result envelopes preserve data while keeping auth token-safe", () => {

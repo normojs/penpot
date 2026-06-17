@@ -30,6 +30,12 @@ the plugin-live path. Page current and selection state remain live workspace
 semantics, so this flow should not pass explicit backend-command targets that
 would hide a broken live binding.
 
+P17.5 tightens the unbound path: live-only errors include
+`liveOnly.adapter: "plugin-live"`, `liveOnly.state: "editor-local"`, the
+retry tool name, and target-aware handoff data when MCP can infer or receive a
+file target. For `page.set_current`, the requested `pageId` should be retained
+in the handoff URL even when the file id comes from an available context.
+
 ## Preconditions
 
 - Penpot is running with backend, frontend, MCP server, and bundled MCP plugin
@@ -213,6 +219,11 @@ Keep JSON responses from each step as release evidence.
    - recovery actions include `file.open`, `file.get_context`,
      `file.bind_context`, and `retry_original_tool`
    - when the target file is known, the response includes a `workspaceUrl`
+   - `error.data.liveOnly.adapter` is `plugin-live`
+   - `error.data.liveOnly.state` is `editor-local`
+   - `error.data.retryTool` is `page.set_current`
+   - `error.data.target.pageId` matches `<SECOND_PAGE_ID>` when an available
+     or stale context lets MCP infer the file target
 
 ## Stale Recovery
 
@@ -226,7 +237,8 @@ Keep JSON responses from each step as release evidence.
 Expected evidence:
 
 - stale or unavailable context is visible after the tab disconnects
-- the live-only command returns `file_context_required`
+- the live-only command returns `file_context_required` with `liveOnly`
+  metadata and `retryTool`
 - reopening the URL produces a fresh available context
 - binding the fresh context allows the plugin-live command to succeed again
 

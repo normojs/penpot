@@ -240,7 +240,7 @@ cell/child placement to plugin-live or a later stable cell payload contract.
 
 ## P17.5 Live-Only Guidance
 
-Selection and current page commands should explain:
+Selection and current page commands now explain:
 
 - The state is editor-local and requires a live bound workspace tab.
 - Backend-command can still edit the file if the caller supplies explicit ids.
@@ -248,6 +248,17 @@ Selection and current page commands should explain:
   then retry the live-only tool.
 - CLI commands do not execute plugin-live tasks; CLI output should report the
   command as live-only instead of implying it can switch an editor tab.
+- `file_context_required` responses include `liveOnly.adapter:
+  "plugin-live"`, `liveOnly.state: "editor-local"`, `retryTool`, and a
+  target-aware handoff when the file target can be inferred.
+- `page.set_current` passes its requested `pageId` into binding guidance, so an
+  available or stale context can provide the file id without losing the target
+  page.
+
+`selection.get` and `selection.set` remain descriptor-only until the plugin-live
+selection task contract is added. Their shared command-runtime reason text now
+points CLI users back to MCP `file.open`, `file.get_context`,
+`file.bind_context`, and retry rather than suggesting a headless CLI path.
 
 ## Open Decisions
 

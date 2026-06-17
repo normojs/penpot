@@ -431,12 +431,13 @@ Tasks:
 - P17.4: completed 2026-06-17; backend-command now supports the grid container
   track subset for explicit file targets while cell/child placement stays out
   of scope.
-- P17.5: tighten live-only guidance for selection and current-page commands
-  across MCP responses, CLI output, and smoke docs.
+- P17.5: completed 2026-06-17; live-only current-page/selection guidance now
+  includes plugin-live recovery metadata, target-aware `page.set_current`
+  handoff URLs, aligned CLI reason text, and smoke evidence.
 
 Acceptance:
 
-- `todo.md` has P17.5 as the single active task.
+- `todo.md` has Phase 18 as the next implementation wave.
 - The Wave I audit documents the adapter boundary before runtime behavior
   changes.
 - Operations that remain live-only explain why and point agents through
@@ -444,19 +445,19 @@ Acceptance:
 
 ## Near-Term Priority
 
-Wave D, Wave E, Wave F, Wave G, and Wave H are complete. Wave I / Phase 17 is
-the active implementation slice for headless live-gap closure. P17.1 is
-complete in `headless-live-gap-audit.md`.
+Wave D, Wave E, Wave F, Wave G, Wave H, and Wave I / Phase 17 are complete.
+The next active implementation slice is Phase 18, which turns descriptor-only
+live workspace state into explicit plugin-live commands without pretending it
+is backend-command data.
 
-The next active task is P17.5:
+The next active task is P18.1:
 
-1. Audit current `page.set_current`, `selection.get`, and `selection.set`
-   responses for unbound, stale, and bound workspace states.
-2. Tighten MCP response metadata and CLI guidance so live-only commands point
-   agents through `file.open`, `file.get_context`, `file.bind_context`, and
-   retry steps.
-3. Update smoke documentation and tests so P17.5 preserves the boundary between
-   persisted backend-command edits and editor-local workspace state.
+1. Define and implement the plugin-live task payload/result for
+   `selection.get`.
+2. Return selected shape ids and lightweight summaries through MCP while
+   preserving `file_context_required` recovery for unbound/stale workspaces.
+3. Keep CLI behavior descriptor-only and point users to MCP binding for
+   editor-local selection state.
 
 Keep manual configuration behavior stable while moving command metadata and
 envelopes; transport-specific formatting should stay at the MCP/CLI edges.

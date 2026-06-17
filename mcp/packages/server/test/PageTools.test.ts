@@ -4,7 +4,7 @@ import { FileContextRegistry, FileContextErrorCodes } from "../src/FileContextRe
 import { McpWriteLimiter } from "../src/McpWriteLimiter.js";
 import type { PenpotRpcRequestContext } from "../src/PenpotRpcClient.js";
 import type { PenpotMcpServer } from "../src/PenpotMcpServer.js";
-import { PageCreateTool, PageListTool, PageRenameTool } from "../src/tools/PageTools.js";
+import { PageCreateTool, PageListTool, PageRenameTool, PageSetCurrentTool } from "../src/tools/PageTools.js";
 
 type RpcCall = {
     methodName: string;
@@ -210,4 +210,42 @@ test("PageListTool without fileId still requires a live bound file context", asy
 
     assert.equal(body.status, "error");
     assert.equal(body.error.code, FileContextErrorCodes.FILE_CONTEXT_REQUIRED);
+});
+
+test("PageSetCurrentTool returns target-aware live binding guidance when unbound", async () => {
+    const registry = new FileContextRegistry();
+    registry.upsertContext("token-1", {
+        contextId: "tab-1:00000000-0000-0000-0000-000000000001",
+        status: "available",
+        ownerTabId: "tab-1",
+        fileId: "00000000-0000-0000-0000-000000000001",
+        fileName: "Prototype",
+        pageId: "00000000-0000-0000-0000-000000000002",
+        teamId: "team-1",
+        selectionIds: [],
+        capabilities: ["shape.write"],
+        updatedAt: "2026-06-17T00:00:00.000Z",
+    });
+    const tool = new PageSetCurrentTool({
+        fileContextRegistry: registry,
+        getSessionContext: () => ({ userToken: "token-1" }),
+    } as unknown as PenpotMcpServer);
+
+    const response = await tool.execute({ pageId: "00000000-0000-0000-0000-000000000003" });
+    const body = parseJsonResponse(response);
+
+    assert.equal(body.status, "error");
+    assert.equal(body.error.code, FileContextErrorCodes.FILE_CONTEXT_REQUIRED);
+    assert.deepEqual(body.error.actions, ["file.open", "file.get_context", "file.bind_context", "retry_original_tool"]);
+    assert.deepEqual(body.error.data.target, {
+        fileId: "00000000-0000-0000-0000-000000000001",
+        teamId: "team-1",
+        pageId: "00000000-0000-0000-0000-000000000003",
+    });
+    assert.equal(
+        body.error.data.handoff.workspaceUrl,
+        "http://localhost:3449/#/workspace?file-id=00000000-0000-0000-0000-000000000001&team-id=team-1&page-id=00000000-0000-0000-0000-000000000003"
+    );
+    assert.equal(body.error.data.liveOnly.adapter, "plugin-live");
+    assert.equal(body.error.data.retryTool, "page.set_current");
 });

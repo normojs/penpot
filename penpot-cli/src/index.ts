@@ -3049,7 +3049,7 @@ function writeFileOpenText(io: CliIO, url: string): void {
     writeLine(io.stdout, url);
     writeLine(
         io.stdout,
-        "Open this URL, then run file.get_context and file.bind_context before live-only MCP tools."
+        "Open this URL in Penpot, then use MCP file.get_context and file.bind_context before retrying live-only tools such as page.set_current or selection.get."
     );
 }
 

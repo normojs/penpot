@@ -496,8 +496,8 @@ P17.1 audit result:
 - `headless-live-gap-audit.md` is the Phase 17 command-boundary source of
   truth.
 - `page.set_current`, `selection.get`, and `selection.set` are live workspace
-  state. They should advertise plugin-live-only behavior and guide agents
-  through file open, context inspection, bind, and retry steps.
+  state. They advertise plugin-live-only behavior and guide agents through file
+  open, context inspection, bind, and retry steps.
 - `prototype.list_interactions` is the first backend-safe read candidate
   because flows and interactions are persisted in file data. It should receive
   descriptors before backend/common read implementation.
@@ -522,6 +522,17 @@ P17.2 descriptor result:
   interaction list is the next backend-safe read target; prototype mutation and
   grid cell placement gaps stay descriptor-only or unsupported until contracts
   are defined.
+
+P17.5 live-only guidance result:
+
+- `file_context_required` responses include `liveOnly` metadata for
+  plugin-live/editor-local state plus the original retry tool.
+- `page.set_current` sends its requested page id into the binding guard, so
+  target-aware handoff URLs preserve the page the caller wanted while inferring
+  file/team ids from an available or stale context.
+- CLI live-workspace-state reason text points agents to MCP `file.open`,
+  `file.get_context`, `file.bind_context`, and retry instead of suggesting the
+  CLI can mutate editor-local state.
 
 ## 4. Target Architecture
 
