@@ -24,7 +24,12 @@ import { FileCreateTool } from "./tools/FileCreateTool";
 import { FileOpenTool } from "./tools/FileOpenTool";
 import { FileBindContextTool, FileGetContextTool, FileReleaseContextTool } from "./tools/FileContextTools";
 import { PageCreateTool, PageListTool, PageRenameTool, PageSetCurrentTool } from "./tools/PageTools";
-import { PrototypeCreateFlowTool, PrototypeCreateInteractionTool, PrototypeListInteractionsTool } from "./tools/PrototypeTools";
+import {
+    PrototypeCreateFlowTool,
+    PrototypeCreateInteractionTool,
+    PrototypeListInteractionsTool,
+} from "./tools/PrototypeTools";
+import { SelectionGetTool } from "./tools/SelectionTools";
 import {
     ShapeDeleteTool,
     ShapeCreateFrameTool,
@@ -267,6 +272,7 @@ export class PenpotMcpServer {
             new PageCreateTool(this),
             new PageRenameTool(this),
             new PageSetCurrentTool(this),
+            new SelectionGetTool(this),
             new ShapeCreateFrameTool(this),
             new ShapeCreateRectTool(this),
             new ShapeCreateTextTool(this),

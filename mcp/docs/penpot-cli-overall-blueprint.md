@@ -445,17 +445,15 @@ Acceptance:
 
 ## Near-Term Priority
 
-Wave D, Wave E, Wave F, Wave G, Wave H, and Wave I / Phase 17 are complete.
-The next active implementation slice is Phase 18, which turns descriptor-only
-live workspace state into explicit plugin-live commands without pretending it
-is backend-command data.
+Wave D, Wave E, Wave F, Wave G, Wave H, Wave I / Phase 17, and P18.1 are
+complete. Phase 18 continues turning descriptor-only live workspace state into
+explicit plugin-live commands without pretending it is backend-command data.
 
-The next active task is P18.1:
+The next active task is P18.2:
 
-1. Define and implement the plugin-live task payload/result for
-   `selection.get`.
-2. Return selected shape ids and lightweight summaries through MCP while
-   preserving `file_context_required` recovery for unbound/stale workspaces.
+1. Extend the plugin-live selection task with a `set` action.
+2. Validate requested shape ids in the bound workspace before mutating
+   editor-local selection.
 3. Keep CLI behavior descriptor-only and point users to MCP binding for
    editor-local selection state.
 

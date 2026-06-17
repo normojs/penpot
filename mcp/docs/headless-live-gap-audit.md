@@ -109,7 +109,7 @@ state for them.
 | `page.create` | Registered MCP tool and descriptor; backend-command with `fileId`, plugin-live without it. | Backend-safe persisted data plus plugin-live convenience. | Page creation persists file data. `makeCurrent` is live-only. | Keep warning that backend-command does not switch UI state. |
 | `page.rename` | Registered MCP tool and descriptor; backend-command with `fileId`, plugin-live without it. | Backend-safe persisted data plus plugin-live convenience. | Page metadata persists in file data. | Keep behavior. |
 | `page.set_current` | Registered MCP tool, no command-runtime descriptor; always plugin-live. | Plugin-live workspace state. | It calls `penpot.openPage` and changes editor state, not file data. | Add plugin-live-only descriptor and live-only reason text in P17.2/P17.5. |
-| `selection.get` | Name exists in `ToolNames.ts`, not registered. | Plugin-live workspace state. | Selection lives in `workspace-local` and plugin context snapshots. | Add descriptor first as plugin-live-only read; implement later through bound context or plugin task. |
+| `selection.get` | Registered MCP tool backed by a plugin-live selection task. | Plugin-live workspace state. | Selection lives in `workspace-local` and plugin context snapshots. | Returns selected ids and lightweight shape summaries only when a file context is bound. |
 | `selection.set` | Name exists in `ToolNames.ts`, not registered. | Plugin-live workspace state. | Selection mutation is editor-local state. | Add descriptor with live-only guidance; runtime implementation can wait for P17.5. |
 | `shape.create_frame`, `shape.create_rect`, `shape.create_text`, `shape.create_image` | Registered MCP tools and descriptors; backend-command with explicit targets, plugin-live otherwise. | Backend-safe persisted data plus plugin-live convenience. | Supported persisted shape creation already exists. | Keep behavior. |
 | `shape.update` with geometry/style/text/hierarchy | Registered MCP tool and descriptor; backend-command with explicit targets, plugin-live otherwise. | Backend-safe persisted data plus plugin-live convenience. | Supported shape fields persist through file changes. | Keep behavior. |
@@ -255,9 +255,10 @@ Selection and current page commands now explain:
   available or stale context can provide the file id without losing the target
   page.
 
-`selection.get` and `selection.set` remain descriptor-only until the plugin-live
-selection task contract is added. Their shared command-runtime reason text now
-points CLI users back to MCP `file.open`, `file.get_context`,
+`selection.get` now has a plugin-live task contract and registered MCP tool for
+bound workspaces. `selection.set` remains descriptor-only until the mutation
+contract and shape id validation are added. Their shared command-runtime reason
+text still points CLI users back to MCP `file.open`, `file.get_context`,
 `file.bind_context`, and retry rather than suggesting a headless CLI path.
 
 ## Open Decisions

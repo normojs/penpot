@@ -89,6 +89,7 @@
 - Plan the next MCP/CLI implementation wave around headless live-gap closure for page current/selection, grid layout, prototype reads, and live-only guidance.
 - Document the headless live-gap audit for current-page and selection state, grid layout boundaries, prototype read/delete/overlay gaps, and the next read-only descriptor slice.
 - Add shared command descriptors for live-gap boundaries, including live-only page/selection state, planned prototype interaction reads, unsupported prototype mutations, and layout contract metadata.
+- Add plugin-live MCP `selection.get` support for bound workspace selection ids and lightweight shape summaries.
 - Add rate limiting and concurrency safety for file snapshot operations [#9723](https://github.com/penpot/penpot/issues/9723) (PR: [#9722](https://github.com/penpot/penpot/pull/9722))
 - Prevent concurrent font uploads from causing excessive simultaneous requests [#9922](https://github.com/penpot/penpot/issues/9922) (PR: [#9921](https://github.com/penpot/penpot/pull/9921))
 

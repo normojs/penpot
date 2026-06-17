@@ -2,6 +2,7 @@ import { ExecuteCodeTaskHandler } from "./task-handlers/ExecuteCodeTaskHandler";
 import { ExportTaskHandler } from "./task-handlers/ExportTaskHandler";
 import { PageTaskHandler } from "./task-handlers/PageTaskHandler";
 import { PrototypeTaskHandler } from "./task-handlers/PrototypeTaskHandler";
+import { SelectionTaskHandler } from "./task-handlers/SelectionTaskHandler";
 import { ShapeTaskHandler } from "./task-handlers/ShapeTaskHandler";
 import { Task, TaskHandler } from "./TaskHandler";
 
@@ -66,6 +67,7 @@ const MCP_PLUGIN_CAPABILITIES = [
     "file-context.bind",
     "page.read",
     "page.write",
+    "selection.read",
     "shape.write-basic",
     "prototype.write-basic",
     "export.read",
@@ -110,6 +112,7 @@ if (mcp) {
 const taskHandlers: TaskHandler[] = [
     new ExecuteCodeTaskHandler(),
     new PageTaskHandler(),
+    new SelectionTaskHandler(),
     new ShapeTaskHandler(),
     new PrototypeTaskHandler(),
     new ExportTaskHandler(),

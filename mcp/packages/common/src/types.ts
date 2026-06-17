@@ -69,6 +69,7 @@ export const MCP_SERVER_CAPABILITIES = [
     "file-context.bind",
     "page.read",
     "page.write",
+    "selection.read",
     "shape.write-basic",
     "prototype.write-basic",
     "export.read",
@@ -81,6 +82,7 @@ export const MCP_REQUIRED_PLUGIN_CAPABILITIES = [
     "file-context.bind",
     "page.read",
     "page.write",
+    "selection.read",
     "shape.write-basic",
     "prototype.write-basic",
     "export.read",
@@ -278,6 +280,33 @@ export interface PageTaskParams {
 export interface PageTaskResultData {
     page?: PageSummary;
     pages: PageSummary[];
+    currentPage: PageSummary | null;
+}
+
+export interface SelectionShapeSummary {
+    id: string;
+    name: string;
+    type: string;
+    pageId?: string;
+    pageName?: string;
+    parentId?: string;
+    x?: number;
+    y?: number;
+    parentX?: number;
+    parentY?: number;
+    width?: number;
+    height?: number;
+}
+
+export type SelectionTaskAction = "get";
+
+export interface SelectionTaskParams {
+    action: SelectionTaskAction;
+}
+
+export interface SelectionTaskResultData {
+    selectionIds: string[];
+    shapes: SelectionShapeSummary[];
     currentPage: PageSummary | null;
 }
 

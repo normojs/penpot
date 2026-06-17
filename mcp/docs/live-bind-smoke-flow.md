@@ -192,8 +192,10 @@ Keep JSON responses from each step as release evidence.
    - the adapter evidence is plugin-live in the response metadata or through
      the page plugin task response
 
-   `selection.get` or `selection.set` can be used as additional live-only
-   evidence when the workspace has a known selection setup.
+   `selection.get` can be used as additional live-only evidence when the
+   workspace has a known selection setup. A successful response should include
+   `adapter: "plugin-live"`, `selectionIds`, and lightweight `shapes`
+   summaries. `selection.set` remains planned for the next selection slice.
 
 8. Release the bound context.
 

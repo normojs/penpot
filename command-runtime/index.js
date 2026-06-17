@@ -180,9 +180,9 @@ export const CommandDescriptors = Object.freeze({
         title: "Get selection",
         description:
             "Reads the current selection from a bound live Penpot workspace; CLI and backend-command cannot read editor-local selection state.",
-        inputSchema: "empty",
+        inputSchema: "adapter?",
         adapters: Object.freeze(["plugin-live"]),
-        responseShape: "planned status envelope with selected shape summaries and plugin-live adapter metadata",
+        responseShape: "status envelope with selected shape summaries and plugin-live adapter metadata",
     }),
     SELECTION_SET: Object.freeze({
         id: "selection.set",
