@@ -398,9 +398,20 @@ Planning decisions:
   TypeScript, but the tested cases must agree.
 - Host/hybrid `dev up --mcp` work should stay in planning/dry-run mode until
   dependency, port ownership, and service-boundary diagnostics are explicit.
-- Portable CLI packaging remains behind a documented release archive or
-  compatible command-runtime package boundary. The private checkout link flow
-  stays supported during fork development.
+- Portable CLI packaging is handled by a private release archive that carries
+  the built CLI plus `command-runtime/` package files. The private checkout and
+  workspace link flows stay supported during fork development.
+
+P16.5 implementation note:
+
+- Root `pnpm cli:package-check` builds `penpot-cli`, creates
+  `tmp/penpot-cli-release/penpot-cli-<version>.tar.gz`, extracts the archive,
+  and verifies `node dist/index.js --help` plus
+  `node bin/penpot-cli mcp config --format json`.
+- The archive includes `dist/index.js`, a `bin/penpot-cli` wrapper,
+  `README.md`, generated `RELEASE.md`, portable package metadata, and a local
+  `node_modules/@penpot/command-runtime` copy from root `command-runtime/`.
+- This is a private fork distribution path, not an npm publication contract.
 
 ### 3.10 CLI Profile Config Read Path (2026-06-16)
 
@@ -1383,9 +1394,12 @@ P13.1 build/install decision:
 - The CLI package version stays independent from the Penpot product version;
   fork releases tie product and CLI behavior together through git tags and
   changelog entries.
-- Standalone tarballs or npm publishing are deferred until
-  `@penpot/command-runtime` is bundled, published with compatible versions, or
-  shipped in a documented release archive layout.
+- npm publishing is deferred until `@penpot/command-runtime` is bundled or
+  published with compatible versions.
+- P16.5 adds the supported private portable artifact:
+  `pnpm cli:package-check` creates and verifies
+  `tmp/penpot-cli-release/penpot-cli-<version>.tar.gz` with the built CLI and a
+  local `node_modules/@penpot/command-runtime` copy.
 
 ## 6. User Configuration
 

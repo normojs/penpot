@@ -391,8 +391,9 @@ Tasks:
   reset cases.
 - Done in P16.4: harden `dev up --mcp` host/hybrid dry-run planning with
   dependency, port, service-surface, and unsupported-startup diagnostics.
-- P16.5: define a portable CLI release archive path that includes the CLI and
-  command-runtime dependency boundary without relying on global workspace links.
+- Done in P16.5: define and verify a portable CLI release archive path that
+  includes the built CLI and command-runtime dependency boundary without
+  relying on global workspace links.
 
 Acceptance:
 
@@ -403,19 +404,21 @@ Acceptance:
 
 ## Near-Term Priority
 
-Wave D, Wave E, Wave F, and Wave G are complete. P15.2 selected Wave H as the
-next implementation slice. P16.1 documented the profile-config read-path
-contract, P16.2 implemented opt-in authenticated profile reads for
-`penpot-cli mcp config`, P16.3 added canonical MCP URL derivation fixtures and
-parity tests, and P16.4 hardened host/hybrid `dev up --mcp` dry-run planning.
+Wave D, Wave E, Wave F, Wave G, and Wave H are complete. P15.2 selected Wave H
+as the implementation slice for CLI configuration convergence and distribution
+hardening. P16.1 documented the profile-config read-path contract, P16.2
+implemented opt-in authenticated profile reads for `penpot-cli mcp config`,
+P16.3 added canonical MCP URL derivation fixtures and parity tests, P16.4
+hardened host/hybrid `dev up --mcp` dry-run planning, and P16.5 added a private
+portable CLI release archive check.
 
-The next active task is P16.5:
+The next active work should be a short roadmap reconciliation pass before
+starting Wave I:
 
-1. Audit the current private-checkout and workspace-link CLI install path.
-2. Define a portable release archive layout for `penpot-cli` plus the
-   `@penpot/command-runtime` workspace dependency.
-3. Add or document a packaging verification command that checks archive
-   contents without requiring a global workspace link.
+1. Re-audit the remaining product gaps after Wave H.
+2. Select the next user-visible implementation theme.
+3. Add the next ordered phase tasks to `todo.md` with affected modules,
+   acceptance checks, and the first task marked `in_progress`.
 
 Keep manual configuration behavior stable while moving command metadata and
 envelopes; transport-specific formatting should stay at the MCP/CLI edges.

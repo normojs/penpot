@@ -78,6 +78,7 @@
 - Document CI-friendly check commands for MCP/CLI release verification, separating TypeScript, Clojure, ClojureScript, packaging, smoke-flow, and missing-tool evidence.
 - Reconcile the MCP/CLI roadmap after release verification, documenting remaining product gaps and moving active planning to the next implementation wave.
 - Define the next MCP/CLI implementation wave around CLI configuration convergence, URL derivation parity, local orchestration hardening, and portable CLI packaging.
+- Add a private portable `penpot-cli` release archive and package check that carries the built CLI plus `@penpot/command-runtime` without requiring a global workspace link.
 - Document the authenticated CLI profile-config read-path contract for `penpot-cli mcp config` profile-source support.
 - Add opt-in authenticated `penpot-cli mcp config --profile-source auto|backend` support with source metadata, env/flag precedence, and no-network default behavior.
 - Add canonical MCP URL derivation fixtures shared by `penpot-cli` smoke tests and mirrored frontend effective-config tests.

@@ -15,6 +15,8 @@
     "cli:build": "pnpm --filter penpot-cli build",
     "cli:help": "pnpm --filter penpot-cli smoke:help",
     "cli:install-check": "pnpm --filter penpot-cli install:check",
+    "cli:package": "pnpm --filter penpot-cli package:release",
+    "cli:package-check": "pnpm --filter penpot-cli package:check",
     "mcp:plugin:package": "pnpm --dir mcp --filter mcp-plugin package:frontend",
     "mcp:plugin:check": "pnpm --dir mcp --filter mcp-plugin check:frontend",
     "lint": "./scripts/lint",

@@ -69,6 +69,7 @@ pnpm --filter penpot-cli types:check
 pnpm --filter penpot-cli test
 pnpm --filter penpot-cli smoke:help
 pnpm cli:install-check
+pnpm cli:package-check
 ```
 
 `pnpm --filter penpot-cli lint` is an alias for the CLI type check and can be
@@ -174,7 +175,7 @@ adapter, and whether the failure is a product failure or local tooling issue.
 | `backend` RPC/headless commands | focused backend test, backend regression when feasible, root CLJ lint/format |
 | `common` shared data helpers | root CLJ lint/format, focused backend/frontend tests for consumers |
 | `exporter` or render output | exporter-related dry-run/execution smoke plus affected TS/CLJ checks |
-| Packaging/gateway | MCP plugin package/check, CLI install check, relevant smoke-flow docs |
+| Packaging/gateway | MCP plugin package/check, CLI install check, CLI package check, relevant smoke-flow docs |
 
 ## Failure Classification
 
@@ -216,7 +217,7 @@ The full release matrix can be split into independent CI jobs:
 | `typescript-no-service` | MCP format/type/test, CLI type/test/smoke help |
 | `frontend-cljs` | frontend CLJ format/lint/test |
 | `backend-jvm` | root CLJ lint/format plus focused or full backend tests |
-| `packaging` | MCP plugin package/check and CLI install check |
+| `packaging` | MCP plugin package/check, CLI install check, and CLI package check |
 | `running-stack-smoke` | focused smoke flows against a live Penpot stack |
 
 CI should fail on product failures. Missing local tools should fail only in jobs

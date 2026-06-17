@@ -6,8 +6,9 @@ coordinates frontend, backend, exporter, MCP, and future shared command runtime
 surfaces.
 
 The current package is private and intended for private fork checkout usage.
-It is not published as a standalone npm package yet because it depends on the
-workspace `@penpot/command-runtime` package.
+It is not published to npm yet, but the workspace can generate a private
+portable release archive that includes the built CLI and the
+`@penpot/command-runtime` runtime files.
 
 ## Quick Start
 
@@ -25,6 +26,7 @@ Useful root shortcuts:
 pnpm cli:build
 pnpm cli:help
 pnpm cli:install-check
+pnpm cli:package-check
 pnpm --filter penpot-cli types:check
 pnpm --filter penpot-cli lint
 ```
@@ -42,13 +44,36 @@ Current packaging decisions:
 | Binary name | `penpot-cli` |
 | Package visibility | Private workspace package; no npm publish yet |
 | Versioning | CLI package semver is independent from the Penpot product version; fork releases are tied together by git tag and changelog |
-| Supported install path | Private checkout build or workspace global link |
+| Supported install path | Private checkout build, workspace global link, or private portable archive |
 
 Fresh checkout verification:
 
 ```bash
 pnpm install
 pnpm cli:install-check
+```
+
+Portable archive verification:
+
+```bash
+pnpm cli:package-check
+```
+
+The check builds the CLI, writes
+`tmp/penpot-cli-release/penpot-cli-<version>.tar.gz`, extracts it, and verifies
+that both direct execution and the packaged `bin/penpot-cli` wrapper run
+without a global workspace link.
+
+The archive layout is:
+
+```text
+penpot-cli-<version>/
+  README.md
+  RELEASE.md
+  package.json
+  bin/penpot-cli
+  dist/index.js
+  node_modules/@penpot/command-runtime/
 ```
 
 Local workspace link for repeated terminal use:
@@ -60,9 +85,9 @@ penpot-cli --help
 ```
 
 Do not treat `pnpm pack`, `npm publish`, or a copied `dist/` directory as a
-supported artifact yet. Standalone packaging should wait until
-`@penpot/command-runtime` is bundled, published with compatible versions, or
-shipped in a documented release archive layout.
+supported artifact yet. The supported portable artifact is the generated
+release archive because it carries the CLI build and the private
+`@penpot/command-runtime` dependency boundary together.
 
 The full packaging decision is tracked in
 `mcp/docs/penpot-cli-build-install-strategy.md`.
