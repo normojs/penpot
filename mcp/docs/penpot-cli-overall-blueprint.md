@@ -445,17 +445,18 @@ Acceptance:
 
 ## Near-Term Priority
 
-Wave D, Wave E, Wave F, Wave G, Wave H, Wave I / Phase 17, and P18.1 are
-complete. Phase 18 continues turning descriptor-only live workspace state into
-explicit plugin-live commands without pretending it is backend-command data.
+Wave D, Wave E, Wave F, Wave G, Wave H, Wave I / Phase 17, P18.1, and P18.2
+are complete. Phase 18 continues turning descriptor-only live workspace state
+into explicit plugin-live commands without pretending it is backend-command
+data.
 
-The next active task is P18.2:
+The next active task is P18.3:
 
-1. Extend the plugin-live selection task with a `set` action.
-2. Validate requested shape ids in the bound workspace before mutating
-   editor-local selection.
-3. Keep CLI behavior descriptor-only and point users to MCP binding for
-   editor-local selection state.
+1. Add smoke-flow evidence for `selection.get` and `selection.set` after
+   `page.set_current`.
+2. Document empty selection clearing and stale/unbound recovery expectations.
+3. Keep CLI behavior descriptor-only while command metadata points users to MCP
+   binding for editor-local selection state.
 
 Keep manual configuration behavior stable while moving command metadata and
 envelopes; transport-specific formatting should stay at the MCP/CLI edges.

@@ -110,7 +110,7 @@ state for them.
 | `page.rename` | Registered MCP tool and descriptor; backend-command with `fileId`, plugin-live without it. | Backend-safe persisted data plus plugin-live convenience. | Page metadata persists in file data. | Keep behavior. |
 | `page.set_current` | Registered MCP tool, no command-runtime descriptor; always plugin-live. | Plugin-live workspace state. | It calls `penpot.openPage` and changes editor state, not file data. | Add plugin-live-only descriptor and live-only reason text in P17.2/P17.5. |
 | `selection.get` | Registered MCP tool backed by a plugin-live selection task. | Plugin-live workspace state. | Selection lives in `workspace-local` and plugin context snapshots. | Returns selected ids and lightweight shape summaries only when a file context is bound. |
-| `selection.set` | Name exists in `ToolNames.ts`, not registered. | Plugin-live workspace state. | Selection mutation is editor-local state. | Add descriptor with live-only guidance; runtime implementation can wait for P17.5. |
+| `selection.set` | Registered MCP tool backed by a plugin-live selection task. | Plugin-live workspace state. | Selection mutation is editor-local state. | Sets selected shape ids only when a file context is bound; `shapeIds: []` clears selection. |
 | `shape.create_frame`, `shape.create_rect`, `shape.create_text`, `shape.create_image` | Registered MCP tools and descriptors; backend-command with explicit targets, plugin-live otherwise. | Backend-safe persisted data plus plugin-live convenience. | Supported persisted shape creation already exists. | Keep behavior. |
 | `shape.update` with geometry/style/text/hierarchy | Registered MCP tool and descriptor; backend-command with explicit targets, plugin-live otherwise. | Backend-safe persisted data plus plugin-live convenience. | Supported shape fields persist through file changes. | Keep behavior. |
 | `shape.update` with `layout.type = none|flex` | Registered MCP tool and descriptor. | Backend-safe persisted data. | Common/backend explicitly support this subset. | Keep behavior. |
@@ -146,14 +146,13 @@ Recommended P17.2 commands:
 2. `selection.get`
    - Adapter: `plugin-live` only.
    - Reason: selection is editor-local state.
-   - Runtime can initially be descriptor-only if implementation is deferred to
-     P17.5.
+   - Current runtime: registered MCP plugin-live task for bound workspaces.
 
 3. `selection.set`
    - Adapter: `plugin-live` only.
    - Reason: selection mutation is editor-local state.
-   - Runtime can initially be descriptor-only if implementation is deferred to
-     P17.5.
+   - Current runtime: registered MCP plugin-live task for bound workspaces,
+     with shape id validation and empty-array clearing.
 
 4. `prototype.list_interactions`
    - Adapter: `backend-command` for explicit `fileId`/`pageId`; optional
@@ -181,8 +180,8 @@ P17.2 implementation note:
 - Added `LiveGapCommandDescriptors` to `@penpot/command-runtime` for the seven
   commands above.
 - Kept `page.set_current`, `selection.get`, and `selection.set` as
-  plugin-live/live workspace metadata. Only `page.set_current` is currently
-  registered as an MCP tool.
+  plugin-live/live workspace metadata. All three are now registered MCP tools
+  for bound workspace contexts.
 - Kept `prototype.list_interactions` as the planned backend-command read that
   starts P17.3. Prototype delete, overlay creation, and layout alias behavior
   remain descriptor-only or unsupported until stable contracts exist.
@@ -255,10 +254,11 @@ Selection and current page commands now explain:
   available or stale context can provide the file id without losing the target
   page.
 
-`selection.get` now has a plugin-live task contract and registered MCP tool for
-bound workspaces. `selection.set` remains descriptor-only until the mutation
-contract and shape id validation are added. Their shared command-runtime reason
-text still points CLI users back to MCP `file.open`, `file.get_context`,
+`selection.get` and `selection.set` now have plugin-live task contracts and
+registered MCP tools for bound workspaces. `selection.set` validates requested
+shape ids in the plugin before mutating editor-local selection, and
+`shapeIds: []` clears selection. Their shared command-runtime reason text still
+points CLI users back to MCP `file.open`, `file.get_context`,
 `file.bind_context`, and retry rather than suggesting a headless CLI path.
 
 ## Open Decisions

@@ -15,6 +15,8 @@ const MCP_PLUGIN_CAPABILITIES = [
     "file-context.bind",
     "page.read",
     "page.write",
+    "selection.read",
+    "selection.write",
     "shape.write-basic",
     "prototype.write-basic",
     "export.read",

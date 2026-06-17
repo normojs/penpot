@@ -121,7 +121,7 @@ not register yet:
 
 - global/file: `file.search`, `file.duplicate`, `file.open`,
   `token.get_mcp_status`
-- file context: `selection.set`; `page.set_current` and `selection.get` are implemented but remain plugin-live and now share live-only recovery metadata with the same binding flow
+- file context: `page.set_current`, `selection.get`, and `selection.set` are implemented but remain plugin-live and now share live-only recovery metadata with the same binding flow
 - design editing: `shape.group`, `shape.ungroup`, `shape.set_layout`,
   `shape.set_style`, `component.create`, `component.instantiate`,
   `tokens.list`, `tokens.apply`

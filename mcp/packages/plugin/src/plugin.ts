@@ -68,6 +68,7 @@ const MCP_PLUGIN_CAPABILITIES = [
     "page.read",
     "page.write",
     "selection.read",
+    "selection.write",
     "shape.write-basic",
     "prototype.write-basic",
     "export.read",
@@ -76,6 +77,7 @@ const MCP_PLUGIN_CAPABILITIES = [
 const FILE_CONTEXT_CAPABILITIES = [
     "page.read",
     "selection.read",
+    "selection.write",
     "shape.read",
     "shape.write",
     "prototype.write",

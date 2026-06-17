@@ -1,5 +1,6 @@
 import { Page, Shape } from "@penpot/plugin-types";
 import { PageSummary, SelectionShapeSummary, SelectionTaskParams, SelectionTaskResultData } from "../../../common/src";
+import { PenpotUtils } from "../PenpotUtils";
 import { Task, TaskHandler } from "../TaskHandler";
 
 export class SelectionTaskHandler extends TaskHandler<SelectionTaskParams> {
@@ -23,9 +24,28 @@ export class SelectionTaskHandler extends TaskHandler<SelectionTaskParams> {
         switch (params.action) {
             case "get":
                 return this.result();
+            case "set":
+                return this.setSelection(params.shapeIds);
             default:
                 throw new Error(`Unsupported selection action: ${(params as SelectionTaskParams).action}`);
         }
+    }
+
+    private setSelection(shapeIds: string[] | undefined): SelectionTaskResultData {
+        if (!Array.isArray(shapeIds)) {
+            throw new Error("selection.set requires shapeIds.");
+        }
+
+        const shapes = shapeIds.map((shapeId) => {
+            const shape = PenpotUtils.findShapeById(shapeId);
+            if (!shape) {
+                throw new Error(`Shape not found: ${shapeId}`);
+            }
+            return shape;
+        });
+
+        penpot.selection = shapes;
+        return this.result();
     }
 
     private result(): SelectionTaskResultData {

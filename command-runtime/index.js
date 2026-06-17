@@ -189,10 +189,10 @@ export const CommandDescriptors = Object.freeze({
         mcpToolName: "selection.set",
         title: "Set selection",
         description:
-            "Sets the current selection in a bound live Penpot workspace; descriptor-only until a plugin-live task contract is added.",
-        inputSchema: "shapeIds",
+            "Sets the current selection in a bound live Penpot workspace; CLI and backend-command cannot mutate editor-local selection state.",
+        inputSchema: "shapeIds, adapter?",
         adapters: Object.freeze(["plugin-live"]),
-        responseShape: "planned status envelope with selected shape ids and plugin-live adapter metadata",
+        responseShape: "status envelope with selected shape summaries and plugin-live adapter metadata",
     }),
     PROTOTYPE_CREATE_FLOW: Object.freeze({
         id: "prototype.create_flow",

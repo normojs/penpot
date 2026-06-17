@@ -29,7 +29,7 @@ import {
     PrototypeCreateInteractionTool,
     PrototypeListInteractionsTool,
 } from "./tools/PrototypeTools";
-import { SelectionGetTool } from "./tools/SelectionTools";
+import { SelectionGetTool, SelectionSetTool } from "./tools/SelectionTools";
 import {
     ShapeDeleteTool,
     ShapeCreateFrameTool,
@@ -273,6 +273,7 @@ export class PenpotMcpServer {
             new PageRenameTool(this),
             new PageSetCurrentTool(this),
             new SelectionGetTool(this),
+            new SelectionSetTool(this),
             new ShapeCreateFrameTool(this),
             new ShapeCreateRectTool(this),
             new ShapeCreateTextTool(this),

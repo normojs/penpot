@@ -70,6 +70,7 @@ export const MCP_SERVER_CAPABILITIES = [
     "page.read",
     "page.write",
     "selection.read",
+    "selection.write",
     "shape.write-basic",
     "prototype.write-basic",
     "export.read",
@@ -83,6 +84,7 @@ export const MCP_REQUIRED_PLUGIN_CAPABILITIES = [
     "page.read",
     "page.write",
     "selection.read",
+    "selection.write",
     "shape.write-basic",
     "prototype.write-basic",
     "export.read",
@@ -298,10 +300,11 @@ export interface SelectionShapeSummary {
     height?: number;
 }
 
-export type SelectionTaskAction = "get";
+export type SelectionTaskAction = "get" | "set";
 
 export interface SelectionTaskParams {
     action: SelectionTaskAction;
+    shapeIds?: string[];
 }
 
 export interface SelectionTaskResultData {

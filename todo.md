@@ -120,9 +120,10 @@ container track subset for explicit file targets while cell/child placement
 remains out of scope. P17.5 is complete: live-only current-page/selection
 guidance now includes plugin-live recovery metadata, target-aware
 `page.set_current` handoff URLs, aligned CLI reason text, and smoke evidence.
-P18.1 is complete: `selection.get` now runs through plugin-live for bound MCP
-workspaces and returns selected ids plus lightweight shape summaries. Current
-active work moves to P18.2 for editor-local `selection.set`.
+P18.1 and P18.2 are complete: `selection.get` and `selection.set` now run
+through plugin-live for bound MCP workspaces, returning selected ids plus
+lightweight shape summaries while allowing explicit selection mutation and
+clearing. Current active work moves to P18.3 for live-bind smoke evidence.
 
 ## Feature Roadmap
 
@@ -155,7 +156,7 @@ remain the execution plan.
 | F22 | done | Roadmap reconciliation and next-wave planning | Phase 15 | The fork has one accurate active task and a clean next development wave | Completed 2026-06-16; P15.1 reconciled roadmap status and P15.2 defined Wave H / Phase 16 as the next implementation wave |
 | F23 | done | CLI configuration convergence and distribution hardening | Phase 16 | `penpot-cli` can inspect the same saved MCP config that Penpot uses and has a clearer path toward portable local use | Completed 2026-06-17; P16.1 completed the read-path contract; P16.2 completed opt-in authenticated profile-source support; P16.3 completed URL derivation fixtures; P16.4 completed host/hybrid planning; P16.5 added a verified private portable CLI release archive |
 | F24 | done | Headless live-gap closure | Phase 17 | More authoring operations can run without a live workspace, while truly live-only state stays explicit | Completed 2026-06-17; P17.1-P17.5 audited live gaps, added descriptors, implemented persisted prototype reads, added backend-safe grid tracks, and tightened live-only binding guidance |
-| F25 | todo | Live workspace state commands | Phase 18 | Agents can intentionally read or change editor-local selection state through bound MCP plugin-live commands | P18.1 completed `selection.get` plugin-live task/results; next are `selection.set` and smoke coverage |
+| F25 | todo | Live workspace state commands | Phase 18 | Agents can intentionally read or change editor-local selection state through bound MCP plugin-live commands | P18.1 completed `selection.get`; P18.2 completed `selection.set`; next is smoke coverage |
 
 ## Detailed Upcoming Task Queue
 
@@ -321,7 +322,7 @@ Order rationale:
 | Order | Task | Modules | Output | Verification |
 | --- | --- | --- | --- | --- |
 | J1 | Implement plugin-live `selection.get` | `mcp`, `mcp/docs` | Completed 2026-06-17; MCP returns selected shape ids and lightweight summaries from the bound workspace context | Plugin task serialization plus MCP tool tests cover plugin-live execution and unbound recovery |
-| J2 | Implement plugin-live `selection.set` | `mcp`, `mcp/docs` | MCP can set editor selection for explicit shape ids in the bound workspace | Tests cover empty selection, invalid ids, stale context recovery, and plugin task payloads |
+| J2 | Implement plugin-live `selection.set` | `mcp`, `mcp/docs` | Completed 2026-06-17; MCP can set or clear editor selection for explicit shape ids in the bound workspace | Plugin validates shape ids; tests cover empty selection, stale context recovery, and plugin task payloads |
 | J3 | Add selection smoke evidence | `mcp/docs`, `penpot-cli` | Live-bind smoke includes optional selection read/write evidence and CLI descriptor guidance stays explicit | Docs plus CLI/runtime descriptor tests |
 
 ## Phase 0: Baseline, Planning, And Rules
@@ -569,18 +570,18 @@ mutations.
 | ID | Status | Task | Modules | Verification | Notes |
 | --- | --- | --- | --- | --- | --- |
 | P18.1 | done | Implement plugin-live `selection.get` | `mcp`, `mcp/docs` | Completed 2026-06-17; plugin task serialization and MCP tool tests cover bound plugin-live execution, unbound recovery, and unsupported adapters | Returns selected shape ids and lightweight summaries from the bound workspace; CLI remains descriptor-only |
-| P18.2 | in_progress | Implement plugin-live `selection.set` | `mcp`, `mcp/docs` | Tests cover empty selection, invalid ids, stale context recovery, and plugin task payloads | Mutates only editor-local selection in the bound workspace |
-| P18.3 | todo | Add selection live-bind smoke evidence | `mcp/docs`, `penpot-cli` | Smoke docs cover optional selection read/write after `page.set_current`; CLI/runtime descriptor tests stay aligned | Keep recovery guidance identical to `page.set_current` |
+| P18.2 | done | Implement plugin-live `selection.set` | `mcp`, `mcp/docs` | Completed 2026-06-17; plugin task serialization and MCP tool tests cover bound plugin-live execution, clearing selection, stale/unbound recovery, and unsupported adapters | Mutates only editor-local selection in the bound workspace; plugin validates requested shape ids before assignment |
+| P18.3 | in_progress | Add selection live-bind smoke evidence | `mcp/docs`, `penpot-cli` | Smoke docs cover optional selection read/write after `page.set_current`; CLI/runtime descriptor tests stay aligned | Keep recovery guidance identical to `page.set_current` |
 
 ## Next Recommended Sprint
 
 Use `mcp/docs/penpot-cli-overall-blueprint.md` and
 `mcp/docs/headless-live-gap-audit.md` as the current architecture baseline and
-continue with P18.2:
+continue with P18.3:
 
-1. Extend the selection plugin task contract with a `set` action and shape id
-   validation.
-2. Register `selection.set` as plugin-live-only with the existing
-   `file_context_required` recovery behavior.
-3. Cover empty selection, invalid ids, and successful selection mutation while
-   keeping CLI behavior descriptor-only.
+1. Add concrete `selection.get` and `selection.set` calls to the live-bind
+   smoke flow after `page.set_current`.
+2. Document expected response evidence for selection mutation, empty selection
+   clearing, and stale/unbound recovery.
+3. Re-run CLI/runtime descriptor checks to confirm CLI remains descriptor-only
+   for editor-local selection state.
