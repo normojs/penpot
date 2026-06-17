@@ -528,7 +528,62 @@ test("dev up dry-run reports MCP surfaces without starting services", async () =
     assert.equal(body.data.mcpEnabled, true);
     assert.equal(body.data.dryRun, true);
     assert.equal(body.data.surfaces.mcpStream, "http://127.0.0.1:3449/mcp/stream");
+    assert.equal(body.data.surfaces.backend, "http://localhost:6060");
+    assert.ok(body.data.services.some((service) => service.name === "devenv-dependencies"));
+    assert.ok(body.data.dependencyChecks.some((check) => check.name === "manage.sh"));
+    assert.ok(body.data.portChecks.some((check) => check.name === "mcpHttpInternal" && check.port === 4401));
     assert.ok(body.data.readinessChecks.includes("GET http://127.0.0.1:3449/mcp/status"));
+});
+
+test("dev up host dry-run reports dependency, port, and startup boundaries", async () => {
+    const result = await runCli(["dev", "up", "--mcp", "--mode", "host", "--dry-run", "--format", "json"], {
+        PENPOT_MCP_PUBLIC_URI: "http://127.0.0.1:3449",
+    });
+    const body = parseJson(result.stdout);
+
+    assert.equal(result.exitCode, 0);
+    assert.equal(body.status, "ok");
+    assert.equal(body.data.mode, "host");
+    assert.equal(body.data.dryRun, true);
+    assert.ok(body.data.services.some((service) => service.name === "frontend-watch" && service.status === "unsupported"));
+    assert.ok(body.data.services.some((service) => service.name === "mcp-server" && service.ports.includes(4402)));
+    assert.ok(body.data.dependencyChecks.some((check) => check.name === "node"));
+    assert.ok(body.data.dependencyChecks.some((check) => check.name === "pnpm"));
+    assert.ok(body.data.dependencyChecks.some((check) => check.name === "clojure"));
+    assert.ok(body.data.portChecks.some((check) => check.name === "frontend" && check.port === 3449));
+    assert.ok(body.data.portChecks.some((check) => check.name === "backend" && check.port === 6060));
+    assert.equal(body.data.startupBoundaries[0].status, "planning_only");
+});
+
+test("dev up hybrid dry-run reports docker dependency and host MCP surfaces", async () => {
+    const result = await runCli(["dev", "up", "--mcp", "--mode", "hybrid", "--dry-run", "--format", "json"], {
+        PENPOT_MCP_PUBLIC_URI: "http://127.0.0.1:3449",
+    });
+    const body = parseJson(result.stdout);
+
+    assert.equal(result.exitCode, 0);
+    assert.equal(body.status, "ok");
+    assert.equal(body.data.mode, "hybrid");
+    assert.ok(body.data.services.some((service) => service.name === "backend-api" && service.kind === "docker-dependency"));
+    assert.ok(body.data.services.some((service) => service.name === "mcp-server" && service.surfaces.includes("http://localhost:4401/status")));
+    assert.ok(body.data.dependencyChecks.some((check) => check.name === "docker"));
+    assert.ok(body.data.dependencyChecks.some((check) => check.name === "manage.sh"));
+    assert.ok(body.data.dependencyChecks.some((check) => check.name === "pnpm"));
+    assert.ok(body.data.portChecks.some((check) => check.name === "mcpWebSocketInternal" && check.port === 4402));
+    assert.equal(body.data.startupBoundaries[0].status, "planning_only");
+});
+
+test("dev up host startup returns plan with unsupported boundary", async () => {
+    const result = await runCli(["dev", "up", "--mcp", "--mode", "host", "--format", "json"], {
+        PENPOT_MCP_PUBLIC_URI: "http://127.0.0.1:3449",
+    });
+    const body = parseJson(result.stdout);
+
+    assert.equal(result.exitCode, 2);
+    assert.equal(body.status, "error");
+    assert.equal(body.error.code, "dev_mode_not_implemented");
+    assert.equal(body.error.data.plan.mode, "host");
+    assert.equal(body.error.data.plan.startupBoundaries[0].status, "planning_only");
 });
 
 test("file open emits a workspace URL and does not claim to bind MCP context", async () => {

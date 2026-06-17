@@ -692,6 +692,23 @@ P6.4 implementation note:
 - `host` and `hybrid` remain planned modes; the CLI reports them explicitly
   instead of pretending to start unsupported flows.
 
+P16.4 implementation note:
+
+- `penpot-cli dev up --mcp --mode host --dry-run --format json` and
+  `--mode hybrid` now report a structured plan with `services`,
+  `dependencyChecks`, `portChecks`, `surfaces`, `readinessChecks`, and
+  `startupBoundaries`.
+- Host planning checks `node`, `pnpm`, and `clojure`; hybrid planning checks
+  `./manage.sh`, `docker`, `node`, and `pnpm`.
+- Dry-run port diagnostics cover the public frontend surface, backend,
+  exporter, internal MCP HTTP/WebSocket ports, and standalone plugin preview
+  port. The status is advisory in dry-run mode and may be `listening`,
+  `available`, or `unknown` depending on the local machine.
+- Non-dry-run host/hybrid startup still fails with `dev_mode_not_implemented`
+  and returns the same plan in JSON error details. This keeps the unsupported
+  startup boundary explicit until preflight checks become enforced startup
+  gates.
+
 P6.5 implementation note:
 
 - `penpot-cli file list` and `penpot-cli file create` call the same backend RPC
@@ -728,8 +745,8 @@ P6.6 implementation note:
   export dry-run examples, and the token/backend/public URI environment
   variables required by current commands.
 - The documented limitations match the implementation: `dev up --mcp` only
-  delegates Docker dependency startup in `devenv` mode, `file open` only emits a
-  browser URL, and real CLI export execution waits for Phase 7.
+  delegates Docker dependency startup in `devenv` mode, host/hybrid startup is
+  planning-only, and `file open` only emits a browser URL.
 
 ### 5.2 Global MCP Agent
 

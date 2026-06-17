@@ -389,8 +389,8 @@ Tasks:
 - Done in P16.3: add canonical MCP URL derivation contract fixtures for
   frontend and CLI parity across built-in, custom, local, partial, invalid, and
   reset cases.
-- P16.4: harden `dev up --mcp` host/hybrid dry-run planning with dependency,
-  port, service-surface, and unsupported-startup diagnostics.
+- Done in P16.4: harden `dev up --mcp` host/hybrid dry-run planning with
+  dependency, port, service-surface, and unsupported-startup diagnostics.
 - P16.5: define a portable CLI release archive path that includes the CLI and
   command-runtime dependency boundary without relying on global workspace links.
 
@@ -405,18 +405,17 @@ Acceptance:
 
 Wave D, Wave E, Wave F, and Wave G are complete. P15.2 selected Wave H as the
 next implementation slice. P16.1 documented the profile-config read-path
-contract, and P16.2 implemented opt-in authenticated profile reads for
-`penpot-cli mcp config`. P16.3 added canonical MCP URL derivation fixtures and
-parity tests.
+contract, P16.2 implemented opt-in authenticated profile reads for
+`penpot-cli mcp config`, P16.3 added canonical MCP URL derivation fixtures and
+parity tests, and P16.4 hardened host/hybrid `dev up --mcp` dry-run planning.
 
-The next active task is P16.4:
+The next active task is P16.5:
 
-1. Audit the current `penpot-cli dev up --mcp` host/hybrid placeholder behavior,
-   dependency checks, and service surface reporting.
-2. Add dry-run diagnostics for host/hybrid planning before starting any local
-   services.
-3. Cover the new plan output with CLI smoke tests and document unsupported
-   startup boundaries.
+1. Audit the current private-checkout and workspace-link CLI install path.
+2. Define a portable release archive layout for `penpot-cli` plus the
+   `@penpot/command-runtime` workspace dependency.
+3. Add or document a packaging verification command that checks archive
+   contents without requiring a global workspace link.
 
 Keep manual configuration behavior stable while moving command metadata and
 envelopes; transport-specific formatting should stay at the MCP/CLI edges.

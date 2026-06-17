@@ -3,6 +3,7 @@
 import { spawn } from "node:child_process";
 import { constants } from "node:fs";
 import { access, mkdir, readFile, readdir, stat, writeFile } from "node:fs/promises";
+import { createConnection } from "node:net";
 import { basename, delimiter, dirname, extname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import {
@@ -34,7 +35,9 @@ const DEFAULT_LOCAL_MCP_STREAM_URI = "http://localhost:4401/mcp";
 const DEFAULT_LOCAL_MCP_SSE_URI = "http://localhost:4401/sse";
 const DEFAULT_LOCAL_MCP_WEBSOCKET_URI = "ws://localhost:4402";
 const DEFAULT_LOCAL_MCP_STATUS_URI = "http://localhost:4401/status";
+const DEFAULT_BACKEND_URI = "http://localhost:6060";
 const DEFAULT_EXPORTER_URI = "http://localhost:6061";
+const DEFAULT_PLUGIN_PREVIEW_URI = "http://localhost:4400/manifest.json";
 
 const HELP_TEXT = `penpot-cli ${VERSION}
 
@@ -44,7 +47,7 @@ Usage:
   penpot-cli mcp status [--url <status-url>] [--format text|json]
   penpot-cli mcp config [--mode builtin|custom|local] [--profile-source off|auto|backend] [--format text|json]
   penpot-cli mcp logs [--dir <path>] [--follow] [--format text|json]
-  penpot-cli dev up --mcp [--mode devenv] [--dry-run] [--format text|json]
+  penpot-cli dev up --mcp [--mode devenv|host|hybrid] [--dry-run] [--format text|json]
   penpot-cli file list --project-id <id> [--format text|json]
   penpot-cli file create --project-id <id> [--name <name>] [--format text|json]
   penpot-cli file open <file-id> [--team-id <id>] [--page-id <id>] [--format text|json]
@@ -84,7 +87,7 @@ Environment:
 const DEV_HELP_TEXT = `penpot-cli dev
 
 Usage:
-  penpot-cli dev up --mcp [--mode devenv] [--dry-run] [--format text|json]
+  penpot-cli dev up --mcp [--mode devenv|host|hybrid] [--dry-run] [--format text|json]
 
 Modes:
   devenv   Reuse the existing Docker devenv managed by ./manage.sh
@@ -269,7 +272,49 @@ interface DevPlan {
     publicUri: string;
     commands: string[];
     surfaces: Record<string, string>;
+    services: DevServicePlan[];
+    dependencyChecks: DevDependencyCheck[];
+    portChecks: DevPortCheck[];
+    startupBoundaries: DevStartupBoundary[];
     readinessChecks: string[];
+}
+
+interface DevServicePlan {
+    name: string;
+    kind: "devenv" | "host-process" | "docker-dependency" | "static-assets" | "gateway";
+    mode: "devenv" | "host" | "hybrid" | "all";
+    required: boolean;
+    command: string | null;
+    surfaces: string[];
+    ports: number[];
+    status: "planned" | "delegated" | "unsupported";
+}
+
+interface DevDependencyCheck {
+    name: string;
+    kind: "command" | "file";
+    target: string;
+    required: boolean;
+    modes: string[];
+    status: "available" | "missing";
+    detail: string;
+}
+
+interface DevPortCheck {
+    name: string;
+    host: string;
+    port: number;
+    url: string;
+    required: boolean;
+    status: "listening" | "available" | "unknown";
+    detail: string;
+}
+
+interface DevStartupBoundary {
+    mode: string;
+    status: "supported" | "planning_only";
+    detail: string;
+    nextActions: string[];
 }
 
 interface RpcConfig {
@@ -811,7 +856,7 @@ function getRpcConfig(args: string[], env: NodeJS.ProcessEnv): RpcConfig {
             readOption(args, ["--backend-uri"]) ??
                 env.PENPOT_BACKEND_URI ??
                 env.PENPOT_PUBLIC_URI ??
-                "http://localhost:6060"
+                DEFAULT_BACKEND_URI
         ),
         token:
             readOption(args, ["--token"]) ??
@@ -920,9 +965,286 @@ function createWorkspaceUrl(args: string[], env: NodeJS.ProcessEnv, fileId: stri
     });
 }
 
-function getDevPlan(args: string[], env: NodeJS.ProcessEnv, dryRun: boolean): DevPlan {
+function createDevServicePlans(mode: string, config: McpConfig, backendUri: string, exporterUri: string): DevServicePlan[] {
+    const pluginManifestUri = appendPath(config.publicUri, "/plugins/mcp/manifest.json");
+    const services: DevServicePlan[] = [
+        {
+            name: "public-gateway",
+            kind: "gateway",
+            mode: "all",
+            required: true,
+            command: null,
+            surfaces: [config.publicUri, config.streamUri, config.sseUri, config.websocketUri, config.statusUri],
+            ports: readPortsFromUrls([config.publicUri, config.streamUri, config.sseUri, config.websocketUri, config.statusUri]),
+            status: mode === "devenv" ? "delegated" : "planned",
+        },
+        {
+            name: "mcp-plugin-assets",
+            kind: "static-assets",
+            mode: "all",
+            required: true,
+            command: "pnpm --dir mcp/packages/plugin build",
+            surfaces: [pluginManifestUri, DEFAULT_PLUGIN_PREVIEW_URI],
+            ports: readPortsFromUrls([pluginManifestUri, DEFAULT_PLUGIN_PREVIEW_URI]),
+            status: mode === "devenv" ? "delegated" : "planned",
+        },
+    ];
+
+    if (mode === "devenv") {
+        services.push({
+            name: "devenv-dependencies",
+            kind: "devenv",
+            mode: "devenv",
+            required: true,
+            command: "./manage.sh start-devenv",
+            surfaces: [backendUri, exporterUri, DEFAULT_LOCAL_MCP_STATUS_URI],
+            ports: readPortsFromUrls([backendUri, exporterUri, DEFAULT_LOCAL_MCP_STATUS_URI, DEFAULT_LOCAL_MCP_WEBSOCKET_URI]),
+            status: "delegated",
+        });
+        services.push({
+            name: "devenv-workspace",
+            kind: "devenv",
+            mode: "devenv",
+            required: true,
+            command: "./manage.sh run-devenv",
+            surfaces: [config.publicUri],
+            ports: readPortsFromUrls([config.publicUri]),
+            status: "delegated",
+        });
+        return services;
+    }
+
+    services.push(
+        {
+            name: "frontend-watch",
+            kind: "host-process",
+            mode: mode === "hybrid" ? "hybrid" : "host",
+            required: true,
+            command: "pnpm --dir frontend watch",
+            surfaces: [config.publicUri],
+            ports: readPortsFromUrls([config.publicUri]),
+            status: "unsupported",
+        },
+        {
+            name: "backend-api",
+            kind: mode === "hybrid" ? "docker-dependency" : "host-process",
+            mode: mode === "hybrid" ? "hybrid" : "host",
+            required: true,
+            command: mode === "hybrid" ? "./manage.sh start-devenv" : "backend development server",
+            surfaces: [backendUri],
+            ports: readPortsFromUrls([backendUri]),
+            status: "unsupported",
+        },
+        {
+            name: "exporter",
+            kind: mode === "hybrid" ? "docker-dependency" : "host-process",
+            mode: mode === "hybrid" ? "hybrid" : "host",
+            required: true,
+            command: mode === "hybrid" ? "./manage.sh start-devenv" : "pnpm --dir exporter watch",
+            surfaces: [exporterUri],
+            ports: readPortsFromUrls([exporterUri]),
+            status: "unsupported",
+        },
+        {
+            name: "mcp-server",
+            kind: "host-process",
+            mode: mode === "hybrid" ? "hybrid" : "host",
+            required: true,
+            command: "pnpm --dir mcp/packages/server dev",
+            surfaces: [DEFAULT_LOCAL_MCP_STREAM_URI, DEFAULT_LOCAL_MCP_SSE_URI, DEFAULT_LOCAL_MCP_WEBSOCKET_URI, DEFAULT_LOCAL_MCP_STATUS_URI],
+            ports: readPortsFromUrls([
+                DEFAULT_LOCAL_MCP_STREAM_URI,
+                DEFAULT_LOCAL_MCP_SSE_URI,
+                DEFAULT_LOCAL_MCP_WEBSOCKET_URI,
+                DEFAULT_LOCAL_MCP_STATUS_URI,
+            ]),
+            status: "unsupported",
+        }
+    );
+
+    return services;
+}
+
+async function getDevDependencyChecks(mode: string, env: NodeJS.ProcessEnv): Promise<DevDependencyCheck[]> {
+    const dependencyTargets: Array<{
+        name: string;
+        kind: "command" | "file";
+        target: string;
+        modes: string[];
+        detail: string;
+    }> = [
+        {
+            name: "manage.sh",
+            kind: "file",
+            target: resolve("manage.sh"),
+            modes: ["devenv", "hybrid"],
+            detail: "Required to delegate Docker/devenv dependency startup.",
+        },
+        {
+            name: "docker",
+            kind: "command",
+            target: "docker",
+            modes: ["devenv", "hybrid"],
+            detail: "Required for Docker devenv dependencies.",
+        },
+        {
+            name: "node",
+            kind: "command",
+            target: "node",
+            modes: ["host", "hybrid"],
+            detail: "Required for host frontend, MCP server, plugin, and CLI package scripts.",
+        },
+        {
+            name: "pnpm",
+            kind: "command",
+            target: "pnpm",
+            modes: ["host", "hybrid"],
+            detail: "Required for host package scripts and MCP plugin builds.",
+        },
+        {
+            name: "clojure",
+            kind: "command",
+            target: "clojure",
+            modes: ["host"],
+            detail: "Required before host-native backend/exporter startup can be enabled.",
+        },
+    ];
+
+    const checks = await Promise.all(
+        dependencyTargets
+            .filter((dependency) => dependency.modes.includes(mode))
+            .map(async (dependency) => {
+                const available =
+                    dependency.kind === "file"
+                        ? await canExecute(dependency.target)
+                        : await commandExists(dependency.target, env);
+                return {
+                    ...dependency,
+                    required: true,
+                    status: available ? "available" : "missing",
+                } satisfies DevDependencyCheck;
+            })
+    );
+
+    return checks;
+}
+
+function readPortsFromUrls(urls: string[]): number[] {
+    const ports = new Set<number>();
+    for (const url of urls) {
+        const endpoint = parseUrlEndpoint("service", url);
+        if (endpoint) {
+            ports.add(endpoint.port);
+        }
+    }
+    return [...ports].sort((left, right) => left - right);
+}
+
+function parseUrlEndpoint(name: string, url: string): { name: string; host: string; port: number; url: string } | null {
+    try {
+        const parsed = new URL(url);
+        const defaultPort = parsed.protocol === "https:" || parsed.protocol === "wss:" ? 443 : 80;
+        const port = parsed.port ? Number(parsed.port) : defaultPort;
+        if (!Number.isFinite(port)) {
+            return null;
+        }
+        return {
+            name,
+            host: parsed.hostname || "localhost",
+            port,
+            url,
+        };
+    } catch {
+        return null;
+    }
+}
+
+async function checkTcpPort(host: string, port: number): Promise<DevPortCheck["status"]> {
+    return await new Promise((resolvePort) => {
+        let settled = false;
+        const socket = createConnection({ host, port });
+        const settle = (status: DevPortCheck["status"]) => {
+            if (settled) {
+                return;
+            }
+            settled = true;
+            socket.destroy();
+            resolvePort(status);
+        };
+
+        socket.setTimeout(250);
+        socket.on("connect", () => settle("listening"));
+        socket.on("timeout", () => settle("unknown"));
+        socket.on("error", (error: NodeJS.ErrnoException) => {
+            settle(error.code === "ECONNREFUSED" ? "available" : "unknown");
+        });
+    });
+}
+
+async function getDevPortChecks(config: McpConfig, backendUri: string, exporterUri: string): Promise<DevPortCheck[]> {
+    const endpoints = [
+        parseUrlEndpoint("frontend", config.publicUri),
+        parseUrlEndpoint("backend", backendUri),
+        parseUrlEndpoint("exporter", exporterUri),
+        parseUrlEndpoint("mcpHttpInternal", DEFAULT_LOCAL_MCP_STATUS_URI),
+        parseUrlEndpoint("mcpWebSocketInternal", DEFAULT_LOCAL_MCP_WEBSOCKET_URI),
+        parseUrlEndpoint("pluginPreview", DEFAULT_PLUGIN_PREVIEW_URI),
+    ].filter((endpoint): endpoint is { name: string; host: string; port: number; url: string } => endpoint !== null);
+
+    const uniqueEndpoints = new Map<string, { name: string; host: string; port: number; url: string }>();
+    for (const endpoint of endpoints) {
+        uniqueEndpoints.set(`${endpoint.host}:${endpoint.port}:${endpoint.name}`, endpoint);
+    }
+
+    return await Promise.all(
+        [...uniqueEndpoints.values()].map(async (endpoint) => {
+            const status = await checkTcpPort(endpoint.host, endpoint.port);
+            return {
+                ...endpoint,
+                required: true,
+                status,
+                detail:
+                    status === "listening"
+                        ? "A process is already listening on this host/port."
+                        : status === "available"
+                          ? "No TCP listener was detected during dry-run planning."
+                          : "Port ownership could not be confirmed during dry-run planning.",
+            } satisfies DevPortCheck;
+        })
+    );
+}
+
+function getDevStartupBoundaries(mode: string): DevStartupBoundary[] {
+    if (mode === "devenv") {
+        return [
+            {
+                mode,
+                status: "supported",
+                detail: "Only Docker/devenv dependency startup is supported; interactive app processes still use ./manage.sh run-devenv.",
+                nextActions: ["Run penpot-cli dev up --mcp --mode devenv", "Then run ./manage.sh run-devenv for the interactive development shell."],
+            },
+        ];
+    }
+
+    return [
+        {
+            mode,
+            status: "planning_only",
+            detail: `${mode} startup remains disabled until dependency and port checks become enforced preflight gates.`,
+            nextActions: [
+                "Use --dry-run to inspect the host/hybrid service plan.",
+                "Use --mode devenv for the only supported startup path.",
+            ],
+        },
+    ];
+}
+
+async function getDevPlan(args: string[], env: NodeJS.ProcessEnv, dryRun: boolean): Promise<DevPlan> {
     const config = getMcpConfig(args, env);
     const mode = readOption(args, ["--mode"]) ?? "devenv";
+    const backendUri = getRpcConfig(args, env).backendUri;
+    const exporterUri = getExporterUri(args, env);
+    const services = createDevServicePlans(mode, config, backendUri, exporterUri);
 
     return {
         mode,
@@ -936,14 +1258,24 @@ function getDevPlan(args: string[], env: NodeJS.ProcessEnv, dryRun: boolean): De
                       "./manage.sh run-devenv",
                       "Inside devenv: start the frontend/backend/exporter/MCP processes with enable-mcp.",
                   ]
-                : [`${mode} mode startup is planned for a later Phase 6 slice.`],
+                : services
+                      .filter((service) => service.mode === mode || service.mode === "all")
+                      .map((service) => service.command)
+                      .filter((command): command is string => command !== null),
         surfaces: {
             frontend: config.publicUri,
+            backend: backendUri,
+            exporter: exporterUri,
             mcpStream: config.streamUri,
             mcpSse: config.sseUri,
             mcpWebSocket: config.websocketUri,
             mcpStatus: config.statusUri,
+            mcpPluginManifest: appendPath(config.publicUri, "/plugins/mcp/manifest.json"),
         },
+        services,
+        dependencyChecks: await getDevDependencyChecks(mode, env),
+        portChecks: await getDevPortChecks(config, backendUri, exporterUri),
+        startupBoundaries: getDevStartupBoundaries(mode),
         readinessChecks: [
             "GET /api/health or the available backend health endpoint",
             `GET ${config.statusUri}`,
@@ -1897,6 +2229,28 @@ function writeDevPlanText(io: CliIO, plan: DevPlan): void {
     writeLine(io.stdout, "surfaces:");
     for (const [name, uri] of Object.entries(plan.surfaces)) {
         writeLine(io.stdout, `  ${name}: ${uri}`);
+    }
+    writeLine(io.stdout, "services:");
+    for (const service of plan.services) {
+        writeLine(
+            io.stdout,
+            `  ${service.name}: ${service.kind}, status=${service.status}, command=${service.command ?? "n/a"}`
+        );
+    }
+    writeLine(io.stdout, "dependencies:");
+    if (plan.dependencyChecks.length === 0) {
+        writeLine(io.stdout, "  none for this mode");
+    }
+    for (const check of plan.dependencyChecks) {
+        writeLine(io.stdout, `  ${check.name}: ${check.status} (${check.target})`);
+    }
+    writeLine(io.stdout, "ports:");
+    for (const check of plan.portChecks) {
+        writeLine(io.stdout, `  ${check.name}: ${check.host}:${String(check.port)} ${check.status}`);
+    }
+    writeLine(io.stdout, "startup boundaries:");
+    for (const boundary of plan.startupBoundaries) {
+        writeLine(io.stdout, `  ${boundary.mode}: ${boundary.status} - ${boundary.detail}`);
     }
     writeLine(io.stdout, "commands:");
     for (const command of plan.commands) {
@@ -3024,7 +3378,7 @@ async function handleDevUp(args: string[], io: CliIO, env: NodeJS.ProcessEnv): P
 
     const dryRun = hasFlag(args, "--dry-run");
     const mode = readOption(args, ["--mode"]) ?? "devenv";
-    const plan = getDevPlan(args, env, dryRun);
+    const plan = await getDevPlan(args, env, dryRun);
 
     if (!plan.mcpEnabled) {
         writeError(
@@ -3060,7 +3414,7 @@ async function handleDevUp(args: string[], io: CliIO, env: NodeJS.ProcessEnv): P
         writeError(io, format, "dev_mode_not_implemented", `${mode} mode startup is not implemented yet.`, [
             "Use --mode devenv for the first implementation.",
             "Use --dry-run to inspect planned host/hybrid surfaces.",
-        ]);
+        ], { plan });
         return 2;
     }
 

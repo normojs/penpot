@@ -177,6 +177,8 @@ Preview the MCP-enabled local development plan:
 ```bash
 node penpot-cli/dist/index.js dev up --mcp --dry-run
 node penpot-cli/dist/index.js dev up --mcp --dry-run --format json
+node penpot-cli/dist/index.js dev up --mcp --mode host --dry-run --format json
+node penpot-cli/dist/index.js dev up --mcp --mode hybrid --dry-run --format json
 ```
 
 Start the current Docker-based development dependencies:
@@ -188,7 +190,10 @@ node penpot-cli/dist/index.js dev up --mcp --mode devenv
 The first implementation is intentionally conservative: `devenv` mode checks
 `./manage.sh` and Docker, then delegates dependency startup to
 `./manage.sh start-devenv`. It does not yet replace the normal
-`./manage.sh run-devenv` workflow. `host` and `hybrid` modes are planned.
+`./manage.sh run-devenv` workflow. `host` and `hybrid` modes are planning-only
+for startup, but their dry-run JSON includes dependency checks, port checks,
+planned services, public/internal MCP surfaces, and unsupported-startup
+boundaries.
 
 ## File Commands
 
