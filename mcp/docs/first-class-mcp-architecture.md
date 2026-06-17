@@ -1282,6 +1282,19 @@ P7.2 implementation note:
 - `penpot-cli page list/create --file <file-id>` exposes the same headless page
   operations to scripts and reports `adapter: "backend-command"` in JSON
   output.
+
+P17.3 prototype read result:
+
+- Common/backend now summarize persisted prototype flows and navigate-to
+  interactions through `prototype-interactions-summary` and
+  `get-file-prototype-interactions`.
+- MCP registers `prototype.list_interactions` as a backend-command-only read for
+  explicit `fileId` targets, returning flow and interaction summaries plus
+  adapter-selection metadata.
+- `penpot-cli prototype list-interactions` exposes the same backend read path
+  for scripts without requiring a bound live workspace.
+- Prototype overlay creation/deletion and editor-local selection/current-page
+  state remain out of scope for this backend-safe read slice.
 - This is a transitional adapter slice. `command-runtime/` now centralizes the
   first adapter-selection helper, while descriptors, request envelopes, and
   execution dispatch still need to move out of MCP and CLI entry adapters.
@@ -1373,9 +1386,11 @@ P11.4 implementation note:
 - `penpot-cli prototype create-flow` and `prototype create-interaction` call
   the new backend commands directly and report `adapterSelection` in JSON
   output.
-- Overlay creation, interaction listing, interaction deletion, current page
-  state, selection state, and other live workspace semantics remain
-  plugin-live until dedicated backend-safe contracts are defined.
+- Overlay creation, interaction deletion, current page state, selection state,
+  and other live workspace semantics remain plugin-live until dedicated
+  backend-safe contracts are defined. Interaction listing is now available for
+  explicit file targets through `get-file-prototype-interactions`,
+  `prototype.list_interactions`, and `penpot-cli prototype list-interactions`.
 
 P11.5 implementation note:
 

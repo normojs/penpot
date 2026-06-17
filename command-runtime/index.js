@@ -70,7 +70,7 @@ const AdapterSelectionReasonMessages = Object.freeze({
     [AdapterSelectionReasonCodes.PLUGIN_LIVE_WORKSPACE_STATE_REQUIRED]:
         "plugin-live requires a bound Penpot workspace because this command reads or changes editor-local state.",
     [AdapterSelectionReasonCodes.BACKEND_COMMAND_PROTOTYPE_READ_PLANNED]:
-        "backend-command prototype reads are planned for explicit file/page targets.",
+        "backend-command prototype reads require explicit file/page targets.",
     [AdapterSelectionReasonCodes.BACKEND_COMMAND_PROTOTYPE_MUTATION_UNSUPPORTED]:
         "backend-command prototype mutations need a stable target and interaction identity contract before execution.",
     [AdapterSelectionReasonCodes.BACKEND_COMMAND_GRID_CONTRACT_UNSUPPORTED]:
@@ -223,10 +223,10 @@ export const CommandDescriptors = Object.freeze({
         cliCommand: "prototype list-interactions",
         title: "List prototype interactions",
         description:
-            "Planned backend-command read for persisted prototype flows and interactions using explicit file/page targets.",
+            "Lists persisted prototype flows and navigate interactions using backend-command explicit file/page targets.",
         inputSchema: "fileId, pageId?, flowId?, sourceShapeId?, adapter?",
         adapters: Object.freeze(["backend-command"]),
-        responseShape: "planned status envelope with flow and interaction summaries",
+        responseShape: "status envelope with flow and interaction summaries plus adapterSelection metadata",
     }),
     PROTOTYPE_DELETE_INTERACTION: Object.freeze({
         id: "prototype.delete_interaction",

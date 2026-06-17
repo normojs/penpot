@@ -354,6 +354,22 @@
    [:revn {:min 0} ::sm/int]
    [:vern {:min 0} ::sm/int]])
 
+(def ^:private
+  schema:get-file-prototype-interactions
+  [:map {:title "get-file-prototype-interactions"}
+   [:id ::sm/uuid]
+   [:page-id {:optional true} ::sm/uuid]
+   [:flow-id {:optional true} ::sm/uuid]
+   [:source-shape-id {:optional true} ::sm/uuid]
+   [:features {:optional true} ::cfeat/features]])
+
+(def ^:private
+  schema:get-file-prototype-interactions-result
+  [:map {:title "get-file-prototype-interactions-result"}
+   [:file-id ::sm/uuid]
+   [:flows [:vector schema:prototype-flow-summary]]
+   [:interactions [:vector schema:prototype-interaction-summary]]])
+
 ;; --- HELPERS
 
 ;; File changes that affect to the library, and must be notified
@@ -957,9 +973,32 @@
       {::audit/replace-props
        {:id         (:id file)
         :name       (:name file)
-        :features   (:features file)
-        :project-id (:project-id file)
-        :team-id    (:team-id file)}})))
+                :features   (:features file)
+                :project-id (:project-id file)
+                :team-id    (:team-id file)}})))
+
+(sv/defmethod ::get-file-prototype-interactions
+  "Get persisted prototype flow and navigate interaction summaries for the specified file."
+  {::sm/params schema:get-file-prototype-interactions
+   ::sm/result schema:get-file-prototype-interactions-result
+   ::doc/module :files
+   ::doc/added "2.15.4"
+   ::db/transaction true}
+  [{:keys [::db/conn] :as cfg} {:keys [::rpc/profile-id id] :as params}]
+
+  (files/check-read-permissions! conn profile-id id)
+
+  (let [file    (get-file cfg id)
+        team    (teams/get-team conn
+                                :profile-id profile-id
+                                :team-id (:team-id file))
+        _       (-> (cfeat/get-team-enabled-features cf/flags team)
+                    (cfeat/check-client-features! (:features params))
+                    (cfeat/check-file-features! (:features file)))
+        summary (headless/prototype-interactions-summary (blob/decode (:data file)) params)]
+    {:file-id id
+     :flows (:flows summary)
+     :interactions (:interactions summary)}))
 
 (defn- update-file*
   "Internal function, part of the update-file process, that encapsulates

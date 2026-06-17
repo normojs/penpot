@@ -199,6 +199,20 @@ Implement prototype read/list before delete:
 This gives agents a stable way to inspect existing prototype data before any
 mutation command such as delete.
 
+P17.3 implementation note:
+
+- Common now exposes `prototype-interactions-summary`, which summarizes page
+  `:flows` and supported navigate-to shape `:interactions` from persisted file
+  data with optional page, flow, and source-shape filters.
+- Backend adds the read-only `get-file-prototype-interactions` RPC with file
+  read-permission checks and feature validation.
+- MCP registers `prototype.list_interactions` as a backend-command-only tool for
+  explicit `fileId` targets and returns stable adapter selection metadata.
+- `penpot-cli prototype list-interactions` calls the same read RPC through GET
+  and reports flow/interaction summaries in text or JSON.
+- Overlay creation, interaction deletion, selection, and current-page state
+  remain outside this slice.
+
 ## P17.4 Grid Contract Decision
 
 Grid layout should not be added to backend-command by copying plugin API calls.

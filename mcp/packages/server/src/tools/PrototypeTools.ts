@@ -79,6 +79,30 @@ abstract class PrototypeTool<TArgs extends object> extends PenpotRpcTool<TArgs> 
         });
     }
 
+    protected selectPrototypeReadAdapter(command: string, args: PrototypeAdapterArgs): CommandAdapterSelection {
+        const hasBackendTarget = Boolean(args.fileId);
+        return selectCommandAdapter({
+            command,
+            requestedAdapter: args.adapter ?? "auto",
+            candidates: [
+                {
+                    kind: "backend-command",
+                    available: hasBackendTarget,
+                    priority: 10,
+                    reason: hasBackendTarget
+                        ? null
+                        : getAdapterSelectionReason(AdapterSelectionReasonCodes.BACKEND_COMMAND_FILE_ID_REQUIRED),
+                },
+                {
+                    kind: "plugin-live",
+                    available: false,
+                    priority: 50,
+                    reason: getAdapterSelectionReason(AdapterSelectionReasonCodes.PLUGIN_LIVE_WORKSPACE_STATE_REQUIRED),
+                },
+            ],
+        });
+    }
+
     protected adapterSelectionFailure(selection: CommandAdapterSelection): ToolResponse {
         const error = createAdapterSelectionError(selection, {
             actions: [
@@ -195,6 +219,41 @@ abstract class PrototypeTool<TArgs extends object> extends PenpotRpcTool<TArgs> 
                 interaction: result.interaction,
                 revn: result.revn,
                 vern: result.vern,
+            });
+        } catch (cause) {
+            return this.rpcFailure(cause);
+        }
+    }
+
+    protected async executeBackendPrototypeList(
+        args: PrototypeListInteractionsArgs,
+        adapterSelection: CommandAdapterSelection
+    ): Promise<ToolResponse> {
+        const userToken = this.getUserToken();
+        if (!userToken) {
+            return this.authenticationRequired();
+        }
+
+        try {
+            const result = await this.rpcGet<PenpotRecord>(
+                "get-file-prototype-interactions",
+                {
+                    id: args.fileId,
+                    "page-id": args.pageId,
+                    "flow-id": args.flowId,
+                    "source-shape-id": args.sourceShapeId,
+                },
+                userToken
+            );
+            return this.ok({
+                adapter: adapterSelection.selected,
+                adapterSelection,
+                fileId: args.fileId,
+                pageId: args.pageId,
+                flowId: args.flowId,
+                sourceShapeId: args.sourceShapeId,
+                flows: result.flows ?? [],
+                interactions: result.interactions ?? [],
             });
         } catch (cause) {
             return this.rpcFailure(cause);
@@ -331,5 +390,47 @@ export class PrototypeCreateInteractionTool extends PrototypeTool<PrototypeCreat
             },
             adapterSelection
         );
+    }
+}
+
+export class PrototypeListInteractionsArgs {
+    static schema = {
+        fileId: uuidSchema.describe("File id for backend-command prototype interaction listing."),
+        pageId: uuidSchema.optional().describe("Optional page id used to limit prototype summaries."),
+        flowId: uuidSchema.optional().describe("Optional flow id used to limit returned flow summaries."),
+        sourceShapeId: uuidSchema.optional().describe("Optional source shape id used to limit returned interactions."),
+        adapter: z.string().optional().describe("Optional adapter request: auto or backend-command."),
+    };
+
+    fileId!: string;
+    pageId?: string;
+    flowId?: string;
+    sourceShapeId?: string;
+    adapter?: string;
+}
+
+export class PrototypeListInteractionsTool extends PrototypeTool<PrototypeListInteractionsArgs> {
+    constructor(mcpServer: PenpotMcpServer) {
+        super(mcpServer, PrototypeListInteractionsArgs.schema);
+    }
+
+    public getToolName(): string {
+        return CommandDescriptors.PROTOTYPE_LIST_INTERACTIONS.mcpToolName;
+    }
+
+    public getToolDescription(): string {
+        return CommandDescriptors.PROTOTYPE_LIST_INTERACTIONS.description;
+    }
+
+    protected async executeCore(args: PrototypeListInteractionsArgs): Promise<ToolResponse> {
+        const adapterSelection = this.selectPrototypeReadAdapter(
+            CommandDescriptors.PROTOTYPE_LIST_INTERACTIONS.id,
+            args
+        );
+        if (adapterSelection.status !== "selected") {
+            return this.adapterSelectionFailure(adapterSelection);
+        }
+
+        return this.executeBackendPrototypeList(args, adapterSelection);
     }
 }

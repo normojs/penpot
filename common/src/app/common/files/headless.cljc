@@ -204,6 +204,62 @@
                 :field field-name))
     [page-id page shape]))
 
+(defn- prototype-page-ids
+  [file-data page-id]
+  (if page-id
+    (let [[page-id _page] (require-page file-data page-id)]
+      [page-id])
+    (:pages file-data)))
+
+(defn- shape-by-id
+  [file-data shape-id]
+  (some (fn [page-id]
+          (dm/get-in file-data [:pages-index page-id :objects shape-id]))
+        (:pages file-data)))
+
+(defn- prototype-flow-summaries
+  [file-data page-id flow-id]
+  (->> (prototype-page-ids file-data page-id)
+       (mapcat
+        (fn [page-id]
+          (let [flows (dm/get-in file-data [:pages-index page-id :flows])]
+            (->> flows
+                 vals
+                 (filter #(or (nil? flow-id) (= flow-id (:id %))))
+                 (keep (fn [flow]
+                         (when-let [starting-board (shape-by-id file-data (:starting-frame flow))]
+                           (prototype-flow-summary flow page-id starting-board))))))))
+       (vec)))
+
+(defn- prototype-navigate-interaction-summary
+  [file-data source interaction index]
+  (when (= :navigate (:action-type interaction))
+    (when-let [destination (shape-by-id file-data (:destination interaction))]
+      (prototype-interaction-summary source interaction destination index))))
+
+(defn- prototype-interaction-summaries
+  [file-data page-id source-shape-id]
+  (->> (prototype-page-ids file-data page-id)
+       (mapcat
+        (fn [page-id]
+          (let [objects (dm/get-in file-data [:pages-index page-id :objects])]
+            (->> objects
+                 vals
+                 (filter #(or (nil? source-shape-id) (= source-shape-id (:id %))))
+                 (mapcat
+                  (fn [source]
+                    (->> (:interactions source)
+                         (map-indexed
+                          (fn [index interaction]
+                            (prototype-navigate-interaction-summary file-data source interaction index)))
+                         (keep identity))))))))
+       (vec)))
+
+(defn prototype-interactions-summary
+  [file-data {:keys [page-id flow-id source-shape-id]}]
+  {:flows (prototype-flow-summaries file-data page-id flow-id)
+   :interactions (prototype-interaction-summaries file-data page-id source-shape-id)})
+
 (defn- require-frame-parent
   [objects type parent-id]
   (let [parent-id (or parent-id uuid/zero)

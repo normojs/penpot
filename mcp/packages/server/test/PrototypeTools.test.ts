@@ -3,7 +3,11 @@ import test from "node:test";
 import { McpWriteLimiter } from "../src/McpWriteLimiter.js";
 import type { PenpotRpcRequestContext } from "../src/PenpotRpcClient.js";
 import type { PenpotMcpServer } from "../src/PenpotMcpServer.js";
-import { PrototypeCreateFlowTool, PrototypeCreateInteractionTool } from "../src/tools/PrototypeTools.js";
+import {
+    PrototypeCreateFlowTool,
+    PrototypeCreateInteractionTool,
+    PrototypeListInteractionsTool,
+} from "../src/tools/PrototypeTools.js";
 
 type RpcCall = {
     methodName: string;
@@ -21,7 +25,7 @@ function parseJsonResponse(response: Awaited<ReturnType<PrototypeCreateFlowTool[
 }
 
 function mcpServerWithRpc(
-    rpcClient: { post?: (...args: any[]) => Promise<unknown> },
+    rpcClient: { get?: (...args: any[]) => Promise<unknown>; post?: (...args: any[]) => Promise<unknown> },
     userToken = "token-1",
     mcpSessionId = "session-1"
 ): PenpotMcpServer {
@@ -174,6 +178,64 @@ test("PrototypeCreateInteractionTool maps navigate interaction backend parameter
     assert.equal(body.data.adapterSelection.command, "prototype.create_interaction");
     assert.equal(body.data.interaction.actionType, "navigate-to");
     assert.equal(body.data.revn, 4);
+});
+
+test("PrototypeListInteractionsTool reads persisted prototype data through backend RPC", async () => {
+    const calls: RpcCall[] = [];
+    const tool = new PrototypeListInteractionsTool(
+        mcpServerWithRpc({
+            get: async (methodName: string, params: Record<string, unknown>, userToken: string) => {
+                calls.push({ methodName, params, userToken });
+                return {
+                    fileId: "00000000-0000-0000-0000-000000000001",
+                    flows: [
+                        {
+                            id: "00000000-0000-0000-0000-000000000005",
+                            name: "Checkout",
+                            pageId: "00000000-0000-0000-0000-000000000002",
+                            startingBoardId: "00000000-0000-0000-0000-000000000004",
+                        },
+                    ],
+                    interactions: [
+                        {
+                            sourceShapeId: "00000000-0000-0000-0000-000000000003",
+                            destinationBoardId: "00000000-0000-0000-0000-000000000004",
+                            index: 0,
+                            actionType: "navigate-to",
+                        },
+                    ],
+                };
+            },
+        })
+    );
+
+    const response = await tool.execute({
+        fileId: "00000000-0000-0000-0000-000000000001",
+        pageId: "00000000-0000-0000-0000-000000000002",
+        flowId: "00000000-0000-0000-0000-000000000005",
+        sourceShapeId: "00000000-0000-0000-0000-000000000003",
+    });
+    const body = parseJsonResponse(response);
+
+    assert.deepEqual(calls, [
+        {
+            methodName: "get-file-prototype-interactions",
+            params: {
+                id: "00000000-0000-0000-0000-000000000001",
+                "page-id": "00000000-0000-0000-0000-000000000002",
+                "flow-id": "00000000-0000-0000-0000-000000000005",
+                "source-shape-id": "00000000-0000-0000-0000-000000000003",
+            },
+            userToken: "token-1",
+        },
+    ]);
+    assert.equal(body.status, "ok");
+    assert.equal(body.data.adapter, "backend-command");
+    assert.equal(body.data.adapterSelection.command, "prototype.list_interactions");
+    assert.equal(body.data.fileId, "00000000-0000-0000-0000-000000000001");
+    assert.equal(body.data.pageId, "00000000-0000-0000-0000-000000000002");
+    assert.equal(body.data.flows.length, 1);
+    assert.equal(body.data.interactions[0].actionType, "navigate-to");
 });
 
 test("PrototypeCreateFlowTool reports adapter error when target is incomplete", async () => {

@@ -90,6 +90,7 @@ test("live-gap descriptors document live-only and planned command boundaries", (
     assert.match(CommandDescriptors.SELECTION_GET.description, /live Penpot workspace/);
     assert.equal(CommandDescriptors.PROTOTYPE_LIST_INTERACTIONS.cliCommand, "prototype list-interactions");
     assert.deepEqual(CommandDescriptors.PROTOTYPE_LIST_INTERACTIONS.adapters, ["backend-command"]);
+    assert.match(CommandDescriptors.PROTOTYPE_LIST_INTERACTIONS.responseShape, /flow and interaction summaries/);
     assert.deepEqual(CommandDescriptors.PROTOTYPE_DELETE_INTERACTION.adapters, []);
     assert.match(CommandDescriptors.SHAPE_SET_LAYOUT.responseShape, /shape.update/);
 });
@@ -192,7 +193,7 @@ test("adapter selection errors share codes, messages, and payload shape", () => 
     );
     assert.equal(
         getAdapterSelectionReason(AdapterSelectionReasonCodes.BACKEND_COMMAND_PROTOTYPE_READ_PLANNED),
-        "backend-command prototype reads are planned for explicit file/page targets."
+        "backend-command prototype reads require explicit file/page targets."
     );
     assert.equal(
         getAdapterSelectionReason(AdapterSelectionReasonCodes.BACKEND_COMMAND_GRID_CONTRACT_UNSUPPORTED),

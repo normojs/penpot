@@ -483,6 +483,32 @@
                  (get-in out [:result :interaction])))
         (t/is (= 5 (get-in out [:result :revn])))))
 
+    (t/testing "list prototype flows and interactions through the backend command"
+      (let [out {::th/type :get-file-prototype-interactions
+                 ::rpc/profile-id (:id profile)
+                 :id (:id file)
+                 :page-id page-id
+                 :flow-id flow-id
+                 :source-shape-id rect-id
+                 :features cfeat/supported-features}
+            out (th/command! out)]
+        (t/is (nil? (:error out)))
+        (t/is (= {:file-id (:id file)
+                  :flows [{:id flow-id
+                           :name "Checkout flow"
+                           :page-id page-id
+                           :starting-board-id frame-a
+                           :starting-board-name "Start"}]
+                  :interactions [{:source-shape-id rect-id
+                                  :source-shape-name "CTA"
+                                  :index 0
+                                  :trigger :click
+                                  :delay nil
+                                  :action-type :navigate-to
+                                  :destination-board-id frame-b
+                                  :destination-board-name "Done"}]}
+                 (:result out)))))
+
     (t/testing "prototype data is persisted in file data"
       (let [out {::th/type :get-file
                  ::rpc/profile-id (:id profile)

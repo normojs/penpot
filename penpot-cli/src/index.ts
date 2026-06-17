@@ -62,6 +62,7 @@ Usage:
   penpot-cli shape delete --file <file-id> --shape <shape-id> [--page <page-id>] [--format text|json]
   penpot-cli prototype create-flow --file <file-id> --name <name> --starting-board <frame-id> [--page <page-id>] [--flow-id <id>] [--format text|json]
   penpot-cli prototype create-interaction --file <file-id> --source <shape-id> --destination <frame-id> [--page <page-id>] [--trigger click|mouse-enter|mouse-leave|after-delay] [--format text|json]
+  penpot-cli prototype list-interactions --file <file-id> [--page <page-id>] [--flow-id <id>] [--source <shape-id>] [--format text|json]
   penpot-cli export page --file <file-id> --page <page-id> --object <object-id> [--adapter auto|exporter] [--output <path>] [--dry-run] [--format text|json]
   penpot-cli render preview --file <file-id> --page <page-id> --object <object-id> [--adapter auto|exporter] [--output <path>] [--dry-run] [--format text|json]`;
 
@@ -149,10 +150,11 @@ const PROTOTYPE_HELP_TEXT = `penpot-cli prototype
 Usage:
   penpot-cli prototype create-flow --file <file-id> --name <name> --starting-board <frame-id> [--page <page-id>] [--flow-id <id>] [--adapter auto|backend-command] [--backend-uri <uri>] [--token <token>] [--format text|json]
   penpot-cli prototype create-interaction --file <file-id> --source <shape-id> --destination <frame-id> [--page <page-id>] [--trigger click|mouse-enter|mouse-leave|after-delay] [--delay <ms>] [--preserve-scroll] [--animation dissolve|slide|push] [--animation-duration <ms>] [--format text|json]
+  penpot-cli prototype list-interactions --file <file-id> [--page <page-id>] [--flow-id <id>] [--source <shape-id>] [--adapter auto|backend-command] [--format text|json]
 
 Notes:
-  Backend-command prototype helpers currently support basic flows and navigate-to interactions.
-  Overlay creation, interaction listing, and interaction deletion remain live-workspace MCP tools.
+  Backend-command prototype helpers currently support basic flows, navigate-to interactions, and persisted interaction listing.
+  Overlay creation and interaction deletion remain planned MCP commands until their payload and target contracts are stable.
 
 Environment:
   PENPOT_BACKEND_URI       Backend RPC base URI, default http://localhost:6060
@@ -523,6 +525,13 @@ interface PrototypeInteractionParams {
     delay?: number;
     preserveScrollPosition?: boolean;
     animation?: PrototypeAnimationParams;
+}
+
+interface PrototypeListInteractionsParams {
+    fileId: string;
+    pageId?: string;
+    flowId?: string;
+    sourceShapeId?: string;
 }
 
 const DEFAULT_IO: CliIO = {
@@ -2206,6 +2215,27 @@ function parsePrototypeInteractionParams(args: string[], io: CliIO, format: Form
     };
 }
 
+function parsePrototypeListInteractionsParams(
+    args: string[],
+    io: CliIO,
+    format: Format
+): PrototypeListInteractionsParams | null {
+    const fileId = readOption(args, ["--file", "--file-id"]);
+    if (!fileId) {
+        writeError(io, format, "file_id_required", "prototype list-interactions requires --file <file-id>.", [
+            "Use penpot-cli file list first, then pass --file <file-id>.",
+        ]);
+        return null;
+    }
+
+    return {
+        fileId,
+        pageId: readOption(args, ["--page", "--page-id"]),
+        flowId: readOption(args, ["--flow-id"]),
+        sourceShapeId: readOption(args, ["--source", "--source-shape", "--source-shape-id", "--shape", "--shape-id"]),
+    };
+}
+
 function toRpcPrototypeAnimation(animation: PrototypeAnimationParams | undefined): Record<string, unknown> | undefined {
     if (!animation) {
         return undefined;
@@ -3001,6 +3031,28 @@ function writePrototypeInteractionCreatedText(io: CliIO, fileId: string, interac
     );
     writeLine(io.stdout, `actionType: ${String(record.actionType ?? record["action-type"] ?? "navigate-to")}`);
     writeLine(io.stdout, `index: ${String(record.index ?? "<unknown>")}`);
+}
+
+function writePrototypeInteractionsText(
+    io: CliIO,
+    fileId: string,
+    flows: unknown[],
+    interactions: unknown[]
+): void {
+    writeLine(io.stdout, "Prototype interactions");
+    writeLine(io.stdout, `fileId: ${fileId}`);
+    writeLine(io.stdout, `flows: ${flows.length}`);
+    writeLine(io.stdout, `interactions: ${interactions.length}`);
+    for (const interaction of interactions) {
+        const record = asRecord(interaction);
+        const source = record.sourceShapeName ?? record["source-shape-name"] ?? record.sourceShapeId ?? record["source-shape-id"];
+        const destination =
+            record.destinationBoardName ??
+            record["destination-board-name"] ??
+            record.destinationBoardId ??
+            record["destination-board-id"];
+        writeLine(io.stdout, `- ${String(source ?? "<unknown>")} -> ${String(destination ?? "<unknown>")}`);
+    }
 }
 
 function writeExportPlanText(io: CliIO, plan: ExportPagePlan): void {
@@ -4288,6 +4340,63 @@ async function handlePrototypeCreateInteraction(args: string[], io: CliIO, env: 
     }
 }
 
+async function handlePrototypeListInteractions(args: string[], io: CliIO, env: NodeJS.ProcessEnv): Promise<number> {
+    const format = parseFormat(args, io);
+    if (!format) {
+        return 2;
+    }
+
+    const adapterSelection = selectCliPrototypeAdapter(CommandDescriptors.PROTOTYPE_LIST_INTERACTIONS.id, args);
+    if (adapterSelection.status !== "selected" || adapterSelection.selected !== "backend-command") {
+        return adapterSelectionFailure(io, format, adapterSelection);
+    }
+
+    const prototypeParams = parsePrototypeListInteractionsParams(args, io, format);
+    if (!prototypeParams) {
+        return 2;
+    }
+
+    const rpc = getRpcConfig(args, env);
+    if (!rpc.token) {
+        return rpcAuthenticationRequired(io, format);
+    }
+
+    try {
+        const result = await rpcRequest<Record<string, unknown>>(
+            "GET",
+            rpc.backendUri,
+            "get-file-prototype-interactions",
+            {
+                id: prototypeParams.fileId,
+                "page-id": prototypeParams.pageId,
+                "flow-id": prototypeParams.flowId,
+                "source-shape-id": prototypeParams.sourceShapeId,
+            },
+            rpc.token
+        );
+        const flows = Array.isArray(result.flows) ? result.flows : [];
+        const interactions = Array.isArray(result.interactions) ? result.interactions : [];
+        writeOk(
+            io,
+            format,
+            {
+                fileId: prototypeParams.fileId,
+                pageId: prototypeParams.pageId,
+                flowId: prototypeParams.flowId,
+                sourceShapeId: prototypeParams.sourceShapeId,
+                flows,
+                interactions,
+                adapter: adapterSelection.selected,
+                adapterSelection,
+            },
+            () => writePrototypeInteractionsText(io, prototypeParams.fileId, flows, interactions)
+        );
+        return 0;
+    } catch (cause) {
+        return rpcErrorResponse(io, format, "get-file-prototype-interactions", rpc.backendUri, cause);
+    }
+}
+
 async function handlePrototypeCommand(args: string[], io: CliIO, env: NodeJS.ProcessEnv): Promise<number> {
     const [subcommand, ...rest] = args;
 
@@ -4301,6 +4410,8 @@ async function handlePrototypeCommand(args: string[], io: CliIO, env: NodeJS.Pro
             return await handlePrototypeCreateFlow(rest, io, env);
         case "create-interaction":
             return await handlePrototypeCreateInteraction(rest, io, env);
+        case "list-interactions":
+            return await handlePrototypeListInteractions(rest, io, env);
         default:
             writeLine(io.stderr, `Unknown prototype command: ${subcommand}`);
             writeLine(io.stderr, 'Run "penpot-cli prototype --help" for usage.');

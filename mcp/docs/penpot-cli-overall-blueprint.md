@@ -421,10 +421,11 @@ Tasks:
   explicit backend contract, and overlay/delete/descriptor-only gaps stay
   planned or unsupported until contracts exist.
 - P17.2: completed 2026-06-17; `LiveGapCommandDescriptors` now expose the
-  selected live-only, planned-read, and unsupported capability boundaries
+  selected live-only, read-only, and unsupported capability boundaries
   consistently for CLI/MCP metadata.
-- P17.3: add backend-command prototype read/list support for explicit
-  file/page targets where existing persisted data is sufficient.
+- P17.3: completed 2026-06-17; backend-command prototype read/list support now
+  works for explicit file/page targets through common/backend, MCP, and
+  `penpot-cli`.
 - P17.4: define a backend-safe grid layout subset or document structured
   unsupported errors with exact live bind guidance.
 - P17.5: tighten live-only guidance for selection and current-page commands
@@ -432,7 +433,7 @@ Tasks:
 
 Acceptance:
 
-- `todo.md` has P17.3 as the single active task.
+- `todo.md` has P17.4 as the single active task.
 - The Wave I audit documents the adapter boundary before runtime behavior
   changes.
 - Operations that remain live-only explain why and point agents through
@@ -444,14 +445,14 @@ Wave D, Wave E, Wave F, Wave G, and Wave H are complete. Wave I / Phase 17 is
 the active implementation slice for headless live-gap closure. P17.1 is
 complete in `headless-live-gap-audit.md`.
 
-The next active task is P17.3:
+The next active task is P17.4:
 
-1. Add backend/common prototype interaction read helpers for explicit
-   `fileId`/`pageId` targets.
-2. Register MCP `prototype.list_interactions` on backend-command with stable
-   adapter metadata.
-3. Add `penpot-cli prototype list-interactions` and focused CLI/MCP tests while
-   leaving overlay mutation and live selection behavior out of scope.
+1. Inspect persisted grid layout data and the current plugin-live shape layout
+   payload.
+2. Decide whether a minimal backend-safe grid track/cell contract is small
+   enough for this wave.
+3. Implement the supported subset or return structured unsupported errors with
+   exact live bind guidance.
 
 Keep manual configuration behavior stable while moving command metadata and
 envelopes; transport-specific formatting should stay at the MCP/CLI edges.

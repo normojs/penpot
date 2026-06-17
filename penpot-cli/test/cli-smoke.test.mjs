@@ -1114,6 +1114,82 @@ test("prototype create-interaction sends navigate interaction backend-command RP
     }
 });
 
+test("prototype list-interactions reads persisted prototype data with backend-command RPC", async () => {
+    const originalFetch = globalThis.fetch;
+    const calls = [];
+    globalThis.fetch = async (url, options) => {
+        calls.push({ url: String(url), options });
+        return {
+            ok: true,
+            status: 200,
+            statusText: "OK",
+            text: async () =>
+                JSON.stringify({
+                    fileId: UUIDS.file,
+                    flows: [
+                        {
+                            id: UUIDS.profile,
+                            name: "Checkout",
+                            pageId: UUIDS.page,
+                            startingBoardId: UUIDS.object,
+                        },
+                    ],
+                    interactions: [
+                        {
+                            sourceShapeId: UUIDS.object,
+                            destinationBoardId: UUIDS.profile,
+                            index: 0,
+                            actionType: "navigate-to",
+                        },
+                    ],
+                }),
+        };
+    };
+
+    try {
+        const result = await runCli(
+            [
+                "prototype",
+                "list-interactions",
+                "--file",
+                UUIDS.file,
+                "--page",
+                UUIDS.page,
+                "--flow-id",
+                UUIDS.profile,
+                "--source",
+                UUIDS.object,
+                "--format",
+                "json",
+            ],
+            {
+                PENPOT_BACKEND_URI: "http://127.0.0.1:6060",
+                PENPOT_CLI_TOKEN: "token-1",
+            }
+        );
+        const body = parseJson(result.stdout);
+        const url = new URL(calls[0].url);
+
+        assert.equal(result.exitCode, 0);
+        assert.equal(result.stderr, "");
+        assert.equal(calls.length, 1);
+        assert.match(calls[0].url, /\/api\/main\/methods\/get-file-prototype-interactions\?/);
+        assert.equal(calls[0].options.method, "GET");
+        assert.equal(calls[0].options.body, undefined);
+        assert.equal(url.searchParams.get("id"), UUIDS.file);
+        assert.equal(url.searchParams.get("page-id"), UUIDS.page);
+        assert.equal(url.searchParams.get("flow-id"), UUIDS.profile);
+        assert.equal(url.searchParams.get("source-shape-id"), UUIDS.object);
+        assert.equal(body.status, "ok");
+        assert.equal(body.data.adapter, "backend-command");
+        assert.equal(body.data.adapterSelection.command, "prototype.list_interactions");
+        assert.equal(body.data.flows[0].name, "Checkout");
+        assert.equal(body.data.interactions[0].actionType, "navigate-to");
+    } finally {
+        globalThis.fetch = originalFetch;
+    }
+});
+
 test("export page dry-run returns exporter adapter plan and request payload", async () => {
     const result = await runCli(
         [

@@ -63,6 +63,7 @@
 - Add backend-safe headless frame layout updates for `shape.update`, covering `layout none` and flex direction, wrap, alignment, gap, and padding through common/backend, MCP, and `penpot-cli`.
 - Add headless image/media insertion through common/backend `create-file-image-shape`, MCP `shape.create_image` backend-command mode, and `penpot-cli shape create-image`.
 - Add headless prototype flow and navigate interaction creation through common/backend prototype helpers, MCP backend-command routing, and `penpot-cli prototype create-*` commands.
+- Add headless prototype flow and interaction listing through common/backend `get-file-prototype-interactions`, MCP `prototype.list_interactions`, and `penpot-cli prototype list-interactions`.
 - Add exporter-backed `render.preview` support for explicit file/page/object targets in MCP plus `penpot-cli render preview` with artifact metadata and `--output` downloads.
 - Document the file open/bind handoff UX and command contract for moving from headless MCP/CLI edits into live workspace binding.
 - Add shared `file.open` workspace URL and handoff payload generation for MCP and `penpot-cli`.

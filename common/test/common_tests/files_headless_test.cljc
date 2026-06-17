@@ -325,6 +325,78 @@
               :offset-effect true}
              (:animation interaction)))))
 
+(t/deftest prototype-interactions-summary-lists-flows-and-navigate-interactions
+  (let [file-id  (uuid/next)
+        page-id  (uuid/next)
+        frame-a  (uuid/next)
+        frame-b  (uuid/next)
+        rect-id  (uuid/next)
+        flow-id  (uuid/next)
+        data     (ctf/make-file-data file-id page-id)
+        frame-a-result (headless/create-shape-request data {:page-id page-id
+                                                            :shape-id frame-a
+                                                            :type :frame
+                                                            :name "Start"
+                                                            :x 0
+                                                            :y 0
+                                                            :width 320
+                                                            :height 640})
+        data     (cpc/process-changes data (:changes frame-a-result))
+        frame-b-result (headless/create-shape-request data {:page-id page-id
+                                                            :shape-id frame-b
+                                                            :type :frame
+                                                            :name "Done"
+                                                            :x 360
+                                                            :y 0
+                                                            :width 320
+                                                            :height 640})
+        data     (cpc/process-changes data (:changes frame-b-result))
+        rect     (headless/create-shape-request data {:page-id page-id
+                                                     :shape-id rect-id
+                                                     :parent-id frame-a
+                                                     :type :rect
+                                                     :name "CTA"
+                                                     :x 24
+                                                     :y 32
+                                                     :width 120
+                                                     :height 40})
+        data     (cpc/process-changes data (:changes rect))
+        flow     (headless/create-prototype-flow-request data {:page-id page-id
+                                                               :flow-id flow-id
+                                                               :name "Checkout flow"
+                                                               :starting-board-id frame-a})
+        data     (cpc/process-changes data (:changes flow))
+        interaction (headless/create-prototype-interaction-request
+                     data
+                     {:page-id page-id
+                      :source-shape-id rect-id
+                      :destination-board-id frame-b
+                      :trigger :click})
+        data     (cpc/process-changes data (:changes interaction))
+        summary  (headless/prototype-interactions-summary data {:page-id page-id})
+        filtered (headless/prototype-interactions-summary data {:page-id page-id
+                                                               :flow-id flow-id
+                                                               :source-shape-id rect-id})]
+    (t/is (= [{:id flow-id
+               :name "Checkout flow"
+               :page-id page-id
+               :starting-board-id frame-a
+               :starting-board-name "Start"}]
+             (:flows summary)))
+    (t/is (= [{:source-shape-id rect-id
+               :source-shape-name "CTA"
+               :index 0
+               :trigger :click
+               :delay nil
+               :action-type :navigate-to
+               :destination-board-id frame-b
+               :destination-board-name "Done"}]
+             (:interactions summary)))
+    (t/is (= summary filtered))
+    (t/is (= {:flows [] :interactions []}
+             (headless/prototype-interactions-summary data {:flow-id (uuid/next)
+                                                            :source-shape-id (uuid/next)})))))
+
 (t/deftest update-shape-request-updates-geometry-and-style
   (let [file-id  (uuid/next)
         page-id  (uuid/next)
