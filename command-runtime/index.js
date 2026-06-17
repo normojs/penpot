@@ -72,7 +72,7 @@ const AdapterSelectionReasonMessages = Object.freeze({
     [AdapterSelectionReasonCodes.BACKEND_COMMAND_PROTOTYPE_READ_PLANNED]:
         "backend-command prototype reads require explicit file/page targets.",
     [AdapterSelectionReasonCodes.BACKEND_COMMAND_PROTOTYPE_MUTATION_UNSUPPORTED]:
-        "backend-command prototype mutations need a stable target and interaction identity contract before execution.",
+        "backend-command prototype mutations need source-shape/index delete implementation before execution.",
     [AdapterSelectionReasonCodes.BACKEND_COMMAND_GRID_CONTRACT_UNSUPPORTED]:
         "backend-command grid cell and child placement updates are unsupported until a stable cell payload contract exists.",
     [AdapterSelectionReasonCodes.CLI_LIVE_WORKSPACE_STATE_UNSUPPORTED]:
@@ -233,10 +233,11 @@ export const CommandDescriptors = Object.freeze({
         mcpToolName: "prototype.delete_interaction",
         title: "Delete prototype interaction",
         description:
-            "Descriptor-only planned command; mutation remains unsupported until interaction target and identity semantics are stable.",
-        inputSchema: "fileId?, pageId?, sourceShapeId?, interactionId? or interactionIndex?, adapter?",
+            "Descriptor-only planned command; delete identity is explicit fileId, pageId, sourceShapeId, and zero-based interactionIndex because persisted interactions do not have stable ids.",
+        inputSchema: "fileId, pageId, sourceShapeId, interactionIndex, adapter?",
         adapters: Object.freeze([]),
-        responseShape: "unsupported until a stable backend-command mutation contract exists",
+        responseShape:
+            "unsupported until backend-command delete implements source-shape/index mutation with not-found and stale-index errors",
     }),
     PROTOTYPE_CREATE_OVERLAY: Object.freeze({
         id: "prototype.create_overlay",

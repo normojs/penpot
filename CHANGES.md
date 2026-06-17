@@ -92,6 +92,7 @@
 - Add plugin-live MCP `selection.get` support for bound workspace selection ids and lightweight shape summaries.
 - Add plugin-live MCP `selection.set` support for bound workspace selection mutation and clearing.
 - Document selection read/write live-bind smoke evidence and align CLI handoff guidance with live-only MCP selection tools.
+- Define the `prototype.delete_interaction` source-shape/index identity contract before enabling persisted prototype mutation.
 - Add rate limiting and concurrency safety for file snapshot operations [#9723](https://github.com/penpot/penpot/issues/9723) (PR: [#9722](https://github.com/penpot/penpot/pull/9722))
 - Prevent concurrent font uploads from causing excessive simultaneous requests [#9922](https://github.com/penpot/penpot/issues/9922) (PR: [#9921](https://github.com/penpot/penpot/pull/9921))
 

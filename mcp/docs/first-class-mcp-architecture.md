@@ -501,8 +501,9 @@ P17.1 audit result:
 - `prototype.list_interactions` is the first backend-safe read candidate
   because flows and interactions are persisted in file data. It should receive
   descriptors before backend/common read implementation.
-- `prototype.delete_interaction` is a possible backend-safe mutation, but only
-  after a stable target/index/id contract exists.
+- `prototype.delete_interaction` is a possible backend-safe mutation once it
+  uses explicit `fileId`, `pageId`, `sourceShapeId`, and zero-based
+  `interactionIndex`; persisted interactions do not currently have stable ids.
 - `prototype.create_overlay`, `shape.set_layout`, `shape.set_style`,
   `export.file`, `render.thumbnail`, component, token, and debug names remain
   planned or unsupported descriptor gaps unless a later wave selects them.
@@ -545,6 +546,21 @@ P18 live workspace state result:
 - CLI file-open handoff text names `selection.get` and `selection.set` as
   live-only MCP retry targets while keeping selection state out of CLI
   execution.
+
+P19.1 prototype delete identity result:
+
+- Persisted prototype interactions are stored on source shapes as ordered
+  `:interactions` vectors; individual interactions do not carry stable ids.
+- `prototype.delete_interaction` must therefore address a target by explicit
+  `fileId`, `pageId`, `sourceShapeId`, and zero-based `interactionIndex`.
+- `flowId` remains useful for `prototype.list_interactions` filtering and human
+  discovery, but it is not part of the delete identity because flows are page
+  entries, not interaction parents.
+- `interactionId` remains unsupported until a future data migration or product
+  contract adds persistent interaction ids.
+- P19.2 can implement backend-command delete against this contract, returning
+  not-found or stale-index errors when the source shape or indexed interaction
+  no longer matches persisted file data.
 
 ## 4. Target Architecture
 

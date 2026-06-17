@@ -120,8 +120,8 @@ state for them.
 | `shape.group`, `shape.ungroup` | Names exist in `ToolNames.ts`, not registered. | Unsupported or descriptor-only. | No backend/common or plugin task implementation found. | Leave out of P17.2 unless a separate grouping wave is selected. |
 | `prototype.create_flow` | Registered MCP tool and descriptor; backend-command with `fileId`, plugin-live otherwise. | Backend-safe persisted data plus plugin-live convenience. | Flow data persists on the page. | Keep behavior. |
 | `prototype.create_interaction` | Registered MCP tool and descriptor; backend-command with `fileId`, plugin-live otherwise. | Backend-safe persisted data plus plugin-live convenience. | Navigate interaction data persists on source shape. | Keep behavior. |
-| `prototype.list_interactions` | Name exists in `ToolNames.ts`, not registered. | Backend-safe persisted read. | Flows and interactions are persisted in file data. | P17.2 descriptor, then P17.3 backend/common/MCP/CLI read implementation. |
-| `prototype.delete_interaction` | Name exists in `ToolNames.ts`, not registered. | Backend-safe persisted mutation if indexed delete contract is defined. | Interaction arrays are persisted, but delete needs stable target/index semantics. | Add descriptor only after P17.1 as unsupported/planned; implement after list/read proves summary shape. |
+| `prototype.list_interactions` | Registered MCP tool, backend/common read helper, and CLI command. | Backend-safe persisted read. | Flows and interactions are persisted in file data. | Keep as the discovery/read path for source-shape/index delete targets. |
+| `prototype.delete_interaction` | Name exists in `ToolNames.ts`, not registered. | Backend-safe persisted mutation with explicit source-shape/index identity. | Interaction arrays are persisted on source shapes and interactions do not carry stable ids. | P19.1 selects `fileId`, `pageId`, `sourceShapeId`, and zero-based `interactionIndex`; implement backend-command delete next. |
 | `prototype.create_overlay` | Name exists in `ToolNames.ts`, not registered. | Unsupported until contract. | Existing backend and plugin prototype handlers only implement flow and navigate interaction creation. | Keep out of first implementation slice; define action/data model separately. |
 | `export.shape` | Registered descriptor and MCP tool through plugin-live. | Plugin-live workspace/export state. | It can use explicit live shape or current selection and returns plugin base64 data. | Keep plugin-live. Explicit exporter shape/page preview is covered by `render.preview`. |
 | `export.page` | Registered descriptor and MCP tool. | Exporter/read-only plus plugin-live. | Exporter path requires explicit ids; plugin-live can use bound workspace page. | Keep behavior. |
@@ -265,8 +265,9 @@ points CLI users back to MCP `file.open`, `file.get_context`,
 
 - Whether `shape.set_layout` and `shape.set_style` should become real commands
   or remain documented aliases for `shape.update`.
-- Whether `prototype.delete_interaction` should address interactions by index,
-  generated id, action tuple, or exact summary match.
+- Whether `prototype.delete_interaction` should later gain persistent
+  interaction ids. P19.1 selects explicit `fileId`, `pageId`, `sourceShapeId`,
+  and zero-based `interactionIndex` for the current data model.
 - Whether plugin-live `prototype.list_interactions` is needed, or whether
   backend-command reads are enough for agents.
 - Whether exporter-backed `export.shape` should get an explicit file/page/shape

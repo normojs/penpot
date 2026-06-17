@@ -445,19 +445,20 @@ Acceptance:
 
 ## Near-Term Priority
 
-Wave D, Wave E, Wave F, Wave G, Wave H, Wave I / Phase 17, and Phase 18 are
-complete. The selection live workspace state commands now have plugin-live MCP
-execution plus smoke-flow evidence, while CLI remains descriptor-only for
-editor-local state.
+Wave D, Wave E, Wave F, Wave G, Wave H, Wave I / Phase 17, Phase 18, and P19.1
+are complete. Prototype delete now has an explicit target identity contract:
+`fileId`, `pageId`, `sourceShapeId`, and zero-based `interactionIndex`.
+`interactionId` remains unsupported because persisted interactions do not carry
+stable ids.
 
-The next active task is P19.1:
+The next active task is P19.2:
 
-1. Define a stable prototype interaction mutation identity contract before
-   enabling delete behavior.
-2. Decide whether deletes address interactions by id, index, or a flow-scoped
-   selector.
+1. Implement backend-command `prototype.delete_interaction` against the
+   source-shape/index contract.
+2. Return structured not-found and stale-index errors when the source shape or
+   indexed interaction no longer exists.
 3. Keep planned overlay and broader prototype mutations descriptor-only until
-   that contract exists.
+   delete proves the mutation envelope.
 
 Keep manual configuration behavior stable while moving command metadata and
 envelopes; transport-specific formatting should stay at the MCP/CLI edges.

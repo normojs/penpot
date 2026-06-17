@@ -174,6 +174,9 @@ test("command runtime exposes live-gap descriptor boundaries", () => {
     assert.equal(getCommandDescriptor("selection.set").cliCommand, undefined);
     assert.equal(getCommandDescriptor("prototype list-interactions").id, "prototype.list_interactions");
     assert.equal(CommandDescriptors.PROTOTYPE_DELETE_INTERACTION.adapters.length, 0);
+    assert.match(CommandDescriptors.PROTOTYPE_DELETE_INTERACTION.description, /sourceShapeId/);
+    assert.match(CommandDescriptors.PROTOTYPE_DELETE_INTERACTION.inputSchema, /interactionIndex/);
+    assert.doesNotMatch(CommandDescriptors.PROTOTYPE_DELETE_INTERACTION.inputSchema, /interactionId/);
     assert.equal(
         getAdapterSelectionReason(AdapterSelectionReasonCodes.CLI_LIVE_WORKSPACE_STATE_UNSUPPORTED),
         "CLI commands do not read or mutate editor-local workspace state; use MCP file.open, file.get_context, and file.bind_context before retrying the live-only tool."

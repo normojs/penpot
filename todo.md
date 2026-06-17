@@ -124,8 +124,11 @@ P18.1, P18.2, and P18.3 are complete: `selection.get` and `selection.set` now ru
 through plugin-live for bound MCP workspaces, returning selected ids plus
 lightweight shape summaries while allowing explicit selection mutation and
 clearing, and the live-bind smoke flow plus CLI descriptor guidance now cover
-selection read/write evidence. Current active work moves to P19.1 for the
-prototype interaction mutation identity contract.
+selection read/write evidence. P19.1 is complete: prototype interaction delete
+identity is explicit `fileId`, `pageId`, `sourceShapeId`, and zero-based
+`interactionIndex`; `interactionId` remains unsupported until persisted
+interactions gain stable ids. Current active work moves to P19.2 for
+backend-command delete implementation.
 
 ## Feature Roadmap
 
@@ -159,7 +162,7 @@ remain the execution plan.
 | F23 | done | CLI configuration convergence and distribution hardening | Phase 16 | `penpot-cli` can inspect the same saved MCP config that Penpot uses and has a clearer path toward portable local use | Completed 2026-06-17; P16.1 completed the read-path contract; P16.2 completed opt-in authenticated profile-source support; P16.3 completed URL derivation fixtures; P16.4 completed host/hybrid planning; P16.5 added a verified private portable CLI release archive |
 | F24 | done | Headless live-gap closure | Phase 17 | More authoring operations can run without a live workspace, while truly live-only state stays explicit | Completed 2026-06-17; P17.1-P17.5 audited live gaps, added descriptors, implemented persisted prototype reads, added backend-safe grid tracks, and tightened live-only binding guidance |
 | F25 | done | Live workspace state commands | Phase 18 | Agents can intentionally read or change editor-local selection state through bound MCP plugin-live commands | Completed 2026-06-17; P18.1-P18.3 implemented `selection.get`, `selection.set`, clearing, and live-bind/CLI descriptor smoke evidence |
-| F26 | todo | Prototype mutation contracts | Phase 19 | Agents can safely mutate persisted prototype interactions only after target identity semantics are explicit | Start with P19.1 to define delete interaction identity before backend-command or plugin-live execution |
+| F26 | todo | Prototype mutation contracts | Phase 19 | Agents can safely mutate persisted prototype interactions only after target identity semantics are explicit | P19.1 defined the source-shape/index delete identity; next is P19.2 backend-command implementation |
 
 ## Detailed Upcoming Task Queue
 
@@ -339,14 +342,14 @@ Order rationale:
 
 - Define identity before mutation so agents can address interactions
   predictably across backend-command, plugin-live, and future CLI surfaces.
-- Implement delete only after id/index/flow selector behavior is documented and
+- Implement delete only after source-shape/index behavior is documented and
   testable.
 - Keep overlay creation planned until delete proves the shared prototype
   mutation envelope and error shape.
 
 | Order | Task | Modules | Output | Verification |
 | --- | --- | --- | --- | --- |
-| K1 | Define prototype interaction mutation identity contract | `mcp/docs`, `command-runtime`, `mcp`, `penpot-cli` | Contract chooses id/index/flow selector semantics for `prototype.delete_interaction` and documents unsupported overlay behavior | Docs plus descriptor/runtime tests |
+| K1 | Define prototype interaction mutation identity contract | `mcp/docs`, `command-runtime`, `mcp`, `penpot-cli` | Completed 2026-06-17; contract chooses explicit `fileId`, `pageId`, `sourceShapeId`, and zero-based `interactionIndex` for `prototype.delete_interaction`; `interactionId` stays unsupported | Docs plus descriptor/runtime tests |
 | K2 | Implement backend-command `prototype.delete_interaction` | `backend`, `common`, `mcp`, `penpot-cli`, `mcp/docs` | Persisted interaction delete works for explicit file/page/flow targets without a live workspace | Backend/common plus MCP/CLI tests cover success, not-found, and stale target errors |
 | K3 | Reassess prototype overlay creation contract | `mcp/docs`, `command-runtime`, `mcp` | Overlay creation has a documented target/action payload or remains explicitly unsupported | Audit docs and descriptors stay aligned |
 
@@ -605,19 +608,19 @@ after target identity and error semantics are stable.
 
 | ID | Status | Task | Modules | Verification | Notes |
 | --- | --- | --- | --- | --- | --- |
-| P19.1 | in_progress | Define prototype interaction mutation identity contract | `mcp/docs`, `command-runtime`, `mcp`, `penpot-cli` | Docs plus descriptor/runtime tests define how `prototype.delete_interaction` addresses interactions | Decide id/index/flow selector semantics before implementation |
-| P19.2 | todo | Implement backend-command `prototype.delete_interaction` | `backend`, `common`, `mcp`, `penpot-cli`, `mcp/docs` | Backend/common plus MCP/CLI tests cover persisted delete success, not-found, and stale target errors | Keep plugin-live optional until backend-safe delete works |
+| P19.1 | done | Define prototype interaction mutation identity contract | `mcp/docs`, `command-runtime`, `mcp`, `penpot-cli` | Completed 2026-06-17; docs plus descriptor/runtime tests define source-shape/index identity for `prototype.delete_interaction` | Delete requires explicit `fileId`, `pageId`, `sourceShapeId`, and zero-based `interactionIndex`; `interactionId` remains unsupported |
+| P19.2 | in_progress | Implement backend-command `prototype.delete_interaction` | `backend`, `common`, `mcp`, `penpot-cli`, `mcp/docs` | Backend/common plus MCP/CLI tests cover persisted delete success, not-found, and stale target errors | Keep plugin-live optional until backend-safe delete works |
 | P19.3 | todo | Reassess prototype overlay creation contract | `mcp/docs`, `command-runtime`, `mcp` | Audit docs and descriptors explain executable payload or unsupported status | Do not implement overlay creation without target/action payload contract |
 
 ## Next Recommended Sprint
 
 Use `mcp/docs/penpot-cli-overall-blueprint.md` and
 `mcp/docs/headless-live-gap-audit.md` as the current architecture baseline and
-continue with P19.1:
+continue with P19.2:
 
-1. Inspect existing prototype flow/interaction data shapes in backend/common,
-   MCP tools, and CLI descriptors.
-2. Choose the stable `prototype.delete_interaction` target identity contract:
-   interaction id, interaction index, or flow-scoped selector.
-3. Update descriptors, docs, and tests so delete remains planned until the
-   contract is explicit and verifiable.
+1. Add common headless delete helper using `sourceShapeId` plus zero-based
+   `interactionIndex`, including source-shape not-found and stale-index errors.
+2. Add backend RPC, MCP backend-command routing, and `penpot-cli prototype
+   delete-interaction` against the same explicit target contract.
+3. Cover success, missing source, stale index, and descriptor alignment in
+   backend/common, MCP, CLI, and command-runtime tests.

@@ -94,6 +94,17 @@ test("live-gap descriptors document live-only and planned command boundaries", (
     assert.deepEqual(CommandDescriptors.PROTOTYPE_LIST_INTERACTIONS.adapters, ["backend-command"]);
     assert.match(CommandDescriptors.PROTOTYPE_LIST_INTERACTIONS.responseShape, /flow and interaction summaries/);
     assert.deepEqual(CommandDescriptors.PROTOTYPE_DELETE_INTERACTION.adapters, []);
+    assert.match(CommandDescriptors.PROTOTYPE_DELETE_INTERACTION.description, /sourceShapeId/);
+    assert.match(CommandDescriptors.PROTOTYPE_DELETE_INTERACTION.description, /interactionIndex/);
+    assert.equal(
+        CommandDescriptors.PROTOTYPE_DELETE_INTERACTION.inputSchema,
+        "fileId, pageId, sourceShapeId, interactionIndex, adapter?"
+    );
+    assert.match(CommandDescriptors.PROTOTYPE_DELETE_INTERACTION.responseShape, /stale-index/);
+    assert.match(
+        getAdapterSelectionReason(AdapterSelectionReasonCodes.BACKEND_COMMAND_PROTOTYPE_MUTATION_UNSUPPORTED),
+        /source-shape\/index/
+    );
     assert.match(CommandDescriptors.SHAPE_SET_LAYOUT.responseShape, /shape.update/);
 });
 
