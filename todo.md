@@ -107,11 +107,12 @@ frontend and CLI parity, and P16.4 hardened `dev up --mcp` host/hybrid dry-run
 planning. Current active work moves to P16.5 to define the portable CLI release
 archive path. P16.5 is complete: the repository can build and verify a private
 portable `penpot-cli` release archive containing the CLI and
-`@penpot/command-runtime`. Current active work should move to a fresh roadmap
-reconciliation and Wave I planning pass before starting the next implementation
-slice. Wave I / Phase 17 is now selected for headless live-gap closure,
-starting with an audit of remaining plugin-live-only command semantics before
-backend or CLI behavior changes.
+`@penpot/command-runtime`. Wave I / Phase 17 is now selected for headless
+live-gap closure. P17.1 is complete: `mcp/docs/headless-live-gap-audit.md`
+classifies current-page/selection state, grid layout, prototype list/delete and
+overlay gaps, exporter boundaries, and descriptor-only tool names. Current
+active work moves to P17.2 to add read-only command descriptors for the selected
+live-gap commands before runtime behavior changes.
 
 ## Feature Roadmap
 
@@ -143,7 +144,7 @@ remain the execution plan.
 | F21 | done | Release verification matrix | Phase 14 | Critical MCP/CLI flows have repeatable checks | Completed 2026-06-16; P14.1-P14.4 document config/global connection, headless edit/export, live bind, and CI-friendly command checks |
 | F22 | done | Roadmap reconciliation and next-wave planning | Phase 15 | The fork has one accurate active task and a clean next development wave | Completed 2026-06-16; P15.1 reconciled roadmap status and P15.2 defined Wave H / Phase 16 as the next implementation wave |
 | F23 | done | CLI configuration convergence and distribution hardening | Phase 16 | `penpot-cli` can inspect the same saved MCP config that Penpot uses and has a clearer path toward portable local use | Completed 2026-06-17; P16.1 completed the read-path contract; P16.2 completed opt-in authenticated profile-source support; P16.3 completed URL derivation fixtures; P16.4 completed host/hybrid planning; P16.5 added a verified private portable CLI release archive |
-| F24 | todo | Headless live-gap closure | Phase 17 | More authoring operations can run without a live workspace, while truly live-only state stays explicit | P17.1 audits page current/selection, grid/full layout, prototype overlay/list/delete, and command-runtime descriptor gaps before choosing backend-safe slices |
+| F24 | todo | Headless live-gap closure | Phase 17 | More authoring operations can run without a live workspace, while truly live-only state stays explicit | P17.1 completed 2026-06-17; P17.2 now adds read-only descriptors for live-only page/selection state, prototype read/list planning, and unsupported layout/prototype boundaries |
 
 ## Detailed Upcoming Task Queue
 
@@ -285,8 +286,8 @@ Order rationale:
 
 | Order | Task | Modules | Output | Verification |
 | --- | --- | --- | --- | --- |
-| I1 | Audit remaining live-only command semantics | `mcp/docs`, `command-runtime`, `mcp`, `penpot-cli`, `backend`, `common` | Map page current/selection, grid/full layout, prototype overlay/list/delete, diagnostic/read commands, and legacy tools to backend-safe, exporter, plugin-live, or unsupported adapters | Audit document identifies command names, persisted data shape, adapter candidates, permission model, and first implementation slice |
-| I2 | Add read-only command descriptors for live-gap commands | `command-runtime`, `mcp`, `penpot-cli` | Command catalog exposes descriptor metadata for selected page/selection reads, prototype reads, and layout capability checks without changing behavior | Descriptor tests and CLI/MCP smoke tests keep transport output stable |
+| I1 | Audit remaining live-only command semantics | `mcp/docs`, `command-runtime`, `mcp`, `penpot-cli`, `backend`, `common` | Completed 2026-06-17; `mcp/docs/headless-live-gap-audit.md` maps page current/selection, grid/full layout, prototype overlay/list/delete, diagnostic/read commands, and legacy tools to backend-safe, exporter, plugin-live, or unsupported adapters | Audit document identifies command names, persisted data shape, adapter candidates, permission model, and first implementation slice |
+| I2 | Add read-only command descriptors for live-gap commands | `command-runtime`, `mcp`, `penpot-cli` | In progress; command catalog exposes descriptor metadata for selected page/selection reads, prototype reads, and layout capability checks without changing behavior | Descriptor tests and CLI/MCP smoke tests keep transport output stable |
 | I3 | Add headless prototype read/list support | `backend`, `common`, `mcp`, `penpot-cli` | MCP and CLI can list prototype flows/interactions for explicit file/page targets through backend-command | Backend/common focused tests plus MCP/CLI adapter tests cover permissions, empty states, and unsupported live-only overlay mutation |
 | I4 | Define and implement backend-safe grid layout subset | `backend`, `common`, `mcp`, `penpot-cli`, `mcp/docs` | Grid layout writes either support a documented minimal track/cell contract or return structured unsupported details with exact live bind guidance | Tests cover supported grid payloads or explicit unsupported errors; docs explain when plugin-live remains required |
 | I5 | Tighten selection/current-page live-only guidance | `frontend`, `mcp`, `penpot-cli`, `mcp/docs` | Selection and current-page commands report why a live workspace is required and include file.open/bind/retry guidance aligned with smoke flows | MCP server tests and live-bind smoke docs cover unbound, stale, and bound workspace cases |
@@ -521,20 +522,22 @@ state with persisted document data.
 
 | ID | Status | Task | Modules | Verification | Notes |
 | --- | --- | --- | --- | --- | --- |
-| P17.1 | in_progress | Audit remaining live-only command semantics | `mcp/docs`, `command-runtime`, `mcp`, `penpot-cli`, `backend`, `common` | Audit document maps each candidate command to persisted data, live workspace state, adapter candidates, permissions, errors, and first implementation slice | Start with page current/selection, grid/full layout, prototype overlay/list/delete, diagnostic/read commands, and legacy command-runtime gaps |
-| P17.2 | todo | Add read-only descriptors for live-gap commands | `command-runtime`, `mcp`, `penpot-cli` | Descriptor tests pass and CLI/MCP output stays backward compatible | Build on P17.1 command naming and adapter decisions |
+| P17.1 | done | Audit remaining live-only command semantics | `mcp/docs`, `command-runtime`, `mcp`, `penpot-cli`, `backend`, `common` | Completed 2026-06-17; `mcp/docs/headless-live-gap-audit.md` maps each candidate command to persisted data, live workspace state, adapter candidates, permissions, errors, and first implementation slice | Classified page current/selection as plugin-live, prototype list as backend-safe read, grid as backend-contract pending, and overlay/delete/descriptor-only names as planned or unsupported |
+| P17.2 | in_progress | Add read-only descriptors for live-gap commands | `command-runtime`, `mcp`, `penpot-cli` | Descriptor tests pass and CLI/MCP output stays backward compatible | Add descriptors and adapter reason text for `page.set_current`, `selection.get`, `selection.set`, `prototype.list_interactions`, prototype planned/unsupported gaps, and layout boundary metadata |
 | P17.3 | todo | Add headless prototype read/list support | `backend`, `common`, `mcp`, `penpot-cli` | Backend/common focused tests plus MCP/CLI adapter tests cover explicit file/page targets | Keep overlay mutation and live selection behavior plugin-live unless P17.1 proves a backend-safe contract |
 | P17.4 | todo | Define backend-safe grid layout subset | `backend`, `common`, `mcp`, `penpot-cli`, `mcp/docs` | Supported grid payloads or structured unsupported errors are covered by tests | Avoid partial document mutations without a clear track/cell data contract |
 | P17.5 | todo | Tighten selection/current-page live-only guidance | `frontend`, `mcp`, `penpot-cli`, `mcp/docs` | MCP tests and live-bind smoke docs cover unbound, stale, and bound workspace cases | Keep ephemeral workspace state explicit and guide agents through file.open/bind/retry |
 
 ## Next Recommended Sprint
 
-Use `mcp/docs/penpot-cli-overall-blueprint.md` as the current architecture
-baseline and start with P17.1:
+Use `mcp/docs/penpot-cli-overall-blueprint.md` and
+`mcp/docs/headless-live-gap-audit.md` as the current architecture baseline and
+continue with P17.2:
 
-1. Create the live-gap audit document for page current/selection, grid/full
-   layout, prototype overlay/list/delete, and command-runtime descriptor gaps.
-2. Decide which operations are persisted backend-safe data, which are
-   ephemeral live workspace state, and which remain unsupported.
-3. Use the audit to pick the exact P17.2 descriptor slice before writing
-   runtime behavior.
+1. Add command-runtime descriptors for `page.set_current`, `selection.get`,
+   `selection.set`, `prototype.list_interactions`, and the selected planned or
+   unsupported live-gap commands.
+2. Add adapter reason text for live-only workspace state, planned backend reads,
+   and unsupported grid/prototype mutations.
+3. Keep runtime behavior stable in P17.2; prototype read/list implementation
+   starts in P17.3 after descriptor coverage is in place.

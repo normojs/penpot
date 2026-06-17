@@ -415,9 +415,11 @@ without pretending ephemeral workspace state is persisted document data.
 
 Tasks:
 
-- P17.1: audit page current/selection semantics, grid/full layout editing,
-  prototype overlay/list/delete behavior, diagnostic/read command gaps, and
-  legacy command-runtime gaps before changing runtime behavior.
+- P17.1: completed 2026-06-17 in
+  `headless-live-gap-audit.md`; page current/selection remain live workspace
+  state, prototype list/read is backend-safe persisted data, grid needs an
+  explicit backend contract, and overlay/delete/descriptor-only gaps stay
+  planned or unsupported until contracts exist.
 - P17.2: add read-only command descriptors for the selected live-gap commands
   so CLI/MCP can expose adapter and capability boundaries consistently.
 - P17.3: add backend-command prototype read/list support for explicit
@@ -429,25 +431,27 @@ Tasks:
 
 Acceptance:
 
-- `todo.md` has P17.1 as the single active task.
-- The first Wave I implementation step is blocked on an explicit audit rather
-  than implicit assumptions about plugin-live state.
+- `todo.md` has P17.2 as the single active task.
+- The Wave I audit documents the adapter boundary before runtime behavior
+  changes.
 - Operations that remain live-only explain why and point agents through
   `file.open`, `file.get_context`, `file.bind_context`, and retry steps.
 
 ## Near-Term Priority
 
 Wave D, Wave E, Wave F, Wave G, and Wave H are complete. Wave I / Phase 17 is
-the active implementation slice for headless live-gap closure.
+the active implementation slice for headless live-gap closure. P17.1 is
+complete in `headless-live-gap-audit.md`.
 
-The next active task is P17.1:
+The next active task is P17.2:
 
-1. Audit page current/selection, grid/full layout, prototype overlay/list/delete,
-   diagnostics/read command gaps, and legacy command-runtime gaps.
-2. Classify each candidate as backend-safe persisted data, exporter/read-only
-   data, plugin-live workspace state, or unsupported.
-3. Choose the first P17.2 descriptor slice with command names, adapter choices,
-   permission expectations, structured errors, and verification commands.
+1. Add read-only command descriptors for `page.set_current`, `selection.get`,
+   `selection.set`, `prototype.list_interactions`, and selected planned or
+   unsupported live-gap names.
+2. Add shared adapter reason text for live-only workspace state, planned
+   backend reads, and unsupported grid/prototype mutations.
+3. Keep runtime behavior stable until descriptor tests and command catalog
+   coverage are in place.
 
 Keep manual configuration behavior stable while moving command metadata and
 envelopes; transport-specific formatting should stay at the MCP/CLI edges.

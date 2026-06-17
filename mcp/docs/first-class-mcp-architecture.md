@@ -491,6 +491,24 @@ Planning decisions:
   contract before implementation; otherwise they should return structured
   unsupported errors with live-bind guidance.
 
+P17.1 audit result:
+
+- `headless-live-gap-audit.md` is the Phase 17 command-boundary source of
+  truth.
+- `page.set_current`, `selection.get`, and `selection.set` are live workspace
+  state. They should advertise plugin-live-only behavior and guide agents
+  through file open, context inspection, bind, and retry steps.
+- `prototype.list_interactions` is the first backend-safe read candidate
+  because flows and interactions are persisted in file data. It should receive
+  descriptors before backend/common read implementation.
+- `prototype.delete_interaction` is a possible backend-safe mutation, but only
+  after a stable target/index/id contract exists.
+- `prototype.create_overlay`, `shape.set_layout`, `shape.set_style`,
+  `export.file`, `render.thumbnail`, component, token, and debug names remain
+  planned or unsupported descriptor gaps unless a later wave selects them.
+- Grid layout stays plugin-live or structured-unsupported until backend/common
+  owns a persisted track/cell contract.
+
 ## 4. Target Architecture
 
 ```text
