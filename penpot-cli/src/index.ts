@@ -63,6 +63,7 @@ Usage:
   penpot-cli prototype create-flow --file <file-id> --name <name> --starting-board <frame-id> [--page <page-id>] [--flow-id <id>] [--format text|json]
   penpot-cli prototype create-interaction --file <file-id> --source <shape-id> --destination <frame-id> [--page <page-id>] [--trigger click|mouse-enter|mouse-leave|after-delay] [--format text|json]
   penpot-cli prototype list-interactions --file <file-id> [--page <page-id>] [--flow-id <id>] [--source <shape-id>] [--format text|json]
+  penpot-cli prototype delete-interaction --file <file-id> --source <shape-id> --index <n> [--page <page-id>] [--format text|json]
   penpot-cli export page --file <file-id> --page <page-id> --object <object-id> [--adapter auto|exporter] [--output <path>] [--dry-run] [--format text|json]
   penpot-cli render preview --file <file-id> --page <page-id> --object <object-id> [--adapter auto|exporter] [--output <path>] [--dry-run] [--format text|json]`;
 
@@ -151,10 +152,11 @@ Usage:
   penpot-cli prototype create-flow --file <file-id> --name <name> --starting-board <frame-id> [--page <page-id>] [--flow-id <id>] [--adapter auto|backend-command] [--backend-uri <uri>] [--token <token>] [--format text|json]
   penpot-cli prototype create-interaction --file <file-id> --source <shape-id> --destination <frame-id> [--page <page-id>] [--trigger click|mouse-enter|mouse-leave|after-delay] [--delay <ms>] [--preserve-scroll] [--animation dissolve|slide|push] [--animation-duration <ms>] [--format text|json]
   penpot-cli prototype list-interactions --file <file-id> [--page <page-id>] [--flow-id <id>] [--source <shape-id>] [--adapter auto|backend-command] [--format text|json]
+  penpot-cli prototype delete-interaction --file <file-id> --source <shape-id> --index <n> [--page <page-id>] [--adapter auto|backend-command] [--format text|json]
 
 Notes:
-  Backend-command prototype helpers currently support basic flows, navigate-to interactions, and persisted interaction listing.
-  Overlay creation and interaction deletion remain planned MCP commands until their payload and target contracts are stable.
+  Backend-command prototype helpers currently support basic flows, navigate-to interactions, persisted listing, and source-shape/index deletion.
+  Overlay creation remains planned until its payload and target contracts are stable.
 
 Environment:
   PENPOT_BACKEND_URI       Backend RPC base URI, default http://localhost:6060
@@ -537,6 +539,13 @@ interface PrototypeListInteractionsParams {
     pageId?: string;
     flowId?: string;
     sourceShapeId?: string;
+}
+
+interface PrototypeDeleteInteractionParams {
+    fileId: string;
+    pageId?: string;
+    sourceShapeId: string;
+    interactionIndex: number;
 }
 
 const DEFAULT_IO: CliIO = {
@@ -2343,6 +2352,48 @@ function parsePrototypeListInteractionsParams(
     };
 }
 
+function parsePrototypeDeleteInteractionParams(
+    args: string[],
+    io: CliIO,
+    format: Format
+): PrototypeDeleteInteractionParams | null {
+    const fileId = readOption(args, ["--file", "--file-id"]);
+    if (!fileId) {
+        writeError(io, format, "file_id_required", "prototype delete-interaction requires --file <file-id>.", [
+            "Use penpot-cli file list first, then pass --file <file-id>.",
+        ]);
+        return null;
+    }
+
+    const sourceShapeId = readOption(args, ["--source", "--source-shape", "--source-shape-id", "--shape", "--shape-id"]);
+    if (!sourceShapeId) {
+        writeError(
+            io,
+            format,
+            "prototype_source_shape_required",
+            "prototype delete-interaction requires --source <shape-id>.",
+            ["Pass the shape id that owns the interaction."]
+        );
+        return null;
+    }
+
+    const indexValue = readOption(args, ["--index", "--interaction-index"]);
+    const interactionIndex = indexValue === undefined ? Number.NaN : Number(indexValue);
+    if (!Number.isInteger(interactionIndex) || interactionIndex < 0) {
+        writeError(io, format, "prototype_interaction_index_invalid", "Invalid prototype interaction index.", [
+            "Pass a zero-based non-negative integer with --index <n>.",
+        ]);
+        return null;
+    }
+
+    return {
+        fileId,
+        pageId: readOption(args, ["--page", "--page-id"]),
+        sourceShapeId,
+        interactionIndex,
+    };
+}
+
 function toRpcPrototypeAnimation(animation: PrototypeAnimationParams | undefined): Record<string, unknown> | undefined {
     if (!animation) {
         return undefined;
@@ -3130,6 +3181,19 @@ function writePrototypeFlowCreatedText(io: CliIO, fileId: string, flow: unknown)
 function writePrototypeInteractionCreatedText(io: CliIO, fileId: string, interaction: unknown): void {
     const record = asRecord(interaction);
     writeLine(io.stdout, "Prototype interaction created");
+    writeLine(io.stdout, `fileId: ${fileId}`);
+    writeLine(io.stdout, `sourceShapeId: ${String(record.sourceShapeId ?? record["source-shape-id"] ?? "<unknown>")}`);
+    writeLine(
+        io.stdout,
+        `destinationBoardId: ${String(record.destinationBoardId ?? record["destination-board-id"] ?? "<unknown>")}`
+    );
+    writeLine(io.stdout, `actionType: ${String(record.actionType ?? record["action-type"] ?? "navigate-to")}`);
+    writeLine(io.stdout, `index: ${String(record.index ?? "<unknown>")}`);
+}
+
+function writePrototypeInteractionDeletedText(io: CliIO, fileId: string, interaction: unknown): void {
+    const record = asRecord(interaction);
+    writeLine(io.stdout, "Prototype interaction deleted");
     writeLine(io.stdout, `fileId: ${fileId}`);
     writeLine(io.stdout, `sourceShapeId: ${String(record.sourceShapeId ?? record["source-shape-id"] ?? "<unknown>")}`);
     writeLine(
@@ -4504,6 +4568,62 @@ async function handlePrototypeListInteractions(args: string[], io: CliIO, env: N
     }
 }
 
+async function handlePrototypeDeleteInteraction(args: string[], io: CliIO, env: NodeJS.ProcessEnv): Promise<number> {
+    const format = parseFormat(args, io);
+    if (!format) {
+        return 2;
+    }
+
+    const adapterSelection = selectCliPrototypeAdapter(CommandDescriptors.PROTOTYPE_DELETE_INTERACTION.id, args);
+    if (adapterSelection.status !== "selected" || adapterSelection.selected !== "backend-command") {
+        return adapterSelectionFailure(io, format, adapterSelection);
+    }
+
+    const prototypeParams = parsePrototypeDeleteInteractionParams(args, io, format);
+    if (!prototypeParams) {
+        return 2;
+    }
+
+    const rpc = getRpcConfig(args, env);
+    if (!rpc.token) {
+        return rpcAuthenticationRequired(io, format);
+    }
+
+    try {
+        const result = await rpcRequest<Record<string, unknown>>(
+            "POST",
+            rpc.backendUri,
+            "delete-file-prototype-interaction",
+            {
+                id: prototypeParams.fileId,
+                "page-id": prototypeParams.pageId,
+                "source-shape-id": prototypeParams.sourceShapeId,
+                "interaction-index": prototypeParams.interactionIndex,
+            },
+            rpc.token
+        );
+        writeOk(
+            io,
+            format,
+            {
+                fileId: prototypeParams.fileId,
+                pageId: prototypeParams.pageId,
+                sourceShapeId: prototypeParams.sourceShapeId,
+                interactionIndex: prototypeParams.interactionIndex,
+                interaction: result.interaction,
+                revn: result.revn,
+                vern: result.vern,
+                adapter: adapterSelection.selected,
+                adapterSelection,
+            },
+            () => writePrototypeInteractionDeletedText(io, prototypeParams.fileId, result.interaction)
+        );
+        return 0;
+    } catch (cause) {
+        return rpcErrorResponse(io, format, "delete-file-prototype-interaction", rpc.backendUri, cause);
+    }
+}
+
 async function handlePrototypeCommand(args: string[], io: CliIO, env: NodeJS.ProcessEnv): Promise<number> {
     const [subcommand, ...rest] = args;
 
@@ -4519,6 +4639,8 @@ async function handlePrototypeCommand(args: string[], io: CliIO, env: NodeJS.Pro
             return await handlePrototypeCreateInteraction(rest, io, env);
         case "list-interactions":
             return await handlePrototypeListInteractions(rest, io, env);
+        case "delete-interaction":
+            return await handlePrototypeDeleteInteraction(rest, io, env);
         default:
             writeLine(io.stderr, `Unknown prototype command: ${subcommand}`);
             writeLine(io.stderr, 'Run "penpot-cli prototype --help" for usage.');

@@ -1050,6 +1050,36 @@
                               :attr :interactions
                               :val interactions}]}]}))
 
+(defn delete-prototype-interaction-request
+  [file-data {:keys [page-id source-shape-id interaction-index]}]
+  (let [[page-id _page source] (require-prototype-shape file-data page-id source-shape-id :source-shape-id)
+        interactions (vec (or (:interactions source) []))]
+    (when-not (and (int? interaction-index)
+                   (<= 0 interaction-index)
+                   (< interaction-index (count interactions)))
+      (ex/raise :type :validation
+                :code :prototype-interaction-not-found
+                :hint "The target prototype interaction index does not exist on the source shape."
+                :page-id page-id
+                :source-shape-id source-shape-id
+                :interaction-index interaction-index))
+    (let [interaction (nth interactions interaction-index)
+          destination (shape-by-id file-data (:destination interaction))]
+      (when-not (and (= :navigate (:action-type interaction)) destination)
+        (ex/raise :type :validation
+                  :code :unsupported-prototype-interaction
+                  :hint "Headless prototype interaction deletion currently returns summaries for navigate-to interactions only."
+                  :page-id page-id
+                  :source-shape-id source-shape-id
+                  :interaction-index interaction-index))
+      {:interaction (prototype-interaction-summary source interaction destination interaction-index)
+       :changes [{:type :mod-obj
+                  :id source-shape-id
+                  :page-id page-id
+                  :operations [{:type :set
+                                :attr :interactions
+                                :val (ctsi/remove-interaction interactions interaction-index)}]}]})))
+
 (defn update-shape-request
   [file-data {:keys [page-id shape-id] :as params}]
   (when-not (requested? params update-attrs)

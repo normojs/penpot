@@ -451,14 +451,20 @@ are complete. Prototype delete now has an explicit target identity contract:
 `interactionId` remains unsupported because persisted interactions do not carry
 stable ids.
 
-The next active task is P19.2:
+P19.2 is complete:
 
-1. Implement backend-command `prototype.delete_interaction` against the
-   source-shape/index contract.
-2. Return structured not-found and stale-index errors when the source shape or
-   indexed interaction no longer exists.
-3. Keep planned overlay and broader prototype mutations descriptor-only until
-   delete proves the mutation envelope.
+1. Common/backend expose source-shape/index prototype interaction deletion
+   through `delete-file-prototype-interaction`.
+2. MCP and `penpot-cli prototype delete-interaction` route the same
+   backend-command mutation and return deleted interaction summaries.
+3. Missing source shapes and stale indexes have focused test coverage.
+
+The next active task is P19.3:
+
+1. Reassess `prototype.create_overlay` and decide whether it has a stable
+   target/action payload or should remain explicitly unsupported.
+2. Keep broader prototype mutations descriptor-only until their persisted data
+   ownership and response shape are documented.
 
 Keep manual configuration behavior stable while moving command metadata and
 envelopes; transport-specific formatting should stay at the MCP/CLI edges.

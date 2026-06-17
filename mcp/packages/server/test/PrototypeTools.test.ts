@@ -6,6 +6,7 @@ import type { PenpotMcpServer } from "../src/PenpotMcpServer.js";
 import {
     PrototypeCreateFlowTool,
     PrototypeCreateInteractionTool,
+    PrototypeDeleteInteractionTool,
     PrototypeListInteractionsTool,
 } from "../src/tools/PrototypeTools.js";
 
@@ -236,6 +237,68 @@ test("PrototypeListInteractionsTool reads persisted prototype data through backe
     assert.equal(body.data.pageId, "00000000-0000-0000-0000-000000000002");
     assert.equal(body.data.flows.length, 1);
     assert.equal(body.data.interactions[0].actionType, "navigate-to");
+});
+
+test("PrototypeDeleteInteractionTool deletes persisted prototype interaction through backend RPC", async () => {
+    const calls: RpcCall[] = [];
+    const tool = new PrototypeDeleteInteractionTool(
+        mcpServerWithRpc({
+            post: async (
+                methodName: string,
+                params: Record<string, unknown>,
+                userToken: string,
+                context?: PenpotRpcRequestContext
+            ) => {
+                calls.push({ methodName, params, userToken, context });
+                return {
+                    interaction: {
+                        sourceShapeId: "00000000-0000-0000-0000-000000000003",
+                        destinationBoardId: "00000000-0000-0000-0000-000000000004",
+                        index: 1,
+                        actionType: "navigate-to",
+                    },
+                    revn: 5,
+                    vern: 0,
+                };
+            },
+        })
+    );
+
+    const response = await tool.execute({
+        fileId: "00000000-0000-0000-0000-000000000001",
+        pageId: "00000000-0000-0000-0000-000000000002",
+        sourceShapeId: "00000000-0000-0000-0000-000000000003",
+        interactionIndex: 1,
+    });
+    const body = parseJsonResponse(response);
+
+    assert.deepEqual(calls, [
+        {
+            methodName: "delete-file-prototype-interaction",
+            params: {
+                id: "00000000-0000-0000-0000-000000000001",
+                "page-id": "00000000-0000-0000-0000-000000000002",
+                "source-shape-id": "00000000-0000-0000-0000-000000000003",
+                "interaction-index": 1,
+            },
+            userToken: "token-1",
+            context: {
+                mcpToolName: "prototype.delete_interaction",
+                mcpSessionId: "session-1",
+                mcpAdapter: "backend-command",
+                mcpFileId: "00000000-0000-0000-0000-000000000001",
+                mcpPageId: "00000000-0000-0000-0000-000000000002",
+                mcpShapeId: "00000000-0000-0000-0000-000000000003",
+            },
+        },
+    ]);
+    assert.equal(body.status, "ok");
+    assert.equal(body.data.adapter, "backend-command");
+    assert.equal(body.data.adapterSelection.command, "prototype.delete_interaction");
+    assert.equal(body.data.sourceShapeId, "00000000-0000-0000-0000-000000000003");
+    assert.equal(body.data.interactionIndex, 1);
+    assert.equal(body.data.interaction.actionType, "navigate-to");
+    assert.equal(body.data.revn, 5);
 });
 
 test("PrototypeCreateFlowTool reports adapter error when target is incomplete", async () => {

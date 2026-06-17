@@ -121,7 +121,7 @@ state for them.
 | `prototype.create_flow` | Registered MCP tool and descriptor; backend-command with `fileId`, plugin-live otherwise. | Backend-safe persisted data plus plugin-live convenience. | Flow data persists on the page. | Keep behavior. |
 | `prototype.create_interaction` | Registered MCP tool and descriptor; backend-command with `fileId`, plugin-live otherwise. | Backend-safe persisted data plus plugin-live convenience. | Navigate interaction data persists on source shape. | Keep behavior. |
 | `prototype.list_interactions` | Registered MCP tool, backend/common read helper, and CLI command. | Backend-safe persisted read. | Flows and interactions are persisted in file data. | Keep as the discovery/read path for source-shape/index delete targets. |
-| `prototype.delete_interaction` | Name exists in `ToolNames.ts`, not registered. | Backend-safe persisted mutation with explicit source-shape/index identity. | Interaction arrays are persisted on source shapes and interactions do not carry stable ids. | P19.1 selects `fileId`, `pageId`, `sourceShapeId`, and zero-based `interactionIndex`; implement backend-command delete next. |
+| `prototype.delete_interaction` | Registered MCP tool, backend/common delete helper, and CLI command. | Backend-safe persisted mutation with explicit source-shape/index identity. | Interaction arrays are persisted on source shapes and interactions do not carry stable ids. | P19.2 implements backend-command delete for `fileId`, optional `pageId`, `sourceShapeId`, and zero-based `interactionIndex`; stale indexes return structured validation errors. |
 | `prototype.create_overlay` | Name exists in `ToolNames.ts`, not registered. | Unsupported until contract. | Existing backend and plugin prototype handlers only implement flow and navigate interaction creation. | Keep out of first implementation slice; define action/data model separately. |
 | `export.shape` | Registered descriptor and MCP tool through plugin-live. | Plugin-live workspace/export state. | It can use explicit live shape or current selection and returns plugin base64 data. | Keep plugin-live. Explicit exporter shape/page preview is covered by `render.preview`. |
 | `export.page` | Registered descriptor and MCP tool. | Exporter/read-only plus plugin-live. | Exporter path requires explicit ids; plugin-live can use bound workspace page. | Keep behavior. |
@@ -211,8 +211,9 @@ P17.3 implementation note:
   explicit `fileId` targets and returns stable adapter selection metadata.
 - `penpot-cli prototype list-interactions` calls the same read RPC through GET
   and reports flow/interaction summaries in text or JSON.
-- Overlay creation, interaction deletion, selection, and current-page state
-  remain outside this slice.
+- Overlay creation, selection, and current-page state remain outside this
+  slice. Interaction deletion is now covered by P19.2 as a backend-command
+  source-shape/index mutation.
 
 ## P17.4 Grid Contract Decision
 
@@ -266,8 +267,9 @@ points CLI users back to MCP `file.open`, `file.get_context`,
 - Whether `shape.set_layout` and `shape.set_style` should become real commands
   or remain documented aliases for `shape.update`.
 - Whether `prototype.delete_interaction` should later gain persistent
-  interaction ids. P19.1 selects explicit `fileId`, `pageId`, `sourceShapeId`,
-  and zero-based `interactionIndex` for the current data model.
+  interaction ids. P19.2 currently implements explicit `fileId`, optional
+  `pageId`, `sourceShapeId`, and zero-based `interactionIndex` for the current
+  data model.
 - Whether plugin-live `prototype.list_interactions` is needed, or whether
   backend-command reads are enough for agents.
 - Whether exporter-backed `export.shape` should get an explicit file/page/shape

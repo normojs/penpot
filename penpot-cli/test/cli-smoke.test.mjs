@@ -101,6 +101,7 @@ test("top-level help lists first-class MCP, shape, and export commands", async (
     assert.match(result.stdout, /penpot-cli page rename/);
     assert.match(result.stdout, /penpot-cli shape delete/);
     assert.match(result.stdout, /penpot-cli prototype create-flow/);
+    assert.match(result.stdout, /penpot-cli prototype delete-interaction/);
     assert.match(result.stdout, /penpot-cli export page/);
     assert.match(result.stdout, /penpot-cli render preview/);
 });
@@ -173,7 +174,9 @@ test("command runtime exposes live-gap descriptor boundaries", () => {
     assert.equal(getCommandDescriptor("selection.set").adapters[0], "plugin-live");
     assert.equal(getCommandDescriptor("selection.set").cliCommand, undefined);
     assert.equal(getCommandDescriptor("prototype list-interactions").id, "prototype.list_interactions");
-    assert.equal(CommandDescriptors.PROTOTYPE_DELETE_INTERACTION.adapters.length, 0);
+    assert.equal(getCommandDescriptor("prototype delete-interaction").id, "prototype.delete_interaction");
+    assert.deepEqual(CommandDescriptors.PROTOTYPE_DELETE_INTERACTION.adapters, ["backend-command"]);
+    assert.equal(CommandDescriptors.PROTOTYPE_DELETE_INTERACTION.cliCommand, "prototype delete-interaction");
     assert.match(CommandDescriptors.PROTOTYPE_DELETE_INTERACTION.description, /sourceShapeId/);
     assert.match(CommandDescriptors.PROTOTYPE_DELETE_INTERACTION.inputSchema, /interactionIndex/);
     assert.doesNotMatch(CommandDescriptors.PROTOTYPE_DELETE_INTERACTION.inputSchema, /interactionId/);
@@ -1334,6 +1337,74 @@ test("prototype list-interactions reads persisted prototype data with backend-co
         assert.equal(body.data.adapterSelection.command, "prototype.list_interactions");
         assert.equal(body.data.flows[0].name, "Checkout");
         assert.equal(body.data.interactions[0].actionType, "navigate-to");
+    } finally {
+        globalThis.fetch = originalFetch;
+    }
+});
+
+test("prototype delete-interaction sends backend-command RPC", async () => {
+    const originalFetch = globalThis.fetch;
+    const calls = [];
+    globalThis.fetch = async (url, options) => {
+        calls.push({ url: String(url), options });
+        return {
+            ok: true,
+            status: 200,
+            statusText: "OK",
+            text: async () =>
+                JSON.stringify({
+                    interaction: {
+                        sourceShapeId: UUIDS.object,
+                        destinationBoardId: UUIDS.profile,
+                        index: 1,
+                        actionType: "navigate-to",
+                    },
+                    revn: 7,
+                    vern: 0,
+                }),
+        };
+    };
+
+    try {
+        const result = await runCli(
+            [
+                "prototype",
+                "delete-interaction",
+                "--file",
+                UUIDS.file,
+                "--page",
+                UUIDS.page,
+                "--source",
+                UUIDS.object,
+                "--index",
+                "1",
+                "--format",
+                "json",
+            ],
+            {
+                PENPOT_BACKEND_URI: "http://127.0.0.1:6060",
+                PENPOT_CLI_TOKEN: "token-1",
+            }
+        );
+        const body = parseJson(result.stdout);
+
+        assert.equal(result.exitCode, 0);
+        assert.equal(result.stderr, "");
+        assert.equal(calls.length, 1);
+        assert.match(calls[0].url, /\/api\/main\/methods\/delete-file-prototype-interaction\?_fmt=json$/);
+        assert.deepEqual(JSON.parse(calls[0].options.body), {
+            id: UUIDS.file,
+            "page-id": UUIDS.page,
+            "source-shape-id": UUIDS.object,
+            "interaction-index": 1,
+        });
+        assert.equal(body.status, "ok");
+        assert.equal(body.data.adapter, "backend-command");
+        assert.equal(body.data.adapterSelection.command, "prototype.delete_interaction");
+        assert.equal(body.data.sourceShapeId, UUIDS.object);
+        assert.equal(body.data.interactionIndex, 1);
+        assert.equal(body.data.interaction.actionType, "navigate-to");
+        assert.equal(body.data.revn, 7);
     } finally {
         globalThis.fetch = originalFetch;
     }

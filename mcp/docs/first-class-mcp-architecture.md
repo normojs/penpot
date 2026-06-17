@@ -558,9 +558,19 @@ P19.1 prototype delete identity result:
   entries, not interaction parents.
 - `interactionId` remains unsupported until a future data migration or product
   contract adds persistent interaction ids.
-- P19.2 can implement backend-command delete against this contract, returning
-  not-found or stale-index errors when the source shape or indexed interaction
-  no longer matches persisted file data.
+
+P19.2 prototype delete implementation result:
+
+- Common/backend now expose `delete-prototype-interaction-request` and
+  `delete-file-prototype-interaction` for persisted navigate-to interaction
+  removal without a live workspace.
+- MCP registers `prototype.delete_interaction` as a backend-command-only tool
+  for explicit `fileId`, optional `pageId`, `sourceShapeId`, and
+  `interactionIndex` targets.
+- `penpot-cli prototype delete-interaction` calls the same backend write path
+  and returns the deleted interaction summary plus revision metadata.
+- Missing source shapes and stale indexes return structured validation errors;
+  overlay creation remains contract-first and descriptor-only.
 
 ## 4. Target Architecture
 
@@ -1333,8 +1343,9 @@ P17.3 prototype read result:
   adapter-selection metadata.
 - `penpot-cli prototype list-interactions` exposes the same backend read path
   for scripts without requiring a bound live workspace.
-- Prototype overlay creation/deletion and editor-local selection/current-page
-  state remain out of scope for this backend-safe read slice.
+- Prototype overlay creation and editor-local selection/current-page state
+  remain out of scope for this backend-safe read slice. P19.2 later adds
+  backend-command interaction deletion against the list/discovery identity.
 - This is a transitional adapter slice. `command-runtime/` now centralizes the
   first adapter-selection helper, while descriptors, request envelopes, and
   execution dispatch still need to move out of MCP and CLI entry adapters.
@@ -1428,11 +1439,14 @@ P11.4 implementation note:
 - `penpot-cli prototype create-flow` and `prototype create-interaction` call
   the new backend commands directly and report `adapterSelection` in JSON
   output.
-- Overlay creation, interaction deletion, current page state, selection state,
-  and other live workspace semantics remain plugin-live until dedicated
-  backend-safe contracts are defined. Interaction listing is now available for
-  explicit file targets through `get-file-prototype-interactions`,
+- Overlay creation, current page state, selection state, and other live
+  workspace semantics remain plugin-live until dedicated backend-safe
+  contracts are defined. Interaction listing is now available for explicit
+  file targets through `get-file-prototype-interactions`,
   `prototype.list_interactions`, and `penpot-cli prototype list-interactions`.
+  P19.2 adds source-shape/index interaction deletion through
+  `delete-file-prototype-interaction`, `prototype.delete_interaction`, and
+  `penpot-cli prototype delete-interaction`; overlay creation remains planned.
 
 P11.5 implementation note:
 

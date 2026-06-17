@@ -509,6 +509,53 @@
                                   :destination-board-name "Done"}]}
                  (:result out)))))
 
+    (t/testing "delete a prototype interaction through the backend command"
+      (let [out {::th/type :delete-file-prototype-interaction
+                 ::rpc/profile-id (:id profile)
+                 :id (:id file)
+                 :page-id page-id
+                 :source-shape-id rect-id
+                 :interaction-index 0
+                 :features cfeat/supported-features}
+            out (th/command! out)]
+        (t/is (nil? (:error out)))
+        (t/is (= {:source-shape-id rect-id
+                  :source-shape-name "CTA"
+                  :index 0
+                  :trigger :click
+                  :delay nil
+                  :action-type :navigate-to
+                  :destination-board-id frame-b
+                  :destination-board-name "Done"}
+                 (get-in out [:result :interaction])))
+        (t/is (= 6 (get-in out [:result :revn])))))
+
+    (t/testing "reject stale prototype interaction indexes"
+      (let [out {::th/type :delete-file-prototype-interaction
+                 ::rpc/profile-id (:id profile)
+                 :id (:id file)
+                 :page-id page-id
+                 :source-shape-id rect-id
+                 :interaction-index 0
+                 :features cfeat/supported-features}
+            out (th/command! out)
+            error (:error out)]
+        (t/is (th/ex-info? error))
+        (t/is (th/ex-with-code? error :prototype-interaction-not-found))))
+
+    (t/testing "reject missing prototype source shapes"
+      (let [out {::th/type :delete-file-prototype-interaction
+                 ::rpc/profile-id (:id profile)
+                 :id (:id file)
+                 :page-id page-id
+                 :source-shape-id (uuid/next)
+                 :interaction-index 0
+                 :features cfeat/supported-features}
+            out (th/command! out)
+            error (:error out)]
+        (t/is (th/ex-info? error))
+        (t/is (th/ex-with-code? error :shape-not-found))))
+
     (t/testing "prototype data is persisted in file data"
       (let [out {::th/type :get-file
                  ::rpc/profile-id (:id profile)
@@ -517,22 +564,13 @@
             out (th/command! out)
             data (:data (:result out))
             flow (get-in data [:pages-index page-id :flows flow-id])
-            interaction (-> data
-                            (get-in [:pages-index page-id :objects rect-id :interactions])
-                            first)]
+            interactions (get-in data [:pages-index page-id :objects rect-id :interactions])]
         (t/is (nil? (:error out)))
         (t/is (= {:id flow-id
                   :name "Checkout flow"
                   :starting-frame frame-a}
                  flow))
-        (t/is (= :click (:event-type interaction)))
-        (t/is (= :navigate (:action-type interaction)))
-        (t/is (= frame-b (:destination interaction)))
-        (t/is (= true (:preserve-scroll interaction)))
-        (t/is (= {:animation-type :dissolve
-                  :duration 300
-                  :easing :ease-in-out}
-                 (:animation interaction)))))))
+        (t/is (= [] interactions))))))
 
 (t/deftest update-file-shape-supports-rich-style-and-parent-move
   (let [profile    (th/create-profile* 1 {:is-active true})

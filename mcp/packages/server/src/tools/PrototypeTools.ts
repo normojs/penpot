@@ -103,6 +103,30 @@ abstract class PrototypeTool<TArgs extends object> extends PenpotRpcTool<TArgs> 
         });
     }
 
+    protected selectPrototypeMutationAdapter(command: string, args: PrototypeAdapterArgs): CommandAdapterSelection {
+        const hasBackendTarget = Boolean(args.fileId);
+        return selectCommandAdapter({
+            command,
+            requestedAdapter: args.adapter ?? "auto",
+            candidates: [
+                {
+                    kind: "backend-command",
+                    available: hasBackendTarget,
+                    priority: 10,
+                    reason: hasBackendTarget
+                        ? null
+                        : getAdapterSelectionReason(AdapterSelectionReasonCodes.BACKEND_COMMAND_FILE_ID_REQUIRED),
+                },
+                {
+                    kind: "plugin-live",
+                    available: false,
+                    priority: 50,
+                    reason: getAdapterSelectionReason(AdapterSelectionReasonCodes.PLUGIN_LIVE_WORKSPACE_STATE_REQUIRED),
+                },
+            ],
+        });
+    }
+
     protected adapterSelectionFailure(selection: CommandAdapterSelection): ToolResponse {
         const error = createAdapterSelectionError(selection, {
             actions: [
@@ -225,6 +249,48 @@ abstract class PrototypeTool<TArgs extends object> extends PenpotRpcTool<TArgs> 
         }
     }
 
+    protected async executeBackendPrototypeDeleteInteraction(
+        args: PrototypeDeleteInteractionArgs,
+        adapterSelection: CommandAdapterSelection
+    ): Promise<ToolResponse> {
+        const userToken = this.getUserToken();
+        if (!userToken) {
+            return this.authenticationRequired();
+        }
+
+        try {
+            const result = await this.rpcWritePost<PenpotRecord>(
+                "delete-file-prototype-interaction",
+                {
+                    id: args.fileId,
+                    "page-id": args.pageId,
+                    "source-shape-id": args.sourceShapeId,
+                    "interaction-index": args.interactionIndex,
+                },
+                userToken,
+                {
+                    mcpAdapter: adapterSelection.selected,
+                    mcpFileId: args.fileId,
+                    mcpPageId: args.pageId,
+                    mcpShapeId: args.sourceShapeId,
+                }
+            );
+            return this.ok({
+                adapter: adapterSelection.selected,
+                adapterSelection,
+                fileId: args.fileId,
+                pageId: args.pageId,
+                sourceShapeId: args.sourceShapeId,
+                interactionIndex: args.interactionIndex,
+                interaction: result.interaction,
+                revn: result.revn,
+                vern: result.vern,
+            });
+        } catch (cause) {
+            return this.rpcFailure(cause);
+        }
+    }
+
     protected async executeBackendPrototypeList(
         args: PrototypeListInteractionsArgs,
         adapterSelection: CommandAdapterSelection
@@ -262,6 +328,48 @@ abstract class PrototypeTool<TArgs extends object> extends PenpotRpcTool<TArgs> 
 
     protected nonEmptyString(value: unknown): string | undefined {
         return typeof value === "string" && value.trim() !== "" ? value.trim() : undefined;
+    }
+}
+
+export class PrototypeDeleteInteractionArgs {
+    static schema = {
+        fileId: uuidSchema.describe("File id for backend-command prototype interaction deletion."),
+        pageId: uuidSchema.optional().describe("Optional page id used to resolve the source shape."),
+        sourceShapeId: uuidSchema.describe("Shape id that owns the interaction."),
+        interactionIndex: z.number().int().min(0).describe("Zero-based index in the source shape interactions array."),
+        adapter: z.string().optional().describe("Optional adapter request: auto or backend-command."),
+    };
+
+    fileId!: string;
+    pageId?: string;
+    sourceShapeId!: string;
+    interactionIndex!: number;
+    adapter?: string;
+}
+
+export class PrototypeDeleteInteractionTool extends PrototypeTool<PrototypeDeleteInteractionArgs> {
+    constructor(mcpServer: PenpotMcpServer) {
+        super(mcpServer, PrototypeDeleteInteractionArgs.schema);
+    }
+
+    public getToolName(): string {
+        return CommandDescriptors.PROTOTYPE_DELETE_INTERACTION.mcpToolName;
+    }
+
+    public getToolDescription(): string {
+        return CommandDescriptors.PROTOTYPE_DELETE_INTERACTION.description;
+    }
+
+    protected async executeCore(args: PrototypeDeleteInteractionArgs): Promise<ToolResponse> {
+        const adapterSelection = this.selectPrototypeMutationAdapter(
+            CommandDescriptors.PROTOTYPE_DELETE_INTERACTION.id,
+            args
+        );
+        if (adapterSelection.status !== "selected") {
+            return this.adapterSelectionFailure(adapterSelection);
+        }
+
+        return this.executeBackendPrototypeDeleteInteraction(args, adapterSelection);
     }
 }
 

@@ -397,6 +397,134 @@
              (headless/prototype-interactions-summary data {:flow-id (uuid/next)
                                                             :source-shape-id (uuid/next)})))))
 
+(t/deftest delete-prototype-interaction-request-removes-interaction-by-index
+  (let [file-id  (uuid/next)
+        page-id  (uuid/next)
+        frame-a  (uuid/next)
+        frame-b  (uuid/next)
+        frame-c  (uuid/next)
+        rect-id  (uuid/next)
+        data     (ctf/make-file-data file-id page-id)
+        frame-a-result (headless/create-shape-request data {:page-id page-id
+                                                            :shape-id frame-a
+                                                            :type :frame
+                                                            :name "Start"
+                                                            :x 0
+                                                            :y 0
+                                                            :width 320
+                                                            :height 640})
+        data     (cpc/process-changes data (:changes frame-a-result))
+        frame-b-result (headless/create-shape-request data {:page-id page-id
+                                                            :shape-id frame-b
+                                                            :type :frame
+                                                            :name "Middle"
+                                                            :x 360
+                                                            :y 0
+                                                            :width 320
+                                                            :height 640})
+        data     (cpc/process-changes data (:changes frame-b-result))
+        frame-c-result (headless/create-shape-request data {:page-id page-id
+                                                            :shape-id frame-c
+                                                            :type :frame
+                                                            :name "Done"
+                                                            :x 720
+                                                            :y 0
+                                                            :width 320
+                                                            :height 640})
+        data     (cpc/process-changes data (:changes frame-c-result))
+        rect     (headless/create-shape-request data {:page-id page-id
+                                                     :shape-id rect-id
+                                                     :parent-id frame-a
+                                                     :type :rect
+                                                     :name "CTA"
+                                                     :x 24
+                                                     :y 32
+                                                     :width 120
+                                                     :height 40})
+        data     (cpc/process-changes data (:changes rect))
+        first-interaction (headless/create-prototype-interaction-request
+                           data
+                           {:page-id page-id
+                            :source-shape-id rect-id
+                            :destination-board-id frame-b
+                            :trigger :click})
+        data     (cpc/process-changes data (:changes first-interaction))
+        second-interaction (headless/create-prototype-interaction-request
+                            data
+                            {:page-id page-id
+                             :source-shape-id rect-id
+                             :destination-board-id frame-c
+                             :trigger :mouse-enter})
+        data     (cpc/process-changes data (:changes second-interaction))
+        result   (headless/delete-prototype-interaction-request
+                  data
+                  {:page-id page-id
+                   :source-shape-id rect-id
+                   :interaction-index 0})
+        data'    (cpc/process-changes data (:changes result))
+        interactions (get-in data' [:pages-index page-id :objects rect-id :interactions])]
+    (t/is (= {:source-shape-id rect-id
+              :source-shape-name "CTA"
+              :index 0
+              :trigger :click
+              :delay nil
+              :action-type :navigate-to
+              :destination-board-id frame-b
+              :destination-board-name "Middle"}
+             (:interaction result)))
+    (t/is (= [{:type :mod-obj
+               :id rect-id
+               :page-id page-id
+               :operations [{:type :set
+                             :attr :interactions
+                             :val (get-in result [:changes 0 :operations 0 :val])}]}]
+             (:changes result)))
+    (t/is (= 1 (count interactions)))
+    (t/is (= frame-c (:destination (first interactions))))))
+
+(t/deftest delete-prototype-interaction-request-rejects-stale-index
+  (let [file-id  (uuid/next)
+        page-id  (uuid/next)
+        frame-id (uuid/next)
+        rect-id  (uuid/next)
+        data     (ctf/make-file-data file-id page-id)
+        frame    (headless/create-shape-request data {:page-id page-id
+                                                      :shape-id frame-id
+                                                      :type :frame
+                                                      :name "Start"
+                                                      :x 0
+                                                      :y 0
+                                                      :width 320
+                                                      :height 640})
+        data     (cpc/process-changes data (:changes frame))
+        rect     (headless/create-shape-request data {:page-id page-id
+                                                     :shape-id rect-id
+                                                     :parent-id frame-id
+                                                     :type :rect
+                                                     :name "CTA"
+                                                     :x 24
+                                                     :y 32
+                                                     :width 120
+                                                     :height 40})
+        data     (cpc/process-changes data (:changes rect))]
+    (t/is (thrown? #?(:clj Exception :cljs :default)
+                   (headless/delete-prototype-interaction-request
+                    data
+                    {:page-id page-id
+                     :source-shape-id rect-id
+                     :interaction-index 0})))))
+
+(t/deftest delete-prototype-interaction-request-rejects-missing-source
+  (let [file-id (uuid/next)
+        page-id (uuid/next)
+        data    (ctf/make-file-data file-id page-id)]
+    (t/is (thrown? #?(:clj Exception :cljs :default)
+                   (headless/delete-prototype-interaction-request
+                    data
+                    {:page-id page-id
+                     :source-shape-id (uuid/next)
+                     :interaction-index 0})))))
+
 (t/deftest update-shape-request-updates-geometry-and-style
   (let [file-id  (uuid/next)
         page-id  (uuid/next)

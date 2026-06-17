@@ -79,6 +79,7 @@ test("descriptor lookup supports internal, MCP, and CLI command names", () => {
     assert.equal(getCommandDescriptor("selection.get"), CommandDescriptors.SELECTION_GET);
     assert.equal(getCommandDescriptor("prototype list-interactions"), CommandDescriptors.PROTOTYPE_LIST_INTERACTIONS);
     assert.equal(getCommandDescriptor("prototype.delete_interaction"), CommandDescriptors.PROTOTYPE_DELETE_INTERACTION);
+    assert.equal(getCommandDescriptor("prototype delete-interaction"), CommandDescriptors.PROTOTYPE_DELETE_INTERACTION);
     assert.equal(getCommandDescriptor("shape.set_layout"), CommandDescriptors.SHAPE_SET_LAYOUT);
     assert.equal(getCommandDescriptor("missing.command"), undefined);
 });
@@ -93,14 +94,15 @@ test("live-gap descriptors document live-only and planned command boundaries", (
     assert.equal(CommandDescriptors.PROTOTYPE_LIST_INTERACTIONS.cliCommand, "prototype list-interactions");
     assert.deepEqual(CommandDescriptors.PROTOTYPE_LIST_INTERACTIONS.adapters, ["backend-command"]);
     assert.match(CommandDescriptors.PROTOTYPE_LIST_INTERACTIONS.responseShape, /flow and interaction summaries/);
-    assert.deepEqual(CommandDescriptors.PROTOTYPE_DELETE_INTERACTION.adapters, []);
+    assert.equal(CommandDescriptors.PROTOTYPE_DELETE_INTERACTION.cliCommand, "prototype delete-interaction");
+    assert.deepEqual(CommandDescriptors.PROTOTYPE_DELETE_INTERACTION.adapters, ["backend-command"]);
     assert.match(CommandDescriptors.PROTOTYPE_DELETE_INTERACTION.description, /sourceShapeId/);
     assert.match(CommandDescriptors.PROTOTYPE_DELETE_INTERACTION.description, /interactionIndex/);
     assert.equal(
         CommandDescriptors.PROTOTYPE_DELETE_INTERACTION.inputSchema,
         "fileId, pageId, sourceShapeId, interactionIndex, adapter?"
     );
-    assert.match(CommandDescriptors.PROTOTYPE_DELETE_INTERACTION.responseShape, /stale-index/);
+    assert.match(CommandDescriptors.PROTOTYPE_DELETE_INTERACTION.responseShape, /deleted interaction summary/);
     assert.match(
         getAdapterSelectionReason(AdapterSelectionReasonCodes.BACKEND_COMMAND_PROTOTYPE_MUTATION_UNSUPPORTED),
         /source-shape\/index/

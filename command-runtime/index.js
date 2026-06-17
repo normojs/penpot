@@ -231,13 +231,14 @@ export const CommandDescriptors = Object.freeze({
     PROTOTYPE_DELETE_INTERACTION: Object.freeze({
         id: "prototype.delete_interaction",
         mcpToolName: "prototype.delete_interaction",
+        cliCommand: "prototype delete-interaction",
         title: "Delete prototype interaction",
         description:
-            "Descriptor-only planned command; delete identity is explicit fileId, pageId, sourceShapeId, and zero-based interactionIndex because persisted interactions do not have stable ids.",
+            "Deletes a persisted prototype interaction using backend-command with explicit fileId, pageId, sourceShapeId, and zero-based interactionIndex.",
         inputSchema: "fileId, pageId, sourceShapeId, interactionIndex, adapter?",
-        adapters: Object.freeze([]),
+        adapters: Object.freeze(["backend-command"]),
         responseShape:
-            "unsupported until backend-command delete implements source-shape/index mutation with not-found and stale-index errors",
+            "status envelope with deleted interaction summary, revision metadata, and adapterSelection metadata",
     }),
     PROTOTYPE_CREATE_OVERLAY: Object.freeze({
         id: "prototype.create_overlay",
