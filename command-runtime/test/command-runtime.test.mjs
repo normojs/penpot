@@ -177,7 +177,7 @@ test("adapter selection errors share codes, messages, and payload shape", () => 
     assert.equal(unavailableError.code, CommandErrorCodes.ADAPTER_NOT_AVAILABLE);
     assert.equal(
         unavailable.candidates[0].reason,
-        "backend-command supports layout none/flex only; use plugin-live for grid layout updates."
+        "backend-command supports layout none, flex, and grid container tracks only; use plugin-live for unsupported layout details."
     );
     assert.equal(
         getAdapterSelectionReason(AdapterSelectionReasonCodes.PLUGIN_LIVE_BACKEND_ONLY_SHAPE_FIELDS_UNSUPPORTED),
@@ -197,7 +197,7 @@ test("adapter selection errors share codes, messages, and payload shape", () => 
     );
     assert.equal(
         getAdapterSelectionReason(AdapterSelectionReasonCodes.BACKEND_COMMAND_GRID_CONTRACT_UNSUPPORTED),
-        "backend-command grid layout updates are unsupported until a stable grid track and cell payload contract exists."
+        "backend-command grid cell and child placement updates are unsupported until a stable cell payload contract exists."
     );
 });
 

@@ -314,10 +314,14 @@ export interface ShapeLayout {
     direction?: "row" | "row-reverse" | "column" | "column-reverse";
     wrap?: "wrap" | "nowrap";
     alignItems?: "start" | "end" | "center" | "stretch";
+    justifyItems?: "start" | "end" | "center" | "stretch";
+    alignContent?: "start" | "center" | "end" | "space-between" | "space-around" | "space-evenly" | "stretch";
     justifyContent?: "start" | "center" | "end" | "space-between" | "space-around" | "space-evenly" | "stretch";
     rowGap?: number;
     columnGap?: number;
     padding?: number;
+    rows?: Array<{ type: "percent" | "flex" | "auto" | "fixed"; value?: number }>;
+    columns?: Array<{ type: "percent" | "flex" | "auto" | "fixed"; value?: number }>;
 }
 
 export type ShapeTaskAction = "createFrame" | "createRect" | "createText" | "createImage" | "update" | "delete";

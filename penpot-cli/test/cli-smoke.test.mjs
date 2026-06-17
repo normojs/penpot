@@ -860,6 +860,136 @@ test("shape update sends rich style, hierarchy, and layout fields to backend-com
     }
 });
 
+test("shape update sends grid layout subset fields to backend-command RPC", async () => {
+    const originalFetch = globalThis.fetch;
+    const calls = [];
+    globalThis.fetch = async (url, options) => {
+        calls.push({ url: String(url), options });
+        return {
+            ok: true,
+            status: 200,
+            statusText: "OK",
+            text: async () =>
+                JSON.stringify({
+                    shape: {
+                        id: UUIDS.object,
+                        name: "Grid",
+                        type: "frame",
+                        pageId: UUIDS.page,
+                    },
+                    revn: 4,
+                    vern: 0,
+                }),
+        };
+    };
+
+    try {
+        const result = await runCli(
+            [
+                "shape",
+                "update",
+                "--file",
+                UUIDS.file,
+                "--page",
+                UUIDS.page,
+                "--shape",
+                UUIDS.object,
+                "--layout",
+                "grid",
+                "--layout-grid-direction",
+                "row",
+                "--layout-align-items",
+                "center",
+                "--layout-justify-items",
+                "stretch",
+                "--layout-align-content",
+                "space-between",
+                "--layout-justify-content",
+                "space-evenly",
+                "--layout-gap",
+                "12",
+                "--layout-row-gap",
+                "20",
+                "--layout-padding",
+                "24",
+                "--layout-grid-rows",
+                "fixed:120,flex:1",
+                "--layout-grid-columns",
+                "percent:50",
+                "--layout-grid-columns",
+                "auto",
+                "--format",
+                "json",
+            ],
+            {
+                PENPOT_BACKEND_URI: "http://127.0.0.1:6060",
+                PENPOT_CLI_TOKEN: "token-1",
+            }
+        );
+        const body = parseJson(result.stdout);
+
+        assert.equal(result.exitCode, 0);
+        assert.equal(result.stderr, "");
+        assert.equal(calls.length, 1);
+        assert.match(calls[0].url, /\/api\/main\/methods\/update-file-shape\?_fmt=json$/);
+        assert.deepEqual(JSON.parse(calls[0].options.body), {
+            id: UUIDS.file,
+            "page-id": UUIDS.page,
+            "shape-id": UUIDS.object,
+            layout: {
+                type: "grid",
+                direction: "row",
+                "align-items": "center",
+                "justify-items": "stretch",
+                "align-content": "space-between",
+                "justify-content": "space-evenly",
+                "row-gap": 20,
+                "column-gap": 12,
+                padding: 24,
+                rows: [
+                    { type: "fixed", value: 120 },
+                    { type: "flex", value: 1 },
+                ],
+                columns: [{ type: "percent", value: 50 }, { type: "auto" }],
+            },
+        });
+        assert.equal(body.status, "ok");
+        assert.equal(body.data.adapter, "backend-command");
+        assert.equal(body.data.adapterSelection.command, "shape.update");
+    } finally {
+        globalThis.fetch = originalFetch;
+    }
+});
+
+test("shape update rejects reverse directions for grid layout in CLI parsing", async () => {
+    const result = await runCli(
+        [
+            "shape",
+            "update",
+            "--file",
+            UUIDS.file,
+            "--shape",
+            UUIDS.object,
+            "--layout",
+            "grid",
+            "--layout-grid-direction",
+            "row-reverse",
+            "--format",
+            "json",
+        ],
+        {
+            PENPOT_BACKEND_URI: "http://127.0.0.1:6060",
+            PENPOT_CLI_TOKEN: "token-1",
+        }
+    );
+    const body = parseJson(result.stdout);
+
+    assert.equal(result.exitCode, 2);
+    assert.equal(result.stderr, "");
+    assert.equal(body.status, "error");
+    assert.equal(body.error.code, "shape_layout_grid_direction_invalid");
+});
+
 test("shape create-image reads a local image and sends backend-command RPC", async () => {
     const originalFetch = globalThis.fetch;
     const calls = [];

@@ -50,7 +50,7 @@ const AdapterSelectionReasonMessages = Object.freeze({
     [AdapterSelectionReasonCodes.BACKEND_COMMAND_FILE_PAGE_REQUIRED]:
         "backend-command requires explicit fileId and pageId.",
     [AdapterSelectionReasonCodes.BACKEND_COMMAND_LAYOUT_UNSUPPORTED]:
-        "backend-command supports layout none/flex only; use plugin-live for grid layout updates.",
+        "backend-command supports layout none, flex, and grid container tracks only; use plugin-live for unsupported layout details.",
     [AdapterSelectionReasonCodes.PLUGIN_LIVE_BACKEND_ONLY_SHAPE_FIELDS_UNSUPPORTED]:
         "plugin-live does not support backend-only shape style or hierarchy fields; pass fileId to use backend-command.",
     [AdapterSelectionReasonCodes.PLUGIN_LIVE_OMIT_FILE_ID]:
@@ -74,7 +74,7 @@ const AdapterSelectionReasonMessages = Object.freeze({
     [AdapterSelectionReasonCodes.BACKEND_COMMAND_PROTOTYPE_MUTATION_UNSUPPORTED]:
         "backend-command prototype mutations need a stable target and interaction identity contract before execution.",
     [AdapterSelectionReasonCodes.BACKEND_COMMAND_GRID_CONTRACT_UNSUPPORTED]:
-        "backend-command grid layout updates are unsupported until a stable grid track and cell payload contract exists.",
+        "backend-command grid cell and child placement updates are unsupported until a stable cell payload contract exists.",
     [AdapterSelectionReasonCodes.CLI_LIVE_WORKSPACE_STATE_UNSUPPORTED]:
         "CLI commands do not read or mutate editor-local workspace state; use MCP with a bound live workspace.",
 });
@@ -301,7 +301,7 @@ export const CommandDescriptors = Object.freeze({
         description:
             "Updates geometry, style, text, or supported layout fields using backend-command or plugin-live adapters.",
         inputSchema:
-            "fileId?, pageId?, shapeId, parentId?, index?, name?, x?, y?, width?, height?, fill?, fills?, stroke?, strokes?, borderRadius?, r1?, r2?, r3?, r4?, content?, fontSize?, layout(type none|flex backend-command; grid plugin-live)?",
+            "fileId?, pageId?, shapeId, parentId?, index?, name?, x?, y?, width?, height?, fill?, fills?, stroke?, strokes?, borderRadius?, r1?, r2?, r3?, r4?, content?, fontSize?, layout(type none|flex|grid tracks backend-command; grid cells plugin-live)?",
         adapters: Object.freeze(["backend-command", "plugin-live"]),
         responseShape: "status envelope with shape summary, revision metadata, and adapterSelection metadata",
     }),
@@ -310,10 +310,10 @@ export const CommandDescriptors = Object.freeze({
         mcpToolName: "shape.set_layout",
         title: "Set shape layout",
         description:
-            "Descriptor-only layout alias for shape.update; backend-command supports none/flex while grid remains plugin-live or planned backend-contract work.",
-        inputSchema: "fileId?, pageId?, shapeId, layout(type none|flex backend-command; grid plugin-live/planned), adapter?",
+            "Descriptor-only layout alias for shape.update; backend-command supports none/flex plus the grid container track subset.",
+        inputSchema: "fileId?, pageId?, shapeId, layout(type none|flex|grid tracks backend-command; grid cells plugin-live/planned), adapter?",
         adapters: Object.freeze(["backend-command", "plugin-live"]),
-        responseShape: "use shape.update today; grid backend-command updates are unsupported until the grid contract is defined",
+        responseShape: "use shape.update today; backend grid support covers container direction/tracks/gaps only",
     }),
     SHAPE_DELETE: Object.freeze({
         id: "shape.delete",

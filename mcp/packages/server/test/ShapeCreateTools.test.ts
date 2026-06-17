@@ -531,13 +531,18 @@ test("ShapeDeleteTool executes confirmed destructive backend delete when configu
     assert.equal(body.data.deleted, true);
 });
 
-test("ShapeUpdateTool reports adapter error for backend grid layout updates", async () => {
+test("ShapeUpdateTool sends backend grid layout subset updates", async () => {
     const calls: RpcCall[] = [];
     const tool = new ShapeUpdateTool(
         mcpServerWithRpc({
-            post: async (methodName: string, params: Record<string, unknown>, userToken: string) => {
-                calls.push({ methodName, params, userToken });
-                return { shape: null };
+            post: async (
+                methodName: string,
+                params: Record<string, unknown>,
+                userToken: string,
+                context?: PenpotRpcRequestContext
+            ) => {
+                calls.push({ methodName, params, userToken, context });
+                return { shape: { id: "00000000-0000-0000-0000-000000000003", type: "frame" }, revn: 2, vern: 0 };
             },
         })
     );
@@ -545,18 +550,47 @@ test("ShapeUpdateTool reports adapter error for backend grid layout updates", as
     const response = await tool.execute({
         fileId: "00000000-0000-0000-0000-000000000001",
         shapeId: "00000000-0000-0000-0000-000000000003",
-        layout: { type: "grid" },
+        layout: {
+            type: "grid",
+            direction: "row",
+            alignItems: "center",
+            justifyItems: "stretch",
+            alignContent: "space-between",
+            justifyContent: "space-evenly",
+            rowGap: 20,
+            columnGap: 12,
+            padding: 24,
+            rows: [
+                { type: "fixed", value: 120 },
+                { type: "flex", value: 1 },
+            ],
+            columns: [{ type: "percent", value: 50 }, { type: "auto" }],
+        },
     });
     const body = parseJsonResponse(response);
 
-    assert.deepEqual(calls, []);
-    assert.equal(body.status, "error");
-    assert.equal(body.error.code, "adapter_not_available");
-    assert.equal(body.error.data.adapterSelection.selected, null);
-    assert.equal(
-        body.error.data.adapterSelection.candidates[0].reason,
-        "backend-command supports layout none/flex only; use plugin-live for grid layout updates."
-    );
+    assert.equal(calls.length, 1);
+    assert.equal(calls[0].methodName, "update-file-shape");
+    assert.deepEqual(calls[0].params.layout, {
+        type: "grid",
+        direction: "row",
+        "align-items": "center",
+        "justify-items": "stretch",
+        "align-content": "space-between",
+        "justify-content": "space-evenly",
+        "row-gap": 20,
+        "column-gap": 12,
+        padding: 24,
+        rows: [
+            { type: "fixed", value: 120 },
+            { type: "flex", value: 1 },
+        ],
+        columns: [{ type: "percent", value: 50 }, { type: "auto" }],
+    });
+    assert.equal(calls[0].context?.mcpToolName, "shape.update");
+    assert.equal(body.status, "ok");
+    assert.equal(body.data.adapter, "backend-command");
+    assert.equal(body.data.adapterSelection.selected, "backend-command");
 });
 
 test("ShapeUpdateTool rejects concurrent writes to the same file and releases after completion", async () => {

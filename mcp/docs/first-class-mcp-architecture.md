@@ -506,8 +506,9 @@ P17.1 audit result:
 - `prototype.create_overlay`, `shape.set_layout`, `shape.set_style`,
   `export.file`, `render.thumbnail`, component, token, and debug names remain
   planned or unsupported descriptor gaps unless a later wave selects them.
-- Grid layout stays plugin-live or structured-unsupported until backend/common
-  owns a persisted track/cell contract.
+- Grid container layout can move to backend-command once backend/common owns a
+  persisted track contract; grid cells and child placement need a later
+  dedicated payload contract.
 
 P17.2 descriptor result:
 
@@ -519,8 +520,8 @@ P17.2 descriptor result:
   description while keeping its existing plugin-live execution path.
 - Selection/current-page commands remain live workspace state; prototype
   interaction list is the next backend-safe read target; prototype mutation and
-  grid layout gaps stay descriptor-only or unsupported until contracts are
-  defined.
+  grid cell placement gaps stay descriptor-only or unsupported until contracts
+  are defined.
 
 ## 4. Target Architecture
 
@@ -1331,11 +1332,13 @@ P7.3 implementation note:
   independent `r1` through `r4` corner radii, and `parentId`/`index` movement
   through the existing `:mov-objects` change path.
 - P11.2 also adds a backend-safe layout subset for frame targets:
-  `layout.type` can be `none` or `flex`, and flex updates support direction,
-  wrap, align-items, justify-content, row/column gaps, and uniform padding.
-  Grid layout remains plugin-live until the backend command owns tracks/cells.
+  `layout.type` can be `none`, `flex`, or the grid container track subset.
+  Flex updates support direction, wrap, align-items, justify-content,
+  row/column gaps, and uniform padding. Grid updates support container
+  direction, rows/columns tracks, gaps, padding, and alignment; cells and child
+  placement remain out of scope.
 - These richer style, hierarchy, and supported layout fields require explicit
-  `fileId`; plugin-live continues to handle grid layout edits and
+  `fileId`; plugin-live continues to handle full grid cell placement and
   bound-workspace updates.
 - `penpot-cli export page` now executes the exporter adapter without a live
   workspace tab for explicit file/page/object targets, returning resource
@@ -1353,16 +1356,16 @@ P11.2 implementation note:
   fields for generated frame, rectangle, and text shapes: fill stacks, stroke
   stacks, independent corner radii, and parent frame/root movement.
 - `update-file-shape` now supports backend-safe frame layout metadata for
-  `layout.type = none | flex`; flex supports direction, wrap, alignment,
-  row/column gap, and uniform padding. Grid remains plugin-live.
+  `layout.type = none | flex | grid`; flex supports direction, wrap,
+  alignment, row/column gap, and uniform padding, while grid supports container
+  direction, rows/columns tracks, gaps, padding, and alignment.
 - MCP `shape.update` maps those fields to backend-command when `fileId` is
   supplied and returns a shared adapter error if callers try to use
-  backend-only fields without an explicit file target or request grid layout on
-  the backend-command path.
+  backend-only fields without an explicit file target.
 - `penpot-cli shape update` exposes the same fields with repeatable `--fill`
   and `--stroke` flags, `--r1` through `--r4`, `--parent`, `--index`, and
-  `--layout none|flex` with flex direction, wrap, alignment, gap, and padding
-  flags.
+  `--layout none|flex|grid` with flex direction, grid rows/columns tracks,
+  alignment, gap, and padding flags.
 - MCP `page.rename` now selects backend-command when callers provide an
   explicit `fileId`, and keeps the plugin-live path for bound workspace
   renames.

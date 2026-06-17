@@ -55,9 +55,11 @@ for future persisted operations.
 subset:
 
 - Supported shape types are frame, rect, and text.
-- Layout updates support only `none` and `flex`.
-- Unsupported layout types raise `unsupported-layout-type` with the hint that
-  backend layout updates currently support only none and flex.
+- Layout updates support `none`, `flex`, and a backend-safe grid container
+  subset.
+- Grid layout support covers container direction, rows/columns track arrays,
+  gaps, padding, and alignment fields; `layout-grid-cells` and child placement
+  remain outside the backend-command contract.
 - Prototype helpers persist page flows and navigate interactions through
   `:set-flow` and `:mod-obj` changes.
 
@@ -112,7 +114,7 @@ state for them.
 | `shape.create_frame`, `shape.create_rect`, `shape.create_text`, `shape.create_image` | Registered MCP tools and descriptors; backend-command with explicit targets, plugin-live otherwise. | Backend-safe persisted data plus plugin-live convenience. | Supported persisted shape creation already exists. | Keep behavior. |
 | `shape.update` with geometry/style/text/hierarchy | Registered MCP tool and descriptor; backend-command with explicit targets, plugin-live otherwise. | Backend-safe persisted data plus plugin-live convenience. | Supported shape fields persist through file changes. | Keep behavior. |
 | `shape.update` with `layout.type = none|flex` | Registered MCP tool and descriptor. | Backend-safe persisted data. | Common/backend explicitly support this subset. | Keep behavior. |
-| `shape.update` with `layout.type = grid` | Plugin-live can do it; backend-command rejects it. | Plugin-live workspace/API-specific until backend contract exists. | Backend helper intentionally raises unsupported layout type. | P17.4 should either define a minimal backend grid payload or strengthen structured unsupported errors. |
+| `shape.update` with `layout.type = grid` | Registered MCP tool and descriptor; backend-command supports the container track subset with explicit `fileId`, plugin-live remains available for live workspace convenience. | Backend-safe persisted data for container direction/tracks/gaps/padding/alignment; plugin-live or future contract for cell/child placement. | Persisted grid container fields are stable enough for headless updates, while `layout-grid-cells` needs a separate payload contract. | Keep backend-command subset; do not add cell placement until the contract is defined. |
 | `shape.set_layout` | Name exists in `ToolNames.ts`, not registered. | Unsupported or descriptor-only. | Behavior overlaps with `shape.update.layout`; no separate runtime surface. | Descriptor should clarify planned alias or future specialized command before implementation. |
 | `shape.set_style` | Name exists in `ToolNames.ts`, not registered. | Unsupported or descriptor-only. | Behavior overlaps with `shape.update` style fields. | Descriptor should clarify planned alias or future specialized command before implementation. |
 | `shape.group`, `shape.ungroup` | Names exist in `ToolNames.ts`, not registered. | Unsupported or descriptor-only. | No backend/common or plugin task implementation found. | Leave out of P17.2 unless a separate grouping wave is selected. |
@@ -215,18 +217,26 @@ P17.3 implementation note:
 
 ## P17.4 Grid Contract Decision
 
-Grid layout should not be added to backend-command by copying plugin API calls.
-The backend contract needs an explicit persisted shape payload for:
+P17.4 defines a minimal backend-safe grid container subset instead of copying
+plugin API calls or attempting full grid editing.
 
-- Track definitions.
-- Cell placement and spans.
-- Alignment/gap/padding mapping.
-- Clearing or replacing existing flex/grid layout data.
-- Error behavior when the target is not a frame/board.
+Supported backend-command payload:
 
-Until that contract exists, backend-command should keep returning structured
-unsupported details and point agents to plugin-live with file open/bind/retry
-steps.
+- `layout.type = grid`.
+- Grid auto-flow direction: `row` or `column`.
+- `rows` and `columns` track arrays with `percent`, `flex`, `auto`, or `fixed`
+  track types and optional numeric values.
+- Container row/column gap, uniform padding, align/justify items, and
+  align/justify content.
+
+Explicitly unsupported in this slice:
+
+- `layout-grid-cells`.
+- Child cell placement, spans, and moving children into tracks/cells.
+- Any payload that implies a full layout-engine placement mutation.
+
+This keeps backend-command useful for generated frame scaffolds while leaving
+cell/child placement to plugin-live or a later stable cell payload contract.
 
 ## P17.5 Live-Only Guidance
 

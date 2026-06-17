@@ -20,6 +20,7 @@
    [app.common.types.color :as ctc]
    [app.common.types.file :as ctf]
    [app.common.types.shape.interactions :as ctsi]
+   [app.common.types.shape.layout :as ctsl]
    [app.common.uuid :as uuid]
    [app.config :as cf]
    [app.db :as db]
@@ -148,17 +149,29 @@
    [:alignment {:optional true} [::sm/one-of #{:center :inner :outer}]]])
 
 (def ^:private
+  schema:headless-grid-track
+  [:map {:title "HeadlessGridTrack"}
+   [:type [::sm/one-of ctsl/grid-track-types]]
+   [:value {:optional true} [::sm/number {:min 0 :max 10000}]]])
+
+(def ^:private
   schema:headless-layout
   [:map {:title "HeadlessShapeLayout"}
-   [:type [::sm/one-of #{:none :flex}]]
+   [:type [::sm/one-of #{:none :flex :grid}]]
    [:direction {:optional true} [::sm/one-of #{:row :row-reverse :column :column-reverse}]]
+   [:grid-direction {:optional true} [::sm/one-of ctsl/grid-direction-types]]
    [:wrap {:optional true} [::sm/one-of #{:wrap :nowrap}]]
    [:align-items {:optional true} [::sm/one-of #{:start :end :center :stretch}]]
+   [:justify-items {:optional true} [::sm/one-of #{:start :end :center :stretch}]]
+   [:align-content {:optional true}
+    [::sm/one-of #{:start :end :center :space-between :space-around :space-evenly :stretch}]]
    [:justify-content {:optional true}
     [::sm/one-of #{:start :center :end :space-between :space-around :space-evenly :stretch}]]
    [:row-gap {:optional true} [::sm/number {:min 0 :max 10000}]]
    [:column-gap {:optional true} [::sm/number {:min 0 :max 10000}]]
-   [:padding {:optional true} [::sm/number {:min 0 :max 10000}]]])
+   [:padding {:optional true} [::sm/number {:min 0 :max 10000}]]
+   [:rows {:optional true} [:vector {:max 100} schema:headless-grid-track]]
+   [:columns {:optional true} [:vector {:max 100} schema:headless-grid-track]]])
 
 (def ^:private
   schema:create-file-shape

@@ -81,7 +81,8 @@ prototype flows and navigate interactions from MCP and `penpot-cli` while
 plugin-live remains available for live-only prototype operations. C5/P11.5 is
 complete: exporter-backed previews now work for explicit file/page/object
 targets from MCP and `penpot-cli`, with shared artifact metadata and CLI
-`--output` writes. Grid/full layout editing remains plugin-live. D3/P12.3 is
+`--output` writes. Backend-command now supports the grid container track subset;
+full grid cell placement remains plugin-live/future contract work. D3/P12.3 is
 complete: dashboard/settings now expose the current MCP file-context state
 outside the workspace menu. D4/P12.4 is complete: live-only
 `file_context_required` errors now include target-aware open, inspect, bind,
@@ -114,8 +115,10 @@ overlay gaps, exporter boundaries, and descriptor-only tool names. P17.2 is
 complete: shared command-runtime descriptors now expose the selected live-gap
 boundaries before runtime behavior changes. P17.3 is complete: persisted
 prototype flow/interaction listing now works through backend-command from MCP
-and `penpot-cli`. Current active work moves to P17.4 to define the backend-safe
-grid layout subset or structured unsupported behavior.
+and `penpot-cli`. P17.4 is complete: backend-command now supports the grid
+container track subset for explicit file targets while cell/child placement
+remains out of scope. Current active work moves to P17.5 to tighten
+selection/current-page live-only guidance.
 
 ## Feature Roadmap
 
@@ -193,7 +196,7 @@ complete as of 2026-06-15.
 | Order | Task | Modules | Output | Verification |
 | --- | --- | --- | --- | --- |
 | C1 | Add headless page rename metadata path | `backend`, `common`, `mcp`, `penpot-cli` | Completed 2026-06-15; page rename works through backend-command for explicit file/page targets | Backend/common tests plus MCP/CLI command tests cover success and permission errors |
-| C2 | Expand headless shape styling and hierarchy | `backend`, `common`, `mcp`, `penpot-cli` | Completed 2026-06-15; backend-command `shape.update` covers fill/stroke stacks, independent radius, parent/frame placement, and frame layout `none|flex`; grid remains plugin-live | Common/backend plus MCP/CLI tests cover style, hierarchy, supported layout mapping, and unsupported grid adapter errors |
+| C2 | Expand headless shape styling and hierarchy | `backend`, `common`, `mcp`, `penpot-cli` | Completed 2026-06-15 and expanded 2026-06-17; backend-command `shape.update` covers fill/stroke stacks, independent radius, parent/frame placement, frame layout `none|flex`, and the grid container track subset | Common/backend plus MCP/CLI tests cover style, hierarchy, supported layout mapping, and backend-safe grid track payloads |
 | C3 | Add headless image/media insertion path | `backend`, `common`, `mcp`, `penpot-cli` | Completed 2026-06-15; image-backed rectangles are creatable without a live plugin context using existing media upload/storage paths | Common/backend plus MCP/CLI tests cover media validation, permission errors, adapter selection, and persisted preview metadata |
 | C4 | Add backend-supported prototype helpers | `backend`, `common`, `mcp`, `penpot-cli` | Completed 2026-06-15; backend-command creates prototype flows and navigate interactions for explicit targets while plugin-live remains available for live-only prototype tools | Common/backend plus MCP/CLI tests cover flow persistence, navigate interaction mapping, and adapter selection |
 | C5 | Expand exporter-backed preview commands | `exporter`, `mcp`, `penpot-cli` | Completed 2026-06-15; explicit file/page/object previews return consistent artifact metadata in MCP and CLI | CLI output write path plus MCP exporter resource metadata and plugin-live base64 metadata are covered |
@@ -455,7 +458,7 @@ for supported operations.
 | ID | Status | Task | Modules | Verification | Notes |
 | --- | --- | --- | --- | --- | --- |
 | P11.1 | done | Expand headless page operations | `backend`, `common`, `mcp`, `penpot-cli` | Completed 2026-06-15; page rename works headlessly through backend-command and live fallback remains available in MCP | Added `rename-page-request`, `rename-file-page`, shared `page.rename` descriptor, MCP/CLI adapters, limit config, docs, and regression tests; page current/selection semantics remain plugin-live |
-| P11.2 | done | Expand headless shape styling and hierarchy | `backend`, `common`, `mcp`, `penpot-cli` | Completed 2026-06-15; generated frames/rect/text support fill/stroke stacks, independent corner radii, parent changes, and frame layout `none|flex` through backend-command | Grid/full layout remains plugin-live until a dedicated backend track/cell contract exists |
+| P11.2 | done | Expand headless shape styling and hierarchy | `backend`, `common`, `mcp`, `penpot-cli` | Completed 2026-06-15 and expanded 2026-06-17; generated frames/rect/text support fill/stroke stacks, independent corner radii, parent changes, frame layout `none|flex`, and the grid container track subset through backend-command | Grid cells and child placement remain plugin-live/future contract work |
 | P11.3 | done | Add headless image/media insertion path | `backend`, `common`, `mcp`, `penpot-cli` | Completed 2026-06-15; image-backed rectangles can be created without plugin-live context through backend media upload/storage paths | Added common `create-image-shape-request`, backend `create-file-image-shape`, MCP backend-command routing, `penpot-cli shape create-image`, docs, and focused tests |
 | P11.4 | done | Add backend-supported prototype helpers | `backend`, `common`, `mcp`, `penpot-cli` | Completed 2026-06-15; basic flows and navigate interactions work headlessly through backend-command | Added common prototype requests, backend `create-file-prototype-flow` / `create-file-prototype-interaction`, MCP backend-command routing, `penpot-cli prototype create-*`, docs, and focused tests; overlay/list/delete remain plugin-live |
 | P11.5 | done | Expand exporter-backed preview commands | `exporter`, `mcp`, `penpot-cli` | Completed 2026-06-15; explicit file/page/object previews return useful artifacts | `render.preview` now selects exporter for explicit MCP targets, keeps plugin-live base64 previews for bound workspace context, and `penpot-cli render preview` supports dry-run metadata plus `--output` writes |
@@ -528,18 +531,19 @@ state with persisted document data.
 | P17.1 | done | Audit remaining live-only command semantics | `mcp/docs`, `command-runtime`, `mcp`, `penpot-cli`, `backend`, `common` | Completed 2026-06-17; `mcp/docs/headless-live-gap-audit.md` maps each candidate command to persisted data, live workspace state, adapter candidates, permissions, errors, and first implementation slice | Classified page current/selection as plugin-live, prototype list as backend-safe read, grid as backend-contract pending, and overlay/delete/descriptor-only names as planned or unsupported |
 | P17.2 | done | Add read-only descriptors for live-gap commands | `command-runtime`, `mcp`, `penpot-cli` | Completed 2026-06-17; command-runtime and CLI smoke tests cover the live-gap descriptor group, reason text, and stable MCP `page.set_current` metadata | Added descriptors and adapter reason text for `page.set_current`, `selection.get`, `selection.set`, `prototype.list_interactions`, prototype planned/unsupported gaps, and layout boundary metadata |
 | P17.3 | done | Add headless prototype read/list support | `backend`, `common`, `mcp`, `penpot-cli` | Completed 2026-06-17; backend/common focused tests plus MCP/CLI adapter tests cover explicit file/page targets | Added persisted flow/interaction summaries through `get-file-prototype-interactions`, MCP `prototype.list_interactions`, and `penpot-cli prototype list-interactions`; overlay mutation and live selection remain out of scope |
-| P17.4 | in_progress | Define backend-safe grid layout subset | `backend`, `common`, `mcp`, `penpot-cli`, `mcp/docs` | Supported grid payloads or structured unsupported errors are covered by tests | Avoid partial document mutations without a clear track/cell data contract |
-| P17.5 | todo | Tighten selection/current-page live-only guidance | `frontend`, `mcp`, `penpot-cli`, `mcp/docs` | MCP tests and live-bind smoke docs cover unbound, stale, and bound workspace cases | Keep ephemeral workspace state explicit and guide agents through file.open/bind/retry |
+| P17.4 | done | Define backend-safe grid layout subset | `backend`, `common`, `mcp`, `penpot-cli`, `mcp/docs` | Completed 2026-06-17; common/backend plus MCP/CLI tests cover grid container direction, rows/columns tracks, gaps, padding, and alignment | Cell placement, spans, and moving children into grid tracks remain out of scope until a stable cell payload contract exists |
+| P17.5 | in_progress | Tighten selection/current-page live-only guidance | `frontend`, `mcp`, `penpot-cli`, `mcp/docs` | MCP tests and live-bind smoke docs cover unbound, stale, and bound workspace cases | Keep ephemeral workspace state explicit and guide agents through file.open/bind/retry |
 
 ## Next Recommended Sprint
 
 Use `mcp/docs/penpot-cli-overall-blueprint.md` and
 `mcp/docs/headless-live-gap-audit.md` as the current architecture baseline and
-continue with P17.4:
+continue with P17.5:
 
-1. Inspect the persisted grid layout data shape and current plugin-live layout
-   payloads.
-2. Decide whether a minimal backend-safe track/cell contract belongs in this
-   wave, or whether the right behavior is a structured unsupported response.
-3. Implement the chosen P17.4 path with tests and docs while keeping live
-   selection/current-page state explicit.
+1. Audit current `page.set_current`, `selection.get`, and `selection.set`
+   responses for unbound, stale, and bound workspace states.
+2. Tighten MCP response metadata and CLI guidance so live-only commands point
+   agents through `file.open`, `file.get_context`, `file.bind_context`, and
+   retry steps.
+3. Update smoke documentation and tests so P17.5 preserves the boundary between
+   persisted backend-command edits and editor-local workspace state.

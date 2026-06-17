@@ -240,6 +240,8 @@ Tasks:
   fill/stroke stacks, independent corner radii, and parent frame movement.
 - Done: add backend-safe frame layout updates for `shape.update`, covering
   `layout none` and flex direction, wrap, alignment, gap, and padding.
+- Done: add backend-safe grid container layout updates for frames, covering
+  grid direction, rows/columns tracks, gaps, padding, and alignment.
 - Done: add headless image/media insertion for image-backed rectangles through
   existing backend media upload/storage paths.
 - Done: add backend-supported prototype flow and navigate interaction helpers
@@ -248,8 +250,8 @@ Tasks:
   file/page/object targets, with shared artifact metadata for MCP and CLI.
 - Keep set-current as a live workspace operation unless a future backend
   metadata use case becomes meaningful.
-- Keep grid/full layout metadata in plugin-live until backend-command owns
-  tracks, cells, and related layout structures.
+- Keep grid cells, child placement, and full layout-engine mutations in
+  plugin-live until backend-command owns a stable cell payload contract.
 
 Acceptance:
 
@@ -417,8 +419,8 @@ Tasks:
 
 - P17.1: completed 2026-06-17 in
   `headless-live-gap-audit.md`; page current/selection remain live workspace
-  state, prototype list/read is backend-safe persisted data, grid needs an
-  explicit backend contract, and overlay/delete/descriptor-only gaps stay
+  state, prototype list/read is backend-safe persisted data, grid needs a
+  scoped backend container contract, and overlay/delete/descriptor-only gaps stay
   planned or unsupported until contracts exist.
 - P17.2: completed 2026-06-17; `LiveGapCommandDescriptors` now expose the
   selected live-only, read-only, and unsupported capability boundaries
@@ -426,14 +428,15 @@ Tasks:
 - P17.3: completed 2026-06-17; backend-command prototype read/list support now
   works for explicit file/page targets through common/backend, MCP, and
   `penpot-cli`.
-- P17.4: define a backend-safe grid layout subset or document structured
-  unsupported errors with exact live bind guidance.
+- P17.4: completed 2026-06-17; backend-command now supports the grid container
+  track subset for explicit file targets while cell/child placement stays out
+  of scope.
 - P17.5: tighten live-only guidance for selection and current-page commands
   across MCP responses, CLI output, and smoke docs.
 
 Acceptance:
 
-- `todo.md` has P17.4 as the single active task.
+- `todo.md` has P17.5 as the single active task.
 - The Wave I audit documents the adapter boundary before runtime behavior
   changes.
 - Operations that remain live-only explain why and point agents through
@@ -445,14 +448,15 @@ Wave D, Wave E, Wave F, Wave G, and Wave H are complete. Wave I / Phase 17 is
 the active implementation slice for headless live-gap closure. P17.1 is
 complete in `headless-live-gap-audit.md`.
 
-The next active task is P17.4:
+The next active task is P17.5:
 
-1. Inspect persisted grid layout data and the current plugin-live shape layout
-   payload.
-2. Decide whether a minimal backend-safe grid track/cell contract is small
-   enough for this wave.
-3. Implement the supported subset or return structured unsupported errors with
-   exact live bind guidance.
+1. Audit current `page.set_current`, `selection.get`, and `selection.set`
+   responses for unbound, stale, and bound workspace states.
+2. Tighten MCP response metadata and CLI guidance so live-only commands point
+   agents through `file.open`, `file.get_context`, `file.bind_context`, and
+   retry steps.
+3. Update smoke documentation and tests so P17.5 preserves the boundary between
+   persisted backend-command edits and editor-local workspace state.
 
 Keep manual configuration behavior stable while moving command metadata and
 envelopes; transport-specific formatting should stay at the MCP/CLI edges.

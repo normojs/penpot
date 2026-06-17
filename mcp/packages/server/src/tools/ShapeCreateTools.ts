@@ -40,13 +40,18 @@ const layoutSchema = z
     .object({
         type: z
             .enum(["none", "flex", "grid"])
-            .describe("Container layout mode. Backend-command supports none and flex; grid uses plugin-live."),
+            .describe("Container layout mode. Backend-command supports none, flex, and the grid container track subset."),
         direction: z
             .enum(["row", "row-reverse", "column", "column-reverse"])
             .optional()
-            .describe("Flex layout direction. Defaults to the existing direction or row."),
+            .describe("Flex layout direction, or grid auto-flow direction row/column."),
         wrap: z.enum(["wrap", "nowrap"]).optional().describe("Flex wrapping behavior."),
         alignItems: z.enum(["start", "end", "center", "stretch"]).optional().describe("Default item alignment."),
+        justifyItems: z.enum(["start", "end", "center", "stretch"]).optional().describe("Grid item justification."),
+        alignContent: z
+            .enum(["start", "center", "end", "space-between", "space-around", "space-evenly", "stretch"])
+            .optional()
+            .describe("Grid content alignment."),
         justifyContent: z
             .enum(["start", "center", "end", "space-between", "space-around", "space-evenly", "stretch"])
             .optional()
@@ -54,6 +59,26 @@ const layoutSchema = z
         rowGap: z.number().min(0).max(10000).optional().describe("Layout row gap in pixels."),
         columnGap: z.number().min(0).max(10000).optional().describe("Layout column gap in pixels."),
         padding: z.number().min(0).max(10000).optional().describe("Uniform container padding in pixels."),
+        rows: z
+            .array(
+                z.object({
+                    type: z.enum(["percent", "flex", "auto", "fixed"]),
+                    value: z.number().min(0).max(10000).optional(),
+                })
+            )
+            .max(100)
+            .optional()
+            .describe("Backend-command grid row tracks. Child cell placement is not supported."),
+        columns: z
+            .array(
+                z.object({
+                    type: z.enum(["percent", "flex", "auto", "fixed"]),
+                    value: z.number().min(0).max(10000).optional(),
+                })
+            )
+            .max(100)
+            .optional()
+            .describe("Backend-command grid column tracks. Child cell placement is not supported."),
     })
     .optional();
 
@@ -98,7 +123,7 @@ function hasBackendOnlyShapeUpdateFields(args: ShapeStyleUpdateFieldArgs): boole
 }
 
 function isBackendShapeLayoutSupported(layout?: ShapeTaskParams["layout"]): boolean {
-    return !layout || layout.type === "none" || layout.type === "flex";
+    return !layout || layout.type === "none" || layout.type === "flex" || layout.type === "grid";
 }
 
 function toBackendShapeLayout(layout?: ShapeTaskParams["layout"]): PenpotRecord | undefined {
@@ -106,16 +131,21 @@ function toBackendShapeLayout(layout?: ShapeTaskParams["layout"]): PenpotRecord 
         return undefined;
     }
 
-    return {
+    const result: PenpotRecord = {
         type: layout.type,
-        direction: layout.direction,
-        wrap: layout.wrap,
-        "align-items": layout.alignItems,
-        "justify-content": layout.justifyContent,
-        "row-gap": layout.rowGap,
-        "column-gap": layout.columnGap,
-        padding: layout.padding,
     };
+    if (layout.direction !== undefined) result.direction = layout.direction;
+    if (layout.wrap !== undefined) result.wrap = layout.wrap;
+    if (layout.alignItems !== undefined) result["align-items"] = layout.alignItems;
+    if (layout.justifyItems !== undefined) result["justify-items"] = layout.justifyItems;
+    if (layout.alignContent !== undefined) result["align-content"] = layout.alignContent;
+    if (layout.justifyContent !== undefined) result["justify-content"] = layout.justifyContent;
+    if (layout.rowGap !== undefined) result["row-gap"] = layout.rowGap;
+    if (layout.columnGap !== undefined) result["column-gap"] = layout.columnGap;
+    if (layout.padding !== undefined) result.padding = layout.padding;
+    if (layout.rows !== undefined) result.rows = layout.rows;
+    if (layout.columns !== undefined) result.columns = layout.columns;
+    return result;
 }
 
 function normalizeImageMimeType(mimeType: string): string {

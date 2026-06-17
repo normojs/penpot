@@ -739,3 +739,71 @@
             frame (get-in data [:pages-index page-id :objects frame-id])]
         (t/is (nil? (:error out)))
         (t/is (every? #(not (contains? frame %)) layout-attrs))))))
+
+(t/deftest update-file-shape-supports-frame-grid-layout-subset
+  (let [profile  (th/create-profile* 1 {:is-active true})
+        file     (th/create-file* 1 {:profile-id (:id profile)
+                                     :project-id (:default-project-id profile)
+                                     :is-shared false})
+        page-id  (get-in file [:data :pages 0])
+        frame-id (uuid/next)]
+
+    (let [out {::th/type :create-file-shape
+               ::rpc/profile-id (:id profile)
+               :id (:id file)
+               :page-id page-id
+               :shape-id frame-id
+               :type :frame
+               :x 0
+               :y 0
+               :width 320
+               :height 640
+               :features cfeat/supported-features}
+          out (th/command! out)]
+      (t/is (nil? (:error out))))
+
+    (let [out {::th/type :update-file-shape
+               ::rpc/profile-id (:id profile)
+               :id (:id file)
+               :shape-id frame-id
+               :layout {:type :grid
+                        :direction :row
+                        :align-items :center
+                        :justify-items :stretch
+                        :align-content :space-between
+                        :justify-content :space-evenly
+                        :row-gap 20
+                        :column-gap 12
+                        :padding 24
+                        :rows [{:type :fixed :value 120}
+                               {:type :flex :value 1}]
+                        :columns [{:type :percent :value 50}
+                                  {:type :auto}]}
+               :features cfeat/supported-features}
+          out (th/command! out)]
+      (t/is (nil? (:error out)))
+      (t/is (= frame-id (get-in out [:result :shape :id]))))
+
+    (let [out {::th/type :get-file
+               ::rpc/profile-id (:id profile)
+               :id (:id file)
+               :features cfeat/supported-features}
+          out (th/command! out)
+          data (:data (:result out))
+          frame (get-in data [:pages-index page-id :objects frame-id])]
+      (t/is (nil? (:error out)))
+      (t/is (= :grid (:layout frame)))
+      (t/is (= :row (:layout-grid-dir frame)))
+      (t/is (= :center (:layout-align-items frame)))
+      (t/is (= :stretch (:layout-justify-items frame)))
+      (t/is (= :space-between (:layout-align-content frame)))
+      (t/is (= :space-evenly (:layout-justify-content frame)))
+      (t/is (= {:row-gap 20 :column-gap 12} (:layout-gap frame)))
+      (t/is (= {:p1 24 :p2 24 :p3 24 :p4 24} (:layout-padding frame)))
+      (t/is (= [{:type :fixed :value 120}
+                {:type :flex :value 1}]
+               (:layout-grid-rows frame)))
+      (t/is (= [{:type :percent :value 50}
+                {:type :auto}]
+               (:layout-grid-columns frame)))
+      (t/is (= {} (:layout-grid-cells frame))))))

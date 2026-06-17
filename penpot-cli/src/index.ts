@@ -58,7 +58,7 @@ Usage:
   penpot-cli shape create-rect --file <file-id> --page <page-id> --parent <frame-id> --x <n> --y <n> --width <n> --height <n> [--format text|json]
   penpot-cli shape create-text --file <file-id> --page <page-id> --parent <frame-id> --x <n> --y <n> --width <n> --height <n> --content <text> [--format text|json]
   penpot-cli shape create-image --file <file-id> --page <page-id> --image <path> --x <n> --y <n> [--width <n>] [--height <n>] [--format text|json]
-  penpot-cli shape update --file <file-id> --shape <shape-id> [--page <page-id>] [--parent <frame-id>] [--x <n>] [--y <n>] [--width <n>] [--height <n>] [--fill <hex>] [--layout none|flex] [--format text|json]
+  penpot-cli shape update --file <file-id> --shape <shape-id> [--page <page-id>] [--parent <frame-id>] [--x <n>] [--y <n>] [--width <n>] [--height <n>] [--fill <hex>] [--layout none|flex|grid] [--format text|json]
   penpot-cli shape delete --file <file-id> --shape <shape-id> [--page <page-id>] [--format text|json]
   penpot-cli prototype create-flow --file <file-id> --name <name> --starting-board <frame-id> [--page <page-id>] [--flow-id <id>] [--format text|json]
   penpot-cli prototype create-interaction --file <file-id> --source <shape-id> --destination <frame-id> [--page <page-id>] [--trigger click|mouse-enter|mouse-leave|after-delay] [--format text|json]
@@ -130,13 +130,13 @@ Usage:
   penpot-cli shape create-rect --file <file-id> --page <page-id> --parent <frame-id> --x <n> --y <n> --width <n> --height <n> [--name <name>] [--shape-id <id>] [--fill <hex>] [--border-radius <n>] [--format text|json]
   penpot-cli shape create-text --file <file-id> --page <page-id> --parent <frame-id> --x <n> --y <n> --width <n> --height <n> --content <text> [--name <name>] [--shape-id <id>] [--font-size <n>] [--fill <hex>] [--format text|json]
   penpot-cli shape create-image --file <file-id> --page <page-id> --image <path> --x <n> --y <n> [--width <n>] [--height <n>] [--name <name>] [--shape-id <id>] [--parent <frame-id>] [--mime-type <type>] [--format text|json]
-  penpot-cli shape update --file <file-id> --shape <shape-id> [--page <page-id>] [--parent <frame-id>] [--index <n>] [--name <name>] [--x <n>] [--y <n>] [--width <n>] [--height <n>] [--fill <hex>] [--stroke <hex>] [--border-radius <n>] [--r1 <n>] [--r2 <n>] [--r3 <n>] [--r4 <n>] [--content <text>] [--font-size <n>] [--layout none|flex] [--layout-direction row|column] [--layout-wrap wrap|nowrap] [--layout-align-items start|center|end|stretch] [--layout-justify-content start|center|end|space-between|space-around|space-evenly|stretch] [--layout-gap <n>] [--layout-row-gap <n>] [--layout-column-gap <n>] [--layout-padding <n>] [--format text|json]
+  penpot-cli shape update --file <file-id> --shape <shape-id> [--page <page-id>] [--parent <frame-id>] [--index <n>] [--name <name>] [--x <n>] [--y <n>] [--width <n>] [--height <n>] [--fill <hex>] [--stroke <hex>] [--border-radius <n>] [--r1 <n>] [--r2 <n>] [--r3 <n>] [--r4 <n>] [--content <text>] [--font-size <n>] [--layout none|flex|grid] [--layout-direction row|row-reverse|column|column-reverse] [--layout-grid-direction row|column] [--layout-grid-rows fixed:120,flex:1,auto] [--layout-grid-columns percent:50,percent:50] [--layout-wrap wrap|nowrap] [--layout-align-items start|center|end|stretch] [--layout-justify-items start|center|end|stretch] [--layout-align-content start|center|end|space-between|space-around|space-evenly|stretch] [--layout-justify-content start|center|end|space-between|space-around|space-evenly|stretch] [--layout-gap <n>] [--layout-row-gap <n>] [--layout-column-gap <n>] [--layout-padding <n>] [--format text|json]
   penpot-cli shape delete --file <file-id> --shape <shape-id> [--page <page-id>] [--format text|json]
 
 Notes:
   Repeat --fill and --stroke to send backend-command fill/stroke stacks.
   Repeated --fill-opacity, --stroke-opacity, --stroke-width, --stroke-style, and --stroke-alignment values align by index.
-  Backend-command layout updates support --layout none and --layout flex. Grid layout remains live-workspace only.
+  Backend-command layout updates support --layout none, --layout flex, and the grid container track subset.
 
 Environment:
   PENPOT_BACKEND_URI       Backend RPC base URI, default http://localhost:6060
@@ -406,10 +406,11 @@ interface ExportPageResult {
 }
 
 type ShapeCreateKind = "frame" | "rect" | "text";
-type ShapeLayoutType = "none" | "flex";
+type ShapeLayoutType = "none" | "flex" | "grid";
 type ShapeLayoutDirection = "row" | "row-reverse" | "column" | "column-reverse";
 type ShapeLayoutWrap = "wrap" | "nowrap";
 type ShapeLayoutAlignItems = "start" | "end" | "center" | "stretch";
+type ShapeLayoutTrackType = "percent" | "flex" | "auto" | "fixed";
 type ShapeLayoutJustifyContent =
     | "start"
     | "center"
@@ -424,10 +425,14 @@ interface ShapeLayoutParams {
     direction?: ShapeLayoutDirection;
     wrap?: ShapeLayoutWrap;
     alignItems?: ShapeLayoutAlignItems;
+    justifyItems?: ShapeLayoutAlignItems;
+    alignContent?: ShapeLayoutJustifyContent;
     justifyContent?: ShapeLayoutJustifyContent;
     rowGap?: number;
     columnGap?: number;
     padding?: number;
+    rows?: Array<{ type: ShapeLayoutTrackType; value?: number }>;
+    columns?: Array<{ type: ShapeLayoutTrackType; value?: number }>;
 }
 
 interface ShapeCreateParams {
@@ -1561,6 +1566,54 @@ function validateLayoutNumber(
     return value;
 }
 
+function parseShapeGridTracks(
+    args: string[],
+    names: string[],
+    optionName: string,
+    io: CliIO,
+    format: Format
+): Array<{ type: ShapeLayoutTrackType; value?: number }> | null | undefined {
+    const rawValues = readOptions(args, names).flatMap((value) =>
+        value
+            .split(",")
+            .map((part) => part.trim())
+            .filter(Boolean)
+    );
+    if (rawValues.length === 0) {
+        return undefined;
+    }
+
+    const tracks: Array<{ type: ShapeLayoutTrackType; value?: number }> = [];
+    for (const rawValue of rawValues) {
+        const [type, valueText, extra] = rawValue.split(":");
+        if (
+            extra !== undefined ||
+            !["percent", "flex", "auto", "fixed"].includes(type) ||
+            (valueText !== undefined && valueText.trim() === "")
+        ) {
+            writeError(io, format, "shape_layout_grid_track_invalid", `Invalid ${optionName} track: ${rawValue}.`, [
+                "Use tracks like fixed:120, flex:1, percent:50, or auto.",
+            ]);
+            return null;
+        }
+
+        const track: { type: ShapeLayoutTrackType; value?: number } = { type: type as ShapeLayoutTrackType };
+        if (valueText !== undefined) {
+            const value = Number(valueText);
+            if (!Number.isFinite(value) || value < 0 || value > 10000) {
+                writeError(io, format, "shape_layout_grid_track_invalid", `Invalid ${optionName} value: ${valueText}.`, [
+                    "Pass grid track values from 0 to 10000.",
+                ]);
+                return null;
+            }
+            track.value = value;
+        }
+        tracks.push(track);
+    }
+
+    return tracks;
+}
+
 function parseShapeLayoutParams(args: string[], io: CliIO, format: Format): ShapeLayoutParams | null | undefined {
     const layoutOptionNames = [
         "--layout",
@@ -1568,31 +1621,36 @@ function parseShapeLayoutParams(args: string[], io: CliIO, format: Format): Shap
         "--layout-direction",
         "--layout-wrap",
         "--layout-align-items",
+        "--layout-justify-items",
+        "--layout-align-content",
         "--layout-justify-content",
         "--layout-gap",
         "--layout-row-gap",
         "--layout-column-gap",
         "--layout-padding",
+        "--layout-grid-direction",
+        "--layout-grid-rows",
+        "--layout-grid-columns",
     ];
     const hasLayoutOption = layoutOptionNames.some((name) => readOption(args, [name]) !== undefined);
     if (!hasLayoutOption) {
         return undefined;
     }
 
-    const type = readEnumOption(args, ["--layout", "--layout-type"], ["none", "flex"], io, format, "--layout");
+    const type = readEnumOption(args, ["--layout", "--layout-type"], ["none", "flex", "grid"], io, format, "--layout");
     if (type === null) {
         return null;
     }
     if (!type) {
         writeError(io, format, "shape_layout_type_required", "shape update layout options require --layout <type>.", [
-            "Pass --layout none or --layout flex.",
+            "Pass --layout none, --layout flex, or --layout grid.",
         ]);
         return null;
     }
 
     const direction = readEnumOption(
         args,
-        ["--layout-direction"],
+        ["--layout-direction", "--layout-grid-direction"],
         ["row", "row-reverse", "column", "column-reverse"],
         io,
         format,
@@ -1607,6 +1665,22 @@ function parseShapeLayoutParams(args: string[], io: CliIO, format: Format): Shap
         format,
         "--layout-align-items"
     );
+    const justifyItems = readEnumOption(
+        args,
+        ["--layout-justify-items"],
+        ["start", "end", "center", "stretch"],
+        io,
+        format,
+        "--layout-justify-items"
+    );
+    const alignContent = readEnumOption(
+        args,
+        ["--layout-align-content"],
+        ["start", "center", "end", "space-between", "space-around", "space-evenly", "stretch"],
+        io,
+        format,
+        "--layout-align-content"
+    );
     const justifyContent = readEnumOption(
         args,
         ["--layout-justify-content"],
@@ -1616,7 +1690,20 @@ function parseShapeLayoutParams(args: string[], io: CliIO, format: Format): Shap
         "--layout-justify-content"
     );
 
-    if (direction === null || wrap === null || alignItems === null || justifyContent === null) {
+    if (
+        direction === null ||
+        wrap === null ||
+        alignItems === null ||
+        justifyItems === null ||
+        alignContent === null ||
+        justifyContent === null
+    ) {
+        return null;
+    }
+    if (type === "grid" && direction && !["row", "column"].includes(direction)) {
+        writeError(io, format, "shape_layout_grid_direction_invalid", "Invalid grid layout direction.", [
+            "Pass --layout-grid-direction row or --layout-grid-direction column for grid layout.",
+        ]);
         return null;
     }
 
@@ -1634,15 +1721,31 @@ function parseShapeLayoutParams(args: string[], io: CliIO, format: Format): Shap
         return null;
     }
 
+    const rows = parseShapeGridTracks(args, ["--layout-grid-rows", "--grid-rows"], "--layout-grid-rows", io, format);
+    const columns = parseShapeGridTracks(
+        args,
+        ["--layout-grid-columns", "--grid-columns"],
+        "--layout-grid-columns",
+        io,
+        format
+    );
+    if (rows === null || columns === null) {
+        return null;
+    }
+
     return {
         type,
         ...(direction ? { direction } : {}),
         ...(wrap ? { wrap } : {}),
         ...(alignItems ? { alignItems } : {}),
+        ...(justifyItems ? { justifyItems } : {}),
+        ...(alignContent ? { alignContent } : {}),
         ...(justifyContent ? { justifyContent } : {}),
         ...(rowGap !== undefined || gap !== undefined ? { rowGap: rowGap ?? gap } : {}),
         ...(columnGap !== undefined || gap !== undefined ? { columnGap: columnGap ?? gap } : {}),
         ...(padding !== undefined ? { padding } : {}),
+        ...(rows ? { rows } : {}),
+        ...(columns ? { columns } : {}),
     };
 }
 
@@ -1655,10 +1758,14 @@ function toRpcShapeLayout(layout: ShapeLayoutParams | undefined): Record<string,
         ...(layout.direction ? { direction: layout.direction } : {}),
         ...(layout.wrap ? { wrap: layout.wrap } : {}),
         ...(layout.alignItems ? { "align-items": layout.alignItems } : {}),
+        ...(layout.justifyItems ? { "justify-items": layout.justifyItems } : {}),
+        ...(layout.alignContent ? { "align-content": layout.alignContent } : {}),
         ...(layout.justifyContent ? { "justify-content": layout.justifyContent } : {}),
         ...(layout.rowGap !== undefined ? { "row-gap": layout.rowGap } : {}),
         ...(layout.columnGap !== undefined ? { "column-gap": layout.columnGap } : {}),
         ...(layout.padding !== undefined ? { padding: layout.padding } : {}),
+        ...(layout.rows ? { rows: layout.rows } : {}),
+        ...(layout.columns ? { columns: layout.columns } : {}),
     };
 }
 

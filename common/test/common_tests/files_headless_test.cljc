@@ -581,6 +581,53 @@
                    (headless/update-shape-request data {:shape-id rect-id
                                                         :layout {:type :flex}})))))
 
+(t/deftest update-shape-request-updates-frame-grid-layout-subset
+  (let [file-id  (uuid/next)
+        page-id  (uuid/next)
+        frame-id (uuid/next)
+        data     (ctf/make-file-data file-id page-id)
+        frame    (headless/create-shape-request data {:page-id page-id
+                                                      :shape-id frame-id
+                                                      :type :frame
+                                                      :x 0
+                                                      :y 0
+                                                      :width 320
+                                                      :height 640})
+        data     (cpc/process-changes data (:changes frame))
+        update   (headless/update-shape-request data {:shape-id frame-id
+                                                      :layout {:type "grid"
+                                                               :direction "column"
+                                                               :alignItems "center"
+                                                               :justifyItems "stretch"
+                                                               :alignContent "space-between"
+                                                               :justifyContent "space-evenly"
+                                                               :rowGap 20
+                                                               :columnGap 12
+                                                               :padding 24
+                                                               :rows [{:type "fixed" :value 120}
+                                                                      {:type "flex" :value 1}]
+                                                               :columns [{:type "percent" :value 50}
+                                                                         {:type "auto"}]}})
+        data'    (cpc/process-changes data (:changes update))
+        frame'   (get-in data' [:pages-index page-id :objects frame-id])]
+    (t/is (= :grid (:layout frame')))
+    (t/is (= :column (:layout-grid-dir frame')))
+    (t/is (= :center (:layout-align-items frame')))
+    (t/is (= :stretch (:layout-justify-items frame')))
+    (t/is (= :space-between (:layout-align-content frame')))
+    (t/is (= :space-evenly (:layout-justify-content frame')))
+    (t/is (= :multiple (:layout-gap-type frame')))
+    (t/is (= {:row-gap 20 :column-gap 12} (:layout-gap frame')))
+    (t/is (= :simple (:layout-padding-type frame')))
+    (t/is (= {:p1 24 :p2 24 :p3 24 :p4 24} (:layout-padding frame')))
+    (t/is (= [{:type :fixed :value 120}
+              {:type :flex :value 1}]
+             (:layout-grid-rows frame')))
+    (t/is (= [{:type :percent :value 50}
+              {:type :auto}]
+             (:layout-grid-columns frame')))
+    (t/is (= {} (:layout-grid-cells frame')))))
+
 (t/deftest update-shape-request-moves-shape-between-frames
   (let [file-id    (uuid/next)
         page-id    (uuid/next)

@@ -372,6 +372,21 @@
    :layout-padding-type    :simple
    :layout-padding         {:p1 0 :p2 0 :p3 0 :p4 0}})
 
+(def ^:private grid-layout-defaults
+  {:layout                 :grid
+   :layout-grid-dir        :row
+   :layout-gap-type        :multiple
+   :layout-gap             {:row-gap 0 :column-gap 0}
+   :layout-align-items     :start
+   :layout-justify-items   :start
+   :layout-align-content   :stretch
+   :layout-justify-content :stretch
+   :layout-padding-type    :simple
+   :layout-padding         {:p1 0 :p2 0 :p3 0 :p4 0}
+   :layout-grid-cells      {}
+   :layout-grid-rows       [ctsl/default-track-value]
+   :layout-grid-columns    [ctsl/default-track-value]})
+
 (def ^:private operation-attrs
   (into [:name
          :x
@@ -517,6 +532,40 @@
       default
       value)))
 
+(defn- layout-tracks
+  [layout default keys]
+  (let [value (apply layout-param layout keys)]
+    (if (= missing-layout-value value)
+      default
+      (do
+        (when-not (vector? value)
+          (ex/raise :type :validation
+                    :code :unsupported-grid-tracks
+                    :hint "Headless grid layout tracks must be a vector."
+                    :value value))
+        (mapv
+         (fn [track]
+           (when-not (map? track)
+             (ex/raise :type :validation
+                       :code :unsupported-grid-track
+                       :hint "Headless grid layout tracks must be maps."
+                       :value track))
+           (let [track-type (normalize-layout-keyword (:type track))
+                 value      (:value track)]
+             (when-not (contains? ctsl/grid-track-types track-type)
+               (ex/raise :type :validation
+                         :code :unsupported-grid-track-type
+                         :hint "Unsupported grid layout track type."
+                         :value track-type))
+             (when (and (some? value) (not (number? value)))
+               (ex/raise :type :validation
+                         :code :unsupported-grid-track-value
+                         :hint "Headless grid layout track values must be numbers."
+                         :value value))
+             (cond-> {:type track-type}
+               (some? value) (assoc :value value))))
+         value)))))
+
 (defn- remove-layout-container-data
   [shape]
   (reduce dissoc shape layout-container-attrs))
@@ -575,6 +624,60 @@
                        :layout-padding {:p1 padding :p2 padding :p3 padding :p4 padding})]
     (merge (remove-layout-container-data shape) updated)))
 
+(defn- grid-layout-base
+  [shape]
+  (if (= :grid (:layout shape))
+    (merge grid-layout-defaults (select-keys shape layout-container-attrs))
+    grid-layout-defaults))
+
+(defn- apply-grid-layout-update
+  [shape layout]
+  (let [base    (grid-layout-base shape)
+        row-gap (layout-number layout
+                               (get-in base [:layout-gap :row-gap])
+                               [:row-gap :rowGap])
+        col-gap (layout-number layout
+                               (get-in base [:layout-gap :column-gap])
+                               [:column-gap :columnGap])
+        padding (layout-number layout (get-in base [:layout-padding :p1]) [:padding])
+        updated (assoc base
+                       :layout :grid
+                       :layout-grid-dir
+                       (layout-keyword layout (:layout-grid-dir base) ctsl/grid-direction-types
+                                       :unsupported-grid-direction
+                                       "Unsupported grid layout direction."
+                                       [:grid-direction :gridDirection :direction])
+                       :layout-align-items
+                       (layout-keyword layout (:layout-align-items base) ctsl/align-items-types
+                                       :unsupported-layout-align-items
+                                       "Unsupported grid layout align-items value."
+                                       [:align-items :alignItems])
+                       :layout-justify-items
+                       (layout-keyword layout (:layout-justify-items base) ctsl/justify-items-types
+                                       :unsupported-layout-justify-items
+                                       "Unsupported grid layout justify-items value."
+                                       [:justify-items :justifyItems])
+                       :layout-align-content
+                       (layout-keyword layout (:layout-align-content base) ctsl/align-content-types
+                                       :unsupported-layout-align-content
+                                       "Unsupported grid layout align-content value."
+                                       [:align-content :alignContent])
+                       :layout-justify-content
+                       (layout-keyword layout (:layout-justify-content base) ctsl/justify-content-types
+                                       :unsupported-layout-justify-content
+                                       "Unsupported grid layout justify-content value."
+                                       [:justify-content :justifyContent])
+                       :layout-gap-type :multiple
+                       :layout-gap {:row-gap row-gap :column-gap col-gap}
+                       :layout-padding-type :simple
+                       :layout-padding {:p1 padding :p2 padding :p3 padding :p4 padding}
+                       :layout-grid-rows
+                       (layout-tracks layout (:layout-grid-rows base) [:rows :grid-rows :gridRows])
+                       :layout-grid-columns
+                       (layout-tracks layout (:layout-grid-columns base) [:columns :grid-columns :gridColumns])
+                       :layout-grid-cells (:layout-grid-cells base))]
+    (merge (remove-layout-container-data shape) updated)))
+
 (defn- apply-layout-update
   [shape {:keys [layout] :as params}]
   (if-not (contains? params :layout)
@@ -593,9 +696,12 @@
           :flex
           (apply-flex-layout-update shape layout)
 
+          :grid
+          (apply-grid-layout-update shape layout)
+
           (ex/raise :type :validation
                     :code :unsupported-layout-type
-                    :hint "Headless backend layout updates currently support none and flex only."
+                    :hint "Headless backend layout updates currently support none, flex, and the grid container track subset."
                     :layout-type layout-type
                     :shape-id (:id shape)))))))
 
