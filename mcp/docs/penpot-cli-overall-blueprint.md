@@ -386,8 +386,9 @@ Tasks:
   `cli-profile-config-read-path.md`.
 - Done in P16.2: add an optional authenticated profile source to
   `penpot-cli mcp config`, preserving current env-derived/no-network behavior.
-- P16.3: add canonical MCP URL derivation contract fixtures for frontend and
-  CLI parity across built-in, custom, local, partial, invalid, and reset cases.
+- Done in P16.3: add canonical MCP URL derivation contract fixtures for
+  frontend and CLI parity across built-in, custom, local, partial, invalid, and
+  reset cases.
 - P16.4: harden `dev up --mcp` host/hybrid dry-run planning with dependency,
   port, service-surface, and unsupported-startup diagnostics.
 - P16.5: define a portable CLI release archive path that includes the CLI and
@@ -405,16 +406,17 @@ Acceptance:
 Wave D, Wave E, Wave F, and Wave G are complete. P15.2 selected Wave H as the
 next implementation slice. P16.1 documented the profile-config read-path
 contract, and P16.2 implemented opt-in authenticated profile reads for
-`penpot-cli mcp config`.
+`penpot-cli mcp config`. P16.3 added canonical MCP URL derivation fixtures and
+parity tests.
 
-The next active task is P16.3:
+The next active task is P16.4:
 
-1. Add canonical MCP URL derivation contract fixtures for frontend and CLI
-   parity across built-in, custom, local, partial, invalid, and reset configs.
-2. Keep the new `mcp config` profile-source behavior covered while adding
-   fixture-backed expectations for derived URL fields.
-3. Document which fixture cases are shared directly and which are mirrored
-   across TS and CLJS tests.
+1. Audit the current `penpot-cli dev up --mcp` host/hybrid placeholder behavior,
+   dependency checks, and service surface reporting.
+2. Add dry-run diagnostics for host/hybrid planning before starting any local
+   services.
+3. Cover the new plan output with CLI smoke tests and document unsupported
+   startup boundaries.
 
 Keep manual configuration behavior stable while moving command metadata and
 envelopes; transport-specific formatting should stay at the MCP/CLI edges.

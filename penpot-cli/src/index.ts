@@ -30,7 +30,10 @@ import type {
 const VERSION = "0.1.0";
 const DEFAULT_PUBLIC_URI = "http://localhost:3449";
 const DEFAULT_LOCAL_MCP_PUBLIC_URI = "http://localhost:4401";
+const DEFAULT_LOCAL_MCP_STREAM_URI = "http://localhost:4401/mcp";
+const DEFAULT_LOCAL_MCP_SSE_URI = "http://localhost:4401/sse";
 const DEFAULT_LOCAL_MCP_WEBSOCKET_URI = "ws://localhost:4402";
+const DEFAULT_LOCAL_MCP_STATUS_URI = "http://localhost:4401/status";
 const DEFAULT_EXPORTER_URI = "http://localhost:6061";
 
 const HELP_TEXT = `penpot-cli ${VERSION}
@@ -714,6 +717,7 @@ function getMcpConfig(
     const modeSource =
         modeFlag !== undefined ? "flag" : modeEnv !== undefined ? "env" : profileConfig.mode ? "profile" : "default";
     const mode = normalizeMcpMode(modeFlag ?? modeEnv ?? profileConfig.mode);
+    const profileUrlConfig: McpProfileConfigInput = mode === "builtin" ? {} : profileConfig;
     const autoConnect = readBooleanConfigWithSource(
         readOption(args, ["--auto-connect"]),
         env.PENPOT_MCP_AUTO_CONNECT,
@@ -724,36 +728,36 @@ function getMcpConfig(
     const publicUriConfig = readStringConfigWithSource(
         readOption(args, ["--public-uri"]),
         env.PENPOT_MCP_PUBLIC_URI,
-        profileConfig["public-uri"],
+        profileUrlConfig["public-uri"],
         defaultPublicUri
     );
     const publicUri = trimTrailingSlash(publicUriConfig.value);
     const streamUri = readStringConfigWithSource(
         readOption(args, ["--stream-uri"]),
         env.PENPOT_MCP_STREAM_URI,
-        profileConfig["stream-uri"],
-        appendPath(publicUri, mode === "local" ? "/mcp" : "/mcp/stream"),
+        profileUrlConfig["stream-uri"],
+        mode === "local" ? DEFAULT_LOCAL_MCP_STREAM_URI : appendPath(publicUri, "/mcp/stream"),
         "derived"
     );
     const sseUri = readStringConfigWithSource(
         readOption(args, ["--sse-uri"]),
         env.PENPOT_MCP_SSE_URI,
-        profileConfig["sse-uri"],
-        appendPath(publicUri, mode === "local" ? "/sse" : "/mcp/sse"),
+        profileUrlConfig["sse-uri"],
+        mode === "local" ? DEFAULT_LOCAL_MCP_SSE_URI : appendPath(publicUri, "/mcp/sse"),
         "derived"
     );
     const websocketUri = readStringConfigWithSource(
         readOption(args, ["--websocket-uri", "--ws-uri"]),
         env.PENPOT_MCP_WEBSOCKET_URI,
-        profileConfig["websocket-uri"],
+        profileUrlConfig["websocket-uri"],
         mode === "local" ? DEFAULT_LOCAL_MCP_WEBSOCKET_URI : appendPath(publicUri, "/mcp/ws"),
         "derived"
     );
     const statusUri = readStringConfigWithSource(
         readOption(args, ["--status-uri", "--url"]),
         env.PENPOT_MCP_STATUS_URI,
-        profileConfig["status-uri"],
-        appendPath(publicUri, mode === "local" ? "/status" : "/mcp/status"),
+        profileUrlConfig["status-uri"],
+        mode === "local" ? DEFAULT_LOCAL_MCP_STATUS_URI : appendPath(publicUri, "/mcp/status"),
         "derived"
     );
     const logDirFlag = readOption(args, ["--dir", "--log-dir"]);

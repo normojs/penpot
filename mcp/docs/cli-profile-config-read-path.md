@@ -165,7 +165,13 @@ P16.2 CLI smoke tests cover:
 12. defensive parsing ignores unknown modes, blank URLs, unknown nested keys,
     and token-like nested keys.
 
-P16.3 should mirror frontend `effective-config` cases:
+P16.3 adds `mcp/docs/mcp-url-derivation-fixtures.json` as the canonical
+frontend/CLI URL derivation contract. `penpot-cli` smoke tests consume this
+JSON directly through authenticated fake profile reads. Frontend CLJS tests
+mirror the same cases in `frontend-tests.data.mcp-test` because the test
+runner does not currently load repository JSON fixtures.
+
+The canonical fixture cases cover:
 
 - built-in missing config
 - built-in `auto-connect=false`
@@ -177,9 +183,17 @@ P16.3 should mirror frontend `effective-config` cases:
 - blank URL fallback
 - reset config represented by missing `mcp-config`
 
+The fixtures also lock two parity rules that are easy to regress:
+
+- Built-in mode ignores saved profile URL overrides; runtime defaults or
+  flag/env overrides define the built-in gateway URLs.
+- Local mode uses fixed standalone local endpoint defaults and only applies
+  explicit endpoint overrides. A local `public-uri` override does not
+  automatically re-derive stream, SSE, WebSocket, or status URLs.
+
 ## Implementation Notes
 
-The P16.2 implementation stays inside `penpot-cli/src/index.ts` and its
+The P16.2/P16.3 implementation stays inside `penpot-cli/src/index.ts` and its
 existing smoke test file. It reuses backend `get-profile`; no new backend RPC
 is required. Profile reading remains non-default until scripts, CI, and
 self-hosted env-only deployments have a migration window.

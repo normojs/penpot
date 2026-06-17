@@ -1,0 +1,213 @@
+{
+  "description": "Canonical MCP effective URL derivation cases mirrored by frontend and penpot-cli tests.",
+  "runtimeDefaults": {
+    "mode": "builtin",
+    "autoConnect": true,
+    "publicUri": "https://penpot.example",
+    "streamUri": "https://penpot.example/mcp/stream",
+    "sseUri": "https://penpot.example/mcp/sse",
+    "websocketUri": "https://penpot.example/mcp/ws",
+    "statusUri": "https://penpot.example/mcp/status"
+  },
+  "cases": [
+    {
+      "id": "builtin-default",
+      "title": "Built-in default without saved MCP config",
+      "profileProps": {},
+      "expected": {
+        "mode": "builtin",
+        "autoConnect": true,
+        "publicUri": "https://penpot.example",
+        "streamUri": "https://penpot.example/mcp/stream",
+        "sseUri": "https://penpot.example/mcp/sse",
+        "websocketUri": "https://penpot.example/mcp/ws",
+        "statusUri": "https://penpot.example/mcp/status"
+      }
+    },
+    {
+      "id": "builtin-auto-connect-false",
+      "title": "Built-in mode ignores saved URL overrides",
+      "profileProps": {
+        "mcp-config": {
+          "mode": "builtin",
+          "auto-connect": false,
+          "public-uri": "https://ignored.example",
+          "stream-uri": "https://ignored.example/mcp/stream",
+          "sse-uri": "https://ignored.example/mcp/sse",
+          "websocket-uri": "wss://ignored.example/mcp/ws",
+          "status-uri": "https://ignored.example/mcp/status"
+        }
+      },
+      "expected": {
+        "mode": "builtin",
+        "autoConnect": false,
+        "publicUri": "https://penpot.example",
+        "streamUri": "https://penpot.example/mcp/stream",
+        "sseUri": "https://penpot.example/mcp/sse",
+        "websocketUri": "https://penpot.example/mcp/ws",
+        "statusUri": "https://penpot.example/mcp/status"
+      }
+    },
+    {
+      "id": "custom-public-uri",
+      "title": "Custom mode derives gateway URLs from public URI",
+      "profileProps": {
+        "mcp-config": {
+          "mode": "custom",
+          "public-uri": "https://mcp.example"
+        }
+      },
+      "expected": {
+        "mode": "custom",
+        "autoConnect": true,
+        "publicUri": "https://mcp.example",
+        "streamUri": "https://mcp.example/mcp/stream",
+        "sseUri": "https://mcp.example/mcp/sse",
+        "websocketUri": "https://mcp.example/mcp/ws",
+        "statusUri": "https://mcp.example/mcp/status"
+      }
+    },
+    {
+      "id": "custom-explicit-overrides",
+      "title": "Custom mode keeps explicit endpoint overrides",
+      "profileProps": {
+        "mcp-config": {
+          "mode": "custom",
+          "public-uri": "https://mcp.example",
+          "stream-uri": "https://stream.example/mcp",
+          "sse-uri": "https://sse.example/sse",
+          "websocket-uri": "wss://ws.example",
+          "status-uri": "https://status.example/status"
+        }
+      },
+      "expected": {
+        "mode": "custom",
+        "autoConnect": true,
+        "publicUri": "https://mcp.example",
+        "streamUri": "https://stream.example/mcp",
+        "sseUri": "https://sse.example/sse",
+        "websocketUri": "wss://ws.example",
+        "statusUri": "https://status.example/status"
+      }
+    },
+    {
+      "id": "custom-blank-and-partial-fallback",
+      "title": "Custom mode ignores blank fields and derives missing URLs",
+      "profileProps": {
+        "mcp-config": {
+          "mode": "custom",
+          "public-uri": " ",
+          "stream-uri": "",
+          "sse-uri": "https://sse.example/sse",
+          "websocket-uri": "   ",
+          "status-uri": null
+        }
+      },
+      "expected": {
+        "mode": "custom",
+        "autoConnect": true,
+        "publicUri": "https://penpot.example",
+        "streamUri": "https://penpot.example/mcp/stream",
+        "sseUri": "https://sse.example/sse",
+        "websocketUri": "https://penpot.example/mcp/ws",
+        "statusUri": "https://penpot.example/mcp/status"
+      }
+    },
+    {
+      "id": "local-default",
+      "title": "Local mode uses standalone local MCP defaults",
+      "profileProps": {
+        "mcp-config": {
+          "mode": "local",
+          "auto-connect": false
+        }
+      },
+      "expected": {
+        "mode": "local",
+        "autoConnect": false,
+        "publicUri": "http://localhost:4401",
+        "streamUri": "http://localhost:4401/mcp",
+        "sseUri": "http://localhost:4401/sse",
+        "websocketUri": "ws://localhost:4402",
+        "statusUri": "http://localhost:4401/status"
+      }
+    },
+    {
+      "id": "local-partial-overrides",
+      "title": "Local mode applies only explicit endpoint overrides",
+      "profileProps": {
+        "mcp-config": {
+          "mode": "local",
+          "public-uri": "http://localhost:5501",
+          "sse-uri": "http://localhost:5501/sse",
+          "status-uri": "http://localhost:5501/status"
+        }
+      },
+      "expected": {
+        "mode": "local",
+        "autoConnect": true,
+        "publicUri": "http://localhost:5501",
+        "streamUri": "http://localhost:4401/mcp",
+        "sseUri": "http://localhost:5501/sse",
+        "websocketUri": "ws://localhost:4402",
+        "statusUri": "http://localhost:5501/status"
+      }
+    },
+    {
+      "id": "unknown-mode-fallback",
+      "title": "Unknown mode falls back to built-in runtime URLs",
+      "profileProps": {
+        "mcp-config": {
+          "mode": "sidecar",
+          "auto-connect": false,
+          "public-uri": "https://ignored.example",
+          "stream-uri": "https://ignored.example/mcp/stream"
+        }
+      },
+      "expected": {
+        "mode": "builtin",
+        "autoConnect": false,
+        "publicUri": "https://penpot.example",
+        "streamUri": "https://penpot.example/mcp/stream",
+        "sseUri": "https://penpot.example/mcp/sse",
+        "websocketUri": "https://penpot.example/mcp/ws",
+        "statusUri": "https://penpot.example/mcp/status"
+      }
+    },
+    {
+      "id": "missing-mode-fallback",
+      "title": "Missing mode falls back to built-in runtime URLs",
+      "profileProps": {
+        "mcp-config": {
+          "public-uri": "https://ignored.example",
+          "stream-uri": "https://ignored.example/mcp/stream"
+        }
+      },
+      "expected": {
+        "mode": "builtin",
+        "autoConnect": true,
+        "publicUri": "https://penpot.example",
+        "streamUri": "https://penpot.example/mcp/stream",
+        "sseUri": "https://penpot.example/mcp/sse",
+        "websocketUri": "https://penpot.example/mcp/ws",
+        "statusUri": "https://penpot.example/mcp/status"
+      }
+    },
+    {
+      "id": "reset-config",
+      "title": "Reset config uses built-in runtime defaults",
+      "profileProps": {
+        "mcp-config": null
+      },
+      "expected": {
+        "mode": "builtin",
+        "autoConnect": true,
+        "publicUri": "https://penpot.example",
+        "streamUri": "https://penpot.example/mcp/stream",
+        "sseUri": "https://penpot.example/mcp/sse",
+        "websocketUri": "https://penpot.example/mcp/ws",
+        "statusUri": "https://penpot.example/mcp/status"
+      }
+    }
+  ]
+}

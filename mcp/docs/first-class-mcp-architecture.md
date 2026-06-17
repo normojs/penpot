@@ -438,6 +438,26 @@ Implementation decisions:
 - Field precedence is `flag > env > profile > default/derived`; `logDir`
   remains local-only.
 
+### 3.12 MCP URL Derivation Fixtures (2026-06-17)
+
+P16.3 added canonical URL derivation fixtures for frontend and
+`penpot-cli mcp config` parity.
+
+Implementation decisions:
+
+- `mcp/docs/mcp-url-derivation-fixtures.json` owns the canonical case matrix for
+  built-in, custom, local, partial, invalid, and reset profile configs.
+- `penpot-cli` smoke tests consume the JSON fixture directly through
+  authenticated fake profile reads.
+- Frontend CLJS tests mirror the same cases in
+  `frontend-tests.data.mcp-test`; this keeps parity coverage without forcing a
+  shared TS/CLJS runtime helper.
+- Built-in mode ignores saved profile URL overrides and uses runtime defaults
+  unless flags or environment variables explicitly override CLI output.
+- Local mode keeps standalone local endpoint defaults and applies only explicit
+  endpoint overrides, so a local `public-uri` override does not re-derive the
+  stream, SSE, WebSocket, or status URLs.
+
 ## 4. Target Architecture
 
 ```text

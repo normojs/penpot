@@ -32,6 +32,101 @@
    :websocket-uri "https://penpot.example/mcp/ws"
    :status-uri "https://penpot.example/mcp/status"})
 
+(defn- canonical-url-derivation-cases
+  []
+  ;; Mirrors mcp/docs/mcp-url-derivation-fixtures.json.
+  [{:id "builtin-default"
+    :profile-props {}
+    :expected (runtime-defaults)}
+   {:id "builtin-auto-connect-false"
+    :profile-props {:mcp-config {:mode "builtin"
+                                 :auto-connect false
+                                 :public-uri "https://ignored.example"
+                                 :stream-uri "https://ignored.example/mcp/stream"
+                                 :sse-uri "https://ignored.example/mcp/sse"
+                                 :websocket-uri "wss://ignored.example/mcp/ws"
+                                 :status-uri "https://ignored.example/mcp/status"}}
+    :expected (assoc (runtime-defaults) :auto-connect false)}
+   {:id "custom-public-uri"
+    :profile-props {:mcp-config {:mode "custom"
+                                 :public-uri "https://mcp.example"}}
+    :expected {:mode "custom"
+               :auto-connect true
+               :public-uri "https://mcp.example"
+               :stream-uri "https://mcp.example/mcp/stream"
+               :sse-uri "https://mcp.example/mcp/sse"
+               :websocket-uri "https://mcp.example/mcp/ws"
+               :status-uri "https://mcp.example/mcp/status"}}
+   {:id "custom-explicit-overrides"
+    :profile-props {:mcp-config {:mode "custom"
+                                 :public-uri "https://mcp.example"
+                                 :stream-uri "https://stream.example/mcp"
+                                 :sse-uri "https://sse.example/sse"
+                                 :websocket-uri "wss://ws.example"
+                                 :status-uri "https://status.example/status"}}
+    :expected {:mode "custom"
+               :auto-connect true
+               :public-uri "https://mcp.example"
+               :stream-uri "https://stream.example/mcp"
+               :sse-uri "https://sse.example/sse"
+               :websocket-uri "wss://ws.example"
+               :status-uri "https://status.example/status"}}
+   {:id "custom-blank-and-partial-fallback"
+    :profile-props {:mcp-config {:mode "custom"
+                                 :public-uri " "
+                                 :stream-uri ""
+                                 :sse-uri "https://sse.example/sse"
+                                 :websocket-uri "   "
+                                 :status-uri nil}}
+    :expected {:mode "custom"
+               :auto-connect true
+               :public-uri "https://penpot.example"
+               :stream-uri "https://penpot.example/mcp/stream"
+               :sse-uri "https://sse.example/sse"
+               :websocket-uri "https://penpot.example/mcp/ws"
+               :status-uri "https://penpot.example/mcp/status"}}
+   {:id "local-default"
+    :profile-props {:mcp-config {:mode "local"
+                                 :auto-connect false}}
+    :expected {:mode "local"
+               :auto-connect false
+               :public-uri "http://localhost:4401"
+               :stream-uri "http://localhost:4401/mcp"
+               :sse-uri "http://localhost:4401/sse"
+               :websocket-uri "ws://localhost:4402"
+               :status-uri "http://localhost:4401/status"}}
+   {:id "local-partial-overrides"
+    :profile-props {:mcp-config {:mode "local"
+                                 :public-uri "http://localhost:5501"
+                                 :sse-uri "http://localhost:5501/sse"
+                                 :status-uri "http://localhost:5501/status"}}
+    :expected {:mode "local"
+               :auto-connect true
+               :public-uri "http://localhost:5501"
+               :stream-uri "http://localhost:4401/mcp"
+               :sse-uri "http://localhost:5501/sse"
+               :websocket-uri "ws://localhost:4402"
+               :status-uri "http://localhost:5501/status"}}
+   {:id "unknown-mode-fallback"
+    :profile-props {:mcp-config {:mode "sidecar"
+                                 :auto-connect false
+                                 :public-uri "https://ignored.example"
+                                 :stream-uri "https://ignored.example/mcp/stream"}}
+    :expected (assoc (runtime-defaults) :auto-connect false)}
+   {:id "missing-mode-fallback"
+    :profile-props {:mcp-config {:public-uri "https://ignored.example"
+                                 :stream-uri "https://ignored.example/mcp/stream"}}
+    :expected (runtime-defaults)}
+   {:id "reset-config"
+    :profile-props {:mcp-config nil}
+    :expected (runtime-defaults)}])
+
+(t/deftest effective-config-matches-canonical-url-derivation-fixtures
+  (doseq [{:keys [id profile-props expected]} (canonical-url-derivation-cases)]
+    (t/testing id
+      (t/is (= expected
+               (mcp/effective-config (runtime-defaults) profile-props))))))
+
 (t/deftest effective-config-uses-runtime-defaults-without-profile-config
   (t/is (= (runtime-defaults)
            (mcp/effective-config (runtime-defaults) {}))))

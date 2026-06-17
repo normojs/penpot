@@ -102,8 +102,9 @@ the remaining product gaps. P15.2 selected Wave H / Phase 16 for CLI
 configuration convergence and distribution hardening. P16.1 documented the
 authenticated CLI profile-config read path, precedence, fallback behavior, and
 fixture matrix. P16.2 added the opt-in authenticated profile source to
-`penpot-cli mcp config`. Current active work moves to P16.3 to add canonical
-MCP URL derivation fixtures for frontend and CLI parity.
+`penpot-cli mcp config`. P16.3 added canonical MCP URL derivation fixtures for
+frontend and CLI parity. Current active work moves to P16.4 to harden
+`dev up --mcp` host/hybrid planning.
 
 ## Feature Roadmap
 
@@ -134,7 +135,7 @@ remain the execution plan.
 | F20 | done | Packaging and distribution | Phase 13 | Developers and self-hosted operators have one documented install/setup path | Completed 2026-06-16; P13.1 documented private-checkout `penpot-cli` build/install, P13.2 packages MCP plugin assets, P13.3 documents self-hosted gateway setup, and P13.4 documents existing-user migration |
 | F21 | done | Release verification matrix | Phase 14 | Critical MCP/CLI flows have repeatable checks | Completed 2026-06-16; P14.1-P14.4 document config/global connection, headless edit/export, live bind, and CI-friendly command checks |
 | F22 | done | Roadmap reconciliation and next-wave planning | Phase 15 | The fork has one accurate active task and a clean next development wave | Completed 2026-06-16; P15.1 reconciled roadmap status and P15.2 defined Wave H / Phase 16 as the next implementation wave |
-| F23 | todo | CLI configuration convergence and distribution hardening | Phase 16 | `penpot-cli` can inspect the same saved MCP config that Penpot uses and has a clearer path toward portable local use | P16.1 completed the read-path contract; P16.2 completed opt-in authenticated profile-source support; P16.3 is active for URL derivation fixtures |
+| F23 | todo | CLI configuration convergence and distribution hardening | Phase 16 | `penpot-cli` can inspect the same saved MCP config that Penpot uses and has a clearer path toward portable local use | P16.1 completed the read-path contract; P16.2 completed opt-in authenticated profile-source support; P16.3 completed URL derivation fixtures; P16.4 is active for host/hybrid planning |
 
 ## Detailed Upcoming Task Queue
 
@@ -254,8 +255,8 @@ Order rationale:
 | --- | --- | --- | --- | --- |
 | H1 | Audit CLI profile config read path and precedence | `penpot-cli`, `backend`, `frontend`, `mcp/docs` | Completed 2026-06-16; `mcp/docs/cli-profile-config-read-path.md` maps authenticated profile reads, env/flag precedence, offline fallback, errors, and test fixtures | Audit doc or architecture section maps RPC/status/token surfaces, precedence, errors, and test fixtures before code changes |
 | H2 | Add authenticated `penpot-cli mcp config` profile source | `penpot-cli`, `backend`, `mcp/docs` | Completed 2026-06-17; CLI can optionally read saved `profile.props.mcp-config` from Penpot when a token/backend URI is supplied, while preserving current env-derived output | CLI JSON tests cover profile source, env/flag precedence, missing auth, network failure, and legacy env-only mode |
-| H3 | Add canonical MCP URL derivation contract fixtures | `frontend`, `penpot-cli`, `mcp/docs` | Frontend and CLI derivation stay aligned through shared cases for built-in, custom, local, partial, invalid, and reset configs | Frontend and CLI tests consume the same fixture expectations or equivalent golden cases |
-| H4 | Harden `dev up --mcp` host/hybrid planning | `penpot-cli`, `mcp/docs` | Host and hybrid modes report actionable dependency checks, service plan, port ownership, and unsupported startup boundaries instead of placeholder guidance | CLI smoke tests cover host/hybrid dry-runs and missing dependency diagnostics |
+| H3 | Add canonical MCP URL derivation contract fixtures | `frontend`, `penpot-cli`, `mcp/docs` | Completed 2026-06-17; frontend and CLI derivation stay aligned through canonical cases for built-in, custom, local, partial, invalid, and reset configs | CLI tests consume `mcp/docs/mcp-url-derivation-fixtures.json`; frontend tests mirror the same golden cases |
+| H4 | Harden `dev up --mcp` host/hybrid planning | `penpot-cli`, `mcp/docs` | Host and hybrid modes should report actionable dependency checks, service plan, port ownership, and unsupported startup boundaries instead of placeholder guidance | CLI smoke tests cover host/hybrid dry-runs and missing dependency diagnostics |
 | H5 | Define portable CLI release archive path | `penpot-cli`, `mcp/packages/command-runtime`, root scripts, `mcp/docs` | Release archive strategy includes CLI plus command-runtime dependency layout, install verification, and version compatibility notes | Packaging check verifies archive contents or explicitly documented release layout without relying on global workspace links |
 
 ## Phase 0: Baseline, Planning, And Rules
@@ -476,19 +477,19 @@ stable configuration model.
 | --- | --- | --- | --- | --- | --- |
 | P16.1 | done | Audit CLI profile config read path and precedence | `penpot-cli`, `backend`, `frontend`, `mcp/docs` | Completed 2026-06-16; `mcp/docs/cli-profile-config-read-path.md` maps authenticated profile reads, env/flag precedence, offline fallback, errors, and test fixtures before code changes | Confirmed existing `get-profile`/profile-prop surfaces, CLI token/backend config, frontend derivation rules, and current `mcp config` JSON shape |
 | P16.2 | done | Add authenticated `mcp config` profile source | `penpot-cli`, `backend`, `mcp/docs` | Completed 2026-06-17; CLI tests cover profile-source success, env/flag overrides, missing auth, network failure, and legacy env-only mode | Preserved current no-network behavior unless the user asks CLI to read from Penpot |
-| P16.3 | in_progress | Add canonical MCP URL derivation contract fixtures | `frontend`, `penpot-cli`, `mcp/docs` | Frontend and CLI tests share or mirror golden cases for built-in, custom, local, partial, invalid, and reset configs | Prefer fixture-backed cross-language parity over forcing one runtime helper across TS and CLJS |
-| P16.4 | todo | Harden `dev up --mcp` host/hybrid planning | `penpot-cli`, `mcp/docs` | CLI smoke tests cover host/hybrid dry-runs, dependency diagnostics, service surfaces, and unsupported startup boundaries | Do not start host/hybrid services until dependency and port checks are explicit |
+| P16.3 | done | Add canonical MCP URL derivation contract fixtures | `frontend`, `penpot-cli`, `mcp/docs` | Completed 2026-06-17; frontend and CLI tests share or mirror golden cases for built-in, custom, local, partial, invalid, and reset configs | Added `mcp/docs/mcp-url-derivation-fixtures.json`, direct CLI smoke consumption, mirrored frontend effective-config cases, and parity rules for built-in/local URL overrides |
+| P16.4 | in_progress | Harden `dev up --mcp` host/hybrid planning | `penpot-cli`, `mcp/docs` | CLI smoke tests cover host/hybrid dry-runs, dependency diagnostics, service surfaces, and unsupported startup boundaries | Do not start host/hybrid services until dependency and port checks are explicit |
 | P16.5 | todo | Define portable CLI release archive path | `penpot-cli`, `mcp/packages/command-runtime`, root scripts, `mcp/docs` | Packaging check verifies archive contents or documented install layout without relying on global workspace links | Keep private checkout install path supported during fork development |
 
 ## Next Recommended Sprint
 
 Use `mcp/docs/penpot-cli-overall-blueprint.md` as the current architecture
 baseline and the Detailed Upcoming Task Queue as the execution order. Continue
-with P16.3:
+with P16.4:
 
-1. Add canonical MCP URL derivation contract fixtures that cover built-in,
-   custom, local, partial, invalid, and reset profile configs.
-2. Mirror or share the fixture expectations between frontend effective-config
-   tests and `penpot-cli mcp config` tests.
-3. Update docs with the fixture ownership rule so future CLI/frontend changes
-   do not drift on derived MCP endpoints.
+1. Audit current `penpot-cli dev up --mcp` host/hybrid placeholder behavior,
+   dependency checks, and service surface reporting.
+2. Add host/hybrid dry-run diagnostics for dependency availability, port
+   ownership, planned service surfaces, and unsupported startup boundaries.
+3. Cover the new dry-run planning output with CLI smoke tests before enabling
+   any service startup behavior.

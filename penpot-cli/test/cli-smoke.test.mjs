@@ -27,6 +27,10 @@ const UUIDS = {
     profile: "00000000-0000-0000-0000-000000000004",
 };
 
+const mcpUrlDerivationFixtures = JSON.parse(
+    readFileSync(new URL("../../mcp/docs/mcp-url-derivation-fixtures.json", import.meta.url), "utf8")
+);
+
 function createCapture() {
     let stdout = "";
     let stderr = "";
@@ -62,6 +66,29 @@ async function runCli(argv, env = {}) {
 
 function parseJson(stdout) {
     return JSON.parse(stdout);
+}
+
+function pickMcpConfigFields(data) {
+    return {
+        mode: data.mode,
+        autoConnect: data.autoConnect,
+        publicUri: data.publicUri,
+        streamUri: data.streamUri,
+        sseUri: data.sseUri,
+        websocketUri: data.websocketUri,
+        statusUri: data.statusUri,
+    };
+}
+
+function createMcpFixtureEnv(fixture) {
+    const env = {
+        PENPOT_BACKEND_URI: "http://127.0.0.1:6060",
+        PENPOT_CLI_TOKEN: "token-1",
+    };
+    if (fixture.expected.publicUri === mcpUrlDerivationFixtures.runtimeDefaults.publicUri) {
+        env.PENPOT_MCP_PUBLIC_URI = mcpUrlDerivationFixtures.runtimeDefaults.publicUri;
+    }
+    return env;
 }
 
 test("top-level help lists first-class MCP, shape, and export commands", async () => {
@@ -283,6 +310,41 @@ test("mcp config reports custom mode and auto-connect override", async () => {
         "websocket-uri": "https://external-mcp.example/mcp/ws",
         "status-uri": "https://external-mcp.example/mcp/status",
     });
+});
+
+test("mcp config matches canonical URL derivation fixtures", async (t) => {
+    for (const fixture of mcpUrlDerivationFixtures.cases) {
+        await t.test(fixture.id, async () => {
+            const originalFetch = globalThis.fetch;
+            globalThis.fetch = async () => ({
+                ok: true,
+                status: 200,
+                statusText: "OK",
+                headers: { get: () => "application/json" },
+                text: async () =>
+                    JSON.stringify({
+                        id: UUIDS.profile,
+                        props: fixture.profileProps,
+                    }),
+            });
+
+            try {
+                const result = await runCli(
+                    ["mcp", "config", "--profile-source", "backend", "--format", "json"],
+                    createMcpFixtureEnv(fixture)
+                );
+                const body = parseJson(result.stdout);
+
+                assert.equal(result.exitCode, 0);
+                assert.equal(result.stderr, "");
+                assert.equal(body.status, "ok");
+                assert.equal(body.data.configSource.status, "loaded");
+                assert.deepEqual(pickMcpConfigFields(body.data), fixture.expected);
+            } finally {
+                globalThis.fetch = originalFetch;
+            }
+        });
+    }
 });
 
 test("mcp config reads authenticated profile source from backend", async () => {
