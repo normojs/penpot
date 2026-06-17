@@ -5,6 +5,7 @@ import {
     CommandDescriptors,
     CommandErrorCodes,
     HeadlessAuthoringCommandDescriptors,
+    LiveGapCommandDescriptors,
     LowRiskCommandDescriptors,
     MigratedCommandDescriptors,
     ShapeExportCommandDescriptors,
@@ -31,6 +32,15 @@ const SHAPE_EXPORT_IDS = [
     "export.page",
     "render.preview",
 ];
+const LIVE_GAP_IDS = [
+    "page.set_current",
+    "selection.get",
+    "selection.set",
+    "prototype.list_interactions",
+    "prototype.delete_interaction",
+    "prototype.create_overlay",
+    "shape.set_layout",
+];
 
 test("descriptor groups expose stable command ids", () => {
     assert.deepEqual(
@@ -46,8 +56,12 @@ test("descriptor groups expose stable command ids", () => {
         HEADLESS_AUTHORING_IDS
     );
     assert.deepEqual(
+        LiveGapCommandDescriptors.map((descriptor) => descriptor.id),
+        LIVE_GAP_IDS
+    );
+    assert.deepEqual(
         MigratedCommandDescriptors.map((descriptor) => descriptor.id),
-        [...LOW_RISK_IDS, ...HEADLESS_AUTHORING_IDS, ...SHAPE_EXPORT_IDS]
+        [...LOW_RISK_IDS, ...HEADLESS_AUTHORING_IDS, ...SHAPE_EXPORT_IDS, ...LIVE_GAP_IDS]
     );
 });
 
@@ -61,7 +75,23 @@ test("descriptor lookup supports internal, MCP, and CLI command names", () => {
     assert.equal(getCommandDescriptor("shape create-image"), CommandDescriptors.SHAPE_CREATE_IMAGE);
     assert.equal(getCommandDescriptor("export.page"), CommandDescriptors.EXPORT_PAGE);
     assert.equal(getCommandDescriptor("render preview"), CommandDescriptors.RENDER_PREVIEW);
+    assert.equal(getCommandDescriptor("page.set_current"), CommandDescriptors.PAGE_SET_CURRENT);
+    assert.equal(getCommandDescriptor("selection.get"), CommandDescriptors.SELECTION_GET);
+    assert.equal(getCommandDescriptor("prototype list-interactions"), CommandDescriptors.PROTOTYPE_LIST_INTERACTIONS);
+    assert.equal(getCommandDescriptor("prototype.delete_interaction"), CommandDescriptors.PROTOTYPE_DELETE_INTERACTION);
+    assert.equal(getCommandDescriptor("shape.set_layout"), CommandDescriptors.SHAPE_SET_LAYOUT);
     assert.equal(getCommandDescriptor("missing.command"), undefined);
+});
+
+test("live-gap descriptors document live-only and planned command boundaries", () => {
+    assert.equal(CommandDescriptors.PAGE_SET_CURRENT.mcpToolName, "page.set_current");
+    assert.equal(CommandDescriptors.PAGE_SET_CURRENT.cliCommand, undefined);
+    assert.deepEqual(CommandDescriptors.PAGE_SET_CURRENT.adapters, ["plugin-live"]);
+    assert.match(CommandDescriptors.SELECTION_GET.description, /live Penpot workspace/);
+    assert.equal(CommandDescriptors.PROTOTYPE_LIST_INTERACTIONS.cliCommand, "prototype list-interactions");
+    assert.deepEqual(CommandDescriptors.PROTOTYPE_LIST_INTERACTIONS.adapters, ["backend-command"]);
+    assert.deepEqual(CommandDescriptors.PROTOTYPE_DELETE_INTERACTION.adapters, []);
+    assert.match(CommandDescriptors.SHAPE_SET_LAYOUT.responseShape, /shape.update/);
 });
 
 test("file open helpers produce stable workspace URLs and handoff actions", () => {
@@ -155,6 +185,18 @@ test("adapter selection errors share codes, messages, and payload shape", () => 
     assert.equal(
         getAdapterSelectionReason(AdapterSelectionReasonCodes.EXPORTER_EXPLICIT_TARGET_REQUIRED),
         "exporter requires explicit fileId, pageId, and objectId."
+    );
+    assert.equal(
+        getAdapterSelectionReason(AdapterSelectionReasonCodes.PLUGIN_LIVE_WORKSPACE_STATE_REQUIRED),
+        "plugin-live requires a bound Penpot workspace because this command reads or changes editor-local state."
+    );
+    assert.equal(
+        getAdapterSelectionReason(AdapterSelectionReasonCodes.BACKEND_COMMAND_PROTOTYPE_READ_PLANNED),
+        "backend-command prototype reads are planned for explicit file/page targets."
+    );
+    assert.equal(
+        getAdapterSelectionReason(AdapterSelectionReasonCodes.BACKEND_COMMAND_GRID_CONTRACT_UNSUPPORTED),
+        "backend-command grid layout updates are unsupported until a stable grid track and cell payload contract exists."
     );
 });
 

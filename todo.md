@@ -110,9 +110,11 @@ portable `penpot-cli` release archive containing the CLI and
 `@penpot/command-runtime`. Wave I / Phase 17 is now selected for headless
 live-gap closure. P17.1 is complete: `mcp/docs/headless-live-gap-audit.md`
 classifies current-page/selection state, grid layout, prototype list/delete and
-overlay gaps, exporter boundaries, and descriptor-only tool names. Current
-active work moves to P17.2 to add read-only command descriptors for the selected
-live-gap commands before runtime behavior changes.
+overlay gaps, exporter boundaries, and descriptor-only tool names. P17.2 is
+complete: shared command-runtime descriptors now expose the selected live-gap
+boundaries before runtime behavior changes. Current active work moves to P17.3
+to add backend-safe prototype interaction read/list support for explicit
+file/page targets.
 
 ## Feature Roadmap
 
@@ -144,7 +146,7 @@ remain the execution plan.
 | F21 | done | Release verification matrix | Phase 14 | Critical MCP/CLI flows have repeatable checks | Completed 2026-06-16; P14.1-P14.4 document config/global connection, headless edit/export, live bind, and CI-friendly command checks |
 | F22 | done | Roadmap reconciliation and next-wave planning | Phase 15 | The fork has one accurate active task and a clean next development wave | Completed 2026-06-16; P15.1 reconciled roadmap status and P15.2 defined Wave H / Phase 16 as the next implementation wave |
 | F23 | done | CLI configuration convergence and distribution hardening | Phase 16 | `penpot-cli` can inspect the same saved MCP config that Penpot uses and has a clearer path toward portable local use | Completed 2026-06-17; P16.1 completed the read-path contract; P16.2 completed opt-in authenticated profile-source support; P16.3 completed URL derivation fixtures; P16.4 completed host/hybrid planning; P16.5 added a verified private portable CLI release archive |
-| F24 | todo | Headless live-gap closure | Phase 17 | More authoring operations can run without a live workspace, while truly live-only state stays explicit | P17.1 completed 2026-06-17; P17.2 now adds read-only descriptors for live-only page/selection state, prototype read/list planning, and unsupported layout/prototype boundaries |
+| F24 | todo | Headless live-gap closure | Phase 17 | More authoring operations can run without a live workspace, while truly live-only state stays explicit | P17.1 and P17.2 completed 2026-06-17; shared descriptors now cover live-only page/selection state, prototype read/list planning, and unsupported layout/prototype boundaries; P17.3 is active for backend-safe prototype interaction reads |
 
 ## Detailed Upcoming Task Queue
 
@@ -523,8 +525,8 @@ state with persisted document data.
 | ID | Status | Task | Modules | Verification | Notes |
 | --- | --- | --- | --- | --- | --- |
 | P17.1 | done | Audit remaining live-only command semantics | `mcp/docs`, `command-runtime`, `mcp`, `penpot-cli`, `backend`, `common` | Completed 2026-06-17; `mcp/docs/headless-live-gap-audit.md` maps each candidate command to persisted data, live workspace state, adapter candidates, permissions, errors, and first implementation slice | Classified page current/selection as plugin-live, prototype list as backend-safe read, grid as backend-contract pending, and overlay/delete/descriptor-only names as planned or unsupported |
-| P17.2 | in_progress | Add read-only descriptors for live-gap commands | `command-runtime`, `mcp`, `penpot-cli` | Descriptor tests pass and CLI/MCP output stays backward compatible | Add descriptors and adapter reason text for `page.set_current`, `selection.get`, `selection.set`, `prototype.list_interactions`, prototype planned/unsupported gaps, and layout boundary metadata |
-| P17.3 | todo | Add headless prototype read/list support | `backend`, `common`, `mcp`, `penpot-cli` | Backend/common focused tests plus MCP/CLI adapter tests cover explicit file/page targets | Keep overlay mutation and live selection behavior plugin-live unless P17.1 proves a backend-safe contract |
+| P17.2 | done | Add read-only descriptors for live-gap commands | `command-runtime`, `mcp`, `penpot-cli` | Completed 2026-06-17; command-runtime and CLI smoke tests cover the live-gap descriptor group, reason text, and stable MCP `page.set_current` metadata | Added descriptors and adapter reason text for `page.set_current`, `selection.get`, `selection.set`, `prototype.list_interactions`, prototype planned/unsupported gaps, and layout boundary metadata |
+| P17.3 | in_progress | Add headless prototype read/list support | `backend`, `common`, `mcp`, `penpot-cli` | Backend/common focused tests plus MCP/CLI adapter tests cover explicit file/page targets | Keep overlay mutation and live selection behavior plugin-live unless P17.1 proves a backend-safe contract |
 | P17.4 | todo | Define backend-safe grid layout subset | `backend`, `common`, `mcp`, `penpot-cli`, `mcp/docs` | Supported grid payloads or structured unsupported errors are covered by tests | Avoid partial document mutations without a clear track/cell data contract |
 | P17.5 | todo | Tighten selection/current-page live-only guidance | `frontend`, `mcp`, `penpot-cli`, `mcp/docs` | MCP tests and live-bind smoke docs cover unbound, stale, and bound workspace cases | Keep ephemeral workspace state explicit and guide agents through file.open/bind/retry |
 
@@ -532,12 +534,11 @@ state with persisted document data.
 
 Use `mcp/docs/penpot-cli-overall-blueprint.md` and
 `mcp/docs/headless-live-gap-audit.md` as the current architecture baseline and
-continue with P17.2:
+continue with P17.3:
 
-1. Add command-runtime descriptors for `page.set_current`, `selection.get`,
-   `selection.set`, `prototype.list_interactions`, and the selected planned or
-   unsupported live-gap commands.
-2. Add adapter reason text for live-only workspace state, planned backend reads,
-   and unsupported grid/prototype mutations.
-3. Keep runtime behavior stable in P17.2; prototype read/list implementation
-   starts in P17.3 after descriptor coverage is in place.
+1. Add backend/common prototype interaction read helpers for explicit
+   `fileId`/`pageId` targets using persisted file data.
+2. Register MCP `prototype.list_interactions` with backend-command adapter
+   selection and stable result envelopes.
+3. Add `penpot-cli prototype list-interactions` plus focused tests, keeping
+   overlay mutation and live selection behavior out of scope.

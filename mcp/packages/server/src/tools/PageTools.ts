@@ -2,7 +2,6 @@ import { z } from "zod";
 import type { ToolResponse } from "../ToolResponse.js";
 import { PenpotMcpServer } from "../PenpotMcpServer.js";
 import { PagePluginTask } from "../tasks/PagePluginTask.js";
-import { ToolNames } from "../ToolNames.js";
 import { requireBoundFileContext } from "./FileContextGuard.js";
 import { PenpotRpcTool } from "./PenpotRpcTool.js";
 import type { PageTaskParams } from "@penpot/mcp-common";
@@ -413,15 +412,15 @@ export class PageSetCurrentTool extends PageTool<PageSetCurrentArgs> {
     }
 
     public getToolName(): string {
-        return ToolNames.PAGE_SET_CURRENT;
+        return CommandDescriptors.PAGE_SET_CURRENT.mcpToolName;
     }
 
     public getToolDescription(): string {
-        return "Switches the currently bound Penpot file context to a page.";
+        return CommandDescriptors.PAGE_SET_CURRENT.description;
     }
 
     protected async executeCore(args: PageSetCurrentArgs): Promise<ToolResponse> {
-        const adapterSelection = this.selectPageAdapter(ToolNames.PAGE_SET_CURRENT, {});
+        const adapterSelection = this.selectPageAdapter(CommandDescriptors.PAGE_SET_CURRENT.id, {});
         if (adapterSelection.status !== "selected") {
             return this.adapterSelectionFailure(adapterSelection);
         }

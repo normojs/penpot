@@ -73,6 +73,11 @@ export interface AdapterSelectionReasonCodeCatalog {
     CLI_PLUGIN_LIVE_UNSUPPORTED: "cli_plugin_live_unsupported";
     CLI_EXPORT_PLUGIN_LIVE_UNSUPPORTED: "cli_export_plugin_live_unsupported";
     CLI_SHAPE_PLUGIN_LIVE_UNSUPPORTED: "cli_shape_plugin_live_unsupported";
+    PLUGIN_LIVE_WORKSPACE_STATE_REQUIRED: "plugin_live_workspace_state_required";
+    BACKEND_COMMAND_PROTOTYPE_READ_PLANNED: "backend_command_prototype_read_planned";
+    BACKEND_COMMAND_PROTOTYPE_MUTATION_UNSUPPORTED: "backend_command_prototype_mutation_unsupported";
+    BACKEND_COMMAND_GRID_CONTRACT_UNSUPPORTED: "backend_command_grid_contract_unsupported";
+    CLI_LIVE_WORKSPACE_STATE_UNSUPPORTED: "cli_live_workspace_state_unsupported";
 }
 
 export type CommandErrorCode = CommandErrorCodeCatalog[keyof CommandErrorCodeCatalog];
@@ -203,6 +208,9 @@ export interface LowRiskCommandDescriptorCatalog {
 
 export interface CommandDescriptorCatalog extends LowRiskCommandDescriptorCatalog {
     PAGE_RENAME: CommandDescriptor & { id: "page.rename"; mcpToolName: "page.rename"; cliCommand: "page rename" };
+    PAGE_SET_CURRENT: CommandDescriptor & { id: "page.set_current"; mcpToolName: "page.set_current" };
+    SELECTION_GET: CommandDescriptor & { id: "selection.get"; mcpToolName: "selection.get" };
+    SELECTION_SET: CommandDescriptor & { id: "selection.set"; mcpToolName: "selection.set" };
     PROTOTYPE_CREATE_FLOW: CommandDescriptor & {
         id: "prototype.create_flow";
         mcpToolName: "prototype.create_flow";
@@ -212,6 +220,19 @@ export interface CommandDescriptorCatalog extends LowRiskCommandDescriptorCatalo
         id: "prototype.create_interaction";
         mcpToolName: "prototype.create_interaction";
         cliCommand: "prototype create-interaction";
+    };
+    PROTOTYPE_LIST_INTERACTIONS: CommandDescriptor & {
+        id: "prototype.list_interactions";
+        mcpToolName: "prototype.list_interactions";
+        cliCommand: "prototype list-interactions";
+    };
+    PROTOTYPE_DELETE_INTERACTION: CommandDescriptor & {
+        id: "prototype.delete_interaction";
+        mcpToolName: "prototype.delete_interaction";
+    };
+    PROTOTYPE_CREATE_OVERLAY: CommandDescriptor & {
+        id: "prototype.create_overlay";
+        mcpToolName: "prototype.create_overlay";
     };
     SHAPE_CREATE_FRAME: CommandDescriptor & {
         id: "shape.create_frame";
@@ -238,6 +259,10 @@ export interface CommandDescriptorCatalog extends LowRiskCommandDescriptorCatalo
         mcpToolName: "shape.update";
         cliCommand: "shape update";
     };
+    SHAPE_SET_LAYOUT: CommandDescriptor & {
+        id: "shape.set_layout";
+        mcpToolName: "shape.set_layout";
+    };
     SHAPE_DELETE: CommandDescriptor & {
         id: "shape.delete";
         mcpToolName: "shape.delete";
@@ -261,6 +286,7 @@ export const AdapterSelectionReasonCodes: AdapterSelectionReasonCodeCatalog;
 export const CommandDescriptors: CommandDescriptorCatalog;
 export const LowRiskCommandDescriptors: readonly CommandDescriptor[];
 export const HeadlessAuthoringCommandDescriptors: readonly CommandDescriptor[];
+export const LiveGapCommandDescriptors: readonly CommandDescriptor[];
 export const ShapeExportCommandDescriptors: readonly CommandDescriptor[];
 export const MigratedCommandDescriptors: readonly CommandDescriptor[];
 export function getCommandDescriptor(id: string): CommandDescriptor | undefined;

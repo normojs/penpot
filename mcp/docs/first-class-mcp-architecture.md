@@ -509,6 +509,19 @@ P17.1 audit result:
 - Grid layout stays plugin-live or structured-unsupported until backend/common
   owns a persisted track/cell contract.
 
+P17.2 descriptor result:
+
+- `@penpot/command-runtime` exposes `LiveGapCommandDescriptors` for
+  `page.set_current`, `selection.get`, `selection.set`,
+  `prototype.list_interactions`, `prototype.delete_interaction`,
+  `prototype.create_overlay`, and `shape.set_layout`.
+- `page.set_current` now uses the shared descriptor for MCP name and
+  description while keeping its existing plugin-live execution path.
+- Selection/current-page commands remain live workspace state; prototype
+  interaction list is the next backend-safe read target; prototype mutation and
+  grid layout gaps stay descriptor-only or unsupported until contracts are
+  defined.
+
 ## 4. Target Architecture
 
 ```text

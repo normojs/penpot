@@ -420,8 +420,9 @@ Tasks:
   state, prototype list/read is backend-safe persisted data, grid needs an
   explicit backend contract, and overlay/delete/descriptor-only gaps stay
   planned or unsupported until contracts exist.
-- P17.2: add read-only command descriptors for the selected live-gap commands
-  so CLI/MCP can expose adapter and capability boundaries consistently.
+- P17.2: completed 2026-06-17; `LiveGapCommandDescriptors` now expose the
+  selected live-only, planned-read, and unsupported capability boundaries
+  consistently for CLI/MCP metadata.
 - P17.3: add backend-command prototype read/list support for explicit
   file/page targets where existing persisted data is sufficient.
 - P17.4: define a backend-safe grid layout subset or document structured
@@ -431,7 +432,7 @@ Tasks:
 
 Acceptance:
 
-- `todo.md` has P17.2 as the single active task.
+- `todo.md` has P17.3 as the single active task.
 - The Wave I audit documents the adapter boundary before runtime behavior
   changes.
 - Operations that remain live-only explain why and point agents through
@@ -443,15 +444,14 @@ Wave D, Wave E, Wave F, Wave G, and Wave H are complete. Wave I / Phase 17 is
 the active implementation slice for headless live-gap closure. P17.1 is
 complete in `headless-live-gap-audit.md`.
 
-The next active task is P17.2:
+The next active task is P17.3:
 
-1. Add read-only command descriptors for `page.set_current`, `selection.get`,
-   `selection.set`, `prototype.list_interactions`, and selected planned or
-   unsupported live-gap names.
-2. Add shared adapter reason text for live-only workspace state, planned
-   backend reads, and unsupported grid/prototype mutations.
-3. Keep runtime behavior stable until descriptor tests and command catalog
-   coverage are in place.
+1. Add backend/common prototype interaction read helpers for explicit
+   `fileId`/`pageId` targets.
+2. Register MCP `prototype.list_interactions` on backend-command with stable
+   adapter metadata.
+3. Add `penpot-cli prototype list-interactions` and focused CLI/MCP tests while
+   leaving overlay mutation and live selection behavior out of scope.
 
 Keep manual configuration behavior stable while moving command metadata and
 envelopes; transport-specific formatting should stay at the MCP/CLI edges.

@@ -8,6 +8,7 @@ import {
     CommandDescriptors,
     CommandErrorCodes,
     HeadlessAuthoringCommandDescriptors,
+    LiveGapCommandDescriptors,
     LowRiskCommandDescriptors,
     MigratedCommandDescriptors,
     ShapeExportCommandDescriptors,
@@ -142,7 +143,7 @@ test("command runtime exposes migrated shape and export descriptors", () => {
             "render.preview",
         ]
     );
-    assert.equal(MigratedCommandDescriptors.length, 19);
+    assert.equal(MigratedCommandDescriptors.length, 26);
     assert.equal(CommandDescriptors.SHAPE_DELETE.cliCommand, "shape delete");
     assert.equal(CommandDescriptors.SHAPE_CREATE_IMAGE.cliCommand, "shape create-image");
     assert.equal(CommandDescriptors.EXPORT_PAGE.mcpToolName, "export.page");
@@ -150,6 +151,31 @@ test("command runtime exposes migrated shape and export descriptors", () => {
     assert.equal(getCommandDescriptor("shape create-image").id, "shape.create_image");
     assert.equal(getCommandDescriptor("render.preview").title, "Render preview");
     assert.equal(getCommandDescriptor("render preview").cliCommand, "render preview");
+});
+
+test("command runtime exposes live-gap descriptor boundaries", () => {
+    assert.deepEqual(
+        LiveGapCommandDescriptors.map((descriptor) => descriptor.id),
+        [
+            "page.set_current",
+            "selection.get",
+            "selection.set",
+            "prototype.list_interactions",
+            "prototype.delete_interaction",
+            "prototype.create_overlay",
+            "shape.set_layout",
+        ]
+    );
+    assert.equal(MigratedCommandDescriptors.length, 26);
+    assert.equal(CommandDescriptors.PAGE_SET_CURRENT.mcpToolName, "page.set_current");
+    assert.equal(CommandDescriptors.PAGE_SET_CURRENT.cliCommand, undefined);
+    assert.equal(getCommandDescriptor("selection.get").adapters[0], "plugin-live");
+    assert.equal(getCommandDescriptor("prototype list-interactions").id, "prototype.list_interactions");
+    assert.equal(CommandDescriptors.PROTOTYPE_DELETE_INTERACTION.adapters.length, 0);
+    assert.equal(
+        getAdapterSelectionReason(AdapterSelectionReasonCodes.CLI_LIVE_WORKSPACE_STATE_UNSUPPORTED),
+        "CLI commands do not read or mutate editor-local workspace state; use MCP with a bound live workspace."
+    );
 });
 
 test("command runtime creates token-safe request and result envelopes", () => {

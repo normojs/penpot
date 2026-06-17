@@ -174,6 +174,17 @@ Recommended P17.2 commands:
    - Reason: current behavior lives under `shape.update.layout`; grid backend
      support is still unresolved.
 
+P17.2 implementation note:
+
+- Added `LiveGapCommandDescriptors` to `@penpot/command-runtime` for the seven
+  commands above.
+- Kept `page.set_current`, `selection.get`, and `selection.set` as
+  plugin-live/live workspace metadata. Only `page.set_current` is currently
+  registered as an MCP tool.
+- Kept `prototype.list_interactions` as the planned backend-command read that
+  starts P17.3. Prototype delete, overlay creation, and layout alias behavior
+  remain descriptor-only or unsupported until stable contracts exist.
+
 ## P17.3 Backend-Safe Read Slice
 
 Implement prototype read/list before delete:

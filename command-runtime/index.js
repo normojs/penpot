@@ -37,6 +37,11 @@ export const AdapterSelectionReasonCodes = Object.freeze({
     CLI_PLUGIN_LIVE_UNSUPPORTED: "cli_plugin_live_unsupported",
     CLI_EXPORT_PLUGIN_LIVE_UNSUPPORTED: "cli_export_plugin_live_unsupported",
     CLI_SHAPE_PLUGIN_LIVE_UNSUPPORTED: "cli_shape_plugin_live_unsupported",
+    PLUGIN_LIVE_WORKSPACE_STATE_REQUIRED: "plugin_live_workspace_state_required",
+    BACKEND_COMMAND_PROTOTYPE_READ_PLANNED: "backend_command_prototype_read_planned",
+    BACKEND_COMMAND_PROTOTYPE_MUTATION_UNSUPPORTED: "backend_command_prototype_mutation_unsupported",
+    BACKEND_COMMAND_GRID_CONTRACT_UNSUPPORTED: "backend_command_grid_contract_unsupported",
+    CLI_LIVE_WORKSPACE_STATE_UNSUPPORTED: "cli_live_workspace_state_unsupported",
 });
 
 const AdapterSelectionReasonMessages = Object.freeze({
@@ -62,6 +67,16 @@ const AdapterSelectionReasonMessages = Object.freeze({
         "CLI export planning requires explicit file/page/object ids and does not use live selection.",
     [AdapterSelectionReasonCodes.CLI_SHAPE_PLUGIN_LIVE_UNSUPPORTED]:
         "CLI shape commands require explicit backend targets and do not use live workspace state.",
+    [AdapterSelectionReasonCodes.PLUGIN_LIVE_WORKSPACE_STATE_REQUIRED]:
+        "plugin-live requires a bound Penpot workspace because this command reads or changes editor-local state.",
+    [AdapterSelectionReasonCodes.BACKEND_COMMAND_PROTOTYPE_READ_PLANNED]:
+        "backend-command prototype reads are planned for explicit file/page targets.",
+    [AdapterSelectionReasonCodes.BACKEND_COMMAND_PROTOTYPE_MUTATION_UNSUPPORTED]:
+        "backend-command prototype mutations need a stable target and interaction identity contract before execution.",
+    [AdapterSelectionReasonCodes.BACKEND_COMMAND_GRID_CONTRACT_UNSUPPORTED]:
+        "backend-command grid layout updates are unsupported until a stable grid track and cell payload contract exists.",
+    [AdapterSelectionReasonCodes.CLI_LIVE_WORKSPACE_STATE_UNSUPPORTED]:
+        "CLI commands do not read or mutate editor-local workspace state; use MCP with a bound live workspace.",
 });
 
 export const CommandDescriptors = Object.freeze({
@@ -149,6 +164,36 @@ export const CommandDescriptors = Object.freeze({
         adapters: Object.freeze(["backend-command", "plugin-live"]),
         responseShape: "status envelope with page summary, revision metadata, and adapterSelection metadata",
     }),
+    PAGE_SET_CURRENT: Object.freeze({
+        id: "page.set_current",
+        mcpToolName: "page.set_current",
+        title: "Set current page",
+        description:
+            "Switches the currently bound Penpot workspace context to a page through plugin-live editor state.",
+        inputSchema: "pageId",
+        adapters: Object.freeze(["plugin-live"]),
+        responseShape: "status envelope with pageId and plugin-live adapter metadata",
+    }),
+    SELECTION_GET: Object.freeze({
+        id: "selection.get",
+        mcpToolName: "selection.get",
+        title: "Get selection",
+        description:
+            "Reads the current selection from a bound live Penpot workspace; CLI and backend-command cannot read editor-local selection state.",
+        inputSchema: "empty",
+        adapters: Object.freeze(["plugin-live"]),
+        responseShape: "planned status envelope with selected shape summaries and plugin-live adapter metadata",
+    }),
+    SELECTION_SET: Object.freeze({
+        id: "selection.set",
+        mcpToolName: "selection.set",
+        title: "Set selection",
+        description:
+            "Sets the current selection in a bound live Penpot workspace; descriptor-only until a plugin-live task contract is added.",
+        inputSchema: "shapeIds",
+        adapters: Object.freeze(["plugin-live"]),
+        responseShape: "planned status envelope with selected shape ids and plugin-live adapter metadata",
+    }),
     PROTOTYPE_CREATE_FLOW: Object.freeze({
         id: "prototype.create_flow",
         mcpToolName: "prototype.create_flow",
@@ -171,6 +216,37 @@ export const CommandDescriptors = Object.freeze({
             "fileId?, pageId?, sourceShapeId, destinationBoardId, trigger?, delay?, preserveScrollPosition?, animation?, adapter?",
         adapters: Object.freeze(["backend-command", "plugin-live"]),
         responseShape: "status envelope with interaction summary, revision metadata, and adapterSelection metadata",
+    }),
+    PROTOTYPE_LIST_INTERACTIONS: Object.freeze({
+        id: "prototype.list_interactions",
+        mcpToolName: "prototype.list_interactions",
+        cliCommand: "prototype list-interactions",
+        title: "List prototype interactions",
+        description:
+            "Planned backend-command read for persisted prototype flows and interactions using explicit file/page targets.",
+        inputSchema: "fileId, pageId?, flowId?, sourceShapeId?, adapter?",
+        adapters: Object.freeze(["backend-command"]),
+        responseShape: "planned status envelope with flow and interaction summaries",
+    }),
+    PROTOTYPE_DELETE_INTERACTION: Object.freeze({
+        id: "prototype.delete_interaction",
+        mcpToolName: "prototype.delete_interaction",
+        title: "Delete prototype interaction",
+        description:
+            "Descriptor-only planned command; mutation remains unsupported until interaction target and identity semantics are stable.",
+        inputSchema: "fileId?, pageId?, sourceShapeId?, interactionId? or interactionIndex?, adapter?",
+        adapters: Object.freeze([]),
+        responseShape: "unsupported until a stable backend-command mutation contract exists",
+    }),
+    PROTOTYPE_CREATE_OVERLAY: Object.freeze({
+        id: "prototype.create_overlay",
+        mcpToolName: "prototype.create_overlay",
+        title: "Create prototype overlay",
+        description:
+            "Descriptor-only planned command; overlay creation is not executable until overlay payload semantics are defined.",
+        inputSchema: "planned overlay target and interaction payload",
+        adapters: Object.freeze([]),
+        responseShape: "unsupported until overlay command contract exists",
     }),
     SHAPE_CREATE_FRAME: Object.freeze({
         id: "shape.create_frame",
@@ -228,6 +304,16 @@ export const CommandDescriptors = Object.freeze({
             "fileId?, pageId?, shapeId, parentId?, index?, name?, x?, y?, width?, height?, fill?, fills?, stroke?, strokes?, borderRadius?, r1?, r2?, r3?, r4?, content?, fontSize?, layout(type none|flex backend-command; grid plugin-live)?",
         adapters: Object.freeze(["backend-command", "plugin-live"]),
         responseShape: "status envelope with shape summary, revision metadata, and adapterSelection metadata",
+    }),
+    SHAPE_SET_LAYOUT: Object.freeze({
+        id: "shape.set_layout",
+        mcpToolName: "shape.set_layout",
+        title: "Set shape layout",
+        description:
+            "Descriptor-only layout alias for shape.update; backend-command supports none/flex while grid remains plugin-live or planned backend-contract work.",
+        inputSchema: "fileId?, pageId?, shapeId, layout(type none|flex backend-command; grid plugin-live/planned), adapter?",
+        adapters: Object.freeze(["backend-command", "plugin-live"]),
+        responseShape: "use shape.update today; grid backend-command updates are unsupported until the grid contract is defined",
     }),
     SHAPE_DELETE: Object.freeze({
         id: "shape.delete",
@@ -288,6 +374,16 @@ export const HeadlessAuthoringCommandDescriptors = Object.freeze([
     CommandDescriptors.PROTOTYPE_CREATE_INTERACTION,
 ]);
 
+export const LiveGapCommandDescriptors = Object.freeze([
+    CommandDescriptors.PAGE_SET_CURRENT,
+    CommandDescriptors.SELECTION_GET,
+    CommandDescriptors.SELECTION_SET,
+    CommandDescriptors.PROTOTYPE_LIST_INTERACTIONS,
+    CommandDescriptors.PROTOTYPE_DELETE_INTERACTION,
+    CommandDescriptors.PROTOTYPE_CREATE_OVERLAY,
+    CommandDescriptors.SHAPE_SET_LAYOUT,
+]);
+
 export const ShapeExportCommandDescriptors = Object.freeze([
     CommandDescriptors.SHAPE_CREATE_FRAME,
     CommandDescriptors.SHAPE_CREATE_RECT,
@@ -304,6 +400,7 @@ export const MigratedCommandDescriptors = Object.freeze([
     ...LowRiskCommandDescriptors,
     ...HeadlessAuthoringCommandDescriptors,
     ...ShapeExportCommandDescriptors,
+    ...LiveGapCommandDescriptors,
 ]);
 
 export function getCommandDescriptor(id) {
