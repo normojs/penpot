@@ -1440,13 +1440,28 @@ P11.4 implementation note:
   the new backend commands directly and report `adapterSelection` in JSON
   output.
 - Overlay creation, current page state, selection state, and other live
-  workspace semantics remain plugin-live until dedicated backend-safe
-  contracts are defined. Interaction listing is now available for explicit
-  file targets through `get-file-prototype-interactions`,
+  workspace semantics remain plugin-live or unsupported until dedicated
+  backend-safe contracts are defined. Interaction listing is now available for
+  explicit file targets through `get-file-prototype-interactions`,
   `prototype.list_interactions`, and `penpot-cli prototype list-interactions`.
   P19.2 adds source-shape/index interaction deletion through
   `delete-file-prototype-interaction`, `prototype.delete_interaction`, and
-  `penpot-cli prototype delete-interaction`; overlay creation remains planned.
+  `penpot-cli prototype delete-interaction`; overlay creation remains
+  descriptor-only because open/toggle/close action, destination, relative target,
+  positioning, close/background, animation, and response summary semantics need
+  fixtures before execution.
+
+P19.3 implementation note:
+
+- `prototype.create_overlay` remains descriptor-only with no executable
+  adapters.
+- Persisted overlay actions are more than navigate-to variants: they include
+  `open-overlay`, `toggle-overlay`, and `close-overlay`, plus destination,
+  relative target, preset/manual positioning, close-on-click-outside,
+  background overlay, and animation fields.
+- The next safe slice is read-only overlay interaction summaries and fixtures,
+  followed by a create payload contract. MCP and CLI should not register an
+  overlay creation command before that contract exists.
 
 P11.5 implementation note:
 
@@ -1827,10 +1842,13 @@ Require a bound file:
 ```text
 prototype.create_flow
 prototype.create_interaction
-prototype.create_overlay
 prototype.list_interactions
 prototype.delete_interaction
 ```
+
+`prototype.create_overlay` is intentionally omitted from the executable tool
+set until the overlay action contract is defined. The descriptor may exist so
+agents can discover the gap, but it must report no adapters.
 
 ### 8.5 Export and Render Tools
 

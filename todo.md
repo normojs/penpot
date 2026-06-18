@@ -129,8 +129,11 @@ identity is explicit `fileId`, `pageId`, `sourceShapeId`, and zero-based
 `interactionIndex`; `interactionId` remains unsupported until persisted
 interactions gain stable ids. P19.2 is complete: backend-command
 `prototype.delete_interaction` now works through common/backend helpers, MCP,
-and `penpot-cli prototype delete-interaction`. Current active work moves to
-P19.3 to reassess the prototype overlay creation contract.
+and `penpot-cli prototype delete-interaction`. P19.3 is complete:
+`prototype.create_overlay` remains descriptor-only and unsupported until
+read-only overlay summaries and validation fixtures define open/toggle/close
+action, positioning, and response semantics. Current active work moves to
+Phase 20 to harden the overlay read contract before any creation command.
 
 ## Feature Roadmap
 
@@ -164,7 +167,8 @@ remain the execution plan.
 | F23 | done | CLI configuration convergence and distribution hardening | Phase 16 | `penpot-cli` can inspect the same saved MCP config that Penpot uses and has a clearer path toward portable local use | Completed 2026-06-17; P16.1 completed the read-path contract; P16.2 completed opt-in authenticated profile-source support; P16.3 completed URL derivation fixtures; P16.4 completed host/hybrid planning; P16.5 added a verified private portable CLI release archive |
 | F24 | done | Headless live-gap closure | Phase 17 | More authoring operations can run without a live workspace, while truly live-only state stays explicit | Completed 2026-06-17; P17.1-P17.5 audited live gaps, added descriptors, implemented persisted prototype reads, added backend-safe grid tracks, and tightened live-only binding guidance |
 | F25 | done | Live workspace state commands | Phase 18 | Agents can intentionally read or change editor-local selection state through bound MCP plugin-live commands | Completed 2026-06-17; P18.1-P18.3 implemented `selection.get`, `selection.set`, clearing, and live-bind/CLI descriptor smoke evidence |
-| F26 | todo | Prototype mutation contracts | Phase 19 | Agents can safely mutate persisted prototype interactions only after target identity semantics are explicit | P19.2 implemented backend-command source-shape/index delete; next is P19.3 overlay contract reassessment |
+| F26 | done | Prototype mutation contracts | Phase 19 | Agents can safely mutate persisted prototype interactions only after target identity semantics are explicit | Completed 2026-06-18; P19.1/P19.2 delivered source-shape/index delete and P19.3 kept overlay creation descriptor-only until fixtures define action and positioning semantics |
+| F27 | todo | Prototype overlay read contract | Phase 20 | Agents can inspect persisted overlay interactions before any create/mutate overlay command exists | First task is P20.1 read-only overlay interaction summaries and fixtures |
 
 ## Detailed Upcoming Task Queue
 
@@ -612,17 +616,28 @@ after target identity and error semantics are stable.
 | --- | --- | --- | --- | --- | --- |
 | P19.1 | done | Define prototype interaction mutation identity contract | `mcp/docs`, `command-runtime`, `mcp`, `penpot-cli` | Completed 2026-06-17; docs plus descriptor/runtime tests define source-shape/index identity for `prototype.delete_interaction` | Delete requires explicit `fileId`, `pageId`, `sourceShapeId`, and zero-based `interactionIndex`; `interactionId` remains unsupported |
 | P19.2 | done | Implement backend-command `prototype.delete_interaction` | `backend`, `common`, `mcp`, `penpot-cli`, `mcp/docs` | Completed 2026-06-17; backend/common plus MCP/CLI tests cover persisted delete success, missing source, stale index, and descriptor alignment | Implemented backend-command-only source-shape/index delete; plugin-live remains unnecessary for this persisted mutation |
-| P19.3 | in_progress | Reassess prototype overlay creation contract | `mcp/docs`, `command-runtime`, `mcp` | Audit docs and descriptors explain executable payload or unsupported status | Do not implement overlay creation without target/action payload contract |
+| P19.3 | done | Reassess prototype overlay creation contract | `mcp/docs`, `command-runtime`, `mcp` | Completed 2026-06-18; command-runtime tests and docs lock `prototype.create_overlay` as descriptor-only with no adapters | Overlay creation needs read-only overlay summaries plus validation fixtures before any executable payload contract |
+
+## Phase 20: Prototype Overlay Read Contract
+
+Goal: make persisted overlay interactions inspectable and fixture-backed before
+any headless overlay creation command is implemented.
+
+| ID | Status | Task | Modules | Verification | Notes |
+| --- | --- | --- | --- | --- | --- |
+| P20.1 | todo | Add read-only overlay interaction summaries | `common`, `backend`, `mcp`, `penpot-cli`, `mcp/docs` | Common/backend plus MCP/CLI tests cover existing `open-overlay`, `toggle-overlay`, and `close-overlay` summaries without mutating them | Extend `prototype.list_interactions` before any create-overlay command |
+| P20.2 | todo | Define `prototype.create_overlay` payload contract | `mcp/docs`, `command-runtime`, `common` | Descriptor and contract fixtures define action type, source shape, destination board, relative target, preset/manual position, close/background flags, animation, validation errors, and response shape | No executable adapter until contract fixtures are stable |
+| P20.3 | todo | Implement backend-command overlay creation if contract is stable | `common`, `backend`, `mcp`, `penpot-cli` | Focused tests cover open/toggle/close creation, invalid targets, manual/preset positioning, and list/delete interoperability | Only start after P20.1 and P20.2 are done |
 
 ## Next Recommended Sprint
 
 Use `mcp/docs/penpot-cli-overall-blueprint.md` and
 `mcp/docs/headless-live-gap-audit.md` as the current architecture baseline and
-continue with P19.3:
+continue with P20.1:
 
-1. Audit persisted prototype overlay data shape and existing plugin/backend
-   capabilities.
-2. Decide whether `prototype.create_overlay` has a stable target/action payload
-   for backend-command or should remain explicitly unsupported.
-3. Update docs, descriptors, and MCP tests to reflect the decision before any
-   overlay mutation implementation.
+1. Extend prototype interaction summaries to include existing persisted
+   overlay actions without creating or mutating them.
+2. Add fixtures for `open-overlay`, `toggle-overlay`, and `close-overlay`
+   fields as stored in common file data and exposed through backend-command.
+3. Keep `prototype.create_overlay` descriptor-only until those read fixtures
+   can drive a stable payload contract.

@@ -125,9 +125,11 @@ not register yet:
 - design editing: `shape.group`, `shape.ungroup`, `shape.set_layout`,
   `shape.set_style`, `component.create`, `component.instantiate`,
   `tokens.list`, `tokens.apply`
-- prototype/export: `prototype.create_overlay`, `export.file`,
-  `render.thumbnail`; `prototype.delete_interaction` is registered as a
-  backend-command source-shape/index mutation
+- prototype/export: `prototype.create_overlay` remains descriptor-only with no
+  executable adapters until overlay action and positioning semantics are
+  fixture-backed; `export.file` and `render.thumbnail` remain unregistered;
+  `prototype.delete_interaction` is registered as a backend-command
+  source-shape/index mutation
 - debug: `debug.get_plugin_state`, `debug.get_agent_logs`
 
 Do not migrate these as executable descriptors until their implementation is

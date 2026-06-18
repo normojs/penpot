@@ -459,12 +459,25 @@ P19.2 is complete:
    backend-command mutation and return deleted interaction summaries.
 3. Missing source shapes and stale indexes have focused test coverage.
 
-The next active task is P19.3:
+P19.3 is complete and closes Phase 19:
 
-1. Reassess `prototype.create_overlay` and decide whether it has a stable
-   target/action payload or should remain explicitly unsupported.
-2. Keep broader prototype mutations descriptor-only until their persisted data
-   ownership and response shape are documented.
+1. `prototype.create_overlay` remains descriptor-only and explicitly
+   unsupported.
+2. Overlay creation needs a stable contract for action type
+   (`open-overlay`, `toggle-overlay`, `close-overlay`), destination board,
+   relative target, preset/manual positioning, close-on-click-outside,
+   background overlay, animation, and persisted response summaries.
+3. The next safe slice is read-only overlay interaction summaries and fixtures
+   before any backend-command mutation implementation.
+
+The next active work should start Phase 20:
+
+1. Extend prototype interaction summaries to include persisted overlay actions
+   without creating or mutating them.
+2. Use those fixtures to define the eventual `prototype.create_overlay` payload
+   and validation model.
+3. Register executable MCP/CLI overlay creation only after the read contract and
+   validation fixtures are stable.
 
 Keep manual configuration behavior stable while moving command metadata and
 envelopes; transport-specific formatting should stay at the MCP/CLI edges.

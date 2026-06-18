@@ -94,6 +94,7 @@
 - Document selection read/write live-bind smoke evidence and align CLI handoff guidance with live-only MCP selection tools.
 - Define the `prototype.delete_interaction` source-shape/index identity contract before enabling persisted prototype mutation.
 - Add backend-command `prototype.delete_interaction` through common/backend helpers, MCP routing, and `penpot-cli prototype delete-interaction`.
+- Clarify the `prototype.create_overlay` descriptor-only contract, keeping overlay creation unsupported until read-only overlay summaries and validation fixtures define action and positioning semantics.
 - Add rate limiting and concurrency safety for file snapshot operations [#9723](https://github.com/penpot/penpot/issues/9723) (PR: [#9722](https://github.com/penpot/penpot/pull/9722))
 - Prevent concurrent font uploads from causing excessive simultaneous requests [#9922](https://github.com/penpot/penpot/issues/9922) (PR: [#9921](https://github.com/penpot/penpot/pull/9921))
 

@@ -72,7 +72,7 @@ const AdapterSelectionReasonMessages = Object.freeze({
     [AdapterSelectionReasonCodes.BACKEND_COMMAND_PROTOTYPE_READ_PLANNED]:
         "backend-command prototype reads require explicit file/page targets.",
     [AdapterSelectionReasonCodes.BACKEND_COMMAND_PROTOTYPE_MUTATION_UNSUPPORTED]:
-        "backend-command prototype mutations need source-shape/index delete implementation before execution.",
+        "backend-command prototype mutations require an explicit persisted-data contract; overlay creation is unsupported until action and positioning semantics are stable.",
     [AdapterSelectionReasonCodes.BACKEND_COMMAND_GRID_CONTRACT_UNSUPPORTED]:
         "backend-command grid cell and child placement updates are unsupported until a stable cell payload contract exists.",
     [AdapterSelectionReasonCodes.CLI_LIVE_WORKSPACE_STATE_UNSUPPORTED]:
@@ -245,10 +245,12 @@ export const CommandDescriptors = Object.freeze({
         mcpToolName: "prototype.create_overlay",
         title: "Create prototype overlay",
         description:
-            "Descriptor-only planned command; overlay creation is not executable until overlay payload semantics are defined.",
-        inputSchema: "planned overlay target and interaction payload",
+            "Descriptor-only planned command; overlay creation is not executable until open/toggle/close action, destination board, relative target, positioning, close behavior, background, and animation semantics are defined.",
+        inputSchema:
+            "unsupported planned payload: fileId, pageId, sourceShapeId, actionType, destinationBoardId?, relativeToShapeId?, overlayPositionType?, manualPosition?, closeWhenClickOutside?, addBackgroundOverlay?, animation?",
         adapters: Object.freeze([]),
-        responseShape: "unsupported until overlay command contract exists",
+        responseShape:
+            "unsupported until overlay action contract, persisted summary shape, and backend/common validation fixtures exist",
     }),
     SHAPE_CREATE_FRAME: Object.freeze({
         id: "shape.create_frame",

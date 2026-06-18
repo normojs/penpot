@@ -105,8 +105,12 @@ test("live-gap descriptors document live-only and planned command boundaries", (
     assert.match(CommandDescriptors.PROTOTYPE_DELETE_INTERACTION.responseShape, /deleted interaction summary/);
     assert.match(
         getAdapterSelectionReason(AdapterSelectionReasonCodes.BACKEND_COMMAND_PROTOTYPE_MUTATION_UNSUPPORTED),
-        /source-shape\/index/
+        /overlay creation is unsupported/
     );
+    assert.deepEqual(CommandDescriptors.PROTOTYPE_CREATE_OVERLAY.adapters, []);
+    assert.match(CommandDescriptors.PROTOTYPE_CREATE_OVERLAY.description, /open\/toggle\/close action/);
+    assert.match(CommandDescriptors.PROTOTYPE_CREATE_OVERLAY.inputSchema, /manualPosition/);
+    assert.match(CommandDescriptors.PROTOTYPE_CREATE_OVERLAY.responseShape, /validation fixtures/);
     assert.match(CommandDescriptors.SHAPE_SET_LAYOUT.responseShape, /shape.update/);
 });
 
