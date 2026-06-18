@@ -97,6 +97,7 @@
 - Clarify the `prototype.create_overlay` descriptor-only contract, keeping overlay creation unsupported until read-only overlay summaries and validation fixtures define action and positioning semantics.
 - Extend `prototype.list_interactions` summaries to include persisted open, toggle, and close overlay interactions without enabling overlay creation yet.
 - Define the `prototype.create_overlay` payload contract for future backend-command execution while keeping the command descriptor adapterless.
+- Add backend-command `prototype.create_overlay` through common/backend helpers, MCP routing, and `penpot-cli prototype create-overlay`.
 - Add rate limiting and concurrency safety for file snapshot operations [#9723](https://github.com/penpot/penpot/issues/9723) (PR: [#9722](https://github.com/penpot/penpot/pull/9722))
 - Prevent concurrent font uploads from causing excessive simultaneous requests [#9922](https://github.com/penpot/penpot/issues/9922) (PR: [#9921](https://github.com/penpot/penpot/pull/9921))
 

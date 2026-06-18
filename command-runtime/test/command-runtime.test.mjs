@@ -20,7 +20,12 @@ import {
 } from "../index.js";
 
 const LOW_RISK_IDS = ["mcp.status", "mcp.config", "file.list", "file.create", "file.open", "page.list", "page.create"];
-const HEADLESS_AUTHORING_IDS = ["page.rename", "prototype.create_flow", "prototype.create_interaction"];
+const HEADLESS_AUTHORING_IDS = [
+    "page.rename",
+    "prototype.create_flow",
+    "prototype.create_interaction",
+    "prototype.create_overlay",
+];
 const SHAPE_EXPORT_IDS = [
     "shape.create_frame",
     "shape.create_rect",
@@ -38,7 +43,6 @@ const LIVE_GAP_IDS = [
     "selection.set",
     "prototype.list_interactions",
     "prototype.delete_interaction",
-    "prototype.create_overlay",
     "shape.set_layout",
 ];
 
@@ -106,14 +110,15 @@ test("live-gap descriptors document live-only and planned command boundaries", (
     assert.match(CommandDescriptors.PROTOTYPE_DELETE_INTERACTION.responseShape, /deleted interaction summary/);
     assert.match(
         getAdapterSelectionReason(AdapterSelectionReasonCodes.BACKEND_COMMAND_PROTOTYPE_MUTATION_UNSUPPORTED),
-        /overlay creation is unsupported/
+        /explicit persisted-data contract/
     );
-    assert.deepEqual(CommandDescriptors.PROTOTYPE_CREATE_OVERLAY.adapters, []);
-    assert.match(CommandDescriptors.PROTOTYPE_CREATE_OVERLAY.description, /contracted command/);
+    assert.equal(CommandDescriptors.PROTOTYPE_CREATE_OVERLAY.cliCommand, "prototype create-overlay");
+    assert.deepEqual(CommandDescriptors.PROTOTYPE_CREATE_OVERLAY.adapters, ["backend-command"]);
+    assert.match(CommandDescriptors.PROTOTYPE_CREATE_OVERLAY.description, /Creates a persisted open, toggle, or close overlay/);
     assert.match(CommandDescriptors.PROTOTYPE_CREATE_OVERLAY.inputSchema, /actionType=open-overlay\|toggle-overlay\|close-overlay/);
     assert.match(CommandDescriptors.PROTOTYPE_CREATE_OVERLAY.inputSchema, /manualPosition\{x,y\} required/);
     assert.match(CommandDescriptors.PROTOTYPE_CREATE_OVERLAY.inputSchema, /push animation unsupported/);
-    assert.match(CommandDescriptors.PROTOTYPE_CREATE_OVERLAY.responseShape, /no executable adapters/);
+    assert.match(CommandDescriptors.PROTOTYPE_CREATE_OVERLAY.responseShape, /overlay interaction summary/);
     assert.match(CommandDescriptors.SHAPE_SET_LAYOUT.responseShape, /shape.update/);
 });
 

@@ -355,6 +355,25 @@
    [:features {:optional true} ::cfeat/features]])
 
 (def ^:private
+  schema:create-file-prototype-overlay
+  [:map {:title "create-file-prototype-overlay"}
+   [:id ::sm/uuid]
+   [:page-id ::sm/uuid]
+   [:source-shape-id ::sm/uuid]
+   [:action-type [::sm/one-of headless/prototype-overlay-action-types]]
+   [:destination-board-id {:optional true} ::sm/uuid]
+   [:relative-to-shape-id {:optional true} ::sm/uuid]
+   [:overlay-position-type {:optional true} [::sm/one-of ctsi/overlay-positioning-types]]
+   [:manual-position {:optional true} schema:prototype-point]
+   [:close-click-outside {:optional true} ::sm/boolean]
+   [:background-overlay {:optional true} ::sm/boolean]
+   [:trigger {:optional true} [::sm/one-of #{:click :mouse-enter :mouse-leave :after-delay}]]
+   [:delay {:optional true} [::sm/int {:min 0 :max 60000}]]
+   [:animation {:optional true} schema:prototype-animation]
+   [:session-id {:optional true} ::sm/uuid]
+   [:features {:optional true} ::cfeat/features]])
+
+(def ^:private
   schema:prototype-interaction-summary-base
   [:map {:title "HeadlessPrototypeInteractionSummaryBase"}
    [:source-shape-id ::sm/uuid]
@@ -409,6 +428,14 @@
 (def ^:private
   schema:create-file-prototype-interaction-result
   [:map {:title "create-file-prototype-interaction-result"}
+   [:file-id ::sm/uuid]
+   [:interaction schema:prototype-interaction-summary]
+   [:revn {:min 0} ::sm/int]
+   [:vern {:min 0} ::sm/int]])
+
+(def ^:private
+  schema:create-file-prototype-overlay-result
+  [:map {:title "create-file-prototype-overlay-result"}
    [:file-id ::sm/uuid]
    [:interaction schema:prototype-interaction-summary]
    [:revn {:min 0} ::sm/int]
@@ -1051,9 +1078,63 @@
       {::audit/replace-props
        {:id         (:id file)
         :name       (:name file)
-                :features   (:features file)
-                :project-id (:project-id file)
-                :team-id    (:team-id file)}})))
+        :features   (:features file)
+        :project-id (:project-id file)
+        :team-id    (:team-id file)}})))
+
+(sv/defmethod ::create-file-prototype-overlay
+  {::climit/id [[:update-file/by-profile ::rpc/profile-id]
+                [:update-file/global]]
+
+   ::webhooks/event? true
+   ::webhooks/batch-timeout (ct/duration "2m")
+   ::webhooks/batch-key (webhooks/key-fn ::rpc/profile-id :id)
+
+   ::sm/params schema:create-file-prototype-overlay
+   ::sm/result schema:create-file-prototype-overlay-result
+   ::doc/module :files
+   ::doc/added "2.15.4"
+   ::db/transaction true}
+  [{:keys [::mtx/metrics ::db/conn] :as cfg}
+   {:keys [::rpc/profile-id id session-id] :as params}]
+
+  (files/check-edition-permissions! conn profile-id id)
+  (db/xact-lock! conn id)
+
+  (let [file              (get-file cfg id)
+        team              (teams/get-team conn
+                                          :profile-id profile-id
+                                          :team-id (:team-id file))
+        features          (-> (cfeat/get-team-enabled-features cf/flags team)
+                              (cfeat/check-client-features! (:features params))
+                              (cfeat/check-file-features! (:features file)))
+        prototype-request (headless/create-prototype-overlay-request (blob/decode (:data file)) params)
+        changes           (:changes prototype-request)
+        session-id        (or session-id (uuid/next))
+        cfg               (assoc cfg ::timestamp (ct/now))
+        update-args       {:id id
+                           :revn (:revn file)
+                           :vern (:vern file)
+                           :file file
+                           :team team
+                           :features (set/difference features cfeat/frontend-only-features)
+                           :changes changes
+                           :session-id session-id
+                           :profile-id profile-id}]
+
+    (mtx/run! metrics {:id :update-file-changes :inc (count changes)})
+    (update-file* cfg update-args)
+
+    (with-meta {:file-id id
+                :interaction (:interaction prototype-request)
+                :revn (inc (:revn file))
+                :vern (:vern file)}
+      {::audit/replace-props
+       {:id         (:id file)
+        :name       (:name file)
+        :features   (:features file)
+        :project-id (:project-id file)
+        :team-id    (:team-id file)}})))
 
 (sv/defmethod ::delete-file-prototype-interaction
   {::climit/id [[:update-file/by-profile ::rpc/profile-id]

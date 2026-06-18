@@ -1447,15 +1447,15 @@ P11.4 implementation note:
   `prototype.list_interactions`, and `penpot-cli prototype list-interactions`.
   P19.2 adds source-shape/index interaction deletion through
   `delete-file-prototype-interaction`, `prototype.delete_interaction`, and
-  `penpot-cli prototype delete-interaction`; overlay creation remains
-  descriptor-only because open/toggle/close action, destination, relative target,
-  positioning, close/background, animation, and response summary semantics need
-  fixtures before execution.
+  `penpot-cli prototype delete-interaction`; at that point overlay creation
+  remained descriptor-only because open/toggle/close action, destination,
+  relative target, positioning, close/background, animation, and response
+  summary semantics still needed fixtures before execution.
 
 P19.3 implementation note:
 
-- `prototype.create_overlay` remains descriptor-only with no executable
-  adapters.
+- `prototype.create_overlay` remained descriptor-only with no executable
+  adapters at the P19.3 boundary.
 - Persisted overlay actions are more than navigate-to variants: they include
   `open-overlay`, `toggle-overlay`, and `close-overlay`, plus destination,
   relative target, preset/manual positioning, close-on-click-outside,
@@ -1475,6 +1475,21 @@ P20.2 implementation note:
 - The shared descriptor now publishes this payload contract but still reports no
   executable adapters. P20.3 must register backend-command only after the common
   helper and RPC path satisfy the contract fixtures.
+
+P20.3 implementation note:
+
+- Common/backend now implement `create-prototype-overlay-request` and
+  `create-file-prototype-overlay` for persisted `open-overlay`,
+  `toggle-overlay`, and `close-overlay` interactions.
+- MCP registers `prototype.create_overlay` as a backend-command tool for
+  explicit file/page/source targets and returns the created overlay summary
+  with revision and adapter-selection metadata.
+- `penpot-cli prototype create-overlay` calls the same backend command and
+  validates required action, destination, manual position, and unsupported push
+  animation inputs before RPC execution.
+- The shared descriptor now advertises `adapters: ["backend-command"]` and CLI
+  command `prototype create-overlay`; plugin-live overlay creation remains out
+  of scope for this contract.
 
 P11.5 implementation note:
 
@@ -1855,13 +1870,14 @@ Require a bound file:
 ```text
 prototype.create_flow
 prototype.create_interaction
+prototype.create_overlay
 prototype.list_interactions
 prototype.delete_interaction
 ```
 
-`prototype.create_overlay` is intentionally omitted from the executable tool
-set until the overlay action contract is defined. The descriptor may exist so
-agents can discover the gap, but it must report no adapters.
+`prototype.create_overlay` is backend-command-only in Phase 20. It requires
+explicit file/page/source targets and uses the persisted overlay interaction
+contract defined in `prototype-create-overlay-contract.md`.
 
 ### 8.5 Export and Render Tools
 

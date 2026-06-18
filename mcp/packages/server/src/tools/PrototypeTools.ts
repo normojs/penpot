@@ -15,6 +15,10 @@ import {
 import type { CommandAdapterSelection } from "@penpot/command-runtime";
 
 const uuidSchema = z.string().uuid();
+const pointSchema = z.object({
+    x: z.number().finite().describe("X coordinate."),
+    y: z.number().finite().describe("Y coordinate."),
+});
 
 const animationSchema = z
     .object({
@@ -40,10 +44,10 @@ function toBackendAnimation(animation?: PrototypeTaskParams["animation"]): Penpo
     return {
         type: animation.type,
         duration: animation.duration,
-        easing: animation.easing,
-        direction: animation.direction,
-        way: animation.way,
-        "offset-effect": animation.offsetEffect,
+        ...(animation.easing ? { easing: animation.easing } : {}),
+        ...(animation.direction ? { direction: animation.direction } : {}),
+        ...(animation.way ? { way: animation.way } : {}),
+        ...(animation.offsetEffect !== undefined ? { "offset-effect": animation.offsetEffect } : {}),
     };
 }
 
@@ -291,6 +295,56 @@ abstract class PrototypeTool<TArgs extends object> extends PenpotRpcTool<TArgs> 
         }
     }
 
+    protected async executeBackendPrototypeOverlay(
+        args: PrototypeCreateOverlayArgs,
+        adapterSelection: CommandAdapterSelection
+    ): Promise<ToolResponse> {
+        const userToken = this.getUserToken();
+        if (!userToken) {
+            return this.authenticationRequired();
+        }
+
+        try {
+            const result = await this.rpcWritePost<PenpotRecord>(
+                "create-file-prototype-overlay",
+                {
+                    id: args.fileId,
+                    "page-id": args.pageId,
+                    "source-shape-id": args.sourceShapeId,
+                    "action-type": args.actionType,
+                    "destination-board-id": args.destinationBoardId,
+                    "relative-to-shape-id": args.relativeToShapeId,
+                    "overlay-position-type": args.overlayPositionType,
+                    "manual-position": args.manualPosition,
+                    "close-click-outside": args.closeClickOutside,
+                    "background-overlay": args.backgroundOverlay,
+                    trigger: args.trigger,
+                    delay: args.delay,
+                    animation: toBackendAnimation(args.animation),
+                },
+                userToken,
+                {
+                    mcpAdapter: adapterSelection.selected,
+                    mcpFileId: args.fileId,
+                    mcpPageId: args.pageId,
+                    mcpShapeId: args.sourceShapeId,
+                }
+            );
+            return this.ok({
+                adapter: adapterSelection.selected,
+                adapterSelection,
+                fileId: args.fileId,
+                pageId: args.pageId,
+                sourceShapeId: args.sourceShapeId,
+                interaction: result.interaction,
+                revn: result.revn,
+                vern: result.vern,
+            });
+        } catch (cause) {
+            return this.rpcFailure(cause);
+        }
+    }
+
     protected async executeBackendPrototypeList(
         args: PrototypeListInteractionsArgs,
         adapterSelection: CommandAdapterSelection
@@ -498,6 +552,76 @@ export class PrototypeCreateInteractionTool extends PrototypeTool<PrototypeCreat
             },
             adapterSelection
         );
+    }
+}
+
+export class PrototypeCreateOverlayArgs {
+    static schema = {
+        fileId: uuidSchema.describe("File id for backend-command prototype overlay creation."),
+        pageId: uuidSchema.describe("Page id used to resolve source, destination, and relative shapes."),
+        adapter: z.string().optional().describe("Optional adapter request: auto or backend-command."),
+        sourceShapeId: uuidSchema.describe("Shape id that owns the overlay interaction."),
+        actionType: z
+            .enum(["open-overlay", "toggle-overlay", "close-overlay"])
+            .describe("Overlay action type."),
+        destinationBoardId: uuidSchema
+            .optional()
+            .describe("Destination board/frame id. Required for open-overlay and toggle-overlay."),
+        relativeToShapeId: uuidSchema.optional().describe("Optional shape id used as the overlay positioning base."),
+        overlayPositionType: z
+            .enum(["center", "manual", "top-left", "top-right", "top-center", "bottom-left", "bottom-right", "bottom-center"])
+            .optional()
+            .describe("Overlay positioning mode. Defaults to center."),
+        manualPosition: pointSchema.optional().describe("Required when overlayPositionType is manual."),
+        closeClickOutside: z.boolean().optional().describe("Whether clicking outside closes the overlay."),
+        backgroundOverlay: z.boolean().optional().describe("Whether the overlay has a background scrim."),
+        trigger: z
+            .enum(["click", "mouse-enter", "mouse-leave", "after-delay"])
+            .optional()
+            .describe("Interaction trigger. Defaults to click."),
+        delay: z.number().min(0).max(60000).optional().describe("Delay in milliseconds for after-delay triggers."),
+        animation: animationSchema,
+    };
+
+    fileId!: string;
+    pageId!: string;
+    adapter?: string;
+    sourceShapeId!: string;
+    actionType!: "open-overlay" | "toggle-overlay" | "close-overlay";
+    destinationBoardId?: string;
+    relativeToShapeId?: string;
+    overlayPositionType?: "center" | "manual" | "top-left" | "top-right" | "top-center" | "bottom-left" | "bottom-right" | "bottom-center";
+    manualPosition?: { x: number; y: number };
+    closeClickOutside?: boolean;
+    backgroundOverlay?: boolean;
+    trigger?: PrototypeTaskParams["trigger"];
+    delay?: number;
+    animation?: PrototypeTaskParams["animation"];
+}
+
+export class PrototypeCreateOverlayTool extends PrototypeTool<PrototypeCreateOverlayArgs> {
+    constructor(mcpServer: PenpotMcpServer) {
+        super(mcpServer, PrototypeCreateOverlayArgs.schema);
+    }
+
+    public getToolName(): string {
+        return CommandDescriptors.PROTOTYPE_CREATE_OVERLAY.mcpToolName;
+    }
+
+    public getToolDescription(): string {
+        return CommandDescriptors.PROTOTYPE_CREATE_OVERLAY.description;
+    }
+
+    protected async executeCore(args: PrototypeCreateOverlayArgs): Promise<ToolResponse> {
+        const adapterSelection = this.selectPrototypeMutationAdapter(
+            CommandDescriptors.PROTOTYPE_CREATE_OVERLAY.id,
+            args
+        );
+        if (adapterSelection.status !== "selected") {
+            return this.adapterSelectionFailure(adapterSelection);
+        }
+
+        return this.executeBackendPrototypeOverlay(args, adapterSelection);
     }
 }
 

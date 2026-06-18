@@ -62,6 +62,7 @@ Usage:
   penpot-cli shape delete --file <file-id> --shape <shape-id> [--page <page-id>] [--format text|json]
   penpot-cli prototype create-flow --file <file-id> --name <name> --starting-board <frame-id> [--page <page-id>] [--flow-id <id>] [--format text|json]
   penpot-cli prototype create-interaction --file <file-id> --source <shape-id> --destination <frame-id> [--page <page-id>] [--trigger click|mouse-enter|mouse-leave|after-delay] [--format text|json]
+  penpot-cli prototype create-overlay --file <file-id> --page <page-id> --source <shape-id> --action open-overlay|toggle-overlay|close-overlay [--destination <frame-id>] [--position center|manual|top-left|top-right|top-center|bottom-left|bottom-right|bottom-center] [--format text|json]
   penpot-cli prototype list-interactions --file <file-id> [--page <page-id>] [--flow-id <id>] [--source <shape-id>] [--format text|json]
   penpot-cli prototype delete-interaction --file <file-id> --source <shape-id> --index <n> [--page <page-id>] [--format text|json]
   penpot-cli export page --file <file-id> --page <page-id> --object <object-id> [--adapter auto|exporter] [--output <path>] [--dry-run] [--format text|json]
@@ -151,12 +152,13 @@ const PROTOTYPE_HELP_TEXT = `penpot-cli prototype
 Usage:
   penpot-cli prototype create-flow --file <file-id> --name <name> --starting-board <frame-id> [--page <page-id>] [--flow-id <id>] [--adapter auto|backend-command] [--backend-uri <uri>] [--token <token>] [--format text|json]
   penpot-cli prototype create-interaction --file <file-id> --source <shape-id> --destination <frame-id> [--page <page-id>] [--trigger click|mouse-enter|mouse-leave|after-delay] [--delay <ms>] [--preserve-scroll] [--animation dissolve|slide|push] [--animation-duration <ms>] [--format text|json]
+  penpot-cli prototype create-overlay --file <file-id> --page <page-id> --source <shape-id> --action open-overlay|toggle-overlay|close-overlay [--destination <frame-id>] [--relative-to <shape-id>] [--position center|manual|top-left|top-right|top-center|bottom-left|bottom-right|bottom-center] [--manual-x <n> --manual-y <n>] [--close-click-outside] [--background-overlay] [--trigger click|mouse-enter|mouse-leave|after-delay] [--delay <ms>] [--animation dissolve|slide] [--animation-duration <ms>] [--format text|json]
   penpot-cli prototype list-interactions --file <file-id> [--page <page-id>] [--flow-id <id>] [--source <shape-id>] [--adapter auto|backend-command] [--format text|json]
   penpot-cli prototype delete-interaction --file <file-id> --source <shape-id> --index <n> [--page <page-id>] [--adapter auto|backend-command] [--format text|json]
 
 Notes:
-  Backend-command prototype helpers currently support basic flows, navigate-to interaction creation, persisted navigate/overlay listing, and source-shape/index deletion.
-  Overlay creation remains planned until its payload and target contracts are stable.
+  Backend-command prototype helpers currently support basic flows, navigate-to interaction creation, open/toggle/close overlay creation, persisted navigate/overlay listing, and source-shape/index deletion.
+  Overlay creation requires --destination for open-overlay and toggle-overlay; close-overlay can omit it.
 
 Environment:
   PENPOT_BACKEND_URI       Backend RPC base URI, default http://localhost:6060
@@ -505,6 +507,16 @@ type PrototypeAnimationType = "dissolve" | "slide" | "push";
 type PrototypeAnimationEasing = "linear" | "ease" | "ease-in" | "ease-out" | "ease-in-out";
 type PrototypeAnimationDirection = "right" | "left" | "up" | "down";
 type PrototypeAnimationWay = "in" | "out";
+type PrototypeOverlayActionType = "open-overlay" | "toggle-overlay" | "close-overlay";
+type PrototypeOverlayPositionType =
+    | "center"
+    | "manual"
+    | "top-left"
+    | "top-right"
+    | "top-center"
+    | "bottom-left"
+    | "bottom-right"
+    | "bottom-center";
 
 interface PrototypeAnimationParams {
     type: PrototypeAnimationType;
@@ -531,6 +543,27 @@ interface PrototypeInteractionParams {
     trigger?: PrototypeTrigger;
     delay?: number;
     preserveScrollPosition?: boolean;
+    animation?: PrototypeAnimationParams;
+}
+
+interface PrototypePoint extends Record<string, unknown> {
+    x: number;
+    y: number;
+}
+
+interface PrototypeOverlayParams {
+    fileId: string;
+    pageId: string;
+    sourceShapeId: string;
+    actionType: PrototypeOverlayActionType;
+    destinationBoardId?: string;
+    relativeToShapeId?: string;
+    overlayPositionType?: PrototypeOverlayPositionType;
+    manualPosition?: PrototypePoint;
+    closeClickOutside?: boolean;
+    backgroundOverlay?: boolean;
+    trigger?: PrototypeTrigger;
+    delay?: number;
     animation?: PrototypeAnimationParams;
 }
 
@@ -2327,6 +2360,164 @@ function parsePrototypeInteractionParams(args: string[], io: CliIO, format: Form
         trigger: trigger ?? (delay !== undefined ? "after-delay" : undefined),
         delay,
         preserveScrollPosition: readOptionalBooleanFlag(args, ["--preserve-scroll", "--preserve-scroll-position"]),
+        animation,
+    };
+}
+
+function parsePrototypeOverlayParams(args: string[], io: CliIO, format: Format): PrototypeOverlayParams | null {
+    const fileId = readOption(args, ["--file", "--file-id"]);
+    if (!fileId) {
+        writeError(io, format, "file_id_required", "prototype create-overlay requires --file <file-id>.", [
+            "Use penpot-cli file list first, then pass --file <file-id>.",
+        ]);
+        return null;
+    }
+
+    const pageId = readOption(args, ["--page", "--page-id"]);
+    if (!pageId) {
+        writeError(io, format, "page_id_required", "prototype create-overlay requires --page <page-id>.", [
+            "Use penpot-cli page list --file <file-id> first, then pass --page <page-id>.",
+        ]);
+        return null;
+    }
+
+    const sourceShapeId = readOption(args, ["--source", "--source-shape", "--source-shape-id", "--shape", "--shape-id"]);
+    if (!sourceShapeId) {
+        writeError(
+            io,
+            format,
+            "prototype_source_shape_required",
+            "prototype create-overlay requires --source <shape-id>.",
+            ["Pass the shape id that owns the overlay interaction."]
+        );
+        return null;
+    }
+
+    const actionType = readPrototypeEnumOption(
+        args,
+        ["--action", "--action-type"],
+        ["open-overlay", "toggle-overlay", "close-overlay"],
+        io,
+        format,
+        "--action"
+    );
+    if (actionType === null) {
+        return null;
+    }
+    if (!actionType) {
+        writeError(
+            io,
+            format,
+            "prototype_overlay_action_required",
+            "prototype create-overlay requires --action <type>.",
+            ["Use --action open-overlay, --action toggle-overlay, or --action close-overlay."]
+        );
+        return null;
+    }
+
+    const destinationBoardId = readOption(args, [
+        "--destination",
+        "--destination-board",
+        "--destination-board-id",
+        "--target",
+        "--target-board",
+    ]);
+    if ((actionType === "open-overlay" || actionType === "toggle-overlay") && !destinationBoardId) {
+        writeError(
+            io,
+            format,
+            "prototype_overlay_destination_required",
+            "prototype create-overlay requires --destination <frame-id> for open-overlay and toggle-overlay.",
+            ["Pass the destination overlay frame id, or use --action close-overlay when no destination is needed."]
+        );
+        return null;
+    }
+
+    const overlayPositionType = readPrototypeEnumOption(
+        args,
+        ["--position", "--overlay-position", "--overlay-position-type"],
+        ["center", "manual", "top-left", "top-right", "top-center", "bottom-left", "bottom-right", "bottom-center"],
+        io,
+        format,
+        "--position"
+    );
+    if (overlayPositionType === null) {
+        return null;
+    }
+
+    const manualX = readNumberOption(args, ["--manual-x"]);
+    const manualY = readNumberOption(args, ["--manual-y"]);
+    if (
+        (manualX !== undefined || manualY !== undefined) &&
+        (!Number.isFinite(manualX) || !Number.isFinite(manualY))
+    ) {
+        writeError(io, format, "prototype_overlay_manual_position_invalid", "Invalid manual overlay position.", [
+            "Pass both --manual-x <n> and --manual-y <n> with finite numeric values.",
+        ]);
+        return null;
+    }
+    if (overlayPositionType === "manual" && (manualX === undefined || manualY === undefined)) {
+        writeError(
+            io,
+            format,
+            "prototype_overlay_manual_position_required",
+            "prototype create-overlay manual positioning requires --manual-x and --manual-y.",
+            ["Pass both manual coordinates or use a preset --position value."]
+        );
+        return null;
+    }
+
+    const delay = readNumberOption(args, ["--delay"]);
+    if (delay !== undefined && (!Number.isFinite(delay) || delay < 0 || delay > 60000)) {
+        writeError(io, format, "prototype_numeric_option_invalid", "Invalid prototype delay.", [
+            "Pass a finite delay from 0 to 60000.",
+        ]);
+        return null;
+    }
+
+    const trigger = readPrototypeEnumOption(
+        args,
+        ["--trigger"],
+        ["click", "mouse-enter", "mouse-leave", "after-delay"],
+        io,
+        format,
+        "--trigger"
+    );
+    if (trigger === null) {
+        return null;
+    }
+
+    const animation = parsePrototypeAnimationParams(args, io, format);
+    if (animation === null) {
+        return null;
+    }
+    if (animation?.type === "push") {
+        writeError(io, format, "prototype_overlay_animation_unsupported", "Overlay creation does not support push animation.", [
+            "Use --animation dissolve or --animation slide.",
+        ]);
+        return null;
+    }
+
+    return {
+        fileId,
+        pageId,
+        sourceShapeId,
+        actionType,
+        destinationBoardId,
+        relativeToShapeId: readOption(args, ["--relative-to", "--relative-to-shape", "--relative-to-shape-id"]),
+        overlayPositionType:
+            overlayPositionType ?? (manualX !== undefined || manualY !== undefined ? "manual" : undefined),
+        manualPosition:
+            manualX !== undefined && manualY !== undefined
+                ? {
+                      x: manualX,
+                      y: manualY,
+                  }
+                : undefined,
+        closeClickOutside: readOptionalBooleanFlag(args, ["--close-click-outside", "--close-when-click-outside"]),
+        backgroundOverlay: readOptionalBooleanFlag(args, ["--background-overlay", "--add-background-overlay"]),
+        trigger: trigger ?? (delay !== undefined ? "after-delay" : undefined),
+        delay,
         animation,
     };
 }
@@ -4511,6 +4702,70 @@ async function handlePrototypeCreateInteraction(args: string[], io: CliIO, env: 
     }
 }
 
+async function handlePrototypeCreateOverlay(args: string[], io: CliIO, env: NodeJS.ProcessEnv): Promise<number> {
+    const format = parseFormat(args, io);
+    if (!format) {
+        return 2;
+    }
+
+    const adapterSelection = selectCliPrototypeAdapter(CommandDescriptors.PROTOTYPE_CREATE_OVERLAY.id, args);
+    if (adapterSelection.status !== "selected" || adapterSelection.selected !== "backend-command") {
+        return adapterSelectionFailure(io, format, adapterSelection);
+    }
+
+    const prototypeParams = parsePrototypeOverlayParams(args, io, format);
+    if (!prototypeParams) {
+        return 2;
+    }
+
+    const rpc = getRpcConfig(args, env);
+    if (!rpc.token) {
+        return rpcAuthenticationRequired(io, format);
+    }
+
+    try {
+        const result = await rpcRequest<Record<string, unknown>>(
+            "POST",
+            rpc.backendUri,
+            "create-file-prototype-overlay",
+            {
+                id: prototypeParams.fileId,
+                "page-id": prototypeParams.pageId,
+                "source-shape-id": prototypeParams.sourceShapeId,
+                "action-type": prototypeParams.actionType,
+                "destination-board-id": prototypeParams.destinationBoardId,
+                "relative-to-shape-id": prototypeParams.relativeToShapeId,
+                "overlay-position-type": prototypeParams.overlayPositionType,
+                "manual-position": prototypeParams.manualPosition,
+                "close-click-outside": prototypeParams.closeClickOutside,
+                "background-overlay": prototypeParams.backgroundOverlay,
+                trigger: prototypeParams.trigger,
+                delay: prototypeParams.delay,
+                animation: toRpcPrototypeAnimation(prototypeParams.animation),
+            },
+            rpc.token
+        );
+        writeOk(
+            io,
+            format,
+            {
+                fileId: prototypeParams.fileId,
+                pageId: prototypeParams.pageId,
+                sourceShapeId: prototypeParams.sourceShapeId,
+                interaction: result.interaction,
+                revn: result.revn,
+                vern: result.vern,
+                adapter: adapterSelection.selected,
+                adapterSelection,
+            },
+            () => writePrototypeInteractionCreatedText(io, prototypeParams.fileId, result.interaction)
+        );
+        return 0;
+    } catch (cause) {
+        return rpcErrorResponse(io, format, "create-file-prototype-overlay", rpc.backendUri, cause);
+    }
+}
+
 async function handlePrototypeListInteractions(args: string[], io: CliIO, env: NodeJS.ProcessEnv): Promise<number> {
     const format = parseFormat(args, io);
     if (!format) {
@@ -4637,6 +4892,8 @@ async function handlePrototypeCommand(args: string[], io: CliIO, env: NodeJS.Pro
             return await handlePrototypeCreateFlow(rest, io, env);
         case "create-interaction":
             return await handlePrototypeCreateInteraction(rest, io, env);
+        case "create-overlay":
+            return await handlePrototypeCreateOverlay(rest, io, env);
         case "list-interactions":
             return await handlePrototypeListInteractions(rest, io, env);
         case "delete-interaction":

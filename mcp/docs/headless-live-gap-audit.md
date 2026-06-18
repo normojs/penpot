@@ -122,7 +122,7 @@ state for them.
 | `prototype.create_interaction` | Registered MCP tool and descriptor; backend-command with `fileId`, plugin-live otherwise. | Backend-safe persisted data plus plugin-live convenience. | Navigate interaction data persists on source shape. | Keep behavior. |
 | `prototype.list_interactions` | Registered MCP tool, backend/common read helper, and CLI command. | Backend-safe persisted read. | Flows and interactions are persisted in file data. | Keep as the discovery/read path for source-shape/index delete targets. |
 | `prototype.delete_interaction` | Registered MCP tool, backend/common delete helper, and CLI command. | Backend-safe persisted mutation with explicit source-shape/index identity. | Interaction arrays are persisted on source shapes and interactions do not carry stable ids. | P19.2 implements backend-command delete for `fileId`, optional `pageId`, `sourceShapeId`, and zero-based `interactionIndex`; stale indexes return structured validation errors. |
-| `prototype.create_overlay` | Name exists in `ToolNames.ts`, not registered. Command-runtime descriptor has no executable adapters. | Unsupported until contract. | Persisted overlays are interactions with `:open-overlay`, `:toggle-overlay`, or `:close-overlay` actions. The plugin API maps those to `destination`, `relativeTo`, `position`, `manualPositionLocation`, `closeWhenClickOutside`, `addBackgroundOverlay`, and `animation`, while backend/common headless helpers currently create only navigate-to interactions. | Keep descriptor-only. First add read-only overlay summaries and fixtures for persisted `open/toggle/close` interactions, then define a create payload before any backend-command mutation. |
+| `prototype.create_overlay` | Registered MCP tool, command-runtime descriptor, and `penpot-cli prototype create-overlay`. | Backend-safe persisted mutation. | Persisted overlays are interactions with `:open-overlay`, `:toggle-overlay`, or `:close-overlay` actions. The backend/common helper now creates those actions with explicit source, destination, relative target, preset/manual positioning, close/background flags, trigger, delay, and dissolve/slide animation metadata. | Keep backend-command-only for explicit file/page/source targets; plugin-live is not part of the P20 contract. |
 | `export.shape` | Registered descriptor and MCP tool through plugin-live. | Plugin-live workspace/export state. | It can use explicit live shape or current selection and returns plugin base64 data. | Keep plugin-live. Explicit exporter shape/page preview is covered by `render.preview`. |
 | `export.page` | Registered descriptor and MCP tool. | Exporter/read-only plus plugin-live. | Exporter path requires explicit ids; plugin-live can use bound workspace page. | Keep behavior. |
 | `render.preview` | Registered descriptor and MCP tool. | Exporter/read-only plus plugin-live. | Exporter path requires explicit file/page/object ids; plugin-live can preview page/shape/selection. | Keep behavior. |
@@ -166,12 +166,11 @@ Recommended P17.2 commands:
    - Reason: persisted mutation is possible but needs stable index/id contract.
 
 6. `prototype.create_overlay`
-   - Adapter: unsupported/planned.
-   - Reason: neither backend nor plugin task handlers currently expose overlay
-     creation, and overlay actions need stable semantics for `open-overlay`,
-     `toggle-overlay`, `close-overlay`, destination board identity,
-     `relativeTo`, preset/manual positioning, click-outside close behavior,
-     background overlay, animation, and persisted response summaries.
+   - Adapter: implemented in P20.3 as `backend-command`.
+   - Reason: overlay interactions are persisted source-shape data after P20.1
+     made summaries readable and P20.2 defined the payload contract.
+   - Scope: explicit file/page/source targets; plugin-live overlay creation is
+     not part of this slice.
 
 7. `shape.set_layout`
    - Adapter: descriptor-only alias/planned command.
@@ -240,13 +239,28 @@ P20.2 contract note:
   `toggle-overlay`, and optional for `close-overlay`.
 - Manual positioning requires an explicit `{x, y}` point, and push animation is
   rejected for overlay actions.
-- The command-runtime descriptor now exposes the concrete payload contract while
-  keeping `adapters: []` until P20.3 registers an implementation.
+- At P20.2, the command-runtime descriptor exposed the concrete payload
+  contract while still keeping `adapters: []` until P20.3 registered an
+  implementation.
+
+P20.3 implementation note:
+
+- Common/backend now create persisted `open-overlay`, `toggle-overlay`, and
+  `close-overlay` interactions through `create-prototype-overlay-request` and
+  `create-file-prototype-overlay`.
+- MCP registers `prototype.create_overlay` as a backend-command tool for
+  explicit file/page/source targets and returns the created overlay summary
+  plus revision and adapter-selection metadata.
+- `penpot-cli prototype create-overlay` calls the same RPC and validates
+  required action, destination, manual position, and unsupported push animation
+  inputs before sending the backend request.
+- The command-runtime descriptor now advertises the backend-command adapter and
+  CLI command; plugin-live remains out of scope for overlay creation.
 
 ## P19.3 Overlay Contract Reassessment
 
-`prototype.create_overlay` remains descriptor-only and unsupported after the
-Phase 19 reassessment.
+At the Phase 19 reassessment, `prototype.create_overlay` remained
+descriptor-only and unsupported.
 
 Source findings:
 
@@ -259,23 +273,24 @@ Source findings:
 - Plugin API parsing/formatting exposes similar fields as `destination`,
   `relativeTo`, `position`, `manualPositionLocation`,
   `closeWhenClickOutside`, `addBackgroundOverlay`, and `animation`.
-- The existing MCP plugin prototype task handler creates flows and navigate-to
-  interactions only. The backend/common headless helper also creates only
-  navigate-to interactions.
+- At that time, the existing MCP plugin prototype task handler created flows
+  and navigate-to interactions only. The backend/common headless helper also
+  created only navigate-to interactions.
 - Overlay position calculation depends on source shape, destination board,
   relative target, page objects, and viewer/editor geometry conventions, so a
   headless write needs fixtures before execution.
 
 Decision:
 
-- Keep the command-runtime descriptor with `adapters: []`.
-- Do not register an executable MCP tool or CLI command for overlay creation
-  yet.
+- Keep the command-runtime descriptor with `adapters: []` during P19.3.
+- Do not register an executable MCP tool or CLI command for overlay creation at
+  the Phase 19 boundary.
 - Do not reuse `prototype.create_interaction` for overlay actions until the
   input payload and response summary include overlay-specific fields.
 - Make the next implementation slice read-only: extend prototype interaction
   summaries to report existing persisted overlay interactions, then use those
-  fixtures to define the create payload.
+  fixtures to define the create payload. P20.3 later implemented the resulting
+  backend-command create path.
 
 ## P17.4 Grid Contract Decision
 

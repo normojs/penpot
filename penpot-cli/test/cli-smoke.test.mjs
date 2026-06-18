@@ -101,6 +101,7 @@ test("top-level help lists first-class MCP, shape, and export commands", async (
     assert.match(result.stdout, /penpot-cli page rename/);
     assert.match(result.stdout, /penpot-cli shape delete/);
     assert.match(result.stdout, /penpot-cli prototype create-flow/);
+    assert.match(result.stdout, /penpot-cli prototype create-overlay/);
     assert.match(result.stdout, /penpot-cli prototype delete-interaction/);
     assert.match(result.stdout, /penpot-cli export page/);
     assert.match(result.stdout, /penpot-cli render preview/);
@@ -119,14 +120,16 @@ test("command runtime exposes low-risk command descriptors", () => {
 test("command runtime exposes headless authoring descriptors", () => {
     assert.deepEqual(
         HeadlessAuthoringCommandDescriptors.map((descriptor) => descriptor.id),
-        ["page.rename", "prototype.create_flow", "prototype.create_interaction"]
+        ["page.rename", "prototype.create_flow", "prototype.create_interaction", "prototype.create_overlay"]
     );
     assert.equal(CommandDescriptors.PAGE_RENAME.cliCommand, "page rename");
     assert.equal(CommandDescriptors.PAGE_RENAME.mcpToolName, "page.rename");
     assert.equal(CommandDescriptors.PROTOTYPE_CREATE_FLOW.cliCommand, "prototype create-flow");
     assert.equal(CommandDescriptors.PROTOTYPE_CREATE_INTERACTION.mcpToolName, "prototype.create_interaction");
+    assert.equal(CommandDescriptors.PROTOTYPE_CREATE_OVERLAY.cliCommand, "prototype create-overlay");
     assert.equal(getCommandDescriptor("page rename").id, "page.rename");
     assert.equal(getCommandDescriptor("prototype create-flow").id, "prototype.create_flow");
+    assert.equal(getCommandDescriptor("prototype create-overlay").id, "prototype.create_overlay");
 });
 
 test("command runtime exposes migrated shape and export descriptors", () => {
@@ -163,7 +166,6 @@ test("command runtime exposes live-gap descriptor boundaries", () => {
             "selection.set",
             "prototype.list_interactions",
             "prototype.delete_interaction",
-            "prototype.create_overlay",
             "shape.set_layout",
         ]
     );
@@ -1261,6 +1263,157 @@ test("prototype create-interaction sends navigate interaction backend-command RP
         assert.equal(body.data.adapterSelection.command, "prototype.create_interaction");
         assert.equal(body.data.interaction.actionType, "navigate-to");
         assert.equal(body.data.revn, 6);
+    } finally {
+        globalThis.fetch = originalFetch;
+    }
+});
+
+test("prototype create-overlay sends overlay backend-command RPC", async () => {
+    const originalFetch = globalThis.fetch;
+    const calls = [];
+    globalThis.fetch = async (url, options) => {
+        calls.push({ url: String(url), options });
+        return {
+            ok: true,
+            status: 200,
+            statusText: "OK",
+            text: async () =>
+                JSON.stringify({
+                    interaction: {
+                        sourceShapeId: UUIDS.object,
+                        destinationBoardId: UUIDS.profile,
+                        relativeToShapeId: UUIDS.object,
+                        index: 1,
+                        actionType: "toggle-overlay",
+                        overlayPositionType: "manual",
+                        overlayPosition: { x: 12, y: 16 },
+                        closeClickOutside: true,
+                        backgroundOverlay: true,
+                    },
+                    revn: 7,
+                    vern: 0,
+                }),
+        };
+    };
+
+    try {
+        const result = await runCli(
+            [
+                "prototype",
+                "create-overlay",
+                "--file",
+                UUIDS.file,
+                "--page",
+                UUIDS.page,
+                "--source",
+                UUIDS.object,
+                "--action",
+                "toggle-overlay",
+                "--destination",
+                UUIDS.profile,
+                "--relative-to",
+                UUIDS.object,
+                "--position",
+                "manual",
+                "--manual-x",
+                "12",
+                "--manual-y",
+                "16",
+                "--close-click-outside",
+                "--background-overlay",
+                "--trigger",
+                "mouse-enter",
+                "--animation",
+                "dissolve",
+                "--animation-duration",
+                "300",
+                "--animation-easing",
+                "linear",
+                "--format",
+                "json",
+            ],
+            {
+                PENPOT_BACKEND_URI: "http://127.0.0.1:6060",
+                PENPOT_CLI_TOKEN: "token-1",
+            }
+        );
+        const body = parseJson(result.stdout);
+
+        assert.equal(result.exitCode, 0);
+        assert.equal(result.stderr, "");
+        assert.equal(calls.length, 1);
+        assert.match(calls[0].url, /\/api\/main\/methods\/create-file-prototype-overlay\?_fmt=json$/);
+        assert.deepEqual(JSON.parse(calls[0].options.body), {
+            id: UUIDS.file,
+            "page-id": UUIDS.page,
+            "source-shape-id": UUIDS.object,
+            "action-type": "toggle-overlay",
+            "destination-board-id": UUIDS.profile,
+            "relative-to-shape-id": UUIDS.object,
+            "overlay-position-type": "manual",
+            "manual-position": { x: 12, y: 16 },
+            "close-click-outside": true,
+            "background-overlay": true,
+            trigger: "mouse-enter",
+            animation: {
+                type: "dissolve",
+                duration: 300,
+                easing: "linear",
+            },
+        });
+        assert.equal(body.status, "ok");
+        assert.equal(body.data.adapter, "backend-command");
+        assert.equal(body.data.adapterSelection.command, "prototype.create_overlay");
+        assert.equal(body.data.sourceShapeId, UUIDS.object);
+        assert.equal(body.data.interaction.actionType, "toggle-overlay");
+        assert.equal(body.data.interaction.overlayPosition.x, 12);
+        assert.equal(body.data.revn, 7);
+    } finally {
+        globalThis.fetch = originalFetch;
+    }
+});
+
+test("prototype create-overlay rejects push animation locally", async () => {
+    const originalFetch = globalThis.fetch;
+    const calls = [];
+    globalThis.fetch = async (url, options) => {
+        calls.push({ url: String(url), options });
+        throw new Error("prototype create-overlay push validation should not call fetch");
+    };
+
+    try {
+        const result = await runCli(
+            [
+                "prototype",
+                "create-overlay",
+                "--file",
+                UUIDS.file,
+                "--page",
+                UUIDS.page,
+                "--source",
+                UUIDS.object,
+                "--action",
+                "open-overlay",
+                "--destination",
+                UUIDS.profile,
+                "--animation",
+                "push",
+                "--animation-duration",
+                "300",
+                "--format",
+                "json",
+            ],
+            {
+                PENPOT_BACKEND_URI: "http://127.0.0.1:6060",
+                PENPOT_CLI_TOKEN: "token-1",
+            }
+        );
+        const body = parseJson(result.stdout);
+
+        assert.equal(result.exitCode, 2);
+        assert.equal(calls.length, 0);
+        assert.equal(body.status, "error");
+        assert.equal(body.error.code, "prototype_overlay_animation_unsupported");
     } finally {
         globalThis.fetch = originalFetch;
     }

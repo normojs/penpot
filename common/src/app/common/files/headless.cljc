@@ -9,6 +9,7 @@
    [app.common.data.macros :as dm]
    [app.common.exceptions :as ex]
    [app.common.files.helpers :as cfh]
+   [app.common.geom.point :as gpt]
    [app.common.types.shape :as cts]
    [app.common.types.shape.interactions :as ctsi]
    [app.common.types.shape.layout :as ctsl]
@@ -1098,6 +1099,134 @@
               (not= missing-layout-value offset-effect)
               (ctsi/set-offset-effect offset-effect)))))))
 
+(defn- prototype-overlay-param
+  [params & keys]
+  (some (fn [key]
+          (when (contains? params key)
+            (get params key)))
+        keys))
+
+(defn- normalize-prototype-overlay-action
+  [action-type]
+  (let [action-type (normalize-layout-keyword action-type)]
+    (when-not (contains? prototype-overlay-action-types action-type)
+      (ex/raise :type :validation
+                :code :unsupported-prototype-overlay-action
+                :hint "Headless prototype overlay creation supports open-overlay, toggle-overlay, and close-overlay actions."
+                :action-type action-type))
+    action-type))
+
+(defn- normalize-prototype-overlay-position-type
+  [position-type]
+  (let [position-type (normalize-layout-keyword (or position-type :center))]
+    (when-not (contains? ctsi/overlay-positioning-types position-type)
+      (ex/raise :type :validation
+                :code :unsupported-prototype-overlay-position
+                :hint "Headless prototype overlay creation received an unsupported overlay position type."
+                :overlay-position-type position-type))
+    position-type))
+
+(defn- point-coordinate
+  [point key]
+  (or (get point key)
+      (get point (name key))))
+
+(defn- normalize-prototype-overlay-manual-position
+  [position-type manual-position]
+  (if (= position-type :manual)
+    (let [x (point-coordinate manual-position :x)
+          y (point-coordinate manual-position :y)]
+      (when-not (and (number? x) (number? y))
+        (ex/raise :type :validation
+                  :code :prototype-overlay-manual-position-required
+                  :hint "Headless manual overlay positioning requires manual-position with numeric x and y."
+                  :manual-position manual-position))
+      (gpt/point x y))
+    (gpt/point 0 0)))
+
+(defn- ensure-overlay-animation!
+  [action-type animation]
+  (when (= :push (animation-type animation))
+    (ex/raise :type :validation
+              :code :unsupported-prototype-animation
+              :hint "Headless prototype overlay creation does not support push animation."
+              :action-type action-type
+              :animation-type :push)))
+
+(defn- normalize-overlay-animation
+  [action-type animation]
+  (ensure-overlay-animation! action-type animation)
+  (cond-> animation
+    (map? animation)
+    (dissoc :way :offset-effect :offsetEffect
+            "way" "offset-effect" "offsetEffect")))
+
+(defn- create-overlay-interaction
+  [file-data page-id source {:keys [delay animation] :as params}]
+  (let [action-type (normalize-prototype-overlay-action
+                     (prototype-overlay-param params :action-type :actionType))
+        trigger (normalize-prototype-trigger (:trigger params))
+        _ (ensure-after-delay-source! source trigger)
+        _ (when (and (some? delay)
+                     (not= trigger :after-delay))
+            (ex/raise :type :validation
+                      :code :prototype-delay-trigger-required
+                      :hint "Headless prototype overlay delay requires trigger after-delay."
+                      :trigger trigger))
+        destination-board-id (prototype-overlay-param params
+                                                      :destination-board-id
+                                                      :destinationBoardId)
+        relative-to-shape-id (prototype-overlay-param params
+                                                      :relative-to-shape-id
+                                                      :relativeToShapeId)
+        [_destination-page-id _destination-page destination]
+        (if (#{:open-overlay :toggle-overlay} action-type)
+          (do
+            (when-not destination-board-id
+              (ex/raise :type :validation
+                        :code :prototype-overlay-destination-required
+                        :hint "Headless open-overlay and toggle-overlay interactions require destination-board-id."
+                        :action-type action-type))
+            (require-prototype-board file-data page-id destination-board-id :destination-board-id))
+          (when destination-board-id
+            (require-prototype-board file-data page-id destination-board-id :destination-board-id)))
+        [_relative-page _relative-page-data _relative-shape]
+        (when relative-to-shape-id
+          (require-prototype-shape file-data page-id relative-to-shape-id :relative-to-shape-id))
+        overlay-position-type (normalize-prototype-overlay-position-type
+                               (prototype-overlay-param params
+                                                        :overlay-position-type
+                                                        :overlayPositionType))
+        manual-position (prototype-overlay-param params :manual-position :manualPosition)
+        overlay-position (normalize-prototype-overlay-manual-position overlay-position-type manual-position)
+        close-click-outside (boolean (or (prototype-overlay-param params
+                                                                  :close-click-outside
+                                                                  :closeClickOutside)
+                                         false))
+        background-overlay (boolean (or (prototype-overlay-param params
+                                                                :background-overlay
+                                                                :backgroundOverlay)
+                                       false))]
+    (-> ctsi/default-interaction
+        (ctsi/set-event-type trigger source)
+        (ctsi/set-action-type action-type)
+        (cond-> destination
+          (ctsi/set-destination (:id destination))
+
+          (some? delay)
+          (ctsi/set-delay delay)
+
+          (#{:open-overlay :toggle-overlay} action-type)
+          (assoc :overlay-pos-type overlay-position-type
+                 :overlay-position overlay-position
+                 :close-click-outside close-click-outside
+                 :background-overlay background-overlay)
+
+          (and (#{:open-overlay :toggle-overlay} action-type)
+               relative-to-shape-id)
+          (ctsi/set-position-relative-to relative-to-shape-id))
+        (apply-prototype-animation (normalize-overlay-animation action-type animation)))))
+
 (defn- create-navigate-interaction
   [source destination {:keys [trigger delay animation] :as params}]
   (let [trigger (normalize-prototype-trigger trigger)]
@@ -1127,6 +1256,20 @@
                               :attr :interactions
                               :val interactions}]}]}))
 
+(defn create-prototype-overlay-request
+  [file-data {:keys [page-id source-shape-id] :as params}]
+  (let [[page-id _page source] (require-prototype-shape file-data page-id source-shape-id :source-shape-id)
+        interaction (create-overlay-interaction file-data page-id source params)
+        interactions (ctsi/add-interaction (:interactions source) interaction)
+        index (dec (count interactions))]
+    {:interaction (prototype-interaction-summary* file-data source interaction index)
+     :changes [{:type :mod-obj
+                :id source-shape-id
+                :page-id page-id
+                :operations [{:type :set
+                              :attr :interactions
+                              :val interactions}]}]}))
+
 (defn delete-prototype-interaction-request
   [file-data {:keys [page-id source-shape-id interaction-index]}]
   (let [[page-id _page source] (require-prototype-shape file-data page-id source-shape-id :source-shape-id)
@@ -1141,15 +1284,15 @@
                 :source-shape-id source-shape-id
                 :interaction-index interaction-index))
     (let [interaction (nth interactions interaction-index)
-          destination (shape-by-id file-data (:destination interaction))]
-      (when-not (and (= :navigate (:action-type interaction)) destination)
+          summary (prototype-interaction-summary* file-data source interaction interaction-index)]
+      (when-not summary
         (ex/raise :type :validation
                   :code :unsupported-prototype-interaction
-                  :hint "Headless prototype interaction deletion currently returns summaries for navigate-to interactions only."
+                  :hint "Headless prototype interaction deletion only supports summarized navigate and overlay interactions."
                   :page-id page-id
                   :source-shape-id source-shape-id
                   :interaction-index interaction-index))
-      {:interaction (prototype-interaction-summary source interaction destination interaction-index)
+      {:interaction summary
        :changes [{:type :mod-obj
                   :id source-shape-id
                   :page-id page-id

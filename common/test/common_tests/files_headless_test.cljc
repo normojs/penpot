@@ -502,6 +502,165 @@
   (t/is (= #{:push}
            (get-in headless/prototype-overlay-create-contract [:unsupported :animation-types]))))
 
+(t/deftest create-prototype-overlay-request-adds-open-toggle-and-close-interactions
+  (let [file-id  (uuid/next)
+        page-id  (uuid/next)
+        frame-a  (uuid/next)
+        frame-b  (uuid/next)
+        rect-id  (uuid/next)
+        data     (ctf/make-file-data file-id page-id)
+        frame-a-result (headless/create-shape-request data {:page-id page-id
+                                                            :shape-id frame-a
+                                                            :type :frame
+                                                            :name "Start"
+                                                            :x 0
+                                                            :y 0
+                                                            :width 320
+                                                            :height 640})
+        data     (cpc/process-changes data (:changes frame-a-result))
+        frame-b-result (headless/create-shape-request data {:page-id page-id
+                                                            :shape-id frame-b
+                                                            :type :frame
+                                                            :name "Overlay"
+                                                            :x 360
+                                                            :y 0
+                                                            :width 200
+                                                            :height 160})
+        data     (cpc/process-changes data (:changes frame-b-result))
+        rect     (headless/create-shape-request data {:page-id page-id
+                                                     :shape-id rect-id
+                                                     :parent-id frame-a
+                                                     :type :rect
+                                                     :name "CTA"
+                                                     :x 24
+                                                     :y 32
+                                                     :width 120
+                                                     :height 40})
+        data     (cpc/process-changes data (:changes rect))
+        open-result (headless/create-prototype-overlay-request
+                     data
+                     {:page-id page-id
+                      :source-shape-id rect-id
+                      :action-type :open-overlay
+                      :destination-board-id frame-b})
+        data     (cpc/process-changes data (:changes open-result))
+        toggle-result (headless/create-prototype-overlay-request
+                       data
+                       {:page-id page-id
+                        :source-shape-id rect-id
+                        :action-type :toggle-overlay
+                        :destination-board-id frame-b
+                        :relative-to-shape-id rect-id
+                        :overlay-position-type :manual
+                        :manual-position {:x 12 :y 16}
+                        :close-click-outside true
+                        :background-overlay true
+                        :trigger :mouse-enter
+                        :animation {:type :dissolve
+                                    :duration 300
+                                    :easing :linear}})
+        data     (cpc/process-changes data (:changes toggle-result))
+        close-result (headless/create-prototype-overlay-request
+                      data
+                      {:page-id page-id
+                       :source-shape-id rect-id
+                       :action-type :close-overlay})
+        data     (cpc/process-changes data (:changes close-result))
+        delete-result (headless/delete-prototype-interaction-request
+                       data
+                       {:page-id page-id
+                        :source-shape-id rect-id
+                        :interaction-index 1})
+        data     (cpc/process-changes data (:changes delete-result))]
+    (t/is (= {:source-shape-id rect-id
+              :source-shape-name "CTA"
+              :index 0
+              :trigger :click
+              :delay nil
+              :action-type :open-overlay
+              :destination-board-id frame-b
+              :destination-board-name "Overlay"
+              :overlay-position-type :center
+              :overlay-position (gpt/point 0 0)
+              :close-click-outside false
+              :background-overlay false}
+             (:interaction open-result)))
+    (t/is (= {:source-shape-id rect-id
+              :source-shape-name "CTA"
+              :index 1
+              :trigger :mouse-enter
+              :delay nil
+              :action-type :toggle-overlay
+              :destination-board-id frame-b
+              :destination-board-name "Overlay"
+              :relative-to-shape-id rect-id
+              :relative-to-shape-name "CTA"
+              :overlay-position-type :manual
+              :overlay-position (gpt/point 12 16)
+              :close-click-outside true
+              :background-overlay true
+              :animation {:animation-type :dissolve
+                          :duration 300
+                          :easing :linear}}
+             (:interaction toggle-result)))
+    (t/is (= {:source-shape-id rect-id
+              :source-shape-name "CTA"
+              :index 2
+              :trigger :click
+              :delay nil
+              :action-type :close-overlay}
+             (:interaction close-result)))
+    (t/is (= (:interaction toggle-result)
+             (:interaction delete-result)))
+    (t/is (= [:open-overlay :close-overlay]
+             (mapv :action-type
+                   (get-in data [:pages-index page-id :objects rect-id :interactions]))))))
+
+(t/deftest create-prototype-overlay-request-rejects-unsupported-animation
+  (let [file-id  (uuid/next)
+        page-id  (uuid/next)
+        frame-a  (uuid/next)
+        frame-b  (uuid/next)
+        rect-id  (uuid/next)
+        data     (ctf/make-file-data file-id page-id)
+        frame-a-result (headless/create-shape-request data {:page-id page-id
+                                                            :shape-id frame-a
+                                                            :type :frame
+                                                            :name "Start"
+                                                            :x 0
+                                                            :y 0
+                                                            :width 320
+                                                            :height 640})
+        data     (cpc/process-changes data (:changes frame-a-result))
+        frame-b-result (headless/create-shape-request data {:page-id page-id
+                                                            :shape-id frame-b
+                                                            :type :frame
+                                                            :name "Overlay"
+                                                            :x 360
+                                                            :y 0
+                                                            :width 200
+                                                            :height 160})
+        data     (cpc/process-changes data (:changes frame-b-result))
+        rect     (headless/create-shape-request data {:page-id page-id
+                                                     :shape-id rect-id
+                                                     :parent-id frame-a
+                                                     :type :rect
+                                                     :name "CTA"
+                                                     :x 24
+                                                     :y 32
+                                                     :width 120
+                                                     :height 40})
+        data     (cpc/process-changes data (:changes rect))]
+    (t/is (thrown? #?(:clj Exception :cljs :default)
+                   (headless/create-prototype-overlay-request
+                    data
+                    {:page-id page-id
+                     :source-shape-id rect-id
+                     :action-type :open-overlay
+                     :destination-board-id frame-b
+                     :animation {:type :push
+                                 :duration 300}})))))
+
 (t/deftest delete-prototype-interaction-request-removes-interaction-by-index
   (let [file-id  (uuid/next)
         page-id  (uuid/next)

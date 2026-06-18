@@ -27,6 +27,7 @@ import { PageCreateTool, PageListTool, PageRenameTool, PageSetCurrentTool } from
 import {
     PrototypeCreateFlowTool,
     PrototypeCreateInteractionTool,
+    PrototypeCreateOverlayTool,
     PrototypeDeleteInteractionTool,
     PrototypeListInteractionsTool,
 } from "./tools/PrototypeTools";
@@ -283,6 +284,7 @@ export class PenpotMcpServer {
             new ShapeDeleteTool(this),
             new PrototypeCreateFlowTool(this),
             new PrototypeCreateInteractionTool(this),
+            new PrototypeCreateOverlayTool(this),
             new PrototypeListInteractionsTool(this),
             new PrototypeDeleteInteractionTool(this),
             new ExportShapeDataTool(this),

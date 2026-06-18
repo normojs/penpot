@@ -693,6 +693,125 @@
                  :destination-board-name "Overlay"}]
                (get-in out [:result :interactions]))))))
 
+(t/deftest create-file-prototype-overlay-and-delete
+  (let [profile  (th/create-profile* 1 {:is-active true})
+        file     (th/create-file* 1 {:profile-id (:id profile)
+                                     :project-id (:default-project-id profile)
+                                     :is-shared false})
+        page-id  (get-in file [:data :pages 0])
+        frame-a  (uuid/next)
+        frame-b  (uuid/next)
+        rect-id  (uuid/next)]
+
+    (doseq [[shape-id x name] [[frame-a 0 "Start"]
+                               [frame-b 360 "Overlay"]]]
+      (let [out {::th/type :create-file-shape
+                 ::rpc/profile-id (:id profile)
+                 :id (:id file)
+                 :page-id page-id
+                 :shape-id shape-id
+                 :type :frame
+                 :name name
+                 :x x
+                 :y 0
+                 :width 320
+                 :height 640
+                 :features cfeat/supported-features}
+            out (th/command! out)]
+        (t/is (nil? (:error out)))))
+
+    (let [out {::th/type :create-file-shape
+               ::rpc/profile-id (:id profile)
+               :id (:id file)
+               :page-id page-id
+               :shape-id rect-id
+               :parent-id frame-a
+               :type :rect
+               :name "CTA"
+               :x 24
+               :y 32
+               :width 120
+               :height 40
+               :features cfeat/supported-features}
+          out (th/command! out)]
+      (t/is (nil? (:error out))))
+
+    (let [out {::th/type :create-file-prototype-overlay
+               ::rpc/profile-id (:id profile)
+               :id (:id file)
+               :page-id page-id
+               :source-shape-id rect-id
+               :action-type :open-overlay
+               :destination-board-id frame-b
+               :features cfeat/supported-features}
+          out (th/command! out)]
+      (t/is (nil? (:error out)))
+      (t/is (= :open-overlay (get-in out [:result :interaction :action-type])))
+      (t/is (= 4 (get-in out [:result :revn]))))
+
+    (let [out {::th/type :create-file-prototype-overlay
+               ::rpc/profile-id (:id profile)
+               :id (:id file)
+               :page-id page-id
+               :source-shape-id rect-id
+               :action-type :toggle-overlay
+               :destination-board-id frame-b
+               :relative-to-shape-id rect-id
+               :overlay-position-type :manual
+               :manual-position (gpt/point 12 16)
+               :close-click-outside true
+               :background-overlay true
+               :trigger :mouse-enter
+               :animation {:type :dissolve
+                           :duration 300
+                           :easing :linear}
+               :features cfeat/supported-features}
+          out (th/command! out)]
+      (t/is (nil? (:error out)))
+      (t/is (= {:source-shape-id rect-id
+                :source-shape-name "CTA"
+                :index 1
+                :trigger :mouse-enter
+                :delay nil
+                :action-type :toggle-overlay
+                :destination-board-id frame-b
+                :destination-board-name "Overlay"
+                :relative-to-shape-id rect-id
+                :relative-to-shape-name "CTA"
+                :overlay-position-type :manual
+                :overlay-position (gpt/point 12 16)
+                :close-click-outside true
+                :background-overlay true
+                :animation {:animation-type :dissolve
+                            :duration 300
+                            :easing :linear}}
+               (get-in out [:result :interaction])))
+      (t/is (= 5 (get-in out [:result :revn]))))
+
+    (let [out {::th/type :create-file-prototype-overlay
+               ::rpc/profile-id (:id profile)
+               :id (:id file)
+               :page-id page-id
+               :source-shape-id rect-id
+               :action-type :close-overlay
+               :features cfeat/supported-features}
+          out (th/command! out)]
+      (t/is (nil? (:error out)))
+      (t/is (= :close-overlay (get-in out [:result :interaction :action-type])))
+      (t/is (= 6 (get-in out [:result :revn]))))
+
+    (let [out {::th/type :delete-file-prototype-interaction
+               ::rpc/profile-id (:id profile)
+               :id (:id file)
+               :page-id page-id
+               :source-shape-id rect-id
+               :interaction-index 1
+               :features cfeat/supported-features}
+          out (th/command! out)]
+      (t/is (nil? (:error out)))
+      (t/is (= :toggle-overlay (get-in out [:result :interaction :action-type])))
+      (t/is (= 7 (get-in out [:result :revn]))))))
+
 (t/deftest update-file-shape-supports-rich-style-and-parent-move
   (let [profile    (th/create-profile* 1 {:is-active true})
         file       (th/create-file* 1 {:profile-id (:id profile)

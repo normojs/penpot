@@ -1,6 +1,7 @@
 # Prototype Create Overlay Contract
 
-Status: P20.2 contract, descriptor-only until P20.3 implements an adapter.
+Status: Implemented in P20.3 as a backend-command MCP tool and
+`penpot-cli prototype create-overlay`.
 
 `prototype.create_overlay` creates one persisted prototype interaction on a
 source shape. It does not create boards, move shapes, open a live workspace, or
@@ -14,11 +15,12 @@ prototype.create_overlay
 
 Adapters:
 
-- `backend-command`: planned for P20.3.
+- `backend-command`: implemented in P20.3 for explicit `fileId`, `pageId`,
+  and `sourceShapeId` targets.
 - `plugin-live`: not part of this contract.
 
-The command-runtime descriptor must keep `adapters: []` until the backend
-implementation is registered.
+The command-runtime descriptor now advertises `adapters: ["backend-command"]`
+and CLI command `prototype create-overlay`.
 
 ## Payload
 
@@ -59,7 +61,7 @@ Optional for every action:
 
 ## Validation
 
-The backend implementation must reject:
+The backend implementation rejects:
 
 - Missing `fileId`, `pageId`, `sourceShapeId`, or `actionType`.
 - `open-overlay` or `toggle-overlay` without `destinationBoardId`.

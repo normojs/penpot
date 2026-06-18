@@ -72,7 +72,7 @@ const AdapterSelectionReasonMessages = Object.freeze({
     [AdapterSelectionReasonCodes.BACKEND_COMMAND_PROTOTYPE_READ_PLANNED]:
         "backend-command prototype reads require explicit file/page targets.",
     [AdapterSelectionReasonCodes.BACKEND_COMMAND_PROTOTYPE_MUTATION_UNSUPPORTED]:
-        "backend-command prototype mutations require an explicit persisted-data contract; overlay creation is unsupported until action and positioning semantics are stable.",
+        "backend-command prototype mutations require an explicit persisted-data contract before execution.",
     [AdapterSelectionReasonCodes.BACKEND_COMMAND_GRID_CONTRACT_UNSUPPORTED]:
         "backend-command grid cell and child placement updates are unsupported until a stable cell payload contract exists.",
     [AdapterSelectionReasonCodes.CLI_LIVE_WORKSPACE_STATE_UNSUPPORTED]:
@@ -244,14 +244,15 @@ export const CommandDescriptors = Object.freeze({
     PROTOTYPE_CREATE_OVERLAY: Object.freeze({
         id: "prototype.create_overlay",
         mcpToolName: "prototype.create_overlay",
+        cliCommand: "prototype create-overlay",
         title: "Create prototype overlay",
         description:
-            "Descriptor-only contracted command; overlay creation is not executable until the backend-command implementation is enabled.",
+            "Creates a persisted open, toggle, or close overlay prototype interaction using backend-command explicit file/page targets.",
         inputSchema:
             "fileId, pageId, sourceShapeId, actionType=open-overlay|toggle-overlay|close-overlay, destinationBoardId required for open/toggle and optional for close, relativeToShapeId?, overlayPositionType=center|manual|top-left|top-right|top-center|bottom-left|bottom-right|bottom-center, manualPosition{x,y} required when overlayPositionType=manual, closeClickOutside?, backgroundOverlay?, trigger?, delay?, animation?; push animation unsupported",
-        adapters: Object.freeze([]),
+        adapters: Object.freeze(["backend-command"]),
         responseShape:
-            "planned status envelope with overlay interaction summary, revision metadata, and adapterSelection metadata; currently reports no executable adapters",
+            "status envelope with overlay interaction summary, revision metadata, and adapterSelection metadata",
     }),
     SHAPE_CREATE_FRAME: Object.freeze({
         id: "shape.create_frame",
@@ -377,6 +378,7 @@ export const HeadlessAuthoringCommandDescriptors = Object.freeze([
     CommandDescriptors.PAGE_RENAME,
     CommandDescriptors.PROTOTYPE_CREATE_FLOW,
     CommandDescriptors.PROTOTYPE_CREATE_INTERACTION,
+    CommandDescriptors.PROTOTYPE_CREATE_OVERLAY,
 ]);
 
 export const LiveGapCommandDescriptors = Object.freeze([
@@ -385,7 +387,6 @@ export const LiveGapCommandDescriptors = Object.freeze([
     CommandDescriptors.SELECTION_SET,
     CommandDescriptors.PROTOTYPE_LIST_INTERACTIONS,
     CommandDescriptors.PROTOTYPE_DELETE_INTERACTION,
-    CommandDescriptors.PROTOTYPE_CREATE_OVERLAY,
     CommandDescriptors.SHAPE_SET_LAYOUT,
 ]);
 

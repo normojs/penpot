@@ -6,6 +6,7 @@ import type { PenpotMcpServer } from "../src/PenpotMcpServer.js";
 import {
     PrototypeCreateFlowTool,
     PrototypeCreateInteractionTool,
+    PrototypeCreateOverlayTool,
     PrototypeDeleteInteractionTool,
     PrototypeListInteractionsTool,
 } from "../src/tools/PrototypeTools.js";
@@ -179,6 +180,98 @@ test("PrototypeCreateInteractionTool maps navigate interaction backend parameter
     assert.equal(body.data.adapterSelection.command, "prototype.create_interaction");
     assert.equal(body.data.interaction.actionType, "navigate-to");
     assert.equal(body.data.revn, 4);
+});
+
+test("PrototypeCreateOverlayTool maps overlay backend parameters", async () => {
+    const calls: RpcCall[] = [];
+    const tool = new PrototypeCreateOverlayTool(
+        mcpServerWithRpc({
+            post: async (
+                methodName: string,
+                params: Record<string, unknown>,
+                userToken: string,
+                context?: PenpotRpcRequestContext
+            ) => {
+                calls.push({ methodName, params, userToken, context });
+                return {
+                    interaction: {
+                        sourceShapeId: "00000000-0000-0000-0000-000000000003",
+                        destinationBoardId: "00000000-0000-0000-0000-000000000004",
+                        relativeToShapeId: "00000000-0000-0000-0000-000000000003",
+                        index: 1,
+                        actionType: "toggle-overlay",
+                        overlayPositionType: "manual",
+                        overlayPosition: { x: 12, y: 16 },
+                        closeClickOutside: true,
+                        backgroundOverlay: true,
+                    },
+                    revn: 5,
+                    vern: 0,
+                };
+            },
+        })
+    );
+
+    const response = await tool.execute({
+        fileId: "00000000-0000-0000-0000-000000000001",
+        pageId: "00000000-0000-0000-0000-000000000002",
+        sourceShapeId: "00000000-0000-0000-0000-000000000003",
+        actionType: "toggle-overlay",
+        destinationBoardId: "00000000-0000-0000-0000-000000000004",
+        relativeToShapeId: "00000000-0000-0000-0000-000000000003",
+        overlayPositionType: "manual",
+        manualPosition: { x: 12, y: 16 },
+        closeClickOutside: true,
+        backgroundOverlay: true,
+        trigger: "mouse-enter",
+        animation: {
+            type: "dissolve",
+            duration: 300,
+            easing: "linear",
+        },
+    });
+    const body = parseJsonResponse(response);
+
+    assert.deepEqual(calls, [
+        {
+            methodName: "create-file-prototype-overlay",
+            params: {
+                id: "00000000-0000-0000-0000-000000000001",
+                "page-id": "00000000-0000-0000-0000-000000000002",
+                "source-shape-id": "00000000-0000-0000-0000-000000000003",
+                "action-type": "toggle-overlay",
+                "destination-board-id": "00000000-0000-0000-0000-000000000004",
+                "relative-to-shape-id": "00000000-0000-0000-0000-000000000003",
+                "overlay-position-type": "manual",
+                "manual-position": { x: 12, y: 16 },
+                "close-click-outside": true,
+                "background-overlay": true,
+                trigger: "mouse-enter",
+                delay: undefined,
+                animation: {
+                    type: "dissolve",
+                    duration: 300,
+                    easing: "linear",
+                },
+            },
+            userToken: "token-1",
+            context: {
+                mcpToolName: "prototype.create_overlay",
+                mcpSessionId: "session-1",
+                mcpAdapter: "backend-command",
+                mcpFileId: "00000000-0000-0000-0000-000000000001",
+                mcpPageId: "00000000-0000-0000-0000-000000000002",
+                mcpShapeId: "00000000-0000-0000-0000-000000000003",
+            },
+        },
+    ]);
+    assert.equal(body.status, "ok");
+    assert.equal(body.data.adapter, "backend-command");
+    assert.equal(body.data.adapterSelection.command, "prototype.create_overlay");
+    assert.equal(body.data.sourceShapeId, "00000000-0000-0000-0000-000000000003");
+    assert.equal(body.data.interaction.actionType, "toggle-overlay");
+    assert.equal(body.data.interaction.overlayPosition.x, 12);
+    assert.equal(body.data.revn, 5);
 });
 
 test("PrototypeListInteractionsTool reads persisted prototype data through backend RPC", async () => {

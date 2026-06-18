@@ -234,6 +234,7 @@ export interface CommandDescriptorCatalog extends LowRiskCommandDescriptorCatalo
     PROTOTYPE_CREATE_OVERLAY: CommandDescriptor & {
         id: "prototype.create_overlay";
         mcpToolName: "prototype.create_overlay";
+        cliCommand: "prototype create-overlay";
     };
     SHAPE_CREATE_FRAME: CommandDescriptor & {
         id: "shape.create_frame";

@@ -461,25 +461,25 @@ P19.2 is complete:
 
 P19.3 is complete and closes Phase 19:
 
-1. `prototype.create_overlay` remains descriptor-only and explicitly
-   unsupported.
-2. Overlay creation needs a stable contract for action type
+1. `prototype.create_overlay` remained descriptor-only and explicitly
+   unsupported at the Phase 19 boundary.
+2. Overlay creation needed a stable contract for action type
    (`open-overlay`, `toggle-overlay`, `close-overlay`), destination board,
    relative target, preset/manual positioning, close-on-click-outside,
    background overlay, animation, and persisted response summaries.
-3. The next safe slice is read-only overlay interaction summaries and fixtures
+3. The next safe slice was read-only overlay interaction summaries and fixtures
    before any backend-command mutation implementation.
 
-The next active work should start Phase 20:
+Phase 20 is complete:
 
 1. Done in P20.1: extend prototype interaction summaries to include persisted
    overlay actions without creating or mutating them.
 2. Done in P20.2: define the `prototype.create_overlay` payload and validation
    model in `prototype-create-overlay-contract.md` while keeping the descriptor
-   adapterless.
-3. Next in P20.3: register executable MCP/CLI overlay creation only after the
-   backend-command implementation satisfies the read contract and validation
-   fixtures.
+   adapterless at the contract stage.
+3. Done in P20.3: implement backend-command overlay creation through
+   common/backend helpers, MCP `prototype.create_overlay`, and
+   `penpot-cli prototype create-overlay` with validation and smoke coverage.
 
 Keep manual configuration behavior stable while moving command metadata and
 envelopes; transport-specific formatting should stay at the MCP/CLI edges.
