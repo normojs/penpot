@@ -7,6 +7,7 @@
 (ns backend-tests.rpc-headless-commands-test
   (:require
    [app.common.features :as cfeat]
+   [app.common.geom.point :as gpt]
    [app.common.types.text :as cttx]
    [app.common.uuid :as uuid]
    [app.rpc :as-alias rpc]
@@ -571,6 +572,126 @@
                   :starting-frame frame-a}
                  flow))
         (t/is (= [] interactions))))))
+
+(t/deftest get-file-prototype-interactions-lists-overlay-actions
+  (let [profile  (th/create-profile* 1 {:is-active true})
+        file     (th/create-file* 1 {:profile-id (:id profile)
+                                     :project-id (:default-project-id profile)
+                                     :is-shared false})
+        page-id  (get-in file [:data :pages 0])
+        frame-a  (uuid/next)
+        frame-b  (uuid/next)
+        rect-id  (uuid/next)]
+
+    (doseq [[shape-id x name] [[frame-a 0 "Start"]
+                               [frame-b 360 "Overlay"]]]
+      (let [out {::th/type :create-file-shape
+                 ::rpc/profile-id (:id profile)
+                 :id (:id file)
+                 :page-id page-id
+                 :shape-id shape-id
+                 :type :frame
+                 :name name
+                 :x x
+                 :y 0
+                 :width 320
+                 :height 640
+                 :features cfeat/supported-features}
+            out (th/command! out)]
+        (t/is (nil? (:error out)))))
+
+    (let [out {::th/type :create-file-shape
+               ::rpc/profile-id (:id profile)
+               :id (:id file)
+               :page-id page-id
+               :shape-id rect-id
+               :parent-id frame-a
+               :type :rect
+               :name "CTA"
+               :x 24
+               :y 32
+               :width 120
+               :height 40
+               :features cfeat/supported-features}
+          out (th/command! out)]
+      (t/is (nil? (:error out))))
+
+    (th/update-file! :profile-id (:id profile)
+                     :file-id (:id file)
+                     :revn 3
+                     :changes [{:type :mod-obj
+                                :id rect-id
+                                :page-id page-id
+                                :operations [{:type :set
+                                              :attr :interactions
+                                              :val [{:action-type :open-overlay
+                                                     :event-type :mouse-enter
+                                                     :destination frame-b
+                                                     :position-relative-to rect-id
+                                                     :overlay-pos-type :manual
+                                                     :overlay-position (gpt/point 12 16)
+                                                     :close-click-outside true
+                                                     :background-overlay true
+                                                     :animation {:animation-type :dissolve
+                                                                 :duration 300
+                                                                 :easing :linear}}
+                                                    {:action-type :toggle-overlay
+                                                     :event-type :mouse-leave
+                                                     :destination frame-b
+                                                     :overlay-pos-type :bottom-right
+                                                     :overlay-position (gpt/point 0 0)
+                                                     :close-click-outside false
+                                                     :background-overlay false}
+                                                    {:action-type :close-overlay
+                                                     :event-type :click
+                                                     :destination frame-b}]}]}])
+
+    (let [out {::th/type :get-file-prototype-interactions
+               ::rpc/profile-id (:id profile)
+               :id (:id file)
+               :page-id page-id
+               :source-shape-id rect-id
+               :features cfeat/supported-features}
+          out (th/command! out)]
+      (t/is (nil? (:error out)))
+      (t/is (= [{:source-shape-id rect-id
+                 :source-shape-name "CTA"
+                 :index 0
+                 :trigger :mouse-enter
+                 :delay nil
+                 :action-type :open-overlay
+                 :destination-board-id frame-b
+                 :destination-board-name "Overlay"
+                 :relative-to-shape-id rect-id
+                 :relative-to-shape-name "CTA"
+                 :overlay-position-type :manual
+                 :overlay-position (gpt/point 12 16)
+                 :close-click-outside true
+                 :background-overlay true
+                 :animation {:animation-type :dissolve
+                             :duration 300
+                             :easing :linear}}
+                {:source-shape-id rect-id
+                 :source-shape-name "CTA"
+                 :index 1
+                 :trigger :mouse-leave
+                 :delay nil
+                 :action-type :toggle-overlay
+                 :destination-board-id frame-b
+                 :destination-board-name "Overlay"
+                 :overlay-position-type :bottom-right
+                 :overlay-position (gpt/point 0 0)
+                 :close-click-outside false
+                 :background-overlay false}
+                {:source-shape-id rect-id
+                 :source-shape-name "CTA"
+                 :index 2
+                 :trigger :click
+                 :delay nil
+                 :action-type :close-overlay
+                 :destination-board-id frame-b
+                 :destination-board-name "Overlay"}]
+               (get-in out [:result :interactions]))))))
 
 (t/deftest update-file-shape-supports-rich-style-and-parent-move
   (let [profile    (th/create-profile* 1 {:is-active true})

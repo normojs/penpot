@@ -1293,6 +1293,33 @@ test("prototype list-interactions reads persisted prototype data with backend-co
                             index: 0,
                             actionType: "navigate-to",
                         },
+                        {
+                            sourceShapeId: UUIDS.object,
+                            destinationBoardId: UUIDS.profile,
+                            relativeToShapeId: UUIDS.object,
+                            index: 1,
+                            actionType: "open-overlay",
+                            overlayPositionType: "manual",
+                            overlayPosition: { x: 12, y: 16 },
+                            closeClickOutside: true,
+                            backgroundOverlay: true,
+                        },
+                        {
+                            sourceShapeId: UUIDS.object,
+                            destinationBoardId: UUIDS.profile,
+                            index: 2,
+                            actionType: "toggle-overlay",
+                            overlayPositionType: "bottom-right",
+                            overlayPosition: { x: 0, y: 0 },
+                            closeClickOutside: false,
+                            backgroundOverlay: false,
+                        },
+                        {
+                            sourceShapeId: UUIDS.object,
+                            destinationBoardId: UUIDS.profile,
+                            index: 3,
+                            actionType: "close-overlay",
+                        },
                     ],
                 }),
         };
@@ -1337,6 +1364,10 @@ test("prototype list-interactions reads persisted prototype data with backend-co
         assert.equal(body.data.adapterSelection.command, "prototype.list_interactions");
         assert.equal(body.data.flows[0].name, "Checkout");
         assert.equal(body.data.interactions[0].actionType, "navigate-to");
+        assert.equal(body.data.interactions[1].actionType, "open-overlay");
+        assert.equal(body.data.interactions[1].overlayPosition.x, 12);
+        assert.equal(body.data.interactions[2].actionType, "toggle-overlay");
+        assert.equal(body.data.interactions[3].actionType, "close-overlay");
     } finally {
         globalThis.fetch = originalFetch;
     }

@@ -8,8 +8,10 @@
   (:require
    [app.common.files.changes :as cpc]
    [app.common.files.headless :as headless]
+   [app.common.geom.point :as gpt]
    [app.common.types.file :as ctf]
    [app.common.types.pages-list :as ctpl]
+   [app.common.types.shape.interactions :as ctsi]
    [app.common.types.text :as cttx]
    [app.common.uuid :as uuid]
    [clojure.test :as t]))
@@ -373,6 +375,44 @@
                       :destination-board-id frame-b
                       :trigger :click})
         data     (cpc/process-changes data (:changes interaction))
+        open-overlay {:action-type :open-overlay
+                      :event-type :mouse-enter
+                      :destination frame-b
+                      :position-relative-to rect-id
+                      :overlay-pos-type :manual
+                      :overlay-position (gpt/point 12 16)
+                      :close-click-outside true
+                      :background-overlay true
+                      :animation {:animation-type :dissolve
+                                  :duration 300
+                                  :easing :linear}}
+        toggle-overlay {:action-type :toggle-overlay
+                        :event-type :mouse-leave
+                        :destination frame-b
+                        :overlay-pos-type :bottom-right
+                        :overlay-position (gpt/point 0 0)
+                        :close-click-outside false
+                        :background-overlay false}
+        close-overlay {:action-type :close-overlay
+                       :event-type :click
+                       :destination frame-b
+                       :animation {:animation-type :slide
+                                   :duration 250
+                                   :easing :ease-in-out
+                                   :way :in
+                                   :direction :left
+                                   :offset-effect false}}
+        data     (cpc/process-changes
+                  data
+                  [{:type :mod-obj
+                    :id rect-id
+                    :page-id page-id
+                    :operations [{:type :set
+                                  :attr :interactions
+                                  :val (-> (get-in data [:pages-index page-id :objects rect-id :interactions])
+                                           (ctsi/add-interaction open-overlay)
+                                           (ctsi/add-interaction toggle-overlay)
+                                           (ctsi/add-interaction close-overlay))}]}])
         summary  (headless/prototype-interactions-summary data {:page-id page-id})
         filtered (headless/prototype-interactions-summary data {:page-id page-id
                                                                :flow-id flow-id
@@ -390,7 +430,50 @@
                :delay nil
                :action-type :navigate-to
                :destination-board-id frame-b
-               :destination-board-name "Done"}]
+               :destination-board-name "Done"}
+              {:source-shape-id rect-id
+               :source-shape-name "CTA"
+               :index 1
+               :trigger :mouse-enter
+               :delay nil
+               :action-type :open-overlay
+               :destination-board-id frame-b
+               :destination-board-name "Done"
+               :relative-to-shape-id rect-id
+               :relative-to-shape-name "CTA"
+               :overlay-position-type :manual
+               :overlay-position (gpt/point 12 16)
+               :close-click-outside true
+               :background-overlay true
+               :animation {:animation-type :dissolve
+                           :duration 300
+                           :easing :linear}}
+              {:source-shape-id rect-id
+               :source-shape-name "CTA"
+               :index 2
+               :trigger :mouse-leave
+               :delay nil
+               :action-type :toggle-overlay
+               :destination-board-id frame-b
+               :destination-board-name "Done"
+               :overlay-position-type :bottom-right
+               :overlay-position (gpt/point 0 0)
+               :close-click-outside false
+               :background-overlay false}
+              {:source-shape-id rect-id
+               :source-shape-name "CTA"
+               :index 3
+               :trigger :click
+               :delay nil
+               :action-type :close-overlay
+               :destination-board-id frame-b
+               :destination-board-name "Done"
+               :animation {:animation-type :slide
+                           :duration 250
+                           :easing :ease-in-out
+                           :way :in
+                           :direction :left
+                           :offset-effect false}}]
              (:interactions summary)))
     (t/is (= summary filtered))
     (t/is (= {:flows [] :interactions []}

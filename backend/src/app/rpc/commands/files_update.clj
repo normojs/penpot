@@ -298,12 +298,19 @@
 (def ^:private
   schema:prototype-animation
   [:map {:title "HeadlessPrototypeAnimation"}
-   [:type [::sm/one-of ctsi/animation-types]]
+   [:type {:optional true} [::sm/one-of ctsi/animation-types]]
+   [:animation-type {:optional true} [::sm/one-of ctsi/animation-types]]
    [:duration [::sm/int {:min 0 :max 60000}]]
    [:easing {:optional true} [::sm/one-of ctsi/easing-types]]
    [:direction {:optional true} [::sm/one-of ctsi/direction-types]]
    [:way {:optional true} [::sm/one-of ctsi/way-types]]
    [:offset-effect {:optional true} :boolean]])
+
+(def ^:private
+  schema:prototype-point
+  [:map {:title "HeadlessPrototypePoint"}
+   [:x ::sm/safe-number]
+   [:y ::sm/safe-number]])
 
 (def ^:private
   schema:create-file-prototype-flow
@@ -348,16 +355,56 @@
    [:features {:optional true} ::cfeat/features]])
 
 (def ^:private
-  schema:prototype-interaction-summary
-  [:map {:title "HeadlessPrototypeInteractionSummary"}
+  schema:prototype-interaction-summary-base
+  [:map {:title "HeadlessPrototypeInteractionSummaryBase"}
    [:source-shape-id ::sm/uuid]
    [:source-shape-name [:string {:max 250}]]
    [:index [::sm/int {:min 0}]]
    [:trigger [::sm/one-of #{:click :mouse-enter :mouse-leave :after-delay}]]
    [:delay {:optional true} [:maybe ::sm/int]]
+   [:animation {:optional true} schema:prototype-animation]])
+
+(def ^:private
+  schema:prototype-navigate-interaction-summary
+  [:and
+   schema:prototype-interaction-summary-base
+   [:map {:title "HeadlessPrototypeNavigateInteractionSummary"}
    [:action-type [:= :navigate-to]]
    [:destination-board-id ::sm/uuid]
-   [:destination-board-name [:string {:max 250}]]])
+    [:destination-board-name [:string {:max 250}]]]])
+
+(def ^:private
+  schema:prototype-overlay-interaction-summary
+  [:and
+   schema:prototype-interaction-summary-base
+   [:map {:title "HeadlessPrototypeOverlayInteractionSummary"}
+    [:action-type [::sm/one-of #{:open-overlay :toggle-overlay}]]
+    [:destination-board-id ::sm/uuid]
+    [:destination-board-name [:string {:max 250}]]
+    [:relative-to-shape-id {:optional true} ::sm/uuid]
+    [:relative-to-shape-name {:optional true} [:string {:max 250}]]
+    [:overlay-position-type [::sm/one-of ctsi/overlay-positioning-types]]
+    [:overlay-position schema:prototype-point]
+    [:close-click-outside {:optional true} [:maybe ::sm/boolean]]
+    [:background-overlay {:optional true} [:maybe ::sm/boolean]]]])
+
+(def ^:private
+  schema:prototype-close-overlay-interaction-summary
+  [:and
+   schema:prototype-interaction-summary-base
+   [:map {:title "HeadlessPrototypeCloseOverlayInteractionSummary"}
+    [:action-type [:= :close-overlay]]
+    [:destination-board-id {:optional true} ::sm/uuid]
+    [:destination-board-name {:optional true} [:string {:max 250}]]]])
+
+(def ^:private
+  schema:prototype-interaction-summary
+  [:multi {:dispatch :action-type
+           :title "HeadlessPrototypeInteractionSummary"}
+   [:navigate-to schema:prototype-navigate-interaction-summary]
+   [:open-overlay schema:prototype-overlay-interaction-summary]
+   [:toggle-overlay schema:prototype-overlay-interaction-summary]
+   [:close-overlay schema:prototype-close-overlay-interaction-summary]])
 
 (def ^:private
   schema:create-file-prototype-interaction-result
@@ -1063,7 +1110,7 @@
         :team-id    (:team-id file)}})))
 
 (sv/defmethod ::get-file-prototype-interactions
-  "Get persisted prototype flow and navigate interaction summaries for the specified file."
+  "Get persisted prototype flow, navigate, and overlay interaction summaries for the specified file."
   {::sm/params schema:get-file-prototype-interactions
    ::sm/result schema:get-file-prototype-interactions-result
    ::doc/module :files

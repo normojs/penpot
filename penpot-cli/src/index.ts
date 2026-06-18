@@ -155,7 +155,7 @@ Usage:
   penpot-cli prototype delete-interaction --file <file-id> --source <shape-id> --index <n> [--page <page-id>] [--adapter auto|backend-command] [--format text|json]
 
 Notes:
-  Backend-command prototype helpers currently support basic flows, navigate-to interactions, persisted listing, and source-shape/index deletion.
+  Backend-command prototype helpers currently support basic flows, navigate-to interaction creation, persisted navigate/overlay listing, and source-shape/index deletion.
   Overlay creation remains planned until its payload and target contracts are stable.
 
 Environment:

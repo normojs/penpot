@@ -223,10 +223,11 @@ export const CommandDescriptors = Object.freeze({
         cliCommand: "prototype list-interactions",
         title: "List prototype interactions",
         description:
-            "Lists persisted prototype flows and navigate interactions using backend-command explicit file/page targets.",
+            "Lists persisted prototype flows plus navigate and overlay interactions using backend-command explicit file/page targets.",
         inputSchema: "fileId, pageId?, flowId?, sourceShapeId?, adapter?",
         adapters: Object.freeze(["backend-command"]),
-        responseShape: "status envelope with flow and interaction summaries plus adapterSelection metadata",
+        responseShape:
+            "status envelope with flow and navigate/open-overlay/toggle-overlay/close-overlay interaction summaries plus adapterSelection metadata",
     }),
     PROTOTYPE_DELETE_INTERACTION: Object.freeze({
         id: "prototype.delete_interaction",

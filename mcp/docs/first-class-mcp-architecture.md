@@ -1333,10 +1333,10 @@ P7.2 implementation note:
   operations to scripts and reports `adapter: "backend-command"` in JSON
   output.
 
-P17.3 prototype read result:
+P17.3/P20.1 prototype read result:
 
-- Common/backend now summarize persisted prototype flows and navigate-to
-  interactions through `prototype-interactions-summary` and
+- Common/backend now summarize persisted prototype flows, navigate-to
+  interactions, and read-only overlay interactions through `prototype-interactions-summary` and
   `get-file-prototype-interactions`.
 - MCP registers `prototype.list_interactions` as a backend-command-only read for
   explicit `fileId` targets, returning flow and interaction summaries plus
@@ -1345,7 +1345,8 @@ P17.3 prototype read result:
   for scripts without requiring a bound live workspace.
 - Prototype overlay creation and editor-local selection/current-page state
   remain out of scope for this backend-safe read slice. P19.2 later adds
-  backend-command interaction deletion against the list/discovery identity.
+  backend-command interaction deletion against the list/discovery identity, and
+  P20.1 adds read-only overlay summaries before any create-overlay contract.
 - This is a transitional adapter slice. `command-runtime/` now centralizes the
   first adapter-selection helper, while descriptors, request envelopes, and
   execution dispatch still need to move out of MCP and CLI entry adapters.
@@ -2073,8 +2074,8 @@ Phase 5.4 implementation note:
 - `prototype.create_interaction` creates a navigate-to interaction from an
   explicit source shape id to an explicit destination board/frame id, with
   typed trigger, optional delay, preserve-scroll, and transition animation.
-- Tool responses return typed flow and interaction summaries so generated
-  prototype screens can be chained into export and preview tools.
+- Tool responses return typed flow plus navigate/overlay interaction summaries
+  so generated prototype screens can be chained into export and preview tools.
 
 Phase 5.5 implementation note:
 

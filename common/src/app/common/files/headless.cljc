@@ -82,16 +82,37 @@
    :starting-board-id (:starting-frame flow)
    :starting-board-name (:name starting-board)})
 
+(defn- optional-shape-summary
+  [prefix shape]
+  (when shape
+    {(keyword (str prefix "-id")) (:id shape)
+     (keyword (str prefix "-name")) (:name shape)}))
+
 (defn prototype-interaction-summary
   [source interaction destination index]
-  {:source-shape-id (:id source)
-   :source-shape-name (:name source)
-   :index index
-   :trigger (:event-type interaction)
-   :delay (:delay interaction)
-   :action-type :navigate-to
-   :destination-board-id (:id destination)
-   :destination-board-name (:name destination)})
+  (let [action-type (:action-type interaction)
+        action-type (if (= action-type :navigate) :navigate-to action-type)]
+    (cond-> {:source-shape-id (:id source)
+             :source-shape-name (:name source)
+             :index index
+             :trigger (:event-type interaction)
+             :delay (:delay interaction)
+             :action-type action-type}
+      destination
+      (merge (optional-shape-summary "destination-board" destination))
+
+      (some? (:position-relative-to interaction))
+      (assoc :relative-to-shape-id (:position-relative-to interaction))
+
+      (#{:open-overlay :toggle-overlay} action-type)
+      (assoc :overlay-position-type (:overlay-pos-type interaction)
+             :overlay-position (:overlay-position interaction)
+             :close-click-outside (:close-click-outside interaction)
+             :background-overlay (:background-overlay interaction))
+
+      (and (not= :navigate-to action-type)
+           (some? (:animation interaction)))
+      (assoc :animation (:animation interaction)))))
 
 (defn- default-shape-name
   [type]
@@ -231,11 +252,26 @@
                            (prototype-flow-summary flow page-id starting-board))))))))
        (vec)))
 
-(defn- prototype-navigate-interaction-summary
+(defn- prototype-interaction-summary*
   [file-data source interaction index]
-  (when (= :navigate (:action-type interaction))
-    (when-let [destination (shape-by-id file-data (:destination interaction))]
-      (prototype-interaction-summary source interaction destination index))))
+  (let [action-type (:action-type interaction)
+        destination (shape-by-id file-data (:destination interaction))]
+    (case action-type
+      :navigate
+      (when destination
+        (prototype-interaction-summary source interaction destination index))
+
+      (:open-overlay :toggle-overlay)
+      (when destination
+        (let [relative-to (shape-by-id file-data (:position-relative-to interaction))]
+          (cond-> (prototype-interaction-summary source interaction destination index)
+            relative-to
+            (merge (optional-shape-summary "relative-to-shape" relative-to)))))
+
+      :close-overlay
+      (prototype-interaction-summary source interaction destination index)
+
+      nil)))
 
 (defn- prototype-interaction-summaries
   [file-data page-id source-shape-id]
@@ -250,8 +286,8 @@
                   (fn [source]
                     (->> (:interactions source)
                          (map-indexed
-                          (fn [index interaction]
-                            (prototype-navigate-interaction-summary file-data source interaction index)))
+                         (fn [index interaction]
+                            (prototype-interaction-summary* file-data source interaction index)))
                          (keep identity))))))))
        (vec)))
 

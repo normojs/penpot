@@ -60,8 +60,8 @@ subset:
 - Grid layout support covers container direction, rows/columns track arrays,
   gaps, padding, and alignment fields; `layout-grid-cells` and child placement
   remain outside the backend-command contract.
-- Prototype helpers persist page flows and navigate interactions through
-  `:set-flow` and `:mod-obj` changes.
+- Prototype helpers persist page flows plus navigate and overlay interactions
+  through `:set-flow` and `:mod-obj` changes.
 
 ### Plugin-Live Surface
 
@@ -217,6 +217,19 @@ P17.3 implementation note:
 - Overlay creation, selection, and current-page state remain outside this
   slice. Interaction deletion is now covered by P19.2 as a backend-command
   source-shape/index mutation.
+
+P20.1 implementation note:
+
+- `prototype-interactions-summary` now reports persisted `:open-overlay`,
+  `:toggle-overlay`, and `:close-overlay` interactions in addition to
+  navigate-to interactions.
+- Overlay summaries include destination board identity, optional relative shape
+  identity, overlay position type, overlay position point, click-outside close
+  flag, background overlay flag, and animation when present.
+- Backend `get-file-prototype-interactions`, MCP
+  `prototype.list_interactions`, and `penpot-cli prototype list-interactions`
+  expose those summaries read-only. `prototype.create_overlay` remains
+  descriptor-only until P20.2/P20.3.
 
 ## P19.3 Overlay Contract Reassessment
 

@@ -204,6 +204,33 @@ test("PrototypeListInteractionsTool reads persisted prototype data through backe
                             index: 0,
                             actionType: "navigate-to",
                         },
+                        {
+                            sourceShapeId: "00000000-0000-0000-0000-000000000003",
+                            destinationBoardId: "00000000-0000-0000-0000-000000000004",
+                            relativeToShapeId: "00000000-0000-0000-0000-000000000003",
+                            index: 1,
+                            actionType: "open-overlay",
+                            overlayPositionType: "manual",
+                            overlayPosition: { x: 12, y: 16 },
+                            closeClickOutside: true,
+                            backgroundOverlay: true,
+                        },
+                        {
+                            sourceShapeId: "00000000-0000-0000-0000-000000000003",
+                            destinationBoardId: "00000000-0000-0000-0000-000000000004",
+                            index: 2,
+                            actionType: "toggle-overlay",
+                            overlayPositionType: "bottom-right",
+                            overlayPosition: { x: 0, y: 0 },
+                            closeClickOutside: false,
+                            backgroundOverlay: false,
+                        },
+                        {
+                            sourceShapeId: "00000000-0000-0000-0000-000000000003",
+                            destinationBoardId: "00000000-0000-0000-0000-000000000004",
+                            index: 3,
+                            actionType: "close-overlay",
+                        },
                     ],
                 };
             },
@@ -237,6 +264,10 @@ test("PrototypeListInteractionsTool reads persisted prototype data through backe
     assert.equal(body.data.pageId, "00000000-0000-0000-0000-000000000002");
     assert.equal(body.data.flows.length, 1);
     assert.equal(body.data.interactions[0].actionType, "navigate-to");
+    assert.equal(body.data.interactions[1].actionType, "open-overlay");
+    assert.equal(body.data.interactions[1].overlayPosition.x, 12);
+    assert.equal(body.data.interactions[2].actionType, "toggle-overlay");
+    assert.equal(body.data.interactions[3].actionType, "close-overlay");
 });
 
 test("PrototypeDeleteInteractionTool deletes persisted prototype interaction through backend RPC", async () => {
