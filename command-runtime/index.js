@@ -246,12 +246,12 @@ export const CommandDescriptors = Object.freeze({
         mcpToolName: "prototype.create_overlay",
         title: "Create prototype overlay",
         description:
-            "Descriptor-only planned command; overlay creation is not executable until open/toggle/close action, destination board, relative target, positioning, close behavior, background, and animation semantics are defined.",
+            "Descriptor-only contracted command; overlay creation is not executable until the backend-command implementation is enabled.",
         inputSchema:
-            "unsupported planned payload: fileId, pageId, sourceShapeId, actionType, destinationBoardId?, relativeToShapeId?, overlayPositionType?, manualPosition?, closeWhenClickOutside?, addBackgroundOverlay?, animation?",
+            "fileId, pageId, sourceShapeId, actionType=open-overlay|toggle-overlay|close-overlay, destinationBoardId required for open/toggle and optional for close, relativeToShapeId?, overlayPositionType=center|manual|top-left|top-right|top-center|bottom-left|bottom-right|bottom-center, manualPosition{x,y} required when overlayPositionType=manual, closeClickOutside?, backgroundOverlay?, trigger?, delay?, animation?; push animation unsupported",
         adapters: Object.freeze([]),
         responseShape:
-            "unsupported until overlay action contract, persisted summary shape, and backend/common validation fixtures exist",
+            "planned status envelope with overlay interaction summary, revision metadata, and adapterSelection metadata; currently reports no executable adapters",
     }),
     SHAPE_CREATE_FRAME: Object.freeze({
         id: "shape.create_frame",

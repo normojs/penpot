@@ -1464,6 +1464,18 @@ P19.3 implementation note:
   followed by a create payload contract. MCP and CLI should not register an
   overlay creation command before that contract exists.
 
+P20.2 implementation note:
+
+- `prototype-create-overlay-contract.md` defines the future
+  `prototype.create_overlay` backend-command payload.
+- The contract covers explicit file/page/source targets, `open-overlay`,
+  `toggle-overlay`, and `close-overlay`, destination board rules, relative
+  target rules, preset/manual positioning, close/background flags, trigger,
+  delay, animation, validation errors, and response summary shape.
+- The shared descriptor now publishes this payload contract but still reports no
+  executable adapters. P20.3 must register backend-command only after the common
+  helper and RPC path satisfy the contract fixtures.
+
 P11.5 implementation note:
 
 - `render.preview` now advertises both `exporter` and `plugin-live` adapters in

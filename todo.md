@@ -626,7 +626,7 @@ any headless overlay creation command is implemented.
 | ID | Status | Task | Modules | Verification | Notes |
 | --- | --- | --- | --- | --- | --- |
 | P20.1 | done | Add read-only overlay interaction summaries | `common`, `backend`, `mcp`, `penpot-cli`, `mcp/docs` | Completed 2026-06-18; command-runtime/MCP/CLI tests pass, common focused test shows only existing text-content failures, backend focused test is blocked by local Postgres SSL before assertions | `prototype.list_interactions` now reports persisted open/toggle/close overlay summaries without enabling create-overlay |
-| P20.2 | todo | Define `prototype.create_overlay` payload contract | `mcp/docs`, `command-runtime`, `common` | Descriptor and contract fixtures define action type, source shape, destination board, relative target, preset/manual position, close/background flags, animation, validation errors, and response shape | No executable adapter until contract fixtures are stable |
+| P20.2 | done | Define `prototype.create_overlay` payload contract | `mcp/docs`, `command-runtime`, `common` | Completed 2026-06-18; command-runtime/CLI tests pass and common focused test shows only existing text-content failures | Descriptor, common contract fixture, and `prototype-create-overlay-contract.md` define the payload while keeping no executable adapter |
 | P20.3 | todo | Implement backend-command overlay creation if contract is stable | `common`, `backend`, `mcp`, `penpot-cli` | Focused tests cover open/toggle/close creation, invalid targets, manual/preset positioning, and list/delete interoperability | Only start after P20.1 and P20.2 are done |
 
 ## Next Recommended Sprint

@@ -231,6 +231,18 @@ P20.1 implementation note:
   expose those summaries read-only. `prototype.create_overlay` remains
   descriptor-only until P20.2/P20.3.
 
+P20.2 contract note:
+
+- `prototype-create-overlay-contract.md` defines the payload and response
+  contract for future `prototype.create_overlay` execution.
+- The contract requires explicit `fileId`, `pageId`, `sourceShapeId`, and
+  `actionType`; `destinationBoardId` is required for `open-overlay` and
+  `toggle-overlay`, and optional for `close-overlay`.
+- Manual positioning requires an explicit `{x, y}` point, and push animation is
+  rejected for overlay actions.
+- The command-runtime descriptor now exposes the concrete payload contract while
+  keeping `adapters: []` until P20.3 registers an implementation.
+
 ## P19.3 Overlay Contract Reassessment
 
 `prototype.create_overlay` remains descriptor-only and unsupported after the

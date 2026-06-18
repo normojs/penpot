@@ -109,9 +109,11 @@ test("live-gap descriptors document live-only and planned command boundaries", (
         /overlay creation is unsupported/
     );
     assert.deepEqual(CommandDescriptors.PROTOTYPE_CREATE_OVERLAY.adapters, []);
-    assert.match(CommandDescriptors.PROTOTYPE_CREATE_OVERLAY.description, /open\/toggle\/close action/);
-    assert.match(CommandDescriptors.PROTOTYPE_CREATE_OVERLAY.inputSchema, /manualPosition/);
-    assert.match(CommandDescriptors.PROTOTYPE_CREATE_OVERLAY.responseShape, /validation fixtures/);
+    assert.match(CommandDescriptors.PROTOTYPE_CREATE_OVERLAY.description, /contracted command/);
+    assert.match(CommandDescriptors.PROTOTYPE_CREATE_OVERLAY.inputSchema, /actionType=open-overlay\|toggle-overlay\|close-overlay/);
+    assert.match(CommandDescriptors.PROTOTYPE_CREATE_OVERLAY.inputSchema, /manualPosition\{x,y\} required/);
+    assert.match(CommandDescriptors.PROTOTYPE_CREATE_OVERLAY.inputSchema, /push animation unsupported/);
+    assert.match(CommandDescriptors.PROTOTYPE_CREATE_OVERLAY.responseShape, /no executable adapters/);
     assert.match(CommandDescriptors.SHAPE_SET_LAYOUT.responseShape, /shape.update/);
 });
 

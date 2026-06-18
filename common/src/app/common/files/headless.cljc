@@ -114,6 +114,47 @@
            (some? (:animation interaction)))
       (assoc :animation (:animation interaction)))))
 
+(def prototype-overlay-action-types
+  #{:open-overlay
+    :toggle-overlay
+    :close-overlay})
+
+(def prototype-overlay-create-contract
+  {:action-types prototype-overlay-action-types
+   :position-types ctsi/overlay-positioning-types
+   :trigger-types #{:click :mouse-enter :mouse-leave :after-delay}
+   :defaults {:trigger :click
+              :overlay-position-type :center
+              :close-click-outside false
+              :background-overlay false}
+   :required {:all #{:file-id :page-id :source-shape-id :action-type}
+              :open-overlay #{:destination-board-id}
+              :toggle-overlay #{:destination-board-id}
+              :close-overlay #{}}
+   :optional {:open-overlay #{:relative-to-shape-id
+                              :overlay-position-type
+                              :manual-position
+                              :close-click-outside
+                              :background-overlay
+                              :animation
+                              :trigger
+                              :delay}
+              :toggle-overlay #{:relative-to-shape-id
+                                :overlay-position-type
+                                :manual-position
+                                :close-click-outside
+                                :background-overlay
+                                :animation
+                                :trigger
+                                :delay}
+              :close-overlay #{:destination-board-id
+                               :animation
+                               :trigger
+                               :delay}}
+   :manual-position {:required-when {:overlay-position-type :manual}
+                     :shape #{:x :y}}
+   :unsupported {:animation-types #{:push}}})
+
 (defn- default-shape-name
   [type]
   (case type

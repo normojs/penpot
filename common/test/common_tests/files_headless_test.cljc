@@ -480,6 +480,28 @@
              (headless/prototype-interactions-summary data {:flow-id (uuid/next)
                                                             :source-shape-id (uuid/next)})))))
 
+(t/deftest prototype-overlay-create-contract-defines-supported-payload
+  (t/is (= #{:open-overlay :toggle-overlay :close-overlay}
+           (:action-types headless/prototype-overlay-create-contract)))
+  (t/is (= #{:file-id :page-id :source-shape-id :action-type}
+           (get-in headless/prototype-overlay-create-contract [:required :all])))
+  (t/is (= #{:destination-board-id}
+           (get-in headless/prototype-overlay-create-contract [:required :open-overlay])))
+  (t/is (= #{:destination-board-id}
+           (get-in headless/prototype-overlay-create-contract [:required :toggle-overlay])))
+  (t/is (= #{}
+           (get-in headless/prototype-overlay-create-contract [:required :close-overlay])))
+  (t/is (= {:trigger :click
+            :overlay-position-type :center
+            :close-click-outside false
+            :background-overlay false}
+           (:defaults headless/prototype-overlay-create-contract)))
+  (t/is (= {:required-when {:overlay-position-type :manual}
+            :shape #{:x :y}}
+           (:manual-position headless/prototype-overlay-create-contract)))
+  (t/is (= #{:push}
+           (get-in headless/prototype-overlay-create-contract [:unsupported :animation-types]))))
+
 (t/deftest delete-prototype-interaction-request-removes-interaction-by-index
   (let [file-id  (uuid/next)
         page-id  (uuid/next)

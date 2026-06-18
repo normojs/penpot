@@ -472,12 +472,14 @@ P19.3 is complete and closes Phase 19:
 
 The next active work should start Phase 20:
 
-1. Extend prototype interaction summaries to include persisted overlay actions
-   without creating or mutating them.
-2. Use those fixtures to define the eventual `prototype.create_overlay` payload
-   and validation model.
-3. Register executable MCP/CLI overlay creation only after the read contract and
-   validation fixtures are stable.
+1. Done in P20.1: extend prototype interaction summaries to include persisted
+   overlay actions without creating or mutating them.
+2. Done in P20.2: define the `prototype.create_overlay` payload and validation
+   model in `prototype-create-overlay-contract.md` while keeping the descriptor
+   adapterless.
+3. Next in P20.3: register executable MCP/CLI overlay creation only after the
+   backend-command implementation satisfies the read contract and validation
+   fixtures.
 
 Keep manual configuration behavior stable while moving command metadata and
 envelopes; transport-specific formatting should stay at the MCP/CLI edges.
