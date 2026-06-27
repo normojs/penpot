@@ -471,8 +471,9 @@
   [:map {:title "delete-file-prototype-interaction"}
    [:id ::sm/uuid]
    [:page-id {:optional true} ::sm/uuid]
-   [:source-shape-id ::sm/uuid]
-   [:interaction-index [::sm/int {:min 0}]]
+   [:interaction-id {:optional true} ::sm/uuid]
+   [:source-shape-id {:optional true} ::sm/uuid]
+   [:interaction-index {:optional true} [::sm/int {:min 0}]]
    [:session-id {:optional true} ::sm/uuid]
    [:features {:optional true} ::cfeat/features]])
 

@@ -1286,21 +1286,131 @@
                               :attr :interactions
                               :val interactions}]}]}))
 
-(defn delete-prototype-interaction-request
+(defn- raise-prototype-interaction-not-found
+  [{:keys [page-id source-shape-id interaction-index interaction-id hint]}]
+  (ex/raise :type :validation
+            :code :prototype-interaction-not-found
+            :hint hint
+            :page-id page-id
+            :source-shape-id source-shape-id
+            :interaction-index interaction-index
+            :interaction-id interaction-id))
+
+(defn- raise-stale-prototype-interaction-target
+  [{:keys [page-id source-shape-id interaction-index interaction-id hint]}]
+  (ex/raise :type :validation
+            :code :prototype-interaction-target-stale
+            :hint hint
+            :page-id page-id
+            :source-shape-id source-shape-id
+            :interaction-index interaction-index
+            :interaction-id interaction-id))
+
+(defn- stable-prototype-interaction-matches
+  [file-data page-id interaction-id]
+  (->> (prototype-page-ids file-data page-id)
+       (mapcat
+        (fn [page-id]
+          (let [objects (dm/get-in file-data [:pages-index page-id :objects])]
+            (->> objects
+                 vals
+                 (mapcat
+                  (fn [source]
+                    (->> (:interactions source)
+                         (map-indexed
+                          (fn [index interaction]
+                            (when (= interaction-id (:id interaction))
+                              {:page-id page-id
+                               :source source
+                               :interaction interaction
+                               :interaction-index index})))
+                         (keep identity))))))))
+       (vec)))
+
+(defn- resolve-stable-prototype-interaction
+  [file-data {:keys [page-id source-shape-id interaction-index interaction-id]}]
+  (let [matches (stable-prototype-interaction-matches file-data page-id interaction-id)
+        match-count (count matches)
+        requested-index interaction-index]
+    (cond
+      (zero? match-count)
+      (raise-prototype-interaction-not-found
+       {:page-id page-id
+        :source-shape-id source-shape-id
+        :interaction-index interaction-index
+        :interaction-id interaction-id
+        :hint "The target prototype interaction id does not exist."})
+
+      (< 1 match-count)
+      (ex/raise :type :validation
+                :code :prototype-interaction-id-conflict
+                :hint "More than one prototype interaction carries the target stable id."
+                :page-id page-id
+                :source-shape-id source-shape-id
+                :interaction-index interaction-index
+                :interaction-id interaction-id)
+
+      :else
+      (let [{matched-page-id :page-id
+             :keys [source interaction]
+             matched-index :interaction-index} (first matches)]
+        (when (and source-shape-id
+                   (not= source-shape-id (:id source)))
+          (raise-stale-prototype-interaction-target
+           {:page-id matched-page-id
+            :source-shape-id source-shape-id
+            :interaction-index requested-index
+            :interaction-id interaction-id
+            :hint "The stable prototype interaction id belongs to a different source shape."}))
+        (when (and (some? requested-index)
+                   (not= requested-index matched-index))
+          (raise-stale-prototype-interaction-target
+           {:page-id matched-page-id
+            :source-shape-id (:id source)
+            :interaction-index requested-index
+            :interaction-id interaction-id
+            :hint "The stable prototype interaction id no longer matches the requested source index."}))
+        {:page-id matched-page-id
+         :source source
+         :interaction interaction
+         :interaction-index matched-index}))))
+
+(defn- resolve-index-prototype-interaction
   [file-data {:keys [page-id source-shape-id interaction-index]}]
+  (when-not source-shape-id
+    (ex/raise :type :validation
+              :code :prototype-source-shape-required
+              :hint "Headless prototype interaction deletion requires source-shape-id when interaction-id is not supplied."
+              :page-id page-id
+              :interaction-index interaction-index))
   (let [[page-id _page source] (require-prototype-shape file-data page-id source-shape-id :source-shape-id)
         interactions (vec (or (:interactions source) []))]
     (when-not (and (int? interaction-index)
                    (<= 0 interaction-index)
                    (< interaction-index (count interactions)))
-      (ex/raise :type :validation
-                :code :prototype-interaction-not-found
-                :hint "The target prototype interaction index does not exist on the source shape."
-                :page-id page-id
-                :source-shape-id source-shape-id
-                :interaction-index interaction-index))
-    (let [interaction (nth interactions interaction-index)
-          summary (prototype-interaction-summary* file-data source interaction interaction-index)]
+      (raise-prototype-interaction-not-found
+       {:page-id page-id
+        :source-shape-id source-shape-id
+        :interaction-index interaction-index
+        :hint "The target prototype interaction index does not exist on the source shape."}))
+    {:page-id page-id
+     :source source
+     :interaction (nth interactions interaction-index)
+     :interaction-index interaction-index}))
+
+(defn- resolve-prototype-interaction-delete-target
+  [file-data {:keys [interaction-id] :as params}]
+  (if interaction-id
+    (resolve-stable-prototype-interaction file-data params)
+    (resolve-index-prototype-interaction file-data params)))
+
+(defn delete-prototype-interaction-request
+  [file-data params]
+  (let [{:keys [page-id source interaction interaction-index]}
+        (resolve-prototype-interaction-delete-target file-data params)
+        source-shape-id (:id source)
+        interactions (vec (or (:interactions source) []))]
+    (let [summary (prototype-interaction-summary* file-data source interaction interaction-index)]
       (when-not summary
         (ex/raise :type :validation
                   :code :unsupported-prototype-interaction

@@ -454,6 +454,83 @@ test("PrototypeDeleteInteractionTool deletes persisted prototype interaction thr
     assert.equal(body.data.revn, 5);
 });
 
+test("PrototypeDeleteInteractionTool deletes by stable interaction id through backend RPC", async () => {
+    const calls: RpcCall[] = [];
+    const tool = new PrototypeDeleteInteractionTool(
+        mcpServerWithRpc({
+            post: async (
+                methodName: string,
+                params: Record<string, unknown>,
+                userToken: string,
+                context?: PenpotRpcRequestContext
+            ) => {
+                calls.push({ methodName, params, userToken, context });
+                return {
+                    interaction: {
+                        interactionId: "00000000-0000-0000-0000-000000000101",
+                        sourceShapeId: "00000000-0000-0000-0000-000000000003",
+                        destinationBoardId: "00000000-0000-0000-0000-000000000004",
+                        index: 1,
+                        identity: {
+                            kind: "stable-id",
+                            interactionId: "00000000-0000-0000-0000-000000000101",
+                            sourceShapeId: "00000000-0000-0000-0000-000000000003",
+                            interactionIndex: 1,
+                        },
+                        actionType: "navigate-to",
+                    },
+                    revn: 6,
+                    vern: 0,
+                };
+            },
+        })
+    );
+
+    const response = await tool.execute({
+        fileId: "00000000-0000-0000-0000-000000000001",
+        pageId: "00000000-0000-0000-0000-000000000002",
+        interactionId: "00000000-0000-0000-0000-000000000101",
+        sourceShapeId: "00000000-0000-0000-0000-000000000003",
+        interactionIndex: 1,
+    });
+    const body = parseJsonResponse(response);
+
+    assert.deepEqual(calls[0].params, {
+        id: "00000000-0000-0000-0000-000000000001",
+        "page-id": "00000000-0000-0000-0000-000000000002",
+        "interaction-id": "00000000-0000-0000-0000-000000000101",
+        "source-shape-id": "00000000-0000-0000-0000-000000000003",
+        "interaction-index": 1,
+    });
+    assert.equal(body.status, "ok");
+    assert.equal(body.data.interactionId, "00000000-0000-0000-0000-000000000101");
+    assert.equal(body.data.sourceShapeId, "00000000-0000-0000-0000-000000000003");
+    assert.equal(body.data.interactionIndex, 1);
+    assert.equal(body.data.interaction.identity.kind, "stable-id");
+});
+
+test("PrototypeDeleteInteractionTool rejects missing delete target", async () => {
+    const calls: RpcCall[] = [];
+    const tool = new PrototypeDeleteInteractionTool(
+        mcpServerWithRpc({
+            post: async (methodName: string, params: Record<string, unknown>, userToken: string) => {
+                calls.push({ methodName, params, userToken });
+                return {};
+            },
+        })
+    );
+
+    const response = await tool.execute({
+        fileId: "00000000-0000-0000-0000-000000000001",
+        pageId: "00000000-0000-0000-0000-000000000002",
+    });
+    const body = parseJsonResponse(response);
+
+    assert.equal(calls.length, 0);
+    assert.equal(body.status, "error");
+    assert.equal(body.error.code, "prototype_interaction_target_required");
+});
+
 test("PrototypeCreateFlowTool reports adapter error when target is incomplete", async () => {
     const calls: RpcCall[] = [];
     const tool = new PrototypeCreateFlowTool(

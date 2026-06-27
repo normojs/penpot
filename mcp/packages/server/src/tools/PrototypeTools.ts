@@ -5,6 +5,7 @@ import { PrototypePluginTask } from "../tasks/PrototypePluginTask.js";
 import { requireBoundFileContext } from "./FileContextGuard.js";
 import type { PrototypeTaskParams } from "@penpot/mcp-common";
 import { PenpotRpcTool } from "./PenpotRpcTool.js";
+import type { RpcParams } from "../PenpotRpcClient.js";
 import {
     AdapterSelectionReasonCodes,
     CommandDescriptors,
@@ -263,14 +264,17 @@ abstract class PrototypeTool<TArgs extends object> extends PenpotRpcTool<TArgs> 
         }
 
         try {
+            const params: RpcParams = {
+                id: args.fileId,
+            };
+            if (args.pageId !== undefined) params["page-id"] = args.pageId;
+            if (args.interactionId !== undefined) params["interaction-id"] = args.interactionId;
+            if (args.sourceShapeId !== undefined) params["source-shape-id"] = args.sourceShapeId;
+            if (args.interactionIndex !== undefined) params["interaction-index"] = args.interactionIndex;
+
             const result = await this.rpcWritePost<PenpotRecord>(
                 "delete-file-prototype-interaction",
-                {
-                    id: args.fileId,
-                    "page-id": args.pageId,
-                    "source-shape-id": args.sourceShapeId,
-                    "interaction-index": args.interactionIndex,
-                },
+                params,
                 userToken,
                 {
                     mcpAdapter: adapterSelection.selected,
@@ -279,13 +283,15 @@ abstract class PrototypeTool<TArgs extends object> extends PenpotRpcTool<TArgs> 
                     mcpShapeId: args.sourceShapeId,
                 }
             );
+            const interaction = (result.interaction ?? {}) as PenpotRecord;
             return this.ok({
                 adapter: adapterSelection.selected,
                 adapterSelection,
                 fileId: args.fileId,
                 pageId: args.pageId,
-                sourceShapeId: args.sourceShapeId,
-                interactionIndex: args.interactionIndex,
+                interactionId: args.interactionId ?? interaction.interactionId ?? interaction["interaction-id"],
+                sourceShapeId: args.sourceShapeId ?? interaction.sourceShapeId ?? interaction["source-shape-id"],
+                interactionIndex: args.interactionIndex ?? interaction.index,
                 interaction: result.interaction,
                 revn: result.revn,
                 vern: result.vern,
@@ -389,15 +395,28 @@ export class PrototypeDeleteInteractionArgs {
     static schema = {
         fileId: uuidSchema.describe("File id for backend-command prototype interaction deletion."),
         pageId: uuidSchema.optional().describe("Optional page id used to resolve the source shape."),
-        sourceShapeId: uuidSchema.describe("Shape id that owns the interaction."),
-        interactionIndex: z.number().int().min(0).describe("Zero-based index in the source shape interactions array."),
+        interactionId: uuidSchema.optional().describe("Stable interaction id returned by prototype.list_interactions."),
+        sourceShapeId: uuidSchema
+            .optional()
+            .describe(
+                "Shape id that owns the interaction. Required for source/index deletion and optional guard for stable-id deletion."
+            ),
+        interactionIndex: z
+            .number()
+            .int()
+            .min(0)
+            .optional()
+            .describe(
+                "Zero-based source index. Required for source/index deletion and optional guard for stable-id deletion."
+            ),
         adapter: z.string().optional().describe("Optional adapter request: auto or backend-command."),
     };
 
     fileId!: string;
     pageId?: string;
-    sourceShapeId!: string;
-    interactionIndex!: number;
+    interactionId?: string;
+    sourceShapeId?: string;
+    interactionIndex?: number;
     adapter?: string;
 }
 
@@ -415,6 +434,17 @@ export class PrototypeDeleteInteractionTool extends PrototypeTool<PrototypeDelet
     }
 
     protected async executeCore(args: PrototypeDeleteInteractionArgs): Promise<ToolResponse> {
+        if (!args.interactionId && (!args.sourceShapeId || args.interactionIndex === undefined)) {
+            return this.error(
+                "prototype_interaction_target_required",
+                "prototype.delete_interaction requires interactionId or sourceShapeId plus interactionIndex.",
+                [
+                    "Use prototype.list_interactions first, then pass interactionId for stable-id deletion.",
+                    "For legacy deletion, pass sourceShapeId and interactionIndex.",
+                ]
+            );
+        }
+
         const adapterSelection = this.selectPrototypeMutationAdapter(
             CommandDescriptors.PROTOTYPE_DELETE_INTERACTION.id,
             args

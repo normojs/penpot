@@ -131,8 +131,9 @@ not register yet:
 - prototype/export: `prototype.create_overlay` and
   `prototype.delete_interaction` are registered backend-command mutations for
   explicit persisted prototype targets. P22.2 adds optional `interactionId`
-  and `identity.kind` metadata to prototype reads while source-shape/index
-  deletion remains the current runtime contract until stable-id deletion;
+  and `identity.kind` metadata to prototype reads, and P22.3 allows
+  `prototype.delete_interaction` to target that stable id while preserving
+  source-shape/index deletion as the legacy fallback;
   `export.file` and `render.thumbnail` remain unregistered
 - debug: `debug.get_plugin_state`, `debug.get_agent_logs`
 

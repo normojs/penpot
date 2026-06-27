@@ -583,8 +583,8 @@ P19.1 prototype delete identity result:
 - `flowId` remains useful for `prototype.list_interactions` filtering and human
   discovery, but it is not part of the delete identity because flows are page
   entries, not interaction parents.
-- `interactionId` remains unsupported until a future data migration or product
-  contract adds persistent interaction ids.
+- At the P19.1 boundary `interactionId` was unsupported; P22.3 later adds
+  stable-id deletion for interactions that already carry persisted ids.
 
 P19.2 prototype delete implementation result:
 
@@ -622,8 +622,18 @@ P22.2 prototype interaction read identity result:
   stored interaction carries an id, or `source-index` with `unstable: true`
   for legacy/id-missing vectors.
 - MCP and `penpot-cli prototype list-interactions` preserve the identity
-  metadata in JSON responses, while `prototype.delete_interaction` keeps the
-  Phase 19 source-shape/index input until P22.3.
+  metadata in JSON responses.
+
+P22.3 prototype interaction stable delete result:
+
+- `prototype.delete_interaction` accepts `interactionId` as the primary
+  target when a persisted interaction id exists.
+- `sourceShapeId` and `interactionIndex` remain supported for legacy files and
+  can be supplied with `interactionId` as stale guards.
+- Guard mismatches return `prototype-interaction-target-stale`; missing ids
+  return `prototype-interaction-not-found`; duplicate ids return
+  `prototype-interaction-id-conflict` without deleting.
+- P22.3 does not generate interaction ids or add a file-data migration.
 
 ## 4. Target Architecture
 
@@ -1938,11 +1948,11 @@ prototype.delete_interaction
 explicit file/page/source targets and uses the persisted overlay interaction
 contract defined in `prototype-create-overlay-contract.md`.
 
-P22.1 selects future persisted interaction UUIDs for stable prototype mutation
+P22.1 selects persisted interaction UUIDs for stable prototype mutation
 identity. P22.2 exposes optional `interactionId` and explicit
-`identity.kind` metadata on `prototype.list_interactions`. Until P22.3
-implements stable-id deletion, `prototype.delete_interaction` continues to use
-source-shape/index targets.
+`identity.kind` metadata on `prototype.list_interactions`. P22.3 lets
+`prototype.delete_interaction` delete by `interactionId` when present, while
+keeping source-shape/index targeting as the legacy fallback and guard form.
 
 ### 8.5 Export and Render Tools
 

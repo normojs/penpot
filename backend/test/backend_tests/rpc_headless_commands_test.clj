@@ -714,7 +714,51 @@
                  :action-type :close-overlay
                  :destination-board-id frame-b
                  :destination-board-name "Overlay"}]
-               (get-in out [:result :interactions]))))))
+               (get-in out [:result :interactions]))))
+
+    (let [out {::th/type :delete-file-prototype-interaction
+               ::rpc/profile-id (:id profile)
+               :id (:id file)
+               :page-id page-id
+               :interaction-id stable-interaction-id
+               :source-shape-id rect-id
+               :interaction-index 1
+               :features cfeat/supported-features}
+          out (th/command! out)
+          error (:error out)]
+      (t/is (th/ex-info? error))
+      (t/is (th/ex-with-code? error :prototype-interaction-target-stale)))
+
+    (let [out {::th/type :delete-file-prototype-interaction
+               ::rpc/profile-id (:id profile)
+               :id (:id file)
+               :page-id page-id
+               :interaction-id stable-interaction-id
+               :source-shape-id rect-id
+               :interaction-index 0
+               :features cfeat/supported-features}
+          out (th/command! out)]
+      (t/is (nil? (:error out)))
+      (t/is (= {:source-shape-id rect-id
+                :interaction-id stable-interaction-id
+                :source-shape-name "CTA"
+                :index 0
+                :identity (stable-interaction-identity stable-interaction-id rect-id 0)
+                :trigger :mouse-enter
+                :delay nil
+                :action-type :open-overlay
+                :destination-board-id frame-b
+                :destination-board-name "Overlay"
+                :relative-to-shape-id rect-id
+                :relative-to-shape-name "CTA"
+                :overlay-position-type :manual
+                :overlay-position (gpt/point 12 16)
+                :close-click-outside true
+                :background-overlay true
+                :animation {:animation-type :dissolve
+                            :duration 300
+                            :easing :linear}}
+               (get-in out [:result :interaction]))))))
 
 (t/deftest create-file-prototype-overlay-and-delete
   (let [profile  (th/create-profile* 1 {:is-active true})

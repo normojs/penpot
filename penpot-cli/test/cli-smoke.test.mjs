@@ -189,7 +189,7 @@ test("command runtime exposes live-gap descriptor boundaries", () => {
     assert.equal(CommandDescriptors.PROTOTYPE_DELETE_INTERACTION.cliCommand, "prototype delete-interaction");
     assert.match(CommandDescriptors.PROTOTYPE_DELETE_INTERACTION.description, /sourceShapeId/);
     assert.match(CommandDescriptors.PROTOTYPE_DELETE_INTERACTION.inputSchema, /interactionIndex/);
-    assert.doesNotMatch(CommandDescriptors.PROTOTYPE_DELETE_INTERACTION.inputSchema, /interactionId/);
+    assert.match(CommandDescriptors.PROTOTYPE_DELETE_INTERACTION.inputSchema, /interactionId/);
     assert.deepEqual(CommandDescriptors.SHAPE_SET_LAYOUT.adapters, ["backend-command", "plugin-live"]);
     assert.deepEqual(CommandDescriptors.SHAPE_SET_STYLE.adapters, ["backend-command", "plugin-live"]);
     assert.equal(CommandDescriptors.SHAPE_SET_LAYOUT.cliCommand, "shape set-layout");
@@ -1840,6 +1840,107 @@ test("prototype delete-interaction sends backend-command RPC", async () => {
     } finally {
         globalThis.fetch = originalFetch;
     }
+});
+
+test("prototype delete-interaction sends stable interaction id to backend-command RPC", async () => {
+    const originalFetch = globalThis.fetch;
+    const calls = [];
+    globalThis.fetch = async (url, options) => {
+        calls.push({ url: String(url), options });
+        return {
+            ok: true,
+            status: 200,
+            statusText: "OK",
+            text: async () =>
+                JSON.stringify({
+                    interaction: {
+                        interactionId: "00000000-0000-0000-0000-000000000101",
+                        sourceShapeId: UUIDS.object,
+                        destinationBoardId: UUIDS.profile,
+                        index: 1,
+                        identity: {
+                            kind: "stable-id",
+                            interactionId: "00000000-0000-0000-0000-000000000101",
+                            sourceShapeId: UUIDS.object,
+                            interactionIndex: 1,
+                        },
+                        actionType: "navigate-to",
+                    },
+                    revn: 8,
+                    vern: 0,
+                }),
+        };
+    };
+
+    try {
+        const result = await runCli(
+            [
+                "prototype",
+                "delete-interaction",
+                "--file",
+                UUIDS.file,
+                "--page",
+                UUIDS.page,
+                "--interaction-id",
+                "00000000-0000-0000-0000-000000000101",
+                "--source",
+                UUIDS.object,
+                "--index",
+                "1",
+                "--format",
+                "json",
+            ],
+            {
+                PENPOT_BACKEND_URI: "http://127.0.0.1:6060",
+                PENPOT_CLI_TOKEN: "token-1",
+            }
+        );
+        const body = parseJson(result.stdout);
+
+        assert.equal(result.exitCode, 0);
+        assert.equal(result.stderr, "");
+        assert.equal(calls.length, 1);
+        assert.deepEqual(JSON.parse(calls[0].options.body), {
+            id: UUIDS.file,
+            "page-id": UUIDS.page,
+            "interaction-id": "00000000-0000-0000-0000-000000000101",
+            "source-shape-id": UUIDS.object,
+            "interaction-index": 1,
+        });
+        assert.equal(body.status, "ok");
+        assert.equal(body.data.interactionId, "00000000-0000-0000-0000-000000000101");
+        assert.equal(body.data.sourceShapeId, UUIDS.object);
+        assert.equal(body.data.interactionIndex, 1);
+        assert.equal(body.data.interaction.identity.kind, "stable-id");
+        assert.equal(body.data.revn, 8);
+    } finally {
+        globalThis.fetch = originalFetch;
+    }
+});
+
+test("prototype delete-interaction rejects missing target", async () => {
+    const result = await runCli(
+        [
+            "prototype",
+            "delete-interaction",
+            "--file",
+            UUIDS.file,
+            "--page",
+            UUIDS.page,
+            "--format",
+            "json",
+        ],
+        {
+            PENPOT_BACKEND_URI: "http://127.0.0.1:6060",
+            PENPOT_CLI_TOKEN: "token-1",
+        }
+    );
+    const body = parseJson(result.stdout);
+
+    assert.equal(result.exitCode, 2);
+    assert.equal(result.stderr, "");
+    assert.equal(body.status, "error");
+    assert.equal(body.error.code, "prototype_interaction_target_required");
 });
 
 test("export page dry-run returns exporter adapter plan and request payload", async () => {

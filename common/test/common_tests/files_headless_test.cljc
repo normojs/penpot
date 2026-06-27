@@ -6,6 +6,7 @@
 
 (ns common-tests.files-headless-test
   (:require
+   [app.common.exceptions :as ex]
    [app.common.files.changes :as cpc]
    [app.common.files.headless :as headless]
    [app.common.geom.point :as gpt]
@@ -29,6 +30,12 @@
    :interaction-id interaction-id
    :source-shape-id source-id
    :interaction-index index})
+
+(defn- thrown-code
+  [f]
+  (let [cause (ex/try! (f))]
+    (when (ex/exception? cause)
+      (:code (ex-data cause)))))
 
 (t/deftest page-summaries-preserve-file-page-order
   (let [file-id (uuid/next)
@@ -771,6 +778,113 @@
              (:changes result)))
     (t/is (= 1 (count interactions)))
     (t/is (= frame-c (:destination (first interactions))))))
+
+(t/deftest delete-prototype-interaction-request-removes-interaction-by-stable-id
+  (let [file-id  (uuid/next)
+        page-id  (uuid/next)
+        frame-a  (uuid/next)
+        frame-b  (uuid/next)
+        rect-id  (uuid/next)
+        interaction-a (uuid/next)
+        interaction-b (uuid/next)
+        data     (ctf/make-file-data file-id page-id)
+        frame-a-result (headless/create-shape-request data {:page-id page-id
+                                                            :shape-id frame-a
+                                                            :type :frame
+                                                            :name "Start"
+                                                            :x 0
+                                                            :y 0
+                                                            :width 320
+                                                            :height 640})
+        data     (cpc/process-changes data (:changes frame-a-result))
+        frame-b-result (headless/create-shape-request data {:page-id page-id
+                                                            :shape-id frame-b
+                                                            :type :frame
+                                                            :name "Done"
+                                                            :x 360
+                                                            :y 0
+                                                            :width 320
+                                                            :height 640})
+        data     (cpc/process-changes data (:changes frame-b-result))
+        rect     (headless/create-shape-request data {:page-id page-id
+                                                      :shape-id rect-id
+                                                      :parent-id frame-a
+                                                      :type :rect
+                                                      :name "CTA"
+                                                      :x 24
+                                                      :y 32
+                                                      :width 120
+                                                      :height 40})
+        data     (cpc/process-changes data (:changes rect))
+        data     (cpc/process-changes
+                  data
+                  [{:type :mod-obj
+                    :id rect-id
+                    :page-id page-id
+                    :operations [{:type :set
+                                  :attr :interactions
+                                  :val [{:id interaction-a
+                                         :action-type :navigate
+                                         :event-type :click
+                                         :destination frame-b}
+                                        {:id interaction-b
+                                         :action-type :navigate
+                                         :event-type :mouse-enter
+                                         :destination frame-b}]}]}])
+        stale-target #(headless/delete-prototype-interaction-request
+                       data
+                       {:page-id page-id
+                        :interaction-id interaction-b
+                        :source-shape-id rect-id
+                        :interaction-index 0})
+        result   (headless/delete-prototype-interaction-request
+                  data
+                  {:page-id page-id
+                   :interaction-id interaction-b
+                   :source-shape-id rect-id
+                   :interaction-index 1})
+        data'    (cpc/process-changes data (:changes result))
+        interactions (get-in data' [:pages-index page-id :objects rect-id :interactions])
+        duplicate-data (cpc/process-changes
+                        data
+                        [{:type :mod-obj
+                          :id rect-id
+                          :page-id page-id
+                          :operations [{:type :set
+                                        :attr :interactions
+                                        :val [{:id interaction-b
+                                               :action-type :navigate
+                                               :event-type :click
+                                               :destination frame-b}
+                                              {:id interaction-b
+                                               :action-type :navigate
+                                               :event-type :mouse-enter
+                                               :destination frame-b}]}]}])]
+    (t/is (= {:interaction-id interaction-b
+              :source-shape-id rect-id
+              :source-shape-name "CTA"
+              :index 1
+              :identity (stable-interaction-identity interaction-b rect-id 1)
+              :trigger :mouse-enter
+              :delay nil
+              :action-type :navigate-to
+              :destination-board-id frame-b
+              :destination-board-name "Done"}
+             (:interaction result)))
+    (t/is (= [interaction-a] (mapv :id interactions)))
+    (t/is (= :prototype-interaction-target-stale (thrown-code stale-target)))
+    (t/is (= :prototype-interaction-not-found
+             (thrown-code
+              #(headless/delete-prototype-interaction-request
+                data
+                {:page-id page-id
+                 :interaction-id (uuid/next)}))))
+    (t/is (= :prototype-interaction-id-conflict
+             (thrown-code
+              #(headless/delete-prototype-interaction-request
+                duplicate-data
+                {:page-id page-id
+                 :interaction-id interaction-b}))))))
 
 (t/deftest delete-prototype-interaction-request-rejects-stale-index
   (let [file-id  (uuid/next)

@@ -1,9 +1,9 @@
 {
-  "version": "p22.2",
-  "status": "read-contract-implemented",
+  "version": "p22.3",
+  "status": "stable-delete-contract-implemented",
   "notes": [
     "The read summaries are implemented for id-present and id-missing interactions.",
-    "Stable-id deletion remains future P22.3 work.",
+    "Stable-id deletion is implemented when persisted interaction ids exist.",
     "Existing source-shape/index targeting remains the compatibility fallback."
   ],
   "ids": {
@@ -107,6 +107,33 @@
       }
     },
     {
+      "name": "stable id guard mismatch must not delete",
+      "storedInteractions": [
+        {
+          "id": "00000000-0000-0000-0000-000000000101",
+          "action-type": "navigate",
+          "event-type": "click",
+          "destination": "00000000-0000-0000-0000-000000000004"
+        },
+        {
+          "id": "00000000-0000-0000-0000-000000000102",
+          "action-type": "navigate",
+          "event-type": "mouse-enter",
+          "destination": "00000000-0000-0000-0000-000000000004"
+        }
+      ],
+      "stableDeleteInput": {
+        "fileId": "00000000-0000-0000-0000-000000000001",
+        "interactionId": "00000000-0000-0000-0000-000000000102",
+        "sourceShapeId": "00000000-0000-0000-0000-000000000003",
+        "interactionIndex": 0
+      },
+      "expectedError": {
+        "code": "prototype-interaction-target-stale",
+        "message": "The stable interaction id no longer matches the requested source/index guard."
+      }
+    },
+    {
       "name": "duplicate stable id must not delete",
       "storedInteractions": [
         {
@@ -137,7 +164,7 @@
       "prototype.list_interactions.responseShape": "includes optional interactionId and identity.kind stable-id|source-index"
     },
     "p22.3": {
-      "prototype.delete_interaction.inputSchema": "fileId, interactionId OR sourceShapeId + interactionIndex, adapter?"
+      "prototype.delete_interaction.inputSchema": "fileId, pageId?, interactionId? OR sourceShapeId + interactionIndex, optional sourceShapeId/interactionIndex guards with interactionId, adapter?"
     }
   }
 }

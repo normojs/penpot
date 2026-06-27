@@ -1,7 +1,6 @@
 # Prototype Interaction Identity Audit
 
-Status: P22.2 read metadata implemented. Stable-id deletion remains future
-P22.3 work.
+Status: P22.3 stable-id deletion targeting implemented.
 
 ## Scope
 
@@ -15,9 +14,10 @@ interactions used by:
 - `penpot-cli prototype list-interactions`
 - `penpot-cli prototype delete-interaction`
 
-The current delete contract remains source-shape/index based until P22.3
-explicitly changes the write surface. The read surface now exposes explicit
-identity metadata.
+The delete contract now accepts a persisted interaction id when one exists and
+keeps source-shape/index targeting as the compatibility fallback. The read
+surface exposes explicit identity metadata so agents can decide which target
+form is stable.
 
 ## Current Data Shape
 
@@ -41,9 +41,9 @@ Important facts from the current implementation:
 - `headless/prototype-interactions-summary` emits `source-shape-id`, `index`,
   optional `interaction-id`, and an `identity` map for each summarized
   interaction.
-- `headless/delete-prototype-interaction-request` validates
-  `interaction-index` against the current source-shape vector, then removes
-  that index.
+- `headless/delete-prototype-interaction-request` resolves a supplied
+  `interaction-id` first, using optional source-shape/index fields as stale
+  guards, or falls back to source-shape/index deletion.
 - Flow ids are page-level entries. A flow id can help discovery, but it is not
   an interaction parent and cannot identify a specific source-shape
   interaction.
@@ -51,11 +51,13 @@ Important facts from the current implementation:
 Current public API surfaces mirror this:
 
 - Backend RPC `delete-file-prototype-interaction` accepts `id`, optional
-  `page-id`, `source-shape-id`, and `interaction-index`.
+  `page-id`, optional `interaction-id`, optional `source-shape-id`, and
+  optional `interaction-index`.
 - MCP `prototype.delete_interaction` accepts `fileId`, optional `pageId`,
-  `sourceShapeId`, and `interactionIndex`.
+  optional `interactionId`, optional `sourceShapeId`, and optional
+  `interactionIndex`.
 - CLI `prototype delete-interaction` accepts `--file`, optional `--page`,
-  `--source`, and `--index`.
+  optional `--interaction-id`, optional `--source`, and optional `--index`.
 - `prototype.list_interactions` responses include `identity.kind =
   stable-id|source-index`; `interactionId` appears only when the stored
   interaction carries a persisted id.
@@ -65,18 +67,20 @@ Implementation evidence:
 - `common/src/app/common/types/shape.cljc` stores `:interactions` on shapes.
 - `common/src/app/common/types/shape/interactions.cljc` defines interaction
   schema fields and vector helpers.
-- `common/src/app/common/files/headless.cljc` builds summaries and delete
-  requests with `index`.
+- `common/src/app/common/files/headless.cljc` builds summaries with `index`
+  plus optional `interaction-id`, and delete requests can resolve by stable id
+  or legacy source/index.
 - `backend/src/app/rpc/commands/files_update.clj` exposes list/delete RPC
-  schemas with `interaction-index`.
-- `mcp/packages/server/src/tools/PrototypeTools.ts` maps MCP delete calls to
-  backend `interaction-index`.
-- `penpot-cli/src/index.ts` maps CLI `--index` to backend
+  schemas with optional `interaction-id` and optional legacy
   `interaction-index`.
+- `mcp/packages/server/src/tools/PrototypeTools.ts` maps MCP delete calls to
+  backend `interaction-id` or `interaction-index`.
+- `penpot-cli/src/index.ts` maps CLI `--interaction-id` or `--index` to the
+  backend delete target.
 
 ## Stability Problem
 
-The current target identity is stable only between a fresh
+Legacy source-shape/index identity is stable only between a fresh
 `prototype.list_interactions` result and the next write to the same source
 shape. It is not stable across:
 
@@ -86,9 +90,10 @@ shape. It is not stable across:
 - Duplicating shapes or components when interactions are copied.
 - Concurrent edits between list and delete.
 
-The backend already protects the most obvious stale case by rejecting an index
-outside the current vector. It cannot detect a still-in-range index that now
-points to a different interaction.
+The backend protects the most obvious legacy stale case by rejecting an index
+outside the current vector. When a stored interaction id exists, P22.3 can
+delete by that stable id and optionally reject stale source/index guards before
+removing anything.
 
 ## Options Considered
 
@@ -131,9 +136,11 @@ P22.2 implements the read side of the P22.1 decision:
 - Summaries without stored ids include `identity.kind = "source-index"` and
   `unstable: true`.
 - No UUIDs are generated during reads or creates in P22.2.
-- `prototype.delete_interaction` does not yet accept `interactionId`.
+- `prototype.delete_interaction` keeps legacy source-shape/index deletion for
+  id-missing summaries until those files are migrated or new interactions
+  receive persisted ids.
 
-Recommended summary shape for P22.2:
+Recommended summary shape:
 
 ```json
 {
@@ -164,9 +171,9 @@ Recommended legacy summary shape for id-missing files:
 }
 ```
 
-## Future Write Contract
+## P22.3 Delete Contract
 
-P22.3 can extend deletion without breaking existing callers:
+P22.3 extends deletion without breaking existing callers:
 
 ```text
 prototype.delete_interaction
@@ -174,29 +181,31 @@ prototype.delete_interaction
 
 Accepted target forms:
 
-- Stable form: `fileId`, `interactionId`, optional `pageId`,
-  optional `sourceShapeId`.
+- Stable form: `fileId`, `interactionId`, optional `pageId`, optional
+  `sourceShapeId`, optional `interactionIndex`.
 - Legacy form: `fileId`, optional `pageId`, `sourceShapeId`,
   `interactionIndex`.
 
 Rules:
 
-- If `interactionId` is supplied, it wins over `interactionIndex`.
-- If both `interactionId` and legacy fields are supplied, legacy fields should
-  act as guards. A mismatched source or index should return a stale-target
-  validation error rather than deleting by id silently.
+- If `interactionId` is supplied, it is the primary target.
+- If `interactionId` and source/index fields are supplied together, source and
+  index act as guards. A mismatched source or index returns
+  `prototype-interaction-target-stale` rather than deleting by id silently.
 - If no interaction carries the requested id, return
   `prototype-interaction-not-found`.
 - If more than one interaction carries the requested id, return a conflict or
   validation error and do not delete anything.
 - Legacy deletion keeps the current behavior and error codes.
+- P22.3 does not generate ids during create/delete and does not add a file-data
+  migration.
 
 ## Migration Notes
 
 Preferred migration path:
 
-1. Add `:id` as an optional field in `ctsi/schema:generic-interaction-attrs`
-   or the shared interaction schema.
+1. Done in P22.2: add `:id` as an optional field in the shared interaction
+   schema.
 2. Update interaction creation helpers so new navigate and overlay
    interactions always receive a UUID.
 3. Add a file-data migration that walks every shape `:interactions` vector and
@@ -205,8 +214,8 @@ Preferred migration path:
 5. During copy/duplicate/remap, keep interaction ids only when the operation is
    a version/history read; generate new ids when creating a distinct copy of a
    shape to avoid duplicate ids in the same file.
-6. Add duplicate-id detection in read/delete helpers so old or manually edited
-   files cannot make stable-id deletion ambiguous.
+6. Done for deletion in P22.3: add duplicate-id detection so old or manually
+   edited files cannot make stable-id deletion ambiguous.
 
 Generated fingerprints can still be useful as an optional diagnostic guard, but
 they should not be accepted as a primary delete target.
@@ -221,12 +230,13 @@ Implemented descriptor changes for P22.2:
   `interactionId` and `identity.kind`.
 - MCP/CLI tests should cover id-present and id-missing summaries.
 
-Expected descriptor changes for P22.3:
+Implemented descriptor changes for P22.3:
 
 - `prototype.delete_interaction.inputSchema` should describe
   `interactionId OR sourceShapeId + interactionIndex`.
-- MCP/CLI tests should cover stable id deletion, legacy deletion, stale guard
-  mismatch, missing id, and duplicate id.
+- MCP/CLI tests cover stable id deletion and legacy deletion; common/backend
+  tests cover stale guard mismatch, missing id, duplicate id, and legacy index
+  compatibility.
 
 ## Fixtures
 

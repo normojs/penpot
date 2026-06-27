@@ -66,7 +66,7 @@ Usage:
   penpot-cli prototype create-interaction --file <file-id> --source <shape-id> --destination <frame-id> [--page <page-id>] [--trigger click|mouse-enter|mouse-leave|after-delay] [--format text|json]
   penpot-cli prototype create-overlay --file <file-id> --page <page-id> --source <shape-id> --action open-overlay|toggle-overlay|close-overlay [--destination <frame-id>] [--position center|manual|top-left|top-right|top-center|bottom-left|bottom-right|bottom-center] [--format text|json]
   penpot-cli prototype list-interactions --file <file-id> [--page <page-id>] [--flow-id <id>] [--source <shape-id>] [--format text|json]
-  penpot-cli prototype delete-interaction --file <file-id> --source <shape-id> --index <n> [--page <page-id>] [--format text|json]
+  penpot-cli prototype delete-interaction --file <file-id> [--interaction-id <id>] [--source <shape-id> --index <n>] [--page <page-id>] [--format text|json]
   penpot-cli export page --file <file-id> --page <page-id> --object <object-id> [--adapter auto|exporter] [--output <path>] [--dry-run] [--format text|json]
   penpot-cli render preview --file <file-id> --page <page-id> --object <object-id> [--adapter auto|exporter] [--output <path>] [--dry-run] [--format text|json]`;
 
@@ -158,10 +158,10 @@ Usage:
   penpot-cli prototype create-interaction --file <file-id> --source <shape-id> --destination <frame-id> [--page <page-id>] [--trigger click|mouse-enter|mouse-leave|after-delay] [--delay <ms>] [--preserve-scroll] [--animation dissolve|slide|push] [--animation-duration <ms>] [--format text|json]
   penpot-cli prototype create-overlay --file <file-id> --page <page-id> --source <shape-id> --action open-overlay|toggle-overlay|close-overlay [--destination <frame-id>] [--relative-to <shape-id>] [--position center|manual|top-left|top-right|top-center|bottom-left|bottom-right|bottom-center] [--manual-x <n> --manual-y <n>] [--close-click-outside] [--background-overlay] [--trigger click|mouse-enter|mouse-leave|after-delay] [--delay <ms>] [--animation dissolve|slide] [--animation-duration <ms>] [--format text|json]
   penpot-cli prototype list-interactions --file <file-id> [--page <page-id>] [--flow-id <id>] [--source <shape-id>] [--adapter auto|backend-command] [--format text|json]
-  penpot-cli prototype delete-interaction --file <file-id> --source <shape-id> --index <n> [--page <page-id>] [--adapter auto|backend-command] [--format text|json]
+  penpot-cli prototype delete-interaction --file <file-id> [--interaction-id <id>] [--source <shape-id> --index <n>] [--page <page-id>] [--adapter auto|backend-command] [--format text|json]
 
 Notes:
-  Backend-command prototype helpers currently support basic flows, navigate-to interaction creation, open/toggle/close overlay creation, persisted navigate/overlay listing, and source-shape/index deletion.
+  Backend-command prototype helpers currently support basic flows, navigate-to interaction creation, open/toggle/close overlay creation, persisted navigate/overlay listing, stable-id deletion, and source-shape/index deletion.
   Overlay creation requires --destination for open-overlay and toggle-overlay; close-overlay can omit it.
 
 Environment:
@@ -588,8 +588,9 @@ interface PrototypeListInteractionsParams {
 interface PrototypeDeleteInteractionParams {
     fileId: string;
     pageId?: string;
-    sourceShapeId: string;
-    interactionIndex: number;
+    interactionId?: string;
+    sourceShapeId?: string;
+    interactionIndex?: number;
 }
 
 const DEFAULT_IO: CliIO = {
@@ -2682,23 +2683,30 @@ function parsePrototypeDeleteInteractionParams(
         return null;
     }
 
+    const interactionId = readOption(args, ["--interaction-id", "--interaction"]);
     const sourceShapeId = readOption(args, ["--source", "--source-shape", "--source-shape-id", "--shape", "--shape-id"]);
-    if (!sourceShapeId) {
+    if (!interactionId && !sourceShapeId) {
         writeError(
             io,
             format,
-            "prototype_source_shape_required",
-            "prototype delete-interaction requires --source <shape-id>.",
-            ["Pass the shape id that owns the interaction."]
+            "prototype_interaction_target_required",
+            "prototype delete-interaction requires --interaction-id <id> or --source <shape-id>.",
+            ["Use prototype list-interactions first, then pass --interaction-id or the legacy --source and --index pair."]
         );
         return null;
     }
 
     const indexValue = readOption(args, ["--index", "--interaction-index"]);
-    const interactionIndex = indexValue === undefined ? Number.NaN : Number(indexValue);
-    if (!Number.isInteger(interactionIndex) || interactionIndex < 0) {
+    const interactionIndex = indexValue === undefined ? undefined : Number(indexValue);
+    if (interactionIndex !== undefined && (!Number.isInteger(interactionIndex) || interactionIndex < 0)) {
         writeError(io, format, "prototype_interaction_index_invalid", "Invalid prototype interaction index.", [
             "Pass a zero-based non-negative integer with --index <n>.",
+        ]);
+        return null;
+    }
+    if (!interactionId && interactionIndex === undefined) {
+        writeError(io, format, "prototype_interaction_index_invalid", "Invalid prototype interaction index.", [
+            "Pass --index <n> for source-shape/index deletion, or pass --interaction-id <id> for stable-id deletion.",
         ]);
         return null;
     }
@@ -2706,6 +2714,7 @@ function parsePrototypeDeleteInteractionParams(
     return {
         fileId,
         pageId: readOption(args, ["--page", "--page-id"]),
+        interactionId,
         sourceShapeId,
         interactionIndex,
     };
@@ -3512,6 +3521,7 @@ function writePrototypeInteractionDeletedText(io: CliIO, fileId: string, interac
     const record = asRecord(interaction);
     writeLine(io.stdout, "Prototype interaction deleted");
     writeLine(io.stdout, `fileId: ${fileId}`);
+    writeLine(io.stdout, `interactionId: ${String(record.interactionId ?? record["interaction-id"] ?? "<none>")}`);
     writeLine(io.stdout, `sourceShapeId: ${String(record.sourceShapeId ?? record["source-shape-id"] ?? "<unknown>")}`);
     writeLine(
         io.stdout,
@@ -4991,19 +5001,22 @@ async function handlePrototypeDeleteInteraction(args: string[], io: CliIO, env: 
             {
                 id: prototypeParams.fileId,
                 "page-id": prototypeParams.pageId,
+                "interaction-id": prototypeParams.interactionId,
                 "source-shape-id": prototypeParams.sourceShapeId,
                 "interaction-index": prototypeParams.interactionIndex,
             },
             rpc.token
         );
+        const interaction = asRecord(result.interaction);
         writeOk(
             io,
             format,
             {
                 fileId: prototypeParams.fileId,
                 pageId: prototypeParams.pageId,
-                sourceShapeId: prototypeParams.sourceShapeId,
-                interactionIndex: prototypeParams.interactionIndex,
+                interactionId: prototypeParams.interactionId ?? interaction.interactionId ?? interaction["interaction-id"],
+                sourceShapeId: prototypeParams.sourceShapeId ?? interaction.sourceShapeId ?? interaction["source-shape-id"],
+                interactionIndex: prototypeParams.interactionIndex ?? interaction.index,
                 interaction: result.interaction,
                 revn: result.revn,
                 vern: result.vern,

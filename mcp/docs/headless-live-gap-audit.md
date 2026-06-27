@@ -121,7 +121,7 @@ state for them.
 | `prototype.create_flow` | Registered MCP tool and descriptor; backend-command with `fileId`, plugin-live otherwise. | Backend-safe persisted data plus plugin-live convenience. | Flow data persists on the page. | Keep behavior. |
 | `prototype.create_interaction` | Registered MCP tool and descriptor; backend-command with `fileId`, plugin-live otherwise. | Backend-safe persisted data plus plugin-live convenience. | Navigate interaction data persists on source shape. | Keep behavior. |
 | `prototype.list_interactions` | Registered MCP tool, backend/common read helper, and CLI command. | Backend-safe persisted read. | Flows and interactions are persisted in file data. | Keep as the discovery/read path; P22.2 adds optional `interactionId` plus explicit `identity.kind` metadata while preserving source-shape/index fields. |
-| `prototype.delete_interaction` | Registered MCP tool, backend/common delete helper, and CLI command. | Backend-safe persisted mutation with explicit source-shape/index identity. | Interaction arrays are persisted on source shapes; P22.2 can read optional ids, but delete still targets source-shape/index. | P19.2 implements backend-command delete for `fileId`, optional `pageId`, `sourceShapeId`, and zero-based `interactionIndex`; P22.3 should add stable-id deletion. |
+| `prototype.delete_interaction` | Registered MCP tool, backend/common delete helper, and CLI command. | Backend-safe persisted mutation with stable-id or source-shape/index identity. | Interaction arrays are persisted on source shapes; P22.3 can target stored interaction ids and keeps source/index as the legacy fallback and guard form. | Keep stable-id deletion as the preferred target when `prototype.list_interactions` returns `interactionId`; plan richer update/reorder/duplicate helpers separately. |
 | `prototype.create_overlay` | Registered MCP tool, command-runtime descriptor, and `penpot-cli prototype create-overlay`. | Backend-safe persisted mutation. | Persisted overlays are interactions with `:open-overlay`, `:toggle-overlay`, or `:close-overlay` actions. The backend/common helper now creates those actions with explicit source, destination, relative target, preset/manual positioning, close/background flags, trigger, delay, and dissolve/slide animation metadata. | Keep backend-command-only for explicit file/page/source targets; plugin-live is not part of the P20 contract. |
 | `export.shape` | Registered descriptor and MCP tool through plugin-live. | Plugin-live workspace/export state. | It can use explicit live shape or current selection and returns plugin base64 data. | Keep plugin-live. Explicit exporter shape/page preview is covered by `render.preview`. |
 | `export.page` | Registered descriptor and MCP tool. | Exporter/read-only plus plugin-live. | Exporter path requires explicit ids; plugin-live can use bound workspace page. | Keep behavior. |
@@ -378,10 +378,9 @@ points CLI users back to MCP `file.open`, `file.get_context`,
 
 ## Open Decisions
 
-- P22.2 exposes optional `interactionId` and explicit `identity.kind`
-  metadata on prototype interaction reads. Runtime deletion still uses
+- P22.3 adds stable-id deletion for prototype interactions while preserving
   explicit `fileId`, optional `pageId`, `sourceShapeId`, and zero-based
-  `interactionIndex` until P22.3 adds stable-id deletion.
+  `interactionIndex` as the legacy fallback and optional guard form.
 - Whether plugin-live `prototype.list_interactions` is needed, or whether
   backend-command reads are enough for agents.
 - Whether exporter-backed `export.shape` should get an explicit file/page/shape

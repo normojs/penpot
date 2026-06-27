@@ -236,11 +236,12 @@ export const CommandDescriptors = Object.freeze({
         cliCommand: "prototype delete-interaction",
         title: "Delete prototype interaction",
         description:
-            "Deletes a persisted prototype interaction using backend-command with explicit fileId, pageId, sourceShapeId, and zero-based interactionIndex.",
-        inputSchema: "fileId, pageId, sourceShapeId, interactionIndex, adapter?",
+            "Deletes a persisted prototype interaction using backend-command with stable interactionId or legacy sourceShapeId plus interactionIndex.",
+        inputSchema:
+            "fileId, pageId?, interactionId? OR sourceShapeId + interactionIndex, optional sourceShapeId/interactionIndex guards with interactionId, adapter?",
         adapters: Object.freeze(["backend-command"]),
         responseShape:
-            "status envelope with deleted interaction summary, revision metadata, and adapterSelection metadata",
+            "status envelope with deleted interaction summary, optional interactionId, revision metadata, and adapterSelection metadata",
     }),
     PROTOTYPE_CREATE_OVERLAY: Object.freeze({
         id: "prototype.create_overlay",
