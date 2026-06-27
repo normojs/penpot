@@ -227,7 +227,8 @@ export const CommandDescriptors = Object.freeze({
         inputSchema: "fileId, pageId?, flowId?, sourceShapeId?, adapter?",
         adapters: Object.freeze(["backend-command"]),
         responseShape:
-            "status envelope with flow and navigate/open-overlay/toggle-overlay/close-overlay interaction summaries plus adapterSelection metadata",
+            "status envelope with flow and navigate/open-overlay/toggle-overlay/close-overlay interaction summaries, " +
+            "optional interactionId, identity.kind stable-id|source-index, and adapterSelection metadata",
     }),
     PROTOTYPE_DELETE_INTERACTION: Object.freeze({
         id: "prototype.delete_interaction",

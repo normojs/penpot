@@ -144,6 +144,12 @@ export class PrototypeTaskHandler extends TaskHandler<PrototypeTaskParams> {
             sourceShapeId: source.id,
             sourceShapeName: source.name,
             index,
+            identity: {
+                kind: "source-index",
+                sourceShapeId: source.id,
+                interactionIndex: index,
+                unstable: true,
+            },
             trigger: interaction.trigger,
             delay: interaction.delay,
             actionType: "navigate-to",

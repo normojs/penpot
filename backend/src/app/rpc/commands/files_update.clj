@@ -30,8 +30,8 @@
    [app.http.errors :as errors]
    [app.loggers.audit :as audit]
    [app.loggers.webhooks :as webhooks]
-   [app.metrics :as mtx]
    [app.media :as media]
+   [app.metrics :as mtx]
    [app.msgbus :as mbus]
    [app.redis :as rds]
    [app.rpc :as-alias rpc]
@@ -374,11 +374,36 @@
    [:features {:optional true} ::cfeat/features]])
 
 (def ^:private
+  schema:prototype-stable-interaction-identity
+  [:map {:title "HeadlessPrototypeStableInteractionIdentity"}
+   [:kind [:= :stable-id]]
+   [:interaction-id ::sm/uuid]
+   [:source-shape-id ::sm/uuid]
+   [:interaction-index [::sm/int {:min 0}]]])
+
+(def ^:private
+  schema:prototype-source-index-interaction-identity
+  [:map {:title "HeadlessPrototypeSourceIndexInteractionIdentity"}
+   [:kind [:= :source-index]]
+   [:source-shape-id ::sm/uuid]
+   [:interaction-index [::sm/int {:min 0}]]
+   [:unstable [:= true]]])
+
+(def ^:private
+  schema:prototype-interaction-identity
+  [:multi {:dispatch :kind
+           :title "HeadlessPrototypeInteractionIdentity"}
+   [:stable-id schema:prototype-stable-interaction-identity]
+   [:source-index schema:prototype-source-index-interaction-identity]])
+
+(def ^:private
   schema:prototype-interaction-summary-base
   [:map {:title "HeadlessPrototypeInteractionSummaryBase"}
+   [:interaction-id {:optional true} ::sm/uuid]
    [:source-shape-id ::sm/uuid]
    [:source-shape-name [:string {:max 250}]]
    [:index [::sm/int {:min 0}]]
+   [:identity schema:prototype-interaction-identity]
    [:trigger [::sm/one-of #{:click :mouse-enter :mouse-leave :after-delay}]]
    [:delay {:optional true} [:maybe ::sm/int]]
    [:animation {:optional true} schema:prototype-animation]])
@@ -388,8 +413,8 @@
   [:and
    schema:prototype-interaction-summary-base
    [:map {:title "HeadlessPrototypeNavigateInteractionSummary"}
-   [:action-type [:= :navigate-to]]
-   [:destination-board-id ::sm/uuid]
+    [:action-type [:= :navigate-to]]
+    [:destination-board-id ::sm/uuid]
     [:destination-board-name [:string {:max 250}]]]])
 
 (def ^:private

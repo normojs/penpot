@@ -405,10 +405,26 @@ export interface PrototypeAnimation {
     offsetEffect?: boolean;
 }
 
+export type PrototypeInteractionIdentity =
+    | {
+          kind: "stable-id";
+          interactionId: string;
+          sourceShapeId: string;
+          interactionIndex: number;
+      }
+    | {
+          kind: "source-index";
+          sourceShapeId: string;
+          interactionIndex: number;
+          unstable: true;
+      };
+
 export interface PrototypeInteractionSummary {
+    interactionId?: string;
     sourceShapeId: string;
     sourceShapeName: string;
     index: number;
+    identity: PrototypeInteractionIdentity;
     trigger: PrototypeTrigger;
     delay?: number | null;
     actionType: "navigate-to";

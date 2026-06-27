@@ -1,8 +1,9 @@
 {
-  "version": "p22.1",
-  "status": "contract-fixture-only",
+  "version": "p22.2",
+  "status": "read-contract-implemented",
   "notes": [
-    "These fixtures describe the future stable identity contract. They do not imply current runtime support.",
+    "The read summaries are implemented for id-present and id-missing interactions.",
+    "Stable-id deletion remains future P22.3 work.",
     "Existing source-shape/index targeting remains the compatibility fallback."
   ],
   "ids": {

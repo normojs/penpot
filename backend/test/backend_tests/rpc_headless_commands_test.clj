@@ -105,6 +105,20 @@
   (let [bytes (io/read* (th/tempfile "backend_tests/test_files/sample.png"))]
     (.encodeToString (Base64/getEncoder) bytes)))
 
+(defn- legacy-interaction-identity
+  [source-id index]
+  {:kind :source-index
+   :source-shape-id source-id
+   :interaction-index index
+   :unstable true})
+
+(defn- stable-interaction-identity
+  [interaction-id source-id index]
+  {:kind :stable-id
+   :interaction-id interaction-id
+   :source-shape-id source-id
+   :interaction-index index})
+
 (t/deftest create-file-shape
   (let [profile  (th/create-profile* 1 {:is-active true})
         file     (th/create-file* 1 {:profile-id (:id profile)
@@ -476,6 +490,7 @@
         (t/is (= {:source-shape-id rect-id
                   :source-shape-name "CTA"
                   :index 0
+                  :identity (legacy-interaction-identity rect-id 0)
                   :trigger :click
                   :delay nil
                   :action-type :navigate-to
@@ -503,6 +518,7 @@
                   :interactions [{:source-shape-id rect-id
                                   :source-shape-name "CTA"
                                   :index 0
+                                  :identity (legacy-interaction-identity rect-id 0)
                                   :trigger :click
                                   :delay nil
                                   :action-type :navigate-to
@@ -523,6 +539,7 @@
         (t/is (= {:source-shape-id rect-id
                   :source-shape-name "CTA"
                   :index 0
+                  :identity (legacy-interaction-identity rect-id 0)
                   :trigger :click
                   :delay nil
                   :action-type :navigate-to
@@ -581,7 +598,8 @@
         page-id  (get-in file [:data :pages 0])
         frame-a  (uuid/next)
         frame-b  (uuid/next)
-        rect-id  (uuid/next)]
+        rect-id  (uuid/next)
+        stable-interaction-id (uuid/next)]
 
     (doseq [[shape-id x name] [[frame-a 0 "Start"]
                                [frame-b 360 "Overlay"]]]
@@ -624,7 +642,8 @@
                                 :page-id page-id
                                 :operations [{:type :set
                                               :attr :interactions
-                                              :val [{:action-type :open-overlay
+                                              :val [{:id stable-interaction-id
+                                                     :action-type :open-overlay
                                                      :event-type :mouse-enter
                                                      :destination frame-b
                                                      :position-relative-to rect-id
@@ -655,8 +674,10 @@
           out (th/command! out)]
       (t/is (nil? (:error out)))
       (t/is (= [{:source-shape-id rect-id
+                 :interaction-id stable-interaction-id
                  :source-shape-name "CTA"
                  :index 0
+                 :identity (stable-interaction-identity stable-interaction-id rect-id 0)
                  :trigger :mouse-enter
                  :delay nil
                  :action-type :open-overlay
@@ -674,6 +695,7 @@
                 {:source-shape-id rect-id
                  :source-shape-name "CTA"
                  :index 1
+                 :identity (legacy-interaction-identity rect-id 1)
                  :trigger :mouse-leave
                  :delay nil
                  :action-type :toggle-overlay
@@ -686,6 +708,7 @@
                 {:source-shape-id rect-id
                  :source-shape-name "CTA"
                  :index 2
+                 :identity (legacy-interaction-identity rect-id 2)
                  :trigger :click
                  :delay nil
                  :action-type :close-overlay
@@ -771,6 +794,7 @@
       (t/is (= {:source-shape-id rect-id
                 :source-shape-name "CTA"
                 :index 1
+                :identity (legacy-interaction-identity rect-id 1)
                 :trigger :mouse-enter
                 :delay nil
                 :action-type :toggle-overlay

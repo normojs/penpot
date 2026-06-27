@@ -613,6 +613,18 @@ P22.1 prototype interaction identity audit result:
   id-missing, duplicate-id, and legacy fallback expectations before any
   runtime behavior changes.
 
+P22.2 prototype interaction read identity result:
+
+- `ctsi/schema:interaction` accepts optional persisted interaction UUIDs and
+  `prototype.list_interactions` summaries now expose optional
+  `interactionId`.
+- Every interaction summary includes `identity.kind`: `stable-id` when the
+  stored interaction carries an id, or `source-index` with `unstable: true`
+  for legacy/id-missing vectors.
+- MCP and `penpot-cli prototype list-interactions` preserve the identity
+  metadata in JSON responses, while `prototype.delete_interaction` keeps the
+  Phase 19 source-shape/index input until P22.3.
+
 ## 4. Target Architecture
 
 ```text
@@ -1927,8 +1939,10 @@ explicit file/page/source targets and uses the persisted overlay interaction
 contract defined in `prototype-create-overlay-contract.md`.
 
 P22.1 selects future persisted interaction UUIDs for stable prototype mutation
-identity. Until P22.2/P22.3 implement read metadata and stable-id deletion,
-`prototype.delete_interaction` continues to use source-shape/index targets.
+identity. P22.2 exposes optional `interactionId` and explicit
+`identity.kind` metadata on `prototype.list_interactions`. Until P22.3
+implements stable-id deletion, `prototype.delete_interaction` continues to use
+source-shape/index targets.
 
 ### 8.5 Export and Render Tools
 

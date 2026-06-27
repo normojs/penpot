@@ -120,8 +120,8 @@ state for them.
 | `shape.group`, `shape.ungroup` | Names exist in `ToolNames.ts`, not registered. | Unsupported or descriptor-only. | No backend/common or plugin task implementation found. | Leave out of P17.2 unless a separate grouping wave is selected. |
 | `prototype.create_flow` | Registered MCP tool and descriptor; backend-command with `fileId`, plugin-live otherwise. | Backend-safe persisted data plus plugin-live convenience. | Flow data persists on the page. | Keep behavior. |
 | `prototype.create_interaction` | Registered MCP tool and descriptor; backend-command with `fileId`, plugin-live otherwise. | Backend-safe persisted data plus plugin-live convenience. | Navigate interaction data persists on source shape. | Keep behavior. |
-| `prototype.list_interactions` | Registered MCP tool, backend/common read helper, and CLI command. | Backend-safe persisted read. | Flows and interactions are persisted in file data. | Keep as the discovery/read path; P22.2 should add stable identity metadata while preserving source-shape/index fields. |
-| `prototype.delete_interaction` | Registered MCP tool, backend/common delete helper, and CLI command. | Backend-safe persisted mutation with explicit source-shape/index identity. | Interaction arrays are persisted on source shapes and interactions do not currently carry stable ids. | P19.2 implements backend-command delete for `fileId`, optional `pageId`, `sourceShapeId`, and zero-based `interactionIndex`; P22.1 selects future persisted interaction UUIDs before stable-id deletion is added. |
+| `prototype.list_interactions` | Registered MCP tool, backend/common read helper, and CLI command. | Backend-safe persisted read. | Flows and interactions are persisted in file data. | Keep as the discovery/read path; P22.2 adds optional `interactionId` plus explicit `identity.kind` metadata while preserving source-shape/index fields. |
+| `prototype.delete_interaction` | Registered MCP tool, backend/common delete helper, and CLI command. | Backend-safe persisted mutation with explicit source-shape/index identity. | Interaction arrays are persisted on source shapes; P22.2 can read optional ids, but delete still targets source-shape/index. | P19.2 implements backend-command delete for `fileId`, optional `pageId`, `sourceShapeId`, and zero-based `interactionIndex`; P22.3 should add stable-id deletion. |
 | `prototype.create_overlay` | Registered MCP tool, command-runtime descriptor, and `penpot-cli prototype create-overlay`. | Backend-safe persisted mutation. | Persisted overlays are interactions with `:open-overlay`, `:toggle-overlay`, or `:close-overlay` actions. The backend/common helper now creates those actions with explicit source, destination, relative target, preset/manual positioning, close/background flags, trigger, delay, and dissolve/slide animation metadata. | Keep backend-command-only for explicit file/page/source targets; plugin-live is not part of the P20 contract. |
 | `export.shape` | Registered descriptor and MCP tool through plugin-live. | Plugin-live workspace/export state. | It can use explicit live shape or current selection and returns plugin base64 data. | Keep plugin-live. Explicit exporter shape/page preview is covered by `render.preview`. |
 | `export.page` | Registered descriptor and MCP tool. | Exporter/read-only plus plugin-live. | Exporter path requires explicit ids; plugin-live can use bound workspace page. | Keep behavior. |
@@ -378,10 +378,10 @@ points CLI users back to MCP `file.open`, `file.get_context`,
 
 ## Open Decisions
 
-- P22.1 selected future persisted interaction UUIDs as the stable identity for
-  prototype interactions. Runtime still uses explicit `fileId`, optional
-  `pageId`, `sourceShapeId`, and zero-based `interactionIndex` until P22.2/P22.3
-  add read metadata and stable-id deletion.
+- P22.2 exposes optional `interactionId` and explicit `identity.kind`
+  metadata on prototype interaction reads. Runtime deletion still uses
+  explicit `fileId`, optional `pageId`, `sourceShapeId`, and zero-based
+  `interactionIndex` until P22.3 adds stable-id deletion.
 - Whether plugin-live `prototype.list_interactions` is needed, or whether
   backend-command reads are enough for agents.
 - Whether exporter-backed `export.shape` should get an explicit file/page/shape

@@ -185,6 +185,7 @@ test("command runtime exposes live-gap descriptor boundaries", () => {
     assert.equal(getCommandDescriptor("prototype list-interactions").id, "prototype.list_interactions");
     assert.equal(getCommandDescriptor("prototype delete-interaction").id, "prototype.delete_interaction");
     assert.deepEqual(CommandDescriptors.PROTOTYPE_DELETE_INTERACTION.adapters, ["backend-command"]);
+    assert.match(CommandDescriptors.PROTOTYPE_LIST_INTERACTIONS.responseShape, /identity.kind stable-id\|source-index/);
     assert.equal(CommandDescriptors.PROTOTYPE_DELETE_INTERACTION.cliCommand, "prototype delete-interaction");
     assert.match(CommandDescriptors.PROTOTYPE_DELETE_INTERACTION.description, /sourceShapeId/);
     assert.match(CommandDescriptors.PROTOTYPE_DELETE_INTERACTION.inputSchema, /interactionIndex/);
@@ -1659,9 +1660,16 @@ test("prototype list-interactions reads persisted prototype data with backend-co
                     ],
                     interactions: [
                         {
+                            interactionId: "00000000-0000-0000-0000-000000000101",
                             sourceShapeId: UUIDS.object,
                             destinationBoardId: UUIDS.profile,
                             index: 0,
+                            identity: {
+                                kind: "stable-id",
+                                interactionId: "00000000-0000-0000-0000-000000000101",
+                                sourceShapeId: UUIDS.object,
+                                interactionIndex: 0,
+                            },
                             actionType: "navigate-to",
                         },
                         {
@@ -1669,6 +1677,12 @@ test("prototype list-interactions reads persisted prototype data with backend-co
                             destinationBoardId: UUIDS.profile,
                             relativeToShapeId: UUIDS.object,
                             index: 1,
+                            identity: {
+                                kind: "source-index",
+                                sourceShapeId: UUIDS.object,
+                                interactionIndex: 1,
+                                unstable: true,
+                            },
                             actionType: "open-overlay",
                             overlayPositionType: "manual",
                             overlayPosition: { x: 12, y: 16 },
@@ -1679,6 +1693,12 @@ test("prototype list-interactions reads persisted prototype data with backend-co
                             sourceShapeId: UUIDS.object,
                             destinationBoardId: UUIDS.profile,
                             index: 2,
+                            identity: {
+                                kind: "source-index",
+                                sourceShapeId: UUIDS.object,
+                                interactionIndex: 2,
+                                unstable: true,
+                            },
                             actionType: "toggle-overlay",
                             overlayPositionType: "bottom-right",
                             overlayPosition: { x: 0, y: 0 },
@@ -1689,6 +1709,12 @@ test("prototype list-interactions reads persisted prototype data with backend-co
                             sourceShapeId: UUIDS.object,
                             destinationBoardId: UUIDS.profile,
                             index: 3,
+                            identity: {
+                                kind: "source-index",
+                                sourceShapeId: UUIDS.object,
+                                interactionIndex: 3,
+                                unstable: true,
+                            },
                             actionType: "close-overlay",
                         },
                     ],
@@ -1734,7 +1760,11 @@ test("prototype list-interactions reads persisted prototype data with backend-co
         assert.equal(body.data.adapter, "backend-command");
         assert.equal(body.data.adapterSelection.command, "prototype.list_interactions");
         assert.equal(body.data.flows[0].name, "Checkout");
+        assert.equal(body.data.interactions[0].interactionId, "00000000-0000-0000-0000-000000000101");
+        assert.equal(body.data.interactions[0].identity.kind, "stable-id");
         assert.equal(body.data.interactions[0].actionType, "navigate-to");
+        assert.equal(body.data.interactions[1].identity.kind, "source-index");
+        assert.equal(body.data.interactions[1].identity.unstable, true);
         assert.equal(body.data.interactions[1].actionType, "open-overlay");
         assert.equal(body.data.interactions[1].overlayPosition.x, 12);
         assert.equal(body.data.interactions[2].actionType, "toggle-overlay");

@@ -292,9 +292,16 @@ test("PrototypeListInteractionsTool reads persisted prototype data through backe
                     ],
                     interactions: [
                         {
+                            interactionId: "00000000-0000-0000-0000-000000000101",
                             sourceShapeId: "00000000-0000-0000-0000-000000000003",
                             destinationBoardId: "00000000-0000-0000-0000-000000000004",
                             index: 0,
+                            identity: {
+                                kind: "stable-id",
+                                interactionId: "00000000-0000-0000-0000-000000000101",
+                                sourceShapeId: "00000000-0000-0000-0000-000000000003",
+                                interactionIndex: 0,
+                            },
                             actionType: "navigate-to",
                         },
                         {
@@ -302,6 +309,12 @@ test("PrototypeListInteractionsTool reads persisted prototype data through backe
                             destinationBoardId: "00000000-0000-0000-0000-000000000004",
                             relativeToShapeId: "00000000-0000-0000-0000-000000000003",
                             index: 1,
+                            identity: {
+                                kind: "source-index",
+                                sourceShapeId: "00000000-0000-0000-0000-000000000003",
+                                interactionIndex: 1,
+                                unstable: true,
+                            },
                             actionType: "open-overlay",
                             overlayPositionType: "manual",
                             overlayPosition: { x: 12, y: 16 },
@@ -312,6 +325,12 @@ test("PrototypeListInteractionsTool reads persisted prototype data through backe
                             sourceShapeId: "00000000-0000-0000-0000-000000000003",
                             destinationBoardId: "00000000-0000-0000-0000-000000000004",
                             index: 2,
+                            identity: {
+                                kind: "source-index",
+                                sourceShapeId: "00000000-0000-0000-0000-000000000003",
+                                interactionIndex: 2,
+                                unstable: true,
+                            },
                             actionType: "toggle-overlay",
                             overlayPositionType: "bottom-right",
                             overlayPosition: { x: 0, y: 0 },
@@ -322,6 +341,12 @@ test("PrototypeListInteractionsTool reads persisted prototype data through backe
                             sourceShapeId: "00000000-0000-0000-0000-000000000003",
                             destinationBoardId: "00000000-0000-0000-0000-000000000004",
                             index: 3,
+                            identity: {
+                                kind: "source-index",
+                                sourceShapeId: "00000000-0000-0000-0000-000000000003",
+                                interactionIndex: 3,
+                                unstable: true,
+                            },
                             actionType: "close-overlay",
                         },
                     ],
@@ -356,7 +381,11 @@ test("PrototypeListInteractionsTool reads persisted prototype data through backe
     assert.equal(body.data.fileId, "00000000-0000-0000-0000-000000000001");
     assert.equal(body.data.pageId, "00000000-0000-0000-0000-000000000002");
     assert.equal(body.data.flows.length, 1);
+    assert.equal(body.data.interactions[0].interactionId, "00000000-0000-0000-0000-000000000101");
+    assert.equal(body.data.interactions[0].identity.kind, "stable-id");
     assert.equal(body.data.interactions[0].actionType, "navigate-to");
+    assert.equal(body.data.interactions[1].identity.kind, "source-index");
+    assert.equal(body.data.interactions[1].identity.unstable, true);
     assert.equal(body.data.interactions[1].actionType, "open-overlay");
     assert.equal(body.data.interactions[1].overlayPosition.x, 12);
     assert.equal(body.data.interactions[2].actionType, "toggle-overlay");

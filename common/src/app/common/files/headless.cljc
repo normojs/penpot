@@ -89,16 +89,32 @@
     {(keyword (str prefix "-id")) (:id shape)
      (keyword (str prefix "-name")) (:name shape)}))
 
+(defn- prototype-interaction-identity
+  [source interaction index]
+  (let [source-shape-id (:id source)
+        interaction-id  (:id interaction)]
+    (if interaction-id
+      {:interaction-id interaction-id
+       :identity {:kind :stable-id
+                  :interaction-id interaction-id
+                  :source-shape-id source-shape-id
+                  :interaction-index index}}
+      {:identity {:kind :source-index
+                  :source-shape-id source-shape-id
+                  :interaction-index index
+                  :unstable true}})))
+
 (defn prototype-interaction-summary
   [source interaction destination index]
   (let [action-type (:action-type interaction)
         action-type (if (= action-type :navigate) :navigate-to action-type)]
-    (cond-> {:source-shape-id (:id source)
-             :source-shape-name (:name source)
-             :index index
-             :trigger (:event-type interaction)
-             :delay (:delay interaction)
-             :action-type action-type}
+    (cond-> (merge {:source-shape-id (:id source)
+                    :source-shape-name (:name source)
+                    :index index
+                    :trigger (:event-type interaction)
+                    :delay (:delay interaction)
+                    :action-type action-type}
+                   (prototype-interaction-identity source interaction index))
       destination
       (merge (optional-shape-summary "destination-board" destination))
 
@@ -328,7 +344,7 @@
                   (fn [source]
                     (->> (:interactions source)
                          (map-indexed
-                         (fn [index interaction]
+                          (fn [index interaction]
                             (prototype-interaction-summary* file-data source interaction index)))
                          (keep identity))))))))
        (vec)))
@@ -1204,9 +1220,9 @@
                                                                   :closeClickOutside)
                                          false))
         background-overlay (boolean (or (prototype-overlay-param params
-                                                                :background-overlay
-                                                                :backgroundOverlay)
-                                       false))]
+                                                                 :background-overlay
+                                                                 :backgroundOverlay)
+                                        false))]
     (-> ctsi/default-interaction
         (ctsi/set-event-type trigger source)
         (ctsi/set-action-type action-type)

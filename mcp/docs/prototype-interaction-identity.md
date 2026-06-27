@@ -1,7 +1,7 @@
 # Prototype Interaction Identity Audit
 
-Status: P22.1 audit complete. No runtime behavior changes are made by this
-document.
+Status: P22.2 read metadata implemented. Stable-id deletion remains future
+P22.3 work.
 
 ## Scope
 
@@ -15,8 +15,9 @@ interactions used by:
 - `penpot-cli prototype list-interactions`
 - `penpot-cli prototype delete-interaction`
 
-The current executable contract remains source-shape/index based until P22.2
-or P22.3 explicitly changes the read and write surfaces.
+The current delete contract remains source-shape/index based until P22.3
+explicitly changes the write surface. The read surface now exposes explicit
+identity metadata.
 
 ## Current Data Shape
 
@@ -33,12 +34,13 @@ Important facts from the current implementation:
 
 - Shape attrs define `:interactions` as an optional vector of
   `ctsi/schema:interaction`.
-- `ctsi/schema:interaction` has action/event/destination/overlay fields, but
-  no `:id` field.
+- `ctsi/schema:interaction` has action/event/destination/overlay fields plus
+  an optional `:id` UUID field.
 - `ctsi/add-interaction` appends to the vector.
 - `ctsi/remove-interaction` removes by vector index.
-- `headless/prototype-interactions-summary` emits `source-shape-id` plus
-  `index` for each summarized interaction.
+- `headless/prototype-interactions-summary` emits `source-shape-id`, `index`,
+  optional `interaction-id`, and an `identity` map for each summarized
+  interaction.
 - `headless/delete-prototype-interaction-request` validates
   `interaction-index` against the current source-shape vector, then removes
   that index.
@@ -54,6 +56,9 @@ Current public API surfaces mirror this:
   `sourceShapeId`, and `interactionIndex`.
 - CLI `prototype delete-interaction` accepts `--file`, optional `--page`,
   `--source`, and `--index`.
+- `prototype.list_interactions` responses include `identity.kind =
+  stable-id|source-index`; `interactionId` appears only when the stored
+  interaction carries a persisted id.
 
 Implementation evidence:
 
@@ -113,6 +118,20 @@ Compatibility rules:
 - The backend must not synthesize a hash-based id and treat it as stable.
 - Stable-id deletion should be added only after `prototype.list_interactions`
   exposes the identity metadata.
+
+## P22.2 Read Contract
+
+P22.2 implements the read side of the P22.1 decision:
+
+- `ctsi/schema:interaction` accepts optional persisted `:id` values.
+- `prototype.list_interactions` and related create/delete summaries preserve
+  existing `sourceShapeId`/`index` fields.
+- Summaries with stored ids include top-level `interactionId` and
+  `identity.kind = "stable-id"`.
+- Summaries without stored ids include `identity.kind = "source-index"` and
+  `unstable: true`.
+- No UUIDs are generated during reads or creates in P22.2.
+- `prototype.delete_interaction` does not yet accept `interactionId`.
 
 Recommended summary shape for P22.2:
 
@@ -196,7 +215,7 @@ they should not be accepted as a primary delete target.
 
 No descriptor changes are required in P22.1.
 
-Expected descriptor changes for P22.2:
+Implemented descriptor changes for P22.2:
 
 - `prototype.list_interactions.responseShape` should mention optional
   `interactionId` and `identity.kind`.

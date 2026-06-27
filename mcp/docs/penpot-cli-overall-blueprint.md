@@ -448,11 +448,11 @@ Acceptance:
 Wave D, Wave E, Wave F, Wave G, Wave H, Wave I / Phase 17, Phase 18, and P19.1
 are complete. Prototype delete now has an explicit target identity contract:
 `fileId`, `pageId`, `sourceShapeId`, and zero-based `interactionIndex`.
-`interactionId` remains unsupported in current runtime behavior because
-persisted interactions do not yet carry stable ids. P22.1 selects future
-persisted interaction UUIDs as the stable identity path and keeps
-source-shape/index targeting as the compatibility fallback until read metadata
-and stable-id deletion are implemented.
+`interactionId` remains unsupported for deletion. P22.1 selects future
+persisted interaction UUIDs as the stable identity path, and P22.2 exposes
+optional `interactionId` plus explicit `identity.kind` metadata on interaction
+reads while keeping source-shape/index targeting as the compatibility fallback
+until stable-id deletion is implemented.
 
 P19.2 is complete:
 
@@ -493,6 +493,15 @@ P22.1 is complete:
 3. `prototype-interaction-identity-fixtures.json` captures id-present,
    id-missing, duplicate-id, and legacy fallback expectations for the next read
    metadata slice.
+
+P22.2 is complete:
+
+1. Common/backend prototype interaction summaries expose optional
+   `interactionId` when stored interactions carry ids.
+2. Every summary includes `identity.kind`, using `stable-id` for persisted ids
+   and `source-index` with `unstable: true` for legacy/id-missing data.
+3. MCP and `penpot-cli prototype list-interactions` preserve the identity
+   metadata in JSON output; delete remains source-shape/index until P22.3.
 
 Keep manual configuration behavior stable while moving command metadata and
 envelopes; transport-specific formatting should stay at the MCP/CLI edges.

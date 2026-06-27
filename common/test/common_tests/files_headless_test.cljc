@@ -16,6 +16,20 @@
    [app.common.uuid :as uuid]
    [clojure.test :as t]))
 
+(defn- legacy-interaction-identity
+  [source-id index]
+  {:kind :source-index
+   :source-shape-id source-id
+   :interaction-index index
+   :unstable true})
+
+(defn- stable-interaction-identity
+  [interaction-id source-id index]
+  {:kind :stable-id
+   :interaction-id interaction-id
+   :source-shape-id source-id
+   :interaction-index index})
+
 (t/deftest page-summaries-preserve-file-page-order
   (let [file-id (uuid/next)
         page-a  (uuid/next)
@@ -308,6 +322,7 @@
     (t/is (= {:source-shape-id rect-id
               :source-shape-name "CTA"
               :index 0
+              :identity (legacy-interaction-identity rect-id 0)
               :trigger :mouse-enter
               :delay nil
               :action-type :navigate-to
@@ -334,6 +349,7 @@
         frame-b  (uuid/next)
         rect-id  (uuid/next)
         flow-id  (uuid/next)
+        stable-interaction-id (uuid/next)
         data     (ctf/make-file-data file-id page-id)
         frame-a-result (headless/create-shape-request data {:page-id page-id
                                                             :shape-id frame-a
@@ -375,7 +391,8 @@
                       :destination-board-id frame-b
                       :trigger :click})
         data     (cpc/process-changes data (:changes interaction))
-        open-overlay {:action-type :open-overlay
+        open-overlay {:id stable-interaction-id
+                      :action-type :open-overlay
                       :event-type :mouse-enter
                       :destination frame-b
                       :position-relative-to rect-id
@@ -426,14 +443,17 @@
     (t/is (= [{:source-shape-id rect-id
                :source-shape-name "CTA"
                :index 0
+               :identity (legacy-interaction-identity rect-id 0)
                :trigger :click
                :delay nil
                :action-type :navigate-to
                :destination-board-id frame-b
                :destination-board-name "Done"}
-              {:source-shape-id rect-id
+              {:interaction-id stable-interaction-id
+               :source-shape-id rect-id
                :source-shape-name "CTA"
                :index 1
+               :identity (stable-interaction-identity stable-interaction-id rect-id 1)
                :trigger :mouse-enter
                :delay nil
                :action-type :open-overlay
@@ -451,6 +471,7 @@
               {:source-shape-id rect-id
                :source-shape-name "CTA"
                :index 2
+               :identity (legacy-interaction-identity rect-id 2)
                :trigger :mouse-leave
                :delay nil
                :action-type :toggle-overlay
@@ -463,6 +484,7 @@
               {:source-shape-id rect-id
                :source-shape-name "CTA"
                :index 3
+               :identity (legacy-interaction-identity rect-id 3)
                :trigger :click
                :delay nil
                :action-type :close-overlay
@@ -575,6 +597,7 @@
     (t/is (= {:source-shape-id rect-id
               :source-shape-name "CTA"
               :index 0
+              :identity (legacy-interaction-identity rect-id 0)
               :trigger :click
               :delay nil
               :action-type :open-overlay
@@ -588,6 +611,7 @@
     (t/is (= {:source-shape-id rect-id
               :source-shape-name "CTA"
               :index 1
+              :identity (legacy-interaction-identity rect-id 1)
               :trigger :mouse-enter
               :delay nil
               :action-type :toggle-overlay
@@ -606,6 +630,7 @@
     (t/is (= {:source-shape-id rect-id
               :source-shape-name "CTA"
               :index 2
+              :identity (legacy-interaction-identity rect-id 2)
               :trigger :click
               :delay nil
               :action-type :close-overlay}
@@ -730,6 +755,7 @@
     (t/is (= {:source-shape-id rect-id
               :source-shape-name "CTA"
               :index 0
+              :identity (legacy-interaction-identity rect-id 0)
               :trigger :click
               :delay nil
               :action-type :navigate-to
