@@ -133,8 +133,11 @@ and `penpot-cli prototype delete-interaction`. P19.3, P20.1, P20.2, and P20.3
 are complete: overlay summaries are readable, the create-overlay payload
 contract is documented, and backend-command `prototype.create_overlay` now
 works through common/backend helpers, MCP, and
-`penpot-cli prototype create-overlay`. Phase 20 is complete; the next
-implementation wave has not been selected yet.
+`penpot-cli prototype create-overlay`. Phase 20 is complete. P21.1 is complete:
+`shape.set_layout` and `shape.set_style` are descriptor-only aliases over
+`shape.update`, with no executable MCP/CLI command yet. Current active work
+moves to P21.2 to decide whether to register MCP alias tools that forward to
+the same shape update paths.
 
 ## Feature Roadmap
 
@@ -170,6 +173,7 @@ remain the execution plan.
 | F25 | done | Live workspace state commands | Phase 18 | Agents can intentionally read or change editor-local selection state through bound MCP plugin-live commands | Completed 2026-06-17; P18.1-P18.3 implemented `selection.get`, `selection.set`, clearing, and live-bind/CLI descriptor smoke evidence |
 | F26 | done | Prototype mutation contracts | Phase 19 | Agents can safely mutate persisted prototype interactions only after target identity semantics are explicit | Completed 2026-06-18; P19.1/P19.2 delivered source-shape/index delete and P19.3 kept overlay creation descriptor-only until fixtures define action and positioning semantics |
 | F27 | done | Prototype overlay read and creation contract | Phase 20 | Agents can inspect persisted overlay interactions and create open/toggle/close overlays without a live workspace | Completed 2026-06-18; P20.1/P20.2/P20.3 delivered read summaries, payload contract fixtures, backend-command creation, MCP routing, and `penpot-cli prototype create-overlay` |
+| F28 | in_progress | Design editing alias contracts | Phase 21 | Agents can discover whether specialized layout/style commands are aliases over `shape.update` or independent operations | P21.1 completed 2026-06-28; next task is P21.2 MCP alias registration if the descriptor-only contract remains stable |
 
 ## Detailed Upcoming Task Queue
 
@@ -359,6 +363,18 @@ Order rationale:
 | K1 | Define prototype interaction mutation identity contract | `mcp/docs`, `command-runtime`, `mcp`, `penpot-cli` | Completed 2026-06-17; contract chooses explicit `fileId`, `pageId`, `sourceShapeId`, and zero-based `interactionIndex` for `prototype.delete_interaction`; `interactionId` stays unsupported | Docs plus descriptor/runtime tests |
 | K2 | Implement backend-command `prototype.delete_interaction` | `backend`, `common`, `mcp`, `penpot-cli`, `mcp/docs` | Completed 2026-06-17; persisted interaction delete works for explicit file/page/source-shape/index targets without a live workspace | Backend/common plus MCP/CLI tests cover success, not-found, and stale target errors |
 | K3 | Reassess prototype overlay creation contract | `mcp/docs`, `command-runtime`, `mcp` | Completed 2026-06-18 in P19.3/P20.2; overlay creation stayed descriptor-only until read summaries and payload fixtures stabilized | Audit docs and descriptors stay aligned |
+
+### Wave L: Design Editing Alias Contracts
+
+Wave L resolves the remaining design-editing alias gap before adding more shape
+tools. It keeps `shape.update` as the source of truth unless a specialized
+command has genuinely different semantics.
+
+| Order | Task | Modules | Output | Verification |
+| --- | --- | --- | --- | --- |
+| L1 | Define layout/style alias contracts | `command-runtime`, `mcp/docs`, `penpot-cli`, `todo.md` | Planned descriptor behavior for `shape.set_layout` and `shape.set_style` says whether they alias `shape.update`, which adapters they can eventually use, and why no separate backend/common mutation is needed yet | Descriptor/runtime tests and docs agree on alias status |
+| L2 | Register MCP alias tools if contract is stable | `mcp`, `mcp/docs` | Optional MCP tools forward to the same shape update backend/plugin paths while preserving tool names and audit context | MCP tests prove payload mapping and adapter selection match `shape.update` |
+| L3 | Add CLI alias commands if useful for scripts | `penpot-cli`, `mcp/docs` | Optional `shape set-layout` and `shape set-style` commands map to `shape update` without duplicate parsing semantics | CLI smoke tests prove request bodies match equivalent `shape update` calls |
 
 ## Phase 0: Baseline, Planning, And Rules
 
@@ -634,11 +650,27 @@ creatable through a backend-command path without requiring a live workspace.
 
 Use `mcp/docs/penpot-cli-overall-blueprint.md` and
 `mcp/docs/headless-live-gap-audit.md` as the current architecture baseline and
-select the next implementation wave from remaining descriptor-only gaps:
+continue with Phase 21:
 
-1. `shape.set_layout` / `shape.set_style` alias strategy over the existing
-   `shape.update` payloads.
-2. Prototype interaction stable-id migration or richer prototype mutation
+1. Decide whether to register MCP alias tools for `shape.set_layout` and
+   `shape.set_style`; if registered, forward them to the same backend-command
+   and plugin-live paths used by `shape.update`.
+2. Then decide whether CLI aliases add enough script value over `shape update`,
+   or keep discoverable descriptors that point callers to `shape.update`.
+3. After alias strategy is settled, consider prototype interaction stable-id
+   migration or richer prototype mutation
    helpers beyond source-shape/index deletion and overlay creation.
-3. Export/file, thumbnail, component, token, or debug tool waves if those
+4. Export/file, thumbnail, component, token, or debug tool waves if those
    become higher priority than design-editing aliases.
+
+## Phase 21: Design Editing Alias Contracts
+
+Goal: decide whether `shape.set_layout` and `shape.set_style` should become
+registered commands or remain discoverable aliases over `shape.update`, without
+forking a second shape-update contract.
+
+| ID | Status | Task | Modules | Verification | Notes |
+| --- | --- | --- | --- | --- | --- |
+| P21.1 | done | Define `shape.set_layout` and `shape.set_style` alias contracts | `command-runtime`, `mcp/docs`, `penpot-cli`, `todo.md` | Completed 2026-06-28; runtime and CLI descriptor tests document alias status and docs identify the future registration path | Behavior stays descriptor-only until alias tools are explicitly registered |
+| P21.2 | todo | Register MCP alias tools if contract is stable | `mcp`, `mcp/docs` | MCP tests prove `shape.set_layout` and `shape.set_style` map to the same backend/plugin update paths with alias audit context | Only start after P21.1 |
+| P21.3 | todo | Add CLI alias commands if useful for scripts | `penpot-cli`, `mcp/docs` | CLI smoke tests prove `shape set-layout` and `shape set-style` request bodies match equivalent `shape update` calls | Only start if CLI aliases add value over `shape update` |

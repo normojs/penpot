@@ -316,10 +316,23 @@ export const CommandDescriptors = Object.freeze({
         mcpToolName: "shape.set_layout",
         title: "Set shape layout",
         description:
-            "Descriptor-only layout alias for shape.update; backend-command supports none/flex plus the grid container track subset.",
-        inputSchema: "fileId?, pageId?, shapeId, layout(type none|flex|grid tracks backend-command; grid cells plugin-live/planned), adapter?",
-        adapters: Object.freeze(["backend-command", "plugin-live"]),
-        responseShape: "use shape.update today; backend grid support covers container direction/tracks/gaps only",
+            "Descriptor-only planned alias for shape.update layout fields; use shape.update today for executable backend-command or plugin-live layout updates.",
+        inputSchema:
+            "planned alias of shape.update: fileId?, pageId?, shapeId, layout(type none|flex|grid tracks backend-command; grid cells plugin-live/planned), adapter?",
+        adapters: Object.freeze([]),
+        responseShape:
+            "planned alias response should match shape.update; backend grid support covers container direction/tracks/gaps only",
+    }),
+    SHAPE_SET_STYLE: Object.freeze({
+        id: "shape.set_style",
+        mcpToolName: "shape.set_style",
+        title: "Set shape style",
+        description:
+            "Descriptor-only planned alias for shape.update style/text fields; use shape.update today for executable backend-command or plugin-live style updates.",
+        inputSchema:
+            "planned alias of shape.update: fileId?, pageId?, shapeId, fill?, fills?, stroke?, strokes?, borderRadius?, r1?, r2?, r3?, r4?, content?, fontSize?, adapter?",
+        adapters: Object.freeze([]),
+        responseShape: "planned alias response should match shape.update shape summary and revision metadata",
     }),
     SHAPE_DELETE: Object.freeze({
         id: "shape.delete",
@@ -388,6 +401,7 @@ export const LiveGapCommandDescriptors = Object.freeze([
     CommandDescriptors.PROTOTYPE_LIST_INTERACTIONS,
     CommandDescriptors.PROTOTYPE_DELETE_INTERACTION,
     CommandDescriptors.SHAPE_SET_LAYOUT,
+    CommandDescriptors.SHAPE_SET_STYLE,
 ]);
 
 export const ShapeExportCommandDescriptors = Object.freeze([

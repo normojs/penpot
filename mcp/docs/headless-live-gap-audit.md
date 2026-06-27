@@ -115,8 +115,8 @@ state for them.
 | `shape.update` with geometry/style/text/hierarchy | Registered MCP tool and descriptor; backend-command with explicit targets, plugin-live otherwise. | Backend-safe persisted data plus plugin-live convenience. | Supported shape fields persist through file changes. | Keep behavior. |
 | `shape.update` with `layout.type = none|flex` | Registered MCP tool and descriptor. | Backend-safe persisted data. | Common/backend explicitly support this subset. | Keep behavior. |
 | `shape.update` with `layout.type = grid` | Registered MCP tool and descriptor; backend-command supports the container track subset with explicit `fileId`, plugin-live remains available for live workspace convenience. | Backend-safe persisted data for container direction/tracks/gaps/padding/alignment; plugin-live or future contract for cell/child placement. | Persisted grid container fields are stable enough for headless updates, while `layout-grid-cells` needs a separate payload contract. | Keep backend-command subset; do not add cell placement until the contract is defined. |
-| `shape.set_layout` | Name exists in `ToolNames.ts`, not registered. | Unsupported or descriptor-only. | Behavior overlaps with `shape.update.layout`; no separate runtime surface. | Descriptor should clarify planned alias or future specialized command before implementation. |
-| `shape.set_style` | Name exists in `ToolNames.ts`, not registered. | Unsupported or descriptor-only. | Behavior overlaps with `shape.update` style fields. | Descriptor should clarify planned alias or future specialized command before implementation. |
+| `shape.set_layout` | Name exists in `ToolNames.ts` and command-runtime as a descriptor-only alias, not a registered MCP tool. | Descriptor-only alias contract. | Behavior overlaps with `shape.update.layout`; no separate runtime surface is needed yet. | Use `shape.update` today. If registered later, map to the same backend-command/plugin-live update paths with alias audit context. |
+| `shape.set_style` | Name exists in `ToolNames.ts` and command-runtime as a descriptor-only alias, not a registered MCP tool. | Descriptor-only alias contract. | Behavior overlaps with `shape.update` fill/stroke/text/corner fields; no separate runtime surface is needed yet. | Use `shape.update` today. If registered later, map to the same backend-command/plugin-live update paths with alias audit context. |
 | `shape.group`, `shape.ungroup` | Names exist in `ToolNames.ts`, not registered. | Unsupported or descriptor-only. | No backend/common or plugin task implementation found. | Leave out of P17.2 unless a separate grouping wave is selected. |
 | `prototype.create_flow` | Registered MCP tool and descriptor; backend-command with `fileId`, plugin-live otherwise. | Backend-safe persisted data plus plugin-live convenience. | Flow data persists on the page. | Keep behavior. |
 | `prototype.create_interaction` | Registered MCP tool and descriptor; backend-command with `fileId`, plugin-live otherwise. | Backend-safe persisted data plus plugin-live convenience. | Navigate interaction data persists on source shape. | Keep behavior. |
@@ -177,10 +177,15 @@ Recommended P17.2 commands:
    - Reason: current behavior lives under `shape.update.layout`; grid backend
      support is still unresolved.
 
+8. `shape.set_style`
+   - Adapter: descriptor-only alias/planned command.
+   - Reason: current behavior lives under `shape.update` style/text fields.
+
 P17.2 implementation note:
 
-- Added `LiveGapCommandDescriptors` to `@penpot/command-runtime` for the seven
-  commands above.
+- Added `LiveGapCommandDescriptors` to `@penpot/command-runtime` for the
+  original Phase 17 live-gap commands. P21.1 later adds `shape.set_style` as a
+  descriptor-only alias alongside `shape.set_layout`.
 - Kept `page.set_current`, `selection.get`, and `selection.set` as
   plugin-live/live workspace metadata. All three are now registered MCP tools
   for bound workspace contexts.
@@ -256,6 +261,20 @@ P20.3 implementation note:
   inputs before sending the backend request.
 - The command-runtime descriptor now advertises the backend-command adapter and
   CLI command; plugin-live remains out of scope for overlay creation.
+
+P21.1 alias contract note:
+
+- `shape.set_layout` and `shape.set_style` are descriptor-only aliases over
+  `shape.update`; they intentionally advertise no executable adapters until
+  MCP/CLI alias tools are registered.
+- `shape.set_layout` covers the existing `shape.update.layout` payload:
+  backend-command supports `none`, `flex`, and the grid container track subset,
+  while grid cell placement remains future/plugin-live work.
+- `shape.set_style` covers the existing `shape.update` style/text payload:
+  fills, strokes, corner radii, text content, and font size.
+- A future registration slice should forward alias calls to the same
+  backend-command/plugin-live shape update paths and preserve alias tool names
+  only in audit/adapter metadata.
 
 ## P19.3 Overlay Contract Reassessment
 

@@ -265,6 +265,10 @@ export interface CommandDescriptorCatalog extends LowRiskCommandDescriptorCatalo
         id: "shape.set_layout";
         mcpToolName: "shape.set_layout";
     };
+    SHAPE_SET_STYLE: CommandDescriptor & {
+        id: "shape.set_style";
+        mcpToolName: "shape.set_style";
+    };
     SHAPE_DELETE: CommandDescriptor & {
         id: "shape.delete";
         mcpToolName: "shape.delete";

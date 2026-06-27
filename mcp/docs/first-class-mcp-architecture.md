@@ -524,6 +524,20 @@ P17.2 descriptor result:
   grid cell placement gaps stay descriptor-only or unsupported until contracts
   are defined.
 
+P21.1 design alias contract result:
+
+- `shape.set_layout` and `shape.set_style` are descriptor-only aliases over
+  `shape.update`; they do not currently register executable MCP or CLI
+  commands.
+- `shape.set_layout` should reuse the existing `shape.update.layout` payload
+  if it is registered later, preserving backend-command support for `none`,
+  `flex`, and the grid container track subset while leaving grid cell placement
+  to a future contract.
+- `shape.set_style` should reuse the existing `shape.update` style/text payload
+  for fills, strokes, corner radii, text content, and font size.
+- Until alias tools are registered, callers should use `shape.update` for
+  executable backend-command or plugin-live behavior.
+
 P17.5 live-only guidance result:
 
 - `file_context_required` responses include `liveOnly` metadata for
@@ -1862,6 +1876,12 @@ component.instantiate
 tokens.list
 tokens.apply
 ```
+
+`shape.set_layout` and `shape.set_style` are currently discoverable
+descriptor-only aliases over `shape.update`, not registered executable tools.
+When/if they become registered tools, they should forward to the same
+backend-command/plugin-live shape update paths and preserve the alias name only
+in tool/audit metadata.
 
 ### 8.4 Prototype Tools
 

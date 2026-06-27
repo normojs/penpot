@@ -122,9 +122,10 @@ not register yet:
 - global/file: `file.search`, `file.duplicate`, `file.open`,
   `token.get_mcp_status`
 - file context: `page.set_current`, `selection.get`, and `selection.set` are implemented but remain plugin-live and now share live-only recovery metadata with the same binding flow
-- design editing: `shape.group`, `shape.ungroup`, `shape.set_layout`,
-  `shape.set_style`, `component.create`, `component.instantiate`,
-  `tokens.list`, `tokens.apply`
+- design editing: `shape.group`, `shape.ungroup`, `component.create`,
+  `component.instantiate`, `tokens.list`, `tokens.apply`; `shape.set_layout`
+  and `shape.set_style` are declared and have descriptor-only alias contracts
+  that point callers to `shape.update` until alias tools are registered
 - prototype/export: `prototype.create_overlay` and
   `prototype.delete_interaction` are registered backend-command mutations for
   explicit persisted prototype targets; `export.file` and `render.thumbnail`

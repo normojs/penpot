@@ -44,6 +44,7 @@ const LIVE_GAP_IDS = [
     "prototype.list_interactions",
     "prototype.delete_interaction",
     "shape.set_layout",
+    "shape.set_style",
 ];
 
 test("descriptor groups expose stable command ids", () => {
@@ -85,6 +86,7 @@ test("descriptor lookup supports internal, MCP, and CLI command names", () => {
     assert.equal(getCommandDescriptor("prototype.delete_interaction"), CommandDescriptors.PROTOTYPE_DELETE_INTERACTION);
     assert.equal(getCommandDescriptor("prototype delete-interaction"), CommandDescriptors.PROTOTYPE_DELETE_INTERACTION);
     assert.equal(getCommandDescriptor("shape.set_layout"), CommandDescriptors.SHAPE_SET_LAYOUT);
+    assert.equal(getCommandDescriptor("shape.set_style"), CommandDescriptors.SHAPE_SET_STYLE);
     assert.equal(getCommandDescriptor("missing.command"), undefined);
 });
 
@@ -119,7 +121,15 @@ test("live-gap descriptors document live-only and planned command boundaries", (
     assert.match(CommandDescriptors.PROTOTYPE_CREATE_OVERLAY.inputSchema, /manualPosition\{x,y\} required/);
     assert.match(CommandDescriptors.PROTOTYPE_CREATE_OVERLAY.inputSchema, /push animation unsupported/);
     assert.match(CommandDescriptors.PROTOTYPE_CREATE_OVERLAY.responseShape, /overlay interaction summary/);
+    assert.equal(CommandDescriptors.SHAPE_SET_LAYOUT.cliCommand, undefined);
+    assert.deepEqual(CommandDescriptors.SHAPE_SET_LAYOUT.adapters, []);
+    assert.match(CommandDescriptors.SHAPE_SET_LAYOUT.description, /planned alias for shape.update layout fields/);
     assert.match(CommandDescriptors.SHAPE_SET_LAYOUT.responseShape, /shape.update/);
+    assert.equal(CommandDescriptors.SHAPE_SET_STYLE.cliCommand, undefined);
+    assert.deepEqual(CommandDescriptors.SHAPE_SET_STYLE.adapters, []);
+    assert.match(CommandDescriptors.SHAPE_SET_STYLE.description, /planned alias for shape.update style\/text fields/);
+    assert.match(CommandDescriptors.SHAPE_SET_STYLE.inputSchema, /fill\?/);
+    assert.match(CommandDescriptors.SHAPE_SET_STYLE.responseShape, /shape.update/);
 });
 
 test("file open helpers produce stable workspace URLs and handoff actions", () => {

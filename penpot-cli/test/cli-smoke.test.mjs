@@ -147,7 +147,7 @@ test("command runtime exposes migrated shape and export descriptors", () => {
             "render.preview",
         ]
     );
-    assert.equal(MigratedCommandDescriptors.length, 26);
+    assert.equal(MigratedCommandDescriptors.length, 27);
     assert.equal(CommandDescriptors.SHAPE_DELETE.cliCommand, "shape delete");
     assert.equal(CommandDescriptors.SHAPE_CREATE_IMAGE.cliCommand, "shape create-image");
     assert.equal(CommandDescriptors.EXPORT_PAGE.mcpToolName, "export.page");
@@ -167,9 +167,10 @@ test("command runtime exposes live-gap descriptor boundaries", () => {
             "prototype.list_interactions",
             "prototype.delete_interaction",
             "shape.set_layout",
+            "shape.set_style",
         ]
     );
-    assert.equal(MigratedCommandDescriptors.length, 26);
+    assert.equal(MigratedCommandDescriptors.length, 27);
     assert.equal(CommandDescriptors.PAGE_SET_CURRENT.mcpToolName, "page.set_current");
     assert.equal(CommandDescriptors.PAGE_SET_CURRENT.cliCommand, undefined);
     assert.equal(getCommandDescriptor("selection.get").adapters[0], "plugin-live");
@@ -182,6 +183,9 @@ test("command runtime exposes live-gap descriptor boundaries", () => {
     assert.match(CommandDescriptors.PROTOTYPE_DELETE_INTERACTION.description, /sourceShapeId/);
     assert.match(CommandDescriptors.PROTOTYPE_DELETE_INTERACTION.inputSchema, /interactionIndex/);
     assert.doesNotMatch(CommandDescriptors.PROTOTYPE_DELETE_INTERACTION.inputSchema, /interactionId/);
+    assert.deepEqual(CommandDescriptors.SHAPE_SET_LAYOUT.adapters, []);
+    assert.deepEqual(CommandDescriptors.SHAPE_SET_STYLE.adapters, []);
+    assert.equal(CommandDescriptors.SHAPE_SET_STYLE.cliCommand, undefined);
     assert.equal(
         getAdapterSelectionReason(AdapterSelectionReasonCodes.CLI_LIVE_WORKSPACE_STATE_UNSUPPORTED),
         "CLI commands do not read or mutate editor-local workspace state; use MCP file.open, file.get_context, and file.bind_context before retrying the live-only tool."
