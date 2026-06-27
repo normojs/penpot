@@ -59,6 +59,8 @@ Usage:
   penpot-cli shape create-text --file <file-id> --page <page-id> --parent <frame-id> --x <n> --y <n> --width <n> --height <n> --content <text> [--format text|json]
   penpot-cli shape create-image --file <file-id> --page <page-id> --image <path> --x <n> --y <n> [--width <n>] [--height <n>] [--format text|json]
   penpot-cli shape update --file <file-id> --shape <shape-id> [--page <page-id>] [--parent <frame-id>] [--x <n>] [--y <n>] [--width <n>] [--height <n>] [--fill <hex>] [--layout none|flex|grid] [--format text|json]
+  penpot-cli shape set-layout --file <file-id> --shape <shape-id> --layout none|flex|grid [--page <page-id>] [--format text|json]
+  penpot-cli shape set-style --file <file-id> --shape <shape-id> [--page <page-id>] [--fill <hex>] [--stroke <hex>] [--content <text>] [--font-size <n>] [--format text|json]
   penpot-cli shape delete --file <file-id> --shape <shape-id> [--page <page-id>] [--format text|json]
   penpot-cli prototype create-flow --file <file-id> --name <name> --starting-board <frame-id> [--page <page-id>] [--flow-id <id>] [--format text|json]
   penpot-cli prototype create-interaction --file <file-id> --source <shape-id> --destination <frame-id> [--page <page-id>] [--trigger click|mouse-enter|mouse-leave|after-delay] [--format text|json]
@@ -133,6 +135,8 @@ Usage:
   penpot-cli shape create-text --file <file-id> --page <page-id> --parent <frame-id> --x <n> --y <n> --width <n> --height <n> --content <text> [--name <name>] [--shape-id <id>] [--font-size <n>] [--fill <hex>] [--format text|json]
   penpot-cli shape create-image --file <file-id> --page <page-id> --image <path> --x <n> --y <n> [--width <n>] [--height <n>] [--name <name>] [--shape-id <id>] [--parent <frame-id>] [--mime-type <type>] [--format text|json]
   penpot-cli shape update --file <file-id> --shape <shape-id> [--page <page-id>] [--parent <frame-id>] [--index <n>] [--name <name>] [--x <n>] [--y <n>] [--width <n>] [--height <n>] [--fill <hex>] [--stroke <hex>] [--border-radius <n>] [--r1 <n>] [--r2 <n>] [--r3 <n>] [--r4 <n>] [--content <text>] [--font-size <n>] [--layout none|flex|grid] [--layout-direction row|row-reverse|column|column-reverse] [--layout-grid-direction row|column] [--layout-grid-rows fixed:120,flex:1,auto] [--layout-grid-columns percent:50,percent:50] [--layout-wrap wrap|nowrap] [--layout-align-items start|center|end|stretch] [--layout-justify-items start|center|end|stretch] [--layout-align-content start|center|end|space-between|space-around|space-evenly|stretch] [--layout-justify-content start|center|end|space-between|space-around|space-evenly|stretch] [--layout-gap <n>] [--layout-row-gap <n>] [--layout-column-gap <n>] [--layout-padding <n>] [--format text|json]
+  penpot-cli shape set-layout --file <file-id> --shape <shape-id> [--page <page-id>] --layout none|flex|grid [--layout-direction row|row-reverse|column|column-reverse] [--layout-grid-direction row|column] [--layout-grid-rows fixed:120,flex:1,auto] [--layout-grid-columns percent:50,percent:50] [--layout-wrap wrap|nowrap] [--layout-align-items start|center|end|stretch] [--layout-justify-items start|center|end|stretch] [--layout-align-content start|center|end|space-between|space-around|space-evenly|stretch] [--layout-justify-content start|center|end|space-between|space-around|space-evenly|stretch] [--layout-gap <n>] [--layout-row-gap <n>] [--layout-column-gap <n>] [--layout-padding <n>] [--format text|json]
+  penpot-cli shape set-style --file <file-id> --shape <shape-id> [--page <page-id>] [--fill <hex>] [--stroke <hex>] [--border-radius <n>] [--r1 <n>] [--r2 <n>] [--r3 <n>] [--r4 <n>] [--content <text>] [--font-size <n>] [--format text|json]
   penpot-cli shape delete --file <file-id> --shape <shape-id> [--page <page-id>] [--format text|json]
 
 Notes:
@@ -496,6 +500,13 @@ interface ShapeUpdateParams {
     layout?: ShapeLayoutParams;
 }
 
+type ShapeUpdateMode = "update" | "set-layout" | "set-style";
+
+interface ShapeUpdateParseOptions {
+    command: string;
+    mode: ShapeUpdateMode;
+}
+
 interface ShapeDeleteParams {
     fileId: string;
     shapeId: string;
@@ -642,6 +653,10 @@ function readOptions(args: string[], names: string[]): string[] {
         }
     }
     return values;
+}
+
+function findOptionName(args: string[], names: string[]): string | undefined {
+    return args.find((arg) => names.some((name) => arg === name || arg.startsWith(`${name}=`)));
 }
 
 function readFirstPositional(args: string[]): string | undefined {
@@ -1656,25 +1671,53 @@ function parseShapeGridTracks(
     return tracks;
 }
 
+const SHAPE_LAYOUT_OPTION_NAMES = [
+    "--layout",
+    "--layout-type",
+    "--layout-direction",
+    "--layout-wrap",
+    "--layout-align-items",
+    "--layout-justify-items",
+    "--layout-align-content",
+    "--layout-justify-content",
+    "--layout-gap",
+    "--layout-row-gap",
+    "--layout-column-gap",
+    "--layout-padding",
+    "--layout-grid-direction",
+    "--layout-grid-rows",
+    "--layout-grid-columns",
+    "--grid-rows",
+    "--grid-columns",
+];
+
+const SHAPE_STYLE_OPTION_NAMES = [
+    "--fill",
+    "--fill-color",
+    "--fill-opacity",
+    "--stroke",
+    "--stroke-color",
+    "--stroke-opacity",
+    "--stroke-width",
+    "--stroke-style",
+    "--stroke-alignment",
+    "--border-radius",
+    "--radius",
+    "--r1",
+    "--r2",
+    "--r3",
+    "--r4",
+    "--content",
+    "--text",
+    "--font-size",
+];
+
+const SHAPE_GEOMETRY_OPTION_NAMES = ["--x", "--y", "--width", "--w", "--height", "--h"];
+const SHAPE_HIERARCHY_OPTION_NAMES = ["--parent", "--parent-id", "--frame", "--frame-id", "--index"];
+const SHAPE_NAME_OPTION_NAMES = ["--name"];
+
 function parseShapeLayoutParams(args: string[], io: CliIO, format: Format): ShapeLayoutParams | null | undefined {
-    const layoutOptionNames = [
-        "--layout",
-        "--layout-type",
-        "--layout-direction",
-        "--layout-wrap",
-        "--layout-align-items",
-        "--layout-justify-items",
-        "--layout-align-content",
-        "--layout-justify-content",
-        "--layout-gap",
-        "--layout-row-gap",
-        "--layout-column-gap",
-        "--layout-padding",
-        "--layout-grid-direction",
-        "--layout-grid-rows",
-        "--layout-grid-columns",
-    ];
-    const hasLayoutOption = layoutOptionNames.some((name) => readOption(args, [name]) !== undefined);
+    const hasLayoutOption = SHAPE_LAYOUT_OPTION_NAMES.some((name) => readOption(args, [name]) !== undefined);
     if (!hasLayoutOption) {
         return undefined;
     }
@@ -2055,14 +2098,83 @@ function hasShapeUpdateField(params: ShapeUpdateParams): boolean {
     ].some((value) => value !== undefined);
 }
 
-function parseShapeUpdateParams(args: string[], io: CliIO, format: Format): ShapeUpdateParams | null {
-    const fileId = requireShapeFileId(args, io, format, "shape update");
+function hasShapeStyleUpdateField(params: ShapeUpdateParams): boolean {
+    return [
+        params.fill,
+        params.fills,
+        params.stroke,
+        params.strokes,
+        params.borderRadius,
+        params.r1,
+        params.r2,
+        params.r3,
+        params.r4,
+        params.content,
+        params.fontSize,
+    ].some((value) => value !== undefined);
+}
+
+function rejectShapeAliasOption(
+    args: string[],
+    names: string[],
+    command: string,
+    allowedDescription: string,
+    io: CliIO,
+    format: Format
+): boolean {
+    const option = findOptionName(args, names);
+    if (!option) {
+        return false;
+    }
+
+    writeError(io, format, "shape_alias_option_invalid", `${command} does not accept ${option}.`, [
+        allowedDescription,
+        "Use penpot-cli shape update when combining layout, style, geometry, hierarchy, or name changes.",
+    ]);
+    return true;
+}
+
+function parseShapeUpdateParams(
+    args: string[],
+    io: CliIO,
+    format: Format,
+    options: ShapeUpdateParseOptions = { command: "shape update", mode: "update" }
+): ShapeUpdateParams | null {
+    const fileId = requireShapeFileId(args, io, format, options.command);
     if (!fileId) {
         return null;
     }
 
-    const shapeId = requireShapeId(args, io, format, "shape update");
+    const shapeId = requireShapeId(args, io, format, options.command);
     if (!shapeId) {
+        return null;
+    }
+
+    if (
+        options.mode === "set-layout" &&
+        rejectShapeAliasOption(
+            args,
+            [...SHAPE_STYLE_OPTION_NAMES, ...SHAPE_GEOMETRY_OPTION_NAMES, ...SHAPE_HIERARCHY_OPTION_NAMES, ...SHAPE_NAME_OPTION_NAMES],
+            options.command,
+            "Pass only layout options such as --layout, --layout-direction, --layout-gap, or grid track options.",
+            io,
+            format
+        )
+    ) {
+        return null;
+    }
+
+    if (
+        options.mode === "set-style" &&
+        rejectShapeAliasOption(
+            args,
+            [...SHAPE_LAYOUT_OPTION_NAMES, ...SHAPE_GEOMETRY_OPTION_NAMES, ...SHAPE_HIERARCHY_OPTION_NAMES, ...SHAPE_NAME_OPTION_NAMES],
+            options.command,
+            "Pass only style or text options such as --fill, --stroke, --border-radius, --content, or --font-size.",
+            io,
+            format
+        )
+    ) {
         return null;
     }
 
@@ -2102,13 +2214,27 @@ function parseShapeUpdateParams(args: string[], io: CliIO, format: Format): Shap
     };
 
     if (params.index !== undefined && !params.parentId) {
-        writeError(io, format, "shape_parent_id_required", "shape update requires --parent when --index is provided.", [
+        writeError(io, format, "shape_parent_id_required", `${options.command} requires --parent when --index is provided.`, [
             "Pass --parent <frame-id> together with --index <n>.",
         ]);
         return null;
     }
 
-    if (!hasShapeUpdateField(params)) {
+    if (options.mode === "set-layout" && !params.layout) {
+        writeError(io, format, "shape_set_layout_empty", "shape set-layout requires --layout <type>.", [
+            "Pass --layout none, --layout flex, or --layout grid with optional layout fields.",
+        ]);
+        return null;
+    }
+
+    if (options.mode === "set-style" && !hasShapeStyleUpdateField(params)) {
+        writeError(io, format, "shape_set_style_empty", "shape set-style requires at least one style or text option.", [
+            "Pass --fill, --stroke, --border-radius, --content, --font-size, or corner radius fields.",
+        ]);
+        return null;
+    }
+
+    if (options.mode === "update" && !hasShapeUpdateField(params)) {
         writeError(io, format, "shape_update_empty", "shape update requires at least one update option.", [
             "Pass --name, geometry, parent, fill, stroke, corner radius, content, font size, or layout.",
         ]);
@@ -4439,18 +4565,27 @@ async function handleShapeCreateImage(args: string[], io: CliIO, env: NodeJS.Pro
     }
 }
 
-async function handleShapeUpdate(args: string[], io: CliIO, env: NodeJS.ProcessEnv): Promise<number> {
+async function handleShapeUpdate(
+    descriptor: CommandDescriptor,
+    mode: ShapeUpdateMode,
+    args: string[],
+    io: CliIO,
+    env: NodeJS.ProcessEnv
+): Promise<number> {
     const format = parseFormat(args, io);
     if (!format) {
         return 2;
     }
 
-    const adapterSelection = selectCliShapeAdapter(CommandDescriptors.SHAPE_UPDATE.id, args);
+    const adapterSelection = selectCliShapeAdapter(descriptor.id, args);
     if (adapterSelection.status !== "selected" || adapterSelection.selected !== "backend-command") {
         return adapterSelectionFailure(io, format, adapterSelection);
     }
 
-    const shapeParams = parseShapeUpdateParams(args, io, format);
+    const shapeParams = parseShapeUpdateParams(args, io, format, {
+        command: descriptor.cliCommand ?? descriptor.id,
+        mode,
+    });
     if (!shapeParams) {
         return 2;
     }
@@ -4581,7 +4716,11 @@ async function handleShapeCommand(args: string[], io: CliIO, env: NodeJS.Process
         case "create-image":
             return await handleShapeCreateImage(rest, io, env);
         case "update":
-            return await handleShapeUpdate(rest, io, env);
+            return await handleShapeUpdate(CommandDescriptors.SHAPE_UPDATE, "update", rest, io, env);
+        case "set-layout":
+            return await handleShapeUpdate(CommandDescriptors.SHAPE_SET_LAYOUT, "set-layout", rest, io, env);
+        case "set-style":
+            return await handleShapeUpdate(CommandDescriptors.SHAPE_SET_STYLE, "set-style", rest, io, env);
         case "delete":
             return await handleShapeDelete(rest, io, env);
         default:

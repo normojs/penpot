@@ -100,6 +100,8 @@ test("top-level help lists first-class MCP, shape, and export commands", async (
     assert.match(result.stdout, /penpot-cli mcp config/);
     assert.match(result.stdout, /penpot-cli page rename/);
     assert.match(result.stdout, /penpot-cli shape delete/);
+    assert.match(result.stdout, /penpot-cli shape set-layout/);
+    assert.match(result.stdout, /penpot-cli shape set-style/);
     assert.match(result.stdout, /penpot-cli prototype create-flow/);
     assert.match(result.stdout, /penpot-cli prototype create-overlay/);
     assert.match(result.stdout, /penpot-cli prototype delete-interaction/);
@@ -150,9 +152,13 @@ test("command runtime exposes migrated shape and export descriptors", () => {
     assert.equal(MigratedCommandDescriptors.length, 27);
     assert.equal(CommandDescriptors.SHAPE_DELETE.cliCommand, "shape delete");
     assert.equal(CommandDescriptors.SHAPE_CREATE_IMAGE.cliCommand, "shape create-image");
+    assert.equal(CommandDescriptors.SHAPE_SET_LAYOUT.cliCommand, "shape set-layout");
+    assert.equal(CommandDescriptors.SHAPE_SET_STYLE.cliCommand, "shape set-style");
     assert.equal(CommandDescriptors.EXPORT_PAGE.mcpToolName, "export.page");
     assert.equal(getCommandDescriptor("shape create-frame").id, "shape.create_frame");
     assert.equal(getCommandDescriptor("shape create-image").id, "shape.create_image");
+    assert.equal(getCommandDescriptor("shape set-layout").id, "shape.set_layout");
+    assert.equal(getCommandDescriptor("shape set-style").id, "shape.set_style");
     assert.equal(getCommandDescriptor("render.preview").title, "Render preview");
     assert.equal(getCommandDescriptor("render preview").cliCommand, "render preview");
 });
@@ -185,8 +191,8 @@ test("command runtime exposes live-gap descriptor boundaries", () => {
     assert.doesNotMatch(CommandDescriptors.PROTOTYPE_DELETE_INTERACTION.inputSchema, /interactionId/);
     assert.deepEqual(CommandDescriptors.SHAPE_SET_LAYOUT.adapters, ["backend-command", "plugin-live"]);
     assert.deepEqual(CommandDescriptors.SHAPE_SET_STYLE.adapters, ["backend-command", "plugin-live"]);
-    assert.equal(CommandDescriptors.SHAPE_SET_LAYOUT.cliCommand, undefined);
-    assert.equal(CommandDescriptors.SHAPE_SET_STYLE.cliCommand, undefined);
+    assert.equal(CommandDescriptors.SHAPE_SET_LAYOUT.cliCommand, "shape set-layout");
+    assert.equal(CommandDescriptors.SHAPE_SET_STYLE.cliCommand, "shape set-style");
     assert.equal(
         getAdapterSelectionReason(AdapterSelectionReasonCodes.CLI_LIVE_WORKSPACE_STATE_UNSUPPORTED),
         "CLI commands do not read or mutate editor-local workspace state; use MCP file.open, file.get_context, and file.bind_context before retrying the live-only tool."
@@ -1017,6 +1023,213 @@ test("shape update rejects reverse directions for grid layout in CLI parsing", a
     assert.equal(result.stderr, "");
     assert.equal(body.status, "error");
     assert.equal(body.error.code, "shape_layout_grid_direction_invalid");
+});
+
+test("shape set-layout maps to backend-command shape update with alias metadata", async () => {
+    const originalFetch = globalThis.fetch;
+    const calls = [];
+    globalThis.fetch = async (url, options) => {
+        calls.push({ url: String(url), options });
+        return {
+            ok: true,
+            status: 200,
+            statusText: "OK",
+            text: async () =>
+                JSON.stringify({
+                    shape: {
+                        id: UUIDS.object,
+                        name: "Stack",
+                        type: "frame",
+                        pageId: UUIDS.page,
+                    },
+                    revn: 5,
+                    vern: 0,
+                }),
+        };
+    };
+
+    try {
+        const result = await runCli(
+            [
+                "shape",
+                "set-layout",
+                "--file",
+                UUIDS.file,
+                "--page",
+                UUIDS.page,
+                "--shape",
+                UUIDS.object,
+                "--layout",
+                "flex",
+                "--layout-direction",
+                "column",
+                "--layout-gap",
+                "12",
+                "--layout-padding",
+                "16",
+                "--format",
+                "json",
+            ],
+            {
+                PENPOT_BACKEND_URI: "http://127.0.0.1:6060",
+                PENPOT_CLI_TOKEN: "token-1",
+            }
+        );
+        const body = parseJson(result.stdout);
+
+        assert.equal(result.exitCode, 0);
+        assert.equal(result.stderr, "");
+        assert.equal(calls.length, 1);
+        assert.match(calls[0].url, /\/api\/main\/methods\/update-file-shape\?_fmt=json$/);
+        assert.deepEqual(JSON.parse(calls[0].options.body), {
+            id: UUIDS.file,
+            "page-id": UUIDS.page,
+            "shape-id": UUIDS.object,
+            layout: {
+                type: "flex",
+                direction: "column",
+                "row-gap": 12,
+                "column-gap": 12,
+                padding: 16,
+            },
+        });
+        assert.equal(body.status, "ok");
+        assert.equal(body.data.adapter, "backend-command");
+        assert.equal(body.data.adapterSelection.command, "shape.set_layout");
+    } finally {
+        globalThis.fetch = originalFetch;
+    }
+});
+
+test("shape set-style maps to backend-command shape update with alias metadata", async () => {
+    const originalFetch = globalThis.fetch;
+    const calls = [];
+    globalThis.fetch = async (url, options) => {
+        calls.push({ url: String(url), options });
+        return {
+            ok: true,
+            status: 200,
+            statusText: "OK",
+            text: async () =>
+                JSON.stringify({
+                    shape: {
+                        id: UUIDS.object,
+                        name: "Title",
+                        type: "text",
+                        pageId: UUIDS.page,
+                    },
+                    revn: 6,
+                    vern: 0,
+                }),
+        };
+    };
+
+    try {
+        const result = await runCli(
+            [
+                "shape",
+                "set-style",
+                "--file",
+                UUIDS.file,
+                "--page",
+                UUIDS.page,
+                "--shape",
+                UUIDS.object,
+                "--fill",
+                "#111111",
+                "--stroke",
+                "#333333",
+                "--stroke-width",
+                "2",
+                "--r1",
+                "4",
+                "--r2",
+                "6",
+                "--content",
+                "Hello",
+                "--font-size",
+                "32",
+                "--format",
+                "json",
+            ],
+            {
+                PENPOT_BACKEND_URI: "http://127.0.0.1:6060",
+                PENPOT_CLI_TOKEN: "token-1",
+            }
+        );
+        const body = parseJson(result.stdout);
+
+        assert.equal(result.exitCode, 0);
+        assert.equal(result.stderr, "");
+        assert.equal(calls.length, 1);
+        assert.match(calls[0].url, /\/api\/main\/methods\/update-file-shape\?_fmt=json$/);
+        assert.deepEqual(JSON.parse(calls[0].options.body), {
+            id: UUIDS.file,
+            "page-id": UUIDS.page,
+            "shape-id": UUIDS.object,
+            content: "Hello",
+            fill: { color: "#111111" },
+            stroke: { color: "#333333", width: 2 },
+            r1: 4,
+            r2: 6,
+            "font-size": 32,
+        });
+        assert.equal(body.status, "ok");
+        assert.equal(body.data.adapter, "backend-command");
+        assert.equal(body.data.adapterSelection.command, "shape.set_style");
+    } finally {
+        globalThis.fetch = originalFetch;
+    }
+});
+
+test("shape alias commands reject fields outside their alias contract", async () => {
+    const layoutResult = await runCli(
+        [
+            "shape",
+            "set-layout",
+            "--file",
+            UUIDS.file,
+            "--shape",
+            UUIDS.object,
+            "--layout",
+            "flex",
+            "--fill",
+            "#ffffff",
+            "--format",
+            "json",
+        ],
+        { PENPOT_CLI_TOKEN: "token-1" }
+    );
+    const layoutBody = parseJson(layoutResult.stdout);
+
+    assert.equal(layoutResult.exitCode, 2);
+    assert.equal(layoutResult.stderr, "");
+    assert.equal(layoutBody.status, "error");
+    assert.equal(layoutBody.error.code, "shape_alias_option_invalid");
+
+    const styleResult = await runCli(
+        [
+            "shape",
+            "set-style",
+            "--file",
+            UUIDS.file,
+            "--shape",
+            UUIDS.object,
+            "--fill",
+            "#ffffff",
+            "--layout",
+            "flex",
+            "--format",
+            "json",
+        ],
+        { PENPOT_CLI_TOKEN: "token-1" }
+    );
+    const styleBody = parseJson(styleResult.stdout);
+
+    assert.equal(styleResult.exitCode, 2);
+    assert.equal(styleResult.stderr, "");
+    assert.equal(styleBody.status, "error");
+    assert.equal(styleBody.error.code, "shape_alias_option_invalid");
 });
 
 test("shape create-image reads a local image and sends backend-command RPC", async () => {

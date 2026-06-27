@@ -517,7 +517,7 @@ P17.2 descriptor result:
 - `@penpot/command-runtime` exposes `LiveGapCommandDescriptors` for
   `page.set_current`, `selection.get`, `selection.set`,
   `prototype.list_interactions`, `prototype.delete_interaction`,
-  `prototype.create_overlay`, and `shape.set_layout`.
+  `prototype.create_overlay`, `shape.set_layout`, and `shape.set_style`.
 - `page.set_current` now uses the shared descriptor for MCP name and
   description while keeping its existing plugin-live execution path.
 - Selection/current-page commands remain live workspace state; prototype
@@ -527,28 +527,29 @@ P17.2 descriptor result:
 
 P21.1 design alias contract result:
 
-- `shape.set_layout` and `shape.set_style` are descriptor-only aliases over
-  `shape.update`; they do not currently register executable MCP or CLI
-  commands.
-- `shape.set_layout` should reuse the existing `shape.update.layout` payload
-  if it is registered later, preserving backend-command support for `none`,
-  `flex`, and the grid container track subset while leaving grid cell placement
-  to a future contract.
-- `shape.set_style` should reuse the existing `shape.update` style/text payload
+- `shape.set_layout` and `shape.set_style` are aliases over `shape.update`;
+  P21.1 defined the contract descriptor-first, and P21.2/P21.3 later
+  registered the MCP and CLI alias surfaces.
+- `shape.set_layout` reuses the existing `shape.update.layout` payload,
+  preserving backend-command support for `none`, `flex`, and the grid
+  container track subset while leaving grid cell placement to a future
+  contract.
+- `shape.set_style` reuses the existing `shape.update` style/text payload
   for fills, strokes, corner radii, text content, and font size.
-- Until alias tools are registered, callers should use `shape.update` for
-  executable backend-command or plugin-live behavior.
+- The registered alias surfaces still keep `shape.update` as the source of
+  executable backend-command and plugin-live mutation semantics.
 
-P21.2 MCP alias registration result:
+P21.2/P21.3 alias registration result:
 
-- `shape.set_layout` and `shape.set_style` are now registered MCP tools, but
-  still do not have CLI command names.
+- `shape.set_layout` and `shape.set_style` are now registered MCP tools, and
+  `penpot-cli shape set-layout` / `shape set-style` are matching CLI aliases.
 - Both aliases forward to the same backend-command/plugin-live helpers used by
   `shape.update`; they keep `shape.update` as the source of mutation semantics.
 - Backend-command calls preserve the alias tool name in MCP audit headers, and
   responses preserve the alias id in `adapterSelection.command`.
-- P21.3 remains the decision point for optional `penpot-cli shape set-layout`
-  and `shape set-style` aliases.
+- CLI alias commands select the same backend-command `update-file-shape` path
+  as `shape update`, require fields inside their alias scope, and reject mixed
+  layout/style/geometry/name/hierarchy updates.
 
 P17.5 live-only guidance result:
 
@@ -1890,9 +1891,10 @@ tokens.apply
 ```
 
 `shape.set_layout` and `shape.set_style` are registered MCP aliases over
-`shape.update`. They forward to the same backend-command/plugin-live shape
-update paths and preserve the alias name only in tool/audit metadata. CLI alias
-commands remain a separate P21.3 decision.
+`shape.update`, with matching `penpot-cli shape set-layout` and
+`shape set-style` commands for scripts. They forward to the same
+backend-command/plugin-live shape update paths and preserve the alias name only
+in command/tool audit metadata.
 
 ### 8.4 Prototype Tools
 

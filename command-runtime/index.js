@@ -314,26 +314,28 @@ export const CommandDescriptors = Object.freeze({
     SHAPE_SET_LAYOUT: Object.freeze({
         id: "shape.set_layout",
         mcpToolName: "shape.set_layout",
+        cliCommand: "shape set-layout",
         title: "Set shape layout",
         description:
-            "MCP alias for shape.update layout fields, forwarding to the same backend-command or plugin-live update paths.",
+            "MCP and CLI alias for shape.update layout fields, forwarding to the same backend-command or plugin-live update paths.",
         inputSchema:
-            "MCP alias of shape.update: fileId?, pageId?, shapeId, layout(type none|flex|grid tracks backend-command; grid cells plugin-live/planned), adapter?",
+            "MCP/CLI alias of shape.update: fileId?, pageId?, shapeId, layout(type none|flex|grid tracks backend-command; grid cells plugin-live/planned), adapter?",
         adapters: Object.freeze(["backend-command", "plugin-live"]),
         responseShape:
-            "shape.update-compatible status envelope with alias tool/audit metadata; backend grid support covers container direction/tracks/gaps only",
+            "shape.update-compatible status envelope with alias command/tool audit metadata; backend grid support covers container direction/tracks/gaps only",
     }),
     SHAPE_SET_STYLE: Object.freeze({
         id: "shape.set_style",
         mcpToolName: "shape.set_style",
+        cliCommand: "shape set-style",
         title: "Set shape style",
         description:
-            "MCP alias for shape.update style/text fields, forwarding to the same backend-command or plugin-live update paths.",
+            "MCP and CLI alias for shape.update style/text fields, forwarding to the same backend-command or plugin-live update paths.",
         inputSchema:
-            "MCP alias of shape.update: fileId?, pageId?, shapeId, fill?, fills?, stroke?, strokes?, borderRadius?, r1?, r2?, r3?, r4?, content?, fontSize?, adapter?",
+            "MCP/CLI alias of shape.update: fileId?, pageId?, shapeId, fill?, fills?, stroke?, strokes?, borderRadius?, r1?, r2?, r3?, r4?, content?, fontSize?, adapter?",
         adapters: Object.freeze(["backend-command", "plugin-live"]),
         responseShape:
-            "shape.update-compatible status envelope with shape summary, revision metadata, adapterSelection, and alias tool/audit metadata",
+            "shape.update-compatible status envelope with shape summary, revision metadata, adapterSelection, and alias command/tool audit metadata",
     }),
     SHAPE_DELETE: Object.freeze({
         id: "shape.delete",

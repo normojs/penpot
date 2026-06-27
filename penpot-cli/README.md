@@ -302,9 +302,9 @@ requested adapter, selected adapter, candidates, and fallback reasons.
 
 ## Shape Commands
 
-Shape create, update, and delete commands call backend headless shape commands.
-They work without an open Penpot workspace tab when a valid file id, target ids,
-and token are provided.
+Shape create, update, delete, and alias commands call backend headless shape
+commands. They work without an open Penpot workspace tab when a valid file id,
+target ids, and token are provided.
 
 ```bash
 node penpot-cli/dist/index.js shape create-frame \
@@ -352,6 +352,27 @@ node penpot-cli/dist/index.js shape update \
   --border-radius 12 \
   --format json
 
+node penpot-cli/dist/index.js shape set-layout \
+  --file <file-id> \
+  --shape <frame-id> \
+  --page <page-id> \
+  --layout flex \
+  --layout-direction column \
+  --layout-gap 12 \
+  --layout-padding 16 \
+  --format json
+
+node penpot-cli/dist/index.js shape set-style \
+  --file <file-id> \
+  --shape <shape-id> \
+  --page <page-id> \
+  --fill "#111111" \
+  --stroke "#333333" \
+  --border-radius 8 \
+  --content "Welcome" \
+  --font-size 24 \
+  --format json
+
 node penpot-cli/dist/index.js shape delete \
   --file <file-id> \
   --shape <shape-id> \
@@ -364,6 +385,9 @@ JSON output reports `adapter: "backend-command"` and includes
 `pageId` are supplied. MCP `shape.update` and `shape.delete` use
 backend-command when `fileId` and `shapeId` are supplied; calls without
 explicit file/page targets continue to use the bound live workspace context.
+`shape set-layout` and `shape set-style` are script-friendly aliases over
+`shape update`; they use the same backend RPC but reject options outside their
+layout-only or style/text-only scopes.
 
 ## Export Commands
 

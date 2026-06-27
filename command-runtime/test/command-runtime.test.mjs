@@ -86,7 +86,9 @@ test("descriptor lookup supports internal, MCP, and CLI command names", () => {
     assert.equal(getCommandDescriptor("prototype.delete_interaction"), CommandDescriptors.PROTOTYPE_DELETE_INTERACTION);
     assert.equal(getCommandDescriptor("prototype delete-interaction"), CommandDescriptors.PROTOTYPE_DELETE_INTERACTION);
     assert.equal(getCommandDescriptor("shape.set_layout"), CommandDescriptors.SHAPE_SET_LAYOUT);
+    assert.equal(getCommandDescriptor("shape set-layout"), CommandDescriptors.SHAPE_SET_LAYOUT);
     assert.equal(getCommandDescriptor("shape.set_style"), CommandDescriptors.SHAPE_SET_STYLE);
+    assert.equal(getCommandDescriptor("shape set-style"), CommandDescriptors.SHAPE_SET_STYLE);
     assert.equal(getCommandDescriptor("missing.command"), undefined);
 });
 
@@ -121,15 +123,15 @@ test("live-gap descriptors document live-only and planned command boundaries", (
     assert.match(CommandDescriptors.PROTOTYPE_CREATE_OVERLAY.inputSchema, /manualPosition\{x,y\} required/);
     assert.match(CommandDescriptors.PROTOTYPE_CREATE_OVERLAY.inputSchema, /push animation unsupported/);
     assert.match(CommandDescriptors.PROTOTYPE_CREATE_OVERLAY.responseShape, /overlay interaction summary/);
-    assert.equal(CommandDescriptors.SHAPE_SET_LAYOUT.cliCommand, undefined);
+    assert.equal(CommandDescriptors.SHAPE_SET_LAYOUT.cliCommand, "shape set-layout");
     assert.deepEqual(CommandDescriptors.SHAPE_SET_LAYOUT.adapters, ["backend-command", "plugin-live"]);
-    assert.match(CommandDescriptors.SHAPE_SET_LAYOUT.description, /MCP alias for shape.update layout fields/);
-    assert.match(CommandDescriptors.SHAPE_SET_LAYOUT.responseShape, /alias tool\/audit metadata/);
-    assert.equal(CommandDescriptors.SHAPE_SET_STYLE.cliCommand, undefined);
+    assert.match(CommandDescriptors.SHAPE_SET_LAYOUT.description, /MCP and CLI alias for shape.update layout fields/);
+    assert.match(CommandDescriptors.SHAPE_SET_LAYOUT.responseShape, /alias command\/tool audit metadata/);
+    assert.equal(CommandDescriptors.SHAPE_SET_STYLE.cliCommand, "shape set-style");
     assert.deepEqual(CommandDescriptors.SHAPE_SET_STYLE.adapters, ["backend-command", "plugin-live"]);
-    assert.match(CommandDescriptors.SHAPE_SET_STYLE.description, /MCP alias for shape.update style\/text fields/);
+    assert.match(CommandDescriptors.SHAPE_SET_STYLE.description, /MCP and CLI alias for shape.update style\/text fields/);
     assert.match(CommandDescriptors.SHAPE_SET_STYLE.inputSchema, /fill\?/);
-    assert.match(CommandDescriptors.SHAPE_SET_STYLE.responseShape, /alias tool\/audit metadata/);
+    assert.match(CommandDescriptors.SHAPE_SET_STYLE.responseShape, /alias command\/tool audit metadata/);
 });
 
 test("file open helpers produce stable workspace URLs and handoff actions", () => {

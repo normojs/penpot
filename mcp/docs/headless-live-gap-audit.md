@@ -115,8 +115,8 @@ state for them.
 | `shape.update` with geometry/style/text/hierarchy | Registered MCP tool and descriptor; backend-command with explicit targets, plugin-live otherwise. | Backend-safe persisted data plus plugin-live convenience. | Supported shape fields persist through file changes. | Keep behavior. |
 | `shape.update` with `layout.type = none|flex` | Registered MCP tool and descriptor. | Backend-safe persisted data. | Common/backend explicitly support this subset. | Keep behavior. |
 | `shape.update` with `layout.type = grid` | Registered MCP tool and descriptor; backend-command supports the container track subset with explicit `fileId`, plugin-live remains available for live workspace convenience. | Backend-safe persisted data for container direction/tracks/gaps/padding/alignment; plugin-live or future contract for cell/child placement. | Persisted grid container fields are stable enough for headless updates, while `layout-grid-cells` needs a separate payload contract. | Keep backend-command subset; do not add cell placement until the contract is defined. |
-| `shape.set_layout` | Registered MCP tool and command-runtime descriptor; no CLI command yet. | Alias over `shape.update.layout`; backend-command with explicit targets, plugin-live otherwise. | Behavior overlaps with `shape.update.layout`; a thin alias avoids a second layout mutation contract. | Keep forwarding to the same update paths and preserve alias names only in tool/audit metadata. |
-| `shape.set_style` | Registered MCP tool and command-runtime descriptor; no CLI command yet. | Alias over `shape.update` fill/stroke/text/corner fields; backend-command with explicit targets, plugin-live otherwise for supported fields. | Behavior overlaps with `shape.update` style fields; a thin alias avoids a second style mutation contract. | Keep forwarding to the same update paths and preserve alias names only in tool/audit metadata. |
+| `shape.set_layout` | Registered MCP tool, command-runtime descriptor, and `penpot-cli shape set-layout`. | Alias over `shape.update.layout`; backend-command with explicit targets, plugin-live otherwise. | Behavior overlaps with `shape.update.layout`; a thin alias avoids a second layout mutation contract. | Keep forwarding to the same update paths and preserve alias names only in command/tool audit metadata. |
+| `shape.set_style` | Registered MCP tool, command-runtime descriptor, and `penpot-cli shape set-style`. | Alias over `shape.update` fill/stroke/text/corner fields; backend-command with explicit targets, plugin-live otherwise for supported fields. | Behavior overlaps with `shape.update` style fields; a thin alias avoids a second style mutation contract. | Keep forwarding to the same update paths and preserve alias names only in command/tool audit metadata. |
 | `shape.group`, `shape.ungroup` | Names exist in `ToolNames.ts`, not registered. | Unsupported or descriptor-only. | No backend/common or plugin task implementation found. | Leave out of P17.2 unless a separate grouping wave is selected. |
 | `prototype.create_flow` | Registered MCP tool and descriptor; backend-command with `fileId`, plugin-live otherwise. | Backend-safe persisted data plus plugin-live convenience. | Flow data persists on the page. | Keep behavior. |
 | `prototype.create_interaction` | Registered MCP tool and descriptor; backend-command with `fileId`, plugin-live otherwise. | Backend-safe persisted data plus plugin-live convenience. | Navigate interaction data persists on source shape. | Keep behavior. |
@@ -174,21 +174,22 @@ Recommended P17.2 commands:
 
 7. `shape.set_layout`
    - Adapter: implemented in P21.2 as MCP `backend-command` with
-     `plugin-live` fallback.
+     `plugin-live` fallback; P21.3 adds `penpot-cli shape set-layout`.
    - Reason: current behavior lives under `shape.update.layout`; grid backend
      support remains limited to the container track subset.
 
 8. `shape.set_style`
    - Adapter: implemented in P21.2 as MCP `backend-command` with
-     `plugin-live` fallback for fields the plugin task supports.
+     `plugin-live` fallback for fields the plugin task supports; P21.3 adds
+     `penpot-cli shape set-style`.
    - Reason: current behavior lives under `shape.update` style/text fields.
 
 P17.2 implementation note:
 
 - Added `LiveGapCommandDescriptors` to `@penpot/command-runtime` for the
   original Phase 17 live-gap commands. P21.1 later adds `shape.set_style` as a
-  descriptor-only alias alongside `shape.set_layout`, and P21.2 registers both
-  aliases as MCP tools.
+  descriptor-first alias alongside `shape.set_layout`, P21.2 registers both
+  aliases as MCP tools, and P21.3 adds matching CLI aliases.
 - Kept `page.set_current`, `selection.get`, and `selection.set` as
   plugin-live/live workspace metadata. All three are now registered MCP tools
   for bound workspace contexts.
@@ -267,30 +268,31 @@ P20.3 implementation note:
 
 P21.1 alias contract note:
 
-- `shape.set_layout` and `shape.set_style` are descriptor-only aliases over
-  `shape.update`; they intentionally advertise no executable adapters until
-  MCP/CLI alias tools are registered.
+- `shape.set_layout` and `shape.set_style` are aliases over `shape.update`;
+  P21.1 intentionally defined them descriptor-first before MCP/CLI alias tools
+  were registered.
 - `shape.set_layout` covers the existing `shape.update.layout` payload:
   backend-command supports `none`, `flex`, and the grid container track subset,
   while grid cell placement remains future/plugin-live work.
 - `shape.set_style` covers the existing `shape.update` style/text payload:
   fills, strokes, corner radii, text content, and font size.
-- A future registration slice should forward alias calls to the same
-  backend-command/plugin-live shape update paths and preserve alias tool names
-  only in audit/adapter metadata.
+- The later registration slices forward alias calls to the same
+  backend-command/plugin-live shape update paths and preserve alias names only
+  in command/tool audit metadata.
 
-P21.2 MCP alias registration note:
+P21.2/P21.3 alias registration note:
 
-- `shape.set_layout` and `shape.set_style` are now registered MCP tools.
+- `shape.set_layout` and `shape.set_style` are now registered MCP tools, and
+  `penpot-cli shape set-layout` / `shape set-style` are matching CLI aliases.
 - Both tools reuse the same adapter selection and execution helpers as
   `shape.update`, so `fileId` selects backend-command `update-file-shape` and
   omitted explicit targets select plugin-live when the requested fields are
   supported by the plugin task.
 - Backend writes preserve the alias name in MCP audit headers, and responses
   preserve the alias id in `adapterSelection.command`.
-- CLI aliases remain out of scope until P21.3 decides whether
-  `shape set-layout` and `shape set-style` add enough value over
-  `shape update`.
+- CLI aliases select the same backend-command request builder as
+  `shape update`; `shape set-layout` accepts only layout fields and
+  `shape set-style` accepts only style/text fields.
 
 ## P19.3 Overlay Contract Reassessment
 
@@ -376,8 +378,6 @@ points CLI users back to MCP `file.open`, `file.get_context`,
 
 ## Open Decisions
 
-- Whether CLI `shape set-layout` and `shape set-style` aliases add enough value
-  over `shape update` to justify separate command surface.
 - Whether `prototype.delete_interaction` should later gain persistent
   interaction ids. P19.2 currently implements explicit `fileId`, optional
   `pageId`, `sourceShapeId`, and zero-based `interactionIndex` for the current

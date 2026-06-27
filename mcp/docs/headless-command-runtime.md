@@ -302,8 +302,8 @@ they already exist in MCP, CLI, or both.
 | `shape.create_rect` | file | MCP plugin task, backend `create-file-shape` RPC | `backend-command`, fallback `plugin-live` |
 | `shape.create_text` | file | MCP plugin task, backend `create-file-shape` RPC | `backend-command`, fallback `plugin-live` |
 | `shape.update` | file | MCP plugin task, backend `update-file-shape` RPC | `backend-command`, fallback `plugin-live` |
-| `shape.set_layout` | file | MCP alias over `shape.update.layout`, backend `update-file-shape` RPC | `backend-command`, fallback `plugin-live` |
-| `shape.set_style` | file | MCP alias over `shape.update` style/text fields, backend `update-file-shape` RPC | `backend-command`, fallback `plugin-live` |
+| `shape.set_layout` | file | MCP/CLI alias over `shape.update.layout`, backend `update-file-shape` RPC | `backend-command`, fallback `plugin-live` |
+| `shape.set_style` | file | MCP/CLI alias over `shape.update` style/text fields, backend `update-file-shape` RPC | `backend-command`, fallback `plugin-live` |
 | `shape.delete` | file | MCP plugin task, backend `delete-file-shape` RPC | `backend-command`, fallback `plugin-live` |
 | `export.page` | file | MCP plugin task, CLI exporter execution | `exporter`, fallback `plugin-live` |
 | `render.preview` | file | MCP plugin task, MCP/CLI exporter preview execution | `exporter`, fallback `plugin-live` |
@@ -672,6 +672,11 @@ P7.8 is complete when:
 - CLI shape update/delete commands return script-friendly text/JSON output with
   `adapterSelection`.
 - MCP and CLI checks cover backend request mapping and help output.
+
+Later P17/P21 slices expanded this surface: backend-command `shape.update` now
+supports the frame layout container subset for `none`, `flex`, and `grid`, and
+`penpot-cli shape set-layout` / `shape set-style` are thin aliases over the
+same update request builder for layout-only and style/text-only scripts.
 
 ## P7.9 Exporter Execution Slice
 

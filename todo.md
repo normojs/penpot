@@ -133,12 +133,13 @@ and `penpot-cli prototype delete-interaction`. P19.3, P20.1, P20.2, and P20.3
 are complete: overlay summaries are readable, the create-overlay payload
 contract is documented, and backend-command `prototype.create_overlay` now
 works through common/backend helpers, MCP, and
-`penpot-cli prototype create-overlay`. Phase 20 is complete. P21.1 and P21.2
-are complete: `shape.set_layout` and `shape.set_style` are aliases over
-`shape.update`, and they are now registered MCP tools that forward to the same
-backend-command/plugin-live update paths while preserving alias audit metadata.
-Current active work moves to P21.3 to decide whether CLI aliases add enough
-value over `shape update`.
+`penpot-cli prototype create-overlay`. Phase 20 is complete. Phase 21 is
+complete: `shape.set_layout` and `shape.set_style` are aliases over
+`shape.update`, they are registered MCP tools, and
+`penpot-cli shape set-layout` / `shape set-style` provide script-friendly CLI
+aliases that forward to the same backend-command update path while preserving
+alias audit metadata. The next recommended work is Phase 22 prototype
+interaction identity and mutation hardening.
 
 ## Feature Roadmap
 
@@ -174,7 +175,8 @@ remain the execution plan.
 | F25 | done | Live workspace state commands | Phase 18 | Agents can intentionally read or change editor-local selection state through bound MCP plugin-live commands | Completed 2026-06-17; P18.1-P18.3 implemented `selection.get`, `selection.set`, clearing, and live-bind/CLI descriptor smoke evidence |
 | F26 | done | Prototype mutation contracts | Phase 19 | Agents can safely mutate persisted prototype interactions only after target identity semantics are explicit | Completed 2026-06-18; P19.1/P19.2 delivered source-shape/index delete and P19.3 kept overlay creation descriptor-only until fixtures define action and positioning semantics |
 | F27 | done | Prototype overlay read and creation contract | Phase 20 | Agents can inspect persisted overlay interactions and create open/toggle/close overlays without a live workspace | Completed 2026-06-18; P20.1/P20.2/P20.3 delivered read summaries, payload contract fixtures, backend-command creation, MCP routing, and `penpot-cli prototype create-overlay` |
-| F28 | in_progress | Design editing alias contracts | Phase 21 | Agents can discover whether specialized layout/style commands are aliases over `shape.update` or independent operations | P21.1 and P21.2 completed 2026-06-28; next task is P21.3 CLI alias decision |
+| F28 | done | Design editing alias contracts | Phase 21 | Agents can discover and use specialized layout/style aliases without creating a second shape-update contract | Completed 2026-06-28; P21.1 defined alias contracts, P21.2 registered MCP aliases, and P21.3 added CLI aliases with scoped validation |
+| F29 | todo | Prototype interaction identity and mutation hardening | Phase 22 | Agents can target prototype interactions more robustly than source-shape/index order alone | Start with a persisted-data audit and stable-id compatibility contract before changing mutation behavior |
 
 ## Detailed Upcoming Task Queue
 
@@ -375,7 +377,21 @@ command has genuinely different semantics.
 | --- | --- | --- | --- | --- |
 | L1 | Define layout/style alias contracts | `command-runtime`, `mcp/docs`, `penpot-cli`, `todo.md` | Completed 2026-06-28; descriptor behavior identifies `shape.set_layout` and `shape.set_style` as aliases over `shape.update` instead of separate mutation contracts | Descriptor/runtime tests and docs agree on alias status |
 | L2 | Register MCP alias tools if contract is stable | `mcp`, `mcp/docs` | Completed 2026-06-28; MCP tools forward to the same shape update backend/plugin paths while preserving tool names and audit context | MCP tests prove payload mapping and adapter selection match `shape.update` |
-| L3 | Add CLI alias commands if useful for scripts | `penpot-cli`, `mcp/docs` | Optional `shape set-layout` and `shape set-style` commands map to `shape update` without duplicate parsing semantics | CLI smoke tests prove request bodies match equivalent `shape update` calls |
+| L3 | Add CLI alias commands if useful for scripts | `penpot-cli`, `mcp/docs` | Completed 2026-06-28; `shape set-layout` and `shape set-style` map to `shape update` without duplicate mutation semantics | CLI smoke tests prove request bodies match equivalent `shape update` calls and reject fields outside each alias contract |
+
+### Wave M: Prototype Interaction Identity And Mutation Hardening
+
+Wave M keeps prototype mutations predictable after source-shape/index delete
+and overlay creation are working. It starts with persisted data analysis before
+changing runtime behavior so existing source-shape/index commands remain
+compatible.
+
+| Order | Task | Modules | Output | Verification |
+| --- | --- | --- | --- | --- |
+| M1 | Define prototype interaction stable identity strategy | `common`, `backend`, `mcp/docs`, `command-runtime`, `penpot-cli` | Document whether persisted interactions can gain stable ids, how source-shape/index fallback stays compatible, and what migration or generated reference rules apply | Contract docs, fixtures, and descriptor/runtime tests cover id-present, id-missing, and duplicate/index fallback cases |
+| M2 | Add stable identity metadata to interaction reads if contract is stable | `common`, `backend`, `mcp`, `penpot-cli` | `prototype.list_interactions` reports stable identity metadata or explicit fallback references without breaking existing summaries | Common/backend plus MCP/CLI tests cover navigate and overlay interaction summaries |
+| M3 | Support stable-id prototype deletion if contract is stable | `common`, `backend`, `mcp`, `penpot-cli` | `prototype.delete_interaction` accepts the stable identity while preserving the existing source-shape/index path | Common/backend plus MCP/CLI tests cover stable id, stale id, and source-shape/index compatibility |
+| M4 | Plan richer prototype mutation helpers | `mcp/docs`, `command-runtime` | Contracts for update/reorder/duplicate interaction helpers are explicit before implementation | Descriptor docs and tests distinguish planned, unsupported, and executable helpers |
 
 ## Phase 0: Baseline, Planning, And Rules
 
@@ -651,18 +667,19 @@ creatable through a backend-command path without requiring a live workspace.
 
 Use `mcp/docs/penpot-cli-overall-blueprint.md` and
 `mcp/docs/headless-live-gap-audit.md` as the current architecture baseline and
-continue with Phase 21:
+continue with Phase 22:
 
-1. Decide whether CLI aliases add enough script value over `shape update`, or
-   keep `shape.set_layout` and `shape.set_style` as MCP-only aliases.
-2. If CLI aliases are useful, implement `shape set-layout` and
-   `shape set-style` as thin parser aliases over the existing `shape update`
-   request builder.
-3. After alias strategy is settled, consider prototype interaction stable-id
-   migration or richer prototype mutation
-   helpers beyond source-shape/index deletion and overlay creation.
-4. Export/file, thumbnail, component, token, or debug tool waves if those
-   become higher priority than design-editing aliases.
+1. Audit persisted prototype interaction data and decide whether stable
+   interaction ids can be added or derived without breaking current files.
+2. Define compatibility rules for existing source-shape/index deletion and
+   future stable-id targeting, including fixtures for id-present and id-missing
+   interactions.
+3. If the contract is stable, extend `prototype.list_interactions` summaries
+   with stable identity metadata before changing mutation inputs.
+4. After read metadata is proven, add stable-id deletion support or plan richer
+   prototype mutation helpers such as update, reorder, or duplicate.
+5. Export/file, thumbnail, component, token, or debug tool waves can supersede
+   Phase 22 if they become higher priority.
 
 ## Phase 21: Design Editing Alias Contracts
 
@@ -672,6 +689,18 @@ forking a second shape-update contract.
 
 | ID | Status | Task | Modules | Verification | Notes |
 | --- | --- | --- | --- | --- | --- |
-| P21.1 | done | Define `shape.set_layout` and `shape.set_style` alias contracts | `command-runtime`, `mcp/docs`, `penpot-cli`, `todo.md` | Completed 2026-06-28; runtime and CLI descriptor tests document alias status and docs identify the future registration path | Behavior stays descriptor-only until alias tools are explicitly registered |
-| P21.2 | done | Register MCP alias tools if contract is stable | `mcp`, `mcp/docs` | Completed 2026-06-28; MCP tests prove `shape.set_layout` and `shape.set_style` map to the same backend/plugin update paths with alias audit context | CLI aliases intentionally remain out of scope for P21.3 |
-| P21.3 | todo | Add CLI alias commands if useful for scripts | `penpot-cli`, `mcp/docs` | CLI smoke tests prove `shape set-layout` and `shape set-style` request bodies match equivalent `shape update` calls | Only start if CLI aliases add value over `shape update` |
+| P21.1 | done | Define `shape.set_layout` and `shape.set_style` alias contracts | `command-runtime`, `mcp/docs`, `penpot-cli`, `todo.md` | Completed 2026-06-28; runtime and CLI descriptor tests document alias status and docs identify the future registration path | Later P21.2/P21.3 registered the executable MCP and CLI alias surfaces |
+| P21.2 | done | Register MCP alias tools if contract is stable | `mcp`, `mcp/docs` | Completed 2026-06-28; MCP tests prove `shape.set_layout` and `shape.set_style` map to the same backend/plugin update paths with alias audit context | CLI aliases landed separately in P21.3 |
+| P21.3 | done | Add CLI alias commands if useful for scripts | `penpot-cli`, `mcp/docs` | Completed 2026-06-28; CLI smoke tests prove `shape set-layout` and `shape set-style` request bodies match equivalent `shape update` calls | Alias commands reject fields outside their layout-only or style/text-only contracts |
+
+## Phase 22: Prototype Interaction Identity And Mutation Hardening
+
+Goal: make prototype interaction targeting more stable than source-shape/index
+order alone, while preserving the Phase 19/20 commands that already work.
+
+| ID | Status | Task | Modules | Verification | Notes |
+| --- | --- | --- | --- | --- | --- |
+| P22.1 | todo | Audit prototype interaction identity options | `common`, `backend`, `mcp/docs`, `command-runtime`, `penpot-cli` | Document persisted data shape, migration options, generated-reference risks, and compatibility rules | Do not change runtime behavior until id-present/id-missing fixtures and descriptor expectations are explicit |
+| P22.2 | todo | Add stable identity metadata to read summaries if feasible | `common`, `backend`, `mcp`, `penpot-cli` | `prototype.list_interactions` returns stable identity metadata or explicit fallback reference metadata | Existing source-shape/index summaries remain backward compatible |
+| P22.3 | todo | Add stable-id delete targeting if contract is stable | `common`, `backend`, `mcp`, `penpot-cli` | `prototype.delete_interaction` supports stable-id targeting plus current source-shape/index targeting | Stale ids and stale indexes produce structured validation errors |
+| P22.4 | todo | Define richer prototype mutation helper contracts | `mcp/docs`, `command-runtime` | Planned helpers such as update/reorder/duplicate have clear payload and adapter boundaries | Keep descriptor-only until fixtures prove persisted semantics |
