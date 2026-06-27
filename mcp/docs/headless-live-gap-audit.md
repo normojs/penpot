@@ -115,8 +115,8 @@ state for them.
 | `shape.update` with geometry/style/text/hierarchy | Registered MCP tool and descriptor; backend-command with explicit targets, plugin-live otherwise. | Backend-safe persisted data plus plugin-live convenience. | Supported shape fields persist through file changes. | Keep behavior. |
 | `shape.update` with `layout.type = none|flex` | Registered MCP tool and descriptor. | Backend-safe persisted data. | Common/backend explicitly support this subset. | Keep behavior. |
 | `shape.update` with `layout.type = grid` | Registered MCP tool and descriptor; backend-command supports the container track subset with explicit `fileId`, plugin-live remains available for live workspace convenience. | Backend-safe persisted data for container direction/tracks/gaps/padding/alignment; plugin-live or future contract for cell/child placement. | Persisted grid container fields are stable enough for headless updates, while `layout-grid-cells` needs a separate payload contract. | Keep backend-command subset; do not add cell placement until the contract is defined. |
-| `shape.set_layout` | Name exists in `ToolNames.ts` and command-runtime as a descriptor-only alias, not a registered MCP tool. | Descriptor-only alias contract. | Behavior overlaps with `shape.update.layout`; no separate runtime surface is needed yet. | Use `shape.update` today. If registered later, map to the same backend-command/plugin-live update paths with alias audit context. |
-| `shape.set_style` | Name exists in `ToolNames.ts` and command-runtime as a descriptor-only alias, not a registered MCP tool. | Descriptor-only alias contract. | Behavior overlaps with `shape.update` fill/stroke/text/corner fields; no separate runtime surface is needed yet. | Use `shape.update` today. If registered later, map to the same backend-command/plugin-live update paths with alias audit context. |
+| `shape.set_layout` | Registered MCP tool and command-runtime descriptor; no CLI command yet. | Alias over `shape.update.layout`; backend-command with explicit targets, plugin-live otherwise. | Behavior overlaps with `shape.update.layout`; a thin alias avoids a second layout mutation contract. | Keep forwarding to the same update paths and preserve alias names only in tool/audit metadata. |
+| `shape.set_style` | Registered MCP tool and command-runtime descriptor; no CLI command yet. | Alias over `shape.update` fill/stroke/text/corner fields; backend-command with explicit targets, plugin-live otherwise for supported fields. | Behavior overlaps with `shape.update` style fields; a thin alias avoids a second style mutation contract. | Keep forwarding to the same update paths and preserve alias names only in tool/audit metadata. |
 | `shape.group`, `shape.ungroup` | Names exist in `ToolNames.ts`, not registered. | Unsupported or descriptor-only. | No backend/common or plugin task implementation found. | Leave out of P17.2 unless a separate grouping wave is selected. |
 | `prototype.create_flow` | Registered MCP tool and descriptor; backend-command with `fileId`, plugin-live otherwise. | Backend-safe persisted data plus plugin-live convenience. | Flow data persists on the page. | Keep behavior. |
 | `prototype.create_interaction` | Registered MCP tool and descriptor; backend-command with `fileId`, plugin-live otherwise. | Backend-safe persisted data plus plugin-live convenience. | Navigate interaction data persists on source shape. | Keep behavior. |
@@ -173,19 +173,22 @@ Recommended P17.2 commands:
      not part of this slice.
 
 7. `shape.set_layout`
-   - Adapter: descriptor-only alias/planned command.
+   - Adapter: implemented in P21.2 as MCP `backend-command` with
+     `plugin-live` fallback.
    - Reason: current behavior lives under `shape.update.layout`; grid backend
-     support is still unresolved.
+     support remains limited to the container track subset.
 
 8. `shape.set_style`
-   - Adapter: descriptor-only alias/planned command.
+   - Adapter: implemented in P21.2 as MCP `backend-command` with
+     `plugin-live` fallback for fields the plugin task supports.
    - Reason: current behavior lives under `shape.update` style/text fields.
 
 P17.2 implementation note:
 
 - Added `LiveGapCommandDescriptors` to `@penpot/command-runtime` for the
   original Phase 17 live-gap commands. P21.1 later adds `shape.set_style` as a
-  descriptor-only alias alongside `shape.set_layout`.
+  descriptor-only alias alongside `shape.set_layout`, and P21.2 registers both
+  aliases as MCP tools.
 - Kept `page.set_current`, `selection.get`, and `selection.set` as
   plugin-live/live workspace metadata. All three are now registered MCP tools
   for bound workspace contexts.
@@ -276,6 +279,19 @@ P21.1 alias contract note:
   backend-command/plugin-live shape update paths and preserve alias tool names
   only in audit/adapter metadata.
 
+P21.2 MCP alias registration note:
+
+- `shape.set_layout` and `shape.set_style` are now registered MCP tools.
+- Both tools reuse the same adapter selection and execution helpers as
+  `shape.update`, so `fileId` selects backend-command `update-file-shape` and
+  omitted explicit targets select plugin-live when the requested fields are
+  supported by the plugin task.
+- Backend writes preserve the alias name in MCP audit headers, and responses
+  preserve the alias id in `adapterSelection.command`.
+- CLI aliases remain out of scope until P21.3 decides whether
+  `shape set-layout` and `shape set-style` add enough value over
+  `shape update`.
+
 ## P19.3 Overlay Contract Reassessment
 
 At the Phase 19 reassessment, `prototype.create_overlay` remained
@@ -360,8 +376,8 @@ points CLI users back to MCP `file.open`, `file.get_context`,
 
 ## Open Decisions
 
-- Whether `shape.set_layout` and `shape.set_style` should become real commands
-  or remain documented aliases for `shape.update`.
+- Whether CLI `shape set-layout` and `shape set-style` aliases add enough value
+  over `shape update` to justify separate command surface.
 - Whether `prototype.delete_interaction` should later gain persistent
   interaction ids. P19.2 currently implements explicit `fileId`, optional
   `pageId`, `sourceShapeId`, and zero-based `interactionIndex` for the current

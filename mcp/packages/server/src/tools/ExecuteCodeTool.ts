@@ -85,6 +85,8 @@ export class ExecuteCodeTool extends Tool<ExecuteCodeArgs> {
                         ToolNames.SHAPE_CREATE_RECT,
                         ToolNames.SHAPE_CREATE_TEXT,
                         ToolNames.SHAPE_UPDATE,
+                        ToolNames.SHAPE_SET_LAYOUT,
+                        ToolNames.SHAPE_SET_STYLE,
                         ToolNames.EXPORT_SHAPE,
                         ToolNames.RENDER_PREVIEW,
                     ],

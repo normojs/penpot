@@ -122,14 +122,14 @@ test("live-gap descriptors document live-only and planned command boundaries", (
     assert.match(CommandDescriptors.PROTOTYPE_CREATE_OVERLAY.inputSchema, /push animation unsupported/);
     assert.match(CommandDescriptors.PROTOTYPE_CREATE_OVERLAY.responseShape, /overlay interaction summary/);
     assert.equal(CommandDescriptors.SHAPE_SET_LAYOUT.cliCommand, undefined);
-    assert.deepEqual(CommandDescriptors.SHAPE_SET_LAYOUT.adapters, []);
-    assert.match(CommandDescriptors.SHAPE_SET_LAYOUT.description, /planned alias for shape.update layout fields/);
-    assert.match(CommandDescriptors.SHAPE_SET_LAYOUT.responseShape, /shape.update/);
+    assert.deepEqual(CommandDescriptors.SHAPE_SET_LAYOUT.adapters, ["backend-command", "plugin-live"]);
+    assert.match(CommandDescriptors.SHAPE_SET_LAYOUT.description, /MCP alias for shape.update layout fields/);
+    assert.match(CommandDescriptors.SHAPE_SET_LAYOUT.responseShape, /alias tool\/audit metadata/);
     assert.equal(CommandDescriptors.SHAPE_SET_STYLE.cliCommand, undefined);
-    assert.deepEqual(CommandDescriptors.SHAPE_SET_STYLE.adapters, []);
-    assert.match(CommandDescriptors.SHAPE_SET_STYLE.description, /planned alias for shape.update style\/text fields/);
+    assert.deepEqual(CommandDescriptors.SHAPE_SET_STYLE.adapters, ["backend-command", "plugin-live"]);
+    assert.match(CommandDescriptors.SHAPE_SET_STYLE.description, /MCP alias for shape.update style\/text fields/);
     assert.match(CommandDescriptors.SHAPE_SET_STYLE.inputSchema, /fill\?/);
-    assert.match(CommandDescriptors.SHAPE_SET_STYLE.responseShape, /shape.update/);
+    assert.match(CommandDescriptors.SHAPE_SET_STYLE.responseShape, /alias tool\/audit metadata/);
 });
 
 test("file open helpers produce stable workspace URLs and handoff actions", () => {

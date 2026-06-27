@@ -504,9 +504,10 @@ P17.1 audit result:
 - `prototype.delete_interaction` is a possible backend-safe mutation once it
   uses explicit `fileId`, `pageId`, `sourceShapeId`, and zero-based
   `interactionIndex`; persisted interactions do not currently have stable ids.
-- `prototype.create_overlay`, `shape.set_layout`, `shape.set_style`,
-  `export.file`, `render.thumbnail`, component, token, and debug names remain
-  planned or unsupported descriptor gaps unless a later wave selects them.
+- `prototype.create_overlay`, `shape.set_layout`, and `shape.set_style` have
+  since been selected by later waves; `export.file`, `render.thumbnail`,
+  component, token, and debug names remain planned or unsupported descriptor
+  gaps unless a later wave selects them.
 - Grid container layout can move to backend-command once backend/common owns a
   persisted track contract; grid cells and child placement need a later
   dedicated payload contract.
@@ -537,6 +538,17 @@ P21.1 design alias contract result:
   for fills, strokes, corner radii, text content, and font size.
 - Until alias tools are registered, callers should use `shape.update` for
   executable backend-command or plugin-live behavior.
+
+P21.2 MCP alias registration result:
+
+- `shape.set_layout` and `shape.set_style` are now registered MCP tools, but
+  still do not have CLI command names.
+- Both aliases forward to the same backend-command/plugin-live helpers used by
+  `shape.update`; they keep `shape.update` as the source of mutation semantics.
+- Backend-command calls preserve the alias tool name in MCP audit headers, and
+  responses preserve the alias id in `adapterSelection.command`.
+- P21.3 remains the decision point for optional `penpot-cli shape set-layout`
+  and `shape set-style` aliases.
 
 P17.5 live-only guidance result:
 
@@ -1877,11 +1889,10 @@ tokens.list
 tokens.apply
 ```
 
-`shape.set_layout` and `shape.set_style` are currently discoverable
-descriptor-only aliases over `shape.update`, not registered executable tools.
-When/if they become registered tools, they should forward to the same
-backend-command/plugin-live shape update paths and preserve the alias name only
-in tool/audit metadata.
+`shape.set_layout` and `shape.set_style` are registered MCP aliases over
+`shape.update`. They forward to the same backend-command/plugin-live shape
+update paths and preserve the alias name only in tool/audit metadata. CLI alias
+commands remain a separate P21.3 decision.
 
 ### 8.4 Prototype Tools
 

@@ -37,6 +37,8 @@ test("ExecuteCodeTool returns structured disabled response by default", async ()
     assert.equal(body.error.code, ExecuteCodeErrorCodes.EXECUTE_CODE_DISABLED);
     assert.equal(body.error.config.env, "PENPOT_MCP_ENABLE_EXECUTE_CODE");
     assert.ok(body.error.actions.includes("shape.create_frame"));
+    assert.ok(body.error.actions.includes("shape.set_layout"));
+    assert.ok(body.error.actions.includes("shape.set_style"));
     assert.ok(body.error.actions.includes("render.preview"));
 });
 

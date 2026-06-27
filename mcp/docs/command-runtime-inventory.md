@@ -102,6 +102,8 @@ MCP server tool classes and `penpot-cli`.
 | `shape.create_text` | `ShapeCreateTextArgs` | backend-command RPC `create-file-shape` when `fileId`/`pageId`; otherwise plugin-live task | JSON `{adapter,adapterSelection,fileId,shape,revn,vern}` or plugin task data | `ShapeCreateTools.test.ts`, `ShapePluginTask.test.ts` |
 | `shape.create_image` | `ShapeCreateImageArgs` | backend-command RPC `create-file-image-shape` when `fileId`/`pageId`; otherwise plugin-live task | JSON `{adapter,adapterSelection,fileId,shape,media,revn,vern}` or plugin task data | `ShapeCreateTools.test.ts`, `ShapePluginTask.test.ts` |
 | `shape.update` | `ShapeUpdateArgs` | backend-command RPC `update-file-shape` when `fileId`; otherwise plugin-live task; backend-only rich style/hierarchy fields and frame `layout none|flex|grid` require `fileId`; backend grid support is limited to container direction, rows/columns tracks, gaps, padding, and alignment | JSON `{adapter,adapterSelection,fileId,shape,revn,vern}` or plugin task data | `ShapeCreateTools.test.ts`, `ShapePluginTask.test.ts` |
+| `shape.set_layout` | `ShapeSetLayoutArgs` | MCP alias over `shape.update.layout`; backend-command RPC `update-file-shape` when `fileId`; otherwise plugin-live `shape` update task | `shape.update`-compatible JSON with alias command/tool audit metadata | `ShapeCreateTools.test.ts` |
+| `shape.set_style` | `ShapeSetStyleArgs` | MCP alias over `shape.update` style/text fields; backend-command RPC `update-file-shape` when `fileId`; otherwise plugin-live `shape` update task for supported fields | `shape.update`-compatible JSON with alias command/tool audit metadata | `ShapeCreateTools.test.ts` |
 | `shape.delete` | `ShapeDeleteArgs` | backend-command RPC `delete-file-shape` when `fileId`; otherwise plugin-live task | JSON `{adapter,adapterSelection,fileId,shape,revn,vern,deleted}` or confirmation error | `ShapeCreateTools.test.ts`, `ShapePluginTask.test.ts` |
 | `prototype.create_flow` | `PrototypeCreateFlowArgs` | plugin-live task | JSON plugin task data | `PrototypePluginTask.test.ts` |
 | `prototype.create_interaction` | `PrototypeCreateInteractionArgs` | plugin-live task | JSON plugin task data | `PrototypePluginTask.test.ts` |
@@ -124,8 +126,8 @@ not register yet:
 - file context: `page.set_current`, `selection.get`, and `selection.set` are implemented but remain plugin-live and now share live-only recovery metadata with the same binding flow
 - design editing: `shape.group`, `shape.ungroup`, `component.create`,
   `component.instantiate`, `tokens.list`, `tokens.apply`; `shape.set_layout`
-  and `shape.set_style` are declared and have descriptor-only alias contracts
-  that point callers to `shape.update` until alias tools are registered
+  and `shape.set_style` are now registered MCP aliases over `shape.update`, but
+  still have no CLI aliases
 - prototype/export: `prototype.create_overlay` and
   `prototype.delete_interaction` are registered backend-command mutations for
   explicit persisted prototype targets; `export.file` and `render.thumbnail`

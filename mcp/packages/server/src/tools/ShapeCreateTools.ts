@@ -36,7 +36,7 @@ const solidStrokeSchema = z.object({
 const strokeSchema = solidStrokeSchema.optional();
 const strokesSchema = z.array(solidStrokeSchema).optional();
 
-const layoutSchema = z
+const layoutObjectSchema = z
     .object({
         type: z
             .enum(["none", "flex", "grid"])
@@ -79,8 +79,8 @@ const layoutSchema = z
             .max(100)
             .optional()
             .describe("Backend-command grid column tracks. Child cell placement is not supported."),
-    })
-    .optional();
+    });
+const layoutSchema = layoutObjectSchema.optional();
 
 const parentIdSchema = z
     .string()
@@ -480,6 +480,36 @@ abstract class ShapeTool<TArgs extends object> extends PenpotRpcTool<TArgs> {
         }
     }
 
+    protected async executeShapeUpdate(args: ShapeUpdateArgs, commandId: string): Promise<ToolResponse> {
+        const adapterSelection = this.selectShapeEditAdapter(commandId, args);
+        if (adapterSelection.status !== "selected") {
+            return this.adapterSelectionFailure(adapterSelection);
+        }
+
+        if (adapterSelection.selected === "backend-command") {
+            return this.executeBackendShapeUpdate(args, adapterSelection);
+        }
+
+        return this.executeShapeTask(
+            {
+                action: "update",
+                shapeId: args.shapeId,
+                name: this.nonEmptyString(args.name),
+                x: args.x,
+                y: args.y,
+                width: args.width,
+                height: args.height,
+                fill: args.fill,
+                stroke: args.stroke,
+                borderRadius: args.borderRadius,
+                content: args.content,
+                fontSize: args.fontSize,
+                layout: args.layout,
+            },
+            adapterSelection
+        );
+    }
+
     protected nonEmptyString(value: unknown): string | undefined {
         return typeof value === "string" && value.trim() !== "" ? value.trim() : undefined;
     }
@@ -846,33 +876,95 @@ export class ShapeUpdateTool extends ShapeTool<ShapeUpdateArgs> {
     }
 
     protected async executeCore(args: ShapeUpdateArgs): Promise<ToolResponse> {
-        const adapterSelection = this.selectShapeEditAdapter(CommandDescriptors.SHAPE_UPDATE.id, args);
-        if (adapterSelection.status !== "selected") {
-            return this.adapterSelectionFailure(adapterSelection);
-        }
+        return this.executeShapeUpdate(args, CommandDescriptors.SHAPE_UPDATE.id);
+    }
+}
 
-        if (adapterSelection.selected === "backend-command") {
-            return this.executeBackendShapeUpdate(args, adapterSelection);
-        }
+export class ShapeSetLayoutArgs {
+    static schema = {
+        fileId: uuidSchema.optional().describe("Optional file id for backend-command headless layout updates."),
+        pageId: uuidSchema.optional().describe("Optional page id for backend-command headless layout updates."),
+        shapeId: z.string().uuid().describe("Shape id to update."),
+        adapter: z.string().optional().describe("Optional adapter request: auto, backend-command, or plugin-live."),
+        layout: layoutObjectSchema.describe("Layout update payload; equivalent to shape.update layout."),
+    };
 
-        return this.executeShapeTask(
-            {
-                action: "update",
-                shapeId: args.shapeId,
-                name: this.nonEmptyString(args.name),
-                x: args.x,
-                y: args.y,
-                width: args.width,
-                height: args.height,
-                fill: args.fill,
-                stroke: args.stroke,
-                borderRadius: args.borderRadius,
-                content: args.content,
-                fontSize: args.fontSize,
-                layout: args.layout,
-            },
-            adapterSelection
-        );
+    fileId?: string;
+    pageId?: string;
+    shapeId!: string;
+    adapter?: string;
+    layout!: ShapeTaskParams["layout"];
+}
+
+export class ShapeSetLayoutTool extends ShapeTool<ShapeSetLayoutArgs> {
+    constructor(mcpServer: PenpotMcpServer) {
+        super(mcpServer, ShapeSetLayoutArgs.schema);
+    }
+
+    public getToolName(): string {
+        return CommandDescriptors.SHAPE_SET_LAYOUT.mcpToolName;
+    }
+
+    public getToolDescription(): string {
+        return CommandDescriptors.SHAPE_SET_LAYOUT.description;
+    }
+
+    protected async executeCore(args: ShapeSetLayoutArgs): Promise<ToolResponse> {
+        return this.executeShapeUpdate(args, CommandDescriptors.SHAPE_SET_LAYOUT.id);
+    }
+}
+
+export class ShapeSetStyleArgs {
+    static schema = {
+        fileId: uuidSchema.optional().describe("Optional file id for backend-command headless style updates."),
+        pageId: uuidSchema.optional().describe("Optional page id for backend-command headless style updates."),
+        shapeId: z.string().uuid().describe("Shape id to update."),
+        adapter: z.string().optional().describe("Optional adapter request: auto, backend-command, or plugin-live."),
+        fill: fillSchema,
+        fills: fillsSchema.describe("Optional backend-command fill stack. Overrides fill when supplied."),
+        stroke: strokeSchema,
+        strokes: strokesSchema.describe("Optional backend-command stroke stack. Overrides stroke when supplied."),
+        borderRadius: z.number().min(0).max(10000).optional().describe("Optional corner radius in pixels."),
+        r1: z.number().min(0).max(10000).optional().describe("Optional backend-command top-left corner radius."),
+        r2: z.number().min(0).max(10000).optional().describe("Optional backend-command top-right corner radius."),
+        r3: z.number().min(0).max(10000).optional().describe("Optional backend-command bottom-right corner radius."),
+        r4: z.number().min(0).max(10000).optional().describe("Optional backend-command bottom-left corner radius."),
+        content: z.string().min(1).max(10000).optional().describe("Optional text content for text shapes."),
+        fontSize: z.number().positive().max(512).optional().describe("Optional font size for text shapes."),
+    };
+
+    fileId?: string;
+    pageId?: string;
+    shapeId!: string;
+    adapter?: string;
+    fill?: ShapeTaskParams["fill"];
+    fills?: NonNullable<ShapeTaskParams["fill"]>[];
+    stroke?: ShapeTaskParams["stroke"];
+    strokes?: NonNullable<ShapeTaskParams["stroke"]>[];
+    borderRadius?: number;
+    r1?: number;
+    r2?: number;
+    r3?: number;
+    r4?: number;
+    content?: string;
+    fontSize?: number;
+}
+
+export class ShapeSetStyleTool extends ShapeTool<ShapeSetStyleArgs> {
+    constructor(mcpServer: PenpotMcpServer) {
+        super(mcpServer, ShapeSetStyleArgs.schema);
+    }
+
+    public getToolName(): string {
+        return CommandDescriptors.SHAPE_SET_STYLE.mcpToolName;
+    }
+
+    public getToolDescription(): string {
+        return CommandDescriptors.SHAPE_SET_STYLE.description;
+    }
+
+    protected async executeCore(args: ShapeSetStyleArgs): Promise<ToolResponse> {
+        return this.executeShapeUpdate(args, CommandDescriptors.SHAPE_SET_STYLE.id);
     }
 }
 

@@ -183,8 +183,9 @@ test("command runtime exposes live-gap descriptor boundaries", () => {
     assert.match(CommandDescriptors.PROTOTYPE_DELETE_INTERACTION.description, /sourceShapeId/);
     assert.match(CommandDescriptors.PROTOTYPE_DELETE_INTERACTION.inputSchema, /interactionIndex/);
     assert.doesNotMatch(CommandDescriptors.PROTOTYPE_DELETE_INTERACTION.inputSchema, /interactionId/);
-    assert.deepEqual(CommandDescriptors.SHAPE_SET_LAYOUT.adapters, []);
-    assert.deepEqual(CommandDescriptors.SHAPE_SET_STYLE.adapters, []);
+    assert.deepEqual(CommandDescriptors.SHAPE_SET_LAYOUT.adapters, ["backend-command", "plugin-live"]);
+    assert.deepEqual(CommandDescriptors.SHAPE_SET_STYLE.adapters, ["backend-command", "plugin-live"]);
+    assert.equal(CommandDescriptors.SHAPE_SET_LAYOUT.cliCommand, undefined);
     assert.equal(CommandDescriptors.SHAPE_SET_STYLE.cliCommand, undefined);
     assert.equal(
         getAdapterSelectionReason(AdapterSelectionReasonCodes.CLI_LIVE_WORKSPACE_STATE_UNSUPPORTED),

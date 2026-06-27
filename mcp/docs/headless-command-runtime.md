@@ -302,6 +302,8 @@ they already exist in MCP, CLI, or both.
 | `shape.create_rect` | file | MCP plugin task, backend `create-file-shape` RPC | `backend-command`, fallback `plugin-live` |
 | `shape.create_text` | file | MCP plugin task, backend `create-file-shape` RPC | `backend-command`, fallback `plugin-live` |
 | `shape.update` | file | MCP plugin task, backend `update-file-shape` RPC | `backend-command`, fallback `plugin-live` |
+| `shape.set_layout` | file | MCP alias over `shape.update.layout`, backend `update-file-shape` RPC | `backend-command`, fallback `plugin-live` |
+| `shape.set_style` | file | MCP alias over `shape.update` style/text fields, backend `update-file-shape` RPC | `backend-command`, fallback `plugin-live` |
 | `shape.delete` | file | MCP plugin task, backend `delete-file-shape` RPC | `backend-command`, fallback `plugin-live` |
 | `export.page` | file | MCP plugin task, CLI exporter execution | `exporter`, fallback `plugin-live` |
 | `render.preview` | file | MCP plugin task, MCP/CLI exporter preview execution | `exporter`, fallback `plugin-live` |

@@ -38,6 +38,8 @@ import {
     ShapeCreateImageTool,
     ShapeCreateRectTool,
     ShapeCreateTextTool,
+    ShapeSetLayoutTool,
+    ShapeSetStyleTool,
     ShapeUpdateTool,
 } from "./tools/ShapeCreateTools";
 import { PenpotRpcClient } from "./PenpotRpcClient";
@@ -281,6 +283,8 @@ export class PenpotMcpServer {
             new ShapeCreateTextTool(this),
             new ShapeCreateImageTool(this),
             new ShapeUpdateTool(this),
+            new ShapeSetLayoutTool(this),
+            new ShapeSetStyleTool(this),
             new ShapeDeleteTool(this),
             new PrototypeCreateFlowTool(this),
             new PrototypeCreateInteractionTool(this),

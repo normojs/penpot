@@ -9,6 +9,8 @@ import {
     ShapeCreateImageTool,
     ShapeCreateTextTool,
     ShapeDeleteTool,
+    ShapeSetLayoutTool,
+    ShapeSetStyleTool,
     ShapeUpdateTool,
 } from "../src/tools/ShapeCreateTools.js";
 import { ToolErrorCodes } from "../src/tools/PenpotRpcTool.js";
@@ -40,6 +42,25 @@ function mcpServerWithRpc(
         writeLimiter: new McpWriteLimiter(limiterConfig),
         getSessionContext: () => ({ userToken, mcpSessionId }),
         isDestructiveConfirmationRequired: () => requireDestructiveConfirmation,
+    } as unknown as PenpotMcpServer;
+}
+
+function mcpServerWithPlugin(
+    pluginBridge: { executePluginTask: (...args: any[]) => Promise<unknown> },
+    userToken = "token-1",
+    mcpSessionId = "session-1"
+): PenpotMcpServer {
+    return {
+        pluginBridge,
+        getSessionContext: () => ({ userToken, mcpSessionId }),
+        fileContextRegistry: {
+            getSessionSummary: () => ({
+                bound: true,
+                boundContext: { status: "bound" },
+                availableContexts: [],
+                staleContexts: [],
+            }),
+        },
     } as unknown as PenpotMcpServer;
 }
 
@@ -591,6 +612,149 @@ test("ShapeUpdateTool sends backend grid layout subset updates", async () => {
     assert.equal(body.status, "ok");
     assert.equal(body.data.adapter, "backend-command");
     assert.equal(body.data.adapterSelection.selected, "backend-command");
+});
+
+test("ShapeSetLayoutTool forwards backend layout updates with alias audit context", async () => {
+    const calls: RpcCall[] = [];
+    const tool = new ShapeSetLayoutTool(
+        mcpServerWithRpc({
+            post: async (
+                methodName: string,
+                params: Record<string, unknown>,
+                userToken: string,
+                context?: PenpotRpcRequestContext
+            ) => {
+                calls.push({ methodName, params, userToken, context });
+                return { shape: { id: "00000000-0000-0000-0000-000000000003", type: "frame" }, revn: 6, vern: 0 };
+            },
+        })
+    );
+
+    const response = await tool.execute({
+        fileId: "00000000-0000-0000-0000-000000000001",
+        pageId: "00000000-0000-0000-0000-000000000002",
+        shapeId: "00000000-0000-0000-0000-000000000003",
+        layout: {
+            type: "flex",
+            direction: "column",
+            rowGap: 12,
+            padding: 16,
+        },
+    });
+    const body = parseJsonResponse(response);
+
+    assert.equal(calls.length, 1);
+    assert.equal(calls[0].methodName, "update-file-shape");
+    assert.deepEqual(calls[0].params.layout, {
+        type: "flex",
+        direction: "column",
+        "row-gap": 12,
+        padding: 16,
+    });
+    assert.equal(calls[0].context?.mcpToolName, "shape.set_layout");
+    assert.equal(body.status, "ok");
+    assert.equal(body.data.adapter, "backend-command");
+    assert.equal(body.data.adapterSelection.command, "shape.set_layout");
+});
+
+test("ShapeSetLayoutTool forwards plugin-live layout updates with alias adapter metadata", async () => {
+    const requests: Array<{ id: string; task: string; params: Record<string, unknown> }> = [];
+    const tool = new ShapeSetLayoutTool(
+        mcpServerWithPlugin({
+            executePluginTask: async (
+                task: { toRequest: () => { id: string; task: string; params: Record<string, unknown> } }
+            ) => {
+                requests.push(task.toRequest());
+                return {
+                    data: {
+                        shape: { id: "00000000-0000-0000-0000-000000000003", type: "frame", name: "Card" },
+                        currentPage: null,
+                    },
+                };
+            },
+        })
+    );
+
+    const response = await tool.execute({
+        shapeId: "00000000-0000-0000-0000-000000000003",
+        layout: {
+            type: "flex",
+            direction: "row",
+            columnGap: 8,
+        },
+    });
+    const body = parseJsonResponse(response);
+
+    assert.equal(requests.length, 1);
+    assert.match(requests[0].id, /^[0-9a-f-]{36}$/);
+    assert.equal(requests[0].task, "shape");
+    assert.deepEqual(requests[0].params, {
+        action: "update",
+        shapeId: "00000000-0000-0000-0000-000000000003",
+        name: undefined,
+        x: undefined,
+        y: undefined,
+        width: undefined,
+        height: undefined,
+        fill: undefined,
+        stroke: undefined,
+        borderRadius: undefined,
+        content: undefined,
+        fontSize: undefined,
+        layout: {
+            type: "flex",
+            direction: "row",
+            columnGap: 8,
+        },
+    });
+    assert.equal(body.status, "ok");
+    assert.equal(body.data.adapter, "plugin-live");
+    assert.equal(body.data.adapterSelection.command, "shape.set_layout");
+});
+
+test("ShapeSetStyleTool forwards backend style updates with alias audit context", async () => {
+    const calls: RpcCall[] = [];
+    const tool = new ShapeSetStyleTool(
+        mcpServerWithRpc({
+            post: async (
+                methodName: string,
+                params: Record<string, unknown>,
+                userToken: string,
+                context?: PenpotRpcRequestContext
+            ) => {
+                calls.push({ methodName, params, userToken, context });
+                return {
+                    shape: { id: "00000000-0000-0000-0000-000000000003", type: "text", name: "Title" },
+                    revn: 7,
+                    vern: 0,
+                };
+            },
+        })
+    );
+
+    const response = await tool.execute({
+        fileId: "00000000-0000-0000-0000-000000000001",
+        pageId: "00000000-0000-0000-0000-000000000002",
+        shapeId: "00000000-0000-0000-0000-000000000003",
+        fills: [{ color: "#111111" }],
+        r1: 4,
+        r2: 6,
+        content: "Hello",
+        fontSize: 32,
+    });
+    const body = parseJsonResponse(response);
+
+    assert.equal(calls.length, 1);
+    assert.equal(calls[0].methodName, "update-file-shape");
+    assert.deepEqual(calls[0].params.fills, [{ color: "#111111" }]);
+    assert.equal(calls[0].params.r1, 4);
+    assert.equal(calls[0].params.r2, 6);
+    assert.equal(calls[0].params.content, "Hello");
+    assert.equal(calls[0].params["font-size"], 32);
+    assert.equal(calls[0].context?.mcpToolName, "shape.set_style");
+    assert.equal(body.status, "ok");
+    assert.equal(body.data.adapter, "backend-command");
+    assert.equal(body.data.adapterSelection.command, "shape.set_style");
 });
 
 test("ShapeUpdateTool rejects concurrent writes to the same file and releases after completion", async () => {
