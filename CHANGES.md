@@ -101,6 +101,7 @@
 - Define descriptor-only `shape.set_layout` and `shape.set_style` alias contracts over `shape.update`.
 - Register MCP `shape.set_layout` and `shape.set_style` aliases that forward to the existing `shape.update` backend-command and plugin-live paths.
 - Add `penpot-cli shape set-layout` and `shape set-style` CLI aliases over `shape.update` with layout/style-scoped validation.
+- Document the prototype interaction stable identity audit and fixtures, selecting future persisted interaction UUIDs while preserving source-shape/index compatibility.
 - Add rate limiting and concurrency safety for file snapshot operations [#9723](https://github.com/penpot/penpot/issues/9723) (PR: [#9722](https://github.com/penpot/penpot/pull/9722))
 - Prevent concurrent font uploads from causing excessive simultaneous requests [#9922](https://github.com/penpot/penpot/issues/9922) (PR: [#9921](https://github.com/penpot/penpot/pull/9921))
 

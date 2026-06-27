@@ -126,8 +126,9 @@ lightweight shape summaries while allowing explicit selection mutation and
 clearing, and the live-bind smoke flow plus CLI descriptor guidance now cover
 selection read/write evidence. P19.1 is complete: prototype interaction delete
 identity is explicit `fileId`, `pageId`, `sourceShapeId`, and zero-based
-`interactionIndex`; `interactionId` remains unsupported until persisted
-interactions gain stable ids. P19.2 is complete: backend-command
+`interactionIndex`; `interactionId` remains unsupported in runtime until
+P22.2/P22.3 add persisted identity metadata and stable-id deletion. P19.2 is
+complete: backend-command
 `prototype.delete_interaction` now works through common/backend helpers, MCP,
 and `penpot-cli prototype delete-interaction`. P19.3, P20.1, P20.2, and P20.3
 are complete: overlay summaries are readable, the create-overlay payload
@@ -139,7 +140,10 @@ complete: `shape.set_layout` and `shape.set_style` are aliases over
 `penpot-cli shape set-layout` / `shape set-style` provide script-friendly CLI
 aliases that forward to the same backend-command update path while preserving
 alias audit metadata. The next recommended work is Phase 22 prototype
-interaction identity and mutation hardening.
+interaction identity and mutation hardening. P22.1 is complete: the
+prototype interaction identity audit selects future persisted interaction UUIDs
+as the canonical stable identity while keeping source-shape/index targeting as
+the compatibility fallback.
 
 ## Feature Roadmap
 
@@ -176,7 +180,7 @@ remain the execution plan.
 | F26 | done | Prototype mutation contracts | Phase 19 | Agents can safely mutate persisted prototype interactions only after target identity semantics are explicit | Completed 2026-06-18; P19.1/P19.2 delivered source-shape/index delete and P19.3 kept overlay creation descriptor-only until fixtures define action and positioning semantics |
 | F27 | done | Prototype overlay read and creation contract | Phase 20 | Agents can inspect persisted overlay interactions and create open/toggle/close overlays without a live workspace | Completed 2026-06-18; P20.1/P20.2/P20.3 delivered read summaries, payload contract fixtures, backend-command creation, MCP routing, and `penpot-cli prototype create-overlay` |
 | F28 | done | Design editing alias contracts | Phase 21 | Agents can discover and use specialized layout/style aliases without creating a second shape-update contract | Completed 2026-06-28; P21.1 defined alias contracts, P21.2 registered MCP aliases, and P21.3 added CLI aliases with scoped validation |
-| F29 | todo | Prototype interaction identity and mutation hardening | Phase 22 | Agents can target prototype interactions more robustly than source-shape/index order alone | Start with a persisted-data audit and stable-id compatibility contract before changing mutation behavior |
+| F29 | in_progress | Prototype interaction identity and mutation hardening | Phase 22 | Agents can target prototype interactions more robustly than source-shape/index order alone | P22.1 completed 2026-06-28; next task is P22.2 read-summary identity metadata |
 
 ## Detailed Upcoming Task Queue
 
@@ -388,7 +392,7 @@ compatible.
 
 | Order | Task | Modules | Output | Verification |
 | --- | --- | --- | --- | --- |
-| M1 | Define prototype interaction stable identity strategy | `common`, `backend`, `mcp/docs`, `command-runtime`, `penpot-cli` | Document whether persisted interactions can gain stable ids, how source-shape/index fallback stays compatible, and what migration or generated reference rules apply | Contract docs, fixtures, and descriptor/runtime tests cover id-present, id-missing, and duplicate/index fallback cases |
+| M1 | Define prototype interaction stable identity strategy | `common`, `backend`, `mcp/docs`, `command-runtime`, `penpot-cli` | Completed 2026-06-28; `prototype-interaction-identity.md` selects future persisted interaction UUIDs, rejects generated hashes as delete identities, and preserves source-shape/index compatibility | Contract doc and JSON fixtures cover id-present, id-missing, duplicate-id, and legacy fallback expectations |
 | M2 | Add stable identity metadata to interaction reads if contract is stable | `common`, `backend`, `mcp`, `penpot-cli` | `prototype.list_interactions` reports stable identity metadata or explicit fallback references without breaking existing summaries | Common/backend plus MCP/CLI tests cover navigate and overlay interaction summaries |
 | M3 | Support stable-id prototype deletion if contract is stable | `common`, `backend`, `mcp`, `penpot-cli` | `prototype.delete_interaction` accepts the stable identity while preserving the existing source-shape/index path | Common/backend plus MCP/CLI tests cover stable id, stale id, and source-shape/index compatibility |
 | M4 | Plan richer prototype mutation helpers | `mcp/docs`, `command-runtime` | Contracts for update/reorder/duplicate interaction helpers are explicit before implementation | Descriptor docs and tests distinguish planned, unsupported, and executable helpers |
@@ -669,16 +673,13 @@ Use `mcp/docs/penpot-cli-overall-blueprint.md` and
 `mcp/docs/headless-live-gap-audit.md` as the current architecture baseline and
 continue with Phase 22:
 
-1. Audit persisted prototype interaction data and decide whether stable
-   interaction ids can be added or derived without breaking current files.
-2. Define compatibility rules for existing source-shape/index deletion and
-   future stable-id targeting, including fixtures for id-present and id-missing
-   interactions.
-3. If the contract is stable, extend `prototype.list_interactions` summaries
+1. Extend `prototype.list_interactions` summaries
    with stable identity metadata before changing mutation inputs.
-4. After read metadata is proven, add stable-id deletion support or plan richer
+2. Add id-present, id-missing, and duplicate-id read fixtures/tests for common,
+   backend, MCP, and CLI.
+3. After read metadata is proven, add stable-id deletion support or plan richer
    prototype mutation helpers such as update, reorder, or duplicate.
-5. Export/file, thumbnail, component, token, or debug tool waves can supersede
+4. Export/file, thumbnail, component, token, or debug tool waves can supersede
    Phase 22 if they become higher priority.
 
 ## Phase 21: Design Editing Alias Contracts
@@ -700,7 +701,7 @@ order alone, while preserving the Phase 19/20 commands that already work.
 
 | ID | Status | Task | Modules | Verification | Notes |
 | --- | --- | --- | --- | --- | --- |
-| P22.1 | todo | Audit prototype interaction identity options | `common`, `backend`, `mcp/docs`, `command-runtime`, `penpot-cli` | Document persisted data shape, migration options, generated-reference risks, and compatibility rules | Do not change runtime behavior until id-present/id-missing fixtures and descriptor expectations are explicit |
+| P22.1 | done | Audit prototype interaction identity options | `common`, `backend`, `mcp/docs`, `command-runtime`, `penpot-cli` | Completed 2026-06-28; `prototype-interaction-identity.md` documents current vector storage, migration options, generated-reference risks, compatibility rules, and descriptor expectations | No runtime behavior changed; `prototype-interaction-identity-fixtures.json` captures id-present, id-missing, duplicate-id, and legacy fallback expectations |
 | P22.2 | todo | Add stable identity metadata to read summaries if feasible | `common`, `backend`, `mcp`, `penpot-cli` | `prototype.list_interactions` returns stable identity metadata or explicit fallback reference metadata | Existing source-shape/index summaries remain backward compatible |
 | P22.3 | todo | Add stable-id delete targeting if contract is stable | `common`, `backend`, `mcp`, `penpot-cli` | `prototype.delete_interaction` supports stable-id targeting plus current source-shape/index targeting | Stale ids and stale indexes produce structured validation errors |
 | P22.4 | todo | Define richer prototype mutation helper contracts | `mcp/docs`, `command-runtime` | Planned helpers such as update/reorder/duplicate have clear payload and adapter boundaries | Keep descriptor-only until fixtures prove persisted semantics |

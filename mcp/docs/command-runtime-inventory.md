@@ -130,7 +130,9 @@ not register yet:
   matching `shape set-layout` and `shape set-style` CLI aliases
 - prototype/export: `prototype.create_overlay` and
   `prototype.delete_interaction` are registered backend-command mutations for
-  explicit persisted prototype targets; `export.file` and `render.thumbnail`
+  explicit persisted prototype targets. P22.1 keeps source-shape/index
+  deletion as the current runtime contract and selects future persisted
+  interaction UUIDs for stable identity; `export.file` and `render.thumbnail`
   remain unregistered
 - debug: `debug.get_plugin_state`, `debug.get_agent_logs`
 

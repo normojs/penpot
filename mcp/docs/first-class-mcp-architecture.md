@@ -599,6 +599,20 @@ P19.2 prototype delete implementation result:
 - Missing source shapes and stale indexes return structured validation errors;
   overlay creation remains contract-first and descriptor-only.
 
+P22.1 prototype interaction identity audit result:
+
+- `prototype-interaction-identity.md` documents the current persisted data
+  shape: interactions are source-shape `:interactions` vector entries with no
+  stable `:id`.
+- Future stable targeting should use persisted interaction UUIDs as the
+  canonical identity; generated fingerprints are rejected as delete identities
+  because duplicate interactions can collide and edits can change hashes.
+- Source-shape/index targeting remains the compatibility fallback for existing
+  MCP and CLI callers.
+- `prototype-interaction-identity-fixtures.json` captures future id-present,
+  id-missing, duplicate-id, and legacy fallback expectations before any
+  runtime behavior changes.
+
 ## 4. Target Architecture
 
 ```text
@@ -1911,6 +1925,10 @@ prototype.delete_interaction
 `prototype.create_overlay` is backend-command-only in Phase 20. It requires
 explicit file/page/source targets and uses the persisted overlay interaction
 contract defined in `prototype-create-overlay-contract.md`.
+
+P22.1 selects future persisted interaction UUIDs for stable prototype mutation
+identity. Until P22.2/P22.3 implement read metadata and stable-id deletion,
+`prototype.delete_interaction` continues to use source-shape/index targets.
 
 ### 8.5 Export and Render Tools
 

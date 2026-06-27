@@ -1,0 +1,142 @@
+{
+  "version": "p22.1",
+  "status": "contract-fixture-only",
+  "notes": [
+    "These fixtures describe the future stable identity contract. They do not imply current runtime support.",
+    "Existing source-shape/index targeting remains the compatibility fallback."
+  ],
+  "ids": {
+    "fileId": "00000000-0000-0000-0000-000000000001",
+    "pageId": "00000000-0000-0000-0000-000000000002",
+    "sourceShapeId": "00000000-0000-0000-0000-000000000003",
+    "destinationBoardId": "00000000-0000-0000-0000-000000000004",
+    "navigateInteractionId": "00000000-0000-0000-0000-000000000101",
+    "overlayInteractionId": "00000000-0000-0000-0000-000000000102"
+  },
+  "cases": [
+    {
+      "name": "id-present navigate interaction summary",
+      "storedInteraction": {
+        "id": "00000000-0000-0000-0000-000000000101",
+        "action-type": "navigate",
+        "event-type": "click",
+        "destination": "00000000-0000-0000-0000-000000000004"
+      },
+      "summary": {
+        "interactionId": "00000000-0000-0000-0000-000000000101",
+        "sourceShapeId": "00000000-0000-0000-0000-000000000003",
+        "index": 0,
+        "actionType": "navigate-to",
+        "destinationBoardId": "00000000-0000-0000-0000-000000000004",
+        "identity": {
+          "kind": "stable-id",
+          "interactionId": "00000000-0000-0000-0000-000000000101",
+          "sourceShapeId": "00000000-0000-0000-0000-000000000003",
+          "interactionIndex": 0
+        }
+      },
+      "stableDeleteInput": {
+        "fileId": "00000000-0000-0000-0000-000000000001",
+        "interactionId": "00000000-0000-0000-0000-000000000101"
+      }
+    },
+    {
+      "name": "id-present overlay interaction summary",
+      "storedInteraction": {
+        "id": "00000000-0000-0000-0000-000000000102",
+        "action-type": "open-overlay",
+        "event-type": "click",
+        "destination": "00000000-0000-0000-0000-000000000004",
+        "overlay-pos-type": "center",
+        "overlay-position": {
+          "x": 0,
+          "y": 0
+        },
+        "close-click-outside": false,
+        "background-overlay": false
+      },
+      "summary": {
+        "interactionId": "00000000-0000-0000-0000-000000000102",
+        "sourceShapeId": "00000000-0000-0000-0000-000000000003",
+        "index": 1,
+        "actionType": "open-overlay",
+        "destinationBoardId": "00000000-0000-0000-0000-000000000004",
+        "overlayPositionType": "center",
+        "overlayPosition": {
+          "x": 0,
+          "y": 0
+        },
+        "identity": {
+          "kind": "stable-id",
+          "interactionId": "00000000-0000-0000-0000-000000000102",
+          "sourceShapeId": "00000000-0000-0000-0000-000000000003",
+          "interactionIndex": 1
+        }
+      },
+      "stableDeleteInput": {
+        "fileId": "00000000-0000-0000-0000-000000000001",
+        "interactionId": "00000000-0000-0000-0000-000000000102",
+        "sourceShapeId": "00000000-0000-0000-0000-000000000003",
+        "interactionIndex": 1
+      }
+    },
+    {
+      "name": "id-missing legacy interaction summary",
+      "storedInteraction": {
+        "action-type": "navigate",
+        "event-type": "click",
+        "destination": "00000000-0000-0000-0000-000000000004"
+      },
+      "summary": {
+        "sourceShapeId": "00000000-0000-0000-0000-000000000003",
+        "index": 0,
+        "actionType": "navigate-to",
+        "destinationBoardId": "00000000-0000-0000-0000-000000000004",
+        "identity": {
+          "kind": "source-index",
+          "sourceShapeId": "00000000-0000-0000-0000-000000000003",
+          "interactionIndex": 0,
+          "unstable": true
+        }
+      },
+      "legacyDeleteInput": {
+        "fileId": "00000000-0000-0000-0000-000000000001",
+        "sourceShapeId": "00000000-0000-0000-0000-000000000003",
+        "interactionIndex": 0
+      }
+    },
+    {
+      "name": "duplicate stable id must not delete",
+      "storedInteractions": [
+        {
+          "id": "00000000-0000-0000-0000-000000000101",
+          "action-type": "navigate",
+          "event-type": "click",
+          "destination": "00000000-0000-0000-0000-000000000004"
+        },
+        {
+          "id": "00000000-0000-0000-0000-000000000101",
+          "action-type": "navigate",
+          "event-type": "mouse-enter",
+          "destination": "00000000-0000-0000-0000-000000000004"
+        }
+      ],
+      "stableDeleteInput": {
+        "fileId": "00000000-0000-0000-0000-000000000001",
+        "interactionId": "00000000-0000-0000-0000-000000000101"
+      },
+      "expectedError": {
+        "code": "prototype-interaction-id-conflict",
+        "message": "More than one interaction carries the requested stable id."
+      }
+    }
+  ],
+  "descriptorExpectations": {
+    "p22.2": {
+      "prototype.list_interactions.responseShape": "includes optional interactionId and identity.kind stable-id|source-index"
+    },
+    "p22.3": {
+      "prototype.delete_interaction.inputSchema": "fileId, interactionId OR sourceShapeId + interactionIndex, adapter?"
+    }
+  }
+}
