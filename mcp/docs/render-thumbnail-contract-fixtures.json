@@ -1,0 +1,123 @@
+{
+  "version": "P25.4",
+  "command": "render.thumbnail",
+  "status": "descriptor-only contract; runtime registration pending",
+  "notes": [
+    "render.thumbnail maps to dashboard thumbnail data and persistence semantics, not exporter export-shapes.",
+    "File thumbnails use get-file-data-for-thumbnail and create-file-thumbnail.",
+    "Tagged frame thumbnails use the fileId/pageId/objectId/tag object key and create-file-object-thumbnail."
+  ],
+  "defaults": {
+    "target": "file",
+    "format": "png",
+    "width": 252,
+    "height": 168,
+    "cachePolicy": "reuse",
+    "renderer": "render-wasm-worker"
+  },
+  "cases": [
+    {
+      "id": "file-dashboard-default",
+      "input": {
+        "fileId": "file-1",
+        "revn": 7
+      },
+      "expected": {
+        "targetKind": "file",
+        "requires": [],
+        "cachePolicy": "reuse",
+        "cacheScope": "file-thumbnail",
+        "cacheKey": "file:file-1:revn:7",
+        "artifact": {
+          "width": 252,
+          "height": 168,
+          "format": "png"
+        },
+        "dataRequest": {
+          "file-id": "file-1",
+          "strip-frames-with-thumbnails": false
+        },
+        "persistCommand": "create-file-thumbnail",
+        "persistRequest": {
+          "file-id": "file-1",
+          "revn": 7,
+          "media": "<rendered png blob>"
+        }
+      }
+    },
+    {
+      "id": "file-dashboard-refresh-large",
+      "input": {
+        "fileId": "file-1",
+        "width": 360,
+        "cachePolicy": "refresh",
+        "output": "thumb.png"
+      },
+      "expected": {
+        "targetKind": "file",
+        "requires": [],
+        "cachePolicy": "refresh",
+        "cacheScope": "file-thumbnail",
+        "cacheKey": "file:file-1:revn:<resolved-revn>",
+        "artifact": {
+          "width": 360,
+          "height": 240,
+          "format": "png",
+          "output": "thumb.png"
+        },
+        "persistCommand": "create-file-thumbnail",
+        "persistRequest": {
+          "file-id": "file-1",
+          "revn": "<from get-file-data-for-thumbnail>",
+          "media": "<rendered png blob>"
+        }
+      }
+    },
+    {
+      "id": "tagged-frame-thumbnail",
+      "input": {
+        "fileId": "file-1",
+        "pageId": "page-1",
+        "objectId": "frame-1",
+        "target": "frame",
+        "tag": "component"
+      },
+      "expected": {
+        "targetKind": "frame",
+        "requires": [],
+        "cachePolicy": "reuse",
+        "cacheScope": "file-object-thumbnail",
+        "cacheKey": "file-1/page-1/frame-1/component",
+        "objectKey": "file-1/page-1/frame-1/component",
+        "persistCommand": "create-file-object-thumbnail",
+        "persistRequest": {
+          "file-id": "file-1",
+          "object-id": "file-1/page-1/frame-1/component",
+          "tag": "component",
+          "media": "<rendered png blob>"
+        }
+      }
+    },
+    {
+      "id": "missing-frame-target",
+      "input": {
+        "fileId": "file-1",
+        "target": "frame"
+      },
+      "expected": {
+        "targetKind": "frame",
+        "requires": ["pageId", "objectId"],
+        "cachePolicy": "reuse",
+        "cacheScope": "file-object-thumbnail",
+        "cacheKey": null,
+        "persistCommand": "create-file-object-thumbnail",
+        "persistRequest": {
+          "file-id": "file-1",
+          "object-id": null,
+          "tag": "frame",
+          "media": "<rendered png blob>"
+        }
+      }
+    }
+  ]
+}

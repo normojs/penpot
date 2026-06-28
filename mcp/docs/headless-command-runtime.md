@@ -308,6 +308,7 @@ they already exist in MCP, CLI, or both.
 | `export.page` | file | MCP plugin task, CLI exporter execution | `exporter`, fallback `plugin-live` |
 | `export.file` | file | CLI backend `export-binfile` RPC/SSE execution; MCP registration planned | `backend-rpc` for `penpot-cli export file`; MCP unregistered |
 | `render.preview` | file | MCP plugin task, MCP/CLI exporter preview execution | `exporter`, fallback `plugin-live` |
+| `render.thumbnail` | file | Descriptor-only dashboard thumbnail data/render/cache contract | adapterless until a renderer/runtime boundary is implemented |
 
 ## Schema Strategy
 
@@ -741,3 +742,16 @@ P25.3 defines and executes the CLI `export.file` archive contract:
   resource URI, and writes the returned `.penpot` resource when `--output` is
   supplied.
 - MCP execution still needs a later backend-rpc stream/resource wrapper.
+
+P25.4 defines the descriptor-only `render.thumbnail` contract:
+
+- The command maps to dashboard thumbnail data/render/cache semantics, not
+  exporter `export-shapes`.
+- File thumbnails use backend `get-file-data-for-thumbnail` plus
+  `create-file-thumbnail`; tagged frame thumbnails use
+  `create-file-object-thumbnail` with `fileId/pageId/objectId/tag`.
+- PNG artifact metadata is fixed in the shared contract: default width `252`,
+  derived height `168`, and `3:2` aspect ratio.
+- Cache policy is explicit as `reuse` or `refresh`.
+- The descriptor keeps `adapters: []`; MCP and CLI execution need a later
+  worker/rasterizer or renderer-service boundary.

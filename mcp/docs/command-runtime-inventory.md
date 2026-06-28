@@ -112,6 +112,7 @@ MCP server tool classes and `penpot-cli`.
 | `export.page` | `ExportPageArgs` | plugin-live task | JSON/base64 export task data | `ExportPluginTask.test.ts` serialization only |
 | `export.file` | Planned `ExportFileArgs`; CLI contract implemented | MCP tool unregistered; CLI backend-rpc `export-binfile` RPC/SSE execution | `.penpot` artifact metadata plus backend resource URI and optional downloaded output path in CLI | `command-runtime.test.mjs` consumes `export-file-contract-fixtures.json`; `cli-smoke.test.mjs` covers dry-run, SSE, output write, adapter error, and auth error |
 | `render.preview` | `RenderPreviewArgs` | exporter HTTP service for explicit targets; plugin-live task for bound workspace context | JSON exporter resource metadata or JSON/base64 render task data | `ExportTools.test.ts` covers exporter/plugin-live/adapter errors; `ExportPluginTask.test.ts` covers serialization |
+| `render.thumbnail` | Planned `RenderThumbnailArgs` | descriptor-only dashboard thumbnail data/render/cache contract | planned PNG thumbnail artifact/cache metadata; no MCP tool registered | `command-runtime.test.mjs` consumes `render-thumbnail-contract-fixtures.json` |
 | `execute_code` | `ExecuteCodeArgs` | plugin-live task, disabled unless `PENPOT_MCP_ENABLE_EXECUTE_CODE=true` | JSON disabled error or text execution result | `ExecuteCodeTool.test.ts` |
 | `high_level_overview` | `EmptyToolArgs` | local static overview | text overview | gap: no focused test |
 | `penpot_api_info` | `PenpotApiInfoArgs` | local API docs index | text/JSON API info | gap: no focused test |
@@ -140,7 +141,7 @@ not register yet:
   `prototype.reorder_interaction`, and `prototype.duplicate_interaction`
   contracts with empty adapter lists; `export.file` is CLI-registered through
   backend-rpc while MCP remains unregistered; `render.thumbnail` remains
-  descriptor-only
+  descriptor-only with a fixture-backed target/cache/artifact contract
 - debug: `debug.get_plugin_state`, `debug.get_agent_logs`
 
 Do not migrate these as executable descriptors until their implementation is

@@ -2082,6 +2082,20 @@ P25.3 CLI export.file runtime result:
 - MCP `export.file` remains unregistered until MCP-side backend-rpc
   stream/resource handling is implemented.
 
+P25.4 render.thumbnail contract result:
+
+- `render-thumbnail-contract.md` selects dashboard thumbnail semantics for
+  `render.thumbnail`, not exporter `export-shapes`.
+- The contract covers dashboard file thumbnails and tagged frame thumbnails.
+  File thumbnails persist with `create-file-thumbnail`; tagged frame
+  thumbnails persist with `create-file-object-thumbnail` using the
+  `fileId/pageId/objectId/tag` object key.
+- PNG artifact metadata is fixed at default width `252`, derived height `168`,
+  and `3:2` aspect ratio unless a caller overrides width in a future runtime.
+- Cache policy is explicit: `reuse` or `refresh`.
+- The descriptor stays adapterless and unregistered until an MCP/CLI runtime
+  owns worker/rasterizer execution and resource return behavior.
+
 ### 8.5 Export and Render Tools
 
 May start file-bound and later move to headless:
@@ -2095,10 +2109,11 @@ render.thumbnail
 ```
 
 P25.1 reserves `export.file` and `render.thumbnail` in the shared command
-catalog. P25.2 gives `export.file` a backend binary export contract, and P25.3
-enables the CLI backend-rpc path for `penpot-cli export file`. MCP
-`export.file` and all `render.thumbnail` runtime behavior remain future work
-until their resource-return and target/cache/artifact contracts are explicit.
+catalog. P25.2 gives `export.file` a backend binary export contract, P25.3
+enables the CLI backend-rpc path for `penpot-cli export file`, and P25.4 gives
+`render.thumbnail` a dashboard-thumbnail contract. MCP `export.file` and
+`render.thumbnail` runtime behavior remain future work until their resource
+return and renderer execution boundaries are implemented.
 
 ### 8.6 Advanced Tools
 

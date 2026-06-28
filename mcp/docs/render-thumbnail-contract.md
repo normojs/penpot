@@ -1,0 +1,131 @@
+# Render Thumbnail Contract
+
+Status: P25.4 descriptor-only contract; runtime registration pending.
+
+This document defines the `render.thumbnail` contract before MCP or CLI
+execution is enabled. The contract follows Penpot's existing dashboard
+thumbnail pipeline instead of the exporter `export-shapes` path.
+
+## Existing Penpot Surface
+
+Dashboard file thumbnails currently use this flow:
+
+1. Backend `get-file-data-for-thumbnail` returns the file revision plus a
+   reduced page payload for thumbnail rendering.
+2. The frontend thumbnail worker renders a PNG blob at width `252` with a
+   `3:2` width-to-height aspect ratio.
+3. Backend `create-file-thumbnail` stores the file thumbnail for the file
+   revision.
+
+Tagged frame/object thumbnails use a related persistence path:
+
+1. The frontend renders a frame thumbnail from workspace state.
+2. Backend `create-file-object-thumbnail` stores the PNG blob under an object
+   key formatted as `fileId/pageId/objectId/tag`.
+3. Backend `get-file-object-thumbnails` can read cached tagged thumbnails.
+
+`render.thumbnail` therefore maps to thumbnail data/render/cache semantics, not
+exporter preview/export semantics.
+
+## Command Request
+
+Canonical command input:
+
+```json
+{
+  "fileId": "uuid",
+  "target": "file",
+  "width": 252,
+  "cachePolicy": "reuse",
+  "format": "png",
+  "output": "optional/path/thumb.png",
+  "adapter": "auto"
+}
+```
+
+Supported target values:
+
+| Target | Required ids | Cache scope | Persist command |
+| --- | --- | --- | --- |
+| `file` | `fileId` | `file-thumbnail` | `create-file-thumbnail` |
+| `frame` | `fileId`, `pageId`, `objectId` | `file-object-thumbnail` | `create-file-object-thumbnail` |
+
+`object` and `shape` are accepted aliases for `frame` in the shared contract.
+The tagged frame key is `fileId/pageId/objectId/tag`; `tag` defaults to
+`frame`.
+
+Supported cache policies:
+
+| Policy | Meaning |
+| --- | --- |
+| `reuse` | Prefer an existing thumbnail when the runtime can prove the cache key is current. |
+| `refresh` | Render and persist a fresh PNG thumbnail. |
+
+The only supported format is PNG. The default width is `252`; height is derived
+as `round(width * 2 / 3)`.
+
+## Contract Response
+
+Shared contract shape:
+
+```json
+{
+  "command": "render.thumbnail",
+  "status": "contract",
+  "executable": false,
+  "adapter": null,
+  "target": {
+    "kind": "file",
+    "fileId": "uuid",
+    "pageId": null,
+    "objectId": null,
+    "tag": null,
+    "revn": 7
+  },
+  "artifact": {
+    "kind": "thumbnail",
+    "format": "png",
+    "mimeType": "image/png",
+    "extension": ".png",
+    "width": 252,
+    "height": 168,
+    "aspectRatio": "3:2"
+  },
+  "cache": {
+    "policy": "reuse",
+    "scope": "file-thumbnail",
+    "key": "file:<fileId>:revn:<revn>"
+  },
+  "backendRpc": {
+    "data": {
+      "command": "get-file-data-for-thumbnail"
+    },
+    "persist": {
+      "command": "create-file-thumbnail"
+    }
+  }
+}
+```
+
+## Runtime Boundaries
+
+- `@penpot/command-runtime` exposes `createRenderThumbnailContract` and fixture
+  coverage for request, cache, renderer, and persist mapping.
+- The `render.thumbnail` descriptor keeps `adapters: []` and no CLI command.
+- MCP must not register `render.thumbnail` until a runtime owns the
+  worker/rasterizer execution boundary and resource return shape.
+- CLI must not add `render thumbnail` until it can render the PNG bytes or
+  delegate to a stable renderer service.
+- Exporter service execution is out of scope for this command unless a later
+  task explicitly maps thumbnail rendering to exporter-compatible semantics.
+
+## Fixtures
+
+`render-thumbnail-contract-fixtures.json` is the canonical fixture matrix for:
+
+- default dashboard file thumbnail
+- refreshed dashboard file thumbnail with custom width
+- tagged frame thumbnail object-key mapping
+- missing frame target requirements
+
+The command-runtime test suite consumes the fixture directly.

@@ -167,6 +167,8 @@ test("command runtime exposes migrated shape and export descriptors", () => {
     assert.equal(CommandDescriptors.RENDER_THUMBNAIL.mcpToolName, "render.thumbnail");
     assert.equal(CommandDescriptors.RENDER_THUMBNAIL.cliCommand, undefined);
     assert.deepEqual(CommandDescriptors.RENDER_THUMBNAIL.adapters, []);
+    assert.match(CommandDescriptors.RENDER_THUMBNAIL.description, /dashboard file thumbnails/);
+    assert.match(CommandDescriptors.RENDER_THUMBNAIL.inputSchema, /cachePolicy=reuse\|refresh/);
     assert.equal(getCommandDescriptor("shape create-frame").id, "shape.create_frame");
     assert.equal(getCommandDescriptor("shape create-image").id, "shape.create_image");
     assert.equal(getCommandDescriptor("shape set-layout").id, "shape.set_layout");

@@ -19,6 +19,20 @@ export const ExportFileLibraryModes = Object.freeze({
     DETACH: "detach",
 });
 
+export const RenderThumbnailTargets = Object.freeze({
+    FILE: "file",
+    FRAME: "frame",
+});
+
+export const RenderThumbnailCachePolicies = Object.freeze({
+    REUSE: "reuse",
+    REFRESH: "refresh",
+});
+
+export const RenderThumbnailFormats = Object.freeze({
+    PNG: "png",
+});
+
 const ExportFileLibraryModeConfig = Object.freeze({
     [ExportFileLibraryModes.ALL]: Object.freeze({ includeLibraries: true, embedAssets: false }),
     [ExportFileLibraryModes.MERGE]: Object.freeze({ includeLibraries: false, embedAssets: true }),
@@ -454,10 +468,12 @@ export const CommandDescriptors = Object.freeze({
         mcpToolName: "render.thumbnail",
         title: "Render thumbnail",
         description:
-            "Planned thumbnail render command descriptor. No MCP, CLI, or exporter adapter is executable until target selection, cache policy, and artifact metadata are defined.",
-        inputSchema: "fileId, pageId?, objectId?, size?, scale?, output?, adapter?",
+            "Planned thumbnail render command contract for dashboard file thumbnails and tagged frame thumbnails; no MCP, CLI, or exporter adapter is executable yet.",
+        inputSchema:
+            "fileId, target=file|frame?, pageId?, objectId?/frameId?/shapeId?, tag=frame?, revn?, width/size=252?, cachePolicy=reuse|refresh?, format=png?, output?, adapter?",
         adapters: Object.freeze([]),
-        responseShape: "planned status envelope with thumbnail artifact metadata",
+        responseShape:
+            "contract envelope with PNG thumbnail artifact metadata, cache key, backend thumbnail data/persist RPC boundaries, and renderer plan",
     }),
 });
 
@@ -644,6 +660,131 @@ export function createExportFileContract(options = EMPTY_OBJECT) {
     };
 }
 
+export function createRenderThumbnailContract(options = EMPTY_OBJECT) {
+    const fileId = normalizeOptionalString(options.fileId);
+    const pageId = normalizeOptionalString(options.pageId);
+    const objectId = normalizeOptionalString(options.objectId ?? options.frameId ?? options.shapeId);
+    const targetKind = normalizeRenderThumbnailTarget(options, pageId, objectId);
+    const tag = targetKind === RenderThumbnailTargets.FRAME
+        ? normalizeOptionalString(options.tag) ?? "frame"
+        : null;
+    const revn = normalizeOptionalInteger(options.revn);
+    const format = normalizeRenderThumbnailFormat(options.format);
+    const width = normalizePositiveInteger(options.width ?? options.size, 252, "render.thumbnail width");
+    const height = Math.round(width * 2 / 3);
+    const cachePolicy = normalizeRenderThumbnailCachePolicy(options.cachePolicy ?? options.cache);
+    const output = normalizeOptionalString(options.output);
+    const objectKey =
+        targetKind === RenderThumbnailTargets.FRAME && fileId && pageId && objectId
+            ? `${fileId}/${pageId}/${objectId}/${tag}`
+            : null;
+    const requires = [
+        fileId ? null : "fileId",
+        targetKind === RenderThumbnailTargets.FRAME && !pageId ? "pageId" : null,
+        targetKind === RenderThumbnailTargets.FRAME && !objectId ? "objectId" : null,
+    ].filter(Boolean);
+    const cacheScope = targetKind === RenderThumbnailTargets.FILE ? "file-thumbnail" : "file-object-thumbnail";
+    const cacheKey =
+        targetKind === RenderThumbnailTargets.FILE
+            ? fileId
+                ? `file:${fileId}:revn:${revn ?? "<resolved-revn>"}`
+                : null
+            : objectKey;
+    const persistCommand =
+        targetKind === RenderThumbnailTargets.FILE
+            ? "create-file-thumbnail"
+            : "create-file-object-thumbnail";
+
+    return {
+        command: CommandDescriptors.RENDER_THUMBNAIL.id,
+        status: "contract",
+        executable: false,
+        adapter: null,
+        target: {
+            kind: targetKind,
+            fileId,
+            pageId: targetKind === RenderThumbnailTargets.FRAME ? pageId : null,
+            objectId: targetKind === RenderThumbnailTargets.FRAME ? objectId : null,
+            tag,
+            revn,
+        },
+        artifact: {
+            kind: "thumbnail",
+            format,
+            mimeType: "image/png",
+            extension: ".png",
+            width,
+            height,
+            aspectRatio: "3:2",
+            output,
+        },
+        cache: {
+            policy: cachePolicy,
+            scope: cacheScope,
+            key: cacheKey,
+            invalidatesOn:
+                targetKind === RenderThumbnailTargets.FILE
+                    ? "file revn change"
+                    : "tagged object thumbnail refresh or object deletion",
+        },
+        renderer: {
+            primary: "render-wasm-worker",
+            fallback: "frontend-rasterizer",
+            width,
+            height,
+            dataSource: "get-file-data-for-thumbnail",
+            output: "png-blob",
+        },
+        backendRpc: {
+            data: {
+                command: "get-file-data-for-thumbnail",
+                method: "GET",
+                request: {
+                    "file-id": fileId,
+                    "strip-frames-with-thumbnails": false,
+                },
+            },
+            persist:
+                targetKind === RenderThumbnailTargets.FILE
+                    ? {
+                          command: persistCommand,
+                          method: "POST",
+                          request: {
+                              "file-id": fileId,
+                              revn: revn ?? "<from get-file-data-for-thumbnail>",
+                              media: "<rendered png blob>",
+                          },
+                      }
+                    : {
+                          command: persistCommand,
+                          method: "POST",
+                          request: {
+                              "file-id": fileId,
+                              "object-id": objectKey,
+                              tag,
+                              media: "<rendered png blob>",
+                          },
+                      },
+        },
+        requires,
+        nextActions: [
+            "Keep render.thumbnail unregistered until an MCP/CLI renderer owns the worker/rasterizer execution boundary.",
+            "Use get-file-data-for-thumbnail to load the thumbnail source data before rendering.",
+            "Persist file thumbnails with create-file-thumbnail and tagged frame thumbnails with create-file-object-thumbnail.",
+        ],
+        diagnostics: {
+            adapterBoundary: "descriptor-only",
+            mcpToolRegistered: false,
+            cliCommandRegistered: false,
+            exporterBoundary: "render.thumbnail uses dashboard thumbnail data/rendering semantics, not exporter export-shapes.",
+            thumbnailDataCommand: "get-file-data-for-thumbnail",
+            thumbnailPersistCommand: persistCommand,
+            objectThumbnailIdFormat: "fileId/pageId/objectId/tag",
+            frameTargetDataProviderPending: targetKind === RenderThumbnailTargets.FRAME,
+        },
+    };
+}
+
 export function createCommandErrorPayload(code, message, options = EMPTY_OBJECT) {
     return {
         code,
@@ -751,6 +892,28 @@ function normalizeOptionalString(value) {
     return typeof value === "string" && value.trim().length > 0 ? value.trim() : null;
 }
 
+function normalizeOptionalInteger(value) {
+    if (value === undefined || value === null || value === "") {
+        return null;
+    }
+    const number = Number(value);
+    if (!Number.isInteger(number) || number < 0) {
+        throw new TypeError(`Expected a non-negative integer, got: ${value}.`);
+    }
+    return number;
+}
+
+function normalizePositiveInteger(value, fallback, label) {
+    if (value === undefined || value === null || value === "") {
+        return fallback;
+    }
+    const number = Number(value);
+    if (!Number.isInteger(number) || number <= 0 || number > 4096) {
+        throw new TypeError(`${label} must be an integer between 1 and 4096.`);
+    }
+    return number;
+}
+
 function normalizeExportFileFormat(value) {
     const format = normalizeOptionalString(value) ?? ExportFileFormats.PENPOT;
     if (format !== ExportFileFormats.PENPOT) {
@@ -781,6 +944,35 @@ function normalizeExportFileLibraryMode(options) {
     }
 
     return ExportFileLibraryModes.ALL;
+}
+
+function normalizeRenderThumbnailFormat(value) {
+    const format = normalizeOptionalString(value) ?? RenderThumbnailFormats.PNG;
+    if (format !== RenderThumbnailFormats.PNG) {
+        throw new TypeError(`Unsupported render.thumbnail format: ${format}.`);
+    }
+    return format;
+}
+
+function normalizeRenderThumbnailTarget(options, pageId, objectId) {
+    const explicitTarget = normalizeOptionalString(options.targetKind ?? options.target ?? options.type);
+    const inferredTarget = pageId || objectId ? RenderThumbnailTargets.FRAME : RenderThumbnailTargets.FILE;
+    const target = explicitTarget ?? inferredTarget;
+    if (target === "object" || target === "shape") {
+        return RenderThumbnailTargets.FRAME;
+    }
+    if (!Object.values(RenderThumbnailTargets).includes(target)) {
+        throw new TypeError(`Unsupported render.thumbnail target: ${target}.`);
+    }
+    return target;
+}
+
+function normalizeRenderThumbnailCachePolicy(value) {
+    const policy = normalizeOptionalString(value) ?? RenderThumbnailCachePolicies.REUSE;
+    if (!Object.values(RenderThumbnailCachePolicies).includes(policy)) {
+        throw new TypeError(`Unsupported render.thumbnail cachePolicy: ${policy}.`);
+    }
+    return policy;
 }
 
 function normalizeCandidates(candidates) {

@@ -6,6 +6,8 @@ import {
     CommandDescriptors,
     CommandErrorCodes,
     ExportFileLibraryModes,
+    RenderThumbnailCachePolicies,
+    RenderThumbnailTargets,
     HeadlessAuthoringCommandDescriptors,
     LiveGapCommandDescriptors,
     LowRiskCommandDescriptors,
@@ -15,6 +17,7 @@ import {
     createCommandRequestEnvelope,
     createCommandResultEnvelope,
     createExportFileContract,
+    createRenderThumbnailContract,
     createFileOpenHandoff,
     createWorkspaceUrl,
     getAdapterSelectionReason,
@@ -56,6 +59,9 @@ const LIVE_GAP_IDS = [
 ];
 const exportFileContractFixtures = JSON.parse(
     readFileSync(new URL("../../mcp/docs/export-file-contract-fixtures.json", import.meta.url), "utf8")
+);
+const renderThumbnailContractFixtures = JSON.parse(
+    readFileSync(new URL("../../mcp/docs/render-thumbnail-contract-fixtures.json", import.meta.url), "utf8")
 );
 
 test("descriptor groups expose stable command ids", () => {
@@ -181,9 +187,10 @@ test("shape/export descriptors document planned file and thumbnail boundaries", 
     assert.equal(CommandDescriptors.RENDER_THUMBNAIL.mcpToolName, "render.thumbnail");
     assert.equal(CommandDescriptors.RENDER_THUMBNAIL.cliCommand, undefined);
     assert.deepEqual(CommandDescriptors.RENDER_THUMBNAIL.adapters, []);
-    assert.match(CommandDescriptors.RENDER_THUMBNAIL.description, /Planned thumbnail render/);
-    assert.match(CommandDescriptors.RENDER_THUMBNAIL.description, /cache policy/);
-    assert.match(CommandDescriptors.RENDER_THUMBNAIL.inputSchema, /objectId|size/);
+    assert.match(CommandDescriptors.RENDER_THUMBNAIL.description, /dashboard file thumbnails/);
+    assert.match(CommandDescriptors.RENDER_THUMBNAIL.description, /tagged frame thumbnails/);
+    assert.match(CommandDescriptors.RENDER_THUMBNAIL.inputSchema, /cachePolicy=reuse\|refresh/);
+    assert.match(CommandDescriptors.RENDER_THUMBNAIL.responseShape, /backend thumbnail data\/persist RPC boundaries/);
 });
 
 test("export.file contract maps CLI binary archive requests to backend RPC semantics", () => {
@@ -248,6 +255,92 @@ test("export.file contract validates unsupported format and library boolean comb
     assert.throws(
         () => createExportFileContract({ fileId: "file-1", includeLibraries: true, embedAssets: true }),
         /cannot set includeLibraries and embedAssets/
+    );
+});
+
+test("render.thumbnail contract maps dashboard thumbnails to backend data and cache semantics", () => {
+    const contract = createRenderThumbnailContract({
+        fileId: "file-1",
+        revn: 7,
+    });
+
+    assert.equal(contract.command, "render.thumbnail");
+    assert.equal(contract.executable, false);
+    assert.equal(contract.adapter, null);
+    assert.equal(contract.target.kind, RenderThumbnailTargets.FILE);
+    assert.equal(contract.target.fileId, "file-1");
+    assert.equal(contract.target.revn, 7);
+    assert.deepEqual(contract.requires, []);
+    assert.equal(contract.artifact.kind, "thumbnail");
+    assert.equal(contract.artifact.format, "png");
+    assert.equal(contract.artifact.mimeType, "image/png");
+    assert.equal(contract.artifact.width, 252);
+    assert.equal(contract.artifact.height, 168);
+    assert.equal(contract.cache.policy, RenderThumbnailCachePolicies.REUSE);
+    assert.equal(contract.cache.scope, "file-thumbnail");
+    assert.equal(contract.cache.key, "file:file-1:revn:7");
+    assert.equal(contract.renderer.primary, "render-wasm-worker");
+    assert.deepEqual(contract.backendRpc.data.request, {
+        "file-id": "file-1",
+        "strip-frames-with-thumbnails": false,
+    });
+    assert.equal(contract.backendRpc.persist.command, "create-file-thumbnail");
+    assert.deepEqual(contract.backendRpc.persist.request, {
+        "file-id": "file-1",
+        revn: 7,
+        media: "<rendered png blob>",
+    });
+    assert.equal(contract.diagnostics.adapterBoundary, "descriptor-only");
+    assert.equal(contract.diagnostics.mcpToolRegistered, false);
+    assert.equal(contract.diagnostics.cliCommandRegistered, false);
+    assert.match(contract.diagnostics.exporterBoundary, /not exporter export-shapes/);
+});
+
+test("render.thumbnail contract matches the documented fixture matrix", async (t) => {
+    assert.equal(renderThumbnailContractFixtures.command, "render.thumbnail");
+    assert.match(renderThumbnailContractFixtures.notes.join(" "), /dashboard thumbnail data/);
+
+    for (const fixture of renderThumbnailContractFixtures.cases) {
+        await t.test(fixture.id, () => {
+            const contract = createRenderThumbnailContract(fixture.input);
+            assert.equal(contract.executable, false);
+            assert.equal(contract.adapter, null);
+            assert.equal(contract.target.kind, fixture.expected.targetKind);
+            assert.deepEqual(contract.requires, fixture.expected.requires);
+            assert.equal(contract.cache.policy, fixture.expected.cachePolicy);
+            assert.equal(contract.cache.scope, fixture.expected.cacheScope);
+            assert.equal(contract.cache.key, fixture.expected.cacheKey);
+            assert.equal(contract.backendRpc.persist.command, fixture.expected.persistCommand);
+            assert.deepEqual(contract.backendRpc.persist.request, fixture.expected.persistRequest);
+            if (fixture.expected.artifact) {
+                assert.equal(contract.artifact.width, fixture.expected.artifact.width);
+                assert.equal(contract.artifact.height, fixture.expected.artifact.height);
+                assert.equal(contract.artifact.format, fixture.expected.artifact.format);
+                assert.equal(contract.artifact.output, fixture.expected.artifact.output ?? null);
+            }
+            if (fixture.expected.dataRequest) {
+                assert.deepEqual(contract.backendRpc.data.request, fixture.expected.dataRequest);
+            }
+        });
+    }
+});
+
+test("render.thumbnail contract validates target, format, cache, and dimensions", () => {
+    assert.throws(
+        () => createRenderThumbnailContract({ fileId: "file-1", target: "selection" }),
+        /Unsupported render\.thumbnail target/
+    );
+    assert.throws(
+        () => createRenderThumbnailContract({ fileId: "file-1", format: "jpeg" }),
+        /Unsupported render\.thumbnail format/
+    );
+    assert.throws(
+        () => createRenderThumbnailContract({ fileId: "file-1", cachePolicy: "stale" }),
+        /Unsupported render\.thumbnail cachePolicy/
+    );
+    assert.throws(
+        () => createRenderThumbnailContract({ fileId: "file-1", width: 0 }),
+        /render\.thumbnail width must be an integer/
     );
 });
 

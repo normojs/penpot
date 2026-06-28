@@ -230,6 +230,9 @@ Current state:
 - Done: `penpot-cli export file` executes the backend-rpc `export-binfile`
   stream, returns resource metadata, and writes the `.penpot` archive with
   `--output`; MCP registration remains future work.
+- Done: `render.thumbnail` has a fixture-backed dashboard thumbnail contract
+  for file and tagged frame targets, cache policy, PNG artifact metadata, and
+  backend data/persist boundaries; runtime registration remains future work.
 - Done: focused command-runtime tests cover descriptor groups, lookup,
   adapter-selection priority/error cases, and token-safe envelopes.
 - Status: complete. Later command coverage gaps were tracked by the P15.1
@@ -572,6 +575,15 @@ P25.3 is complete:
 2. The CLI parses the SSE resource URI and reports resource metadata.
 3. `--output` downloads the returned `.penpot` resource. MCP `export.file`
    remains unregistered until MCP resource-return handling is implemented.
+
+P25.4 is complete:
+
+1. `render.thumbnail` maps to dashboard thumbnail data/render/cache semantics,
+   not exporter `export-shapes`.
+2. File thumbnail and tagged frame thumbnail targets have explicit cache keys,
+   PNG artifact dimensions, renderer plan, and backend persist commands.
+3. The descriptor remains adapterless until a future runtime owns worker or
+   renderer-service execution.
 
 Keep manual configuration behavior stable while moving command metadata and
 envelopes; transport-specific formatting should stay at the MCP/CLI edges.

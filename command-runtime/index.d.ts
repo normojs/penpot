@@ -198,6 +198,9 @@ export interface CreateFileOpenHandoffOptions extends FileOpenHandoffTarget {
 
 export type ExportFileFormat = "penpot";
 export type ExportFileLibraryMode = "all" | "merge" | "detach";
+export type RenderThumbnailTarget = "file" | "frame";
+export type RenderThumbnailCachePolicy = "reuse" | "refresh";
+export type RenderThumbnailFormat = "png";
 
 export interface ExportFileFormatCatalog {
     PENPOT: "penpot";
@@ -209,6 +212,20 @@ export interface ExportFileLibraryModeCatalog {
     DETACH: "detach";
 }
 
+export interface RenderThumbnailTargetCatalog {
+    FILE: "file";
+    FRAME: "frame";
+}
+
+export interface RenderThumbnailCachePolicyCatalog {
+    REUSE: "reuse";
+    REFRESH: "refresh";
+}
+
+export interface RenderThumbnailFormatCatalog {
+    PNG: "png";
+}
+
 export interface CreateExportFileContractOptions {
     fileId?: string | null;
     format?: ExportFileFormat | string | null;
@@ -218,6 +235,26 @@ export interface CreateExportFileContractOptions {
     embedAssets?: boolean;
     output?: string | null;
     name?: string | null;
+    adapter?: string | null;
+}
+
+export interface CreateRenderThumbnailContractOptions {
+    fileId?: string | null;
+    pageId?: string | null;
+    objectId?: string | null;
+    frameId?: string | null;
+    shapeId?: string | null;
+    target?: RenderThumbnailTarget | "object" | "shape" | string | null;
+    targetKind?: RenderThumbnailTarget | "object" | "shape" | string | null;
+    type?: RenderThumbnailTarget | "object" | "shape" | string | null;
+    tag?: string | null;
+    revn?: number | string | null;
+    width?: number | string | null;
+    size?: number | string | null;
+    cachePolicy?: RenderThumbnailCachePolicy | string | null;
+    cache?: RenderThumbnailCachePolicy | string | null;
+    format?: RenderThumbnailFormat | string | null;
+    output?: string | null;
     adapter?: string | null;
 }
 
@@ -258,6 +295,87 @@ export interface ExportFileContract {
         exporterBoundary: string;
         mcpToolRegistered: false;
         cliCommandRegistered: true;
+    };
+}
+
+export interface RenderThumbnailContract {
+    command: "render.thumbnail";
+    status: "contract";
+    executable: false;
+    adapter: null;
+    target: {
+        kind: RenderThumbnailTarget;
+        fileId: string | null;
+        pageId: string | null;
+        objectId: string | null;
+        tag: string | null;
+        revn: number | null;
+    };
+    artifact: {
+        kind: "thumbnail";
+        format: RenderThumbnailFormat;
+        mimeType: "image/png";
+        extension: ".png";
+        width: number;
+        height: number;
+        aspectRatio: "3:2";
+        output: string | null;
+    };
+    cache: {
+        policy: RenderThumbnailCachePolicy;
+        scope: "file-thumbnail" | "file-object-thumbnail";
+        key: string | null;
+        invalidatesOn: string;
+    };
+    renderer: {
+        primary: "render-wasm-worker";
+        fallback: "frontend-rasterizer";
+        width: number;
+        height: number;
+        dataSource: "get-file-data-for-thumbnail";
+        output: "png-blob";
+    };
+    backendRpc: {
+        data: {
+            command: "get-file-data-for-thumbnail";
+            method: "GET";
+            request: {
+                "file-id": string | null;
+                "strip-frames-with-thumbnails": false;
+            };
+        };
+        persist:
+            | {
+                  command: "create-file-thumbnail";
+                  method: "POST";
+                  request: {
+                      "file-id": string | null;
+                      revn: number | "<from get-file-data-for-thumbnail>";
+                      media: "<rendered png blob>";
+                  };
+              }
+            | {
+                  command: "create-file-object-thumbnail";
+                  method: "POST";
+                  request: {
+                      "file-id": string | null;
+                      "object-id": string | null;
+                      tag: string | null;
+                      media: "<rendered png blob>";
+                  };
+              };
+    };
+    requires: string[];
+    nextActions: string[];
+    diagnostics: {
+        adapterBoundary: "descriptor-only";
+        mcpToolRegistered: false;
+        cliCommandRegistered: false;
+        exporterBoundary: string;
+        thumbnailDataCommand: "get-file-data-for-thumbnail";
+        thumbnailPersistCommand: "create-file-thumbnail" | "create-file-object-thumbnail";
+        objectThumbnailIdFormat: "fileId/pageId/objectId/tag";
+        frameTargetDataProviderPending: boolean;
     };
 }
 
@@ -382,6 +500,9 @@ export const CommandErrorCodes: CommandErrorCodeCatalog;
 export const AdapterSelectionReasonCodes: AdapterSelectionReasonCodeCatalog;
 export const ExportFileFormats: ExportFileFormatCatalog;
 export const ExportFileLibraryModes: ExportFileLibraryModeCatalog;
+export const RenderThumbnailTargets: RenderThumbnailTargetCatalog;
+export const RenderThumbnailCachePolicies: RenderThumbnailCachePolicyCatalog;
+export const RenderThumbnailFormats: RenderThumbnailFormatCatalog;
 export const CommandDescriptors: CommandDescriptorCatalog;
 export const LowRiskCommandDescriptors: readonly CommandDescriptor[];
 export const HeadlessAuthoringCommandDescriptors: readonly CommandDescriptor[];
@@ -402,6 +523,7 @@ export function getAdapterSelectionReason(code: AdapterSelectionReasonCode | str
 export function createWorkspaceUrl(options: CreateWorkspaceUrlOptions): string;
 export function createFileOpenHandoff(options: CreateFileOpenHandoffOptions): FileOpenHandoff;
 export function createExportFileContract(options?: CreateExportFileContractOptions): ExportFileContract;
+export function createRenderThumbnailContract(options?: CreateRenderThumbnailContractOptions): RenderThumbnailContract;
 export function createCommandErrorPayload(
     code: CommandErrorCode | string,
     message: string,
