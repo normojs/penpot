@@ -486,6 +486,80 @@
    [:vern {:min 0} ::sm/int]])
 
 (def ^:private
+  schema:update-file-prototype-interaction
+  [:map {:title "update-file-prototype-interaction"}
+   [:id ::sm/uuid]
+   [:page-id {:optional true} ::sm/uuid]
+   [:interaction-id {:optional true} ::sm/uuid]
+   [:source-shape-id {:optional true} ::sm/uuid]
+   [:interaction-index {:optional true} [::sm/int {:min 0}]]
+   [:action-type {:optional true} [::sm/one-of #{:navigate-to
+                                                 :navigate
+                                                 :open-overlay
+                                                 :toggle-overlay
+                                                 :close-overlay}]]
+   [:destination-board-id {:optional true} [:maybe ::sm/uuid]]
+   [:relative-to-shape-id {:optional true} [:maybe ::sm/uuid]]
+   [:overlay-position-type {:optional true} [::sm/one-of ctsi/overlay-positioning-types]]
+   [:manual-position {:optional true} [:maybe schema:prototype-point]]
+   [:close-click-outside {:optional true} ::sm/boolean]
+   [:background-overlay {:optional true} ::sm/boolean]
+   [:trigger {:optional true} [::sm/one-of #{:click :mouse-enter :mouse-leave :after-delay}]]
+   [:delay {:optional true} [:maybe [::sm/int {:min 0 :max 60000}]]]
+   [:preserve-scroll-position {:optional true} ::sm/boolean]
+   [:animation {:optional true} [:maybe schema:prototype-animation]]
+   [:session-id {:optional true} ::sm/uuid]
+   [:features {:optional true} ::cfeat/features]])
+
+(def ^:private
+  schema:update-file-prototype-interaction-result
+  [:map {:title "update-file-prototype-interaction-result"}
+   [:file-id ::sm/uuid]
+   [:interaction schema:prototype-interaction-summary]
+   [:revn {:min 0} ::sm/int]
+   [:vern {:min 0} ::sm/int]])
+
+(def ^:private
+  schema:reorder-file-prototype-interaction
+  [:map {:title "reorder-file-prototype-interaction"}
+   [:id ::sm/uuid]
+   [:page-id {:optional true} ::sm/uuid]
+   [:interaction-id {:optional true} ::sm/uuid]
+   [:source-shape-id {:optional true} ::sm/uuid]
+   [:interaction-index {:optional true} [::sm/int {:min 0}]]
+   [:to-index [::sm/int {:min 0}]]
+   [:session-id {:optional true} ::sm/uuid]
+   [:features {:optional true} ::cfeat/features]])
+
+(def ^:private
+  schema:reorder-file-prototype-interaction-result
+  [:map {:title "reorder-file-prototype-interaction-result"}
+   [:file-id ::sm/uuid]
+   [:interaction schema:prototype-interaction-summary]
+   [:revn {:min 0} ::sm/int]
+   [:vern {:min 0} ::sm/int]])
+
+(def ^:private
+  schema:duplicate-file-prototype-interaction
+  [:map {:title "duplicate-file-prototype-interaction"}
+   [:id ::sm/uuid]
+   [:page-id {:optional true} ::sm/uuid]
+   [:interaction-id {:optional true} ::sm/uuid]
+   [:source-shape-id {:optional true} ::sm/uuid]
+   [:interaction-index {:optional true} [::sm/int {:min 0}]]
+   [:insertion-index {:optional true} [::sm/int {:min 0}]]
+   [:session-id {:optional true} ::sm/uuid]
+   [:features {:optional true} ::cfeat/features]])
+
+(def ^:private
+  schema:duplicate-file-prototype-interaction-result
+  [:map {:title "duplicate-file-prototype-interaction-result"}
+   [:file-id ::sm/uuid]
+   [:interaction schema:prototype-interaction-summary]
+   [:revn {:min 0} ::sm/int]
+   [:vern {:min 0} ::sm/int]])
+
+(def ^:private
   schema:get-file-prototype-interactions
   [:map {:title "get-file-prototype-interactions"}
    [:id ::sm/uuid]
@@ -1162,22 +1236,10 @@
         :project-id (:project-id file)
         :team-id    (:team-id file)}})))
 
-(sv/defmethod ::delete-file-prototype-interaction
-  {::climit/id [[:update-file/by-profile ::rpc/profile-id]
-                [:update-file/global]]
-
-   ::webhooks/event? true
-   ::webhooks/batch-timeout (ct/duration "2m")
-   ::webhooks/batch-key (webhooks/key-fn ::rpc/profile-id :id)
-
-   ::sm/params schema:delete-file-prototype-interaction
-   ::sm/result schema:delete-file-prototype-interaction-result
-   ::doc/module :files
-   ::doc/added "2.15.4"
-   ::db/transaction true}
+(defn- apply-file-prototype-interaction-request!
   [{:keys [::mtx/metrics ::db/conn] :as cfg}
-   {:keys [::rpc/profile-id id session-id] :as params}]
-
+   {:keys [::rpc/profile-id id session-id] :as params}
+   request-fn]
   (files/check-edition-permissions! conn profile-id id)
   (db/xact-lock! conn id)
 
@@ -1188,7 +1250,7 @@
         features          (-> (cfeat/get-team-enabled-features cf/flags team)
                               (cfeat/check-client-features! (:features params))
                               (cfeat/check-file-features! (:features file)))
-        prototype-request (headless/delete-prototype-interaction-request (blob/decode (:data file)) params)
+        prototype-request (request-fn (blob/decode (:data file)) params)
         changes           (:changes prototype-request)
         session-id        (or session-id (uuid/next))
         cfg               (assoc cfg ::timestamp (ct/now))
@@ -1215,6 +1277,82 @@
         :features   (:features file)
         :project-id (:project-id file)
         :team-id    (:team-id file)}})))
+
+(sv/defmethod ::delete-file-prototype-interaction
+  {::climit/id [[:update-file/by-profile ::rpc/profile-id]
+                [:update-file/global]]
+
+   ::webhooks/event? true
+   ::webhooks/batch-timeout (ct/duration "2m")
+   ::webhooks/batch-key (webhooks/key-fn ::rpc/profile-id :id)
+
+   ::sm/params schema:delete-file-prototype-interaction
+   ::sm/result schema:delete-file-prototype-interaction-result
+   ::doc/module :files
+   ::doc/added "2.15.4"
+   ::db/transaction true}
+  [cfg params]
+  (apply-file-prototype-interaction-request!
+   cfg
+   params
+   headless/delete-prototype-interaction-request))
+
+(sv/defmethod ::update-file-prototype-interaction
+  {::climit/id [[:update-file/by-profile ::rpc/profile-id]
+                [:update-file/global]]
+
+   ::webhooks/event? true
+   ::webhooks/batch-timeout (ct/duration "2m")
+   ::webhooks/batch-key (webhooks/key-fn ::rpc/profile-id :id)
+
+   ::sm/params schema:update-file-prototype-interaction
+   ::sm/result schema:update-file-prototype-interaction-result
+   ::doc/module :files
+   ::doc/added "2.15.4"
+   ::db/transaction true}
+  [cfg params]
+  (apply-file-prototype-interaction-request!
+   cfg
+   params
+   headless/update-prototype-interaction-request))
+
+(sv/defmethod ::reorder-file-prototype-interaction
+  {::climit/id [[:update-file/by-profile ::rpc/profile-id]
+                [:update-file/global]]
+
+   ::webhooks/event? true
+   ::webhooks/batch-timeout (ct/duration "2m")
+   ::webhooks/batch-key (webhooks/key-fn ::rpc/profile-id :id)
+
+   ::sm/params schema:reorder-file-prototype-interaction
+   ::sm/result schema:reorder-file-prototype-interaction-result
+   ::doc/module :files
+   ::doc/added "2.15.4"
+   ::db/transaction true}
+  [cfg params]
+  (apply-file-prototype-interaction-request!
+   cfg
+   params
+   headless/reorder-prototype-interaction-request))
+
+(sv/defmethod ::duplicate-file-prototype-interaction
+  {::climit/id [[:update-file/by-profile ::rpc/profile-id]
+                [:update-file/global]]
+
+   ::webhooks/event? true
+   ::webhooks/batch-timeout (ct/duration "2m")
+   ::webhooks/batch-key (webhooks/key-fn ::rpc/profile-id :id)
+
+   ::sm/params schema:duplicate-file-prototype-interaction
+   ::sm/result schema:duplicate-file-prototype-interaction-result
+   ::doc/module :files
+   ::doc/added "2.15.4"
+   ::db/transaction true}
+  [cfg params]
+  (apply-file-prototype-interaction-request!
+   cfg
+   params
+   headless/duplicate-prototype-interaction-request))
 
 (sv/defmethod ::get-file-prototype-interactions
   "Get persisted prototype flow, navigate, and overlay interaction summaries for the specified file."

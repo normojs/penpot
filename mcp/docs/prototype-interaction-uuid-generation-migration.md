@@ -38,10 +38,10 @@ P23.3 selects a common file-data migration:
 - Assign a fresh `uuid/next` id to later duplicate ids.
 - Preserve interaction vector order and all non-id payload fields.
 
-Existing copy/remap paths can still duplicate stored interaction ids when
-creating distinct copies. That regeneration policy remains separate from the
-legacy migration and must be handled before update/reorder/duplicate helpers
-become executable.
+Existing copy/remap paths previously could duplicate stored interaction ids
+when creating distinct copies. P23.4 handles that regeneration policy
+separately from the legacy migration before enabling update/reorder/duplicate
+helpers.
 
 P23.4 resolves the distinct-copy regeneration prerequisite:
 
@@ -94,7 +94,8 @@ paths that preserve interaction payloads:
 
 These risks are why update/reorder/duplicate helpers must remain descriptor-only
 until copy/remap distinct-copy id regeneration and executable helper semantics
-are implemented.
+are implemented. P23.4 completes both requirements for same-source persisted
+helpers.
 
 ## P23.2 Implementation
 
@@ -144,7 +145,14 @@ P23.4 copy/remap fixtures cover:
 
 - Shape/page copy regenerates ids for distinct copies in the same file.
 
-Remaining future fixtures before executable update/reorder/duplicate:
+P23.4 executable helper fixtures cover:
+
+- Stable-id targets with source/index stale guards.
+- Action-compatible update fields.
+- Same-source reorder.
+- Same-source duplicate with a fresh generated `interactionId`.
+
+Remaining future fixtures:
 
 - Import/file duplicate preserves or regenerates ids according to the final
   file-wide uniqueness rule.
@@ -163,5 +171,5 @@ Remaining future fixtures before executable update/reorder/duplicate:
   usable for migrated legacy interactions and newly-created backend-command
   interactions.
 - `prototype.update_interaction`, `prototype.reorder_interaction`, and
-  `prototype.duplicate_interaction`: remain descriptor-only until the second
-  P23.4 slice implements executable helper semantics.
+  `prototype.duplicate_interaction`: P23.4 enables backend-command, MCP, and
+  `penpot-cli` execution for same-source persisted mutations.

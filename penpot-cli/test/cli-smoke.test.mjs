@@ -105,6 +105,9 @@ test("top-level help lists first-class MCP, shape, and export commands", async (
     assert.match(result.stdout, /penpot-cli prototype create-flow/);
     assert.match(result.stdout, /penpot-cli prototype create-overlay/);
     assert.match(result.stdout, /penpot-cli prototype delete-interaction/);
+    assert.match(result.stdout, /penpot-cli prototype update-interaction/);
+    assert.match(result.stdout, /penpot-cli prototype reorder-interaction/);
+    assert.match(result.stdout, /penpot-cli prototype duplicate-interaction/);
     assert.match(result.stdout, /penpot-cli export page/);
     assert.match(result.stdout, /penpot-cli render preview/);
 });
@@ -187,18 +190,23 @@ test("command runtime exposes live-gap descriptor boundaries", () => {
     assert.equal(getCommandDescriptor("selection.set").cliCommand, undefined);
     assert.equal(getCommandDescriptor("prototype list-interactions").id, "prototype.list_interactions");
     assert.equal(getCommandDescriptor("prototype delete-interaction").id, "prototype.delete_interaction");
+    assert.equal(getCommandDescriptor("prototype update-interaction").id, "prototype.update_interaction");
+    assert.equal(getCommandDescriptor("prototype reorder-interaction").id, "prototype.reorder_interaction");
+    assert.equal(getCommandDescriptor("prototype duplicate-interaction").id, "prototype.duplicate_interaction");
     assert.deepEqual(CommandDescriptors.PROTOTYPE_DELETE_INTERACTION.adapters, ["backend-command"]);
     assert.match(CommandDescriptors.PROTOTYPE_LIST_INTERACTIONS.responseShape, /identity.kind stable-id\|source-index/);
     assert.equal(CommandDescriptors.PROTOTYPE_DELETE_INTERACTION.cliCommand, "prototype delete-interaction");
     assert.match(CommandDescriptors.PROTOTYPE_DELETE_INTERACTION.description, /sourceShapeId/);
     assert.match(CommandDescriptors.PROTOTYPE_DELETE_INTERACTION.inputSchema, /interactionIndex/);
     assert.match(CommandDescriptors.PROTOTYPE_DELETE_INTERACTION.inputSchema, /interactionId/);
-    assert.deepEqual(CommandDescriptors.PROTOTYPE_UPDATE_INTERACTION.adapters, []);
-    assert.equal(CommandDescriptors.PROTOTYPE_UPDATE_INTERACTION.cliCommand, undefined);
+    assert.deepEqual(CommandDescriptors.PROTOTYPE_UPDATE_INTERACTION.adapters, ["backend-command"]);
+    assert.equal(CommandDescriptors.PROTOTYPE_UPDATE_INTERACTION.cliCommand, "prototype update-interaction");
     assert.match(CommandDescriptors.PROTOTYPE_UPDATE_INTERACTION.inputSchema, /actionType immutable/);
-    assert.deepEqual(CommandDescriptors.PROTOTYPE_REORDER_INTERACTION.adapters, []);
+    assert.deepEqual(CommandDescriptors.PROTOTYPE_REORDER_INTERACTION.adapters, ["backend-command"]);
+    assert.equal(CommandDescriptors.PROTOTYPE_REORDER_INTERACTION.cliCommand, "prototype reorder-interaction");
     assert.match(CommandDescriptors.PROTOTYPE_REORDER_INTERACTION.inputSchema, /same source shape only/);
-    assert.deepEqual(CommandDescriptors.PROTOTYPE_DUPLICATE_INTERACTION.adapters, []);
+    assert.deepEqual(CommandDescriptors.PROTOTYPE_DUPLICATE_INTERACTION.adapters, ["backend-command"]);
+    assert.equal(CommandDescriptors.PROTOTYPE_DUPLICATE_INTERACTION.cliCommand, "prototype duplicate-interaction");
     assert.match(CommandDescriptors.PROTOTYPE_DUPLICATE_INTERACTION.inputSchema, /generates new interactionId/);
     assert.deepEqual(CommandDescriptors.SHAPE_SET_LAYOUT.adapters, ["backend-command", "plugin-live"]);
     assert.deepEqual(CommandDescriptors.SHAPE_SET_STYLE.adapters, ["backend-command", "plugin-live"]);
@@ -1941,6 +1949,235 @@ test("prototype delete-interaction sends stable interaction id to backend-comman
         assert.equal(body.data.interactionIndex, 1);
         assert.equal(body.data.interaction.identity.kind, "stable-id");
         assert.equal(body.data.revn, 8);
+    } finally {
+        globalThis.fetch = originalFetch;
+    }
+});
+
+test("prototype update-interaction sends backend-command RPC", async () => {
+    const originalFetch = globalThis.fetch;
+    const calls = [];
+    globalThis.fetch = async (url, options) => {
+        calls.push({ url: String(url), options });
+        return {
+            ok: true,
+            status: 200,
+            statusText: "OK",
+            text: async () =>
+                JSON.stringify({
+                    interaction: {
+                        interactionId: "00000000-0000-0000-0000-000000000101",
+                        sourceShapeId: UUIDS.object,
+                        destinationBoardId: UUIDS.profile,
+                        index: 0,
+                        actionType: "navigate-to",
+                    },
+                    revn: 9,
+                    vern: 0,
+                }),
+        };
+    };
+
+    try {
+        const result = await runCli(
+            [
+                "prototype",
+                "update-interaction",
+                "--file",
+                UUIDS.file,
+                "--page",
+                UUIDS.page,
+                "--interaction-id",
+                "00000000-0000-0000-0000-000000000101",
+                "--source",
+                UUIDS.object,
+                "--index",
+                "0",
+                "--destination",
+                UUIDS.profile,
+                "--trigger",
+                "mouse-enter",
+                "--preserve-scroll=false",
+                "--animation",
+                "dissolve",
+                "--animation-duration",
+                "250",
+                "--format",
+                "json",
+            ],
+            {
+                PENPOT_BACKEND_URI: "http://127.0.0.1:6060",
+                PENPOT_CLI_TOKEN: "token-1",
+            }
+        );
+        const body = parseJson(result.stdout);
+
+        assert.equal(result.exitCode, 0);
+        assert.equal(result.stderr, "");
+        assert.equal(calls.length, 1);
+        assert.match(calls[0].url, /\/api\/main\/methods\/update-file-prototype-interaction\?_fmt=json$/);
+        assert.deepEqual(JSON.parse(calls[0].options.body), {
+            id: UUIDS.file,
+            "page-id": UUIDS.page,
+            "interaction-id": "00000000-0000-0000-0000-000000000101",
+            "source-shape-id": UUIDS.object,
+            "interaction-index": 0,
+            "destination-board-id": UUIDS.profile,
+            trigger: "mouse-enter",
+            "preserve-scroll-position": false,
+            animation: {
+                type: "dissolve",
+                duration: 250,
+            },
+        });
+        assert.equal(body.status, "ok");
+        assert.equal(body.data.adapterSelection.command, "prototype.update_interaction");
+        assert.equal(body.data.interactionId, "00000000-0000-0000-0000-000000000101");
+        assert.equal(body.data.interactionIndex, 0);
+        assert.equal(body.data.revn, 9);
+    } finally {
+        globalThis.fetch = originalFetch;
+    }
+});
+
+test("prototype reorder-interaction sends backend-command RPC", async () => {
+    const originalFetch = globalThis.fetch;
+    const calls = [];
+    globalThis.fetch = async (url, options) => {
+        calls.push({ url: String(url), options });
+        return {
+            ok: true,
+            status: 200,
+            statusText: "OK",
+            text: async () =>
+                JSON.stringify({
+                    interaction: {
+                        interactionId: "00000000-0000-0000-0000-000000000101",
+                        sourceShapeId: UUIDS.object,
+                        index: 2,
+                        actionType: "navigate-to",
+                    },
+                    revn: 10,
+                    vern: 0,
+                }),
+        };
+    };
+
+    try {
+        const result = await runCli(
+            [
+                "prototype",
+                "reorder-interaction",
+                "--file",
+                UUIDS.file,
+                "--page",
+                UUIDS.page,
+                "--interaction-id",
+                "00000000-0000-0000-0000-000000000101",
+                "--source",
+                UUIDS.object,
+                "--index",
+                "1",
+                "--to-index",
+                "2",
+                "--format",
+                "json",
+            ],
+            {
+                PENPOT_BACKEND_URI: "http://127.0.0.1:6060",
+                PENPOT_CLI_TOKEN: "token-1",
+            }
+        );
+        const body = parseJson(result.stdout);
+
+        assert.equal(result.exitCode, 0);
+        assert.equal(result.stderr, "");
+        assert.equal(calls.length, 1);
+        assert.match(calls[0].url, /\/api\/main\/methods\/reorder-file-prototype-interaction\?_fmt=json$/);
+        assert.deepEqual(JSON.parse(calls[0].options.body), {
+            id: UUIDS.file,
+            "page-id": UUIDS.page,
+            "interaction-id": "00000000-0000-0000-0000-000000000101",
+            "source-shape-id": UUIDS.object,
+            "interaction-index": 1,
+            "to-index": 2,
+        });
+        assert.equal(body.status, "ok");
+        assert.equal(body.data.adapterSelection.command, "prototype.reorder_interaction");
+        assert.equal(body.data.interactionIndex, 2);
+        assert.equal(body.data.revn, 10);
+    } finally {
+        globalThis.fetch = originalFetch;
+    }
+});
+
+test("prototype duplicate-interaction sends backend-command RPC", async () => {
+    const originalFetch = globalThis.fetch;
+    const calls = [];
+    globalThis.fetch = async (url, options) => {
+        calls.push({ url: String(url), options });
+        return {
+            ok: true,
+            status: 200,
+            statusText: "OK",
+            text: async () =>
+                JSON.stringify({
+                    interaction: {
+                        interactionId: "00000000-0000-0000-0000-000000000202",
+                        sourceShapeId: UUIDS.object,
+                        index: 1,
+                        actionType: "navigate-to",
+                    },
+                    revn: 11,
+                    vern: 0,
+                }),
+        };
+    };
+
+    try {
+        const result = await runCli(
+            [
+                "prototype",
+                "duplicate-interaction",
+                "--file",
+                UUIDS.file,
+                "--page",
+                UUIDS.page,
+                "--interaction-id",
+                "00000000-0000-0000-0000-000000000101",
+                "--source",
+                UUIDS.object,
+                "--index",
+                "0",
+                "--insertion-index",
+                "1",
+                "--format",
+                "json",
+            ],
+            {
+                PENPOT_BACKEND_URI: "http://127.0.0.1:6060",
+                PENPOT_CLI_TOKEN: "token-1",
+            }
+        );
+        const body = parseJson(result.stdout);
+
+        assert.equal(result.exitCode, 0);
+        assert.equal(result.stderr, "");
+        assert.equal(calls.length, 1);
+        assert.match(calls[0].url, /\/api\/main\/methods\/duplicate-file-prototype-interaction\?_fmt=json$/);
+        assert.deepEqual(JSON.parse(calls[0].options.body), {
+            id: UUIDS.file,
+            "page-id": UUIDS.page,
+            "interaction-id": "00000000-0000-0000-0000-000000000101",
+            "source-shape-id": UUIDS.object,
+            "interaction-index": 0,
+            "insertion-index": 1,
+        });
+        assert.equal(body.status, "ok");
+        assert.equal(body.data.adapterSelection.command, "prototype.duplicate_interaction");
+        assert.equal(body.data.interactionId, "00000000-0000-0000-0000-000000000202");
+        assert.equal(body.data.interactionIndex, 1);
+        assert.equal(body.data.revn, 11);
     } finally {
         globalThis.fetch = originalFetch;
     }

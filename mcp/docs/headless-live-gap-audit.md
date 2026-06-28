@@ -121,10 +121,10 @@ state for them.
 | `prototype.create_flow` | Registered MCP tool and descriptor; backend-command with `fileId`, plugin-live otherwise. | Backend-safe persisted data plus plugin-live convenience. | Flow data persists on the page. | Keep behavior. |
 | `prototype.create_interaction` | Registered MCP tool and descriptor; backend-command with `fileId`, plugin-live otherwise. | Backend-safe persisted data plus plugin-live convenience. | Navigate interaction data persists on source shape. | Keep behavior. |
 | `prototype.list_interactions` | Registered MCP tool, backend/common read helper, and CLI command. | Backend-safe persisted read. | Flows and interactions are persisted in file data. | Keep as the discovery/read path; P22.2 adds optional `interactionId` plus explicit `identity.kind` metadata while preserving source-shape/index fields. |
-| `prototype.delete_interaction` | Registered MCP tool, backend/common delete helper, and CLI command. | Backend-safe persisted mutation with stable-id or source-shape/index identity. | Interaction arrays are persisted on source shapes; P22.3 can target stored interaction ids and keeps source/index as the legacy fallback and guard form. | Keep stable-id deletion as the preferred target when `prototype.list_interactions` returns `interactionId`; plan richer update/reorder/duplicate helpers separately. |
-| `prototype.update_interaction` | Command-runtime descriptor and planned ToolNames entry only. | Descriptor-only planned persisted mutation. | Updating an interaction needs action-specific patch semantics, stale guard behavior, and UUID coverage for stable targeting. | P22.4 defines the descriptor-only contract; keep adapters empty until UUID generation/migration and fixtures are ready. |
-| `prototype.reorder_interaction` | Command-runtime descriptor and planned ToolNames entry only. | Descriptor-only planned persisted mutation. | Reordering mutates source-shape interaction vector indexes and must report affected identities. | P22.4 limits the future contract to same-source reorder by stable id or guarded source/index. |
-| `prototype.duplicate_interaction` | Command-runtime descriptor and planned ToolNames entry only. | Descriptor-only planned persisted mutation. | Duplicating an interaction must generate a fresh interaction UUID and avoid copied-id conflicts. | P22.4 defines same-source duplication only; keep adapters empty until fresh-id generation is implemented. |
+| `prototype.delete_interaction` | Registered MCP tool, backend/common delete helper, and CLI command. | Backend-safe persisted mutation with stable-id or source-shape/index identity. | Interaction arrays are persisted on source shapes; P22.3 can target stored interaction ids and keeps source/index as the legacy fallback and guard form. | Keep stable-id deletion as the preferred target when `prototype.list_interactions` returns `interactionId`. |
+| `prototype.update_interaction` | Registered MCP tool, backend/common update helper, command-runtime descriptor, and CLI command. | Backend-safe persisted mutation with stable-id or source-shape/index identity. | P23.4 implements action-specific patches, stale guards, immutable action type, board/shape validation, and supported animation/overlay fields. | Keep backend-command-only for persisted data; plugin-live is out of scope. |
+| `prototype.reorder_interaction` | Registered MCP tool, backend/common reorder helper, command-runtime descriptor, and CLI command. | Backend-safe persisted mutation with stable-id or source-shape/index identity. | Reordering mutates the source-shape interaction vector within the same source shape and returns the moved summary at its new index. | Keep same-source reorder only. |
+| `prototype.duplicate_interaction` | Registered MCP tool, backend/common duplicate helper, command-runtime descriptor, and CLI command. | Backend-safe persisted mutation with stable-id or source-shape/index identity. | Duplicating an interaction creates a same-source copy with a fresh persisted interaction UUID. | Keep cross-shape duplication out of scope until remap semantics are explicitly defined. |
 | `prototype.create_overlay` | Registered MCP tool, command-runtime descriptor, and `penpot-cli prototype create-overlay`. | Backend-safe persisted mutation. | Persisted overlays are interactions with `:open-overlay`, `:toggle-overlay`, or `:close-overlay` actions. The backend/common helper now creates those actions with explicit source, destination, relative target, preset/manual positioning, close/background flags, trigger, delay, and dissolve/slide animation metadata. | Keep backend-command-only for explicit file/page/source targets; plugin-live is not part of the P20 contract. |
 | `export.shape` | Registered descriptor and MCP tool through plugin-live. | Plugin-live workspace/export state. | It can use explicit live shape or current selection and returns plugin base64 data. | Keep plugin-live. Explicit exporter shape/page preview is covered by `render.preview`. |
 | `export.page` | Registered descriptor and MCP tool. | Exporter/read-only plus plugin-live. | Exporter path requires explicit ids; plugin-live can use bound workspace page. | Keep behavior. |
@@ -384,13 +384,12 @@ points CLI users back to MCP `file.open`, `file.get_context`,
 - P22.3 adds stable-id deletion for prototype interactions while preserving
   explicit `fileId`, optional `pageId`, `sourceShapeId`, and zero-based
   `interactionIndex` as the legacy fallback and optional guard form.
-- P22.4 defines descriptor-only planned update/reorder/duplicate helpers.
-  They remain non-executable until copy/remap id regeneration and
-  action-specific executable fixtures are stable.
+- P22.4 defined descriptor-only planned update/reorder/duplicate helpers, and
+  P23.4 made them executable through backend-command/MCP/CLI after copy/remap
+  id regeneration and action-specific fixtures landed.
 - P23.2 adds backend-command create-time UUID generation, P23.3 adds the
   common legacy id migration, and the first P23.4 slice regenerates ids for
-  distinct copied shape/page interactions. Executable update/reorder/duplicate
-  helper semantics remain next.
+  distinct copied shape/page interactions.
 - Whether plugin-live `prototype.list_interactions` is needed, or whether
   backend-command reads are enough for agents.
 - Whether exporter-backed `export.shape` should get an explicit file/page/shape

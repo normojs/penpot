@@ -211,9 +211,9 @@ P22.4 defines descriptor-only contracts for:
 - `prototype.reorder_interaction`
 - `prototype.duplicate_interaction`
 
-These helpers are intentionally not executable yet. Their command-runtime
-descriptors advertise no adapters until new interactions receive persisted
-UUIDs and legacy/id-missing files have a migration or explicit fallback policy.
+P22.4 kept these helpers non-executable while UUID generation, legacy
+migration, and copy/remap duplicate-id behavior were unsettled. P23.4 later
+enabled the helpers through backend-command, MCP tools, and `penpot-cli`.
 
 Contract details live in `prototype-mutation-helper-contracts.md`.
 
@@ -281,11 +281,20 @@ Implemented descriptor changes for P22.3:
 Implemented descriptor changes for P22.4:
 
 - `prototype.update_interaction`, `prototype.reorder_interaction`, and
-  `prototype.duplicate_interaction` are descriptor-only planned commands with
-  `adapters: []`.
+  `prototype.duplicate_interaction` were introduced as descriptor-only planned
+  commands.
 - The descriptors define stable target identity, source/index guards, immutable
   action type for updates, same-source reorder/duplicate boundaries, and fresh
   UUID requirements for duplicated interactions.
+
+Implemented descriptor/runtime changes for P23.4:
+
+- `prototype.update_interaction`, `prototype.reorder_interaction`, and
+  `prototype.duplicate_interaction` now advertise `backend-command` adapters
+  and CLI command names.
+- Common/backend helpers execute stable-id or guarded source/index targeting,
+  action-compatible updates, same-source reorder, and same-source duplicate
+  with a fresh generated `interactionId`.
 
 Implemented descriptor/runtime changes for P23.2:
 

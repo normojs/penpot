@@ -109,6 +109,7 @@
 - Generate stable ids for new backend-command prototype navigate and overlay interactions, exposing `interactionId` and stable identity metadata through common/backend, MCP, and `penpot-cli` create responses.
 - Add a file-data migration that assigns stable ids to legacy prototype interactions missing ids and repairs duplicate interaction ids while preserving existing unique ids, order, and payload fields.
 - Regenerate stable prototype interaction ids when creating distinct copied shapes or duplicated pages so copied interactions do not reuse the source interaction identity.
+- Enable backend-command prototype interaction update, reorder, and duplicate helpers through common/backend, MCP, and `penpot-cli`.
 - Add rate limiting and concurrency safety for file snapshot operations [#9723](https://github.com/penpot/penpot/issues/9723) (PR: [#9722](https://github.com/penpot/penpot/pull/9722))
 - Prevent concurrent font uploads from causing excessive simultaneous requests [#9922](https://github.com/penpot/penpot/issues/9922) (PR: [#9921](https://github.com/penpot/penpot/pull/9921))
 

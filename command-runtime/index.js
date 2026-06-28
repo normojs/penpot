@@ -247,38 +247,41 @@ export const CommandDescriptors = Object.freeze({
     PROTOTYPE_UPDATE_INTERACTION: Object.freeze({
         id: "prototype.update_interaction",
         mcpToolName: "prototype.update_interaction",
+        cliCommand: "prototype update-interaction",
         title: "Update prototype interaction",
         description:
-            "Descriptor-only planned contract for updating fields on an existing persisted prototype interaction; not executable until id generation/migration and payload fixtures are defined.",
+            "Updates supported fields on an existing persisted prototype interaction using backend-command stable ids or legacy source indexes.",
         inputSchema:
-            "planned: fileId, pageId?, interactionId OR sourceShapeId + interactionIndex, optional sourceShapeId/interactionIndex guards with interactionId, patch(trigger?, delay?, animation?, destinationBoardId?, preserveScrollPosition?, overlayPositionType?, manualPosition?, relativeToShapeId?, closeClickOutside?, backgroundOverlay?); actionType immutable",
-        adapters: Object.freeze([]),
+            "fileId, pageId?, interactionId OR sourceShapeId + interactionIndex, optional sourceShapeId/interactionIndex guards with interactionId, trigger?, delay?, animation?, destinationBoardId?, preserveScrollPosition?, overlayPositionType?, manualPosition?, relativeToShapeId?, closeClickOutside?, backgroundOverlay?; actionType immutable",
+        adapters: Object.freeze(["backend-command"]),
         responseShape:
-            "planned status envelope with updated interaction summary, revision metadata, and stale-target validation metadata",
+            "status envelope with updated interaction summary, revision metadata, and stale-target validation metadata",
     }),
     PROTOTYPE_REORDER_INTERACTION: Object.freeze({
         id: "prototype.reorder_interaction",
         mcpToolName: "prototype.reorder_interaction",
+        cliCommand: "prototype reorder-interaction",
         title: "Reorder prototype interaction",
         description:
-            "Descriptor-only planned contract for moving a persisted prototype interaction within its source shape interaction list; not executable until stable identity coverage is complete.",
+            "Moves a persisted prototype interaction within its source shape interaction list using backend-command.",
         inputSchema:
-            "planned: fileId, pageId?, interactionId OR sourceShapeId + fromIndex, sourceShapeId guard/owner, toIndex, adapter?; same source shape only",
-        adapters: Object.freeze([]),
+            "fileId, pageId?, interactionId OR sourceShapeId + interactionIndex, optional sourceShapeId/interactionIndex guards with interactionId, toIndex, adapter?; same source shape only",
+        adapters: Object.freeze(["backend-command"]),
         responseShape:
-            "planned status envelope with moved interaction summary, affected interaction identities, revision metadata, and stale-target validation metadata",
+            "status envelope with moved interaction summary, revision metadata, and stale-target validation metadata",
     }),
     PROTOTYPE_DUPLICATE_INTERACTION: Object.freeze({
         id: "prototype.duplicate_interaction",
         mcpToolName: "prototype.duplicate_interaction",
+        cliCommand: "prototype duplicate-interaction",
         title: "Duplicate prototype interaction",
         description:
-            "Descriptor-only planned contract for duplicating a persisted prototype interaction on the same source shape; not executable until copied interactions receive fresh stable ids.",
+            "Duplicates a persisted prototype interaction on the same source shape using backend-command and generates a fresh interactionId.",
         inputSchema:
-            "planned: fileId, pageId?, interactionId OR sourceShapeId + interactionIndex, optional sourceShapeId/interactionIndex guards with interactionId, insertionIndex?, adapter?; backend generates new interactionId",
-        adapters: Object.freeze([]),
+            "fileId, pageId?, interactionId OR sourceShapeId + interactionIndex, optional sourceShapeId/interactionIndex guards with interactionId, insertionIndex?, adapter?; backend generates new interactionId",
+        adapters: Object.freeze(["backend-command"]),
         responseShape:
-            "planned status envelope with duplicated interaction summary, generated interactionId, revision metadata, and stale-target validation metadata",
+            "status envelope with duplicated interaction summary, generated interactionId, revision metadata, and stale-target validation metadata",
     }),
     PROTOTYPE_CREATE_OVERLAY: Object.freeze({
         id: "prototype.create_overlay",

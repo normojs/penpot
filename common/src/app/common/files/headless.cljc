@@ -1122,6 +1122,10 @@
             (get params key)))
         keys))
 
+(defn- prototype-param-present?
+  [params & keys]
+  (boolean (some #(contains? params %) keys)))
+
 (defn- normalize-prototype-overlay-action
   [action-type]
   (let [action-type (normalize-layout-keyword action-type)]
@@ -1179,7 +1183,7 @@
 
 (defn- assign-prototype-interaction-id
   [interaction]
-  (assoc interaction :id (uuid/next)))
+  (ctsi/regenerate-interaction-id interaction))
 
 (defn- create-overlay-interaction
   [file-data page-id source {:keys [delay animation] :as params}]
@@ -1410,27 +1414,308 @@
     (resolve-stable-prototype-interaction file-data params)
     (resolve-index-prototype-interaction file-data params)))
 
+(defn- ensure-supported-prototype-interaction!
+  [file-data page-id source interaction interaction-index operation]
+  (let [summary (prototype-interaction-summary* file-data source interaction interaction-index)]
+    (when-not summary
+      (ex/raise :type :validation
+                :code :unsupported-prototype-interaction
+                :hint (str "Headless prototype interaction " operation " only supports summarized navigate and overlay interactions.")
+                :page-id page-id
+                :source-shape-id (:id source)
+                :interaction-index interaction-index))
+    summary))
+
+(defn- resolve-prototype-interaction-target
+  [file-data {:keys [interaction-id] :as params}]
+  (if interaction-id
+    (resolve-stable-prototype-interaction file-data params)
+    (resolve-index-prototype-interaction file-data params)))
+
+(defn- prototype-interactions-change
+  [page-id source-shape-id interactions]
+  {:type :mod-obj
+   :id source-shape-id
+   :page-id page-id
+   :operations [{:type :set
+                 :attr :interactions
+                 :val interactions}]})
+
+(defn- normalize-prototype-update-params
+  [params]
+  (merge (:patch params) params))
+
+(defn- ensure-prototype-action-immutable!
+  [interaction params]
+  (when (prototype-param-present? params :action-type :actionType)
+    (let [action-type (normalize-layout-keyword
+                       (prototype-overlay-param params :action-type :actionType))
+          action-type (if (= :navigate-to action-type) :navigate action-type)]
+      (when (not= action-type (:action-type interaction))
+        (ex/raise :type :validation
+                  :code :prototype-interaction-action-immutable
+                  :hint "Headless prototype interaction update cannot change action type."
+                  :action-type action-type
+                  :current-action-type (:action-type interaction))))))
+
+(defn- ensure-prototype-update-field!
+  [interaction field allowed-action-types]
+  (when-not (contains? allowed-action-types (:action-type interaction))
+    (ex/raise :type :validation
+              :code :unsupported-prototype-interaction-update
+              :hint "The requested field is not supported for this prototype interaction action type."
+              :field field
+              :action-type (:action-type interaction))))
+
+(defn- normalize-prototype-update-trigger
+  [interaction source params]
+  (if (prototype-param-present? params :trigger)
+    (let [trigger (normalize-prototype-trigger (:trigger params))]
+      (ensure-after-delay-source! source trigger)
+      (cond-> (ctsi/set-event-type interaction trigger source)
+        (not= trigger :after-delay)
+        (dissoc :delay)))
+    interaction))
+
+(defn- apply-prototype-update-delay
+  [interaction params]
+  (if (prototype-param-present? params :delay)
+    (let [delay (:delay params)]
+      (if (nil? delay)
+        (dissoc interaction :delay)
+        (do
+          (when-not (= :after-delay (:event-type interaction))
+            (ex/raise :type :validation
+                      :code :prototype-delay-trigger-required
+                      :hint "Headless prototype interaction delay requires trigger after-delay."
+                      :trigger (:event-type interaction)))
+          (ctsi/set-delay interaction delay))))
+    interaction))
+
+(defn- apply-prototype-update-destination
+  [interaction file-data page-id params]
+  (if (prototype-param-present? params :destination-board-id :destinationBoardId)
+    (let [destination-board-id (prototype-overlay-param params
+                                                        :destination-board-id
+                                                        :destinationBoardId)]
+      (when (and (nil? destination-board-id)
+                 (not= :close-overlay (:action-type interaction)))
+        (ex/raise :type :validation
+                  :code :prototype-destination-required
+                  :hint "Headless prototype interaction update requires destination-board-id for this action type."
+                  :action-type (:action-type interaction)))
+      (when destination-board-id
+        (require-prototype-board file-data page-id destination-board-id :destination-board-id))
+      (ctsi/set-destination interaction destination-board-id))
+    interaction))
+
+(defn- apply-prototype-update-preserve-scroll
+  [interaction params]
+  (if (prototype-param-present? params :preserve-scroll-position :preserveScrollPosition)
+    (do
+      (ensure-prototype-update-field! interaction :preserve-scroll-position #{:navigate})
+      (ctsi/set-preserve-scroll interaction
+                                (boolean (prototype-overlay-param params
+                                                                  :preserve-scroll-position
+                                                                  :preserveScrollPosition))))
+    interaction))
+
+(defn- apply-prototype-update-relative-to
+  [interaction file-data page-id params]
+  (if (prototype-param-present? params :relative-to-shape-id :relativeToShapeId)
+    (let [relative-to-shape-id (prototype-overlay-param params
+                                                        :relative-to-shape-id
+                                                        :relativeToShapeId)]
+      (ensure-prototype-update-field! interaction :relative-to-shape-id #{:open-overlay :toggle-overlay})
+      (when relative-to-shape-id
+        (require-prototype-shape file-data page-id relative-to-shape-id :relative-to-shape-id))
+      (ctsi/set-position-relative-to interaction relative-to-shape-id))
+    interaction))
+
+(defn- apply-prototype-update-overlay-position
+  [interaction file-data page-id source params]
+  (let [position-type-present? (prototype-param-present? params
+                                                         :overlay-position-type
+                                                         :overlayPositionType)
+        manual-position-present? (prototype-param-present? params
+                                                           :manual-position
+                                                           :manualPosition)]
+    (cond-> interaction
+      (or position-type-present? manual-position-present?)
+      (as-> interaction
+            (do
+              (ensure-prototype-update-field! interaction :overlay-position #{:open-overlay :toggle-overlay})
+              interaction))
+
+      position-type-present?
+      (as-> interaction
+            (let [position-type (normalize-prototype-overlay-position-type
+                                 (prototype-overlay-param params
+                                                          :overlay-position-type
+                                                          :overlayPositionType))]
+              (when (and (= :manual position-type)
+                         (not manual-position-present?))
+                (ex/raise :type :validation
+                          :code :prototype-overlay-manual-position-required
+                          :hint "Headless manual overlay positioning requires manual-position with numeric x and y."))
+              (ctsi/set-overlay-pos-type
+               interaction
+               position-type
+               source
+               (dm/get-in file-data [:pages-index page-id :objects]))))
+
+      manual-position-present?
+      (as-> interaction
+            (let [position-type (when position-type-present?
+                                  (normalize-prototype-overlay-position-type
+                                   (prototype-overlay-param params
+                                                            :overlay-position-type
+                                                            :overlayPositionType)))]
+              (when (and position-type
+                         (not= :manual position-type))
+                (ex/raise :type :validation
+                          :code :prototype-overlay-manual-position-conflict
+                          :hint "Headless manual overlay position can only be used with manual overlay positioning."
+                          :overlay-position-type position-type))
+              (ctsi/set-overlay-position
+               interaction
+               (normalize-prototype-overlay-manual-position
+                :manual
+                (prototype-overlay-param params :manual-position :manualPosition))))))))
+
+(defn- apply-prototype-update-overlay-booleans
+  [interaction params]
+  (cond-> interaction
+    (prototype-param-present? params :close-click-outside :closeClickOutside)
+    (as-> interaction
+          (do
+            (ensure-prototype-update-field! interaction :close-click-outside #{:open-overlay :toggle-overlay})
+            (ctsi/set-close-click-outside
+             interaction
+             (boolean (prototype-overlay-param params :close-click-outside :closeClickOutside)))))
+
+    (prototype-param-present? params :background-overlay :backgroundOverlay)
+    (as-> interaction
+          (do
+            (ensure-prototype-update-field! interaction :background-overlay #{:open-overlay :toggle-overlay})
+            (ctsi/set-background-overlay
+             interaction
+             (boolean (prototype-overlay-param params :background-overlay :backgroundOverlay)))))))
+
+(defn- apply-prototype-update-animation
+  [interaction params]
+  (if (prototype-param-present? params :animation)
+    (let [animation (:animation params)]
+      (if (nil? animation)
+        (dissoc interaction :animation)
+        (apply-prototype-animation
+         interaction
+         (if (#{:open-overlay :toggle-overlay :close-overlay} (:action-type interaction))
+           (normalize-overlay-animation (:action-type interaction) animation)
+           animation))))
+    interaction))
+
+(defn- update-prototype-interaction
+  [file-data page-id source interaction params]
+  (let [params (normalize-prototype-update-params params)]
+    (ensure-prototype-action-immutable! interaction params)
+    (-> interaction
+        (normalize-prototype-update-trigger source params)
+        (apply-prototype-update-delay params)
+        (apply-prototype-update-destination file-data page-id params)
+        (apply-prototype-update-preserve-scroll params)
+        (apply-prototype-update-relative-to file-data page-id params)
+        (apply-prototype-update-overlay-position file-data page-id source params)
+        (apply-prototype-update-overlay-booleans params)
+        (apply-prototype-update-animation params))))
+
+(defn update-prototype-interaction-request
+  [file-data params]
+  (let [{:keys [page-id source interaction interaction-index]}
+        (resolve-prototype-interaction-target file-data params)
+        source-shape-id (:id source)
+        interactions (vec (or (:interactions source) []))
+        _ (ensure-supported-prototype-interaction!
+           file-data page-id source interaction interaction-index "update")
+        updated-interaction (update-prototype-interaction file-data page-id source interaction params)
+        interactions (assoc interactions interaction-index updated-interaction)
+        summary (ensure-supported-prototype-interaction!
+                 file-data page-id source updated-interaction interaction-index "update")]
+    {:interaction summary
+     :changes [(prototype-interactions-change page-id source-shape-id interactions)]}))
+
+(defn- insert-vector
+  [items index item]
+  (into (conj (subvec items 0 index) item)
+        (subvec items index)))
+
+(defn- require-interaction-insertion-index
+  [index count hint]
+  (when-not (and (int? index)
+                 (<= 0 index)
+                 (<= index count))
+    (ex/raise :type :validation
+              :code :prototype-interaction-index-invalid
+              :hint hint
+              :interaction-index index
+              :interaction-count count))
+  index)
+
+(defn reorder-prototype-interaction-request
+  [file-data {:keys [to-index toIndex] :as params}]
+  (let [{:keys [page-id source interaction interaction-index]}
+        (resolve-prototype-interaction-target file-data params)
+        source-shape-id (:id source)
+        interactions (vec (or (:interactions source) []))
+        count (count interactions)
+        to-index (or to-index toIndex)
+        _ (ensure-supported-prototype-interaction!
+           file-data page-id source interaction interaction-index "reorder")
+        _ (require-interaction-insertion-index
+           to-index
+           (dec count)
+           "Headless prototype interaction reorder requires to-index within the source interaction list.")
+        interactions (-> interactions
+                         (ctsi/remove-interaction interaction-index)
+                         (insert-vector to-index interaction))
+        summary (ensure-supported-prototype-interaction!
+                 file-data page-id source interaction to-index "reorder")]
+    {:interaction summary
+     :changes [(prototype-interactions-change page-id source-shape-id interactions)]}))
+
+(defn duplicate-prototype-interaction-request
+  [file-data {:keys [insertion-index insertionIndex] :as params}]
+  (let [{:keys [page-id source interaction interaction-index]}
+        (resolve-prototype-interaction-target file-data params)
+        source-shape-id (:id source)
+        interactions (vec (or (:interactions source) []))
+        _ (ensure-supported-prototype-interaction!
+           file-data page-id source interaction interaction-index "duplicate")
+        insertion-index (or insertion-index insertionIndex (inc interaction-index))
+        insertion-index (require-interaction-insertion-index
+                         insertion-index
+                         (count interactions)
+                         "Headless prototype interaction duplicate requires insertion-index within the source interaction list.")
+        duplicated-interaction (ctsi/regenerate-interaction-id interaction)
+        interactions (insert-vector interactions insertion-index duplicated-interaction)
+        summary (ensure-supported-prototype-interaction!
+                 file-data page-id source duplicated-interaction insertion-index "duplicate")]
+    {:interaction summary
+     :changes [(prototype-interactions-change page-id source-shape-id interactions)]}))
+
 (defn delete-prototype-interaction-request
   [file-data params]
   (let [{:keys [page-id source interaction interaction-index]}
         (resolve-prototype-interaction-delete-target file-data params)
         source-shape-id (:id source)
-        interactions (vec (or (:interactions source) []))]
-    (let [summary (prototype-interaction-summary* file-data source interaction interaction-index)]
-      (when-not summary
-        (ex/raise :type :validation
-                  :code :unsupported-prototype-interaction
-                  :hint "Headless prototype interaction deletion only supports summarized navigate and overlay interactions."
-                  :page-id page-id
-                  :source-shape-id source-shape-id
-                  :interaction-index interaction-index))
-      {:interaction summary
-       :changes [{:type :mod-obj
-                  :id source-shape-id
-                  :page-id page-id
-                  :operations [{:type :set
-                                :attr :interactions
-                                :val (ctsi/remove-interaction interactions interaction-index)}]}]})))
+        interactions (vec (or (:interactions source) []))
+        summary (ensure-supported-prototype-interaction!
+                 file-data page-id source interaction interaction-index "deletion")]
+    {:interaction summary
+     :changes [(prototype-interactions-change
+                page-id
+                source-shape-id
+                (ctsi/remove-interaction interactions interaction-index))]}))
 
 (defn update-shape-request
   [file-data {:keys [page-id shape-id] :as params}]

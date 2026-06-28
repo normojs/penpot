@@ -37,6 +37,64 @@
     (when (ex/exception? cause)
       (:code (ex-data cause)))))
 
+(defn- apply-headless-request
+  [data request]
+  (cpc/process-changes data (:changes request)))
+
+(defn- prototype-test-data
+  []
+  (let [file-id  (uuid/next)
+        page-id  (uuid/next)
+        frame-a  (uuid/next)
+        frame-b  (uuid/next)
+        frame-c  (uuid/next)
+        rect-id  (uuid/next)
+        data     (ctf/make-file-data file-id page-id)
+        frame-a-result (headless/create-shape-request data {:page-id page-id
+                                                            :shape-id frame-a
+                                                            :type :frame
+                                                            :name "Start"
+                                                            :x 0
+                                                            :y 0
+                                                            :width 320
+                                                            :height 640})
+        data     (apply-headless-request data frame-a-result)
+        frame-b-result (headless/create-shape-request data {:page-id page-id
+                                                            :shape-id frame-b
+                                                            :type :frame
+                                                            :name "Middle"
+                                                            :x 360
+                                                            :y 0
+                                                            :width 320
+                                                            :height 640})
+        data     (apply-headless-request data frame-b-result)
+        frame-c-result (headless/create-shape-request data {:page-id page-id
+                                                            :shape-id frame-c
+                                                            :type :frame
+                                                            :name "Done"
+                                                            :x 720
+                                                            :y 0
+                                                            :width 320
+                                                            :height 640})
+        data     (apply-headless-request data frame-c-result)
+        rect     (headless/create-shape-request data {:page-id page-id
+                                                      :shape-id rect-id
+                                                      :parent-id frame-a
+                                                      :type :rect
+                                                      :name "CTA"
+                                                      :x 24
+                                                      :y 32
+                                                      :width 120
+                                                      :height 40})
+        data     (apply-headless-request data rect)]
+    {:file-id file-id
+     :page-id page-id
+     :frame-a frame-a
+     :frame-b frame-b
+     :frame-c frame-c
+     :rect-id rect-id
+     :data data}))
+
 (t/deftest page-summaries-preserve-file-page-order
   (let [file-id (uuid/next)
         page-a  (uuid/next)
@@ -902,6 +960,147 @@
                 duplicate-data
                 {:page-id page-id
                  :interaction-id interaction-b}))))))
+
+(t/deftest update-prototype-interaction-request-updates-stable-target
+  (let [{:keys [page-id frame-b frame-c rect-id data]} (prototype-test-data)
+        create-result (headless/create-prototype-interaction-request
+                       data
+                       {:page-id page-id
+                        :source-shape-id rect-id
+                        :destination-board-id frame-b
+                        :trigger :click})
+        interaction-id (get-in create-result [:interaction :interaction-id])
+        data (apply-headless-request data create-result)
+        result (headless/update-prototype-interaction-request
+                data
+                {:page-id page-id
+                 :interaction-id interaction-id
+                 :source-shape-id rect-id
+                 :interaction-index 0
+                 :destination-board-id frame-c
+                 :trigger :mouse-enter
+                 :preserve-scroll-position true
+                 :animation {:type :dissolve
+                             :duration 250
+                             :easing :ease-in}})
+        data' (apply-headless-request data result)
+        interaction (get-in data' [:pages-index page-id :objects rect-id :interactions 0])
+        stale-target #(headless/update-prototype-interaction-request
+                       data
+                       {:page-id page-id
+                        :interaction-id interaction-id
+                        :source-shape-id rect-id
+                        :interaction-index 1
+                        :trigger :mouse-leave})
+        action-update #(headless/update-prototype-interaction-request
+                        data
+                        {:page-id page-id
+                         :interaction-id interaction-id
+                         :source-shape-id rect-id
+                         :interaction-index 0
+                         :action-type :open-overlay})]
+    (t/is (uuid? interaction-id))
+    (t/is (= {:interaction-id interaction-id
+              :source-shape-id rect-id
+              :source-shape-name "CTA"
+              :index 0
+              :identity (stable-interaction-identity interaction-id rect-id 0)
+              :trigger :mouse-enter
+              :delay nil
+              :action-type :navigate-to
+              :destination-board-id frame-c
+              :destination-board-name "Done"}
+             (:interaction result)))
+    (t/is (= interaction-id (:id interaction)))
+    (t/is (= frame-c (:destination interaction)))
+    (t/is (= :mouse-enter (:event-type interaction)))
+    (t/is (:preserve-scroll interaction))
+    (t/is (= {:animation-type :dissolve
+              :duration 250
+              :easing :ease-in}
+             (:animation interaction)))
+    (t/is (= :prototype-interaction-target-stale (thrown-code stale-target)))
+    (t/is (= :prototype-interaction-action-immutable (thrown-code action-update)))))
+
+(t/deftest reorder-and-duplicate-prototype-interaction-request-update-source-list
+  (let [{:keys [page-id frame-b frame-c rect-id data]} (prototype-test-data)
+        first-result (headless/create-prototype-interaction-request
+                      data
+                      {:page-id page-id
+                       :source-shape-id rect-id
+                       :destination-board-id frame-b
+                       :trigger :click})
+        first-id (get-in first-result [:interaction :interaction-id])
+        data (apply-headless-request data first-result)
+        second-result (headless/create-prototype-interaction-request
+                       data
+                       {:page-id page-id
+                        :source-shape-id rect-id
+                        :destination-board-id frame-c
+                        :trigger :mouse-enter})
+        second-id (get-in second-result [:interaction :interaction-id])
+        data (apply-headless-request data second-result)
+        duplicate-result (headless/duplicate-prototype-interaction-request
+                          data
+                          {:page-id page-id
+                           :interaction-id first-id
+                           :source-shape-id rect-id
+                           :interaction-index 0
+                           :insertion-index 1})
+        duplicated-id (get-in duplicate-result [:interaction :interaction-id])
+        data (apply-headless-request data duplicate-result)
+        duplicated-interaction (get-in data [:pages-index page-id :objects rect-id :interactions 1])
+        reorder-result (headless/reorder-prototype-interaction-request
+                        data
+                        {:page-id page-id
+                         :interaction-id duplicated-id
+                         :source-shape-id rect-id
+                         :interaction-index 1
+                         :to-index 2})
+        data' (apply-headless-request data reorder-result)
+        interactions (get-in data' [:pages-index page-id :objects rect-id :interactions])
+        stale-reorder #(headless/reorder-prototype-interaction-request
+                        data
+                        {:page-id page-id
+                         :interaction-id duplicated-id
+                         :source-shape-id rect-id
+                         :interaction-index 0
+                         :to-index 2})
+        invalid-duplicate #(headless/duplicate-prototype-interaction-request
+                            data
+                            {:page-id page-id
+                             :interaction-id first-id
+                             :source-shape-id rect-id
+                             :interaction-index 0
+                             :insertion-index 9})]
+    (t/is (uuid? duplicated-id))
+    (t/is (not= first-id duplicated-id))
+    (t/is (= {:interaction-id duplicated-id
+              :source-shape-id rect-id
+              :source-shape-name "CTA"
+              :index 1
+              :identity (stable-interaction-identity duplicated-id rect-id 1)
+              :trigger :click
+              :delay nil
+              :action-type :navigate-to
+              :destination-board-id frame-b
+              :destination-board-name "Middle"}
+             (:interaction duplicate-result)))
+    (t/is (= frame-b (:destination duplicated-interaction)))
+    (t/is (= {:interaction-id duplicated-id
+              :source-shape-id rect-id
+              :source-shape-name "CTA"
+              :index 2
+              :identity (stable-interaction-identity duplicated-id rect-id 2)
+              :trigger :click
+              :delay nil
+              :action-type :navigate-to
+              :destination-board-id frame-b
+              :destination-board-name "Middle"}
+             (:interaction reorder-result)))
+    (t/is (= [first-id second-id duplicated-id] (mapv :id interactions)))
+    (t/is (= :prototype-interaction-target-stale (thrown-code stale-reorder)))
+    (t/is (= :prototype-interaction-index-invalid (thrown-code invalid-duplicate)))))
 
 (t/deftest delete-prototype-interaction-request-rejects-stale-index
   (let [file-id  (uuid/next)

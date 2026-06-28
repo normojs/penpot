@@ -67,6 +67,9 @@ Usage:
   penpot-cli prototype create-overlay --file <file-id> --page <page-id> --source <shape-id> --action open-overlay|toggle-overlay|close-overlay [--destination <frame-id>] [--position center|manual|top-left|top-right|top-center|bottom-left|bottom-right|bottom-center] [--format text|json]
   penpot-cli prototype list-interactions --file <file-id> [--page <page-id>] [--flow-id <id>] [--source <shape-id>] [--format text|json]
   penpot-cli prototype delete-interaction --file <file-id> [--interaction-id <id>] [--source <shape-id> --index <n>] [--page <page-id>] [--format text|json]
+  penpot-cli prototype update-interaction --file <file-id> [--interaction-id <id>] [--source <shape-id> --index <n>] [--destination <frame-id>] [--trigger click|mouse-enter|mouse-leave|after-delay] [--format text|json]
+  penpot-cli prototype reorder-interaction --file <file-id> [--interaction-id <id>] [--source <shape-id> --index <n>] --to-index <n> [--format text|json]
+  penpot-cli prototype duplicate-interaction --file <file-id> [--interaction-id <id>] [--source <shape-id> --index <n>] [--insertion-index <n>] [--format text|json]
   penpot-cli export page --file <file-id> --page <page-id> --object <object-id> [--adapter auto|exporter] [--output <path>] [--dry-run] [--format text|json]
   penpot-cli render preview --file <file-id> --page <page-id> --object <object-id> [--adapter auto|exporter] [--output <path>] [--dry-run] [--format text|json]`;
 
@@ -159,9 +162,12 @@ Usage:
   penpot-cli prototype create-overlay --file <file-id> --page <page-id> --source <shape-id> --action open-overlay|toggle-overlay|close-overlay [--destination <frame-id>] [--relative-to <shape-id>] [--position center|manual|top-left|top-right|top-center|bottom-left|bottom-right|bottom-center] [--manual-x <n> --manual-y <n>] [--close-click-outside] [--background-overlay] [--trigger click|mouse-enter|mouse-leave|after-delay] [--delay <ms>] [--animation dissolve|slide] [--animation-duration <ms>] [--format text|json]
   penpot-cli prototype list-interactions --file <file-id> [--page <page-id>] [--flow-id <id>] [--source <shape-id>] [--adapter auto|backend-command] [--format text|json]
   penpot-cli prototype delete-interaction --file <file-id> [--interaction-id <id>] [--source <shape-id> --index <n>] [--page <page-id>] [--adapter auto|backend-command] [--format text|json]
+  penpot-cli prototype update-interaction --file <file-id> [--interaction-id <id>] [--source <shape-id> --index <n>] [--page <page-id>] [--destination <frame-id>] [--relative-to <shape-id>] [--position center|manual|top-left|top-right|top-center|bottom-left|bottom-right|bottom-center] [--manual-x <n> --manual-y <n>] [--close-click-outside[=true|false]] [--background-overlay[=true|false]] [--trigger click|mouse-enter|mouse-leave|after-delay] [--delay <ms>] [--preserve-scroll[=true|false]] [--animation dissolve|slide|push] [--animation-duration <ms>] [--adapter auto|backend-command] [--format text|json]
+  penpot-cli prototype reorder-interaction --file <file-id> [--interaction-id <id>] [--source <shape-id> --index <n>] --to-index <n> [--page <page-id>] [--adapter auto|backend-command] [--format text|json]
+  penpot-cli prototype duplicate-interaction --file <file-id> [--interaction-id <id>] [--source <shape-id> --index <n>] [--insertion-index <n>] [--page <page-id>] [--adapter auto|backend-command] [--format text|json]
 
 Notes:
-  Backend-command prototype helpers currently support basic flows, navigate-to interaction creation, open/toggle/close overlay creation, persisted navigate/overlay listing, stable-id deletion, and source-shape/index deletion.
+  Backend-command prototype helpers currently support basic flows, navigate-to interaction creation, open/toggle/close overlay creation, persisted navigate/overlay listing, stable-id deletion/update/reorder/duplicate, and source-shape/index fallback.
   Overlay creation requires --destination for open-overlay and toggle-overlay; close-overlay can omit it.
 
 Environment:
@@ -591,6 +597,27 @@ interface PrototypeDeleteInteractionParams {
     interactionId?: string;
     sourceShapeId?: string;
     interactionIndex?: number;
+}
+
+interface PrototypeUpdateInteractionParams extends PrototypeDeleteInteractionParams {
+    destinationBoardId?: string;
+    relativeToShapeId?: string;
+    overlayPositionType?: PrototypeOverlayPositionType;
+    manualPosition?: PrototypePoint;
+    closeClickOutside?: boolean;
+    backgroundOverlay?: boolean;
+    trigger?: PrototypeTrigger;
+    delay?: number;
+    preserveScrollPosition?: boolean;
+    animation?: PrototypeAnimationParams;
+}
+
+interface PrototypeReorderInteractionParams extends PrototypeDeleteInteractionParams {
+    toIndex: number;
+}
+
+interface PrototypeDuplicateInteractionParams extends PrototypeDeleteInteractionParams {
+    insertionIndex?: number;
 }
 
 const DEFAULT_IO: CliIO = {
@@ -2670,14 +2697,15 @@ function parsePrototypeListInteractionsParams(
     };
 }
 
-function parsePrototypeDeleteInteractionParams(
+function parsePrototypeInteractionTargetParams(
     args: string[],
     io: CliIO,
-    format: Format
+    format: Format,
+    commandLabel: string
 ): PrototypeDeleteInteractionParams | null {
     const fileId = readOption(args, ["--file", "--file-id"]);
     if (!fileId) {
-        writeError(io, format, "file_id_required", "prototype delete-interaction requires --file <file-id>.", [
+        writeError(io, format, "file_id_required", `${commandLabel} requires --file <file-id>.`, [
             "Use penpot-cli file list first, then pass --file <file-id>.",
         ]);
         return null;
@@ -2690,7 +2718,7 @@ function parsePrototypeDeleteInteractionParams(
             io,
             format,
             "prototype_interaction_target_required",
-            "prototype delete-interaction requires --interaction-id <id> or --source <shape-id>.",
+            `${commandLabel} requires --interaction-id <id> or --source <shape-id>.`,
             ["Use prototype list-interactions first, then pass --interaction-id or the legacy --source and --index pair."]
         );
         return null;
@@ -2717,6 +2745,180 @@ function parsePrototypeDeleteInteractionParams(
         interactionId,
         sourceShapeId,
         interactionIndex,
+    };
+}
+
+function parsePrototypeDeleteInteractionParams(
+    args: string[],
+    io: CliIO,
+    format: Format
+): PrototypeDeleteInteractionParams | null {
+    return parsePrototypeInteractionTargetParams(args, io, format, "prototype delete-interaction");
+}
+
+function parsePrototypeUpdateInteractionParams(
+    args: string[],
+    io: CliIO,
+    format: Format
+): PrototypeUpdateInteractionParams | null {
+    const target = parsePrototypeInteractionTargetParams(args, io, format, "prototype update-interaction");
+    if (!target) {
+        return null;
+    }
+
+    const delay = readNumberOption(args, ["--delay"]);
+    if (delay !== undefined && (!Number.isFinite(delay) || delay < 0 || delay > 60000)) {
+        writeError(io, format, "prototype_numeric_option_invalid", "Invalid prototype delay.", [
+            "Pass a finite delay from 0 to 60000.",
+        ]);
+        return null;
+    }
+
+    const trigger = readPrototypeEnumOption(
+        args,
+        ["--trigger"],
+        ["click", "mouse-enter", "mouse-leave", "after-delay"],
+        io,
+        format,
+        "--trigger"
+    );
+    if (trigger === null) {
+        return null;
+    }
+
+    const overlayPositionType = readPrototypeEnumOption(
+        args,
+        ["--position", "--overlay-position", "--overlay-position-type"],
+        ["center", "manual", "top-left", "top-right", "top-center", "bottom-left", "bottom-right", "bottom-center"],
+        io,
+        format,
+        "--position"
+    );
+    if (overlayPositionType === null) {
+        return null;
+    }
+
+    const manualX = readNumberOption(args, ["--manual-x"]);
+    const manualY = readNumberOption(args, ["--manual-y"]);
+    if (
+        (manualX !== undefined || manualY !== undefined) &&
+        (!Number.isFinite(manualX) || !Number.isFinite(manualY))
+    ) {
+        writeError(io, format, "prototype_overlay_manual_position_invalid", "Invalid manual overlay position.", [
+            "Pass both --manual-x <n> and --manual-y <n> with finite numeric values.",
+        ]);
+        return null;
+    }
+    if (overlayPositionType === "manual" && (manualX === undefined || manualY === undefined)) {
+        writeError(
+            io,
+            format,
+            "prototype_overlay_manual_position_required",
+            "prototype update-interaction manual positioning requires --manual-x and --manual-y.",
+            ["Pass both manual coordinates or use a preset --position value."]
+        );
+        return null;
+    }
+
+    const animation = parsePrototypeAnimationParams(args, io, format);
+    if (animation === null) {
+        return null;
+    }
+
+    const params: PrototypeUpdateInteractionParams = {
+        ...target,
+        destinationBoardId: readOption(args, [
+            "--destination",
+            "--destination-board",
+            "--destination-board-id",
+            "--target",
+            "--target-board",
+        ]),
+        relativeToShapeId: readOption(args, ["--relative-to", "--relative-to-shape", "--relative-to-shape-id"]),
+        overlayPositionType:
+            overlayPositionType ?? (manualX !== undefined || manualY !== undefined ? "manual" : undefined),
+        manualPosition:
+            manualX !== undefined && manualY !== undefined
+                ? {
+                      x: manualX,
+                      y: manualY,
+                  }
+                : undefined,
+        closeClickOutside: readOptionalBooleanFlag(args, ["--close-click-outside", "--close-when-click-outside"]),
+        backgroundOverlay: readOptionalBooleanFlag(args, ["--background-overlay", "--add-background-overlay"]),
+        trigger: trigger ?? (delay !== undefined ? "after-delay" : undefined),
+        delay,
+        preserveScrollPosition: readOptionalBooleanFlag(args, ["--preserve-scroll", "--preserve-scroll-position"]),
+        animation,
+    };
+
+    const hasPatch = [
+        params.destinationBoardId,
+        params.relativeToShapeId,
+        params.overlayPositionType,
+        params.manualPosition,
+        params.closeClickOutside,
+        params.backgroundOverlay,
+        params.trigger,
+        params.delay,
+        params.preserveScrollPosition,
+        params.animation,
+    ].some((value) => value !== undefined);
+    if (!hasPatch) {
+        writeError(
+            io,
+            format,
+            "prototype_interaction_patch_required",
+            "prototype update-interaction requires at least one field to update.",
+            ["Pass --destination, --trigger, --animation, or another supported prototype interaction field."]
+        );
+        return null;
+    }
+
+    return params;
+}
+
+function parsePrototypeReorderInteractionParams(
+    args: string[],
+    io: CliIO,
+    format: Format
+): PrototypeReorderInteractionParams | null {
+    const target = parsePrototypeInteractionTargetParams(args, io, format, "prototype reorder-interaction");
+    if (!target) {
+        return null;
+    }
+    const toIndex = readNumberOption(args, ["--to-index", "--to"]);
+    if (toIndex === undefined || !Number.isInteger(toIndex) || toIndex < 0) {
+        writeError(io, format, "prototype_interaction_index_invalid", "Invalid prototype interaction target index.", [
+            "Pass a zero-based non-negative integer with --to-index <n>.",
+        ]);
+        return null;
+    }
+    return {
+        ...target,
+        toIndex,
+    };
+}
+
+function parsePrototypeDuplicateInteractionParams(
+    args: string[],
+    io: CliIO,
+    format: Format
+): PrototypeDuplicateInteractionParams | null {
+    const target = parsePrototypeInteractionTargetParams(args, io, format, "prototype duplicate-interaction");
+    if (!target) {
+        return null;
+    }
+    const insertionIndex = readNumberOption(args, ["--insertion-index", "--insert-index", "--to-index"]);
+    if (insertionIndex !== undefined && (!Number.isInteger(insertionIndex) || insertionIndex < 0)) {
+        writeError(io, format, "prototype_interaction_index_invalid", "Invalid prototype interaction insertion index.", [
+            "Pass a zero-based non-negative integer with --insertion-index <n>.",
+        ]);
+        return null;
+    }
+    return {
+        ...target,
+        insertionIndex,
     };
 }
 
@@ -3520,6 +3722,20 @@ function writePrototypeInteractionCreatedText(io: CliIO, fileId: string, interac
 function writePrototypeInteractionDeletedText(io: CliIO, fileId: string, interaction: unknown): void {
     const record = asRecord(interaction);
     writeLine(io.stdout, "Prototype interaction deleted");
+    writeLine(io.stdout, `fileId: ${fileId}`);
+    writeLine(io.stdout, `interactionId: ${String(record.interactionId ?? record["interaction-id"] ?? "<none>")}`);
+    writeLine(io.stdout, `sourceShapeId: ${String(record.sourceShapeId ?? record["source-shape-id"] ?? "<unknown>")}`);
+    writeLine(
+        io.stdout,
+        `destinationBoardId: ${String(record.destinationBoardId ?? record["destination-board-id"] ?? "<unknown>")}`
+    );
+    writeLine(io.stdout, `actionType: ${String(record.actionType ?? record["action-type"] ?? "navigate-to")}`);
+    writeLine(io.stdout, `index: ${String(record.index ?? "<unknown>")}`);
+}
+
+function writePrototypeInteractionMutationText(io: CliIO, label: string, fileId: string, interaction: unknown): void {
+    const record = asRecord(interaction);
+    writeLine(io.stdout, label);
     writeLine(io.stdout, `fileId: ${fileId}`);
     writeLine(io.stdout, `interactionId: ${String(record.interactionId ?? record["interaction-id"] ?? "<none>")}`);
     writeLine(io.stdout, `sourceShapeId: ${String(record.sourceShapeId ?? record["source-shape-id"] ?? "<unknown>")}`);
@@ -5031,6 +5247,195 @@ async function handlePrototypeDeleteInteraction(args: string[], io: CliIO, env: 
     }
 }
 
+async function handlePrototypeUpdateInteraction(args: string[], io: CliIO, env: NodeJS.ProcessEnv): Promise<number> {
+    const format = parseFormat(args, io);
+    if (!format) {
+        return 2;
+    }
+
+    const adapterSelection = selectCliPrototypeAdapter(CommandDescriptors.PROTOTYPE_UPDATE_INTERACTION.id, args);
+    if (adapterSelection.status !== "selected" || adapterSelection.selected !== "backend-command") {
+        return adapterSelectionFailure(io, format, adapterSelection);
+    }
+
+    const prototypeParams = parsePrototypeUpdateInteractionParams(args, io, format);
+    if (!prototypeParams) {
+        return 2;
+    }
+
+    const rpc = getRpcConfig(args, env);
+    if (!rpc.token) {
+        return rpcAuthenticationRequired(io, format);
+    }
+
+    try {
+        const result = await rpcRequest<Record<string, unknown>>(
+            "POST",
+            rpc.backendUri,
+            "update-file-prototype-interaction",
+            {
+                id: prototypeParams.fileId,
+                "page-id": prototypeParams.pageId,
+                "interaction-id": prototypeParams.interactionId,
+                "source-shape-id": prototypeParams.sourceShapeId,
+                "interaction-index": prototypeParams.interactionIndex,
+                "destination-board-id": prototypeParams.destinationBoardId,
+                "relative-to-shape-id": prototypeParams.relativeToShapeId,
+                "overlay-position-type": prototypeParams.overlayPositionType,
+                "manual-position": prototypeParams.manualPosition,
+                "close-click-outside": prototypeParams.closeClickOutside,
+                "background-overlay": prototypeParams.backgroundOverlay,
+                trigger: prototypeParams.trigger,
+                delay: prototypeParams.delay,
+                "preserve-scroll-position": prototypeParams.preserveScrollPosition,
+                animation: toRpcPrototypeAnimation(prototypeParams.animation),
+            },
+            rpc.token
+        );
+        const interaction = asRecord(result.interaction);
+        writeOk(
+            io,
+            format,
+            {
+                fileId: prototypeParams.fileId,
+                pageId: prototypeParams.pageId,
+                interactionId: prototypeParams.interactionId ?? interaction.interactionId ?? interaction["interaction-id"],
+                sourceShapeId: prototypeParams.sourceShapeId ?? interaction.sourceShapeId ?? interaction["source-shape-id"],
+                interactionIndex: prototypeParams.interactionIndex ?? interaction.index,
+                interaction: result.interaction,
+                revn: result.revn,
+                vern: result.vern,
+                adapter: adapterSelection.selected,
+                adapterSelection,
+            },
+            () => writePrototypeInteractionMutationText(io, "Prototype interaction updated", prototypeParams.fileId, result.interaction)
+        );
+        return 0;
+    } catch (cause) {
+        return rpcErrorResponse(io, format, "update-file-prototype-interaction", rpc.backendUri, cause);
+    }
+}
+
+async function handlePrototypeReorderInteraction(args: string[], io: CliIO, env: NodeJS.ProcessEnv): Promise<number> {
+    const format = parseFormat(args, io);
+    if (!format) {
+        return 2;
+    }
+
+    const adapterSelection = selectCliPrototypeAdapter(CommandDescriptors.PROTOTYPE_REORDER_INTERACTION.id, args);
+    if (adapterSelection.status !== "selected" || adapterSelection.selected !== "backend-command") {
+        return adapterSelectionFailure(io, format, adapterSelection);
+    }
+
+    const prototypeParams = parsePrototypeReorderInteractionParams(args, io, format);
+    if (!prototypeParams) {
+        return 2;
+    }
+
+    const rpc = getRpcConfig(args, env);
+    if (!rpc.token) {
+        return rpcAuthenticationRequired(io, format);
+    }
+
+    try {
+        const result = await rpcRequest<Record<string, unknown>>(
+            "POST",
+            rpc.backendUri,
+            "reorder-file-prototype-interaction",
+            {
+                id: prototypeParams.fileId,
+                "page-id": prototypeParams.pageId,
+                "interaction-id": prototypeParams.interactionId,
+                "source-shape-id": prototypeParams.sourceShapeId,
+                "interaction-index": prototypeParams.interactionIndex,
+                "to-index": prototypeParams.toIndex,
+            },
+            rpc.token
+        );
+        const interaction = asRecord(result.interaction);
+        writeOk(
+            io,
+            format,
+            {
+                fileId: prototypeParams.fileId,
+                pageId: prototypeParams.pageId,
+                interactionId: prototypeParams.interactionId ?? interaction.interactionId ?? interaction["interaction-id"],
+                sourceShapeId: prototypeParams.sourceShapeId ?? interaction.sourceShapeId ?? interaction["source-shape-id"],
+                interactionIndex: interaction.index ?? prototypeParams.toIndex,
+                interaction: result.interaction,
+                revn: result.revn,
+                vern: result.vern,
+                adapter: adapterSelection.selected,
+                adapterSelection,
+            },
+            () => writePrototypeInteractionMutationText(io, "Prototype interaction reordered", prototypeParams.fileId, result.interaction)
+        );
+        return 0;
+    } catch (cause) {
+        return rpcErrorResponse(io, format, "reorder-file-prototype-interaction", rpc.backendUri, cause);
+    }
+}
+
+async function handlePrototypeDuplicateInteraction(args: string[], io: CliIO, env: NodeJS.ProcessEnv): Promise<number> {
+    const format = parseFormat(args, io);
+    if (!format) {
+        return 2;
+    }
+
+    const adapterSelection = selectCliPrototypeAdapter(CommandDescriptors.PROTOTYPE_DUPLICATE_INTERACTION.id, args);
+    if (adapterSelection.status !== "selected" || adapterSelection.selected !== "backend-command") {
+        return adapterSelectionFailure(io, format, adapterSelection);
+    }
+
+    const prototypeParams = parsePrototypeDuplicateInteractionParams(args, io, format);
+    if (!prototypeParams) {
+        return 2;
+    }
+
+    const rpc = getRpcConfig(args, env);
+    if (!rpc.token) {
+        return rpcAuthenticationRequired(io, format);
+    }
+
+    try {
+        const result = await rpcRequest<Record<string, unknown>>(
+            "POST",
+            rpc.backendUri,
+            "duplicate-file-prototype-interaction",
+            {
+                id: prototypeParams.fileId,
+                "page-id": prototypeParams.pageId,
+                "interaction-id": prototypeParams.interactionId,
+                "source-shape-id": prototypeParams.sourceShapeId,
+                "interaction-index": prototypeParams.interactionIndex,
+                "insertion-index": prototypeParams.insertionIndex,
+            },
+            rpc.token
+        );
+        const interaction = asRecord(result.interaction);
+        writeOk(
+            io,
+            format,
+            {
+                fileId: prototypeParams.fileId,
+                pageId: prototypeParams.pageId,
+                interactionId: interaction.interactionId ?? interaction["interaction-id"],
+                sourceShapeId: prototypeParams.sourceShapeId ?? interaction.sourceShapeId ?? interaction["source-shape-id"],
+                interactionIndex: interaction.index ?? prototypeParams.insertionIndex,
+                interaction: result.interaction,
+                revn: result.revn,
+                vern: result.vern,
+                adapter: adapterSelection.selected,
+                adapterSelection,
+            },
+            () => writePrototypeInteractionMutationText(io, "Prototype interaction duplicated", prototypeParams.fileId, result.interaction)
+        );
+        return 0;
+    } catch (cause) {
+        return rpcErrorResponse(io, format, "duplicate-file-prototype-interaction", rpc.backendUri, cause);
+    }
+}
+
 async function handlePrototypeCommand(args: string[], io: CliIO, env: NodeJS.ProcessEnv): Promise<number> {
     const [subcommand, ...rest] = args;
 
@@ -5050,6 +5455,12 @@ async function handlePrototypeCommand(args: string[], io: CliIO, env: NodeJS.Pro
             return await handlePrototypeListInteractions(rest, io, env);
         case "delete-interaction":
             return await handlePrototypeDeleteInteraction(rest, io, env);
+        case "update-interaction":
+            return await handlePrototypeUpdateInteraction(rest, io, env);
+        case "reorder-interaction":
+            return await handlePrototypeReorderInteraction(rest, io, env);
+        case "duplicate-interaction":
+            return await handlePrototypeDuplicateInteraction(rest, io, env);
         default:
             writeLine(io.stderr, `Unknown prototype command: ${subcommand}`);
             writeLine(io.stderr, 'Run "penpot-cli prototype --help" for usage.');

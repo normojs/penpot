@@ -29,7 +29,10 @@ import {
     PrototypeCreateInteractionTool,
     PrototypeCreateOverlayTool,
     PrototypeDeleteInteractionTool,
+    PrototypeDuplicateInteractionTool,
     PrototypeListInteractionsTool,
+    PrototypeReorderInteractionTool,
+    PrototypeUpdateInteractionTool,
 } from "./tools/PrototypeTools";
 import { SelectionGetTool, SelectionSetTool } from "./tools/SelectionTools";
 import {
@@ -291,6 +294,9 @@ export class PenpotMcpServer {
             new PrototypeCreateOverlayTool(this),
             new PrototypeListInteractionsTool(this),
             new PrototypeDeleteInteractionTool(this),
+            new PrototypeUpdateInteractionTool(this),
+            new PrototypeReorderInteractionTool(this),
+            new PrototypeDuplicateInteractionTool(this),
             new ExportShapeDataTool(this),
             new ExportPageTool(this),
             new RenderPreviewTool(this),

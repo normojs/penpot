@@ -1,12 +1,12 @@
 # Prototype Mutation Helper Contracts
 
-Status: P22.4 descriptor-only planning. No runtime adapter is executable yet.
+Status: P23.4 executable backend-command helpers.
 
 This document defines the next persisted prototype interaction helper contracts
-after stable-id deletion. These contracts intentionally do not register
-executable MCP tool handlers or add CLI commands yet; they only reserve command
-names, target identity rules, payload boundaries, and response expectations in
-the shared command runtime.
+after stable-id deletion. P22.4 first reserved command names, target identity
+rules, payload boundaries, and response expectations in the shared command
+runtime. P23.4 turns those contracts into executable common/backend helpers,
+MCP tools, and `penpot-cli` commands.
 
 ## Commands
 
@@ -18,19 +18,20 @@ prototype.duplicate_interaction
 
 Adapters:
 
-- `backend-command`: planned, but unavailable until legacy/id-missing files
-  have a migration and copy/remap duplicate-id behavior is settled. P23.2
-  already generates ids for new backend-command interactions, and P23.3
-  backfills legacy missing/duplicate ids through a common file-data migration.
+- `backend-command`: executable in P23.4 for explicit persisted file targets.
+  P23.2 generates ids for new backend-command interactions, P23.3 backfills
+  legacy missing/duplicate ids, and P23.4 regenerates ids for distinct copied
+  shapes/pages before enabling these helpers.
 - `plugin-live`: not part of these contracts. These helpers mutate persisted
   file data, not editor-local workspace state.
 
-The command-runtime descriptors advertise `adapters: []` until implementation.
+The command-runtime descriptors advertise `adapters: ["backend-command"]` and
+CLI commands for all three helpers.
 
 P23.2 implemented backend-command create-time id generation, P23.3 implemented
 legacy backfill, and the first P23.4 slice implemented copy/remap
-distinct-copy id regeneration. These helper descriptors remain adapterless
-until executable helper semantics are settled.
+distinct-copy id regeneration. The second P23.4 slice implemented executable
+update, reorder, and duplicate helper semantics.
 
 ## Shared Targeting
 
@@ -106,7 +107,6 @@ Validation:
 Response:
 
 - Moved interaction summary at its new index.
-- Affected interaction identities for entries whose indexes changed.
 - `revn`, `vern`, and `adapterSelection`.
 
 ## Duplicate Interaction
@@ -131,12 +131,11 @@ Validation:
 Response:
 
 - New duplicated interaction summary, including generated `interactionId`.
-- Affected interaction identities for entries whose indexes changed.
 - `revn`, `vern`, and `adapterSelection`.
 
-## Implementation Prerequisites
+## Implementation Status
 
-Before any descriptor becomes executable:
+Completed before exposing runtime adapters:
 
 1. New backend-command interaction creation must assign persisted UUIDs.
 2. Done in P23.3: legacy/id-missing files receive ids through a common
@@ -144,7 +143,7 @@ Before any descriptor becomes executable:
 3. Done for distinct copied shapes/pages in P23.4: copy/duplicate/remap paths
    preserve ids only for explicit non-copy reference rewrites and generate
    fresh ids for distinct copied interactions.
-4. Common/backend fixtures must cover stable target, legacy target, stale guard,
-   missing id, duplicate id, and action-specific validation.
-5. MCP and CLI tests must prove the descriptor, request payload, response, and
-   structured errors before exposing a runtime adapter.
+4. Done in P23.4: common/backend fixtures cover stable target, stale guard,
+   action-compatible updates, same-source reorder, and fresh-id duplicate.
+5. Done in P23.4: MCP and CLI tests prove descriptor exposure, request
+   payloads, adapter selection, and response metadata.

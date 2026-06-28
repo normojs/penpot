@@ -690,7 +690,7 @@ P23.3 prototype interaction id migration result:
 - Copy/remap distinct-copy id regeneration remains a separate prerequisite
   before update/reorder/duplicate helpers become executable.
 
-P23.4 copy/remap id regeneration result:
+P23.4 copy/remap id regeneration and helper execution result:
 
 - Common shape duplicate/remap paths regenerate ids for copied prototype
   interactions by default.
@@ -698,8 +698,9 @@ P23.4 copy/remap id regeneration result:
   `{:regenerate-ids? false}` option.
 - Frontend page duplication regenerates interaction ids for copied page
   objects.
-- Executable update/reorder/duplicate helper semantics remain the active P23.4
-  work.
+- `prototype.update_interaction`, `prototype.reorder_interaction`, and
+  `prototype.duplicate_interaction` now execute through backend-command, MCP,
+  and `penpot-cli`.
 
 ## 4. Target Architecture
 
@@ -2031,8 +2032,9 @@ copy/remap duplicate-id policy separate.
 P23.2 implements that backend-command create id generation for navigate and
 overlay interactions. P23.3 adds the common file-data migration for legacy
 missing and duplicate interaction ids. Copy/remap duplicate-id regeneration
-is now implemented for distinct copied shapes/pages; executable
-update/reorder/duplicate helpers remain the active P23.4 work.
+is now implemented for distinct copied shapes/pages, and P23.4 enables
+executable update/reorder/duplicate helpers through backend-command, MCP, and
+`penpot-cli`.
 
 ### 8.5 Export and Render Tools
 

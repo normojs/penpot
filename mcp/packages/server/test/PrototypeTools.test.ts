@@ -8,7 +8,10 @@ import {
     PrototypeCreateInteractionTool,
     PrototypeCreateOverlayTool,
     PrototypeDeleteInteractionTool,
+    PrototypeDuplicateInteractionTool,
     PrototypeListInteractionsTool,
+    PrototypeReorderInteractionTool,
+    PrototypeUpdateInteractionTool,
 } from "../src/tools/PrototypeTools.js";
 
 type RpcCall = {
@@ -525,6 +528,186 @@ test("PrototypeDeleteInteractionTool deletes by stable interaction id through ba
     assert.equal(body.data.sourceShapeId, "00000000-0000-0000-0000-000000000003");
     assert.equal(body.data.interactionIndex, 1);
     assert.equal(body.data.interaction.identity.kind, "stable-id");
+});
+
+test("PrototypeUpdateInteractionTool updates persisted prototype interaction through backend RPC", async () => {
+    const calls: RpcCall[] = [];
+    const tool = new PrototypeUpdateInteractionTool(
+        mcpServerWithRpc({
+            post: async (
+                methodName: string,
+                params: Record<string, unknown>,
+                userToken: string,
+                context?: PenpotRpcRequestContext
+            ) => {
+                calls.push({ methodName, params, userToken, context });
+                return {
+                    interaction: {
+                        interactionId: "00000000-0000-0000-0000-000000000101",
+                        sourceShapeId: "00000000-0000-0000-0000-000000000003",
+                        destinationBoardId: "00000000-0000-0000-0000-000000000004",
+                        index: 0,
+                        actionType: "navigate-to",
+                    },
+                    revn: 7,
+                    vern: 0,
+                };
+            },
+        })
+    );
+
+    const response = await tool.execute({
+        fileId: "00000000-0000-0000-0000-000000000001",
+        pageId: "00000000-0000-0000-0000-000000000002",
+        interactionId: "00000000-0000-0000-0000-000000000101",
+        sourceShapeId: "00000000-0000-0000-0000-000000000003",
+        interactionIndex: 0,
+        destinationBoardId: "00000000-0000-0000-0000-000000000004",
+        trigger: "mouse-enter",
+        preserveScrollPosition: true,
+        animation: {
+            type: "dissolve",
+            duration: 250,
+            easing: "ease-in",
+        },
+    });
+    const body = parseJsonResponse(response);
+
+    assert.deepEqual(calls, [
+        {
+            methodName: "update-file-prototype-interaction",
+            params: {
+                id: "00000000-0000-0000-0000-000000000001",
+                "page-id": "00000000-0000-0000-0000-000000000002",
+                "interaction-id": "00000000-0000-0000-0000-000000000101",
+                "source-shape-id": "00000000-0000-0000-0000-000000000003",
+                "interaction-index": 0,
+                "destination-board-id": "00000000-0000-0000-0000-000000000004",
+                trigger: "mouse-enter",
+                "preserve-scroll-position": true,
+                animation: {
+                    type: "dissolve",
+                    duration: 250,
+                    easing: "ease-in",
+                },
+            },
+            userToken: "token-1",
+            context: {
+                mcpToolName: "prototype.update_interaction",
+                mcpSessionId: "session-1",
+                mcpAdapter: "backend-command",
+                mcpFileId: "00000000-0000-0000-0000-000000000001",
+                mcpPageId: "00000000-0000-0000-0000-000000000002",
+                mcpShapeId: "00000000-0000-0000-0000-000000000003",
+            },
+        },
+    ]);
+    assert.equal(body.status, "ok");
+    assert.equal(body.data.adapterSelection.command, "prototype.update_interaction");
+    assert.equal(body.data.interactionId, "00000000-0000-0000-0000-000000000101");
+    assert.equal(body.data.interactionIndex, 0);
+    assert.equal(body.data.revn, 7);
+});
+
+test("PrototypeReorderInteractionTool reorders persisted prototype interaction through backend RPC", async () => {
+    const calls: RpcCall[] = [];
+    const tool = new PrototypeReorderInteractionTool(
+        mcpServerWithRpc({
+            post: async (
+                methodName: string,
+                params: Record<string, unknown>,
+                userToken: string,
+                context?: PenpotRpcRequestContext
+            ) => {
+                calls.push({ methodName, params, userToken, context });
+                return {
+                    interaction: {
+                        interactionId: "00000000-0000-0000-0000-000000000101",
+                        sourceShapeId: "00000000-0000-0000-0000-000000000003",
+                        index: 2,
+                        actionType: "navigate-to",
+                    },
+                    revn: 8,
+                    vern: 0,
+                };
+            },
+        })
+    );
+
+    const response = await tool.execute({
+        fileId: "00000000-0000-0000-0000-000000000001",
+        pageId: "00000000-0000-0000-0000-000000000002",
+        interactionId: "00000000-0000-0000-0000-000000000101",
+        sourceShapeId: "00000000-0000-0000-0000-000000000003",
+        interactionIndex: 1,
+        toIndex: 2,
+    });
+    const body = parseJsonResponse(response);
+
+    assert.deepEqual(calls[0].params, {
+        id: "00000000-0000-0000-0000-000000000001",
+        "page-id": "00000000-0000-0000-0000-000000000002",
+        "interaction-id": "00000000-0000-0000-0000-000000000101",
+        "source-shape-id": "00000000-0000-0000-0000-000000000003",
+        "interaction-index": 1,
+        "to-index": 2,
+    });
+    assert.equal(calls[0].context?.mcpToolName, "prototype.reorder_interaction");
+    assert.equal(body.status, "ok");
+    assert.equal(body.data.adapterSelection.command, "prototype.reorder_interaction");
+    assert.equal(body.data.interactionIndex, 2);
+    assert.equal(body.data.revn, 8);
+});
+
+test("PrototypeDuplicateInteractionTool duplicates persisted prototype interaction through backend RPC", async () => {
+    const calls: RpcCall[] = [];
+    const tool = new PrototypeDuplicateInteractionTool(
+        mcpServerWithRpc({
+            post: async (
+                methodName: string,
+                params: Record<string, unknown>,
+                userToken: string,
+                context?: PenpotRpcRequestContext
+            ) => {
+                calls.push({ methodName, params, userToken, context });
+                return {
+                    interaction: {
+                        interactionId: "00000000-0000-0000-0000-000000000202",
+                        sourceShapeId: "00000000-0000-0000-0000-000000000003",
+                        index: 1,
+                        actionType: "navigate-to",
+                    },
+                    revn: 9,
+                    vern: 0,
+                };
+            },
+        })
+    );
+
+    const response = await tool.execute({
+        fileId: "00000000-0000-0000-0000-000000000001",
+        pageId: "00000000-0000-0000-0000-000000000002",
+        interactionId: "00000000-0000-0000-0000-000000000101",
+        sourceShapeId: "00000000-0000-0000-0000-000000000003",
+        interactionIndex: 0,
+        insertionIndex: 1,
+    });
+    const body = parseJsonResponse(response);
+
+    assert.deepEqual(calls[0].params, {
+        id: "00000000-0000-0000-0000-000000000001",
+        "page-id": "00000000-0000-0000-0000-000000000002",
+        "interaction-id": "00000000-0000-0000-0000-000000000101",
+        "source-shape-id": "00000000-0000-0000-0000-000000000003",
+        "interaction-index": 0,
+        "insertion-index": 1,
+    });
+    assert.equal(calls[0].context?.mcpToolName, "prototype.duplicate_interaction");
+    assert.equal(body.status, "ok");
+    assert.equal(body.data.adapterSelection.command, "prototype.duplicate_interaction");
+    assert.equal(body.data.interactionId, "00000000-0000-0000-0000-000000000202");
+    assert.equal(body.data.interactionIndex, 1);
+    assert.equal(body.data.revn, 9);
 });
 
 test("PrototypeDeleteInteractionTool rejects missing delete target", async () => {

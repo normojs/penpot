@@ -37,6 +37,11 @@ const animationSchema = z
 
 type PenpotRecord = Record<string, unknown>;
 type PrototypeAdapterArgs = { fileId?: string; pageId?: string; adapter?: string };
+type PrototypeInteractionTargetArgs = PrototypeAdapterArgs & {
+    interactionId?: string;
+    sourceShapeId?: string;
+    interactionIndex?: number;
+};
 
 function toBackendAnimation(animation?: PrototypeTaskParams["animation"]): PenpotRecord | undefined {
     if (!animation) {
@@ -50,6 +55,21 @@ function toBackendAnimation(animation?: PrototypeTaskParams["animation"]): Penpo
         ...(animation.way ? { way: animation.way } : {}),
         ...(animation.offsetEffect !== undefined ? { "offset-effect": animation.offsetEffect } : {}),
     };
+}
+
+function hasPrototypeInteractionTarget(args: PrototypeInteractionTargetArgs): boolean {
+    return Boolean(args.interactionId || (args.sourceShapeId && args.interactionIndex !== undefined));
+}
+
+function toBackendPrototypeTargetParams(args: PrototypeInteractionTargetArgs): RpcParams {
+    const params: RpcParams = {
+        id: args.fileId,
+    };
+    if (args.pageId !== undefined) params["page-id"] = args.pageId;
+    if (args.interactionId !== undefined) params["interaction-id"] = args.interactionId;
+    if (args.sourceShapeId !== undefined) params["source-shape-id"] = args.sourceShapeId;
+    if (args.interactionIndex !== undefined) params["interaction-index"] = args.interactionIndex;
+    return params;
 }
 
 abstract class PrototypeTool<TArgs extends object> extends PenpotRpcTool<TArgs> {
@@ -301,6 +321,148 @@ abstract class PrototypeTool<TArgs extends object> extends PenpotRpcTool<TArgs> 
         }
     }
 
+    protected async executeBackendPrototypeUpdateInteraction(
+        args: PrototypeUpdateInteractionArgs,
+        adapterSelection: CommandAdapterSelection
+    ): Promise<ToolResponse> {
+        const userToken = this.getUserToken();
+        if (!userToken) {
+            return this.authenticationRequired();
+        }
+
+        try {
+            const params: RpcParams = {
+                ...toBackendPrototypeTargetParams(args),
+            };
+            if (args.destinationBoardId !== undefined) params["destination-board-id"] = args.destinationBoardId;
+            if (args.relativeToShapeId !== undefined) params["relative-to-shape-id"] = args.relativeToShapeId;
+            if (args.overlayPositionType !== undefined) params["overlay-position-type"] = args.overlayPositionType;
+            if (args.manualPosition !== undefined) params["manual-position"] = args.manualPosition;
+            if (args.closeClickOutside !== undefined) params["close-click-outside"] = args.closeClickOutside;
+            if (args.backgroundOverlay !== undefined) params["background-overlay"] = args.backgroundOverlay;
+            if (args.trigger !== undefined) params.trigger = args.trigger;
+            if (args.delay !== undefined) params.delay = args.delay;
+            if (args.preserveScrollPosition !== undefined) {
+                params["preserve-scroll-position"] = args.preserveScrollPosition;
+            }
+            if (args.animation !== undefined)
+                params.animation = toBackendAnimation(args.animation ?? undefined) ?? null;
+
+            const result = await this.rpcWritePost<PenpotRecord>(
+                "update-file-prototype-interaction",
+                params,
+                userToken,
+                {
+                    mcpAdapter: adapterSelection.selected,
+                    mcpFileId: args.fileId,
+                    mcpPageId: args.pageId,
+                    mcpShapeId: args.sourceShapeId,
+                }
+            );
+            const interaction = (result.interaction ?? {}) as PenpotRecord;
+            return this.ok({
+                adapter: adapterSelection.selected,
+                adapterSelection,
+                fileId: args.fileId,
+                pageId: args.pageId,
+                interactionId: args.interactionId ?? interaction.interactionId ?? interaction["interaction-id"],
+                sourceShapeId: args.sourceShapeId ?? interaction.sourceShapeId ?? interaction["source-shape-id"],
+                interactionIndex: args.interactionIndex ?? interaction.index,
+                interaction: result.interaction,
+                revn: result.revn,
+                vern: result.vern,
+            });
+        } catch (cause) {
+            return this.rpcFailure(cause);
+        }
+    }
+
+    protected async executeBackendPrototypeReorderInteraction(
+        args: PrototypeReorderInteractionArgs,
+        adapterSelection: CommandAdapterSelection
+    ): Promise<ToolResponse> {
+        const userToken = this.getUserToken();
+        if (!userToken) {
+            return this.authenticationRequired();
+        }
+
+        try {
+            const result = await this.rpcWritePost<PenpotRecord>(
+                "reorder-file-prototype-interaction",
+                {
+                    ...toBackendPrototypeTargetParams(args),
+                    "to-index": args.toIndex,
+                },
+                userToken,
+                {
+                    mcpAdapter: adapterSelection.selected,
+                    mcpFileId: args.fileId,
+                    mcpPageId: args.pageId,
+                    mcpShapeId: args.sourceShapeId,
+                }
+            );
+            const interaction = (result.interaction ?? {}) as PenpotRecord;
+            return this.ok({
+                adapter: adapterSelection.selected,
+                adapterSelection,
+                fileId: args.fileId,
+                pageId: args.pageId,
+                interactionId: args.interactionId ?? interaction.interactionId ?? interaction["interaction-id"],
+                sourceShapeId: args.sourceShapeId ?? interaction.sourceShapeId ?? interaction["source-shape-id"],
+                interactionIndex: interaction.index ?? args.toIndex,
+                interaction: result.interaction,
+                revn: result.revn,
+                vern: result.vern,
+            });
+        } catch (cause) {
+            return this.rpcFailure(cause);
+        }
+    }
+
+    protected async executeBackendPrototypeDuplicateInteraction(
+        args: PrototypeDuplicateInteractionArgs,
+        adapterSelection: CommandAdapterSelection
+    ): Promise<ToolResponse> {
+        const userToken = this.getUserToken();
+        if (!userToken) {
+            return this.authenticationRequired();
+        }
+
+        try {
+            const params: RpcParams = {
+                ...toBackendPrototypeTargetParams(args),
+            };
+            if (args.insertionIndex !== undefined) params["insertion-index"] = args.insertionIndex;
+
+            const result = await this.rpcWritePost<PenpotRecord>(
+                "duplicate-file-prototype-interaction",
+                params,
+                userToken,
+                {
+                    mcpAdapter: adapterSelection.selected,
+                    mcpFileId: args.fileId,
+                    mcpPageId: args.pageId,
+                    mcpShapeId: args.sourceShapeId,
+                }
+            );
+            const interaction = (result.interaction ?? {}) as PenpotRecord;
+            return this.ok({
+                adapter: adapterSelection.selected,
+                adapterSelection,
+                fileId: args.fileId,
+                pageId: args.pageId,
+                interactionId: interaction.interactionId ?? interaction["interaction-id"],
+                sourceShapeId: args.sourceShapeId ?? interaction.sourceShapeId ?? interaction["source-shape-id"],
+                interactionIndex: interaction.index ?? args.insertionIndex,
+                interaction: result.interaction,
+                revn: result.revn,
+                vern: result.vern,
+            });
+        } catch (cause) {
+            return this.rpcFailure(cause);
+        }
+    }
+
     protected async executeBackendPrototypeOverlay(
         args: PrototypeCreateOverlayArgs,
         adapterSelection: CommandAdapterSelection
@@ -457,6 +619,282 @@ export class PrototypeDeleteInteractionTool extends PrototypeTool<PrototypeDelet
     }
 }
 
+export class PrototypeUpdateInteractionArgs {
+    static schema = {
+        fileId: uuidSchema.describe("File id for backend-command prototype interaction update."),
+        pageId: uuidSchema.optional().describe("Optional page id used to resolve the source shape."),
+        interactionId: uuidSchema.optional().describe("Stable interaction id returned by prototype.list_interactions."),
+        sourceShapeId: uuidSchema
+            .optional()
+            .describe(
+                "Shape id that owns the interaction. Required for source/index update and optional guard for stable-id update."
+            ),
+        interactionIndex: z
+            .number()
+            .int()
+            .min(0)
+            .optional()
+            .describe(
+                "Zero-based source index. Required for source/index update and optional guard for stable-id update."
+            ),
+        destinationBoardId: uuidSchema.nullable().optional().describe("Destination board/frame id."),
+        relativeToShapeId: uuidSchema.nullable().optional().describe("Overlay relative-to shape id, or null to clear."),
+        overlayPositionType: z
+            .enum([
+                "center",
+                "manual",
+                "top-left",
+                "top-right",
+                "top-center",
+                "bottom-left",
+                "bottom-right",
+                "bottom-center",
+            ])
+            .optional()
+            .describe("Overlay positioning mode."),
+        manualPosition: pointSchema.nullable().optional().describe("Manual overlay position."),
+        closeClickOutside: z.boolean().optional().describe("Whether clicking outside closes the overlay."),
+        backgroundOverlay: z.boolean().optional().describe("Whether the overlay has a background scrim."),
+        trigger: z
+            .enum(["click", "mouse-enter", "mouse-leave", "after-delay"])
+            .optional()
+            .describe("Interaction trigger."),
+        delay: z.number().min(0).max(60000).nullable().optional().describe("Delay in milliseconds, or null to clear."),
+        preserveScrollPosition: z
+            .boolean()
+            .optional()
+            .describe("Whether to preserve scroll position during navigation."),
+        animation: animationSchema.nullable(),
+        adapter: z.string().optional().describe("Optional adapter request: auto or backend-command."),
+    };
+
+    fileId!: string;
+    pageId?: string;
+    interactionId?: string;
+    sourceShapeId?: string;
+    interactionIndex?: number;
+    destinationBoardId?: string | null;
+    relativeToShapeId?: string | null;
+    overlayPositionType?:
+        | "center"
+        | "manual"
+        | "top-left"
+        | "top-right"
+        | "top-center"
+        | "bottom-left"
+        | "bottom-right"
+        | "bottom-center";
+    manualPosition?: { x: number; y: number } | null;
+    closeClickOutside?: boolean;
+    backgroundOverlay?: boolean;
+    trigger?: PrototypeTaskParams["trigger"];
+    delay?: number | null;
+    preserveScrollPosition?: boolean;
+    animation?: PrototypeTaskParams["animation"] | null;
+    adapter?: string;
+}
+
+export class PrototypeUpdateInteractionTool extends PrototypeTool<PrototypeUpdateInteractionArgs> {
+    constructor(mcpServer: PenpotMcpServer) {
+        super(mcpServer, PrototypeUpdateInteractionArgs.schema);
+    }
+
+    public getToolName(): string {
+        return CommandDescriptors.PROTOTYPE_UPDATE_INTERACTION.mcpToolName;
+    }
+
+    public getToolDescription(): string {
+        return CommandDescriptors.PROTOTYPE_UPDATE_INTERACTION.description;
+    }
+
+    protected async executeCore(args: PrototypeUpdateInteractionArgs): Promise<ToolResponse> {
+        if (!hasPrototypeInteractionTarget(args)) {
+            return this.error(
+                "prototype_interaction_target_required",
+                "prototype.update_interaction requires interactionId or sourceShapeId plus interactionIndex.",
+                [
+                    "Use prototype.list_interactions first, then pass interactionId for stable-id update.",
+                    "For legacy update, pass sourceShapeId and interactionIndex.",
+                ]
+            );
+        }
+
+        const hasPatch =
+            args.destinationBoardId !== undefined ||
+            args.relativeToShapeId !== undefined ||
+            args.overlayPositionType !== undefined ||
+            args.manualPosition !== undefined ||
+            args.closeClickOutside !== undefined ||
+            args.backgroundOverlay !== undefined ||
+            args.trigger !== undefined ||
+            args.delay !== undefined ||
+            args.preserveScrollPosition !== undefined ||
+            args.animation !== undefined;
+        if (!hasPatch) {
+            return this.error(
+                "prototype_interaction_patch_required",
+                "prototype.update_interaction requires at least one field to update.",
+                ["Pass trigger, destinationBoardId, animation, or another supported prototype interaction field."]
+            );
+        }
+
+        const adapterSelection = this.selectPrototypeMutationAdapter(
+            CommandDescriptors.PROTOTYPE_UPDATE_INTERACTION.id,
+            args
+        );
+        if (adapterSelection.status !== "selected") {
+            return this.adapterSelectionFailure(adapterSelection);
+        }
+
+        return this.executeBackendPrototypeUpdateInteraction(args, adapterSelection);
+    }
+}
+
+export class PrototypeReorderInteractionArgs {
+    static schema = {
+        fileId: uuidSchema.describe("File id for backend-command prototype interaction reorder."),
+        pageId: uuidSchema.optional().describe("Optional page id used to resolve the source shape."),
+        interactionId: uuidSchema.optional().describe("Stable interaction id returned by prototype.list_interactions."),
+        sourceShapeId: uuidSchema
+            .optional()
+            .describe(
+                "Shape id that owns the interaction. Required for source/index reorder and optional guard for stable-id reorder."
+            ),
+        interactionIndex: z
+            .number()
+            .int()
+            .min(0)
+            .optional()
+            .describe(
+                "Zero-based current source index. Required for source/index reorder and optional guard for stable-id reorder."
+            ),
+        toIndex: z
+            .number()
+            .int()
+            .min(0)
+            .describe("Zero-based target index within the same source shape interaction list."),
+        adapter: z.string().optional().describe("Optional adapter request: auto or backend-command."),
+    };
+
+    fileId!: string;
+    pageId?: string;
+    interactionId?: string;
+    sourceShapeId?: string;
+    interactionIndex?: number;
+    toIndex!: number;
+    adapter?: string;
+}
+
+export class PrototypeReorderInteractionTool extends PrototypeTool<PrototypeReorderInteractionArgs> {
+    constructor(mcpServer: PenpotMcpServer) {
+        super(mcpServer, PrototypeReorderInteractionArgs.schema);
+    }
+
+    public getToolName(): string {
+        return CommandDescriptors.PROTOTYPE_REORDER_INTERACTION.mcpToolName;
+    }
+
+    public getToolDescription(): string {
+        return CommandDescriptors.PROTOTYPE_REORDER_INTERACTION.description;
+    }
+
+    protected async executeCore(args: PrototypeReorderInteractionArgs): Promise<ToolResponse> {
+        if (!hasPrototypeInteractionTarget(args)) {
+            return this.error(
+                "prototype_interaction_target_required",
+                "prototype.reorder_interaction requires interactionId or sourceShapeId plus interactionIndex.",
+                [
+                    "Use prototype.list_interactions first, then pass interactionId for stable-id reorder.",
+                    "For legacy reorder, pass sourceShapeId and interactionIndex.",
+                ]
+            );
+        }
+
+        const adapterSelection = this.selectPrototypeMutationAdapter(
+            CommandDescriptors.PROTOTYPE_REORDER_INTERACTION.id,
+            args
+        );
+        if (adapterSelection.status !== "selected") {
+            return this.adapterSelectionFailure(adapterSelection);
+        }
+
+        return this.executeBackendPrototypeReorderInteraction(args, adapterSelection);
+    }
+}
+
+export class PrototypeDuplicateInteractionArgs {
+    static schema = {
+        fileId: uuidSchema.describe("File id for backend-command prototype interaction duplication."),
+        pageId: uuidSchema.optional().describe("Optional page id used to resolve the source shape."),
+        interactionId: uuidSchema.optional().describe("Stable interaction id returned by prototype.list_interactions."),
+        sourceShapeId: uuidSchema
+            .optional()
+            .describe(
+                "Shape id that owns the interaction. Required for source/index duplication and optional guard for stable-id duplication."
+            ),
+        interactionIndex: z
+            .number()
+            .int()
+            .min(0)
+            .optional()
+            .describe(
+                "Zero-based source index. Required for source/index duplication and optional guard for stable-id duplication."
+            ),
+        insertionIndex: z
+            .number()
+            .int()
+            .min(0)
+            .optional()
+            .describe("Optional zero-based insertion index. Defaults to directly after the source interaction."),
+        adapter: z.string().optional().describe("Optional adapter request: auto or backend-command."),
+    };
+
+    fileId!: string;
+    pageId?: string;
+    interactionId?: string;
+    sourceShapeId?: string;
+    interactionIndex?: number;
+    insertionIndex?: number;
+    adapter?: string;
+}
+
+export class PrototypeDuplicateInteractionTool extends PrototypeTool<PrototypeDuplicateInteractionArgs> {
+    constructor(mcpServer: PenpotMcpServer) {
+        super(mcpServer, PrototypeDuplicateInteractionArgs.schema);
+    }
+
+    public getToolName(): string {
+        return CommandDescriptors.PROTOTYPE_DUPLICATE_INTERACTION.mcpToolName;
+    }
+
+    public getToolDescription(): string {
+        return CommandDescriptors.PROTOTYPE_DUPLICATE_INTERACTION.description;
+    }
+
+    protected async executeCore(args: PrototypeDuplicateInteractionArgs): Promise<ToolResponse> {
+        if (!hasPrototypeInteractionTarget(args)) {
+            return this.error(
+                "prototype_interaction_target_required",
+                "prototype.duplicate_interaction requires interactionId or sourceShapeId plus interactionIndex.",
+                [
+                    "Use prototype.list_interactions first, then pass interactionId for stable-id duplication.",
+                    "For legacy duplication, pass sourceShapeId and interactionIndex.",
+                ]
+            );
+        }
+
+        const adapterSelection = this.selectPrototypeMutationAdapter(
+            CommandDescriptors.PROTOTYPE_DUPLICATE_INTERACTION.id,
+            args
+        );
+        if (adapterSelection.status !== "selected") {
+            return this.adapterSelectionFailure(adapterSelection);
+        }
+
+        return this.executeBackendPrototypeDuplicateInteraction(args, adapterSelection);
+    }
+}
+
 export class PrototypeCreateFlowArgs {
     static schema = {
         fileId: uuidSchema
@@ -591,15 +1029,22 @@ export class PrototypeCreateOverlayArgs {
         pageId: uuidSchema.describe("Page id used to resolve source, destination, and relative shapes."),
         adapter: z.string().optional().describe("Optional adapter request: auto or backend-command."),
         sourceShapeId: uuidSchema.describe("Shape id that owns the overlay interaction."),
-        actionType: z
-            .enum(["open-overlay", "toggle-overlay", "close-overlay"])
-            .describe("Overlay action type."),
+        actionType: z.enum(["open-overlay", "toggle-overlay", "close-overlay"]).describe("Overlay action type."),
         destinationBoardId: uuidSchema
             .optional()
             .describe("Destination board/frame id. Required for open-overlay and toggle-overlay."),
         relativeToShapeId: uuidSchema.optional().describe("Optional shape id used as the overlay positioning base."),
         overlayPositionType: z
-            .enum(["center", "manual", "top-left", "top-right", "top-center", "bottom-left", "bottom-right", "bottom-center"])
+            .enum([
+                "center",
+                "manual",
+                "top-left",
+                "top-right",
+                "top-center",
+                "bottom-left",
+                "bottom-right",
+                "bottom-center",
+            ])
             .optional()
             .describe("Overlay positioning mode. Defaults to center."),
         manualPosition: pointSchema.optional().describe("Required when overlayPositionType is manual."),
@@ -620,7 +1065,15 @@ export class PrototypeCreateOverlayArgs {
     actionType!: "open-overlay" | "toggle-overlay" | "close-overlay";
     destinationBoardId?: string;
     relativeToShapeId?: string;
-    overlayPositionType?: "center" | "manual" | "top-left" | "top-right" | "top-center" | "bottom-left" | "bottom-right" | "bottom-center";
+    overlayPositionType?:
+        | "center"
+        | "manual"
+        | "top-left"
+        | "top-right"
+        | "top-center"
+        | "bottom-left"
+        | "bottom-right"
+        | "bottom-center";
     manualPosition?: { x: number; y: number };
     closeClickOutside?: boolean;
     backgroundOverlay?: boolean;

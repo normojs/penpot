@@ -597,6 +597,134 @@
                  flow))
         (t/is (= [] interactions))))))
 
+(t/deftest update-reorder-and-duplicate-file-prototype-interaction
+  (let [profile  (th/create-profile* 1 {:is-active true})
+        file     (th/create-file* 1 {:profile-id (:id profile)
+                                     :project-id (:default-project-id profile)
+                                     :is-shared false})
+        page-id  (get-in file [:data :pages 0])
+        frame-a  (uuid/next)
+        frame-b  (uuid/next)
+        frame-c  (uuid/next)
+        rect-id  (uuid/next)]
+
+    (doseq [[shape-id x name] [[frame-a 0 "Start"]
+                               [frame-b 360 "Middle"]
+                               [frame-c 720 "Done"]]]
+      (let [out {::th/type :create-file-shape
+                 ::rpc/profile-id (:id profile)
+                 :id (:id file)
+                 :page-id page-id
+                 :shape-id shape-id
+                 :type :frame
+                 :name name
+                 :x x
+                 :y 0
+                 :width 320
+                 :height 640
+                 :features cfeat/supported-features}
+            out (th/command! out)]
+        (t/is (nil? (:error out)))))
+
+    (let [out {::th/type :create-file-shape
+               ::rpc/profile-id (:id profile)
+               :id (:id file)
+               :page-id page-id
+               :shape-id rect-id
+               :parent-id frame-a
+               :type :rect
+               :name "CTA"
+               :x 24
+               :y 32
+               :width 120
+               :height 40
+               :features cfeat/supported-features}
+          out (th/command! out)]
+      (t/is (nil? (:error out))))
+
+    (let [create-out {::th/type :create-file-prototype-interaction
+                      ::rpc/profile-id (:id profile)
+                      :id (:id file)
+                      :page-id page-id
+                      :source-shape-id rect-id
+                      :destination-board-id frame-b
+                      :trigger :click
+                      :features cfeat/supported-features}
+          create-out (th/command! create-out)
+          interaction-id (get-in create-out [:result :interaction :interaction-id])
+          update-out {::th/type :update-file-prototype-interaction
+                      ::rpc/profile-id (:id profile)
+                      :id (:id file)
+                      :page-id page-id
+                      :interaction-id interaction-id
+                      :source-shape-id rect-id
+                      :interaction-index 0
+                      :destination-board-id frame-c
+                      :trigger :mouse-enter
+                      :preserve-scroll-position true
+                      :features cfeat/supported-features}
+          update-out (th/command! update-out)
+          duplicate-out {::th/type :duplicate-file-prototype-interaction
+                         ::rpc/profile-id (:id profile)
+                         :id (:id file)
+                         :page-id page-id
+                         :interaction-id interaction-id
+                         :source-shape-id rect-id
+                         :interaction-index 0
+                         :insertion-index 1
+                         :features cfeat/supported-features}
+          duplicate-out (th/command! duplicate-out)
+          duplicated-id (get-in duplicate-out [:result :interaction :interaction-id])
+          reorder-out {::th/type :reorder-file-prototype-interaction
+                       ::rpc/profile-id (:id profile)
+                       :id (:id file)
+                       :page-id page-id
+                       :interaction-id duplicated-id
+                       :source-shape-id rect-id
+                       :interaction-index 1
+                       :to-index 0
+                       :features cfeat/supported-features}
+          reorder-out (th/command! reorder-out)]
+      (t/is (nil? (:error create-out)))
+      (t/is (uuid? interaction-id))
+      (t/is (nil? (:error update-out)))
+      (t/is (= {:interaction-id interaction-id
+                :source-shape-id rect-id
+                :source-shape-name "CTA"
+                :index 0
+                :identity (stable-interaction-identity interaction-id rect-id 0)
+                :trigger :mouse-enter
+                :delay nil
+                :action-type :navigate-to
+                :destination-board-id frame-c
+                :destination-board-name "Done"}
+               (get-in update-out [:result :interaction])))
+      (t/is (nil? (:error duplicate-out)))
+      (t/is (uuid? duplicated-id))
+      (t/is (not= interaction-id duplicated-id))
+      (t/is (= 1 (get-in duplicate-out [:result :interaction :index])))
+      (t/is (nil? (:error reorder-out)))
+      (t/is (= {:interaction-id duplicated-id
+                :source-shape-id rect-id
+                :source-shape-name "CTA"
+                :index 0
+                :identity (stable-interaction-identity duplicated-id rect-id 0)
+                :trigger :mouse-enter
+                :delay nil
+                :action-type :navigate-to
+                :destination-board-id frame-c
+                :destination-board-name "Done"}
+               (get-in reorder-out [:result :interaction])))
+      (let [out {::th/type :get-file
+                 ::rpc/profile-id (:id profile)
+                 :id (:id file)
+                 :features cfeat/supported-features}
+            out (th/command! out)
+            interactions (get-in out [:result :data :pages-index page-id :objects rect-id :interactions])]
+        (t/is (nil? (:error out)))
+        (t/is (= [duplicated-id interaction-id] (mapv :id interactions)))
+        (t/is (every? #(= frame-c (:destination %)) interactions))))))
+
 (t/deftest get-file-prototype-interactions-lists-overlay-actions
   (let [profile  (th/create-profile* 1 {:is-active true})
         file     (th/create-file* 1 {:profile-id (:id profile)
