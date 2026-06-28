@@ -11,7 +11,8 @@
    [app.common.geom.point :as gpt]
    [app.common.geom.shapes.bounds :as gsb]
    [app.common.schema :as sm]
-   [app.common.schema.generators :as sg]))
+   [app.common.schema.generators :as sg]
+   [app.common.uuid :as uuid]))
 
 ;; WARNING: options are not deleted when changing event or action
 ;; type, so it can be restored if the user changes it back later.
@@ -721,20 +722,34 @@
   [interactions index update-fn]
   (update interactions index update-fn))
 
+(defn regenerate-interaction-id
+  [interaction]
+  (assoc interaction :id (uuid/next)))
+
+(defn regenerate-interaction-ids
+  [interactions]
+  (when (some? interactions)
+    (mapv regenerate-interaction-id interactions)))
+
 (defn remap-interactions
   "Update all interactions whose destination points to a shape in the
   map to the new id. And remove the ones whose destination does not exist
   in the map nor in the objects tree."
-  [interactions ids-map objects]
-  (when (some? interactions)
-    (let [xform (comp (filter (fn [interaction]
-                                (let [destination (:destination interaction)]
-                                  (or (nil? destination)
-                                      (contains? ids-map destination)
-                                      (contains? objects destination)))))
-                      (map (fn [interaction]
-                             (d/update-when interaction :destination #(get ids-map % %)))))]
-      (into [] xform interactions))))
+  ([interactions ids-map objects]
+   (remap-interactions interactions ids-map objects {:regenerate-ids? true}))
+  ([interactions ids-map objects {:keys [regenerate-ids?]
+                                  :or {regenerate-ids? true}}]
+   (when (some? interactions)
+     (let [xform (comp (filter (fn [interaction]
+                                 (let [destination (:destination interaction)]
+                                   (or (nil? destination)
+                                       (contains? ids-map destination)
+                                       (contains? objects destination)))))
+                       (map (fn [interaction]
+                              (cond-> (d/update-when interaction :destination #(get ids-map % %))
+                                regenerate-ids?
+                                (regenerate-interaction-id)))))]
+       (into [] xform interactions)))))
 
 (defn remove-interactions
   "Remove all interactions that the fn returns true."

@@ -159,7 +159,9 @@ migration `0018-assign-prototype-interaction-ids` backfills legacy missing ids
 and repairs later duplicate ids while preserving order, payload fields, and
 first existing unique ids. Current active work moves to P23.4 to settle
 copy/remap distinct-copy id regeneration and then enable executable
-update/reorder/duplicate helpers.
+update/reorder/duplicate helpers. P23.4 copy/remap id regeneration is complete
+for common shape duplicate/remap and frontend page duplicate paths; the active
+P23.4 remainder is enabling executable update/reorder/duplicate helpers.
 
 ## Feature Roadmap
 
@@ -197,7 +199,7 @@ remain the execution plan.
 | F27 | done | Prototype overlay read and creation contract | Phase 20 | Agents can inspect persisted overlay interactions and create open/toggle/close overlays without a live workspace | Completed 2026-06-18; P20.1/P20.2/P20.3 delivered read summaries, payload contract fixtures, backend-command creation, MCP routing, and `penpot-cli prototype create-overlay` |
 | F28 | done | Design editing alias contracts | Phase 21 | Agents can discover and use specialized layout/style aliases without creating a second shape-update contract | Completed 2026-06-28; P21.1 defined alias contracts, P21.2 registered MCP aliases, and P21.3 added CLI aliases with scoped validation |
 | F29 | done | Prototype interaction identity and mutation hardening | Phase 22 | Agents can target prototype interactions more robustly than source-shape/index order alone | Completed 2026-06-29; P22.1-P22.4 delivered the stable identity audit, read metadata, stable-id deletion, and descriptor-only update/reorder/duplicate contracts |
-| F30 | in_progress | Prototype interaction UUID generation and migration | Phase 23 | New and existing prototype interactions can safely receive stable ids before richer mutations become executable | P23.1-P23.3 completed 2026-06-29; P23.4 is active to settle copy/remap id regeneration and enable richer helpers |
+| F30 | in_progress | Prototype interaction UUID generation and migration | Phase 23 | New and existing prototype interactions can safely receive stable ids before richer mutations become executable | P23.1-P23.3 completed 2026-06-29; P23.4 copy/remap id regeneration is complete, and executable richer helpers remain active |
 
 ## Detailed Upcoming Task Queue
 
@@ -436,7 +438,7 @@ Order rationale:
 | N1 | Audit interaction UUID generation and migration plan | `common`, `backend`, `mcp/docs`, `command-runtime`, `penpot-cli` | Completed 2026-06-29; `prototype-interaction-uuid-generation-migration.md` maps create/copy/import paths, migration candidates, conflict policy, and test fixtures needed before runtime changes | Audit selected backend-command create-time id generation for P23.2 and kept legacy backfill/copy-remap duplicate-id handling separate |
 | N2 | Generate UUIDs for new prototype interactions if safe | `common`, `backend`, `mcp`, `penpot-cli` | Completed 2026-06-29; new backend-command-created navigate and overlay interactions persist a fresh stable `interactionId` without changing legacy reads | Common/backend plus MCP/CLI tests cover generated ids and response metadata |
 | N3 | Add legacy interaction id backfill or migration if safe | `common`, `backend`, `mcp/docs` | Completed 2026-06-29; common migration `0018-assign-prototype-interaction-ids` assigns ids to legacy id-missing interactions and repairs later duplicates | Focused migration tests cover id-missing, duplicate-id, first-unique-id preservation, page/component containers, order, and payload preservation |
-| N4 | Implement executable update/reorder/duplicate helpers after UUID policy | `common`, `backend`, `mcp`, `penpot-cli`, `mcp/docs` | Active; settle copy/remap distinct-copy id regeneration first, then turn Phase 22 descriptors into backend-command/MCP/CLI behavior | Tests cover stable-id targets, stale guards, action-compatible updates, same-source reorder, fresh-id duplicate, copy/remap regeneration, and legacy fallback |
+| N4 | Implement executable update/reorder/duplicate helpers after UUID policy | `common`, `backend`, `mcp`, `penpot-cli`, `mcp/docs` | Active; copy/remap distinct-copy id regeneration is complete, and Phase 22 descriptors now need backend-command/MCP/CLI execution | Tests cover stable-id targets, stale guards, action-compatible updates, same-source reorder, fresh-id duplicate, copy/remap regeneration, and legacy fallback |
 
 ## Phase 0: Baseline, Planning, And Rules
 
@@ -714,8 +716,9 @@ Use `mcp/docs/penpot-cli-overall-blueprint.md` and
 `mcp/docs/headless-live-gap-audit.md` as the current architecture baseline and
 continue with Phase 23:
 
-1. Settle copy/remap distinct-copy interaction id regeneration so copied shapes
-   cannot create ambiguous stable ids in the same file.
+1. Done in P23.4: settle copy/remap distinct-copy interaction id regeneration
+   for common shape duplicate/remap and frontend page duplicate paths so copied
+   shapes/pages do not reuse source interaction ids.
 2. Enable `prototype.update_interaction`, `prototype.reorder_interaction`, and
    `prototype.duplicate_interaction` only after stable-id targets, stale
    guards, action validation, reorder, duplicate, and copy/remap fixtures are
@@ -759,4 +762,4 @@ legacy file data before enabling richer update/reorder/duplicate mutations.
 | P23.1 | done | Audit UUID generation and migration prerequisites | `common`, `backend`, `mcp/docs`, `command-runtime`, `penpot-cli` | Completed 2026-06-29; audit identifies create/copy/import touchpoints, id conflict policy, migration/backfill options, fixture needs, and first safe runtime change | Selected common headless/backend-command create-time id generation for P23.2; no runtime behavior changed |
 | P23.2 | done | Generate persisted ids for new interactions if safe | `common`, `backend`, `mcp`, `penpot-cli` | Completed 2026-06-29; new backend-command navigate/overlay interactions include fresh stable `interactionId` values and read summaries expose them | Generated ids in common headless helpers; create does not accept caller-provided ids; legacy backfill was handled separately in P23.3 |
 | P23.3 | done | Add legacy id backfill or migration if safe | `common`, `backend`, `mcp/docs` | Completed 2026-06-29; existing id-missing interactions gain stable ids through common migration `0018-assign-prototype-interaction-ids`, and later duplicate ids are repaired | Preserves source-shape/index fallback for old clients, existing first unique ids, vector order, and payload fields |
-| P23.4 | in_progress | Enable update/reorder/duplicate helpers after UUID policy | `common`, `backend`, `mcp`, `penpot-cli`, `mcp/docs` | Active; `prototype.update_interaction`, `prototype.reorder_interaction`, and `prototype.duplicate_interaction` should execute with stable ids, stale guards, and action-specific fixtures | First settle copy/remap distinct-copy id regeneration; keep helpers non-executable until that coverage lands |
+| P23.4 | in_progress | Enable update/reorder/duplicate helpers after UUID policy | `common`, `backend`, `mcp`, `penpot-cli`, `mcp/docs` | Active; copy/remap distinct-copy id regeneration is complete, and `prototype.update_interaction`, `prototype.reorder_interaction`, and `prototype.duplicate_interaction` should execute with stable ids, stale guards, and action-specific fixtures | Common shape duplicate/remap and frontend page duplicate now regenerate copied interaction ids; helper adapters remain the active work |

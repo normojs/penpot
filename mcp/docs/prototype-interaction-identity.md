@@ -250,9 +250,10 @@ Preferred migration path:
    interactions without ids, and repairs later duplicate ids.
 4. Done in P23.3: preserve existing interaction order and payload fields
    during migration while keeping the first existing unique id.
-5. During copy/duplicate/remap, keep interaction ids only when the operation is
-   a version/history read; generate new ids when creating a distinct copy of a
-   shape to avoid duplicate ids in the same file.
+5. Done for distinct copies in P23.4: during copy/duplicate/remap, keep
+   interaction ids only when explicitly requested for non-copy reference
+   rewrites; generate new ids when creating a distinct copy of a shape or page
+   to avoid duplicate ids in the same file.
 6. Done for deletion in P22.3: add duplicate-id detection so old or manually
    edited files cannot make stable-id deletion ambiguous.
 
@@ -306,6 +307,14 @@ Implemented migration changes for P23.3:
 - Later duplicate ids receive fresh `uuid/next` values, while the first
   existing unique id is preserved.
 - Descriptor and runtime command contracts do not change in P23.3.
+
+Implemented copy/remap changes for P23.4:
+
+- `ctsi/remap-interactions` regenerates ids for distinct copied shape
+  interactions by default.
+- `ctsi/remap-interactions` accepts `{:regenerate-ids? false}` for non-copy
+  reference rewrites that must preserve existing ids.
+- Frontend page duplication regenerates interaction ids on copied page objects.
 
 ## Fixtures
 

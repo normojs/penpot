@@ -27,10 +27,10 @@ Adapters:
 
 The command-runtime descriptors advertise `adapters: []` until implementation.
 
-P23.2 implemented backend-command create-time id generation and P23.3
-implemented legacy backfill. These helper descriptors remain adapterless until
-copy/remap distinct-copy id regeneration and executable helper semantics are
-settled.
+P23.2 implemented backend-command create-time id generation, P23.3 implemented
+legacy backfill, and the first P23.4 slice implemented copy/remap
+distinct-copy id regeneration. These helper descriptors remain adapterless
+until executable helper semantics are settled.
 
 ## Shared Targeting
 
@@ -141,8 +141,9 @@ Before any descriptor becomes executable:
 1. New backend-command interaction creation must assign persisted UUIDs.
 2. Done in P23.3: legacy/id-missing files receive ids through a common
    file-data migration.
-3. Copy/duplicate/remap paths must define when interaction ids are preserved
-   and when fresh ids are generated.
+3. Done for distinct copied shapes/pages in P23.4: copy/duplicate/remap paths
+   preserve ids only for explicit non-copy reference rewrites and generate
+   fresh ids for distinct copied interactions.
 4. Common/backend fixtures must cover stable target, legacy target, stale guard,
    missing id, duplicate id, and action-specific validation.
 5. MCP and CLI tests must prove the descriptor, request payload, response, and

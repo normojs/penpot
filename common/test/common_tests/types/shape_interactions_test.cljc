@@ -9,12 +9,10 @@
    [app.common.exceptions :as ex]
    [app.common.geom.point :as gpt]
    [app.common.geom.rect :as grc]
-   [app.common.geom.shapes :as gsh]
    [app.common.math :as mth]
    [app.common.types.shape :as cts]
    [app.common.types.shape.interactions :as ctsi]
    [app.common.uuid :as uuid]
-   [clojure.pprint :refer [pprint]]
    [clojure.test :as t]))
 
 (t/deftest set-event-type
@@ -278,7 +276,6 @@
 
 (defn setup-selrect [{:keys [x y width height] :as obj}]
   (let [rect    (grc/make-rect x y width height)
-        center  (grc/rect->center rect)
         points  (grc/rect->points rect)]
     (-> obj
         (assoc :selrect rect)
@@ -876,7 +873,9 @@
         ids-map {(:id frame1) (:id frame4)
                  (:id frame2) (:id frame5)}
 
-        i1 (ctsi/set-destination ctsi/default-interaction (:id frame1))
+        stable-id (uuid/next)
+        i1 (assoc (ctsi/set-destination ctsi/default-interaction (:id frame1))
+                  :id stable-id)
         i2 (ctsi/set-destination ctsi/default-interaction (:id frame2))
         i3 (ctsi/set-destination ctsi/default-interaction (:id frame3))
         i4 (ctsi/set-destination ctsi/default-interaction nil)
@@ -890,7 +889,15 @@
         (t/is (= (:id frame4) (:destination (get new-interactions 0))))
         (t/is (= (:id frame5) (:destination (get new-interactions 1))))
         (t/is (= (:id frame3) (:destination (get new-interactions 2))))
-        (t/is (nil? (:destination (get new-interactions 3))))))
+        (t/is (nil? (:destination (get new-interactions 3))))
+        (t/is (every? uuid? (map :id new-interactions)))
+        (t/is (apply distinct? (map :id new-interactions)))
+        (t/is (not= stable-id (:id (first new-interactions))))))
+
+    (t/testing "Remap interactions can preserve ids for non-copy ref rewrites"
+      (let [new-interactions (ctsi/remap-interactions interactions ids-map objects {:regenerate-ids? false})]
+        (t/is (= stable-id (:id (first new-interactions))))
+        (t/is (= (:id frame4) (:destination (first new-interactions))))))
 
     ;; `nil` interactions is a valid input when a shape has no prototype links yet.
     (t/testing "Remap nil interactions"

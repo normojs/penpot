@@ -12,10 +12,12 @@
    [app.common.test-helpers.ids-map :as cthi]
    [app.common.test-helpers.shapes :as cths]
    [app.common.types.component :as ctk]
+   [app.common.types.shape.interactions :as ctsi]
    [app.common.uuid :as uuid]
    [app.main.data.workspace :as dw]
    [app.main.data.workspace.colors :as dc]
    [app.main.data.workspace.libraries :as dwl]
+   [app.main.data.workspace.pages :as dwp]
    [app.main.data.workspace.selection :as dws]
    [cljs.test :as t :include-macros true]
    [frontend-tests.helpers.pages :as thp]
@@ -420,7 +422,7 @@
                      (cthc/make-component :component-1 :frame-1))
             page-id (cthf/current-page-id file)
             store (ths/setup-store file)
-            events [(app.main.data.workspace.pages/duplicate-page page-id)]]
+            events [(dwp/duplicate-page page-id)]]
         (ths/run-store
          store done events
          (fn [new-state]
@@ -432,8 +434,7 @@
                  new-objects (:objects new-page)
                  group (some #(when (= (:name %) "group-1") %) (vals new-objects))
                  frame (some #(when (= (:name %) "frame-1") %) (vals new-objects))
-                 shape (some #(when (= (:name %) "shape-1") %) (vals new-objects))
-                 component-ids (map :component-id (filter :component-root (vals new-objects)))]
+                 shape (some #(when (= (:name %) "shape-1") %) (vals new-objects))]
 
              (t/is group "Group exists in duplicated page")
              (t/is frame "Frame exists in duplicated page")
@@ -451,4 +452,38 @@
                (t/is (ctk/instance-of? instance (:id file) component-id)
                      (str "Duplicated page contains an instance of the original main component (component-id: " component-id ")")))
 
+             (done))))))))
+
+(t/deftest duplicate-page-regenerates-prototype-interaction-ids
+  (t/async done
+    (with-redefs [uuid/next cthi/next-uuid]
+      (let [file (-> (cthf/sample-file :file1 :page-label :page-1)
+                     (ctho/add-frame :frame-1 {:name "Frame 1"})
+                     (ctho/add-frame :frame-2 {:name "Frame 2"})
+                     (cths/add-sample-shape :shape-1 :parent-label :frame-1 {:name "shape-1"}))
+            page-id (cthf/current-page-id file)
+            source-id (:id (cths/get-shape file :shape-1))
+            destination-id (:id (cths/get-shape file :frame-2))
+            original-interaction-id (uuid/next)
+            interaction (-> ctsi/default-interaction
+                            (assoc :id original-interaction-id)
+                            (ctsi/set-destination destination-id))
+            file (assoc-in file [:data :pages-index page-id :objects source-id :interactions] [interaction])
+            store (ths/setup-store file)
+            events [(dwp/duplicate-page page-id)]]
+        (ths/run-store
+         store done events
+         (fn [new-state]
+           (let [file' (ths/get-file-from-state new-state)
+                 pages-vec (get-in file' [:data :pages])
+                 pages-index (get-in file' [:data :pages-index])
+                 new-page-id (first (remove #(= page-id %) pages-vec))
+                 original-source (get-in pages-index [page-id :objects source-id])
+                 duplicated-source (get-in pages-index [new-page-id :objects source-id])
+                 duplicated-interaction-id (get-in duplicated-source [:interactions 0 :id])]
+             (t/is (= original-interaction-id (get-in original-source [:interactions 0 :id])))
+             (t/is (uuid? duplicated-interaction-id))
+             (t/is (not= original-interaction-id duplicated-interaction-id))
+             (t/is (= (dissoc interaction :id)
+                      (dissoc (get-in duplicated-source [:interactions 0]) :id)))
              (done))))))))

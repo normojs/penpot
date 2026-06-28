@@ -387,9 +387,10 @@ points CLI users back to MCP `file.open`, `file.get_context`,
 - P22.4 defines descriptor-only planned update/reorder/duplicate helpers.
   They remain non-executable until copy/remap id regeneration and
   action-specific executable fixtures are stable.
-- P23.2 adds backend-command create-time UUID generation, and P23.3 adds the
-  common legacy id migration. Copy/remap duplicate-id handling remains the
-  next prerequisite.
+- P23.2 adds backend-command create-time UUID generation, P23.3 adds the
+  common legacy id migration, and the first P23.4 slice regenerates ids for
+  distinct copied shape/page interactions. Executable update/reorder/duplicate
+  helper semantics remain next.
 - Whether plugin-live `prototype.list_interactions` is needed, or whether
   backend-command reads are enough for agents.
 - Whether exporter-backed `export.shape` should get an explicit file/page/shape

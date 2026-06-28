@@ -16,6 +16,7 @@
    [app.common.types.container :as ctn]
    [app.common.types.page :as ctp]
    [app.common.types.shape-tree :as ctst]
+   [app.common.types.shape.interactions :as ctsi]
    [app.common.uuid :as uuid]
    [app.config :as cf]
    [app.main.data.changes :as dch]
@@ -302,6 +303,9 @@
                             (assoc :shapes (mapv #(get variants-ids-map % %) (:shapes shape)))))))
              {}
              objects)
+
+            objects
+            (update-vals objects #(d/update-when % :interactions ctsi/regenerate-interaction-ids))
 
             page    (-> page
                         (assoc :name name)

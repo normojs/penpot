@@ -43,6 +43,15 @@ creating distinct copies. That regeneration policy remains separate from the
 legacy migration and must be handled before update/reorder/duplicate helpers
 become executable.
 
+P23.4 resolves the distinct-copy regeneration prerequisite:
+
+- `ctsi/remap-interactions` regenerates interaction ids by default when shape
+  duplicate/remap creates a distinct copied shape.
+- Callers that are doing non-copy reference rewrites can pass
+  `{:regenerate-ids? false}` to preserve ids.
+- Frontend page duplication regenerates every copied page-object interaction
+  id before the duplicated page is added.
+
 ## Current Creation Paths
 
 | Path | Code | Current id behavior | P23.2 action |
@@ -131,9 +140,12 @@ The focused migration tests cover:
 - Page and component object containers sharing the same file-wide seen set.
 - Payload fields and vector order being preserved.
 
-Remaining future fixtures before executable update/reorder/duplicate:
+P23.4 copy/remap fixtures cover:
 
 - Shape/page copy regenerates ids for distinct copies in the same file.
+
+Remaining future fixtures before executable update/reorder/duplicate:
+
 - Import/file duplicate preserves or regenerates ids according to the final
   file-wide uniqueness rule.
 - Frontend workspace creation either generates ids or is normalized by an
@@ -151,5 +163,5 @@ Remaining future fixtures before executable update/reorder/duplicate:
   usable for migrated legacy interactions and newly-created backend-command
   interactions.
 - `prototype.update_interaction`, `prototype.reorder_interaction`, and
-  `prototype.duplicate_interaction`: remain descriptor-only until P23.4 handles
-  copy/remap duplicate-id behavior and executable helper semantics.
+  `prototype.duplicate_interaction`: remain descriptor-only until the second
+  P23.4 slice implements executable helper semantics.
