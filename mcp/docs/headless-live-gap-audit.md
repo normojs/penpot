@@ -129,7 +129,7 @@ state for them.
 | `export.shape` | Registered descriptor and MCP tool through plugin-live. | Plugin-live workspace/export state. | It can use explicit live shape or current selection and returns plugin base64 data. | Keep plugin-live. Explicit exporter shape/page preview is covered by `render.preview`. |
 | `export.page` | Registered descriptor and MCP tool. | Exporter/read-only plus plugin-live. | Exporter path requires explicit ids; plugin-live can use bound workspace page. | Keep behavior. |
 | `render.preview` | Registered descriptor and MCP tool. | Exporter/read-only plus plugin-live. | Exporter path requires explicit file/page/object ids; plugin-live can preview page/shape/selection. | Keep behavior. |
-| `export.file`, `render.thumbnail` | Names exist in `ToolNames.ts` and command-runtime descriptor-only entries; no registered MCP tools, CLI commands, or executable adapters. | Descriptor-only planned export/render boundaries. | No stable file archive/export contract or thumbnail target/cache/artifact contract has been selected yet. | Keep adapters empty until a future export/render wave defines the runtime contract. |
+| `export.file`, `render.thumbnail` | Names exist in `ToolNames.ts` and command-runtime descriptor-only entries; no registered MCP tools, CLI commands, or executable adapters. `export.file` now has a fixture-backed backend `export-binfile` contract. | Descriptor-only planned export/render boundaries. | File archive semantics are selected but runtime stream/resource handling is not registered; thumbnail target/cache/artifact semantics are still unselected. | Keep adapters empty until a future export/render wave implements backend-rpc file export and defines thumbnail runtime behavior. |
 | `component.create`, `component.instantiate`, `tokens.list`, `tokens.apply` | Names exist in `ToolNames.ts`, not registered. | Unsupported or descriptor-only. | No runtime task or backend helper found. | Leave for a future components/tokens wave. |
 | `debug.get_plugin_state`, `debug.get_agent_logs` | Names exist in `ToolNames.ts`, not registered. | Unsupported or descriptor-only. | Diagnostics exist through status/log paths, not these tools. | Keep out of P17.2 unless diagnostics naming is explicitly selected. |
 | Legacy `execute_code`, `export_shape`, `import_image` | Registered legacy tools. | Legacy live/plugin or local filesystem behavior. | They are compatibility surfaces, not the typed headless path. | Do not expand; keep gated/legacy behavior. |
@@ -394,3 +394,6 @@ points CLI users back to MCP `file.open`, `file.get_context`,
   backend-command reads are enough for agents.
 - Whether exporter-backed `export.shape` should get an explicit file/page/shape
   mode or remain covered by `render.preview` plus `export.page`.
+- P25.2 selects the `export.file` contract as backend `export-binfile`
+  RPC/SSE plus `.penpot` resource URI handling; it remains adapterless until
+  MCP/CLI stream and download behavior is implemented.

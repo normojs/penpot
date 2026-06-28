@@ -225,6 +225,8 @@ Current state:
   render.preview descriptors are part of the migrated command catalog.
 - Done: descriptor-only `export.file` and `render.thumbnail` entries reserve
   planned export/render names with empty adapters and no CLI command names.
+- Done: `export.file` has a fixture-backed backend `export-binfile` binary
+  archive contract in command-runtime, but no executable CLI/MCP adapter yet.
 - Done: focused command-runtime tests cover descriptor groups, lookup,
   adapter-selection priority/error cases, and token-safe envelopes.
 - Status: complete. Later command coverage gaps were tracked by the P15.1
@@ -550,6 +552,15 @@ P24.1 is complete:
    later duplicate ids are still repaired inside the copied/imported file.
 3. Common migration fixtures cover cloned/imported file data without requiring
    a PostgreSQL-backed backend integration test.
+
+P25.2 is complete:
+
+1. `export.file` maps to backend `export-binfile` RPC/SSE semantics, not
+   exporter `export-shapes`.
+2. `libraryMode` owns the user-facing archive behavior: `all`, `merge`, or
+   `detach`.
+3. The shared command-runtime helper and JSON fixtures lock the planned request
+   mapping while keeping the descriptor adapterless.
 
 Keep manual configuration behavior stable while moving command metadata and
 envelopes; transport-specific formatting should stay at the MCP/CLI edges.

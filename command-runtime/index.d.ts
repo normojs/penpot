@@ -196,6 +196,71 @@ export interface CreateFileOpenHandoffOptions extends FileOpenHandoffTarget {
     status?: string;
 }
 
+export type ExportFileFormat = "penpot";
+export type ExportFileLibraryMode = "all" | "merge" | "detach";
+
+export interface ExportFileFormatCatalog {
+    PENPOT: "penpot";
+}
+
+export interface ExportFileLibraryModeCatalog {
+    ALL: "all";
+    MERGE: "merge";
+    DETACH: "detach";
+}
+
+export interface CreateExportFileContractOptions {
+    fileId?: string | null;
+    format?: ExportFileFormat | string | null;
+    libraryMode?: ExportFileLibraryMode | string | null;
+    type?: ExportFileLibraryMode | string | null;
+    includeLibraries?: boolean;
+    embedAssets?: boolean;
+    output?: string | null;
+    name?: string | null;
+    adapter?: string | null;
+}
+
+export interface ExportFileContract {
+    command: "export.file";
+    status: "contract";
+    executable: false;
+    adapter: null;
+    target: {
+        fileId: string | null;
+    };
+    artifact: {
+        kind: "file-export";
+        format: ExportFileFormat;
+        mimeType: "application/zip";
+        extension: ".penpot";
+        name: string;
+        libraryMode: ExportFileLibraryMode;
+        includeLibraries: boolean;
+        embedAssets: boolean;
+        output: string | null;
+    };
+    backendRpc: {
+        command: "export-binfile";
+        transport: "sse";
+        response: "resource-uri";
+        request: {
+            "file-id": string | null;
+            "include-libraries": boolean;
+            "embed-assets": boolean;
+        };
+    };
+    requires: string[];
+    nextActions: string[];
+    diagnostics: {
+        adapterBoundary: "descriptor-only";
+        existingBackendCommand: "export-binfile";
+        exporterBoundary: string;
+        mcpToolRegistered: false;
+        cliCommandRegistered: false;
+    };
+}
+
 export interface LowRiskCommandDescriptorCatalog {
     MCP_STATUS: CommandDescriptor & { id: "mcp.status"; mcpToolName: "mcp.get_status"; cliCommand: "mcp status" };
     MCP_CONFIG: CommandDescriptor & { id: "mcp.config"; cliCommand: "mcp config" };
@@ -314,6 +379,8 @@ export interface CommandDescriptorCatalog extends LowRiskCommandDescriptorCatalo
 
 export const CommandErrorCodes: CommandErrorCodeCatalog;
 export const AdapterSelectionReasonCodes: AdapterSelectionReasonCodeCatalog;
+export const ExportFileFormats: ExportFileFormatCatalog;
+export const ExportFileLibraryModes: ExportFileLibraryModeCatalog;
 export const CommandDescriptors: CommandDescriptorCatalog;
 export const LowRiskCommandDescriptors: readonly CommandDescriptor[];
 export const HeadlessAuthoringCommandDescriptors: readonly CommandDescriptor[];
@@ -333,6 +400,7 @@ export function createCommandResultEnvelope<TData = unknown>(
 export function getAdapterSelectionReason(code: AdapterSelectionReasonCode | string): string;
 export function createWorkspaceUrl(options: CreateWorkspaceUrlOptions): string;
 export function createFileOpenHandoff(options: CreateFileOpenHandoffOptions): FileOpenHandoff;
+export function createExportFileContract(options?: CreateExportFileContractOptions): ExportFileContract;
 export function createCommandErrorPayload(
     code: CommandErrorCode | string,
     message: string,

@@ -2061,6 +2061,18 @@ P25.1 export/render descriptor boundary result:
   path is enabled until a later wave selects the file archive/export contract
   and thumbnail target/cache/artifact contract.
 
+P25.2 export.file contract result:
+
+- `export-file-contract.md` selects backend `export-binfile` RPC/SSE as the
+  file-level archive source. `export.file` is not an exporter `export-shapes`
+  command.
+- `@penpot/command-runtime` exposes `createExportFileContract`, matching
+  `export-file-contract-fixtures.json`, so entry adapters can share the same
+  `libraryMode` to `include-libraries`/`embed-assets` mapping.
+- The descriptor still reports `adapters: []`; no MCP registration, CLI
+  command, backend-rpc stream wrapper, or artifact download path is enabled in
+  P25.2.
+
 ### 8.5 Export and Render Tools
 
 May start file-bound and later move to headless:
@@ -2077,6 +2089,8 @@ P25.1 reserves `export.file` and `render.thumbnail` in the shared command
 catalog only. They are descriptor-only planned boundaries: the descriptors
 document future input and response shapes, but empty adapters mean agents must
 not treat them as executable MCP, CLI, exporter, or plugin-live commands yet.
+P25.2 gives `export.file` a backend binary export contract while preserving
+that adapterless boundary.
 
 ### 8.6 Advanced Tools
 

@@ -9,6 +9,22 @@ const DEFAULT_PRIORITIES = Object.freeze({
 
 const EMPTY_OBJECT = Object.freeze({});
 
+export const ExportFileFormats = Object.freeze({
+    PENPOT: "penpot",
+});
+
+export const ExportFileLibraryModes = Object.freeze({
+    ALL: "all",
+    MERGE: "merge",
+    DETACH: "detach",
+});
+
+const ExportFileLibraryModeConfig = Object.freeze({
+    [ExportFileLibraryModes.ALL]: Object.freeze({ includeLibraries: true, embedAssets: false }),
+    [ExportFileLibraryModes.MERGE]: Object.freeze({ includeLibraries: false, embedAssets: true }),
+    [ExportFileLibraryModes.DETACH]: Object.freeze({ includeLibraries: false, embedAssets: false }),
+});
+
 export const CommandErrorCodes = Object.freeze({
     AUTHENTICATION_REQUIRED: "authentication_required",
     BACKEND_CONFIG_INVALID: "penpot_backend_config_invalid",
@@ -414,10 +430,12 @@ export const CommandDescriptors = Object.freeze({
         mcpToolName: "export.file",
         title: "Export file",
         description:
-            "Planned file-level export command descriptor. No MCP, CLI, or exporter adapter is executable until a stable archive/export contract is selected.",
-        inputSchema: "fileId, format?, includeLibraries?, output?, adapter?",
+            "Planned file-level binary export command descriptor. No MCP, CLI, backend-rpc, or exporter adapter is executable until the archive contract is registered.",
+        inputSchema:
+            "fileId, format=penpot?, libraryMode=all|merge|detach?, includeLibraries?, embedAssets?, output?, adapter?",
         adapters: Object.freeze([]),
-        responseShape: "planned status envelope with file export artifact metadata",
+        responseShape:
+            "planned status envelope with .penpot artifact metadata and backend export-binfile RPC/SSE contract",
     }),
     RENDER_PREVIEW: Object.freeze({
         id: "render.preview",
@@ -574,6 +592,57 @@ export function createFileOpenHandoff({ fileId, teamId, pageId, workspaceUrl, st
     };
 }
 
+export function createExportFileContract(options = EMPTY_OBJECT) {
+    const fileId = normalizeOptionalString(options.fileId);
+    const format = normalizeExportFileFormat(options.format);
+    const libraryMode = normalizeExportFileLibraryMode(options);
+    const libraryConfig = ExportFileLibraryModeConfig[libraryMode];
+    const output = normalizeOptionalString(options.output);
+    const name = normalizeOptionalString(options.name) ?? "file";
+
+    return {
+        command: CommandDescriptors.EXPORT_FILE.id,
+        status: "contract",
+        executable: false,
+        adapter: null,
+        target: { fileId },
+        artifact: {
+            kind: "file-export",
+            format,
+            mimeType: "application/zip",
+            extension: ".penpot",
+            name,
+            libraryMode,
+            includeLibraries: libraryConfig.includeLibraries,
+            embedAssets: libraryConfig.embedAssets,
+            output,
+        },
+        backendRpc: {
+            command: "export-binfile",
+            transport: "sse",
+            response: "resource-uri",
+            request: {
+                "file-id": fileId,
+                "include-libraries": libraryConfig.includeLibraries,
+                "embed-assets": libraryConfig.embedAssets,
+            },
+        },
+        requires: fileId ? [] : ["fileId"],
+        nextActions: [
+            "Register a backend-rpc adapter only after MCP and CLI agree on stream/resource handling.",
+            "Use an authenticated Penpot session with read permission for the target file.",
+            "Download the returned resource URI as a .penpot archive when execution is enabled.",
+        ],
+        diagnostics: {
+            adapterBoundary: "descriptor-only",
+            existingBackendCommand: "export-binfile",
+            exporterBoundary: "export.file uses backend binary export, not exporter export-shapes.",
+            mcpToolRegistered: false,
+            cliCommandRegistered: false,
+        },
+    };
+}
+
 export function createCommandErrorPayload(code, message, options = EMPTY_OBJECT) {
     return {
         code,
@@ -675,6 +744,42 @@ function compactRecord(record) {
     }
 
     return Object.fromEntries(Object.entries(record).filter(([, value]) => value !== undefined));
+}
+
+function normalizeOptionalString(value) {
+    return typeof value === "string" && value.trim().length > 0 ? value.trim() : null;
+}
+
+function normalizeExportFileFormat(value) {
+    const format = normalizeOptionalString(value) ?? ExportFileFormats.PENPOT;
+    if (format !== ExportFileFormats.PENPOT) {
+        throw new TypeError(`Unsupported export.file format: ${format}.`);
+    }
+    return format;
+}
+
+function normalizeExportFileLibraryMode(options) {
+    const explicitMode = normalizeOptionalString(options.libraryMode ?? options.type);
+    if (explicitMode) {
+        if (!Object.values(ExportFileLibraryModes).includes(explicitMode)) {
+            throw new TypeError(`Unsupported export.file libraryMode: ${explicitMode}.`);
+        }
+        return explicitMode;
+    }
+
+    if (options.includeLibraries === true && options.embedAssets === true) {
+        throw new TypeError("export.file cannot set includeLibraries and embedAssets to true at the same time.");
+    }
+
+    if (options.embedAssets === true) {
+        return ExportFileLibraryModes.MERGE;
+    }
+
+    if (options.includeLibraries === false) {
+        return ExportFileLibraryModes.DETACH;
+    }
+
+    return ExportFileLibraryModes.ALL;
 }
 
 function normalizeCandidates(candidates) {

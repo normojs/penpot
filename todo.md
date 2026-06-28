@@ -169,6 +169,9 @@ inside the new file. P25.1 is complete: planned `export.file` and
 `render.thumbnail` now have descriptor-only command-runtime entries and
 regression tests while remaining non-executable in MCP, CLI, and exporter
 adapters.
+P25.2 is complete: `export.file` now has a fixture-backed binary archive
+contract around the existing backend `export-binfile` RPC/SSE semantics while
+remaining adapterless and non-executable.
 
 ## Feature Roadmap
 
@@ -208,7 +211,7 @@ remain the execution plan.
 | F29 | done | Prototype interaction identity and mutation hardening | Phase 22 | Agents can target prototype interactions more robustly than source-shape/index order alone | Completed 2026-06-29; P22.1-P22.4 delivered the stable identity audit, read metadata, stable-id deletion, and descriptor-only update/reorder/duplicate contracts |
 | F30 | done | Prototype interaction UUID generation and migration | Phase 23 | New and existing prototype interactions can safely receive stable ids before richer mutations become executable | Completed 2026-06-29; P23.1-P23.4 delivered UUID generation, legacy id migration, copy/remap distinct-copy regeneration, and executable update/reorder/duplicate helpers |
 | F31 | done | Prototype file copy/import identity guardrails | Phase 24 | File-level duplicate/import paths keep stable interaction ids predictable without colliding inside the new file | Completed 2026-06-29; P24.1 documented file-bound identity semantics and added pure migration fixtures for cloned/imported file data |
-| F32 | done | Export/render descriptor boundary planning | Phase 25 | Agents can discover planned file-export and thumbnail-render command names without mistaking them for executable tools | Completed 2026-06-29; P25.1 added descriptor-only `export.file` and `render.thumbnail` command-runtime entries with no adapters |
+| F32 | done | Export/render descriptor boundary planning | Phase 25 | Agents can discover planned file-export and thumbnail-render command names without mistaking them for executable tools | Completed 2026-06-29; P25.1 added descriptor-only `export.file` and `render.thumbnail` command-runtime entries with no adapters, and P25.2 defined the fixture-backed `export.file` backend binary archive contract |
 
 ## Detailed Upcoming Task Queue
 
@@ -723,7 +726,7 @@ creatable through a backend-command path without requiring a live workspace.
 
 Use `mcp/docs/penpot-cli-overall-blueprint.md` and
 `mcp/docs/headless-live-gap-audit.md` as the current architecture baseline and
-continue after Phase 25:
+continue within Phase 25:
 
 1. Done in P23.4: settle copy/remap distinct-copy interaction id regeneration
    for common shape duplicate/remap and frontend page duplicate paths so copied
@@ -737,8 +740,10 @@ continue after Phase 25:
    until a later live-editor task is selected.
 4. Export/file, thumbnail, component, token, or debug tool waves can supersede
    Phase 23 if they become higher priority. P25.1 starts the export/render
-   wave with descriptor-only `export.file` and `render.thumbnail`; runtime
-   implementation still needs an explicit exporter contract.
+   wave with descriptor-only `export.file` and `render.thumbnail`; P25.2
+   selects the backend `export-binfile` contract for `export.file`. Runtime
+   implementation still needs a backend-rpc stream/resource adapter, and
+   `render.thumbnail` still needs an explicit target/cache/artifact contract.
 
 ## Phase 21: Design Editing Alias Contracts
 
@@ -794,3 +799,5 @@ catalog before adding executable MCP, CLI, or exporter behavior.
 | ID | Status | Task | Modules | Verification | Notes |
 | --- | --- | --- | --- | --- | --- |
 | P25.1 | done | Add descriptor-only export.file and render.thumbnail boundaries | `command-runtime`, `penpot-cli`, `mcp/docs`, `todo.md` | Completed 2026-06-29; command-runtime and CLI smoke descriptor tests prove both names resolve with empty adapters and no CLI command names | No runtime tool registration changed; future work must define file archive/export and thumbnail target/cache/artifact contracts before enabling adapters |
+| P25.2 | done | Define export.file binary archive contract | `command-runtime`, `mcp/docs`, `todo.md` | Completed 2026-06-29; command-runtime tests consume `export-file-contract-fixtures.json` and prove `libraryMode` maps to backend `include-libraries` / `embed-assets` request fields | Contract maps `export.file` to planned backend `export-binfile` RPC/SSE semantics, not exporter `export-shapes`; descriptor remains adapterless until runtime registration |
+| P25.3 | todo | Implement CLI export.file backend-rpc stream/resource path | `penpot-cli`, `command-runtime`, `mcp/docs`, `todo.md` | Not started | Add `penpot-cli export file` only when it can call backend `export-binfile`, process the returned resource URI, support `--output`, and preserve descriptor/runtime metadata |

@@ -1,9 +1,11 @@
 import assert from "node:assert/strict";
+import { readFileSync } from "node:fs";
 import test from "node:test";
 import {
     AdapterSelectionReasonCodes,
     CommandDescriptors,
     CommandErrorCodes,
+    ExportFileLibraryModes,
     HeadlessAuthoringCommandDescriptors,
     LiveGapCommandDescriptors,
     LowRiskCommandDescriptors,
@@ -12,6 +14,7 @@ import {
     createAdapterSelectionError,
     createCommandRequestEnvelope,
     createCommandResultEnvelope,
+    createExportFileContract,
     createFileOpenHandoff,
     createWorkspaceUrl,
     getAdapterSelectionReason,
@@ -51,6 +54,9 @@ const LIVE_GAP_IDS = [
     "shape.set_layout",
     "shape.set_style",
 ];
+const exportFileContractFixtures = JSON.parse(
+    readFileSync(new URL("../../mcp/docs/export-file-contract-fixtures.json", import.meta.url), "utf8")
+);
 
 test("descriptor groups expose stable command ids", () => {
     assert.deepEqual(
@@ -168,14 +174,80 @@ test("shape/export descriptors document planned file and thumbnail boundaries", 
     assert.equal(CommandDescriptors.EXPORT_FILE.mcpToolName, "export.file");
     assert.equal(CommandDescriptors.EXPORT_FILE.cliCommand, undefined);
     assert.deepEqual(CommandDescriptors.EXPORT_FILE.adapters, []);
-    assert.match(CommandDescriptors.EXPORT_FILE.description, /Planned file-level export/);
+    assert.match(CommandDescriptors.EXPORT_FILE.description, /Planned file-level binary export/);
+    assert.match(CommandDescriptors.EXPORT_FILE.inputSchema, /libraryMode=all\|merge\|detach/);
     assert.match(CommandDescriptors.EXPORT_FILE.inputSchema, /includeLibraries/);
+    assert.match(CommandDescriptors.EXPORT_FILE.responseShape, /export-binfile/);
     assert.equal(CommandDescriptors.RENDER_THUMBNAIL.mcpToolName, "render.thumbnail");
     assert.equal(CommandDescriptors.RENDER_THUMBNAIL.cliCommand, undefined);
     assert.deepEqual(CommandDescriptors.RENDER_THUMBNAIL.adapters, []);
     assert.match(CommandDescriptors.RENDER_THUMBNAIL.description, /Planned thumbnail render/);
     assert.match(CommandDescriptors.RENDER_THUMBNAIL.description, /cache policy/);
     assert.match(CommandDescriptors.RENDER_THUMBNAIL.inputSchema, /objectId|size/);
+});
+
+test("export.file contract maps planned binary archive requests to backend RPC semantics", () => {
+    const contract = createExportFileContract({
+        fileId: "file-1",
+        name: "Checkout flow",
+        output: "checkout.penpot",
+    });
+
+    assert.equal(contract.command, "export.file");
+    assert.equal(contract.executable, false);
+    assert.equal(contract.adapter, null);
+    assert.deepEqual(contract.requires, []);
+    assert.deepEqual(contract.target, { fileId: "file-1" });
+    assert.equal(contract.artifact.kind, "file-export");
+    assert.equal(contract.artifact.format, "penpot");
+    assert.equal(contract.artifact.mimeType, "application/zip");
+    assert.equal(contract.artifact.extension, ".penpot");
+    assert.equal(contract.artifact.name, "Checkout flow");
+    assert.equal(contract.artifact.libraryMode, ExportFileLibraryModes.ALL);
+    assert.equal(contract.artifact.includeLibraries, true);
+    assert.equal(contract.artifact.embedAssets, false);
+    assert.equal(contract.artifact.output, "checkout.penpot");
+    assert.equal(contract.backendRpc.command, "export-binfile");
+    assert.equal(contract.backendRpc.transport, "sse");
+    assert.equal(contract.backendRpc.response, "resource-uri");
+    assert.deepEqual(contract.backendRpc.request, {
+        "file-id": "file-1",
+        "include-libraries": true,
+        "embed-assets": false,
+    });
+    assert.equal(contract.diagnostics.adapterBoundary, "descriptor-only");
+    assert.equal(contract.diagnostics.mcpToolRegistered, false);
+    assert.equal(contract.diagnostics.cliCommandRegistered, false);
+    assert.match(contract.diagnostics.exporterBoundary, /not exporter export-shapes/);
+});
+
+test("export.file contract matches the documented fixture matrix", async (t) => {
+    assert.equal(exportFileContractFixtures.command, "export.file");
+    assert.match(exportFileContractFixtures.notes.join(" "), /not exporter export-shapes/);
+
+    for (const fixture of exportFileContractFixtures.cases) {
+        await t.test(fixture.id, () => {
+            const contract = createExportFileContract(fixture.input);
+            assert.equal(contract.executable, false);
+            assert.equal(contract.artifact.libraryMode, fixture.expected.libraryMode);
+            assert.equal(contract.artifact.includeLibraries, fixture.expected.includeLibraries);
+            assert.equal(contract.artifact.embedAssets, fixture.expected.embedAssets);
+            assert.deepEqual(contract.requires, fixture.expected.requires);
+            assert.deepEqual(contract.backendRpc.request, fixture.expected.backendRpcRequest);
+            assert.equal(contract.diagnostics.adapterBoundary, "descriptor-only");
+        });
+    }
+});
+
+test("export.file contract validates unsupported format and library boolean combinations", () => {
+    assert.throws(
+        () => createExportFileContract({ fileId: "file-1", format: "zip" }),
+        /Unsupported export\.file format/
+    );
+    assert.throws(
+        () => createExportFileContract({ fileId: "file-1", includeLibraries: true, embedAssets: true }),
+        /cannot set includeLibraries and embedAssets/
+    );
 });
 
 test("file open helpers produce stable workspace URLs and handoff actions", () => {

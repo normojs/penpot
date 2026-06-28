@@ -1,0 +1,81 @@
+{
+  "version": "P25.2",
+  "command": "export.file",
+  "status": "descriptor-only contract",
+  "notes": [
+    "export.file maps to backend export-binfile RPC/SSE semantics, not exporter export-shapes.",
+    "The command remains non-executable until MCP and CLI register backend-rpc stream/resource handling."
+  ],
+  "cases": [
+    {
+      "id": "default-all",
+      "input": {
+        "fileId": "file-1"
+      },
+      "expected": {
+        "libraryMode": "all",
+        "includeLibraries": true,
+        "embedAssets": false,
+        "requires": [],
+        "backendRpcRequest": {
+          "file-id": "file-1",
+          "include-libraries": true,
+          "embed-assets": false
+        }
+      }
+    },
+    {
+      "id": "merge-assets",
+      "input": {
+        "fileId": "file-1",
+        "libraryMode": "merge"
+      },
+      "expected": {
+        "libraryMode": "merge",
+        "includeLibraries": false,
+        "embedAssets": true,
+        "requires": [],
+        "backendRpcRequest": {
+          "file-id": "file-1",
+          "include-libraries": false,
+          "embed-assets": true
+        }
+      }
+    },
+    {
+      "id": "detach-libraries",
+      "input": {
+        "fileId": "file-1",
+        "libraryMode": "detach"
+      },
+      "expected": {
+        "libraryMode": "detach",
+        "includeLibraries": false,
+        "embedAssets": false,
+        "requires": [],
+        "backendRpcRequest": {
+          "file-id": "file-1",
+          "include-libraries": false,
+          "embed-assets": false
+        }
+      }
+    },
+    {
+      "id": "missing-target",
+      "input": {
+        "embedAssets": true
+      },
+      "expected": {
+        "libraryMode": "merge",
+        "includeLibraries": false,
+        "embedAssets": true,
+        "requires": ["fileId"],
+        "backendRpcRequest": {
+          "file-id": null,
+          "include-libraries": false,
+          "embed-assets": true
+        }
+      }
+    }
+  ]
+}
