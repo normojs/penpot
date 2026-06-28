@@ -1,8 +1,9 @@
 # Prototype Interaction UUID Generation And Migration Audit
 
-Status: P23.3 migration complete. Backend-command-created prototype
-interactions receive persisted stable ids, and legacy file data is backfilled
-by a common file-data migration.
+Status: P24.1 guardrails complete. Backend-command-created prototype
+interactions receive persisted stable ids, legacy file data is backfilled by a
+common file-data migration, distinct in-file copies regenerate ids, and
+file-level duplicate/import semantics are fixture-backed.
 
 This document audits the code paths that create, copy, import, summarize, and
 delete persisted prototype interactions before Phase 23 starts assigning stable
@@ -52,6 +53,18 @@ P23.4 resolves the distinct-copy regeneration prerequisite:
 - Frontend page duplication regenerates every copied page-object interaction
   id before the duplicated page is added.
 
+P24.1 locks down file-level duplicate/import semantics:
+
+- Stable `interactionId` values are scoped to a file, not globally across all
+  files.
+- Whole-file duplicate/import paths may preserve existing unique interaction ids
+  because the copied/imported file is a new identity boundary.
+- Backend duplicate/import paths run through `bfc/process-file`, which applies
+  common file migrations before persistence.
+- `0018-assign-prototype-interaction-ids` therefore preserves the first unique
+  id in the new file and only assigns fresh ids to missing or later duplicate
+  ids inside that new file.
+
 ## Current Creation Paths
 
 | Path | Code | Current id behavior | P23.2 action |
@@ -89,7 +102,7 @@ paths that preserve interaction payloads:
 | --- | --- | --- |
 | Shape/library copy or remap | `common/src/app/common/logic/libraries.cljc` calls `ctsi/remap-interactions`. | `remap-interactions` rewrites `:destination` but preserves `:id`, so copying a shape with interactions can duplicate the interaction id in the same file. |
 | Page duplicate | `frontend/src/app/main/data/workspace/pages.cljs` duplicates page objects and only remaps selected variant/component ids. | Non-variant shapes keep interactions unchanged; a duplicated page can carry the same interaction ids as the source page in the same file. |
-| File duplicate/import | `backend/src/app/binfile/common.clj` `process-file` relinks general refs through `cfh/relink-refs`. | New file ids make cross-file duplicates acceptable, but `relink-refs` does not define interaction-id regeneration. Imported files with existing duplicate ids can remain ambiguous. |
+| File duplicate/import | `backend/src/app/binfile/common.clj` `process-file` relinks general refs through `cfh/relink-refs` and runs common file migrations. | New file ids make cross-file duplicate interaction ids acceptable, while `0018-assign-prototype-interaction-ids` repairs missing or later duplicate ids inside the new file. |
 | Legacy migration | `common/src/app/common/files/migrations.cljc` has `0018-assign-prototype-interaction-ids`. | P23.3 assigns missing ids and repairs later duplicate ids while preserving existing first unique ids, order, and payload fields. |
 
 These risks are why update/reorder/duplicate helpers must remain descriptor-only
@@ -152,10 +165,15 @@ P23.4 executable helper fixtures cover:
 - Same-source reorder.
 - Same-source duplicate with a fresh generated `interactionId`.
 
+P24.1 file-level copy/import fixtures cover:
+
+- Whole-file clone/import data preserves first unique ids, proving interaction
+  identity is file-bound.
+- The same migration assigns missing ids and repairs later duplicate ids inside
+  the cloned/imported file.
+
 Remaining future fixtures:
 
-- Import/file duplicate preserves or regenerates ids according to the final
-  file-wide uniqueness rule.
 - Frontend workspace creation either generates ids or is normalized by an
   explicit save/migration path.
 

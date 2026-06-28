@@ -524,7 +524,7 @@ P22.4 is complete:
 3. The helpers intentionally expose no executable adapters until interaction
    UUID generation and legacy migration semantics are stable.
 
-P23.1, P23.2, and P23.3 are complete:
+P23.1 through P23.4 are complete:
 
 1. `prototype-interaction-uuid-generation-migration.md` audits current
    headless, backend, frontend workspace, copy/remap, import, and migration
@@ -534,9 +534,20 @@ P23.1, P23.2, and P23.3 are complete:
 3. Common file-data migration `0018-assign-prototype-interaction-ids` now
    backfills missing legacy ids and repairs later duplicate ids while
    preserving order, payload fields, and first existing unique ids.
-4. Frontend workspace generation and copy/remap duplicate-id handling stay
-   separate so richer mutation helpers remain blocked until distinct-copy id
-   behavior is durable.
+4. In-file shape/page copy paths regenerate ids for distinct copied
+   interactions.
+5. `prototype.update_interaction`, `prototype.reorder_interaction`, and
+   `prototype.duplicate_interaction` now execute through backend-command, MCP,
+   and `penpot-cli`.
+
+P24.1 is complete:
+
+1. File-level duplicate/import semantics are explicitly file-bound: first
+   unique interaction ids can be preserved across the new file boundary.
+2. Backend duplicate/import paths run through common migrations, so missing or
+   later duplicate ids are still repaired inside the copied/imported file.
+3. Common migration fixtures cover cloned/imported file data without requiring
+   a PostgreSQL-backed backend integration test.
 
 Keep manual configuration behavior stable while moving command metadata and
 envelopes; transport-specific formatting should stay at the MCP/CLI edges.

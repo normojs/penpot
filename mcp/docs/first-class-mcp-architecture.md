@@ -664,8 +664,10 @@ P23.1 prototype interaction UUID generation and migration audit result:
 - Frontend workspace/plugin-live creation remains source-index compatible.
   P23.3 later adds a file-data migration for legacy/id-missing stored
   interactions.
-- Copy/remap paths must regenerate interaction ids for distinct copies before
-  update/reorder/duplicate helpers become executable.
+- In-file copy/remap paths regenerate interaction ids for distinct shape/page
+  copies. Whole-file duplicate/import paths can preserve first unique
+  interaction ids because stable prototype interaction identity is scoped to
+  the file.
 
 P23.2 prototype interaction UUID generation result:
 
@@ -701,6 +703,15 @@ P23.4 copy/remap id regeneration and helper execution result:
 - `prototype.update_interaction`, `prototype.reorder_interaction`, and
   `prototype.duplicate_interaction` now execute through backend-command, MCP,
   and `penpot-cli`.
+
+P24.1 file-level duplicate/import id guardrail result:
+
+- Backend duplicate/import paths already pass new files through
+  `bfc/process-file`, which applies common file migrations before persistence.
+- Whole-file duplicate/import semantics preserve first unique interaction ids
+  in the copied/imported file.
+- The common migration repairs only missing ids and later duplicate ids inside
+  the new file, keeping interaction ids file-bound rather than globally unique.
 
 ## 4. Target Architecture
 
@@ -2034,7 +2045,10 @@ overlay interactions. P23.3 adds the common file-data migration for legacy
 missing and duplicate interaction ids. Copy/remap duplicate-id regeneration
 is now implemented for distinct copied shapes/pages, and P23.4 enables
 executable update/reorder/duplicate helpers through backend-command, MCP, and
-`penpot-cli`.
+`penpot-cli`. P24.1 documents and fixtures file-level duplicate/import
+semantics: preserve first unique ids across the new file boundary, and use the
+common migration to repair only missing or later duplicate ids inside that new
+file.
 
 ### 8.5 Export and Render Tools
 

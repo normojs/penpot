@@ -8,7 +8,6 @@
   (:require
    [app.common.data :as d]
    [app.common.files.migrations :as cfm]
-   [app.common.pprint :as pp]
    [app.common.types.file :as ctf]
    [app.common.uuid :as uuid]
    [clojure.test :as t]))
@@ -92,3 +91,77 @@
              (mapv #(dissoc % :id) migrated-interactions)))
     (t/is (= (mapv #(dissoc % :id) [component-duplicate component-missing])
              (mapv #(dissoc % :id) migrated-component-interactions)))))
+
+(t/deftest prototype-interaction-id-migration-preserves-file-level-clone-identities
+  (let [source-file-id (uuid/next)
+        cloned-file-id (uuid/next)
+        page-a-id (uuid/next)
+        page-b-id (uuid/next)
+        shape-a-id (uuid/next)
+        shape-b-id (uuid/next)
+        shape-c-id (uuid/next)
+        destination-a-id (uuid/next)
+        destination-b-id (uuid/next)
+        stable-a-id (uuid/next)
+        stable-b-id (uuid/next)
+        duplicate-id (uuid/next)
+        stable-a (navigate-interaction destination-a-id {:id stable-a-id
+                                                         :preserve-scroll true})
+        stable-b (navigate-interaction destination-b-id {:id stable-b-id
+                                                         :event-type :mouse-enter})
+        missing (navigate-interaction destination-a-id {:event-type :mouse-leave})
+        duplicate-first (navigate-interaction destination-b-id {:id duplicate-id
+                                                                :delay 100})
+        duplicate-second (navigate-interaction destination-a-id {:id duplicate-id
+                                                                 :preserve-scroll true})
+        source-data {:id source-file-id
+                     :pages [page-a-id]
+                     :pages-index
+                     {page-a-id {:id page-a-id
+                                 :name "Source"
+                                 :objects
+                                 {shape-a-id {:id shape-a-id
+                                              :type :rect
+                                              :interactions [stable-a
+                                                             stable-b]}}}}}
+        cloned-data {:id cloned-file-id
+                     :pages [page-a-id page-b-id]
+                     :pages-index
+                     {page-a-id {:id page-a-id
+                                 :name "Cloned page A"
+                                 :objects
+                                 {shape-a-id {:id shape-a-id
+                                              :type :rect
+                                              :interactions [stable-a
+                                                             missing]}
+                                  shape-b-id {:id shape-b-id
+                                              :type :rect
+                                              :interactions [duplicate-first]}}}
+                      page-b-id {:id page-b-id
+                                 :name "Cloned page B"
+                                 :objects
+                                 {shape-c-id {:id shape-c-id
+                                              :type :rect
+                                              :interactions [stable-b
+                                                             duplicate-second]}}}}}
+        cloned-data' (cfm/migrate-data cloned-data "0018-assign-prototype-interaction-ids")
+        migrated-a (get-in cloned-data' [:pages-index page-a-id :objects shape-a-id :interactions])
+        migrated-b (get-in cloned-data' [:pages-index page-a-id :objects shape-b-id :interactions])
+        migrated-c (get-in cloned-data' [:pages-index page-b-id :objects shape-c-id :interactions])
+        migrated-interactions (concat migrated-a migrated-b migrated-c)
+        migrated-ids (mapv :id migrated-interactions)]
+    (t/is (= source-file-id (:id source-data)))
+    (t/is (= cloned-file-id (:id cloned-data')))
+    (t/is (= stable-a-id (:id (first migrated-a))))
+    (t/is (= stable-b-id (:id (first migrated-c))))
+    (t/is (= duplicate-id (:id (first migrated-b))))
+    (t/is (uuid? (:id (second migrated-a))))
+    (t/is (not= duplicate-id (:id (second migrated-c))))
+    (t/is (every? uuid? migrated-ids))
+    (t/is (apply distinct? migrated-ids))
+    (t/is (= (mapv #(dissoc % :id) [stable-a missing])
+             (mapv #(dissoc % :id) migrated-a)))
+    (t/is (= (mapv #(dissoc % :id) [duplicate-first])
+             (mapv #(dissoc % :id) migrated-b)))
+    (t/is (= (mapv #(dissoc % :id) [stable-b duplicate-second])
+             (mapv #(dissoc % :id) migrated-c)))))

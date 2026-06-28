@@ -161,7 +161,11 @@ first existing unique ids. P23.4 is complete: copy/remap distinct-copy id
 regeneration now covers common shape duplicate/remap and frontend page
 duplicate paths, and `prototype.update_interaction`,
 `prototype.reorder_interaction`, and `prototype.duplicate_interaction` are
-executable through backend-command, MCP, and `penpot-cli`.
+executable through backend-command, MCP, and `penpot-cli`. P24.1 is complete:
+file-level duplicate/import interaction id semantics are now documented as
+file-bound, and common migration fixtures prove cloned/imported file data
+preserves first unique ids while repairing missing or later duplicate ids
+inside the new file.
 
 ## Feature Roadmap
 
@@ -200,6 +204,7 @@ remain the execution plan.
 | F28 | done | Design editing alias contracts | Phase 21 | Agents can discover and use specialized layout/style aliases without creating a second shape-update contract | Completed 2026-06-28; P21.1 defined alias contracts, P21.2 registered MCP aliases, and P21.3 added CLI aliases with scoped validation |
 | F29 | done | Prototype interaction identity and mutation hardening | Phase 22 | Agents can target prototype interactions more robustly than source-shape/index order alone | Completed 2026-06-29; P22.1-P22.4 delivered the stable identity audit, read metadata, stable-id deletion, and descriptor-only update/reorder/duplicate contracts |
 | F30 | done | Prototype interaction UUID generation and migration | Phase 23 | New and existing prototype interactions can safely receive stable ids before richer mutations become executable | Completed 2026-06-29; P23.1-P23.4 delivered UUID generation, legacy id migration, copy/remap distinct-copy regeneration, and executable update/reorder/duplicate helpers |
+| F31 | done | Prototype file copy/import identity guardrails | Phase 24 | File-level duplicate/import paths keep stable interaction ids predictable without colliding inside the new file | Completed 2026-06-29; P24.1 documented file-bound identity semantics and added pure migration fixtures for cloned/imported file data |
 
 ## Detailed Upcoming Task Queue
 
@@ -714,7 +719,7 @@ creatable through a backend-command path without requiring a live workspace.
 
 Use `mcp/docs/penpot-cli-overall-blueprint.md` and
 `mcp/docs/headless-live-gap-audit.md` as the current architecture baseline and
-continue after Phase 23:
+continue after Phase 24:
 
 1. Done in P23.4: settle copy/remap distinct-copy interaction id regeneration
    for common shape duplicate/remap and frontend page duplicate paths so copied
@@ -723,7 +728,9 @@ continue after Phase 23:
    `prototype.reorder_interaction`, and `prototype.duplicate_interaction`
    through common/backend, MCP, and `penpot-cli`.
 3. Keep frontend workspace generation and import/file-duplicate id semantics
-   explicit in docs and tests.
+   explicit in docs and tests. Done in P24.1 for file-level duplicate/import
+   semantics; frontend workspace generation remains source-index compatible
+   until a later live-editor task is selected.
 4. Export/file, thumbnail, component, token, or debug tool waves can supersede
    Phase 23 if they become higher priority.
 
@@ -762,3 +769,13 @@ legacy file data before enabling richer update/reorder/duplicate mutations.
 | P23.2 | done | Generate persisted ids for new interactions if safe | `common`, `backend`, `mcp`, `penpot-cli` | Completed 2026-06-29; new backend-command navigate/overlay interactions include fresh stable `interactionId` values and read summaries expose them | Generated ids in common headless helpers; create does not accept caller-provided ids; legacy backfill was handled separately in P23.3 |
 | P23.3 | done | Add legacy id backfill or migration if safe | `common`, `backend`, `mcp/docs` | Completed 2026-06-29; existing id-missing interactions gain stable ids through common migration `0018-assign-prototype-interaction-ids`, and later duplicate ids are repaired | Preserves source-shape/index fallback for old clients, existing first unique ids, vector order, and payload fields |
 | P23.4 | done | Enable update/reorder/duplicate helpers after UUID policy | `common`, `backend`, `mcp`, `penpot-cli`, `mcp/docs` | Completed 2026-06-29; helper commands execute with stable ids, source/index fallback, stale guards, action-specific update validation, same-source reorder, and fresh-id duplicate | Common shape duplicate/remap and frontend page duplicate regenerate copied interaction ids; backend-command/MCP/CLI tests cover executable helper payloads |
+
+## Phase 24: Prototype File Copy And Import Identity Guardrails
+
+Goal: make file-level duplicate/import semantics explicit after stable
+interaction ids become executable targets, without confusing whole-file copies
+with in-file shape/page copies.
+
+| ID | Status | Task | Modules | Verification | Notes |
+| --- | --- | --- | --- | --- | --- |
+| P24.1 | done | Document and fixture file-level duplicate/import id semantics | `common`, `mcp/docs`, `todo.md` | Completed 2026-06-29; pure migration tests prove cloned/imported file data preserves first unique ids and repairs only missing/later duplicate ids inside the new file | Backend duplicate/import paths already pass through `bfc/process-file` and common file migrations; this locks the contract before selecting export/file or component/token waves |
