@@ -2069,9 +2069,18 @@ P25.2 export.file contract result:
 - `@penpot/command-runtime` exposes `createExportFileContract`, matching
   `export-file-contract-fixtures.json`, so entry adapters can share the same
   `libraryMode` to `include-libraries`/`embed-assets` mapping.
-- The descriptor still reports `adapters: []`; no MCP registration, CLI
-  command, backend-rpc stream wrapper, or artifact download path is enabled in
-  P25.2.
+- P25.2 did not enable runtime execution; it only locked the shared contract.
+
+P25.3 CLI export.file runtime result:
+
+- `penpot-cli export file` is now registered as the CLI command for
+  `export.file`.
+- The CLI selects the `backend-rpc` adapter, calls backend `export-binfile`,
+  parses the SSE `end` event resource URI, and returns resource metadata.
+- `--output <path>` downloads the returned `.penpot` resource with the same
+  auth token/cookie convention used by other artifact downloads.
+- MCP `export.file` remains unregistered until MCP-side backend-rpc
+  stream/resource handling is implemented.
 
 ### 8.5 Export and Render Tools
 
@@ -2086,11 +2095,10 @@ render.thumbnail
 ```
 
 P25.1 reserves `export.file` and `render.thumbnail` in the shared command
-catalog only. They are descriptor-only planned boundaries: the descriptors
-document future input and response shapes, but empty adapters mean agents must
-not treat them as executable MCP, CLI, exporter, or plugin-live commands yet.
-P25.2 gives `export.file` a backend binary export contract while preserving
-that adapterless boundary.
+catalog. P25.2 gives `export.file` a backend binary export contract, and P25.3
+enables the CLI backend-rpc path for `penpot-cli export file`. MCP
+`export.file` and all `render.thumbnail` runtime behavior remain future work
+until their resource-return and target/cache/artifact contracts are explicit.
 
 ### 8.6 Advanced Tools
 

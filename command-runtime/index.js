@@ -428,14 +428,15 @@ export const CommandDescriptors = Object.freeze({
     EXPORT_FILE: Object.freeze({
         id: "export.file",
         mcpToolName: "export.file",
+        cliCommand: "export file",
         title: "Export file",
         description:
-            "Planned file-level binary export command descriptor. No MCP, CLI, backend-rpc, or exporter adapter is executable until the archive contract is registered.",
+            "Exports a file-level .penpot binary archive through backend-rpc export-binfile for explicit CLI targets; MCP registration remains a future step.",
         inputSchema:
-            "fileId, format=penpot?, libraryMode=all|merge|detach?, includeLibraries?, embedAssets?, output?, adapter?",
-        adapters: Object.freeze([]),
+            "fileId, format=penpot?, libraryMode=all|merge|detach?, includeLibraries?, embedAssets?, output?, dryRun?, adapter?",
+        adapters: Object.freeze(["backend-rpc"]),
         responseShape:
-            "planned status envelope with .penpot artifact metadata and backend export-binfile RPC/SSE contract",
+            "status envelope with .penpot artifact metadata, backend export-binfile RPC/SSE resource URI, and optional downloaded artifact metadata",
     }),
     RENDER_PREVIEW: Object.freeze({
         id: "render.preview",
@@ -603,8 +604,8 @@ export function createExportFileContract(options = EMPTY_OBJECT) {
     return {
         command: CommandDescriptors.EXPORT_FILE.id,
         status: "contract",
-        executable: false,
-        adapter: null,
+        executable: true,
+        adapter: "backend-rpc",
         target: { fileId },
         artifact: {
             kind: "file-export",
@@ -629,16 +630,16 @@ export function createExportFileContract(options = EMPTY_OBJECT) {
         },
         requires: fileId ? [] : ["fileId"],
         nextActions: [
-            "Register a backend-rpc adapter only after MCP and CLI agree on stream/resource handling.",
+            "Use penpot-cli export file with backend-rpc to call export-binfile and read the SSE resource URI.",
             "Use an authenticated Penpot session with read permission for the target file.",
-            "Download the returned resource URI as a .penpot archive when execution is enabled.",
+            "Pass --output <path> to download the returned resource URI as a .penpot archive.",
         ],
         diagnostics: {
-            adapterBoundary: "descriptor-only",
+            adapterBoundary: "cli-backend-rpc",
             existingBackendCommand: "export-binfile",
             exporterBoundary: "export.file uses backend binary export, not exporter export-shapes.",
             mcpToolRegistered: false,
-            cliCommandRegistered: false,
+            cliCommandRegistered: true,
         },
     };
 }

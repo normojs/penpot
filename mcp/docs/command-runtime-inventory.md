@@ -36,7 +36,8 @@ Descriptor catalog:
 - headless authoring descriptors: `page.rename`
 - shape/export descriptors: `shape.create_frame`, `shape.create_rect`,
   `shape.create_text`, `shape.create_image`, `shape.update`, `shape.delete`,
-  `export.shape`, `export.page`, `render.preview`
+  `export.shape`, `export.page`, `export.file`, `render.preview`,
+  `render.thumbnail`
 - lookup helper: `getCommandDescriptor(id)` by internal id, MCP tool name, or
   CLI command string
 - descriptor groups: `LowRiskCommandDescriptors`,
@@ -109,7 +110,7 @@ MCP server tool classes and `penpot-cli`.
 | `prototype.create_interaction` | `PrototypeCreateInteractionArgs` | plugin-live task | JSON plugin task data | `PrototypePluginTask.test.ts` |
 | `export.shape` | `ExportShapeArgs` | plugin-live task | JSON/base64 export task data | `ExportPluginTask.test.ts` serialization only |
 | `export.page` | `ExportPageArgs` | plugin-live task | JSON/base64 export task data | `ExportPluginTask.test.ts` serialization only |
-| `export.file` | Planned `ExportFileArgs` | descriptor-only backend `export-binfile` RPC/SSE contract | planned `.penpot` artifact/resource metadata; no MCP tool registered | `command-runtime.test.mjs` consumes `export-file-contract-fixtures.json` |
+| `export.file` | Planned `ExportFileArgs`; CLI contract implemented | MCP tool unregistered; CLI backend-rpc `export-binfile` RPC/SSE execution | `.penpot` artifact metadata plus backend resource URI and optional downloaded output path in CLI | `command-runtime.test.mjs` consumes `export-file-contract-fixtures.json`; `cli-smoke.test.mjs` covers dry-run, SSE, output write, adapter error, and auth error |
 | `render.preview` | `RenderPreviewArgs` | exporter HTTP service for explicit targets; plugin-live task for bound workspace context | JSON exporter resource metadata or JSON/base64 render task data | `ExportTools.test.ts` covers exporter/plugin-live/adapter errors; `ExportPluginTask.test.ts` covers serialization |
 | `execute_code` | `ExecuteCodeArgs` | plugin-live task, disabled unless `PENPOT_MCP_ENABLE_EXECUTE_CODE=true` | JSON disabled error or text execution result | `ExecuteCodeTool.test.ts` |
 | `high_level_overview` | `EmptyToolArgs` | local static overview | text overview | gap: no focused test |
@@ -137,8 +138,9 @@ not register yet:
   source-shape/index deletion as the legacy fallback. P22.4 adds
   descriptor-only planned `prototype.update_interaction`,
   `prototype.reorder_interaction`, and `prototype.duplicate_interaction`
-  contracts with empty adapter lists;
-  `export.file` and `render.thumbnail` remain unregistered
+  contracts with empty adapter lists; `export.file` is CLI-registered through
+  backend-rpc while MCP remains unregistered; `render.thumbnail` remains
+  descriptor-only
 - debug: `debug.get_plugin_state`, `debug.get_agent_logs`
 
 Do not migrate these as executable descriptors until their implementation is
@@ -166,7 +168,7 @@ registered or the descriptor explicitly marks them as planned/unavailable.
 | `shape set-style` | `shape.set_style` | backend-command RPC `update-file-shape`, style/text-only alias over `shape update` | JSON/text `{fileId,shape,revn,vern,adapter,adapterSelection}` | alias RPC smoke tests |
 | `shape delete` | `shape.delete` | backend-command RPC `delete-file-shape` | JSON/text `{fileId,shape,revn,vern,deleted,adapter,adapterSelection}` | gap: no smoke test |
 | `export page` | `export.page` | exporter HTTP service | JSON/text dry-run plan or exporter resource metadata/output path | dry-run and adapter-error smoke tests |
-| `export file` | `export.file` | not registered | planned backend `export-binfile` stream/resource wrapper | descriptor-only; no CLI command yet |
+| `export file` | `export.file` | backend-rpc `export-binfile` SSE | JSON/text dry-run plan or backend resource metadata/output path | dry-run, SSE resource, output-write, adapter-error, and auth smoke tests |
 | `render preview` | `render.preview` | exporter HTTP service | JSON/text dry-run plan or exporter preview resource metadata/output path | dry-run and output-write smoke tests |
 
 ## Duplicated Metadata To Move

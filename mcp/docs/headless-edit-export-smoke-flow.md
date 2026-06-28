@@ -19,6 +19,7 @@ The flow covers:
 - frame, rectangle, and text creation through `backend-command`
 - shape updates through `backend-command`
 - exporter-backed preview and page export with explicit file/page/object ids
+- backend-rpc file archive export through `export-binfile`
 - adapter diagnostics in both CLI and MCP responses
 - artifact output written to disk
 
@@ -61,9 +62,10 @@ pnpm --dir mcp --filter mcp-server test
 git diff --check
 ```
 
-The CLI smoke tests cover exporter dry-runs, preview dry-runs, output writes,
-and no-service validation. The MCP server tests cover backend-command adapter
-selection for page/shape tools and exporter resource metadata for previews.
+The CLI smoke tests cover exporter dry-runs, preview dry-runs, file archive
+dry-runs, backend SSE resource handling, output writes, and no-service
+validation. The MCP server tests cover backend-command adapter selection for
+page/shape tools and exporter resource metadata for previews.
 
 ## CLI Flow
 
@@ -258,6 +260,39 @@ Use JSON output and keep each response as completion evidence.
     test -s "$OUT_DIR/export.png"
     ```
 
+12. Dry-run a file archive export.
+
+    ```bash
+    node penpot-cli/dist/index.js export file \
+      --file "$FILE_ID" \
+      --library-mode merge \
+      --dry-run \
+      --format json
+    ```
+
+    Expected diagnostics:
+
+    - `adapter: "backend-rpc"`
+    - `backendRpc.command: "export-binfile"`
+    - backend request has `include-libraries: false`
+    - backend request has `embed-assets: true`
+
+13. Write the `.penpot` archive.
+
+    ```bash
+    node penpot-cli/dist/index.js export file \
+      --file "$FILE_ID" \
+      --library-mode merge \
+      --output "$OUT_DIR/file.penpot" \
+      --format json
+    ```
+
+    Verify the artifact:
+
+    ```bash
+    test -s "$OUT_DIR/file.penpot"
+    ```
+
 ## MCP Equivalent Flow
 
 Run the same scenario from an MCP client with explicit ids:
@@ -275,6 +310,9 @@ Run the same scenario from an MCP client with explicit ids:
    `profileId`.
 8. `export.page` with explicit file, page, object, profile, format, and scale
    fields when that tool is available through the client catalog.
+
+`export.file` is currently CLI-only; MCP registration waits for MCP-side
+backend-rpc resource-return handling.
 
 Expected MCP evidence:
 

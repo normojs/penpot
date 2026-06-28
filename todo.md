@@ -171,7 +171,12 @@ regression tests while remaining non-executable in MCP, CLI, and exporter
 adapters.
 P25.2 is complete: `export.file` now has a fixture-backed binary archive
 contract around the existing backend `export-binfile` RPC/SSE semantics while
-remaining adapterless and non-executable.
+remaining MCP-unregistered.
+P25.3 is complete: `penpot-cli export file` now executes backend-rpc
+`export-binfile`, parses the SSE resource URI, returns resource metadata, and
+downloads the `.penpot` archive when `--output` is supplied. P25.4 is in
+progress: define the `render.thumbnail` target, cache, artifact, and adapter
+contract before enabling any thumbnail runtime.
 
 ## Feature Roadmap
 
@@ -212,6 +217,7 @@ remain the execution plan.
 | F30 | done | Prototype interaction UUID generation and migration | Phase 23 | New and existing prototype interactions can safely receive stable ids before richer mutations become executable | Completed 2026-06-29; P23.1-P23.4 delivered UUID generation, legacy id migration, copy/remap distinct-copy regeneration, and executable update/reorder/duplicate helpers |
 | F31 | done | Prototype file copy/import identity guardrails | Phase 24 | File-level duplicate/import paths keep stable interaction ids predictable without colliding inside the new file | Completed 2026-06-29; P24.1 documented file-bound identity semantics and added pure migration fixtures for cloned/imported file data |
 | F32 | done | Export/render descriptor boundary planning | Phase 25 | Agents can discover planned file-export and thumbnail-render command names without mistaking them for executable tools | Completed 2026-06-29; P25.1 added descriptor-only `export.file` and `render.thumbnail` command-runtime entries with no adapters, and P25.2 defined the fixture-backed `export.file` backend binary archive contract |
+| F33 | in_progress | Thumbnail render contract | Phase 25 | Agents can request thumbnail rendering only after target/cache/artifact semantics are explicit | Current next task; P25.4 will define `render.thumbnail` contract boundaries before runtime registration |
 
 ## Detailed Upcoming Task Queue
 
@@ -740,10 +746,11 @@ continue within Phase 25:
    until a later live-editor task is selected.
 4. Export/file, thumbnail, component, token, or debug tool waves can supersede
    Phase 23 if they become higher priority. P25.1 starts the export/render
-   wave with descriptor-only `export.file` and `render.thumbnail`; P25.2
-   selects the backend `export-binfile` contract for `export.file`. Runtime
-   implementation still needs a backend-rpc stream/resource adapter, and
-   `render.thumbnail` still needs an explicit target/cache/artifact contract.
+   wave with descriptor boundaries, P25.2 selects the backend
+   `export-binfile` contract for `export.file`, and P25.3 implements
+   `penpot-cli export file` backend-rpc/SSE execution plus `--output`
+   downloads. Remaining work: MCP `export.file` registration and
+   `render.thumbnail` target/cache/artifact contract.
 
 ## Phase 21: Design Editing Alias Contracts
 
@@ -798,6 +805,7 @@ catalog before adding executable MCP, CLI, or exporter behavior.
 
 | ID | Status | Task | Modules | Verification | Notes |
 | --- | --- | --- | --- | --- | --- |
-| P25.1 | done | Add descriptor-only export.file and render.thumbnail boundaries | `command-runtime`, `penpot-cli`, `mcp/docs`, `todo.md` | Completed 2026-06-29; command-runtime and CLI smoke descriptor tests prove both names resolve with empty adapters and no CLI command names | No runtime tool registration changed; future work must define file archive/export and thumbnail target/cache/artifact contracts before enabling adapters |
-| P25.2 | done | Define export.file binary archive contract | `command-runtime`, `mcp/docs`, `todo.md` | Completed 2026-06-29; command-runtime tests consume `export-file-contract-fixtures.json` and prove `libraryMode` maps to backend `include-libraries` / `embed-assets` request fields | Contract maps `export.file` to planned backend `export-binfile` RPC/SSE semantics, not exporter `export-shapes`; descriptor remains adapterless until runtime registration |
-| P25.3 | todo | Implement CLI export.file backend-rpc stream/resource path | `penpot-cli`, `command-runtime`, `mcp/docs`, `todo.md` | Not started | Add `penpot-cli export file` only when it can call backend `export-binfile`, process the returned resource URI, support `--output`, and preserve descriptor/runtime metadata |
+| P25.1 | done | Add descriptor-only export.file and render.thumbnail boundaries | `command-runtime`, `penpot-cli`, `mcp/docs`, `todo.md` | Completed 2026-06-29; command-runtime and CLI smoke descriptor tests proved both names resolved as initial descriptor-only boundaries | No runtime tool registration changed in P25.1; future work had to define file archive/export and thumbnail target/cache/artifact contracts before enabling adapters |
+| P25.2 | done | Define export.file binary archive contract | `command-runtime`, `mcp/docs`, `todo.md` | Completed 2026-06-29; command-runtime tests consume `export-file-contract-fixtures.json` and prove `libraryMode` maps to backend `include-libraries` / `embed-assets` request fields | Contract maps `export.file` to backend `export-binfile` RPC/SSE semantics, not exporter `export-shapes`; MCP remains unregistered until a resource-return contract is implemented |
+| P25.3 | done | Implement CLI export.file backend-rpc stream/resource path | `penpot-cli`, `command-runtime`, `mcp/docs`, `todo.md` | Completed 2026-06-29; command-runtime tests, CLI smoke tests, and typecheck pass for dry-run, backend SSE resource return, `--output` download, adapter rejection, and missing-token errors | `penpot-cli export file` calls backend `export-binfile`, parses the SSE `end` resource URI, returns metadata, and writes the `.penpot` archive when requested; MCP registration remains future work |
+| P25.4 | in_progress | Define render.thumbnail target/cache/artifact contract | `command-runtime`, `mcp/docs`, `todo.md` | In progress 2026-06-29 | Decide whether thumbnail rendering uses exporter, backend thumbnail cache, or plugin-live; define target ids, dimensions, cache policy, artifact metadata, and adapter availability before runtime execution |

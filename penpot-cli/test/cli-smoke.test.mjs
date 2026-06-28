@@ -109,6 +109,7 @@ test("top-level help lists first-class MCP, shape, and export commands", async (
     assert.match(result.stdout, /penpot-cli prototype reorder-interaction/);
     assert.match(result.stdout, /penpot-cli prototype duplicate-interaction/);
     assert.match(result.stdout, /penpot-cli export page/);
+    assert.match(result.stdout, /penpot-cli export file/);
     assert.match(result.stdout, /penpot-cli render preview/);
 });
 
@@ -161,8 +162,8 @@ test("command runtime exposes migrated shape and export descriptors", () => {
     assert.equal(CommandDescriptors.SHAPE_SET_STYLE.cliCommand, "shape set-style");
     assert.equal(CommandDescriptors.EXPORT_PAGE.mcpToolName, "export.page");
     assert.equal(CommandDescriptors.EXPORT_FILE.mcpToolName, "export.file");
-    assert.equal(CommandDescriptors.EXPORT_FILE.cliCommand, undefined);
-    assert.deepEqual(CommandDescriptors.EXPORT_FILE.adapters, []);
+    assert.equal(CommandDescriptors.EXPORT_FILE.cliCommand, "export file");
+    assert.deepEqual(CommandDescriptors.EXPORT_FILE.adapters, ["backend-rpc"]);
     assert.equal(CommandDescriptors.RENDER_THUMBNAIL.mcpToolName, "render.thumbnail");
     assert.equal(CommandDescriptors.RENDER_THUMBNAIL.cliCommand, undefined);
     assert.deepEqual(CommandDescriptors.RENDER_THUMBNAIL.adapters, []);
@@ -171,6 +172,7 @@ test("command runtime exposes migrated shape and export descriptors", () => {
     assert.equal(getCommandDescriptor("shape set-layout").id, "shape.set_layout");
     assert.equal(getCommandDescriptor("shape set-style").id, "shape.set_style");
     assert.equal(getCommandDescriptor("export.file").id, "export.file");
+    assert.equal(getCommandDescriptor("export file").id, "export.file");
     assert.equal(getCommandDescriptor("render.preview").title, "Render preview");
     assert.equal(getCommandDescriptor("render preview").cliCommand, "render preview");
     assert.equal(getCommandDescriptor("render.thumbnail").title, "Render thumbnail");
@@ -2285,6 +2287,227 @@ test("export page dry-run rejects plugin-live adapter with structured error", as
     assert.equal(body.error.code, "adapter_not_available");
     assert.equal(body.error.data.adapterSelection.command, "export.page");
     assert.equal(body.error.data.adapterSelection.requested, "plugin-live");
+});
+
+test("export file dry-run returns backend-rpc export-binfile plan", async () => {
+    const originalFetch = globalThis.fetch;
+    globalThis.fetch = async () => {
+        throw new Error("export file dry-run should not call fetch");
+    };
+
+    try {
+        const result = await runCli(
+            [
+                "export",
+                "file",
+                "--file",
+                UUIDS.file,
+                "--library-mode",
+                "merge",
+                "--dry-run",
+                "--format",
+                "json",
+            ],
+            {
+                PENPOT_BACKEND_URI: "http://127.0.0.1:6060",
+            }
+        );
+        const body = parseJson(result.stdout);
+
+        assert.equal(result.exitCode, 0);
+        assert.equal(result.stderr, "");
+        assert.equal(body.status, "ok");
+        assert.equal(body.data.command, "export.file");
+        assert.equal(body.data.adapter, "backend-rpc");
+        assert.equal(body.data.adapterSelection.status, "selected");
+        assert.equal(body.data.requires.length, 0);
+        assert.equal(body.data.artifact.libraryMode, "merge");
+        assert.equal(body.data.artifact.includeLibraries, false);
+        assert.equal(body.data.artifact.embedAssets, true);
+        assert.match(body.data.backendRpc.endpoint, /\/api\/main\/methods\/export-binfile\?_fmt=json$/);
+        assert.deepEqual(body.data.backendRpc.request, {
+            "file-id": UUIDS.file,
+            "include-libraries": false,
+            "embed-assets": true,
+        });
+    } finally {
+        globalThis.fetch = originalFetch;
+    }
+});
+
+test("export file executes backend SSE and returns resource metadata", async () => {
+    const originalFetch = globalThis.fetch;
+    const calls = [];
+    globalThis.fetch = async (url, options = {}) => {
+        calls.push({ url: String(url), options });
+        return {
+            ok: true,
+            status: 200,
+            statusText: "OK",
+            headers: {
+                get: (name) => (name.toLowerCase() === "content-type" ? "text/event-stream;charset=UTF-8" : null),
+            },
+            text: async () => 'event: end\ndata: "http://127.0.0.1:6060/assets/by-id/resource-1"\n\n',
+        };
+    };
+
+    try {
+        const result = await runCli(
+            [
+                "export",
+                "file",
+                "--file",
+                UUIDS.file,
+                "--library-mode",
+                "merge",
+                "--format",
+                "json",
+            ],
+            {
+                PENPOT_BACKEND_URI: "http://127.0.0.1:6060",
+                PENPOT_CLI_TOKEN: "token-1",
+            }
+        );
+        const body = parseJson(result.stdout);
+
+        assert.equal(result.exitCode, 0);
+        assert.equal(result.stderr, "");
+        assert.equal(calls.length, 1);
+        assert.match(calls[0].url, /\/api\/main\/methods\/export-binfile\?_fmt=json$/);
+        assert.equal(calls[0].options.method, "POST");
+        assert.equal(calls[0].options.headers.authorization, "Token token-1");
+        assert.deepEqual(JSON.parse(calls[0].options.body), {
+            "file-id": UUIDS.file,
+            "include-libraries": false,
+            "embed-assets": true,
+        });
+        assert.equal(body.status, "ok");
+        assert.equal(body.data.command, "export.file");
+        assert.equal(body.data.adapter, "backend-rpc");
+        assert.equal(body.data.resource.uri, "http://127.0.0.1:6060/assets/by-id/resource-1");
+        assert.equal(body.data.resource["resource-uri"], "http://127.0.0.1:6060/assets/by-id/resource-1");
+        assert.equal(body.data.downloadedResource, undefined);
+    } finally {
+        globalThis.fetch = originalFetch;
+    }
+});
+
+test("export file executes backend SSE and writes output artifact", async () => {
+    const originalFetch = globalThis.fetch;
+    const tempDir = mkdtempSync(join(tmpdir(), "penpot-cli-file-export-"));
+    const outputPath = join(tempDir, "archive.penpot");
+    const calls = [];
+
+    globalThis.fetch = async (url, options = {}) => {
+        calls.push({ url: String(url), options });
+        if (String(url).includes("/api/main/methods/export-binfile")) {
+            return {
+                ok: true,
+                status: 200,
+                statusText: "OK",
+                headers: {
+                    get: (name) => (name.toLowerCase() === "content-type" ? "text/event-stream" : null),
+                },
+                text: async () => 'event: end\ndata: "/assets/by-id/resource-2"\n\n',
+            };
+        }
+
+        return {
+            ok: true,
+            status: 200,
+            statusText: "OK",
+            headers: {
+                get: (name) => (name.toLowerCase() === "content-type" ? "application/zip" : null),
+                has: () => false,
+            },
+            arrayBuffer: async () => new Uint8Array([80, 75, 3, 4]).buffer,
+        };
+    };
+
+    try {
+        const result = await runCli(
+            [
+                "export",
+                "file",
+                "--file",
+                UUIDS.file,
+                "--library-mode",
+                "detach",
+                "--output",
+                outputPath,
+                "--format",
+                "json",
+            ],
+            {
+                PENPOT_BACKEND_URI: "http://127.0.0.1:6060",
+                PENPOT_CLI_TOKEN: "token-1",
+            }
+        );
+        const body = parseJson(result.stdout);
+
+        assert.equal(result.exitCode, 0);
+        assert.equal(result.stderr, "");
+        assert.equal(calls.length, 2);
+        assert.deepEqual(JSON.parse(calls[0].options.body), {
+            "file-id": UUIDS.file,
+            "include-libraries": false,
+            "embed-assets": false,
+        });
+        assert.equal(calls[1].url, "http://127.0.0.1:6060/assets/by-id/resource-2");
+        assert.equal(calls[1].options.headers.authorization, "Bearer token-1");
+        assert.equal(calls[1].options.headers.cookie, "auth-token=token-1");
+        assert.deepEqual([...readFileSync(outputPath)], [80, 75, 3, 4]);
+        assert.equal(body.status, "ok");
+        assert.equal(body.data.command, "export.file");
+        assert.equal(body.data.artifact.libraryMode, "detach");
+        assert.equal(body.data.downloadedResource.path, outputPath);
+        assert.equal(body.data.downloadedResource.bytes, 4);
+        assert.equal(body.data.downloadedResource.contentType, "application/zip");
+    } finally {
+        globalThis.fetch = originalFetch;
+        rmSync(tempDir, { recursive: true, force: true });
+    }
+});
+
+test("export file rejects exporter adapter with structured error", async () => {
+    const result = await runCli([
+        "export",
+        "file",
+        "--file",
+        UUIDS.file,
+        "--adapter",
+        "exporter",
+        "--dry-run",
+        "--format",
+        "json",
+    ]);
+    const body = parseJson(result.stdout);
+
+    assert.equal(result.exitCode, 2);
+    assert.equal(result.stderr, "");
+    assert.equal(body.status, "error");
+    assert.equal(body.error.code, "adapter_not_available");
+    assert.equal(body.error.data.adapterSelection.command, "export.file");
+    assert.equal(body.error.data.adapterSelection.requested, "exporter");
+});
+
+test("export file execution requires auth token", async () => {
+    const originalFetch = globalThis.fetch;
+    globalThis.fetch = async () => {
+        throw new Error("export file without token should not call fetch");
+    };
+
+    try {
+        const result = await runCli(["export", "file", "--file", UUIDS.file, "--format", "json"]);
+        const body = parseJson(result.stdout);
+
+        assert.equal(result.exitCode, 2);
+        assert.equal(result.stderr, "");
+        assert.equal(body.status, "error");
+        assert.equal(body.error.code, CommandErrorCodes.AUTHENTICATION_REQUIRED);
+    } finally {
+        globalThis.fetch = originalFetch;
+    }
 });
 
 test("render preview dry-run returns exporter adapter plan and artifact metadata", async () => {

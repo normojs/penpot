@@ -13,6 +13,7 @@ import {
     createAdapterSelectionError,
     createCommandRequestEnvelope,
     createCommandResultEnvelope,
+    createExportFileContract,
     createFileOpenHandoff,
     createWorkspaceUrl as createCommandWorkspaceUrl,
     getAdapterSelectionReason,
@@ -25,6 +26,7 @@ import type {
     CommandResultEnvelope,
     CreateCommandRequestEnvelopeOptions,
     CreateCommandResultEnvelopeOptions,
+    ExportFileContract,
     RequestedCommandAdapter,
 } from "@penpot/command-runtime";
 
@@ -71,6 +73,7 @@ Usage:
   penpot-cli prototype reorder-interaction --file <file-id> [--interaction-id <id>] [--source <shape-id> --index <n>] --to-index <n> [--format text|json]
   penpot-cli prototype duplicate-interaction --file <file-id> [--interaction-id <id>] [--source <shape-id> --index <n>] [--insertion-index <n>] [--format text|json]
   penpot-cli export page --file <file-id> --page <page-id> --object <object-id> [--adapter auto|exporter] [--output <path>] [--dry-run] [--format text|json]
+  penpot-cli export file --file <file-id> [--library-mode all|merge|detach] [--adapter auto|backend-rpc] [--output <path>] [--dry-run] [--format text|json]
   penpot-cli render preview --file <file-id> --page <page-id> --object <object-id> [--adapter auto|exporter] [--output <path>] [--dry-run] [--format text|json]`;
 
 const MCP_HELP_TEXT = `penpot-cli mcp
@@ -181,16 +184,18 @@ const EXPORT_HELP_TEXT = `penpot-cli export
 
 Usage:
   penpot-cli export page --file <file-id> --page <page-id> --object <object-id> [--export-format png|jpeg|svg|pdf] [--scale <n>] [--output <path>] [--exporter-uri <uri>] [--backend-uri <uri>] [--token <token>] [--adapter auto|exporter] [--dry-run] [--format text|json]
+  penpot-cli export file --file <file-id> [--library-mode all|merge|detach] [--output <path>] [--backend-uri <uri>] [--token <token>] [--adapter auto|backend-rpc] [--dry-run] [--format text|json]
 
 Current adapters:
   exporter   Phase 7 headless adapter backed by the Penpot exporter HTTP service.
+  backend-rpc   File-level .penpot archive export through backend export-binfile SSE.
 
 Environment:
   PENPOT_EXPORTER_URI      Exporter HTTP URI, default http://localhost:6061
-  PENPOT_BACKEND_URI       Backend RPC base URI used to resolve profile id
+  PENPOT_BACKEND_URI       Backend RPC base URI used for export file and profile id resolution
   PENPOT_PROFILE_ID        Optional profile id for the direct exporter request
-  PENPOT_CLI_TOKEN         Penpot auth-token/session token for exporter execution
-  PENPOT_MCP_USER_TOKEN    Penpot MCP user token fallback for exporter execution
+  PENPOT_CLI_TOKEN         Penpot auth-token/session token for export execution
+  PENPOT_MCP_USER_TOKEN    Penpot MCP user token fallback for export execution
   PENPOT_ACCESS_TOKEN      Generic Penpot access token fallback`;
 
 const RENDER_HELP_TEXT = `penpot-cli render
@@ -417,6 +422,55 @@ interface ExportPageResult {
         bytes: number;
         contentType: string | null;
     };
+}
+
+type ExportFileLibraryMode = "all" | "merge" | "detach";
+
+interface DownloadedResourceMetadata {
+    path: string;
+    bytes: number;
+    contentType: string | null;
+}
+
+interface ExportFilePlan {
+    command: string;
+    adapter: string | null;
+    adapterSelection: CommandAdapterSelection;
+    contract: ExportFileContract;
+    artifact: ExportFileContract["artifact"];
+    fileId: string | null;
+    name: string;
+    libraryMode: ExportFileLibraryMode;
+    output: string | null;
+    dryRun: boolean;
+    status: string;
+    backendRpc: {
+        uri: string;
+        endpoint: string;
+        method: "POST";
+        requestContentType: "application/json";
+        responseContentType: "text/event-stream";
+        command: "export-binfile";
+        transport: "sse";
+        response: "resource-uri";
+        request: ExportFileContract["backendRpc"]["request"];
+    };
+    requires: string[];
+    nextActions: string[];
+    diagnostics: Record<string, unknown>;
+}
+
+interface ExportFileResult {
+    command: string;
+    adapter: string | null;
+    adapterSelection: CommandAdapterSelection;
+    artifact: ExportFileContract["artifact"];
+    fileId: string;
+    libraryMode: ExportFileLibraryMode;
+    output: string | null;
+    backendRpc: ExportFilePlan["backendRpc"];
+    resource: Record<string, unknown>;
+    downloadedResource?: DownloadedResourceMetadata;
 }
 
 type ShapeCreateKind = "frame" | "rect" | "text";
@@ -1020,6 +1074,28 @@ function selectCliExporterAdapter(command: string, args: string[]): CommandAdapt
     });
 }
 
+function selectCliExportFileAdapter(command: string, args: string[]): CommandAdapterSelection {
+    return selectCommandAdapter({
+        command,
+        requestedAdapter: readRequestedAdapter(args),
+        candidates: [
+            { kind: "backend-rpc", available: true, priority: 10 },
+            {
+                kind: "exporter",
+                available: false,
+                priority: 20,
+                reason: "export.file uses backend export-binfile; exporter export-shapes is only for page/object rendering.",
+            },
+            {
+                kind: "plugin-live",
+                available: false,
+                priority: 50,
+                reason: getAdapterSelectionReason(AdapterSelectionReasonCodes.CLI_EXPORT_PLUGIN_LIVE_UNSUPPORTED),
+            },
+        ],
+    });
+}
+
 function selectCliShapeAdapter(command: string, args: string[]): CommandAdapterSelection {
     return selectCommandAdapter({
         command,
@@ -1516,6 +1592,79 @@ function createRenderPreviewPlan(args: string[], env: NodeJS.ProcessEnv): Export
         allowExportFormat: false,
         outputMode: "exporter-preview-resource-upload",
     });
+}
+
+function readExportFileLibraryMode(args: string[]): ExportFileLibraryMode | undefined {
+    const explicit = readOption(args, ["--library-mode", "--type"]);
+    if (explicit) {
+        return explicit as ExportFileLibraryMode;
+    }
+    if (hasFlag(args, "--embed-assets") || hasFlag(args, "--merge-assets")) {
+        return "merge";
+    }
+    if (hasFlag(args, "--detach-libraries") || hasFlag(args, "--detach")) {
+        return "detach";
+    }
+    if (hasFlag(args, "--include-libraries")) {
+        return "all";
+    }
+    return undefined;
+}
+
+function createExportFilePlan(args: string[], env: NodeJS.ProcessEnv): ExportFilePlan {
+    const fileId = readOption(args, ["--file", "--file-id"]) ?? null;
+    const output = readOption(args, ["--output"]) ?? null;
+    const name = readOption(args, ["--name"])?.trim() || "file";
+    const format = readOption(args, ["--export-format", "--file-format"]) ?? "penpot";
+    const libraryMode = readExportFileLibraryMode(args);
+    const contract = createExportFileContract({
+        fileId,
+        format,
+        libraryMode,
+        includeLibraries: hasFlag(args, "--include-libraries") ? true : undefined,
+        embedAssets: hasFlag(args, "--embed-assets") || hasFlag(args, "--merge-assets") ? true : undefined,
+        output,
+        name,
+    });
+    const rpc = getRpcConfig(args, env);
+    const adapterSelection = selectCliExportFileAdapter(CommandDescriptors.EXPORT_FILE.id, args);
+
+    return {
+        command: CommandDescriptors.EXPORT_FILE.id,
+        adapter: adapterSelection.selected,
+        adapterSelection,
+        contract,
+        artifact: contract.artifact,
+        fileId,
+        name,
+        libraryMode: contract.artifact.libraryMode,
+        output,
+        dryRun: hasFlag(args, "--dry-run"),
+        status: "planned",
+        backendRpc: {
+            uri: rpc.backendUri,
+            endpoint: createRpcUrl(rpc.backendUri, contract.backendRpc.command).toString(),
+            method: "POST",
+            requestContentType: "application/json",
+            responseContentType: "text/event-stream",
+            command: contract.backendRpc.command,
+            transport: contract.backendRpc.transport,
+            response: contract.backendRpc.response,
+            request: contract.backendRpc.request,
+        },
+        requires: contract.requires,
+        nextActions: [
+            "Pass --token with a Penpot auth-token/session token before executing the export.",
+            "Run without --dry-run to call backend export-binfile and receive a resource URI.",
+            "Pass --output <path> to download the returned .penpot resource.",
+        ],
+        diagnostics: {
+            ...contract.diagnostics,
+            outputMode: "backend-rpc-sse-resource-uri",
+            authHeader: "Token",
+            downloadAuthCookie: "auth-token",
+        },
+    };
 }
 
 function createSolidFill(args: string[]): Record<string, unknown> | undefined {
@@ -3145,6 +3294,107 @@ async function rpcRequest<T>(
     return data as T;
 }
 
+interface SseEvent {
+    type: string;
+    data: unknown;
+}
+
+function parseSseEventData(data: string): unknown {
+    if (!data.trim()) {
+        return null;
+    }
+    try {
+        return decodeTransitJson(data);
+    } catch {
+        return data;
+    }
+}
+
+function parseSseEvents(text: string): SseEvent[] {
+    return text
+        .split(/\r?\n\r?\n/)
+        .map((block) => block.trim())
+        .filter(Boolean)
+        .map((block) => {
+            let type = "message";
+            const dataLines: string[] = [];
+            for (const line of block.split(/\r?\n/)) {
+                if (line.startsWith("event:")) {
+                    type = line.slice("event:".length).trim();
+                } else if (line.startsWith("data:")) {
+                    dataLines.push(line.slice("data:".length).trimStart());
+                }
+            }
+            return {
+                type,
+                data: parseSseEventData(dataLines.join("\n")),
+            };
+        });
+}
+
+async function rpcSseRequest(
+    backendUri: string,
+    methodName: string,
+    params: RpcParams,
+    token: string
+): Promise<SseEvent[]> {
+    const url = createRpcUrl(backendUri, methodName);
+    const response = await fetch(url, {
+        method: "POST",
+        headers: {
+            accept: "text/event-stream,application/json",
+            authorization: `Token ${token}`,
+            "content-type": "application/json",
+            "x-client": "penpot-cli/0.1",
+        },
+        body: JSON.stringify(params),
+    });
+    const text = await response.text();
+
+    if (!response.ok) {
+        const data = text.trim() ? parseSseEventData(text) : null;
+        const body = asRecord(data);
+        const code = typeof body.code === "string" ? body.code.replaceAll("-", "_") : "penpot_rpc_error";
+        const message =
+            typeof body.message === "string"
+                ? body.message
+                : typeof body.hint === "string"
+                  ? body.hint
+                  : `Penpot RPC ${methodName} failed with HTTP ${response.status}`;
+        throw Object.assign(new Error(message), {
+            code,
+            status: response.status,
+            data,
+        });
+    }
+
+    const contentType = response.headers.get("content-type") ?? "";
+    if (!contentType.includes("text/event-stream")) {
+        throw createCliError(
+            "penpot_rpc_stream_expected",
+            `Penpot RPC ${methodName} did not return an SSE stream.`,
+            response.status,
+            { contentType, response: text }
+        );
+    }
+
+    const events = parseSseEvents(text);
+    const error = events.find((event) => event.type === "error");
+    if (error) {
+        const data = asRecord(error.data);
+        const code = typeof data.code === "string" ? data.code.replaceAll("-", "_") : "penpot_rpc_stream_error";
+        const message =
+            typeof data.message === "string"
+                ? data.message
+                : typeof data.hint === "string"
+                  ? data.hint
+                  : `Penpot RPC ${methodName} stream failed.`;
+        throw createCliError(code, message, response.status, { response: error.data });
+    }
+
+    return events;
+}
+
 function rpcErrorResponse(io: CliIO, format: Format, methodName: string, backendUri: string, cause: unknown): number {
     const error = asRecord(cause);
     const code = typeof error.code === "string" ? error.code : "penpot_rpc_error";
@@ -3501,6 +3751,63 @@ async function downloadExporterResource(
     };
 }
 
+function getResourceUri(resource: Record<string, unknown>): string | null {
+    const uri = resource.uri ?? resource["resource-uri"];
+    return typeof uri === "string" && uri.length > 0 ? uri : null;
+}
+
+function resolveDownloadUri(uri: string, backendUri: string): string {
+    return new URL(uri, `${backendUri}/`).toString();
+}
+
+async function downloadCommandResource(
+    uri: string,
+    backendUri: string,
+    output: string,
+    token: string
+): Promise<DownloadedResourceMetadata> {
+    const downloadUri = resolveDownloadUri(uri, backendUri);
+    let response: Response;
+    try {
+        response = await fetch(downloadUri, {
+            headers: {
+                accept: "*/*",
+                authorization: `Bearer ${token}`,
+                cookie: authCookieHeader(token),
+                "x-client": "penpot-cli/0.1",
+            },
+        });
+    } catch (cause) {
+        throw createCliError("resource_unavailable", `Unable to download resource ${downloadUri}: ${String(cause)}`, 0, {
+            resourceUri: downloadUri,
+        });
+    }
+
+    if (response.status === 204 && response.headers.has("x-accel-redirect")) {
+        throw createCliError(
+            "resource_requires_gateway",
+            "Resource download requires the Penpot public gateway that serves x-accel-redirect assets.",
+            response.status,
+            { resourceUri: downloadUri, xAccelRedirect: response.headers.get("x-accel-redirect") }
+        );
+    }
+
+    if (!response.ok) {
+        throw createHttpResponseError("resource_download_failed", "Resource download failed.", response, null);
+    }
+
+    const bytes = Buffer.from(await response.arrayBuffer());
+    const outputPath = resolve(output);
+    await mkdir(dirname(outputPath), { recursive: true });
+    await writeFile(outputPath, bytes);
+
+    return {
+        path: outputPath,
+        bytes: bytes.byteLength,
+        contentType: response.headers.get("content-type"),
+    };
+}
+
 async function executeExportPagePlan(plan: ExportPagePlan, args: string[], env: NodeJS.ProcessEnv): Promise<ExportPageResult> {
     const rawToken = getRpcConfig(args, env).token;
     if (!rawToken) {
@@ -3540,6 +3847,63 @@ async function executeExportPagePlan(plan: ExportPagePlan, args: string[], env: 
     };
 }
 
+function normalizeExportFileResource(data: unknown): Record<string, unknown> {
+    if (typeof data === "string" && data.length > 0) {
+        return {
+            uri: data,
+            "resource-uri": data,
+        };
+    }
+
+    const resource = asRecord(data);
+    if (getResourceUri(resource)) {
+        return resource;
+    }
+
+    throw createCliError("export_file_resource_uri_missing", "export.file stream did not include a downloadable resource URI.", 0, {
+        response: data,
+    });
+}
+
+async function executeExportFilePlan(plan: ExportFilePlan, args: string[], env: NodeJS.ProcessEnv): Promise<ExportFileResult> {
+    const rpc = getRpcConfig(args, env);
+    if (!rpc.token) {
+        throw createCliError(
+            CommandErrorCodes.AUTHENTICATION_REQUIRED,
+            "export file requires a Penpot auth-token/session token."
+        );
+    }
+
+    const events = await rpcSseRequest(rpc.backendUri, plan.backendRpc.command, plan.backendRpc.request, rpc.token);
+    const endEvent = [...events].reverse().find((event) => event.type === "end");
+    if (!endEvent) {
+        throw createCliError("export_file_stream_incomplete", "export.file stream ended without an end event.", 0, {
+            events: events.map((event) => event.type),
+        });
+    }
+
+    const resource = normalizeExportFileResource(endEvent.data);
+    const resourceUri = getResourceUri(resource);
+    const token = extractAuthTokenValue(rpc.token);
+    const downloadedResource =
+        plan.output && resourceUri
+            ? await downloadCommandResource(resourceUri, rpc.backendUri, plan.output, token)
+            : undefined;
+
+    return {
+        command: plan.command,
+        adapter: plan.adapter,
+        adapterSelection: plan.adapterSelection,
+        artifact: plan.artifact,
+        fileId: plan.fileId as string,
+        libraryMode: plan.libraryMode,
+        output: plan.output,
+        backendRpc: plan.backendRpc,
+        resource,
+        ...(downloadedResource ? { downloadedResource } : {}),
+    };
+}
+
 function exportErrorResponse(io: CliIO, format: Format, plan: ExportPagePlan, cause: unknown): number {
     const error = asRecord(cause);
     const code = typeof error.code === "string" ? error.code : "exporter_request_failed";
@@ -3561,6 +3925,33 @@ function exportErrorResponse(io: CliIO, format: Format, plan: ExportPagePlan, ca
     writeError(io, format, code, message, actions, {
         status,
         exporterUri: plan.exporter.endpoint,
+        output: plan.output,
+        details: error.data,
+    });
+    return 2;
+}
+
+function exportFileErrorResponse(io: CliIO, format: Format, plan: ExportFilePlan, cause: unknown): number {
+    const error = asRecord(cause);
+    const code = typeof error.code === "string" ? error.code : "export_file_failed";
+    const status = typeof error.status === "number" ? error.status : 0;
+    const message = cause instanceof Error ? cause.message : "Unable to execute backend-rpc file export.";
+    const actions =
+        code === CommandErrorCodes.AUTHENTICATION_REQUIRED
+            ? [
+                  "Pass --token with a Penpot auth-token/session token.",
+                  "Set PENPOT_CLI_TOKEN, PENPOT_MCP_USER_TOKEN, or PENPOT_ACCESS_TOKEN.",
+                  "Use --dry-run to inspect the backend export-binfile request without executing it.",
+              ]
+            : [
+                  "Check PENPOT_BACKEND_URI or --backend-uri.",
+                  "Check the token and normal Penpot read permissions for the file.",
+                  "Use --dry-run to inspect the backend export-binfile request payload.",
+              ];
+
+    writeError(io, format, code, message, actions, {
+        status,
+        backendUri: plan.backendRpc.uri,
         output: plan.output,
         details: error.data,
     });
@@ -3828,6 +4219,63 @@ function writeExportResultText(io: CliIO, result: ExportPageResult): void {
     writeLine(io.stdout, `resourceUri: ${String(resourceUri)}`);
     writeLine(io.stdout, `mtype: ${String(result.resource.mtype ?? "<unknown>")}`);
     writeLine(io.stdout, `filename: ${String(result.resource.filename ?? "<unknown>")}`);
+    if (result.downloadedResource) {
+        writeLine(io.stdout, `output: ${result.downloadedResource.path}`);
+        writeLine(io.stdout, `bytes: ${result.downloadedResource.bytes}`);
+    } else {
+        writeLine(io.stdout, "output: <not written; resource metadata only>");
+    }
+}
+
+function writeExportFilePlanText(io: CliIO, plan: ExportFilePlan): void {
+    writeLine(io.stdout, "Export file plan");
+    writeLine(io.stdout, `command: ${plan.command}`);
+    writeLine(io.stdout, `adapter: ${plan.adapter ?? "<none>"}`);
+    writeLine(io.stdout, `requestedAdapter: ${plan.adapterSelection.requested}`);
+    writeLine(io.stdout, `adapterSelection: ${plan.adapterSelection.status}`);
+    writeLine(io.stdout, `status: ${plan.status}`);
+    writeLine(io.stdout, `backendRpc: ${plan.backendRpc.method} ${plan.backendRpc.endpoint}`);
+    writeLine(io.stdout, `fileId: ${plan.fileId ?? "<missing>"}`);
+    writeLine(io.stdout, `name: ${plan.name}`);
+    writeLine(io.stdout, `mimeType: ${plan.artifact.mimeType}`);
+    writeLine(io.stdout, `libraryMode: ${plan.libraryMode}`);
+    writeLine(io.stdout, `includeLibraries: ${String(plan.artifact.includeLibraries)}`);
+    writeLine(io.stdout, `embedAssets: ${String(plan.artifact.embedAssets)}`);
+    writeLine(io.stdout, `output: ${plan.output ?? "<resource metadata only>"}`);
+    if (plan.requires.length > 0) {
+        writeLine(io.stdout, "requires:");
+        for (const requirement of plan.requires) {
+            writeLine(io.stdout, `  ${requirement}`);
+        }
+    }
+    if (plan.adapterSelection.fallbacks.length > 0) {
+        writeLine(io.stdout, "adapterFallbacks:");
+        for (const fallback of plan.adapterSelection.fallbacks) {
+            const reason = fallback.reason ? ` (${fallback.reason})` : "";
+            writeLine(io.stdout, `  ${fallback.kind}: ${fallback.available ? "available" : "unavailable"}${reason}`);
+        }
+    }
+    writeLine(io.stdout, "nextActions:");
+    for (const action of plan.nextActions) {
+        writeLine(io.stdout, `  ${action}`);
+    }
+}
+
+function writeExportFileResultText(io: CliIO, result: ExportFileResult): void {
+    const resourceId = result.resource.id ?? result.resource["resource-id"] ?? "<unknown>";
+    const resourceUri = getResourceUri(result.resource) ?? "<unknown>";
+
+    writeLine(io.stdout, "Export file completed");
+    writeLine(io.stdout, `command: ${result.command}`);
+    writeLine(io.stdout, `adapter: ${result.adapter ?? "<none>"}`);
+    writeLine(io.stdout, `backendRpc: ${result.backendRpc.method} ${result.backendRpc.endpoint}`);
+    writeLine(io.stdout, `fileId: ${result.fileId}`);
+    writeLine(io.stdout, `mimeType: ${result.artifact.mimeType}`);
+    writeLine(io.stdout, `libraryMode: ${result.libraryMode}`);
+    writeLine(io.stdout, `includeLibraries: ${String(result.artifact.includeLibraries)}`);
+    writeLine(io.stdout, `embedAssets: ${String(result.artifact.embedAssets)}`);
+    writeLine(io.stdout, `resourceId: ${String(resourceId)}`);
+    writeLine(io.stdout, `resourceUri: ${resourceUri}`);
     if (result.downloadedResource) {
         writeLine(io.stdout, `output: ${result.downloadedResource.path}`);
         writeLine(io.stdout, `bytes: ${result.downloadedResource.bytes}`);
@@ -5530,6 +5978,63 @@ async function handleExportPage(args: string[], io: CliIO, env: NodeJS.ProcessEn
     }
 }
 
+function exportFileContractErrorResponse(io: CliIO, format: Format, cause: unknown): number {
+    const message = cause instanceof Error ? cause.message : "Invalid export file options.";
+    writeError(
+        io,
+        format,
+        "export_file_contract_invalid",
+        message,
+        [
+            "Use --library-mode all, merge, or detach.",
+            "Use --export-format penpot when exporting a file archive.",
+            "Avoid setting conflicting library flags such as --include-libraries with --embed-assets.",
+        ],
+        {
+            details: asRecord(cause),
+        }
+    );
+    return 2;
+}
+
+async function handleExportFile(args: string[], io: CliIO, env: NodeJS.ProcessEnv): Promise<number> {
+    const format = parseFormat(args, io);
+    if (!format) {
+        return 2;
+    }
+
+    let plan: ExportFilePlan;
+    try {
+        plan = createExportFilePlan(args, env);
+    } catch (cause) {
+        return exportFileContractErrorResponse(io, format, cause);
+    }
+
+    if (!plan.fileId) {
+        writeError(io, format, "file_id_required", "export file requires --file <file-id>.", [
+            "Open or list files first, then pass --file <file-id>.",
+        ]);
+        return 2;
+    }
+
+    if (plan.adapterSelection.status !== "selected" || plan.adapterSelection.selected !== "backend-rpc") {
+        return adapterSelectionFailure(io, format, plan.adapterSelection);
+    }
+
+    if (plan.dryRun) {
+        writeOk(io, format, plan, () => writeExportFilePlanText(io, plan));
+        return 0;
+    }
+
+    try {
+        const result = await executeExportFilePlan(plan, args, env);
+        writeOk(io, format, result, () => writeExportFileResultText(io, result));
+        return 0;
+    } catch (cause) {
+        return exportFileErrorResponse(io, format, plan, cause);
+    }
+}
+
 async function handleRenderPreview(args: string[], io: CliIO, env: NodeJS.ProcessEnv): Promise<number> {
     const format = parseFormat(args, io);
     if (!format) {
@@ -5595,6 +6100,8 @@ async function handleExportCommand(args: string[], io: CliIO, env: NodeJS.Proces
     switch (subcommand) {
         case "page":
             return await handleExportPage(rest, io, env);
+        case "file":
+            return await handleExportFile(rest, io, env);
         default:
             writeLine(io.stderr, `Unknown export command: ${subcommand}`);
             writeLine(io.stderr, 'Run "penpot-cli export --help" for usage.');

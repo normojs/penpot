@@ -306,7 +306,7 @@ they already exist in MCP, CLI, or both.
 | `shape.set_style` | file | MCP/CLI alias over `shape.update` style/text fields, backend `update-file-shape` RPC | `backend-command`, fallback `plugin-live` |
 | `shape.delete` | file | MCP plugin task, backend `delete-file-shape` RPC | `backend-command`, fallback `plugin-live` |
 | `export.page` | file | MCP plugin task, CLI exporter execution | `exporter`, fallback `plugin-live` |
-| `export.file` | file | Planned backend `export-binfile` RPC/SSE contract only | descriptor-only until backend-rpc stream/resource handling is registered |
+| `export.file` | file | CLI backend `export-binfile` RPC/SSE execution; MCP registration planned | `backend-rpc` for `penpot-cli export file`; MCP unregistered |
 | `render.preview` | file | MCP plugin task, MCP/CLI exporter preview execution | `exporter`, fallback `plugin-live` |
 
 ## Schema Strategy
@@ -728,7 +728,7 @@ P11.5 extends the exporter adapter to previews:
 - MCP tests cover exporter resource metadata, plugin-live base64 metadata, and
   partial-target adapter errors.
 
-P25.2 defines the descriptor-only `export.file` archive contract:
+P25.3 defines and executes the CLI `export.file` archive contract:
 
 - The command maps to backend `export-binfile` RPC/SSE, not exporter
   `export-shapes`.
@@ -737,5 +737,7 @@ P25.2 defines the descriptor-only `export.file` archive contract:
   neither.
 - `@penpot/command-runtime` exposes `createExportFileContract` and consumes
   `export-file-contract-fixtures.json` in tests.
-- The descriptor keeps `adapters: []`; CLI and MCP execution need a later
-  backend-rpc stream/resource wrapper.
+- `penpot-cli export file` selects `backend-rpc`, reads the backend SSE `end`
+  resource URI, and writes the returned `.penpot` resource when `--output` is
+  supplied.
+- MCP execution still needs a later backend-rpc stream/resource wrapper.

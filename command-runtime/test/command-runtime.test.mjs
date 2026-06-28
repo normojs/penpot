@@ -172,9 +172,9 @@ test("live-gap descriptors document live-only and planned command boundaries", (
 
 test("shape/export descriptors document planned file and thumbnail boundaries", () => {
     assert.equal(CommandDescriptors.EXPORT_FILE.mcpToolName, "export.file");
-    assert.equal(CommandDescriptors.EXPORT_FILE.cliCommand, undefined);
-    assert.deepEqual(CommandDescriptors.EXPORT_FILE.adapters, []);
-    assert.match(CommandDescriptors.EXPORT_FILE.description, /Planned file-level binary export/);
+    assert.equal(CommandDescriptors.EXPORT_FILE.cliCommand, "export file");
+    assert.deepEqual(CommandDescriptors.EXPORT_FILE.adapters, ["backend-rpc"]);
+    assert.match(CommandDescriptors.EXPORT_FILE.description, /backend-rpc export-binfile/);
     assert.match(CommandDescriptors.EXPORT_FILE.inputSchema, /libraryMode=all\|merge\|detach/);
     assert.match(CommandDescriptors.EXPORT_FILE.inputSchema, /includeLibraries/);
     assert.match(CommandDescriptors.EXPORT_FILE.responseShape, /export-binfile/);
@@ -186,7 +186,7 @@ test("shape/export descriptors document planned file and thumbnail boundaries", 
     assert.match(CommandDescriptors.RENDER_THUMBNAIL.inputSchema, /objectId|size/);
 });
 
-test("export.file contract maps planned binary archive requests to backend RPC semantics", () => {
+test("export.file contract maps CLI binary archive requests to backend RPC semantics", () => {
     const contract = createExportFileContract({
         fileId: "file-1",
         name: "Checkout flow",
@@ -194,8 +194,8 @@ test("export.file contract maps planned binary archive requests to backend RPC s
     });
 
     assert.equal(contract.command, "export.file");
-    assert.equal(contract.executable, false);
-    assert.equal(contract.adapter, null);
+    assert.equal(contract.executable, true);
+    assert.equal(contract.adapter, "backend-rpc");
     assert.deepEqual(contract.requires, []);
     assert.deepEqual(contract.target, { fileId: "file-1" });
     assert.equal(contract.artifact.kind, "file-export");
@@ -215,9 +215,9 @@ test("export.file contract maps planned binary archive requests to backend RPC s
         "include-libraries": true,
         "embed-assets": false,
     });
-    assert.equal(contract.diagnostics.adapterBoundary, "descriptor-only");
+    assert.equal(contract.diagnostics.adapterBoundary, "cli-backend-rpc");
     assert.equal(contract.diagnostics.mcpToolRegistered, false);
-    assert.equal(contract.diagnostics.cliCommandRegistered, false);
+    assert.equal(contract.diagnostics.cliCommandRegistered, true);
     assert.match(contract.diagnostics.exporterBoundary, /not exporter export-shapes/);
 });
 
@@ -228,13 +228,14 @@ test("export.file contract matches the documented fixture matrix", async (t) => 
     for (const fixture of exportFileContractFixtures.cases) {
         await t.test(fixture.id, () => {
             const contract = createExportFileContract(fixture.input);
-            assert.equal(contract.executable, false);
+            assert.equal(contract.executable, true);
+            assert.equal(contract.adapter, "backend-rpc");
             assert.equal(contract.artifact.libraryMode, fixture.expected.libraryMode);
             assert.equal(contract.artifact.includeLibraries, fixture.expected.includeLibraries);
             assert.equal(contract.artifact.embedAssets, fixture.expected.embedAssets);
             assert.deepEqual(contract.requires, fixture.expected.requires);
             assert.deepEqual(contract.backendRpc.request, fixture.expected.backendRpcRequest);
-            assert.equal(contract.diagnostics.adapterBoundary, "descriptor-only");
+            assert.equal(contract.diagnostics.adapterBoundary, "cli-backend-rpc");
         });
     }
 });

@@ -224,8 +224,8 @@ export interface CreateExportFileContractOptions {
 export interface ExportFileContract {
     command: "export.file";
     status: "contract";
-    executable: false;
-    adapter: null;
+    executable: true;
+    adapter: "backend-rpc";
     target: {
         fileId: string | null;
     };
@@ -253,11 +253,11 @@ export interface ExportFileContract {
     requires: string[];
     nextActions: string[];
     diagnostics: {
-        adapterBoundary: "descriptor-only";
+        adapterBoundary: "cli-backend-rpc";
         existingBackendCommand: "export-binfile";
         exporterBoundary: string;
         mcpToolRegistered: false;
-        cliCommandRegistered: false;
+        cliCommandRegistered: true;
     };
 }
 
@@ -365,6 +365,7 @@ export interface CommandDescriptorCatalog extends LowRiskCommandDescriptorCatalo
     EXPORT_FILE: CommandDescriptor & {
         id: "export.file";
         mcpToolName: "export.file";
+        cliCommand: "export file";
     };
     RENDER_PREVIEW: CommandDescriptor & {
         id: "render.preview";

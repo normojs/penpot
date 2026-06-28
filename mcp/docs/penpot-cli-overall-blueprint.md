@@ -223,10 +223,13 @@ Current state:
   adapter reason text are centralized in `@penpot/command-runtime`.
 - Done: shape/create/update/delete, export.shape, export.page, and
   render.preview descriptors are part of the migrated command catalog.
-- Done: descriptor-only `export.file` and `render.thumbnail` entries reserve
-  planned export/render names with empty adapters and no CLI command names.
+- Done: initial descriptor-only `export.file` and `render.thumbnail` entries
+  reserved planned export/render names before executable adapters were enabled.
 - Done: `export.file` has a fixture-backed backend `export-binfile` binary
-  archive contract in command-runtime, but no executable CLI/MCP adapter yet.
+  archive contract in command-runtime.
+- Done: `penpot-cli export file` executes the backend-rpc `export-binfile`
+  stream, returns resource metadata, and writes the `.penpot` archive with
+  `--output`; MCP registration remains future work.
 - Done: focused command-runtime tests cover descriptor groups, lookup,
   adapter-selection priority/error cases, and token-safe envelopes.
 - Status: complete. Later command coverage gaps were tracked by the P15.1
@@ -559,8 +562,16 @@ P25.2 is complete:
    exporter `export-shapes`.
 2. `libraryMode` owns the user-facing archive behavior: `all`, `merge`, or
    `detach`.
-3. The shared command-runtime helper and JSON fixtures lock the planned request
-   mapping while keeping the descriptor adapterless.
+3. The shared command-runtime helper and JSON fixtures lock the request
+   mapping.
+
+P25.3 is complete:
+
+1. `penpot-cli export file` selects backend-rpc and calls backend
+   `export-binfile`.
+2. The CLI parses the SSE resource URI and reports resource metadata.
+3. `--output` downloads the returned `.penpot` resource. MCP `export.file`
+   remains unregistered until MCP resource-return handling is implemented.
 
 Keep manual configuration behavior stable while moving command metadata and
 envelopes; transport-specific formatting should stay at the MCP/CLI edges.

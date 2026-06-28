@@ -1,11 +1,11 @@
 # Export File Contract
 
-Status: P25.2 descriptor-only contract.
+Status: P25.3 CLI backend-rpc executable contract; MCP registration pending.
 
-This document defines the planned `export.file` archive contract before MCP,
-CLI, or adapter execution is enabled. The current implementation must remain
-non-executable until a later task registers a backend-rpc adapter and tests the
-stream/resource path end to end.
+This document defines the `export.file` archive contract. `penpot-cli export
+file` now executes it through backend-rpc/SSE and can download the returned
+resource with `--output`. MCP `export.file` remains unregistered until the MCP
+backend-rpc resource return path is implemented.
 
 ## Existing Penpot Surface
 
@@ -52,16 +52,16 @@ The shared command-runtime helper also accepts the lower-level booleans
 `includeLibraries=true` and `embedAssets=true` is invalid because the backend UI
 contract never produces that combination.
 
-## Planned Response
+## Response
 
-Contract-only response shape:
+Shared contract shape:
 
 ```json
 {
   "command": "export.file",
   "status": "contract",
-  "executable": false,
-  "adapter": null,
+  "executable": true,
+  "adapter": "backend-rpc",
   "artifact": {
     "kind": "file-export",
     "format": "penpot",
@@ -77,19 +77,20 @@ Contract-only response shape:
 }
 ```
 
-The executable version should wrap the resource URI in the normal command
-result envelope, optionally download it when `output` is supplied, and report
-the final artifact path or resource metadata.
+The CLI executable response wraps the resource URI in the normal command result
+shape, optionally downloads it when `output` is supplied, and reports the final
+artifact path or resource metadata.
 
 ## Runtime Boundaries
 
 - `@penpot/command-runtime` exposes `createExportFileContract` and fixture
   coverage for the request mapping.
-- The `export.file` descriptor keeps `adapters: []`.
-- MCP must not register `export.file` until backend-rpc SSE/resource handling
-  is implemented for this command.
-- `penpot-cli` must not add `export file` until it can stream the backend result
-  and download the returned URI without relying on a live browser workspace.
+- The `export.file` descriptor advertises `cliCommand: "export file"` and the
+  `backend-rpc` adapter for CLI execution.
+- MCP must not register `export.file` until MCP-side backend-rpc SSE/resource
+  handling is implemented for this command.
+- `penpot-cli export file` calls backend `export-binfile`, reads the SSE `end`
+  resource URI, and downloads the returned URI when `--output` is supplied.
 - Exporter service execution is out of scope for this command.
 
 ## Fixtures

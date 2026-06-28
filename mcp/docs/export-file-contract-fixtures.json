@@ -1,10 +1,11 @@
 {
-  "version": "P25.2",
+  "version": "P25.3",
   "command": "export.file",
-  "status": "descriptor-only contract",
+  "status": "CLI backend-rpc executable contract; MCP registration pending",
   "notes": [
     "export.file maps to backend export-binfile RPC/SSE semantics, not exporter export-shapes.",
-    "The command remains non-executable until MCP and CLI register backend-rpc stream/resource handling."
+    "penpot-cli export file can execute the backend stream and optionally download the returned .penpot resource.",
+    "MCP export.file remains unregistered until the MCP backend-rpc resource contract is implemented."
   ],
   "cases": [
     {
