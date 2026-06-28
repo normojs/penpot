@@ -649,6 +649,20 @@ P22.4 prototype mutation helper contract result:
 - The next prerequisite is a stable interaction UUID generation and migration
   plan.
 
+P23.1 prototype interaction UUID generation and migration audit result:
+
+- `prototype-interaction-uuid-generation-migration.md` audits creation,
+  copy/remap, import, read, delete, and migration touchpoints.
+- P23.2 should assign backend-owned `uuid/next` values to
+  backend-command-created navigate and overlay interactions in common headless
+  helpers.
+- Create requests should not accept caller-provided interaction ids.
+- Frontend workspace/plugin-live creation and legacy/id-missing files remain
+  source-index compatible until a separate P23.3 backfill or migration policy
+  is implemented.
+- Copy/remap paths must regenerate interaction ids for distinct copies before
+  update/reorder/duplicate helpers become executable.
+
 ## 4. Target Architecture
 
 ```text
@@ -1973,6 +1987,9 @@ keeping source-shape/index targeting as the legacy fallback and guard form.
 P22.4 defines descriptor-only contracts for update, reorder, and duplicate
 helpers; they remain non-executable until UUID generation and migration
 semantics are stable.
+P23.1 selects backend-command create id generation as the next safe runtime
+step, while keeping legacy backfill, frontend workspace generation, and
+copy/remap duplicate-id policy separate.
 
 ### 8.5 Export and Render Tools
 

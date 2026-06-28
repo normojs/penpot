@@ -26,6 +26,10 @@ Adapters:
 
 The command-runtime descriptors advertise `adapters: []` until implementation.
 
+P23.1 selected backend-command create-time id generation as the next safe
+runtime step, but these helper descriptors remain adapterless until legacy
+backfill and copy/remap duplicate-id behavior are settled.
+
 ## Shared Targeting
 
 All three helpers use the same target identity model as
@@ -132,7 +136,7 @@ Response:
 
 Before any descriptor becomes executable:
 
-1. New interaction creation must assign persisted UUIDs.
+1. New backend-command interaction creation must assign persisted UUIDs.
 2. Legacy/id-missing files need a migration or an explicit source-index-only
    policy for each helper.
 3. Copy/duplicate/remap paths must define when interaction ids are preserved

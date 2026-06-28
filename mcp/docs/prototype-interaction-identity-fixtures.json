@@ -1,11 +1,12 @@
 {
-  "version": "p22.4",
-  "status": "planned-helper-contracts-defined",
+  "version": "p23.1",
+  "status": "uuid-generation-migration-audited",
   "notes": [
     "The read summaries are implemented for id-present and id-missing interactions.",
     "Stable-id deletion is implemented when persisted interaction ids exist.",
     "Existing source-shape/index targeting remains the compatibility fallback.",
-    "Update, reorder, and duplicate helper contracts are descriptor-only until UUID generation and migration semantics are stable."
+    "Update, reorder, and duplicate helper contracts are descriptor-only until UUID generation and migration semantics are stable.",
+    "P23.1 selects backend-command create-time UUID generation as the next safe runtime step and keeps legacy backfill separate."
   ],
   "ids": {
     "fileId": "00000000-0000-0000-0000-000000000001",
@@ -171,6 +172,11 @@
       "prototype.update_interaction.adapters": "[]",
       "prototype.reorder_interaction.adapters": "[]",
       "prototype.duplicate_interaction.adapters": "[]"
+    },
+    "p23.1": {
+      "prototype.create_interaction.generation": "backend-command common headless helper should generate interaction ids in P23.2",
+      "prototype.create_overlay.generation": "backend-command common headless helper should generate interaction ids in P23.2",
+      "legacyBackfill": "deferred to P23.3 until migration and copy/remap duplicate-id policy is fixture-backed"
     }
   }
 }

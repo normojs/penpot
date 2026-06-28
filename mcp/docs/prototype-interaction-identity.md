@@ -217,14 +217,35 @@ UUIDs and legacy/id-missing files have a migration or explicit fallback policy.
 
 Contract details live in `prototype-mutation-helper-contracts.md`.
 
+## P23.1 UUID Generation And Migration Audit
+
+P23.1 audits where stable interaction ids can be generated safely.
+
+Decision:
+
+- Generate ids first for backend-command-created navigate and overlay
+  interactions in common headless helpers.
+- Do not accept caller-provided ids on create.
+- Keep frontend workspace/plugin-live creation as source-index compatible until
+  a separate task covers live editor behavior.
+- Keep legacy/id-missing files on the source-index fallback until P23.3 chooses
+  a backfill or file-data migration policy.
+- Treat copy/remap paths as a blocking prerequisite for executable
+  update/reorder/duplicate helpers, because existing remap helpers preserve
+  interaction payloads and can duplicate `:id` values.
+
+Detailed evidence and the P23.2/P23.3 split live in
+`prototype-interaction-uuid-generation-migration.md`.
+
 ## Migration Notes
 
 Preferred migration path:
 
 1. Done in P22.2: add `:id` as an optional field in the shared interaction
    schema.
-2. Update interaction creation helpers so new navigate and overlay
-   interactions always receive a UUID.
+2. Selected for P23.2: update backend-command/common headless interaction
+   creation helpers so new navigate and overlay interactions always receive a
+   backend-owned UUID.
 3. Add a file-data migration that walks every shape `:interactions` vector and
    assigns UUIDs to interactions without ids.
 4. Preserve existing interaction order and payload fields during migration.
@@ -263,6 +284,10 @@ Implemented descriptor changes for P22.4:
 - The descriptors define stable target identity, source/index guards, immutable
   action type for updates, same-source reorder/duplicate boundaries, and fresh
   UUID requirements for duplicated interactions.
+
+P23.1 does not require descriptor changes. It confirms that P23.2 can rely on
+the existing `prototype.create_interaction` and `prototype.create_overlay`
+response summaries to expose generated `interactionId` values.
 
 ## Fixtures
 

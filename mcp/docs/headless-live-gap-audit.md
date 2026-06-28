@@ -387,6 +387,9 @@ points CLI users back to MCP `file.open`, `file.get_context`,
 - P22.4 defines descriptor-only planned update/reorder/duplicate helpers.
   They remain non-executable until UUID generation/migration semantics and
   action-specific fixtures are stable.
+- P23.1 selects backend-command create-time UUID generation as the next safe
+  step, while legacy backfill and copy/remap duplicate-id handling remain
+  separate prerequisites.
 - Whether plugin-live `prototype.list_interactions` is needed, or whether
   backend-command reads are enough for agents.
 - Whether exporter-backed `export.shape` should get an explicit file/page/shape
