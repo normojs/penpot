@@ -1,10 +1,11 @@
 {
-  "version": "p22.3",
-  "status": "stable-delete-contract-implemented",
+  "version": "p22.4",
+  "status": "planned-helper-contracts-defined",
   "notes": [
     "The read summaries are implemented for id-present and id-missing interactions.",
     "Stable-id deletion is implemented when persisted interaction ids exist.",
-    "Existing source-shape/index targeting remains the compatibility fallback."
+    "Existing source-shape/index targeting remains the compatibility fallback.",
+    "Update, reorder, and duplicate helper contracts are descriptor-only until UUID generation and migration semantics are stable."
   ],
   "ids": {
     "fileId": "00000000-0000-0000-0000-000000000001",
@@ -165,6 +166,11 @@
     },
     "p22.3": {
       "prototype.delete_interaction.inputSchema": "fileId, pageId?, interactionId? OR sourceShapeId + interactionIndex, optional sourceShapeId/interactionIndex guards with interactionId, adapter?"
+    },
+    "p22.4": {
+      "prototype.update_interaction.adapters": "[]",
+      "prototype.reorder_interaction.adapters": "[]",
+      "prototype.duplicate_interaction.adapters": "[]"
     }
   }
 }

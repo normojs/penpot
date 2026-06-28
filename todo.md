@@ -140,16 +140,19 @@ complete: `shape.set_layout` and `shape.set_style` are aliases over
 `shape.update`, they are registered MCP tools, and
 `penpot-cli shape set-layout` / `shape set-style` provide script-friendly CLI
 aliases that forward to the same backend-command update path while preserving
-alias audit metadata. The next recommended work is Phase 22 prototype
-interaction identity and mutation hardening. P22.1 is complete: the
+alias audit metadata. Phase 22 prototype interaction identity and mutation
+hardening is complete. P22.1 is complete: the
 prototype interaction identity audit selects future persisted interaction UUIDs
 as the canonical stable identity while keeping source-shape/index targeting as
 the compatibility fallback. P22.2 is complete: prototype interaction read
 summaries now include optional `interactionId` plus explicit `identity.kind`
 metadata for stable-id and source-index fallback results. P22.3 is complete:
 `prototype.delete_interaction` now accepts stable `interactionId` targets while
-preserving source-shape/index deletion and stale guard validation. The next
-recommended task is P22.4 richer prototype mutation helper contract planning.
+preserving source-shape/index deletion and stale guard validation. P22.4 is
+complete: update/reorder/duplicate interaction helpers now have descriptor-only
+contracts with no executable adapters. Current active work moves to P23.1 to
+audit UUID generation and legacy migration prerequisites before enabling richer
+prototype mutations.
 
 ## Feature Roadmap
 
@@ -186,7 +189,8 @@ remain the execution plan.
 | F26 | done | Prototype mutation contracts | Phase 19 | Agents can safely mutate persisted prototype interactions only after target identity semantics are explicit | Completed 2026-06-18; P19.1/P19.2 delivered source-shape/index delete and P19.3 kept overlay creation descriptor-only until fixtures define action and positioning semantics |
 | F27 | done | Prototype overlay read and creation contract | Phase 20 | Agents can inspect persisted overlay interactions and create open/toggle/close overlays without a live workspace | Completed 2026-06-18; P20.1/P20.2/P20.3 delivered read summaries, payload contract fixtures, backend-command creation, MCP routing, and `penpot-cli prototype create-overlay` |
 | F28 | done | Design editing alias contracts | Phase 21 | Agents can discover and use specialized layout/style aliases without creating a second shape-update contract | Completed 2026-06-28; P21.1 defined alias contracts, P21.2 registered MCP aliases, and P21.3 added CLI aliases with scoped validation |
-| F29 | in_progress | Prototype interaction identity and mutation hardening | Phase 22 | Agents can target prototype interactions more robustly than source-shape/index order alone | P22.1-P22.3 completed 2026-06-28; next task is P22.4 richer prototype mutation helper planning |
+| F29 | done | Prototype interaction identity and mutation hardening | Phase 22 | Agents can target prototype interactions more robustly than source-shape/index order alone | Completed 2026-06-29; P22.1-P22.4 delivered the stable identity audit, read metadata, stable-id deletion, and descriptor-only update/reorder/duplicate contracts |
+| F30 | in_progress | Prototype interaction UUID generation and migration | Phase 23 | New and existing prototype interactions can safely receive stable ids before richer mutations become executable | P23.1 is active: audit UUID generation touchpoints, file-data migration options, and compatibility risks before changing runtime behavior |
 
 ## Detailed Upcoming Task Queue
 
@@ -401,7 +405,31 @@ compatible.
 | M1 | Define prototype interaction stable identity strategy | `common`, `backend`, `mcp/docs`, `command-runtime`, `penpot-cli` | Completed 2026-06-28; `prototype-interaction-identity.md` selects future persisted interaction UUIDs, rejects generated hashes as delete identities, and preserves source-shape/index compatibility | Contract doc and JSON fixtures cover id-present, id-missing, duplicate-id, and legacy fallback expectations |
 | M2 | Add stable identity metadata to interaction reads if contract is stable | `common`, `backend`, `mcp`, `penpot-cli` | Completed 2026-06-28; `prototype.list_interactions` reports optional `interactionId` plus stable-id or source-index identity metadata without breaking existing summaries | Common/backend plus MCP/CLI tests cover stable-id and legacy fallback interaction summaries |
 | M3 | Support stable-id prototype deletion if contract is stable | `common`, `backend`, `mcp`, `penpot-cli` | Completed 2026-06-28; `prototype.delete_interaction` accepts stable `interactionId` targets while preserving source-shape/index deletion and stale guard checks | Common/backend plus MCP/CLI tests cover stable id, stale guard, duplicate id, missing id, and source-shape/index compatibility |
-| M4 | Plan richer prototype mutation helpers | `mcp/docs`, `command-runtime` | Next; contracts for update/reorder/duplicate interaction helpers are explicit before implementation | Descriptor docs and tests distinguish planned, unsupported, and executable helpers |
+| M4 | Plan richer prototype mutation helpers | `mcp/docs`, `command-runtime` | Completed 2026-06-29; contracts for update/reorder/duplicate interaction helpers are explicit before implementation | Descriptor docs and tests distinguish planned, unsupported, and executable helpers |
+
+### Wave N: Prototype Interaction UUID Generation And Migration
+
+Wave N turns Phase 22's stable identity contract into durable data behavior.
+It should not make update/reorder/duplicate executable until new interactions,
+legacy interactions, duplicated interactions, and id-conflict files have a
+documented and tested UUID policy.
+
+Order rationale:
+
+- Audit all creation and persistence touchpoints first because prototype
+  interactions can be created through backend-command helpers and existing file
+  data can already contain id-missing or duplicate-id interactions.
+- Add new-id generation before any migration so newly authored data stops
+  increasing the legacy/id-missing population.
+- Keep migration separate from richer mutation execution so rollback and
+  compatibility behavior stay reviewable.
+
+| Order | Task | Modules | Output | Verification |
+| --- | --- | --- | --- | --- |
+| N1 | Audit interaction UUID generation and migration plan | `common`, `backend`, `mcp/docs`, `command-runtime`, `penpot-cli` | Active; map every create/copy/import path, migration candidate, conflict policy, and test fixture needed before runtime changes | Audit doc and todo updates identify whether generation, lazy backfill, explicit migration, or fallback-only handling is safest |
+| N2 | Generate UUIDs for new prototype interactions if safe | `common`, `backend`, `mcp`, `penpot-cli` | New backend-command-created navigate and overlay interactions persist a fresh stable `interactionId` without changing legacy reads | Common/backend plus MCP/CLI tests cover generated ids, response metadata, and duplicate prevention |
+| N3 | Add legacy interaction id backfill or migration if safe | `common`, `backend`, `mcp/docs` | Existing id-missing interactions receive stable ids through an explicit migration or documented lazy backfill path | Fixtures cover id-missing, duplicate-id, rollback/compatibility, and source-shape/index fallback behavior |
+| N4 | Implement executable update/reorder/duplicate helpers after UUID policy | `common`, `backend`, `mcp`, `penpot-cli`, `mcp/docs` | Planned Phase 22 descriptors become backend-command/MCP/CLI behavior only after stable ids and fixtures are in place | Tests cover stable-id targets, stale guards, action-compatible updates, same-source reorder, fresh-id duplicate, and legacy fallback |
 
 ## Phase 0: Baseline, Planning, And Rules
 
@@ -677,16 +705,16 @@ creatable through a backend-command path without requiring a live workspace.
 
 Use `mcp/docs/penpot-cli-overall-blueprint.md` and
 `mcp/docs/headless-live-gap-audit.md` as the current architecture baseline and
-continue with Phase 22:
+continue with Phase 23:
 
-1. Plan richer prototype mutation helpers such as update, reorder, or
-   duplicate before making any of them executable.
-2. Keep stable-id deletion as the preferred delete path while preserving
-   source-shape/index fallback behavior.
-3. Decide whether interaction creation should start assigning persisted UUIDs
-   before or after a file-data migration.
+1. Audit all prototype interaction UUID generation, copy/import, and migration
+   touchpoints before changing runtime behavior.
+2. Decide whether new interactions should start receiving persisted UUIDs
+   before an explicit legacy migration.
+3. Keep update/reorder/duplicate helpers descriptor-only until id generation,
+   duplicate-id handling, and legacy fallback semantics are fixture-backed.
 4. Export/file, thumbnail, component, token, or debug tool waves can supersede
-   Phase 22 if they become higher priority.
+   Phase 23 if they become higher priority.
 
 ## Phase 21: Design Editing Alias Contracts
 
@@ -710,4 +738,16 @@ order alone, while preserving the Phase 19/20 commands that already work.
 | P22.1 | done | Audit prototype interaction identity options | `common`, `backend`, `mcp/docs`, `command-runtime`, `penpot-cli` | Completed 2026-06-28; `prototype-interaction-identity.md` documents current vector storage, migration options, generated-reference risks, compatibility rules, and descriptor expectations | No runtime behavior changed; `prototype-interaction-identity-fixtures.json` captures id-present, id-missing, duplicate-id, and legacy fallback expectations |
 | P22.2 | done | Add stable identity metadata to read summaries if feasible | `common`, `backend`, `mcp`, `penpot-cli` | Completed 2026-06-28; `prototype.list_interactions` returns stable identity metadata or explicit fallback reference metadata | Existing source-shape/index summaries remain backward compatible; P22.3 later adds stable-id delete targeting |
 | P22.3 | done | Add stable-id delete targeting if contract is stable | `common`, `backend`, `mcp`, `penpot-cli` | Completed 2026-06-28; `prototype.delete_interaction` supports stable-id targeting plus current source-shape/index targeting | Stale guards, missing ids, duplicate ids, and legacy indexes produce structured validation outcomes |
-| P22.4 | in_progress | Define richer prototype mutation helper contracts | `mcp/docs`, `command-runtime` | Planned helpers such as update/reorder/duplicate have clear payload and adapter boundaries | Keep descriptor-only until fixtures prove persisted semantics |
+| P22.4 | done | Define richer prototype mutation helper contracts | `mcp/docs`, `command-runtime` | Completed 2026-06-29; planned update/reorder/duplicate helpers have clear payload and adapter boundaries | Kept descriptor-only with empty adapters until UUID generation and migration semantics are stable |
+
+## Phase 23: Prototype Interaction UUID Generation And Migration
+
+Goal: make persisted prototype interaction ids durable for newly authored and
+legacy file data before enabling richer update/reorder/duplicate mutations.
+
+| ID | Status | Task | Modules | Verification | Notes |
+| --- | --- | --- | --- | --- | --- |
+| P23.1 | in_progress | Audit UUID generation and migration prerequisites | `common`, `backend`, `mcp/docs`, `command-runtime`, `penpot-cli` | Audit identifies create/copy/import touchpoints, id conflict policy, migration/backfill options, fixture needs, and first safe runtime change | No runtime behavior should change during the audit; update architecture docs and todo with the chosen Phase 23 plan |
+| P23.2 | todo | Generate persisted ids for new interactions if safe | `common`, `backend`, `mcp`, `penpot-cli` | New backend-command navigate/overlay interactions include fresh stable `interactionId` values and read summaries expose them | Start only after P23.1 selects generation source, response shape, and duplicate prevention rules |
+| P23.3 | todo | Add legacy id backfill or migration if safe | `common`, `backend`, `mcp/docs` | Existing id-missing interactions gain stable ids through a documented migration or lazy backfill policy | Preserve source-shape/index fallback for old clients and document rollback behavior |
+| P23.4 | todo | Enable update/reorder/duplicate helpers after UUID policy | `common`, `backend`, `mcp`, `penpot-cli`, `mcp/docs` | `prototype.update_interaction`, `prototype.reorder_interaction`, and `prototype.duplicate_interaction` execute with stable ids, stale guards, and action-specific fixtures | Keep helpers non-executable until P23.2/P23.3 prove id coverage |

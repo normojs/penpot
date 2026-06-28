@@ -133,7 +133,10 @@ not register yet:
   explicit persisted prototype targets. P22.2 adds optional `interactionId`
   and `identity.kind` metadata to prototype reads, and P22.3 allows
   `prototype.delete_interaction` to target that stable id while preserving
-  source-shape/index deletion as the legacy fallback;
+  source-shape/index deletion as the legacy fallback. P22.4 adds
+  descriptor-only planned `prototype.update_interaction`,
+  `prototype.reorder_interaction`, and `prototype.duplicate_interaction`
+  contracts with empty adapter lists;
   `export.file` and `render.thumbnail` remain unregistered
 - debug: `debug.get_plugin_state`, `debug.get_agent_logs`
 

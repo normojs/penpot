@@ -231,6 +231,18 @@ export interface CommandDescriptorCatalog extends LowRiskCommandDescriptorCatalo
         mcpToolName: "prototype.delete_interaction";
         cliCommand: "prototype delete-interaction";
     };
+    PROTOTYPE_UPDATE_INTERACTION: CommandDescriptor & {
+        id: "prototype.update_interaction";
+        mcpToolName: "prototype.update_interaction";
+    };
+    PROTOTYPE_REORDER_INTERACTION: CommandDescriptor & {
+        id: "prototype.reorder_interaction";
+        mcpToolName: "prototype.reorder_interaction";
+    };
+    PROTOTYPE_DUPLICATE_INTERACTION: CommandDescriptor & {
+        id: "prototype.duplicate_interaction";
+        mcpToolName: "prototype.duplicate_interaction";
+    };
     PROTOTYPE_CREATE_OVERLAY: CommandDescriptor & {
         id: "prototype.create_overlay";
         mcpToolName: "prototype.create_overlay";

@@ -451,7 +451,8 @@ stable `interactionId` when present, or `fileId`, `pageId`, `sourceShapeId`,
 and zero-based `interactionIndex` as the legacy fallback. P22.1 selects
 persisted interaction UUIDs as the stable identity path, P22.2 exposes optional
 `interactionId` plus explicit `identity.kind` metadata on interaction reads,
-and P22.3 implements stable-id deletion with source/index stale guards.
+P22.3 implements stable-id deletion with source/index stale guards, and P22.4
+defines descriptor-only update/reorder/duplicate helper contracts.
 
 P19.2 is complete:
 
@@ -511,6 +512,17 @@ P22.3 is complete:
 3. MCP and `penpot-cli prototype delete-interaction` expose
    `interactionId` targeting and keep legacy `--source --index` scripts
    working.
+
+P22.4 is complete:
+
+1. `prototype.update_interaction`, `prototype.reorder_interaction`, and
+   `prototype.duplicate_interaction` have command-runtime descriptors and
+   planned MCP tool names.
+2. `prototype-mutation-helper-contracts.md` defines payload boundaries,
+   stale guard behavior, action-specific update rules, same-source reorder,
+   and same-source duplicate behavior.
+3. The helpers intentionally expose no executable adapters until interaction
+   UUID generation and legacy migration semantics are stable.
 
 Keep manual configuration behavior stable while moving command metadata and
 envelopes; transport-specific formatting should stay at the MCP/CLI edges.

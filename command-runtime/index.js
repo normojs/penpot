@@ -243,6 +243,42 @@ export const CommandDescriptors = Object.freeze({
         responseShape:
             "status envelope with deleted interaction summary, optional interactionId, revision metadata, and adapterSelection metadata",
     }),
+    PROTOTYPE_UPDATE_INTERACTION: Object.freeze({
+        id: "prototype.update_interaction",
+        mcpToolName: "prototype.update_interaction",
+        title: "Update prototype interaction",
+        description:
+            "Descriptor-only planned contract for updating fields on an existing persisted prototype interaction; not executable until id generation/migration and payload fixtures are defined.",
+        inputSchema:
+            "planned: fileId, pageId?, interactionId OR sourceShapeId + interactionIndex, optional sourceShapeId/interactionIndex guards with interactionId, patch(trigger?, delay?, animation?, destinationBoardId?, preserveScrollPosition?, overlayPositionType?, manualPosition?, relativeToShapeId?, closeClickOutside?, backgroundOverlay?); actionType immutable",
+        adapters: Object.freeze([]),
+        responseShape:
+            "planned status envelope with updated interaction summary, revision metadata, and stale-target validation metadata",
+    }),
+    PROTOTYPE_REORDER_INTERACTION: Object.freeze({
+        id: "prototype.reorder_interaction",
+        mcpToolName: "prototype.reorder_interaction",
+        title: "Reorder prototype interaction",
+        description:
+            "Descriptor-only planned contract for moving a persisted prototype interaction within its source shape interaction list; not executable until stable identity coverage is complete.",
+        inputSchema:
+            "planned: fileId, pageId?, interactionId OR sourceShapeId + fromIndex, sourceShapeId guard/owner, toIndex, adapter?; same source shape only",
+        adapters: Object.freeze([]),
+        responseShape:
+            "planned status envelope with moved interaction summary, affected interaction identities, revision metadata, and stale-target validation metadata",
+    }),
+    PROTOTYPE_DUPLICATE_INTERACTION: Object.freeze({
+        id: "prototype.duplicate_interaction",
+        mcpToolName: "prototype.duplicate_interaction",
+        title: "Duplicate prototype interaction",
+        description:
+            "Descriptor-only planned contract for duplicating a persisted prototype interaction on the same source shape; not executable until copied interactions receive fresh stable ids.",
+        inputSchema:
+            "planned: fileId, pageId?, interactionId OR sourceShapeId + interactionIndex, optional sourceShapeId/interactionIndex guards with interactionId, insertionIndex?, adapter?; backend generates new interactionId",
+        adapters: Object.freeze([]),
+        responseShape:
+            "planned status envelope with duplicated interaction summary, generated interactionId, revision metadata, and stale-target validation metadata",
+    }),
     PROTOTYPE_CREATE_OVERLAY: Object.freeze({
         id: "prototype.create_overlay",
         mcpToolName: "prototype.create_overlay",
@@ -405,6 +441,9 @@ export const LiveGapCommandDescriptors = Object.freeze([
     CommandDescriptors.SELECTION_SET,
     CommandDescriptors.PROTOTYPE_LIST_INTERACTIONS,
     CommandDescriptors.PROTOTYPE_DELETE_INTERACTION,
+    CommandDescriptors.PROTOTYPE_UPDATE_INTERACTION,
+    CommandDescriptors.PROTOTYPE_REORDER_INTERACTION,
+    CommandDescriptors.PROTOTYPE_DUPLICATE_INTERACTION,
     CommandDescriptors.SHAPE_SET_LAYOUT,
     CommandDescriptors.SHAPE_SET_STYLE,
 ]);

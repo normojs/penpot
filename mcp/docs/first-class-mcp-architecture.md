@@ -635,6 +635,20 @@ P22.3 prototype interaction stable delete result:
   `prototype-interaction-id-conflict` without deleting.
 - P22.3 does not generate interaction ids or add a file-data migration.
 
+P22.4 prototype mutation helper contract result:
+
+- `prototype.update_interaction`, `prototype.reorder_interaction`, and
+  `prototype.duplicate_interaction` are reserved in command-runtime as
+  descriptor-only planned commands.
+- Their descriptors advertise `adapters: []`; no executable MCP tool handler,
+  CLI command, or backend/common execution path is registered yet.
+- `prototype-mutation-helper-contracts.md` defines target identity, stale
+  guard behavior, action-specific update fields, same-source reorder and
+  duplicate boundaries, and the requirement that duplicated interactions get
+  fresh UUIDs.
+- The next prerequisite is a stable interaction UUID generation and migration
+  plan.
+
 ## 4. Target Architecture
 
 ```text
@@ -1942,6 +1956,9 @@ prototype.create_interaction
 prototype.create_overlay
 prototype.list_interactions
 prototype.delete_interaction
+prototype.update_interaction
+prototype.reorder_interaction
+prototype.duplicate_interaction
 ```
 
 `prototype.create_overlay` is backend-command-only in Phase 20. It requires
@@ -1953,6 +1970,9 @@ identity. P22.2 exposes optional `interactionId` and explicit
 `identity.kind` metadata on `prototype.list_interactions`. P22.3 lets
 `prototype.delete_interaction` delete by `interactionId` when present, while
 keeping source-shape/index targeting as the legacy fallback and guard form.
+P22.4 defines descriptor-only contracts for update, reorder, and duplicate
+helpers; they remain non-executable until UUID generation and migration
+semantics are stable.
 
 ### 8.5 Export and Render Tools
 

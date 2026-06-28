@@ -149,7 +149,7 @@ test("command runtime exposes migrated shape and export descriptors", () => {
             "render.preview",
         ]
     );
-    assert.equal(MigratedCommandDescriptors.length, 27);
+    assert.equal(MigratedCommandDescriptors.length, 30);
     assert.equal(CommandDescriptors.SHAPE_DELETE.cliCommand, "shape delete");
     assert.equal(CommandDescriptors.SHAPE_CREATE_IMAGE.cliCommand, "shape create-image");
     assert.equal(CommandDescriptors.SHAPE_SET_LAYOUT.cliCommand, "shape set-layout");
@@ -172,11 +172,14 @@ test("command runtime exposes live-gap descriptor boundaries", () => {
             "selection.set",
             "prototype.list_interactions",
             "prototype.delete_interaction",
+            "prototype.update_interaction",
+            "prototype.reorder_interaction",
+            "prototype.duplicate_interaction",
             "shape.set_layout",
             "shape.set_style",
         ]
     );
-    assert.equal(MigratedCommandDescriptors.length, 27);
+    assert.equal(MigratedCommandDescriptors.length, 30);
     assert.equal(CommandDescriptors.PAGE_SET_CURRENT.mcpToolName, "page.set_current");
     assert.equal(CommandDescriptors.PAGE_SET_CURRENT.cliCommand, undefined);
     assert.equal(getCommandDescriptor("selection.get").adapters[0], "plugin-live");
@@ -190,6 +193,13 @@ test("command runtime exposes live-gap descriptor boundaries", () => {
     assert.match(CommandDescriptors.PROTOTYPE_DELETE_INTERACTION.description, /sourceShapeId/);
     assert.match(CommandDescriptors.PROTOTYPE_DELETE_INTERACTION.inputSchema, /interactionIndex/);
     assert.match(CommandDescriptors.PROTOTYPE_DELETE_INTERACTION.inputSchema, /interactionId/);
+    assert.deepEqual(CommandDescriptors.PROTOTYPE_UPDATE_INTERACTION.adapters, []);
+    assert.equal(CommandDescriptors.PROTOTYPE_UPDATE_INTERACTION.cliCommand, undefined);
+    assert.match(CommandDescriptors.PROTOTYPE_UPDATE_INTERACTION.inputSchema, /actionType immutable/);
+    assert.deepEqual(CommandDescriptors.PROTOTYPE_REORDER_INTERACTION.adapters, []);
+    assert.match(CommandDescriptors.PROTOTYPE_REORDER_INTERACTION.inputSchema, /same source shape only/);
+    assert.deepEqual(CommandDescriptors.PROTOTYPE_DUPLICATE_INTERACTION.adapters, []);
+    assert.match(CommandDescriptors.PROTOTYPE_DUPLICATE_INTERACTION.inputSchema, /generates new interactionId/);
     assert.deepEqual(CommandDescriptors.SHAPE_SET_LAYOUT.adapters, ["backend-command", "plugin-live"]);
     assert.deepEqual(CommandDescriptors.SHAPE_SET_STYLE.adapters, ["backend-command", "plugin-live"]);
     assert.equal(CommandDescriptors.SHAPE_SET_LAYOUT.cliCommand, "shape set-layout");

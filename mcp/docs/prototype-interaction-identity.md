@@ -9,6 +9,9 @@ interactions used by:
 
 - `prototype.list_interactions`
 - `prototype.delete_interaction`
+- `prototype.update_interaction`
+- `prototype.reorder_interaction`
+- `prototype.duplicate_interaction`
 - `prototype.create_interaction`
 - `prototype.create_overlay`
 - `penpot-cli prototype list-interactions`
@@ -200,6 +203,20 @@ Rules:
 - P22.3 does not generate ids during create/delete and does not add a file-data
   migration.
 
+## P22.4 Planned Helper Contracts
+
+P22.4 defines descriptor-only contracts for:
+
+- `prototype.update_interaction`
+- `prototype.reorder_interaction`
+- `prototype.duplicate_interaction`
+
+These helpers are intentionally not executable yet. Their command-runtime
+descriptors advertise no adapters until new interactions receive persisted
+UUIDs and legacy/id-missing files have a migration or explicit fallback policy.
+
+Contract details live in `prototype-mutation-helper-contracts.md`.
+
 ## Migration Notes
 
 Preferred migration path:
@@ -237,6 +254,15 @@ Implemented descriptor changes for P22.3:
 - MCP/CLI tests cover stable id deletion and legacy deletion; common/backend
   tests cover stale guard mismatch, missing id, duplicate id, and legacy index
   compatibility.
+
+Implemented descriptor changes for P22.4:
+
+- `prototype.update_interaction`, `prototype.reorder_interaction`, and
+  `prototype.duplicate_interaction` are descriptor-only planned commands with
+  `adapters: []`.
+- The descriptors define stable target identity, source/index guards, immutable
+  action type for updates, same-source reorder/duplicate boundaries, and fresh
+  UUID requirements for duplicated interactions.
 
 ## Fixtures
 

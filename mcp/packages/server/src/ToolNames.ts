@@ -42,6 +42,9 @@ export const ToolNames = {
     PROTOTYPE_CREATE_OVERLAY: "prototype.create_overlay",
     PROTOTYPE_LIST_INTERACTIONS: "prototype.list_interactions",
     PROTOTYPE_DELETE_INTERACTION: "prototype.delete_interaction",
+    PROTOTYPE_UPDATE_INTERACTION: "prototype.update_interaction",
+    PROTOTYPE_REORDER_INTERACTION: "prototype.reorder_interaction",
+    PROTOTYPE_DUPLICATE_INTERACTION: "prototype.duplicate_interaction",
 
     EXPORT_SHAPE: "export.shape",
     EXPORT_PAGE: "export.page",
@@ -110,6 +113,9 @@ export const PrototypeToolNames = [
     ToolNames.PROTOTYPE_CREATE_OVERLAY,
     ToolNames.PROTOTYPE_LIST_INTERACTIONS,
     ToolNames.PROTOTYPE_DELETE_INTERACTION,
+    ToolNames.PROTOTYPE_UPDATE_INTERACTION,
+    ToolNames.PROTOTYPE_REORDER_INTERACTION,
+    ToolNames.PROTOTYPE_DUPLICATE_INTERACTION,
 ] as const;
 
 export const ExportAndRenderToolNames = [
