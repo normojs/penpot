@@ -1,13 +1,13 @@
 {
-  "version": "p23.2",
-  "status": "backend-command-create-ids-generated",
+  "version": "p23.3",
+  "status": "legacy-interaction-id-migration-implemented",
   "notes": [
     "The read summaries are implemented for id-present and id-missing interactions.",
     "Stable-id deletion is implemented when persisted interaction ids exist.",
     "Existing source-shape/index targeting remains the compatibility fallback.",
     "Backend-command navigate and overlay creation now generates stable interaction ids.",
-    "Update, reorder, and duplicate helper contracts are descriptor-only until legacy backfill and copy/remap duplicate-id semantics are stable.",
-    "P23.2 keeps legacy backfill separate."
+    "Legacy missing and duplicate interaction ids are handled by common file-data migration 0018-assign-prototype-interaction-ids.",
+    "Update, reorder, and duplicate helper contracts are descriptor-only until copy/remap duplicate-id semantics are stable."
   ],
   "ids": {
     "fileId": "00000000-0000-0000-0000-000000000001",
@@ -178,8 +178,12 @@
       "prototype.create_interaction.generation": "backend-command common headless helper generates interaction ids",
       "prototype.create_interaction.responseShape": "interaction summary includes generated interactionId and identity.kind stable-id",
       "prototype.create_overlay.generation": "backend-command common headless helper generates interaction ids",
-      "prototype.create_overlay.responseShape": "interaction summary includes generated interactionId and identity.kind stable-id",
-      "legacyBackfill": "deferred to P23.3 until migration and copy/remap duplicate-id policy is fixture-backed"
+      "prototype.create_overlay.responseShape": "interaction summary includes generated interactionId and identity.kind stable-id"
+    },
+    "p23.3": {
+      "fileDataMigration": "0018-assign-prototype-interaction-ids",
+      "legacyBackfill": "missing ids receive fresh UUIDs; later duplicate ids are regenerated; first existing unique ids, vector order, and payload fields are preserved",
+      "copyRemapPolicy": "still future work before executable update/reorder/duplicate helpers"
     }
   }
 }

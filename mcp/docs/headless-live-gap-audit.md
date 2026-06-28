@@ -385,11 +385,11 @@ points CLI users back to MCP `file.open`, `file.get_context`,
   explicit `fileId`, optional `pageId`, `sourceShapeId`, and zero-based
   `interactionIndex` as the legacy fallback and optional guard form.
 - P22.4 defines descriptor-only planned update/reorder/duplicate helpers.
-  They remain non-executable until UUID generation/migration semantics and
-  action-specific fixtures are stable.
-- P23.1 selects backend-command create-time UUID generation as the next safe
-  step, while legacy backfill and copy/remap duplicate-id handling remain
-  separate prerequisites.
+  They remain non-executable until copy/remap id regeneration and
+  action-specific executable fixtures are stable.
+- P23.2 adds backend-command create-time UUID generation, and P23.3 adds the
+  common legacy id migration. Copy/remap duplicate-id handling remains the
+  next prerequisite.
 - Whether plugin-live `prototype.list_interactions` is needed, or whether
   backend-command reads are enough for agents.
 - Whether exporter-backed `export.shape` should get an explicit file/page/shape

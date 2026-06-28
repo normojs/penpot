@@ -524,16 +524,19 @@ P22.4 is complete:
 3. The helpers intentionally expose no executable adapters until interaction
    UUID generation and legacy migration semantics are stable.
 
-P23.1 and P23.2 are complete:
+P23.1, P23.2, and P23.3 are complete:
 
 1. `prototype-interaction-uuid-generation-migration.md` audits current
    headless, backend, frontend workspace, copy/remap, import, and migration
    touchpoints.
 2. Backend-command-created navigate and overlay interactions now receive
    backend-owned ids without accepting caller-provided ids.
-3. Legacy backfill, frontend workspace generation, and copy/remap duplicate-id
-   handling stay separate so richer mutation helpers remain blocked until file
-   data identity is durable.
+3. Common file-data migration `0018-assign-prototype-interaction-ids` now
+   backfills missing legacy ids and repairs later duplicate ids while
+   preserving order, payload fields, and first existing unique ids.
+4. Frontend workspace generation and copy/remap duplicate-id handling stay
+   separate so richer mutation helpers remain blocked until distinct-copy id
+   behavior is durable.
 
 Keep manual configuration behavior stable while moving command metadata and
 envelopes; transport-specific formatting should stay at the MCP/CLI edges.

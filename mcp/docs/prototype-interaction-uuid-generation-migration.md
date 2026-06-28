@@ -1,8 +1,8 @@
 # Prototype Interaction UUID Generation And Migration Audit
 
-Status: P23.2 runtime change complete. Backend-command-created prototype
-interactions now receive persisted stable ids; legacy backfill remains
-separate.
+Status: P23.3 migration complete. Backend-command-created prototype
+interactions receive persisted stable ids, and legacy file data is backfilled
+by a common file-data migration.
 
 This document audits the code paths that create, copy, import, summarize, and
 delete persisted prototype interactions before Phase 23 starts assigning stable
@@ -10,7 +10,7 @@ interaction UUIDs.
 
 ## Decision
 
-P23.2 makes the smallest safe runtime change:
+P23.2 made the smallest safe runtime change:
 
 - Assign a fresh `uuid/next` value to backend-command-created prototype
   interactions in common headless helpers.
@@ -23,12 +23,25 @@ P23.2 makes the smallest safe runtime change:
   carries `:id`.
 - Leave frontend workspace/plugin-live interaction creation unchanged until a
   separate live editor migration/generation task is selected.
-- Leave legacy/id-missing files as source-index results until P23.3 chooses a
-  backfill or migration policy.
+- Leave legacy/id-missing files as source-index results in P23.2; P23.3 later
+  applies the file-data migration described below.
 
-P23.3 should not be folded into P23.2. Existing copy/remap paths can duplicate
-stored interaction ids unless they are explicitly changed, so legacy backfill
-needs its own fixtures and review.
+P23.3 selects a common file-data migration:
+
+- Add `0018-assign-prototype-interaction-ids` to
+  `common/src/app/common/files/migrations.cljc`.
+- Walk every shape `:interactions` vector in `:pages-index` and
+  `:components`.
+- Track a file-wide seen set across pages and components.
+- Preserve the first existing unique `:id`.
+- Assign a fresh `uuid/next` id to interactions with missing ids.
+- Assign a fresh `uuid/next` id to later duplicate ids.
+- Preserve interaction vector order and all non-id payload fields.
+
+Existing copy/remap paths can still duplicate stored interaction ids when
+creating distinct copies. That regeneration policy remains separate from the
+legacy migration and must be handled before update/reorder/duplicate helpers
+become executable.
 
 ## Current Creation Paths
 
@@ -68,10 +81,11 @@ paths that preserve interaction payloads:
 | Shape/library copy or remap | `common/src/app/common/logic/libraries.cljc` calls `ctsi/remap-interactions`. | `remap-interactions` rewrites `:destination` but preserves `:id`, so copying a shape with interactions can duplicate the interaction id in the same file. |
 | Page duplicate | `frontend/src/app/main/data/workspace/pages.cljs` duplicates page objects and only remaps selected variant/component ids. | Non-variant shapes keep interactions unchanged; a duplicated page can carry the same interaction ids as the source page in the same file. |
 | File duplicate/import | `backend/src/app/binfile/common.clj` `process-file` relinks general refs through `cfh/relink-refs`. | New file ids make cross-file duplicates acceptable, but `relink-refs` does not define interaction-id regeneration. Imported files with existing duplicate ids can remain ambiguous. |
-| Legacy migration | `common/src/app/common/files/migrations.cljc` has `0002-clean-shape-interactions`. | It decodes and validates interactions but does not assign missing ids or fix duplicate ids. A new migration/backfill must be added separately if P23.3 chooses that route. |
+| Legacy migration | `common/src/app/common/files/migrations.cljc` has `0018-assign-prototype-interaction-ids`. | P23.3 assigns missing ids and repairs later duplicate ids while preserving existing first unique ids, order, and payload fields. |
 
 These risks are why update/reorder/duplicate helpers must remain descriptor-only
-until P23.3 has a migration/backfill and copy/remap policy.
+until copy/remap distinct-copy id regeneration and executable helper semantics
+are implemented.
 
 ## P23.2 Implementation
 
@@ -98,24 +112,32 @@ Preferred tests:
 - MCP and `penpot-cli` create commands preserve the generated id in JSON output.
 - Legacy id-missing list/delete tests still return source-index identity.
 
-## Recommended P23.3 Policy Options
+## P23.3 Migration Implementation
 
-P23.3 should choose one of these before changing legacy files:
+P23.3 chose the common file-data migration option:
 
-| Option | Pros | Cons | Current recommendation |
+| Option | Pros | Cons | Outcome |
 | --- | --- | --- | --- |
-| Common file-data migration | Centralized; uses existing migration registry. | If run in read paths before persistence, generated ids may differ across clients until saved. Needs proof of persistence behavior. | Possible, but only after focused migration tests. |
-| Backend write-time lazy backfill | Runs under file lock during explicit writes. | Legacy files stay id-missing until touched. Needs helper shared by create/update/delete. | Safest first backfill candidate. |
-| Fallback-only forever | No migration risk. | Richer helpers must keep legacy source-index complexity and cannot rely on stable ids. | Not enough for update/reorder/duplicate. |
+| Common file-data migration | Centralized; uses existing migration registry; runs before richer helper execution. | Needs deterministic uniqueness semantics and focused migration coverage. | Selected in P23.3 as `0018-assign-prototype-interaction-ids`. |
+| Backend write-time lazy backfill | Runs under file lock during explicit writes. | Legacy files stay id-missing until touched. Needs helper shared by create/update/delete. | Deferred. |
+| Fallback-only forever | No migration risk. | Richer helpers must keep legacy source-index complexity and cannot rely on stable ids. | Rejected for Phase 23. |
 
-For any chosen policy, fixtures must cover:
+The focused migration tests cover:
 
 - Id-missing interactions receiving ids without reordering vectors.
 - Existing unique ids being preserved.
-- Duplicate ids being repaired or reported deterministically.
-- Shape/page copy regenerating ids for distinct copies in the same file.
-- File duplicate/import preserving or regenerating ids according to the final
+- Duplicate ids being repaired deterministically by preserving the first
+  occurrence and regenerating later duplicates.
+- Page and component object containers sharing the same file-wide seen set.
+- Payload fields and vector order being preserved.
+
+Remaining future fixtures before executable update/reorder/duplicate:
+
+- Shape/page copy regenerates ids for distinct copies in the same file.
+- Import/file duplicate preserves or regenerates ids according to the final
   file-wide uniqueness rule.
+- Frontend workspace creation either generates ids or is normalized by an
+  explicit save/migration path.
 
 ## Command Impact
 
@@ -126,7 +148,8 @@ For any chosen policy, fixtures must cover:
 - `prototype.list_interactions`: no contract change; more newly-created results
   will naturally return `identity.kind = stable-id`.
 - `prototype.delete_interaction`: no contract change; stable-id deletion becomes
-  usable for newly-created backend-command interactions.
+  usable for migrated legacy interactions and newly-created backend-command
+  interactions.
 - `prototype.update_interaction`, `prototype.reorder_interaction`, and
-  `prototype.duplicate_interaction`: remain descriptor-only until P23.3 and
-  P23.4.
+  `prototype.duplicate_interaction`: remain descriptor-only until P23.4 handles
+  copy/remap duplicate-id behavior and executable helper semantics.

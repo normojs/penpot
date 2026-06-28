@@ -661,9 +661,9 @@ P23.1 prototype interaction UUID generation and migration audit result:
   backend-command-created navigate and overlay interactions in common headless
   helpers.
 - Create requests should not accept caller-provided interaction ids.
-- Frontend workspace/plugin-live creation and legacy/id-missing files remain
-  source-index compatible until a separate P23.3 backfill or migration policy
-  is implemented.
+- Frontend workspace/plugin-live creation remains source-index compatible.
+  P23.3 later adds a file-data migration for legacy/id-missing stored
+  interactions.
 - Copy/remap paths must regenerate interaction ids for distinct copies before
   update/reorder/duplicate helpers become executable.
 
@@ -675,9 +675,20 @@ P23.2 prototype interaction UUID generation result:
   interactions.
 - Create responses and immediate list summaries expose `interactionId` plus
   `identity.kind = stable-id` for those new interactions.
-- Caller-provided interaction ids remain unsupported on create, and
-  legacy/id-missing interactions keep the source-index compatibility fallback
-  until P23.3.
+- Caller-provided interaction ids remain unsupported on create. Legacy
+  id-missing interactions kept the source-index compatibility fallback until
+  the P23.3 migration.
+
+P23.3 prototype interaction id migration result:
+
+- Common file-data migration `0018-assign-prototype-interaction-ids` backfills
+  legacy prototype interactions in page and component objects.
+- The migration keeps a file-wide seen set, preserves the first existing
+  unique interaction id, assigns fresh ids to missing interactions, and repairs
+  later duplicates.
+- Interaction order and non-id payload fields are preserved.
+- Copy/remap distinct-copy id regeneration remains a separate prerequisite
+  before update/reorder/duplicate helpers become executable.
 
 ## 4. Target Architecture
 
@@ -2007,8 +2018,9 @@ P23.1 selected backend-command create id generation as the next safe runtime
 step, while keeping legacy backfill, frontend workspace generation, and
 copy/remap duplicate-id policy separate.
 P23.2 implements that backend-command create id generation for navigate and
-overlay interactions; P23.3 remains responsible for legacy backfill or
-migration policy.
+overlay interactions. P23.3 adds the common file-data migration for legacy
+missing and duplicate interaction ids. Copy/remap duplicate-id regeneration
+remains separate before executable update/reorder/duplicate helpers.
 
 ### 8.5 Export and Render Tools
 

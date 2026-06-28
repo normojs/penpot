@@ -1786,6 +1786,43 @@
         (update :pages-index d/update-vals update-container)
         (d/update-when :components d/update-vals update-container))))
 
+(defn- next-prototype-interaction-id
+  [seen]
+  (loop [interaction-id (uuid/next)]
+    (if (contains? @seen interaction-id)
+      (recur (uuid/next))
+      interaction-id)))
+
+(defn- assign-stable-prototype-interaction-id
+  [seen interaction]
+  (let [interaction-id (:id interaction)]
+    (if (and (some? interaction-id)
+             (not (contains? @seen interaction-id)))
+      (do
+        (vswap! seen conj interaction-id)
+        interaction)
+      (let [interaction-id (next-prototype-interaction-id seen)]
+        (vswap! seen conj interaction-id)
+        (assoc interaction :id interaction-id)))))
+
+(defmethod migrate-data "0018-assign-prototype-interaction-ids"
+  [data _]
+  (let [seen (volatile! #{})
+
+        update-object
+        (fn [object]
+          (d/update-when object :interactions
+                         (fn [interactions]
+                           (mapv (partial assign-stable-prototype-interaction-id seen)
+                                 interactions))))
+
+        update-container
+        (fn [container]
+          (d/update-when container :objects d/update-vals update-object))]
+    (-> data
+        (update :pages-index d/update-vals update-container)
+        (d/update-when :components d/update-vals update-container))))
+
 (def available-migrations
   (into (d/ordered-set)
         ["legacy-2"
@@ -1860,4 +1897,5 @@
          "0015-fix-text-attrs-blank-strings"
          "0015-clean-shadow-color"
          "0016-copy-fills-from-position-data-to-text-node"
-         "0017-fix-layout-flex-dir"]))
+         "0017-fix-layout-flex-dir"
+         "0018-assign-prototype-interaction-ids"]))

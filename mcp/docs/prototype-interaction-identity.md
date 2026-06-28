@@ -1,6 +1,6 @@
 # Prototype Interaction Identity Audit
 
-Status: P23.2 backend-command create-time id generation implemented.
+Status: P23.3 legacy interaction id migration implemented.
 
 ## Scope
 
@@ -228,8 +228,8 @@ Decision:
 - Do not accept caller-provided ids on create.
 - Keep frontend workspace/plugin-live creation as source-index compatible until
   a separate task covers live editor behavior.
-- Keep legacy/id-missing files on the source-index fallback until P23.3 chooses
-  a backfill or file-data migration policy.
+- Keep legacy/id-missing files on the source-index fallback in P23.2; P23.3
+  later applies a file-data migration.
 - Treat copy/remap paths as a blocking prerequisite for executable
   update/reorder/duplicate helpers, because existing remap helpers preserve
   interaction payloads and can duplicate `:id` values.
@@ -245,9 +245,11 @@ Preferred migration path:
    schema.
 2. Done in P23.2: backend-command/common headless interaction creation helpers
    now assign a backend-owned UUID to new navigate and overlay interactions.
-3. Add a file-data migration that walks every shape `:interactions` vector and
-   assigns UUIDs to interactions without ids.
-4. Preserve existing interaction order and payload fields during migration.
+3. Done in P23.3: add a file-data migration that walks every shape
+   `:interactions` vector in pages and components, assigns UUIDs to
+   interactions without ids, and repairs later duplicate ids.
+4. Done in P23.3: preserve existing interaction order and payload fields
+   during migration while keeping the first existing unique id.
 5. During copy/duplicate/remap, keep interaction ids only when the operation is
    a version/history read; generate new ids when creating a distinct copy of a
    shape to avoid duplicate ids in the same file.
@@ -291,8 +293,19 @@ Implemented descriptor/runtime changes for P23.2:
   summaries.
 - Their descriptor response shapes mention generated `interactionId` and
   `identity.kind = stable-id`.
-- Legacy/id-missing interactions remain on the source-index fallback until
-  P23.3 selects a backfill or migration policy.
+- Legacy/id-missing interactions remained on the source-index fallback until
+  P23.3 selected a migration policy.
+
+Implemented migration changes for P23.3:
+
+- `0018-assign-prototype-interaction-ids` is registered in common file-data
+  migrations.
+- The migration uses one file-wide seen set across page objects and component
+  objects.
+- Missing interaction ids receive fresh `uuid/next` values.
+- Later duplicate ids receive fresh `uuid/next` values, while the first
+  existing unique id is preserved.
+- Descriptor and runtime command contracts do not change in P23.3.
 
 ## Fixtures
 

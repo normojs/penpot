@@ -19,17 +19,18 @@ prototype.duplicate_interaction
 Adapters:
 
 - `backend-command`: planned, but unavailable until legacy/id-missing files
-  have a migration or explicit fallback policy and copy/remap duplicate-id
-  behavior is settled. P23.2 already generates ids for new backend-command
-  interactions.
+  have a migration and copy/remap duplicate-id behavior is settled. P23.2
+  already generates ids for new backend-command interactions, and P23.3
+  backfills legacy missing/duplicate ids through a common file-data migration.
 - `plugin-live`: not part of these contracts. These helpers mutate persisted
   file data, not editor-local workspace state.
 
 The command-runtime descriptors advertise `adapters: []` until implementation.
 
-P23.2 implemented backend-command create-time id generation, but these helper
-descriptors remain adapterless until legacy backfill and copy/remap
-duplicate-id behavior are settled.
+P23.2 implemented backend-command create-time id generation and P23.3
+implemented legacy backfill. These helper descriptors remain adapterless until
+copy/remap distinct-copy id regeneration and executable helper semantics are
+settled.
 
 ## Shared Targeting
 
@@ -138,8 +139,8 @@ Response:
 Before any descriptor becomes executable:
 
 1. New backend-command interaction creation must assign persisted UUIDs.
-2. Legacy/id-missing files need a migration or an explicit source-index-only
-   policy for each helper.
+2. Done in P23.3: legacy/id-missing files receive ids through a common
+   file-data migration.
 3. Copy/duplicate/remap paths must define when interaction ids are preserved
    and when fresh ids are generated.
 4. Common/backend fixtures must cover stable target, legacy target, stale guard,
