@@ -507,9 +507,10 @@ P17.1 audit result:
   have stable ids. Later P22/P23 work adds optional stable ids for summaries,
   deletion, and backend-command creation.
 - `prototype.create_overlay`, `shape.set_layout`, and `shape.set_style` have
-  since been selected by later waves; `export.file`, `render.thumbnail`,
-  component, token, and debug names remain planned or unsupported descriptor
-  gaps unless a later wave selects them.
+  since been selected by later waves. P25.1 selects `export.file` and
+  `render.thumbnail` as descriptor-only planned boundaries; component, token,
+  and debug names remain planned or unsupported descriptor gaps unless a later
+  wave selects them.
 - Grid container layout can move to backend-command once backend/common owns a
   persisted track contract; grid cells and child placement need a later
   dedicated payload contract.
@@ -2050,6 +2051,16 @@ semantics: preserve first unique ids across the new file boundary, and use the
 common migration to repair only missing or later duplicate ids inside that new
 file.
 
+P25.1 export/render descriptor boundary result:
+
+- `export.file` and `render.thumbnail` are present in
+  `@penpot/command-runtime` so catalog consumers can discover the planned names.
+- Both descriptors use the final MCP tool names but intentionally omit
+  `cliCommand` and advertise `adapters: []`.
+- No MCP tool registration, CLI command, exporter execution path, or plugin-live
+  path is enabled until a later wave selects the file archive/export contract
+  and thumbnail target/cache/artifact contract.
+
 ### 8.5 Export and Render Tools
 
 May start file-bound and later move to headless:
@@ -2061,6 +2072,11 @@ export.file
 render.preview
 render.thumbnail
 ```
+
+P25.1 reserves `export.file` and `render.thumbnail` in the shared command
+catalog only. They are descriptor-only planned boundaries: the descriptors
+document future input and response shapes, but empty adapters mean agents must
+not treat them as executable MCP, CLI, exporter, or plugin-live commands yet.
 
 ### 8.6 Advanced Tools
 

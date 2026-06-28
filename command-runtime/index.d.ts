@@ -297,10 +297,18 @@ export interface CommandDescriptorCatalog extends LowRiskCommandDescriptorCatalo
         mcpToolName: "export.page";
         cliCommand: "export page";
     };
+    EXPORT_FILE: CommandDescriptor & {
+        id: "export.file";
+        mcpToolName: "export.file";
+    };
     RENDER_PREVIEW: CommandDescriptor & {
         id: "render.preview";
         mcpToolName: "render.preview";
         cliCommand: "render preview";
+    };
+    RENDER_THUMBNAIL: CommandDescriptor & {
+        id: "render.thumbnail";
+        mcpToolName: "render.thumbnail";
     };
 }
 

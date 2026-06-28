@@ -409,6 +409,16 @@ export const CommandDescriptors = Object.freeze({
         adapters: Object.freeze(["exporter", "plugin-live"]),
         responseShape: "status envelope with export plan, resource metadata, or base64 export data",
     }),
+    EXPORT_FILE: Object.freeze({
+        id: "export.file",
+        mcpToolName: "export.file",
+        title: "Export file",
+        description:
+            "Planned file-level export command descriptor. No MCP, CLI, or exporter adapter is executable until a stable archive/export contract is selected.",
+        inputSchema: "fileId, format?, includeLibraries?, output?, adapter?",
+        adapters: Object.freeze([]),
+        responseShape: "planned status envelope with file export artifact metadata",
+    }),
     RENDER_PREVIEW: Object.freeze({
         id: "render.preview",
         mcpToolName: "render.preview",
@@ -419,6 +429,16 @@ export const CommandDescriptors = Object.freeze({
         inputSchema: "fileId?, pageId?, objectId?, target?, shapeId?, scale?, output?, dryRun?",
         adapters: Object.freeze(["exporter", "plugin-live"]),
         responseShape: "status envelope with preview plan, resource metadata, or base64 PNG preview data",
+    }),
+    RENDER_THUMBNAIL: Object.freeze({
+        id: "render.thumbnail",
+        mcpToolName: "render.thumbnail",
+        title: "Render thumbnail",
+        description:
+            "Planned thumbnail render command descriptor. No MCP, CLI, or exporter adapter is executable until target selection, cache policy, and artifact metadata are defined.",
+        inputSchema: "fileId, pageId?, objectId?, size?, scale?, output?, adapter?",
+        adapters: Object.freeze([]),
+        responseShape: "planned status envelope with thumbnail artifact metadata",
     }),
 });
 
@@ -461,7 +481,9 @@ export const ShapeExportCommandDescriptors = Object.freeze([
     CommandDescriptors.SHAPE_DELETE,
     CommandDescriptors.EXPORT_SHAPE,
     CommandDescriptors.EXPORT_PAGE,
+    CommandDescriptors.EXPORT_FILE,
     CommandDescriptors.RENDER_PREVIEW,
+    CommandDescriptors.RENDER_THUMBNAIL,
 ]);
 
 export const MigratedCommandDescriptors = Object.freeze([

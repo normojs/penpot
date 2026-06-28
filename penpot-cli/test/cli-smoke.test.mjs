@@ -149,21 +149,31 @@ test("command runtime exposes migrated shape and export descriptors", () => {
             "shape.delete",
             "export.shape",
             "export.page",
+            "export.file",
             "render.preview",
+            "render.thumbnail",
         ]
     );
-    assert.equal(MigratedCommandDescriptors.length, 30);
+    assert.equal(MigratedCommandDescriptors.length, 32);
     assert.equal(CommandDescriptors.SHAPE_DELETE.cliCommand, "shape delete");
     assert.equal(CommandDescriptors.SHAPE_CREATE_IMAGE.cliCommand, "shape create-image");
     assert.equal(CommandDescriptors.SHAPE_SET_LAYOUT.cliCommand, "shape set-layout");
     assert.equal(CommandDescriptors.SHAPE_SET_STYLE.cliCommand, "shape set-style");
     assert.equal(CommandDescriptors.EXPORT_PAGE.mcpToolName, "export.page");
+    assert.equal(CommandDescriptors.EXPORT_FILE.mcpToolName, "export.file");
+    assert.equal(CommandDescriptors.EXPORT_FILE.cliCommand, undefined);
+    assert.deepEqual(CommandDescriptors.EXPORT_FILE.adapters, []);
+    assert.equal(CommandDescriptors.RENDER_THUMBNAIL.mcpToolName, "render.thumbnail");
+    assert.equal(CommandDescriptors.RENDER_THUMBNAIL.cliCommand, undefined);
+    assert.deepEqual(CommandDescriptors.RENDER_THUMBNAIL.adapters, []);
     assert.equal(getCommandDescriptor("shape create-frame").id, "shape.create_frame");
     assert.equal(getCommandDescriptor("shape create-image").id, "shape.create_image");
     assert.equal(getCommandDescriptor("shape set-layout").id, "shape.set_layout");
     assert.equal(getCommandDescriptor("shape set-style").id, "shape.set_style");
+    assert.equal(getCommandDescriptor("export.file").id, "export.file");
     assert.equal(getCommandDescriptor("render.preview").title, "Render preview");
     assert.equal(getCommandDescriptor("render preview").cliCommand, "render preview");
+    assert.equal(getCommandDescriptor("render.thumbnail").title, "Render thumbnail");
 });
 
 test("command runtime exposes live-gap descriptor boundaries", () => {
@@ -182,7 +192,7 @@ test("command runtime exposes live-gap descriptor boundaries", () => {
             "shape.set_style",
         ]
     );
-    assert.equal(MigratedCommandDescriptors.length, 30);
+    assert.equal(MigratedCommandDescriptors.length, 32);
     assert.equal(CommandDescriptors.PAGE_SET_CURRENT.mcpToolName, "page.set_current");
     assert.equal(CommandDescriptors.PAGE_SET_CURRENT.cliCommand, undefined);
     assert.equal(getCommandDescriptor("selection.get").adapters[0], "plugin-live");

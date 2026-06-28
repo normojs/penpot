@@ -35,7 +35,9 @@ const SHAPE_EXPORT_IDS = [
     "shape.delete",
     "export.shape",
     "export.page",
+    "export.file",
     "render.preview",
+    "render.thumbnail",
 ];
 const LIVE_GAP_IDS = [
     "page.set_current",
@@ -82,7 +84,9 @@ test("descriptor lookup supports internal, MCP, and CLI command names", () => {
     assert.equal(getCommandDescriptor("shape create-frame"), CommandDescriptors.SHAPE_CREATE_FRAME);
     assert.equal(getCommandDescriptor("shape create-image"), CommandDescriptors.SHAPE_CREATE_IMAGE);
     assert.equal(getCommandDescriptor("export.page"), CommandDescriptors.EXPORT_PAGE);
+    assert.equal(getCommandDescriptor("export.file"), CommandDescriptors.EXPORT_FILE);
     assert.equal(getCommandDescriptor("render preview"), CommandDescriptors.RENDER_PREVIEW);
+    assert.equal(getCommandDescriptor("render.thumbnail"), CommandDescriptors.RENDER_THUMBNAIL);
     assert.equal(getCommandDescriptor("page.set_current"), CommandDescriptors.PAGE_SET_CURRENT);
     assert.equal(getCommandDescriptor("selection.get"), CommandDescriptors.SELECTION_GET);
     assert.equal(getCommandDescriptor("prototype list-interactions"), CommandDescriptors.PROTOTYPE_LIST_INTERACTIONS);
@@ -158,6 +162,20 @@ test("live-gap descriptors document live-only and planned command boundaries", (
     assert.match(CommandDescriptors.SHAPE_SET_STYLE.description, /MCP and CLI alias for shape.update style\/text fields/);
     assert.match(CommandDescriptors.SHAPE_SET_STYLE.inputSchema, /fill\?/);
     assert.match(CommandDescriptors.SHAPE_SET_STYLE.responseShape, /alias command\/tool audit metadata/);
+});
+
+test("shape/export descriptors document planned file and thumbnail boundaries", () => {
+    assert.equal(CommandDescriptors.EXPORT_FILE.mcpToolName, "export.file");
+    assert.equal(CommandDescriptors.EXPORT_FILE.cliCommand, undefined);
+    assert.deepEqual(CommandDescriptors.EXPORT_FILE.adapters, []);
+    assert.match(CommandDescriptors.EXPORT_FILE.description, /Planned file-level export/);
+    assert.match(CommandDescriptors.EXPORT_FILE.inputSchema, /includeLibraries/);
+    assert.equal(CommandDescriptors.RENDER_THUMBNAIL.mcpToolName, "render.thumbnail");
+    assert.equal(CommandDescriptors.RENDER_THUMBNAIL.cliCommand, undefined);
+    assert.deepEqual(CommandDescriptors.RENDER_THUMBNAIL.adapters, []);
+    assert.match(CommandDescriptors.RENDER_THUMBNAIL.description, /Planned thumbnail render/);
+    assert.match(CommandDescriptors.RENDER_THUMBNAIL.description, /cache policy/);
+    assert.match(CommandDescriptors.RENDER_THUMBNAIL.inputSchema, /objectId|size/);
 });
 
 test("file open helpers produce stable workspace URLs and handoff actions", () => {

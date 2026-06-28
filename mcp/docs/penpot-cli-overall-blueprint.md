@@ -223,6 +223,8 @@ Current state:
   adapter reason text are centralized in `@penpot/command-runtime`.
 - Done: shape/create/update/delete, export.shape, export.page, and
   render.preview descriptors are part of the migrated command catalog.
+- Done: descriptor-only `export.file` and `render.thumbnail` entries reserve
+  planned export/render names with empty adapters and no CLI command names.
 - Done: focused command-runtime tests cover descriptor groups, lookup,
   adapter-selection priority/error cases, and token-safe envelopes.
 - Status: complete. Later command coverage gaps were tracked by the P15.1
