@@ -114,8 +114,15 @@ test("PrototypeCreateInteractionTool maps navigate interaction backend parameter
                 calls.push({ methodName, params, userToken, context });
                 return {
                     interaction: {
+                        interactionId: "00000000-0000-0000-0000-000000000101",
                         sourceShapeId: "00000000-0000-0000-0000-000000000003",
                         index: 0,
+                        identity: {
+                            kind: "stable-id",
+                            interactionId: "00000000-0000-0000-0000-000000000101",
+                            sourceShapeId: "00000000-0000-0000-0000-000000000003",
+                            interactionIndex: 0,
+                        },
                         actionType: "navigate-to",
                     },
                     revn: 4,
@@ -178,6 +185,8 @@ test("PrototypeCreateInteractionTool maps navigate interaction backend parameter
     assert.equal(body.status, "ok");
     assert.equal(body.data.adapter, "backend-command");
     assert.equal(body.data.adapterSelection.command, "prototype.create_interaction");
+    assert.equal(body.data.interaction.interactionId, "00000000-0000-0000-0000-000000000101");
+    assert.equal(body.data.interaction.identity.kind, "stable-id");
     assert.equal(body.data.interaction.actionType, "navigate-to");
     assert.equal(body.data.revn, 4);
 });
@@ -195,10 +204,17 @@ test("PrototypeCreateOverlayTool maps overlay backend parameters", async () => {
                 calls.push({ methodName, params, userToken, context });
                 return {
                     interaction: {
+                        interactionId: "00000000-0000-0000-0000-000000000102",
                         sourceShapeId: "00000000-0000-0000-0000-000000000003",
                         destinationBoardId: "00000000-0000-0000-0000-000000000004",
                         relativeToShapeId: "00000000-0000-0000-0000-000000000003",
                         index: 1,
+                        identity: {
+                            kind: "stable-id",
+                            interactionId: "00000000-0000-0000-0000-000000000102",
+                            sourceShapeId: "00000000-0000-0000-0000-000000000003",
+                            interactionIndex: 1,
+                        },
                         actionType: "toggle-overlay",
                         overlayPositionType: "manual",
                         overlayPosition: { x: 12, y: 16 },
@@ -269,6 +285,8 @@ test("PrototypeCreateOverlayTool maps overlay backend parameters", async () => {
     assert.equal(body.data.adapter, "backend-command");
     assert.equal(body.data.adapterSelection.command, "prototype.create_overlay");
     assert.equal(body.data.sourceShapeId, "00000000-0000-0000-0000-000000000003");
+    assert.equal(body.data.interaction.interactionId, "00000000-0000-0000-0000-000000000102");
+    assert.equal(body.data.interaction.identity.kind, "stable-id");
     assert.equal(body.data.interaction.actionType, "toggle-overlay");
     assert.equal(body.data.interaction.overlayPosition.x, 12);
     assert.equal(body.data.revn, 5);

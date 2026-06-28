@@ -325,11 +325,14 @@
                                :offsetEffect true}})
         data'    (cpc/process-changes data (:changes result))
         interactions (get-in data' [:pages-index page-id :objects rect-id :interactions])
-        interaction  (first interactions)]
-    (t/is (= {:source-shape-id rect-id
+        interaction  (first interactions)
+        interaction-id (:id interaction)]
+    (t/is (uuid? interaction-id))
+    (t/is (= {:interaction-id interaction-id
+              :source-shape-id rect-id
               :source-shape-name "CTA"
               :index 0
-              :identity (legacy-interaction-identity rect-id 0)
+              :identity (stable-interaction-identity interaction-id rect-id 0)
               :trigger :mouse-enter
               :delay nil
               :action-type :navigate-to
@@ -339,6 +342,7 @@
     (t/is (= 1 (count interactions)))
     (t/is (= :mouse-enter (:event-type interaction)))
     (t/is (= :navigate (:action-type interaction)))
+    (t/is (= interaction-id (:interaction-id (:interaction result))))
     (t/is (= frame-b (:destination interaction)))
     (t/is (= true (:preserve-scroll interaction)))
     (t/is (= {:animation-type :slide
@@ -397,6 +401,7 @@
                       :source-shape-id rect-id
                       :destination-board-id frame-b
                       :trigger :click})
+        created-interaction-id (get-in interaction [:interaction :interaction-id])
         data     (cpc/process-changes data (:changes interaction))
         open-overlay {:id stable-interaction-id
                       :action-type :open-overlay
@@ -441,16 +446,18 @@
         filtered (headless/prototype-interactions-summary data {:page-id page-id
                                                                :flow-id flow-id
                                                                :source-shape-id rect-id})]
+    (t/is (uuid? created-interaction-id))
     (t/is (= [{:id flow-id
                :name "Checkout flow"
                :page-id page-id
                :starting-board-id frame-a
                :starting-board-name "Start"}]
              (:flows summary)))
-    (t/is (= [{:source-shape-id rect-id
+    (t/is (= [{:interaction-id created-interaction-id
+               :source-shape-id rect-id
                :source-shape-name "CTA"
                :index 0
-               :identity (legacy-interaction-identity rect-id 0)
+               :identity (stable-interaction-identity created-interaction-id rect-id 0)
                :trigger :click
                :delay nil
                :action-type :navigate-to
@@ -572,6 +579,7 @@
                       :source-shape-id rect-id
                       :action-type :open-overlay
                       :destination-board-id frame-b})
+        open-interaction-id (get-in open-result [:interaction :interaction-id])
         data     (cpc/process-changes data (:changes open-result))
         toggle-result (headless/create-prototype-overlay-request
                        data
@@ -588,12 +596,14 @@
                         :animation {:type :dissolve
                                     :duration 300
                                     :easing :linear}})
+        toggle-interaction-id (get-in toggle-result [:interaction :interaction-id])
         data     (cpc/process-changes data (:changes toggle-result))
         close-result (headless/create-prototype-overlay-request
                       data
                       {:page-id page-id
                        :source-shape-id rect-id
                        :action-type :close-overlay})
+        close-interaction-id (get-in close-result [:interaction :interaction-id])
         data     (cpc/process-changes data (:changes close-result))
         delete-result (headless/delete-prototype-interaction-request
                        data
@@ -601,10 +611,12 @@
                         :source-shape-id rect-id
                         :interaction-index 1})
         data     (cpc/process-changes data (:changes delete-result))]
-    (t/is (= {:source-shape-id rect-id
+    (t/is (every? uuid? [open-interaction-id toggle-interaction-id close-interaction-id]))
+    (t/is (= {:interaction-id open-interaction-id
+              :source-shape-id rect-id
               :source-shape-name "CTA"
               :index 0
-              :identity (legacy-interaction-identity rect-id 0)
+              :identity (stable-interaction-identity open-interaction-id rect-id 0)
               :trigger :click
               :delay nil
               :action-type :open-overlay
@@ -615,10 +627,11 @@
               :close-click-outside false
               :background-overlay false}
              (:interaction open-result)))
-    (t/is (= {:source-shape-id rect-id
+    (t/is (= {:interaction-id toggle-interaction-id
+              :source-shape-id rect-id
               :source-shape-name "CTA"
               :index 1
-              :identity (legacy-interaction-identity rect-id 1)
+              :identity (stable-interaction-identity toggle-interaction-id rect-id 1)
               :trigger :mouse-enter
               :delay nil
               :action-type :toggle-overlay
@@ -634,10 +647,11 @@
                           :duration 300
                           :easing :linear}}
              (:interaction toggle-result)))
-    (t/is (= {:source-shape-id rect-id
+    (t/is (= {:interaction-id close-interaction-id
+              :source-shape-id rect-id
               :source-shape-name "CTA"
               :index 2
-              :identity (legacy-interaction-identity rect-id 2)
+              :identity (stable-interaction-identity close-interaction-id rect-id 2)
               :trigger :click
               :delay nil
               :action-type :close-overlay}
@@ -744,6 +758,7 @@
                             :source-shape-id rect-id
                             :destination-board-id frame-b
                             :trigger :click})
+        first-interaction-id (get-in first-interaction [:interaction :interaction-id])
         data     (cpc/process-changes data (:changes first-interaction))
         second-interaction (headless/create-prototype-interaction-request
                             data
@@ -759,10 +774,12 @@
                    :interaction-index 0})
         data'    (cpc/process-changes data (:changes result))
         interactions (get-in data' [:pages-index page-id :objects rect-id :interactions])]
-    (t/is (= {:source-shape-id rect-id
+    (t/is (uuid? first-interaction-id))
+    (t/is (= {:interaction-id first-interaction-id
+              :source-shape-id rect-id
               :source-shape-name "CTA"
               :index 0
-              :identity (legacy-interaction-identity rect-id 0)
+              :identity (stable-interaction-identity first-interaction-id rect-id 0)
               :trigger :click
               :delay nil
               :action-type :navigate-to

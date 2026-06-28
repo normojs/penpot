@@ -215,7 +215,8 @@ export const CommandDescriptors = Object.freeze({
         inputSchema:
             "fileId?, pageId?, sourceShapeId, destinationBoardId, trigger?, delay?, preserveScrollPosition?, animation?, adapter?",
         adapters: Object.freeze(["backend-command", "plugin-live"]),
-        responseShape: "status envelope with interaction summary, revision metadata, and adapterSelection metadata",
+        responseShape:
+            "status envelope with interaction summary, generated interactionId, identity.kind stable-id, revision metadata, and adapterSelection metadata",
     }),
     PROTOTYPE_LIST_INTERACTIONS: Object.freeze({
         id: "prototype.list_interactions",
@@ -290,7 +291,7 @@ export const CommandDescriptors = Object.freeze({
             "fileId, pageId, sourceShapeId, actionType=open-overlay|toggle-overlay|close-overlay, destinationBoardId required for open/toggle and optional for close, relativeToShapeId?, overlayPositionType=center|manual|top-left|top-right|top-center|bottom-left|bottom-right|bottom-center, manualPosition{x,y} required when overlayPositionType=manual, closeClickOutside?, backgroundOverlay?, trigger?, delay?, animation?; push animation unsupported",
         adapters: Object.freeze(["backend-command"]),
         responseShape:
-            "status envelope with overlay interaction summary, revision metadata, and adapterSelection metadata",
+            "status envelope with overlay interaction summary, generated interactionId, identity.kind stable-id, revision metadata, and adapterSelection metadata",
     }),
     SHAPE_CREATE_FRAME: Object.freeze({
         id: "shape.create_frame",

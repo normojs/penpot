@@ -1,6 +1,6 @@
 # Prototype Interaction Identity Audit
 
-Status: P22.3 stable-id deletion targeting implemented.
+Status: P23.2 backend-command create-time id generation implemented.
 
 ## Scope
 
@@ -243,9 +243,8 @@ Preferred migration path:
 
 1. Done in P22.2: add `:id` as an optional field in the shared interaction
    schema.
-2. Selected for P23.2: update backend-command/common headless interaction
-   creation helpers so new navigate and overlay interactions always receive a
-   backend-owned UUID.
+2. Done in P23.2: backend-command/common headless interaction creation helpers
+   now assign a backend-owned UUID to new navigate and overlay interactions.
 3. Add a file-data migration that walks every shape `:interactions` vector and
    assigns UUIDs to interactions without ids.
 4. Preserve existing interaction order and payload fields during migration.
@@ -285,9 +284,15 @@ Implemented descriptor changes for P22.4:
   action type for updates, same-source reorder/duplicate boundaries, and fresh
   UUID requirements for duplicated interactions.
 
-P23.1 does not require descriptor changes. It confirms that P23.2 can rely on
-the existing `prototype.create_interaction` and `prototype.create_overlay`
-response summaries to expose generated `interactionId` values.
+Implemented descriptor/runtime changes for P23.2:
+
+- `prototype.create_interaction` and `prototype.create_overlay` backend-command
+  responses now return generated `interactionId` values inside the interaction
+  summaries.
+- Their descriptor response shapes mention generated `interactionId` and
+  `identity.kind = stable-id`.
+- Legacy/id-missing interactions remain on the source-index fallback until
+  P23.3 selects a backfill or migration policy.
 
 ## Fixtures
 

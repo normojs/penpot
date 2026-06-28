@@ -18,17 +18,18 @@ prototype.duplicate_interaction
 
 Adapters:
 
-- `backend-command`: planned, but unavailable until persisted interaction ids
-  are generated for new interactions and legacy/id-missing files have a
-  migration or explicit fallback policy.
+- `backend-command`: planned, but unavailable until legacy/id-missing files
+  have a migration or explicit fallback policy and copy/remap duplicate-id
+  behavior is settled. P23.2 already generates ids for new backend-command
+  interactions.
 - `plugin-live`: not part of these contracts. These helpers mutate persisted
   file data, not editor-local workspace state.
 
 The command-runtime descriptors advertise `adapters: []` until implementation.
 
-P23.1 selected backend-command create-time id generation as the next safe
-runtime step, but these helper descriptors remain adapterless until legacy
-backfill and copy/remap duplicate-id behavior are settled.
+P23.2 implemented backend-command create-time id generation, but these helper
+descriptors remain adapterless until legacy backfill and copy/remap
+duplicate-id behavior are settled.
 
 ## Shared Targeting
 

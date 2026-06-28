@@ -1418,9 +1418,16 @@ test("prototype create-interaction sends navigate interaction backend-command RP
             text: async () =>
                 JSON.stringify({
                     interaction: {
+                        interactionId: "00000000-0000-0000-0000-000000000101",
                         sourceShapeId: UUIDS.object,
                         destinationBoardId: UUIDS.profile,
                         index: 0,
+                        identity: {
+                            kind: "stable-id",
+                            interactionId: "00000000-0000-0000-0000-000000000101",
+                            sourceShapeId: UUIDS.object,
+                            interactionIndex: 0,
+                        },
                         actionType: "navigate-to",
                     },
                     revn: 6,
@@ -1490,6 +1497,8 @@ test("prototype create-interaction sends navigate interaction backend-command RP
         assert.equal(body.status, "ok");
         assert.equal(body.data.adapter, "backend-command");
         assert.equal(body.data.adapterSelection.command, "prototype.create_interaction");
+        assert.equal(body.data.interaction.interactionId, "00000000-0000-0000-0000-000000000101");
+        assert.equal(body.data.interaction.identity.kind, "stable-id");
         assert.equal(body.data.interaction.actionType, "navigate-to");
         assert.equal(body.data.revn, 6);
     } finally {
@@ -1509,10 +1518,17 @@ test("prototype create-overlay sends overlay backend-command RPC", async () => {
             text: async () =>
                 JSON.stringify({
                     interaction: {
+                        interactionId: "00000000-0000-0000-0000-000000000102",
                         sourceShapeId: UUIDS.object,
                         destinationBoardId: UUIDS.profile,
                         relativeToShapeId: UUIDS.object,
                         index: 1,
+                        identity: {
+                            kind: "stable-id",
+                            interactionId: "00000000-0000-0000-0000-000000000102",
+                            sourceShapeId: UUIDS.object,
+                            interactionIndex: 1,
+                        },
                         actionType: "toggle-overlay",
                         overlayPositionType: "manual",
                         overlayPosition: { x: 12, y: 16 },
@@ -1594,6 +1610,8 @@ test("prototype create-overlay sends overlay backend-command RPC", async () => {
         assert.equal(body.data.adapter, "backend-command");
         assert.equal(body.data.adapterSelection.command, "prototype.create_overlay");
         assert.equal(body.data.sourceShapeId, UUIDS.object);
+        assert.equal(body.data.interaction.interactionId, "00000000-0000-0000-0000-000000000102");
+        assert.equal(body.data.interaction.identity.kind, "stable-id");
         assert.equal(body.data.interaction.actionType, "toggle-overlay");
         assert.equal(body.data.interaction.overlayPosition.x, 12);
         assert.equal(body.data.revn, 7);

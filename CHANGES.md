@@ -106,6 +106,7 @@
 - Add stable-id prototype interaction deletion, letting common/backend, MCP, and `penpot-cli` target persisted `interactionId` values while preserving source-shape/index deletion and stale guard errors.
 - Define descriptor-only contracts for planned prototype interaction update, reorder, and duplicate helpers, keeping them non-executable until UUID generation and migration semantics are stable.
 - Document the prototype interaction UUID generation and migration audit, selecting backend-command create id generation as the next safe step while keeping legacy backfill separate.
+- Generate stable ids for new backend-command prototype navigate and overlay interactions, exposing `interactionId` and stable identity metadata through common/backend, MCP, and `penpot-cli` create responses.
 - Add rate limiting and concurrency safety for file snapshot operations [#9723](https://github.com/penpot/penpot/issues/9723) (PR: [#9722](https://github.com/penpot/penpot/pull/9722))
 - Prevent concurrent font uploads from causing excessive simultaneous requests [#9922](https://github.com/penpot/penpot/issues/9922) (PR: [#9921](https://github.com/penpot/penpot/pull/9921))
 

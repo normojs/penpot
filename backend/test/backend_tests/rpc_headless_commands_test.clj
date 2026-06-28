@@ -418,7 +418,8 @@
         frame-a  (uuid/next)
         frame-b  (uuid/next)
         rect-id  (uuid/next)
-        flow-id  (uuid/next)]
+        flow-id  (uuid/next)
+        created-interaction-id (atom nil)]
 
     (doseq [[shape-id x name] [[frame-a 0 "Start"]
                                [frame-b 360 "Done"]]]
@@ -485,12 +486,16 @@
                              :duration 300
                              :easing :ease-in-out}
                  :features cfeat/supported-features}
-            out (th/command! out)]
+            out (th/command! out)
+            interaction-id (get-in out [:result :interaction :interaction-id])]
         (t/is (nil? (:error out)))
-        (t/is (= {:source-shape-id rect-id
+        (t/is (uuid? interaction-id))
+        (reset! created-interaction-id interaction-id)
+        (t/is (= {:interaction-id interaction-id
+                  :source-shape-id rect-id
                   :source-shape-name "CTA"
                   :index 0
-                  :identity (legacy-interaction-identity rect-id 0)
+                  :identity (stable-interaction-identity interaction-id rect-id 0)
                   :trigger :click
                   :delay nil
                   :action-type :navigate-to
@@ -515,10 +520,11 @@
                            :page-id page-id
                            :starting-board-id frame-a
                            :starting-board-name "Start"}]
-                  :interactions [{:source-shape-id rect-id
+                  :interactions [{:interaction-id @created-interaction-id
+                                  :source-shape-id rect-id
                                   :source-shape-name "CTA"
                                   :index 0
-                                  :identity (legacy-interaction-identity rect-id 0)
+                                  :identity (stable-interaction-identity @created-interaction-id rect-id 0)
                                   :trigger :click
                                   :delay nil
                                   :action-type :navigate-to
@@ -536,10 +542,11 @@
                  :features cfeat/supported-features}
             out (th/command! out)]
         (t/is (nil? (:error out)))
-        (t/is (= {:source-shape-id rect-id
+        (t/is (= {:interaction-id @created-interaction-id
+                  :source-shape-id rect-id
                   :source-shape-name "CTA"
                   :index 0
-                  :identity (legacy-interaction-identity rect-id 0)
+                  :identity (stable-interaction-identity @created-interaction-id rect-id 0)
                   :trigger :click
                   :delay nil
                   :action-type :navigate-to
@@ -768,7 +775,8 @@
         page-id  (get-in file [:data :pages 0])
         frame-a  (uuid/next)
         frame-b  (uuid/next)
-        rect-id  (uuid/next)]
+        rect-id  (uuid/next)
+        toggle-interaction-id (atom nil)]
 
     (doseq [[shape-id x name] [[frame-a 0 "Start"]
                                [frame-b 360 "Overlay"]]]
@@ -811,8 +819,11 @@
                :action-type :open-overlay
                :destination-board-id frame-b
                :features cfeat/supported-features}
-          out (th/command! out)]
+          out (th/command! out)
+          interaction-id (get-in out [:result :interaction :interaction-id])]
       (t/is (nil? (:error out)))
+      (t/is (uuid? interaction-id))
+      (t/is (= :stable-id (get-in out [:result :interaction :identity :kind])))
       (t/is (= :open-overlay (get-in out [:result :interaction :action-type])))
       (t/is (= 4 (get-in out [:result :revn]))))
 
@@ -833,12 +844,16 @@
                            :duration 300
                            :easing :linear}
                :features cfeat/supported-features}
-          out (th/command! out)]
+          out (th/command! out)
+          interaction-id (get-in out [:result :interaction :interaction-id])]
       (t/is (nil? (:error out)))
-      (t/is (= {:source-shape-id rect-id
+      (t/is (uuid? interaction-id))
+      (reset! toggle-interaction-id interaction-id)
+      (t/is (= {:interaction-id interaction-id
+                :source-shape-id rect-id
                 :source-shape-name "CTA"
                 :index 1
-                :identity (legacy-interaction-identity rect-id 1)
+                :identity (stable-interaction-identity interaction-id rect-id 1)
                 :trigger :mouse-enter
                 :delay nil
                 :action-type :toggle-overlay
@@ -863,8 +878,11 @@
                :source-shape-id rect-id
                :action-type :close-overlay
                :features cfeat/supported-features}
-          out (th/command! out)]
+          out (th/command! out)
+          interaction-id (get-in out [:result :interaction :interaction-id])]
       (t/is (nil? (:error out)))
+      (t/is (uuid? interaction-id))
+      (t/is (= :stable-id (get-in out [:result :interaction :identity :kind])))
       (t/is (= :close-overlay (get-in out [:result :interaction :action-type])))
       (t/is (= 6 (get-in out [:result :revn]))))
 
@@ -877,6 +895,8 @@
                :features cfeat/supported-features}
           out (th/command! out)]
       (t/is (nil? (:error out)))
+      (t/is (= @toggle-interaction-id (get-in out [:result :interaction :interaction-id])))
+      (t/is (= :stable-id (get-in out [:result :interaction :identity :kind])))
       (t/is (= :toggle-overlay (get-in out [:result :interaction :action-type])))
       (t/is (= 7 (get-in out [:result :revn]))))))
 

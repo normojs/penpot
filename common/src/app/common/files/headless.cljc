@@ -1177,6 +1177,10 @@
     (dissoc :way :offset-effect :offsetEffect
             "way" "offset-effect" "offsetEffect")))
 
+(defn- assign-prototype-interaction-id
+  [interaction]
+  (assoc interaction :id (uuid/next)))
+
 (defn- create-overlay-interaction
   [file-data page-id source {:keys [delay animation] :as params}]
   (let [action-type (normalize-prototype-overlay-action
@@ -1241,7 +1245,8 @@
           (and (#{:open-overlay :toggle-overlay} action-type)
                relative-to-shape-id)
           (ctsi/set-position-relative-to relative-to-shape-id))
-        (apply-prototype-animation (normalize-overlay-animation action-type animation)))))
+        (apply-prototype-animation (normalize-overlay-animation action-type animation))
+        (assign-prototype-interaction-id))))
 
 (defn- create-navigate-interaction
   [source destination {:keys [trigger delay animation] :as params}]
@@ -1255,7 +1260,8 @@
                                                (:preserveScrollPosition params))))
         (cond-> (some? delay)
           (ctsi/set-delay delay))
-        (apply-prototype-animation animation))))
+        (apply-prototype-animation animation)
+        (assign-prototype-interaction-id))))
 
 (defn create-prototype-interaction-request
   [file-data {:keys [page-id source-shape-id destination-board-id] :as params}]

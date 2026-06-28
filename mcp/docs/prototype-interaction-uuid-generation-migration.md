@@ -1,7 +1,8 @@
 # Prototype Interaction UUID Generation And Migration Audit
 
-Status: P23.1 audit complete. No runtime behavior changes are included in this
-step.
+Status: P23.2 runtime change complete. Backend-command-created prototype
+interactions now receive persisted stable ids; legacy backfill remains
+separate.
 
 This document audits the code paths that create, copy, import, summarize, and
 delete persisted prototype interactions before Phase 23 starts assigning stable
@@ -9,7 +10,7 @@ interaction UUIDs.
 
 ## Decision
 
-P23.2 should make the smallest safe runtime change:
+P23.2 makes the smallest safe runtime change:
 
 - Assign a fresh `uuid/next` value to backend-command-created prototype
   interactions in common headless helpers.
@@ -17,7 +18,7 @@ P23.2 should make the smallest safe runtime change:
   `prototype.create_overlay` open/toggle/close overlay interactions.
 - Do not accept caller-provided interaction ids on create. The backend/common
   layer owns stable id generation.
-- Preserve the existing response shape. The current summary code already emits
+- Preserve the existing response shape. The summary code emits
   `interactionId` and `identity.kind = stable-id` when the stored interaction
   carries `:id`.
 - Leave frontend workspace/plugin-live interaction creation unchanged until a
@@ -33,15 +34,15 @@ needs its own fixtures and review.
 
 | Path | Code | Current id behavior | P23.2 action |
 | --- | --- | --- | --- |
-| Headless navigate create | `common/src/app/common/files/headless.cljc` `create-navigate-interaction` and `create-prototype-interaction-request` | Builds from `ctsi/default-interaction`; no `:id` is assigned. | Add a generated `:id` before appending. |
-| Headless overlay create | `common/src/app/common/files/headless.cljc` `create-overlay-interaction` and `create-prototype-overlay-request` | Builds from `ctsi/default-interaction`; no `:id` is assigned. | Add a generated `:id` before appending. |
-| Backend RPC create | `backend/src/app/rpc/commands/files_update.clj` `create-file-prototype-interaction` / `create-file-prototype-overlay` | Delegates to common headless request helpers after permission, feature, and file locks. | No separate id logic needed. |
+| Headless navigate create | `common/src/app/common/files/headless.cljc` `create-navigate-interaction` and `create-prototype-interaction-request` | Builds from `ctsi/default-interaction` and now assigns a fresh `:id` before appending. | Done in P23.2. |
+| Headless overlay create | `common/src/app/common/files/headless.cljc` `create-overlay-interaction` and `create-prototype-overlay-request` | Builds from `ctsi/default-interaction` and now assigns a fresh `:id` before appending. | Done in P23.2. |
+| Backend RPC create | `backend/src/app/rpc/commands/files_update.clj` `create-file-prototype-interaction` / `create-file-prototype-overlay` | Delegates to common headless request helpers after permission, feature, and file locks, so generated ids are persisted through the normal change path. | No separate id logic needed. |
 | Frontend workspace create | `frontend/src/app/main/data/workspace/interactions.cljs` `add-new-interaction` | Builds from `ctsi/default-interaction`; no `:id` is assigned. | Out of P23.2 scope. |
 | Plugin live create | `frontend/src/app/plugins/page.cljs` can create flows; interaction mutation is still workspace/data driven. | No separate stable interaction id policy found. | Out of P23.2 scope. |
 
 `ctsi/schema:interaction` already allows optional `:id`, so P23.2 does not need
-a schema expansion. It needs focused tests proving the generated id is present
-in the persisted interaction vector and summary.
+a schema expansion. Focused tests prove the generated id is present in the
+persisted interaction vector and summary.
 
 ## Read And Delete Readiness
 
@@ -54,7 +55,7 @@ P22.2 and P22.3 already prepared the read/delete side:
   returns `prototype-interaction-id-conflict` if more than one interaction in
   the search scope has the same id.
 
-Because of this, P23.2 can be limited to creation-time id assignment plus tests.
+Because of this, P23.2 is limited to creation-time id assignment plus tests.
 MCP and CLI payload parsing do not need to change for create commands.
 
 ## Copy, Duplicate, And Import Risks
@@ -72,19 +73,18 @@ paths that preserve interaction payloads:
 These risks are why update/reorder/duplicate helpers must remain descriptor-only
 until P23.3 has a migration/backfill and copy/remap policy.
 
-## Recommended P23.2 Implementation
+## P23.2 Implementation
 
-Implementation should stay in common:
+Implementation stays in common:
 
-1. Add a small helper in `common/src/app/common/files/headless.cljc`, for
-   example `ensure-prototype-interaction-id`, that associates `:id (uuid/next)`
-   when the interaction has no id.
-2. Apply it inside `create-navigate-interaction` and
-   `create-overlay-interaction`, or immediately before `ctsi/add-interaction`
-   in the request helpers.
+1. `common/src/app/common/files/headless.cljc` assigns `:id (uuid/next)` to new
+   prototype interactions before they are appended.
+2. `create-navigate-interaction` and `create-overlay-interaction` both use that
+   helper, covering navigate, open-overlay, toggle-overlay, and close-overlay
+   backend-command paths.
 3. Keep RPC schemas unchanged. Create requests should not accept an
    `interaction-id`.
-4. Update common/backend/MCP/CLI tests to expect `interactionId` in create
+4. Common/backend/MCP/CLI tests expect `interactionId` in create
    responses and stable identity metadata on immediate list responses.
 5. Keep existing id-missing list/delete fixtures as compatibility evidence.
 
@@ -119,9 +119,9 @@ For any chosen policy, fixtures must cover:
 
 ## Command Impact
 
-- `prototype.create_interaction`: P23.2 should become id-generating for the
+- `prototype.create_interaction`: P23.2 is id-generating for the
   backend-command path.
-- `prototype.create_overlay`: P23.2 should become id-generating for the
+- `prototype.create_overlay`: P23.2 is id-generating for the
   backend-command path.
 - `prototype.list_interactions`: no contract change; more newly-created results
   will naturally return `identity.kind = stable-id`.

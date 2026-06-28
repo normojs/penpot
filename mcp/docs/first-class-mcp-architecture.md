@@ -503,7 +503,9 @@ P17.1 audit result:
   descriptors before backend/common read implementation.
 - `prototype.delete_interaction` is a possible backend-safe mutation once it
   uses explicit `fileId`, `pageId`, `sourceShapeId`, and zero-based
-  `interactionIndex`; persisted interactions do not currently have stable ids.
+  `interactionIndex`; at the P17.1 boundary persisted interactions did not yet
+  have stable ids. Later P22/P23 work adds optional stable ids for summaries,
+  deletion, and backend-command creation.
 - `prototype.create_overlay`, `shape.set_layout`, and `shape.set_style` have
   since been selected by later waves; `export.file`, `render.thumbnail`,
   component, token, and debug names remain planned or unsupported descriptor
@@ -577,7 +579,9 @@ P18 live workspace state result:
 P19.1 prototype delete identity result:
 
 - Persisted prototype interactions are stored on source shapes as ordered
-  `:interactions` vectors; individual interactions do not carry stable ids.
+  `:interactions` vectors. At the P19.1 boundary individual interactions did
+  not carry stable ids; P22/P23 later adds optional stable ids while preserving
+  the source/index fallback.
 - `prototype.delete_interaction` must therefore address a target by explicit
   `fileId`, `pageId`, `sourceShapeId`, and zero-based `interactionIndex`.
 - `flowId` remains useful for `prototype.list_interactions` filtering and human
@@ -653,7 +657,7 @@ P23.1 prototype interaction UUID generation and migration audit result:
 
 - `prototype-interaction-uuid-generation-migration.md` audits creation,
   copy/remap, import, read, delete, and migration touchpoints.
-- P23.2 should assign backend-owned `uuid/next` values to
+- P23.1 selected assigning backend-owned `uuid/next` values to
   backend-command-created navigate and overlay interactions in common headless
   helpers.
 - Create requests should not accept caller-provided interaction ids.
@@ -662,6 +666,18 @@ P23.1 prototype interaction UUID generation and migration audit result:
   is implemented.
 - Copy/remap paths must regenerate interaction ids for distinct copies before
   update/reorder/duplicate helpers become executable.
+
+P23.2 prototype interaction UUID generation result:
+
+- Backend-command `prototype.create_interaction` and
+  `prototype.create_overlay` now persist backend-owned `uuid/next` values for
+  newly created navigate, open-overlay, toggle-overlay, and close-overlay
+  interactions.
+- Create responses and immediate list summaries expose `interactionId` plus
+  `identity.kind = stable-id` for those new interactions.
+- Caller-provided interaction ids remain unsupported on create, and
+  legacy/id-missing interactions keep the source-index compatibility fallback
+  until P23.3.
 
 ## 4. Target Architecture
 
@@ -1987,9 +2003,12 @@ keeping source-shape/index targeting as the legacy fallback and guard form.
 P22.4 defines descriptor-only contracts for update, reorder, and duplicate
 helpers; they remain non-executable until UUID generation and migration
 semantics are stable.
-P23.1 selects backend-command create id generation as the next safe runtime
+P23.1 selected backend-command create id generation as the next safe runtime
 step, while keeping legacy backfill, frontend workspace generation, and
 copy/remap duplicate-id policy separate.
+P23.2 implements that backend-command create id generation for navigate and
+overlay interactions; P23.3 remains responsible for legacy backfill or
+migration policy.
 
 ### 8.5 Export and Render Tools
 
