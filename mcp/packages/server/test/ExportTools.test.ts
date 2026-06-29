@@ -1,9 +1,10 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { CommandDescriptors } from "@penpot/command-runtime";
+import { CommandDescriptors, CommandErrorCodes } from "@penpot/command-runtime";
 import { FileContextRegistry } from "../src/FileContextRegistry.js";
+import type { PenpotRpcRequestContext, PenpotSseEvent } from "../src/PenpotRpcClient.js";
 import { PenpotMcpServer } from "../src/PenpotMcpServer.js";
-import { RenderPreviewTool } from "../src/tools/ExportTools.js";
+import { ExportFileTool, RenderPreviewTool } from "../src/tools/ExportTools.js";
 
 const UUIDS = {
     file: "00000000-0000-0000-0000-000000000001",
@@ -17,6 +18,157 @@ function parseJsonResponse(response: Awaited<ReturnType<RenderPreviewTool["execu
     assert.equal(text.type, "text");
     return JSON.parse(text.text);
 }
+
+type SseCall = {
+    methodName: string;
+    params: Record<string, unknown>;
+    userToken: string;
+    context?: PenpotRpcRequestContext;
+};
+
+function mcpServerWithSse(
+    postSse: (...args: any[]) => Promise<PenpotSseEvent[]>,
+    userToken: string | undefined = "token-1"
+): PenpotMcpServer {
+    return {
+        rpcClient: {
+            getBaseUri: () => "http://127.0.0.1:6060",
+            getMethodUrl: (methodName: string) => `http://127.0.0.1:6060/api/main/methods/${methodName}?_fmt=json`,
+            postSse,
+        },
+        getSessionContext: () => ({ userToken, mcpSessionId: "session-1" }),
+    } as unknown as PenpotMcpServer;
+}
+
+test("ExportFileTool executes backend export-binfile SSE and returns resource metadata", async () => {
+    const calls: SseCall[] = [];
+    const tool = new ExportFileTool(
+        mcpServerWithSse(
+            async (
+                methodName: string,
+                params: Record<string, unknown>,
+                userToken: string,
+                context?: PenpotRpcRequestContext
+            ) => {
+                calls.push({ methodName, params, userToken, context });
+                return [
+                    { type: "progress", data: { step: "queued" } },
+                    {
+                        type: "end",
+                        data: {
+                            "resource-uri": "/assets/by-id/resource-1",
+                            filename: "Design.penpot",
+                            mtype: "application/zip",
+                        },
+                    },
+                ];
+            }
+        )
+    );
+
+    const response = await tool.execute({
+        fileId: UUIDS.file,
+        libraryMode: "merge",
+    });
+    const body = parseJsonResponse(response);
+
+    assert.deepEqual(calls, [
+        {
+            methodName: "export-binfile",
+            params: {
+                "file-id": UUIDS.file,
+                "include-libraries": false,
+                "embed-assets": true,
+            },
+            userToken: "token-1",
+            context: {
+                mcpToolName: "export.file",
+                mcpAdapter: "backend-rpc",
+                mcpSessionId: "session-1",
+                mcpFileId: UUIDS.file,
+            },
+        },
+    ]);
+    assert.equal(body.status, "ok");
+    assert.equal(body.data.command, CommandDescriptors.EXPORT_FILE.id);
+    assert.equal(body.data.adapter, "backend-rpc");
+    assert.equal(body.data.adapterSelection.selected, "backend-rpc");
+    assert.equal(body.data.artifact.libraryMode, "merge");
+    assert.equal(body.data.artifact.includeLibraries, false);
+    assert.equal(body.data.artifact.embedAssets, true);
+    assert.equal(body.data.backendRpc.command, "export-binfile");
+    assert.equal(body.data.backendRpc.responseContentType, "text/event-stream");
+    assert.equal(body.data.resource.uri, "/assets/by-id/resource-1");
+    assert.equal(body.data.resource["resource-uri"], "/assets/by-id/resource-1");
+    assert.equal(body.data.resourceUri, "/assets/by-id/resource-1");
+    assert.equal(body.data.downloadUri, "http://127.0.0.1:6060/assets/by-id/resource-1");
+    assert.deepEqual(body.data.stream.eventTypes, ["progress", "end"]);
+});
+
+test("ExportFileTool normalizes string end events into resource metadata", async () => {
+    const tool = new ExportFileTool(
+        mcpServerWithSse(async () => [
+            { type: "end", data: "http://127.0.0.1:6060/assets/by-id/resource-2" },
+        ])
+    );
+
+    const response = await tool.execute({ fileId: UUIDS.file });
+    const body = parseJsonResponse(response);
+
+    assert.equal(body.status, "ok");
+    assert.equal(body.data.artifact.libraryMode, "all");
+    assert.equal(body.data.resource.uri, "http://127.0.0.1:6060/assets/by-id/resource-2");
+    assert.equal(body.data.resource["resource-uri"], "http://127.0.0.1:6060/assets/by-id/resource-2");
+});
+
+test("ExportFileTool requires an authenticated MCP session token", async () => {
+    const tool = new ExportFileTool(
+        mcpServerWithSse(async () => {
+            throw new Error("export.file without token should not call backend");
+        }, "")
+    );
+
+    const response = await tool.execute({ fileId: UUIDS.file });
+    const body = parseJsonResponse(response);
+
+    assert.equal(body.status, "error");
+    assert.equal(body.error.code, CommandErrorCodes.AUTHENTICATION_REQUIRED);
+});
+
+test("ExportFileTool rejects missing target and unsupported adapters before calling backend", async () => {
+    let called = false;
+    const tool = new ExportFileTool(
+        mcpServerWithSse(async () => {
+            called = true;
+            return [];
+        })
+    );
+
+    const missingTarget = parseJsonResponse(await tool.execute({}));
+    const unsupportedAdapter = parseJsonResponse(await tool.execute({ fileId: UUIDS.file, adapter: "exporter" }));
+
+    assert.equal(called, false);
+    assert.equal(missingTarget.status, "error");
+    assert.equal(missingTarget.error.code, "export_file_target_required");
+    assert.equal(unsupportedAdapter.status, "error");
+    assert.equal(unsupportedAdapter.error.code, "adapter_not_available");
+    assert.equal(unsupportedAdapter.error.data.adapterSelection.command, "export.file");
+    assert.equal(unsupportedAdapter.error.data.adapterSelection.requested, "exporter");
+});
+
+test("ExportFileTool reports incomplete streams and missing resource URIs", async () => {
+    const incompleteTool = new ExportFileTool(mcpServerWithSse(async () => [{ type: "progress", data: {} }]));
+    const missingResourceTool = new ExportFileTool(mcpServerWithSse(async () => [{ type: "end", data: { filename: "x" } }]));
+
+    const incomplete = parseJsonResponse(await incompleteTool.execute({ fileId: UUIDS.file }));
+    const missingResource = parseJsonResponse(await missingResourceTool.execute({ fileId: UUIDS.file }));
+
+    assert.equal(incomplete.status, "error");
+    assert.equal(incomplete.error.code, "export_file_stream_incomplete");
+    assert.deepEqual(incomplete.error.data.events, ["progress"]);
+    assert.equal(missingResource.status, "error");
+    assert.equal(missingResource.error.code, "export_file_resource_uri_missing");
+});
 
 test("RenderPreviewTool uses exporter for explicit file/page/object targets", async () => {
     const originalFetch = globalThis.fetch;

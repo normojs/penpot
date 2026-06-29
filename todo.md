@@ -177,9 +177,12 @@ P25.3 is complete: `penpot-cli export file` now executes backend-rpc
 downloads the `.penpot` archive when `--output` is supplied. P25.4 is
 complete: `render.thumbnail` now has a fixture-backed descriptor-only contract
 for dashboard file thumbnails and tagged frame thumbnails, including target,
-cache, artifact, renderer, and backend persistence metadata. P25.5 is in
-progress: register MCP `export.file` only after the backend-rpc resource return
-path is explicit in MCP.
+cache, artifact, renderer, and backend persistence metadata. P25.5 is
+complete: MCP `export.file` now executes backend-rpc `export-binfile`, parses
+the SSE `end` resource URI, and returns `.penpot` resource metadata plus a
+resolved `downloadUri` without writing files on the MCP server filesystem.
+P25.6 is the next task: audit and select the executable `render.thumbnail`
+runtime boundary before registering any thumbnail tool.
 
 ## Feature Roadmap
 
@@ -221,7 +224,8 @@ remain the execution plan.
 | F31 | done | Prototype file copy/import identity guardrails | Phase 24 | File-level duplicate/import paths keep stable interaction ids predictable without colliding inside the new file | Completed 2026-06-29; P24.1 documented file-bound identity semantics and added pure migration fixtures for cloned/imported file data |
 | F32 | done | Export/render descriptor boundary planning | Phase 25 | Agents can discover planned file-export and thumbnail-render command names without mistaking them for executable tools | Completed 2026-06-29; P25.1 added descriptor-only `export.file` and `render.thumbnail` command-runtime entries with no adapters, and P25.2 defined the fixture-backed `export.file` backend binary archive contract |
 | F33 | done | Thumbnail render contract | Phase 25 | Agents can request thumbnail rendering only after target/cache/artifact semantics are explicit | Completed 2026-06-29; P25.4 defines descriptor-only `render.thumbnail` target, cache, artifact, renderer, and backend persistence contracts |
-| F34 | in_progress | MCP file export resource return | Phase 25 | Agents can export a `.penpot` archive through MCP once backend-rpc resource handling is explicit | Current next task; P25.5 will register MCP `export.file` around the existing backend `export-binfile` SSE/resource contract |
+| F34 | done | MCP file export resource return | Phase 25 | Agents can export a `.penpot` archive through MCP once backend-rpc resource handling is explicit | Completed 2026-06-29; P25.5 registers MCP `export.file` around the existing backend `export-binfile` SSE/resource contract and returns resource metadata plus `downloadUri` |
+| F35 | pending | Thumbnail runtime execution boundary | Phase 25 | Agents can render thumbnails only after the renderer owner and resource return semantics are explicit | Next task; P25.6 should audit worker/rasterizer/exporter/service options before registering `render.thumbnail` |
 
 ## Detailed Upcoming Task Queue
 
@@ -754,8 +758,9 @@ continue within Phase 25:
    `export-binfile` contract for `export.file`, and P25.3 implements
    `penpot-cli export file` backend-rpc/SSE execution plus `--output`
    downloads, and P25.4 defines the `render.thumbnail` descriptor-only target,
-   cache, renderer, and artifact contract. Remaining work: MCP `export.file`
-   registration and future `render.thumbnail` runtime execution.
+   cache, renderer, and artifact contract. P25.5 registers MCP `export.file`
+   through backend-rpc SSE resource returns. Remaining work: select and
+   implement future `render.thumbnail` runtime execution.
 
 ## Phase 21: Design Editing Alias Contracts
 
@@ -811,7 +816,8 @@ catalog before adding executable MCP, CLI, or exporter behavior.
 | ID | Status | Task | Modules | Verification | Notes |
 | --- | --- | --- | --- | --- | --- |
 | P25.1 | done | Add descriptor-only export.file and render.thumbnail boundaries | `command-runtime`, `penpot-cli`, `mcp/docs`, `todo.md` | Completed 2026-06-29; command-runtime and CLI smoke descriptor tests proved both names resolved as initial descriptor-only boundaries | No runtime tool registration changed in P25.1; future work had to define file archive/export and thumbnail target/cache/artifact contracts before enabling adapters |
-| P25.2 | done | Define export.file binary archive contract | `command-runtime`, `mcp/docs`, `todo.md` | Completed 2026-06-29; command-runtime tests consume `export-file-contract-fixtures.json` and prove `libraryMode` maps to backend `include-libraries` / `embed-assets` request fields | Contract maps `export.file` to backend `export-binfile` RPC/SSE semantics, not exporter `export-shapes`; MCP remains unregistered until a resource-return contract is implemented |
-| P25.3 | done | Implement CLI export.file backend-rpc stream/resource path | `penpot-cli`, `command-runtime`, `mcp/docs`, `todo.md` | Completed 2026-06-29; command-runtime tests, CLI smoke tests, and typecheck pass for dry-run, backend SSE resource return, `--output` download, adapter rejection, and missing-token errors | `penpot-cli export file` calls backend `export-binfile`, parses the SSE `end` resource URI, returns metadata, and writes the `.penpot` archive when requested; MCP registration remains future work |
+| P25.2 | done | Define export.file binary archive contract | `command-runtime`, `mcp/docs`, `todo.md` | Completed 2026-06-29; command-runtime tests consume `export-file-contract-fixtures.json` and prove `libraryMode` maps to backend `include-libraries` / `embed-assets` request fields | Contract maps `export.file` to backend `export-binfile` RPC/SSE semantics, not exporter `export-shapes`; P25.5 later registers the MCP resource-return path |
+| P25.3 | done | Implement CLI export.file backend-rpc stream/resource path | `penpot-cli`, `command-runtime`, `mcp/docs`, `todo.md` | Completed 2026-06-29; command-runtime tests, CLI smoke tests, and typecheck pass for dry-run, backend SSE resource return, `--output` download, adapter rejection, and missing-token errors | `penpot-cli export file` calls backend `export-binfile`, parses the SSE `end` resource URI, returns metadata, and writes the `.penpot` archive when requested; P25.5 later registers the MCP resource-return path |
 | P25.4 | done | Define render.thumbnail target/cache/artifact contract | `command-runtime`, `mcp/docs`, `todo.md` | Completed 2026-06-29; command-runtime tests consume `render-thumbnail-contract-fixtures.json` and prove file/frame targets, cache keys, PNG dimensions, backend data/persist commands, and validation errors | Contract maps thumbnails to dashboard thumbnail data/render/cache semantics, not exporter `export-shapes`; descriptor remains adapterless until a renderer/runtime boundary is implemented |
-| P25.5 | in_progress | Register MCP export.file backend-rpc resource return | `mcp`, `command-runtime`, `mcp/docs`, `todo.md` | In progress 2026-06-29 | Add MCP `export.file` only when it can call backend `export-binfile`, parse SSE `end`, return a resource URI or resource payload metadata, and preserve auth/error/resource semantics |
+| P25.5 | done | Register MCP export.file backend-rpc resource return | `mcp`, `command-runtime`, `mcp/docs`, `todo.md` | Completed 2026-06-29; `ExportFileTool` tests cover backend-rpc SSE resource return, string resource normalization, auth, adapter, incomplete stream, and missing resource errors; `PenpotRpcClient` tests cover SSE/Transit parsing and stream errors | MCP `export.file` calls backend `export-binfile`, parses SSE `end`, returns resource metadata plus `downloadUri`, and keeps local archive writes in CLI `--output` |
+| P25.6 | pending | Audit render.thumbnail executable runtime boundary | `mcp`, `frontend`, `render-wasm`, `exporter`, `mcp/docs`, `todo.md` | Pending | Decide whether executable thumbnails should run through a frontend worker bridge, exporter-compatible service, backend thumbnail cache wrapper, or a new renderer service; define resource return, cache refresh, auth, and test strategy before registering `render.thumbnail` |

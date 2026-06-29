@@ -290,10 +290,10 @@ export interface ExportFileContract {
     requires: string[];
     nextActions: string[];
     diagnostics: {
-        adapterBoundary: "cli-backend-rpc";
+        adapterBoundary: "mcp-cli-backend-rpc";
         existingBackendCommand: "export-binfile";
         exporterBoundary: string;
-        mcpToolRegistered: false;
+        mcpToolRegistered: true;
         cliCommandRegistered: true;
     };
 }

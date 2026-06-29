@@ -229,7 +229,10 @@ Current state:
   archive contract in command-runtime.
 - Done: `penpot-cli export file` executes the backend-rpc `export-binfile`
   stream, returns resource metadata, and writes the `.penpot` archive with
-  `--output`; MCP registration remains future work.
+  `--output`.
+- Done: MCP `export.file` executes the same backend-rpc `export-binfile`
+  stream and returns resource metadata plus a resolved `downloadUri` without
+  writing files on the MCP server filesystem.
 - Done: `render.thumbnail` has a fixture-backed dashboard thumbnail contract
   for file and tagged frame targets, cache policy, PNG artifact metadata, and
   backend data/persist boundaries; runtime registration remains future work.
@@ -573,8 +576,7 @@ P25.3 is complete:
 1. `penpot-cli export file` selects backend-rpc and calls backend
    `export-binfile`.
 2. The CLI parses the SSE resource URI and reports resource metadata.
-3. `--output` downloads the returned `.penpot` resource. MCP `export.file`
-   remains unregistered until MCP resource-return handling is implemented.
+3. `--output` downloads the returned `.penpot` resource.
 
 P25.4 is complete:
 
@@ -584,6 +586,14 @@ P25.4 is complete:
    PNG artifact dimensions, renderer plan, and backend persist commands.
 3. The descriptor remains adapterless until a future runtime owns worker or
    renderer-service execution.
+
+P25.5 is complete:
+
+1. MCP `export.file` is registered as a backend-rpc tool.
+2. The MCP tool calls backend `export-binfile`, parses the SSE `end` event,
+   and returns `.penpot` resource metadata plus `downloadUri`.
+3. MCP keeps file writing out of scope; CLI `--output` remains the local
+   archive download path.
 
 Keep manual configuration behavior stable while moving command metadata and
 envelopes; transport-specific formatting should stay at the MCP/CLI edges.

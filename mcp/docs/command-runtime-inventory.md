@@ -110,7 +110,7 @@ MCP server tool classes and `penpot-cli`.
 | `prototype.create_interaction` | `PrototypeCreateInteractionArgs` | plugin-live task | JSON plugin task data | `PrototypePluginTask.test.ts` |
 | `export.shape` | `ExportShapeArgs` | plugin-live task | JSON/base64 export task data | `ExportPluginTask.test.ts` serialization only |
 | `export.page` | `ExportPageArgs` | plugin-live task | JSON/base64 export task data | `ExportPluginTask.test.ts` serialization only |
-| `export.file` | Planned `ExportFileArgs`; CLI contract implemented | MCP tool unregistered; CLI backend-rpc `export-binfile` RPC/SSE execution | `.penpot` artifact metadata plus backend resource URI and optional downloaded output path in CLI | `command-runtime.test.mjs` consumes `export-file-contract-fixtures.json`; `cli-smoke.test.mjs` covers dry-run, SSE, output write, adapter error, and auth error |
+| `export.file` | `ExportFileArgs`; CLI contract implemented | MCP and CLI backend-rpc `export-binfile` RPC/SSE execution | `.penpot` artifact metadata plus backend resource URI; CLI can additionally write the archive with `--output` | `ExportTools.test.ts` covers MCP SSE resource return; `PenpotRpcClient.test.ts` covers SSE parsing/errors; `command-runtime.test.mjs` consumes `export-file-contract-fixtures.json`; `cli-smoke.test.mjs` covers dry-run, SSE, output write, adapter error, and auth error |
 | `render.preview` | `RenderPreviewArgs` | exporter HTTP service for explicit targets; plugin-live task for bound workspace context | JSON exporter resource metadata or JSON/base64 render task data | `ExportTools.test.ts` covers exporter/plugin-live/adapter errors; `ExportPluginTask.test.ts` covers serialization |
 | `render.thumbnail` | Planned `RenderThumbnailArgs` | descriptor-only dashboard thumbnail data/render/cache contract | planned PNG thumbnail artifact/cache metadata; no MCP tool registered | `command-runtime.test.mjs` consumes `render-thumbnail-contract-fixtures.json` |
 | `execute_code` | `ExecuteCodeArgs` | plugin-live task, disabled unless `PENPOT_MCP_ENABLE_EXECUTE_CODE=true` | JSON disabled error or text execution result | `ExecuteCodeTool.test.ts` |
@@ -139,9 +139,9 @@ not register yet:
   source-shape/index deletion as the legacy fallback. P22.4 adds
   descriptor-only planned `prototype.update_interaction`,
   `prototype.reorder_interaction`, and `prototype.duplicate_interaction`
-  contracts with empty adapter lists; `export.file` is CLI-registered through
-  backend-rpc while MCP remains unregistered; `render.thumbnail` remains
-  descriptor-only with a fixture-backed target/cache/artifact contract
+  contracts with empty adapter lists; `export.file` is registered in MCP and
+  CLI through backend-rpc; `render.thumbnail` remains descriptor-only with a
+  fixture-backed target/cache/artifact contract
 - debug: `debug.get_plugin_state`, `debug.get_agent_logs`
 
 Do not migrate these as executable descriptors until their implementation is

@@ -4,7 +4,7 @@ import type { ToolResponse } from "../ToolResponse.js";
 import { JsonResponse } from "../ToolResponse.js";
 import { PenpotMcpServer } from "../PenpotMcpServer.js";
 import { PenpotRpcError, RpcParams } from "../PenpotRpcClient.js";
-import type { PenpotRpcRequestContext } from "../PenpotRpcClient.js";
+import type { PenpotRpcRequestContext, PenpotSseEvent } from "../PenpotRpcClient.js";
 import { CommandErrorCodes } from "@penpot/command-runtime";
 
 export const ToolErrorCodes = {
@@ -81,6 +81,15 @@ export abstract class PenpotRpcTool<TArgs extends object> extends Tool<TArgs> {
         context?: PenpotRpcRequestContext
     ): Promise<T> {
         return await this.mcpServer.rpcClient.post<T>(methodName, params, userToken, context);
+    }
+
+    protected async rpcPostSse(
+        methodName: string,
+        params: RpcParams,
+        userToken: string,
+        context?: PenpotRpcRequestContext
+    ): Promise<PenpotSseEvent[]> {
+        return await this.mcpServer.rpcClient.postSse(methodName, params, userToken, context);
     }
 
     protected async rpcWritePost<T>(

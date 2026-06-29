@@ -445,7 +445,7 @@ export const CommandDescriptors = Object.freeze({
         cliCommand: "export file",
         title: "Export file",
         description:
-            "Exports a file-level .penpot binary archive through backend-rpc export-binfile for explicit CLI targets; MCP registration remains a future step.",
+            "Exports a file-level .penpot binary archive through backend-rpc export-binfile for explicit MCP and CLI targets.",
         inputSchema:
             "fileId, format=penpot?, libraryMode=all|merge|detach?, includeLibraries?, embedAssets?, output?, dryRun?, adapter?",
         adapters: Object.freeze(["backend-rpc"]),
@@ -646,15 +646,15 @@ export function createExportFileContract(options = EMPTY_OBJECT) {
         },
         requires: fileId ? [] : ["fileId"],
         nextActions: [
-            "Use penpot-cli export file with backend-rpc to call export-binfile and read the SSE resource URI.",
+            "Use MCP export.file or penpot-cli export file with backend-rpc to call export-binfile and read the SSE resource URI.",
             "Use an authenticated Penpot session with read permission for the target file.",
-            "Pass --output <path> to download the returned resource URI as a .penpot archive.",
+            "MCP returns resource metadata; pass --output <path> in penpot-cli to download the returned resource URI as a .penpot archive.",
         ],
         diagnostics: {
-            adapterBoundary: "cli-backend-rpc",
+            adapterBoundary: "mcp-cli-backend-rpc",
             existingBackendCommand: "export-binfile",
             exporterBoundary: "export.file uses backend binary export, not exporter export-shapes.",
-            mcpToolRegistered: false,
+            mcpToolRegistered: true,
             cliCommandRegistered: true,
         },
     };

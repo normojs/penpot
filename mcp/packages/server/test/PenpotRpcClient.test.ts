@@ -76,6 +76,119 @@ test("PenpotRpcClient.post sends JSON body", async () => {
     }
 });
 
+test("PenpotRpcClient.postSse sends JSON body, context headers, and parses transit SSE events", async () => {
+    let call: FetchCall | undefined;
+    const restoreFetch = withFetchMock(async (input, init) => {
+        call = { input, init };
+        return new Response(
+            [
+                'event: progress\ndata: {"step":"queued"}',
+                'event: end\ndata: ["^ ","~:resource-uri","/assets/by-id/resource-1","~:filename","Design.penpot"]',
+                "",
+            ].join("\n\n"),
+            {
+                status: 200,
+                headers: { "content-type": "text/event-stream;charset=UTF-8" },
+            }
+        );
+    });
+
+    try {
+        const client = new PenpotRpcClient("http://penpot.example");
+        const events = await client.postSse(
+            "export-binfile",
+            { "file-id": "file-1", "include-libraries": false, "embed-assets": true },
+            "token-123",
+            {
+                mcpToolName: "export.file",
+                mcpAdapter: "backend-rpc",
+                mcpSessionId: "session-1",
+                mcpFileId: "file-1",
+            }
+        );
+
+        assert.ok(call);
+        assert.equal(call.init?.method, "POST");
+        const headers = call.init?.headers as Record<string, string>;
+        assert.equal(headers.accept, "text/event-stream,application/json");
+        assert.equal(headers.authorization, "Token token-123");
+        assert.equal(headers["content-type"], "application/json");
+        assert.equal(headers["x-client"], "penpot-mcp/1.0");
+        assert.equal(headers["x-event-origin"], "mcp");
+        assert.equal(headers["x-external-session-id"], "session-1");
+        assert.equal(headers["x-penpot-mcp-tool"], "export.file");
+        assert.equal(headers["x-penpot-mcp-adapter"], "backend-rpc");
+        assert.equal(headers["x-penpot-mcp-file-id"], "file-1");
+        assert.deepEqual(JSON.parse(call.init?.body as string), {
+            "file-id": "file-1",
+            "include-libraries": false,
+            "embed-assets": true,
+        });
+
+        const url = new URL(String(call.input));
+        assert.equal(url.pathname, "/api/main/methods/export-binfile");
+        assert.equal(url.searchParams.get("_fmt"), "json");
+        assert.deepEqual(events, [
+            { type: "progress", data: { step: "queued" } },
+            {
+                type: "end",
+                data: {
+                    "resource-uri": "/assets/by-id/resource-1",
+                    filename: "Design.penpot",
+                },
+            },
+        ]);
+    } finally {
+        restoreFetch();
+    }
+});
+
+test("PenpotRpcClient.postSse rejects non-SSE success responses", async () => {
+    const restoreFetch = withFetchMock(async () => {
+        return new Response(JSON.stringify({ ok: true }), {
+            status: 200,
+            headers: { "content-type": "application/json" },
+        });
+    });
+
+    try {
+        const client = new PenpotRpcClient("http://penpot.example");
+        await assert.rejects(
+            () => client.postSse("export-binfile", {}, "token-123"),
+            (cause) => {
+                assertRpcError(cause, "penpot_rpc_stream_expected");
+                assert.equal(cause.status, 502);
+                return true;
+            }
+        );
+    } finally {
+        restoreFetch();
+    }
+});
+
+test("PenpotRpcClient.postSse normalizes backend stream error events", async () => {
+    const restoreFetch = withFetchMock(async () => {
+        return new Response('event: error\ndata: {"code":"not-allowed","message":"not allowed"}\n\n', {
+            status: 200,
+            headers: { "content-type": "text/event-stream" },
+        });
+    });
+
+    try {
+        const client = new PenpotRpcClient("http://penpot.example");
+        await assert.rejects(
+            () => client.postSse("export-binfile", {}, "token-123"),
+            (cause) => {
+                assertRpcError(cause, "not_allowed");
+                assert.equal(cause.status, 200);
+                return true;
+            }
+        );
+    } finally {
+        restoreFetch();
+    }
+});
+
 test("PenpotRpcClient.post sends MCP audit context headers", async () => {
     let call: FetchCall | undefined;
     const restoreFetch = withFetchMock(async (input, init) => {

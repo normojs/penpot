@@ -306,7 +306,7 @@ they already exist in MCP, CLI, or both.
 | `shape.set_style` | file | MCP/CLI alias over `shape.update` style/text fields, backend `update-file-shape` RPC | `backend-command`, fallback `plugin-live` |
 | `shape.delete` | file | MCP plugin task, backend `delete-file-shape` RPC | `backend-command`, fallback `plugin-live` |
 | `export.page` | file | MCP plugin task, CLI exporter execution | `exporter`, fallback `plugin-live` |
-| `export.file` | file | CLI backend `export-binfile` RPC/SSE execution; MCP registration planned | `backend-rpc` for `penpot-cli export file`; MCP unregistered |
+| `export.file` | file | MCP and CLI backend `export-binfile` RPC/SSE execution | `backend-rpc`; MCP returns resource metadata, CLI can write the archive with `--output` |
 | `render.preview` | file | MCP plugin task, MCP/CLI exporter preview execution | `exporter`, fallback `plugin-live` |
 | `render.thumbnail` | file | Descriptor-only dashboard thumbnail data/render/cache contract | adapterless until a renderer/runtime boundary is implemented |
 
@@ -741,7 +741,6 @@ P25.3 defines and executes the CLI `export.file` archive contract:
 - `penpot-cli export file` selects `backend-rpc`, reads the backend SSE `end`
   resource URI, and writes the returned `.penpot` resource when `--output` is
   supplied.
-- MCP execution still needs a later backend-rpc stream/resource wrapper.
 
 P25.4 defines the descriptor-only `render.thumbnail` contract:
 
@@ -755,3 +754,13 @@ P25.4 defines the descriptor-only `render.thumbnail` contract:
 - Cache policy is explicit as `reuse` or `refresh`.
 - The descriptor keeps `adapters: []`; MCP and CLI execution need a later
   worker/rasterizer or renderer-service boundary.
+
+P25.5 registers MCP `export.file`:
+
+- The MCP tool selects `backend-rpc`, calls backend `export-binfile`, parses
+  the SSE `end` event, and returns `.penpot` resource metadata plus an absolute
+  `downloadUri`.
+- MCP does not write files to the MCP server filesystem. Local artifact writes
+  remain the `penpot-cli export file --output` responsibility.
+- `PenpotRpcClient.postSse` owns SSE/Transit parsing and stream error
+  normalization for backend-rpc streaming calls.

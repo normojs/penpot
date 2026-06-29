@@ -11,6 +11,7 @@ import {
     createAdapterSelectionError,
     createCommandRequestEnvelope,
     createCommandResultEnvelope,
+    createExportFileContract,
     getAdapterSelectionReason,
     selectCommandAdapter,
 } from "@penpot/command-runtime";
@@ -18,6 +19,8 @@ import type { CommandAdapterSelection } from "@penpot/command-runtime";
 
 const uuidSchema = z.string().uuid();
 const formatSchema = z.enum(["png", "jpeg", "svg", "pdf"]);
+const exportFileFormatSchema = z.enum(["penpot"]);
+const exportFileLibraryModeSchema = z.enum(["all", "merge", "detach"]);
 const scaleSchema = z.number().positive().max(16).optional().describe("Export scale for bitmap formats.");
 const DEFAULT_EXPORTER_URI = "http://localhost:6061";
 const ZERO_UUID = "00000000-0000-0000-0000-000000000000";
@@ -110,6 +113,36 @@ function decodeTransitJson(text: string): unknown {
 
 function authCookieHeader(token: string): string {
     return `auth-token=${encodeURIComponent(token)}`;
+}
+
+function getResourceUri(resource: PenpotRecord): string | null {
+    const uri = resource.uri ?? resource["resource-uri"];
+    return typeof uri === "string" && uri.length > 0 ? uri : null;
+}
+
+function normalizeExportFileResource(data: unknown): PenpotRecord | null {
+    if (typeof data === "string" && data.length > 0) {
+        return {
+            uri: data,
+            "resource-uri": data,
+        };
+    }
+
+    const resource = asRecord(data);
+    const uri = getResourceUri(resource);
+    if (!uri) {
+        return null;
+    }
+
+    return {
+        ...resource,
+        uri: typeof resource.uri === "string" ? resource.uri : uri,
+        "resource-uri": typeof resource["resource-uri"] === "string" ? resource["resource-uri"] : uri,
+    };
+}
+
+function resolveResourceUri(uri: string, backendUri: string): string {
+    return new URL(uri, `${backendUri}/`).toString();
 }
 
 function createExporterTransitRequest(args: {
@@ -409,6 +442,194 @@ abstract class ExportTool<TArgs extends object> extends PenpotRpcTool<TArgs> {
             exporterUri,
             data: record.data,
         });
+    }
+}
+
+export class ExportFileArgs {
+    static schema = {
+        fileId: uuidSchema.describe("File id to export as a .penpot archive."),
+        format: exportFileFormatSchema.optional().describe("Archive format. Only penpot is supported."),
+        libraryMode: exportFileLibraryModeSchema
+            .optional()
+            .describe("Library handling mode: all includes libraries, merge embeds assets, detach detaches libraries."),
+        includeLibraries: z.boolean().optional().describe("Low-level export-binfile include-libraries flag."),
+        embedAssets: z.boolean().optional().describe("Low-level export-binfile embed-assets flag."),
+        adapter: z.string().optional().describe("Optional adapter request: auto or backend-rpc."),
+    };
+
+    fileId?: string;
+    format?: string;
+    libraryMode?: string;
+    includeLibraries?: boolean;
+    embedAssets?: boolean;
+    adapter?: string;
+}
+
+export class ExportFileTool extends PenpotRpcTool<ExportFileArgs> {
+    constructor(mcpServer: PenpotMcpServer) {
+        super(mcpServer, ExportFileArgs.schema);
+    }
+
+    public getToolName(): string {
+        return CommandDescriptors.EXPORT_FILE.mcpToolName;
+    }
+
+    public getToolDescription(): string {
+        return CommandDescriptors.EXPORT_FILE.description;
+    }
+
+    protected async executeCore(args: ExportFileArgs): Promise<ToolResponse> {
+        const adapterSelection = this.selectExportFileAdapter(args);
+        if (adapterSelection.status !== "selected") {
+            return this.adapterSelectionFailure(adapterSelection);
+        }
+
+        let contract: ReturnType<typeof createExportFileContract>;
+        try {
+            contract = createExportFileContract(args);
+        } catch (cause) {
+            return this.error(
+                "export_file_contract_invalid",
+                cause instanceof Error ? cause.message : "Invalid export.file request.",
+                [
+                    "Use format: 'penpot'.",
+                    "Use libraryMode: 'all', 'merge', or 'detach'.",
+                    "Do not set includeLibraries and embedAssets to true at the same time.",
+                ]
+            );
+        }
+
+        if (contract.requires.length > 0 || !contract.target.fileId) {
+            return this.error("export_file_target_required", "export.file requires a fileId.", [
+                "Pass fileId for the Penpot file to export.",
+            ], {
+                requires: contract.requires,
+            });
+        }
+
+        const userToken = this.getUserToken();
+        if (!userToken) {
+            return this.authenticationRequired();
+        }
+
+        const backendUri = this.mcpServer.rpcClient.getBaseUri();
+        const backendRpc = {
+            uri: backendUri,
+            endpoint: this.mcpServer.rpcClient.getMethodUrl(contract.backendRpc.command),
+            method: "POST",
+            requestContentType: "application/json",
+            responseContentType: "text/event-stream",
+            command: contract.backendRpc.command,
+            transport: contract.backendRpc.transport,
+            response: contract.backendRpc.response,
+            request: contract.backendRpc.request,
+        };
+        const requestEnvelope = createCommandRequestEnvelope(CommandDescriptors.EXPORT_FILE.id, {
+            transport: "mcp",
+            input: {
+                fileId: contract.target.fileId,
+                format: contract.artifact.format,
+                libraryMode: contract.artifact.libraryMode,
+                includeLibraries: contract.artifact.includeLibraries,
+                embedAssets: contract.artifact.embedAssets,
+            },
+            target: { fileId: contract.target.fileId },
+            auth: { userTokenPresent: true, source: "mcp-session" },
+            adapterSelection,
+            diagnostics: {
+                backendUri,
+                backendCommand: contract.backendRpc.command,
+                outputMode: "backend-rpc-sse-resource-uri",
+            },
+        });
+
+        try {
+            const events = await this.rpcPostSse(
+                contract.backendRpc.command,
+                contract.backendRpc.request,
+                userToken,
+                {
+                    mcpToolName: this.getToolName(),
+                    mcpAdapter: adapterSelection.selected,
+                    mcpSessionId: this.getSessionContext()?.mcpSessionId,
+                    mcpFileId: contract.target.fileId,
+                }
+            );
+            const endEvent = [...events].reverse().find((event) => event.type === "end");
+            if (!endEvent) {
+                return this.error("export_file_stream_incomplete", "export.file stream ended without an end event.", [
+                    "Retry the export and check backend logs if the stream consistently ends early.",
+                ], {
+                    events: events.map((event) => event.type),
+                });
+            }
+
+            const resource = normalizeExportFileResource(endEvent.data);
+            if (!resource) {
+                return this.error(
+                    "export_file_resource_uri_missing",
+                    "export.file stream end event did not include a resource URI.",
+                    ["Retry the export and check the backend export-binfile response shape."],
+                    { response: endEvent.data }
+                );
+            }
+
+            const resourceUri = getResourceUri(resource) as string;
+            const resultEnvelope = createCommandResultEnvelope(
+                requestEnvelope,
+                {
+                    command: CommandDescriptors.EXPORT_FILE.id,
+                    adapter: adapterSelection.selected,
+                    adapterSelection,
+                    artifact: contract.artifact,
+                    fileId: contract.target.fileId,
+                    libraryMode: contract.artifact.libraryMode,
+                    backendRpc,
+                    resource,
+                    resourceUri,
+                    downloadUri: resolveResourceUri(resourceUri, backendUri),
+                    stream: {
+                        eventTypes: events.map((event) => event.type),
+                    },
+                },
+                { adapterSelection }
+            );
+            return super.ok(resultEnvelope.data, resultEnvelope.warnings);
+        } catch (cause) {
+            return this.rpcFailure(cause);
+        }
+    }
+
+    private selectExportFileAdapter(args: ExportFileArgs): CommandAdapterSelection {
+        return selectCommandAdapter({
+            command: CommandDescriptors.EXPORT_FILE.id,
+            requestedAdapter: args.adapter ?? "auto",
+            candidates: [
+                { kind: "backend-rpc", available: true, priority: 10 },
+                {
+                    kind: "exporter",
+                    available: false,
+                    priority: 20,
+                    reason: "export.file uses backend export-binfile; exporter export-shapes is only for page/object rendering.",
+                },
+                {
+                    kind: "plugin-live",
+                    available: false,
+                    priority: 50,
+                    reason: "export.file exports a whole .penpot archive through backend-rpc; plugin-live only exports live page or shape data.",
+                },
+            ],
+        });
+    }
+
+    private adapterSelectionFailure(selection: CommandAdapterSelection): ToolResponse {
+        const error = createAdapterSelectionError(selection, {
+            actions: [
+                "Use adapter: 'auto' or 'backend-rpc'.",
+                "Use export.page or render.preview for exporter-backed page/object artifacts.",
+            ],
+        });
+        return this.error(error.code, error.message, error.actions, error.data);
     }
 }
 

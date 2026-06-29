@@ -129,7 +129,7 @@ state for them.
 | `export.shape` | Registered descriptor and MCP tool through plugin-live. | Plugin-live workspace/export state. | It can use explicit live shape or current selection and returns plugin base64 data. | Keep plugin-live. Explicit exporter shape/page preview is covered by `render.preview`. |
 | `export.page` | Registered descriptor and MCP tool. | Exporter/read-only plus plugin-live. | Exporter path requires explicit ids; plugin-live can use bound workspace page. | Keep behavior. |
 | `render.preview` | Registered descriptor and MCP tool. | Exporter/read-only plus plugin-live. | Exporter path requires explicit file/page/object ids; plugin-live can preview page/shape/selection. | Keep behavior. |
-| `export.file` | Name exists in `ToolNames.ts`; no MCP tool is registered. Command-runtime now advertises `penpot-cli export file` with `backend-rpc`. | CLI backend-rpc file archive export; MCP planned. | CLI calls backend `export-binfile`, reads the SSE resource URI, and can download the returned `.penpot` archive. MCP still needs resource-return handling before registration. | Keep MCP unregistered until the MCP backend-rpc stream/resource contract is implemented. |
+| `export.file` | Registered descriptor and MCP tool; `penpot-cli export file` also uses backend-rpc. | MCP and CLI backend-rpc file archive export. | MCP calls backend `export-binfile`, reads the SSE resource URI, and returns resource metadata plus `downloadUri`; CLI can additionally download the returned `.penpot` archive with `--output`. | Keep exporter/plugin-live out of `export.file`; use `export.page` or `render.preview` for page/object artifacts. |
 | `render.thumbnail` | Name exists in `ToolNames.ts` and command-runtime descriptor-only entries; no registered MCP tool, CLI command, or executable adapter. P25.4 adds a fixture-backed contract. | Descriptor-only dashboard thumbnail contract. | File thumbnails use `get-file-data-for-thumbnail` plus `create-file-thumbnail`; tagged frame thumbnails use `fileId/pageId/objectId/tag` and `create-file-object-thumbnail`. | Keep adapters empty until a future task implements a renderer/runtime boundary and resource return behavior. |
 | `component.create`, `component.instantiate`, `tokens.list`, `tokens.apply` | Names exist in `ToolNames.ts`, not registered. | Unsupported or descriptor-only. | No runtime task or backend helper found. | Leave for a future components/tokens wave. |
 | `debug.get_plugin_state`, `debug.get_agent_logs` | Names exist in `ToolNames.ts`, not registered. | Unsupported or descriptor-only. | Diagnostics exist through status/log paths, not these tools. | Keep out of P17.2 unless diagnostics naming is explicitly selected. |
@@ -396,8 +396,10 @@ points CLI users back to MCP `file.open`, `file.get_context`,
 - Whether exporter-backed `export.shape` should get an explicit file/page/shape
   mode or remain covered by `render.preview` plus `export.page`.
 - P25.3 implements the `export.file` CLI path as backend `export-binfile`
-  RPC/SSE plus `.penpot` resource URI handling and optional download; MCP
-  registration still waits for MCP-side stream/resource handling.
+  RPC/SSE plus `.penpot` resource URI handling and optional download.
 - P25.4 selects the `render.thumbnail` contract as dashboard thumbnail
   data/render/cache semantics with PNG artifact metadata; runtime execution
   remains unregistered until renderer ownership is explicit.
+- P25.5 registers MCP `export.file` on the same backend-rpc `export-binfile`
+  SSE/resource contract. MCP returns resource metadata and `downloadUri`;
+  local archive writes remain the CLI `--output` responsibility.

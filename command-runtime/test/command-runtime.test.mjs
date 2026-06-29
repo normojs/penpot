@@ -222,8 +222,8 @@ test("export.file contract maps CLI binary archive requests to backend RPC seman
         "include-libraries": true,
         "embed-assets": false,
     });
-    assert.equal(contract.diagnostics.adapterBoundary, "cli-backend-rpc");
-    assert.equal(contract.diagnostics.mcpToolRegistered, false);
+    assert.equal(contract.diagnostics.adapterBoundary, "mcp-cli-backend-rpc");
+    assert.equal(contract.diagnostics.mcpToolRegistered, true);
     assert.equal(contract.diagnostics.cliCommandRegistered, true);
     assert.match(contract.diagnostics.exporterBoundary, /not exporter export-shapes/);
 });
@@ -242,7 +242,7 @@ test("export.file contract matches the documented fixture matrix", async (t) => 
             assert.equal(contract.artifact.embedAssets, fixture.expected.embedAssets);
             assert.deepEqual(contract.requires, fixture.expected.requires);
             assert.deepEqual(contract.backendRpc.request, fixture.expected.backendRpcRequest);
-            assert.equal(contract.diagnostics.adapterBoundary, "cli-backend-rpc");
+            assert.equal(contract.diagnostics.adapterBoundary, "mcp-cli-backend-rpc");
         });
     }
 });

@@ -1,11 +1,12 @@
 # Export File Contract
 
-Status: P25.3 CLI backend-rpc executable contract; MCP registration pending.
+Status: P25.5 MCP and CLI backend-rpc executable contract.
 
 This document defines the `export.file` archive contract. `penpot-cli export
 file` now executes it through backend-rpc/SSE and can download the returned
-resource with `--output`. MCP `export.file` remains unregistered until the MCP
-backend-rpc resource return path is implemented.
+resource with `--output`. MCP `export.file` executes the same backend-rpc/SSE
+contract and returns resource URI metadata without writing files on the MCP
+server filesystem.
 
 ## Existing Penpot Surface
 
@@ -77,18 +78,21 @@ Shared contract shape:
 }
 ```
 
-The CLI executable response wraps the resource URI in the normal command result
-shape, optionally downloads it when `output` is supplied, and reports the final
-artifact path or resource metadata.
+The MCP executable response wraps the resource URI in the normal command result
+shape and reports resource metadata plus an absolute `downloadUri` resolved
+against `PENPOT_BACKEND_URI`/`PENPOT_PUBLIC_URI`. The CLI executable response
+uses the same stream/resource contract, optionally downloads it when `output` is
+supplied, and reports the final artifact path or resource metadata.
 
 ## Runtime Boundaries
 
 - `@penpot/command-runtime` exposes `createExportFileContract` and fixture
   coverage for the request mapping.
 - The `export.file` descriptor advertises `cliCommand: "export file"` and the
-  `backend-rpc` adapter for CLI execution.
-- MCP must not register `export.file` until MCP-side backend-rpc SSE/resource
-  handling is implemented for this command.
+  `backend-rpc` adapter for MCP and CLI execution.
+- MCP `export.file` registers a backend-rpc tool that calls `export-binfile`,
+  parses the SSE `end` event, and returns resource metadata. It does not write
+  the `.penpot` archive to local disk.
 - `penpot-cli export file` calls backend `export-binfile`, reads the SSE `end`
   resource URI, and downloads the returned URI when `--output` is supplied.
 - Exporter service execution is out of scope for this command.

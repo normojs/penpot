@@ -2079,8 +2079,6 @@ P25.3 CLI export.file runtime result:
   parses the SSE `end` event resource URI, and returns resource metadata.
 - `--output <path>` downloads the returned `.penpot` resource with the same
   auth token/cookie convention used by other artifact downloads.
-- MCP `export.file` remains unregistered until MCP-side backend-rpc
-  stream/resource handling is implemented.
 
 P25.4 render.thumbnail contract result:
 
@@ -2096,6 +2094,17 @@ P25.4 render.thumbnail contract result:
 - The descriptor stays adapterless and unregistered until an MCP/CLI runtime
   owns worker/rasterizer execution and resource return behavior.
 
+P25.5 MCP export.file runtime result:
+
+- MCP `export.file` is now registered as a backend-rpc tool.
+- It calls backend `export-binfile`, parses the SSE `end` event, normalizes the
+  returned resource URI, and reports `.penpot` resource metadata plus an
+  absolute `downloadUri`.
+- MCP does not write archive bytes to local disk; `penpot-cli export file
+  --output` remains the local download/write path.
+- `PenpotRpcClient.postSse` centralizes SSE/Transit parsing and stream error
+  handling for backend-rpc resource-return calls.
+
 ### 8.5 Export and Render Tools
 
 May start file-bound and later move to headless:
@@ -2110,10 +2119,11 @@ render.thumbnail
 
 P25.1 reserves `export.file` and `render.thumbnail` in the shared command
 catalog. P25.2 gives `export.file` a backend binary export contract, P25.3
-enables the CLI backend-rpc path for `penpot-cli export file`, and P25.4 gives
-`render.thumbnail` a dashboard-thumbnail contract. MCP `export.file` and
-`render.thumbnail` runtime behavior remain future work until their resource
-return and renderer execution boundaries are implemented.
+enables the CLI backend-rpc path for `penpot-cli export file`, P25.4 gives
+`render.thumbnail` a dashboard-thumbnail contract, and P25.5 registers MCP
+`export.file` for backend-rpc resource metadata returns. `render.thumbnail`
+runtime behavior remains future work until its renderer execution boundary is
+implemented.
 
 ### 8.6 Advanced Tools
 

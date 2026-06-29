@@ -4,6 +4,11 @@ type RpcParamValue = string | number | boolean | string[] | number[] | boolean[]
 
 export type RpcParams = Record<string, RpcParamValue>;
 
+export interface PenpotSseEvent {
+    type: string;
+    data: unknown;
+}
+
 export interface PenpotRpcRequestContext {
     mcpToolName?: string;
     mcpAdapter?: string | null;
@@ -41,6 +46,12 @@ export class PenpotRpcClient {
         return this.baseUri;
     }
 
+    public getMethodUrl(methodName: string): string {
+        const url = this.createRpcUrl(methodName);
+        url.searchParams.set("_fmt", "json");
+        return url.toString();
+    }
+
     public async get<T>(
         methodName: string,
         params: RpcParams,
@@ -69,6 +80,80 @@ export class PenpotRpcClient {
         url.searchParams.set("_fmt", "json");
 
         return await this.request<T>(url, "POST", userToken, params, context);
+    }
+
+    public async postSse(
+        methodName: string,
+        params: RpcParams,
+        userToken: string,
+        context?: PenpotRpcRequestContext
+    ): Promise<PenpotSseEvent[]> {
+        const url = this.createRpcUrl(methodName);
+        url.searchParams.set("_fmt", "json");
+        const headers: Record<string, string> = {
+            accept: "text/event-stream,application/json",
+            authorization: `Token ${userToken}`,
+            "content-type": "application/json",
+            "x-client": "penpot-mcp/1.0",
+        };
+        Object.assign(headers, this.createContextHeaders(context));
+
+        let response: Response;
+        try {
+            response = await fetch(url, {
+                method: "POST",
+                headers,
+                body: JSON.stringify(params ?? {}),
+            });
+        } catch (cause) {
+            throw new PenpotRpcError(
+                0,
+                "Unable to reach the Penpot backend RPC endpoint.",
+                "penpot_backend_unavailable",
+                {
+                    baseUri: this.baseUri,
+                    url: url.toString(),
+                    method: "POST",
+                    cause: String(cause),
+                }
+            );
+        }
+
+        const text = await response.text();
+        if (!response.ok) {
+            throw this.createError(response.status, this.parseSseEventData(text));
+        }
+
+        const contentType = response.headers.get("content-type") ?? "";
+        if (!contentType.includes("text/event-stream")) {
+            throw new PenpotRpcError(
+                502,
+                `Penpot RPC ${methodName} did not return an SSE stream.`,
+                "penpot_rpc_stream_expected",
+                {
+                    contentType,
+                    response: text,
+                }
+            );
+        }
+
+        const events = this.parseSseEvents(text);
+        const errorEvent = events.find((event) => event.type === "error");
+        if (errorEvent) {
+            const data = this.asRecord(errorEvent.data);
+            const backendCode = typeof data.code === "string" ? data.code : undefined;
+            const message =
+                typeof data.message === "string"
+                    ? data.message
+                    : typeof data.hint === "string"
+                      ? data.hint
+                      : `Penpot RPC ${methodName} stream failed.`;
+            throw new PenpotRpcError(response.status, message, this.normalizeErrorCode(response.status, backendCode), {
+                response: errorEvent.data,
+            });
+        }
+
+        return events;
     }
 
     private createRpcUrl(methodName: string): URL {
@@ -192,6 +277,100 @@ export class PenpotRpcClient {
                 body: text,
             });
         }
+    }
+
+    private parseSseEvents(text: string): PenpotSseEvent[] {
+        return text
+            .split(/\r?\n\r?\n/)
+            .map((block) => block.trim())
+            .filter(Boolean)
+            .map((block) => {
+                let type = "message";
+                const dataLines: string[] = [];
+                for (const line of block.split(/\r?\n/)) {
+                    if (line.startsWith("event:")) {
+                        type = line.slice("event:".length).trim();
+                    } else if (line.startsWith("data:")) {
+                        dataLines.push(line.slice("data:".length).trimStart());
+                    }
+                }
+                return {
+                    type,
+                    data: this.parseSseEventData(dataLines.join("\n")),
+                };
+            });
+    }
+
+    private parseSseEventData(data: string): unknown {
+        if (!data.trim()) {
+            return null;
+        }
+        try {
+            return this.decodeTransitJson(data);
+        } catch {
+            return data;
+        }
+    }
+
+    private decodeTransitJson(text: string): unknown {
+        return this.decodeTransitValue(JSON.parse(text));
+    }
+
+    private decodeTransitValue(value: unknown): unknown {
+        if (typeof value === "string") {
+            return this.decodeTransitString(value);
+        }
+
+        if (Array.isArray(value)) {
+            if (value[0] === "^ " && value.length % 2 === 1) {
+                const decoded: Record<string, unknown> = {};
+                for (let index = 1; index < value.length; index += 2) {
+                    decoded[this.decodeTransitKey(value[index])] = this.decodeTransitValue(value[index + 1]);
+                }
+                return decoded;
+            }
+
+            if (value.length === 2 && value[0] === "~#uuid" && typeof value[1] === "string") {
+                return value[1];
+            }
+
+            return value.map((entry) => this.decodeTransitValue(entry));
+        }
+
+        if (value !== null && typeof value === "object") {
+            const decoded: Record<string, unknown> = {};
+            for (const [key, entry] of Object.entries(value)) {
+                decoded[this.decodeTransitKey(key)] = this.decodeTransitValue(entry);
+            }
+            return decoded;
+        }
+
+        return value;
+    }
+
+    private decodeTransitKey(value: unknown): string {
+        const decoded = this.decodeTransitValue(value);
+        return typeof decoded === "string" ? decoded : JSON.stringify(decoded);
+    }
+
+    private decodeTransitString(value: string): string {
+        if (value.startsWith("~~")) {
+            return value.slice(1);
+        }
+
+        if (value.startsWith("~:")) {
+            return value.slice(2);
+        }
+
+        if (value.startsWith("~u") && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(value.slice(2))) {
+            return value.slice(2);
+        }
+
+        return value;
+    }
+
+    private asRecord(value: unknown): Record<string, unknown> {
+        return value !== null && typeof value === "object" && !Array.isArray(value) ? (value as Record<string, unknown>) : {};
     }
 
     private createError(status: number, data: unknown): PenpotRpcError {

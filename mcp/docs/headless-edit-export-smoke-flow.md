@@ -310,14 +310,15 @@ Run the same scenario from an MCP client with explicit ids:
    `profileId`.
 8. `export.page` with explicit file, page, object, profile, format, and scale
    fields when that tool is available through the client catalog.
-
-`export.file` is currently CLI-only; MCP registration waits for MCP-side
-backend-rpc resource-return handling.
+9. `export.file` with `fileId` and optional `libraryMode` to receive `.penpot`
+   resource metadata from backend `export-binfile`.
 
 Expected MCP evidence:
 
 - page and shape write tools select `backend-command`
 - each backend-command response includes `adapterSelection`
+- `export.file` selects `backend-rpc`, returns `resourceUri`/`downloadUri`, and
+  does not write files on the MCP server filesystem
 - render/export tools select `exporter`
 - preview/export responses include artifact or resource metadata
 - no response requires `file.bind_context`
