@@ -308,7 +308,7 @@ they already exist in MCP, CLI, or both.
 | `export.page` | file | MCP plugin task, CLI exporter execution | `exporter`, fallback `plugin-live` |
 | `export.file` | file | MCP and CLI backend `export-binfile` RPC/SSE execution | `backend-rpc`; MCP returns resource metadata, CLI can write the archive with `--output` |
 | `render.preview` | file | MCP plugin task, MCP/CLI exporter preview execution | `exporter`, fallback `plugin-live` |
-| `render.thumbnail` | file | Descriptor-only dashboard thumbnail data/render/cache contract | adapterless until a renderer/runtime boundary is implemented |
+| `render.thumbnail` | file | Descriptor-only dashboard thumbnail data/render/cache contract | adapterless until renderer-service API fixtures define resource returns and cache/auth behavior |
 
 ## Schema Strategy
 
@@ -764,3 +764,16 @@ P25.5 registers MCP `export.file`:
   remain the `penpot-cli export file --output` responsibility.
 - `PenpotRpcClient.postSse` owns SSE/Transit parsing and stream error
   normalization for backend-rpc streaming calls.
+
+P25.6 audits the executable `render.thumbnail` boundary:
+
+- Future execution should live behind a dedicated thumbnail renderer service,
+  not inside the MCP Node process.
+- Frontend worker rendering and exporter-compatible Playwright rendering remain
+  deferred options because neither currently provides global MCP/CLI thumbnail
+  cache persistence semantics.
+- Backend thumbnail RPCs remain the auth, data, and persistence authority, but
+  the backend does not render PNG bytes.
+- MCP and CLI registration remain blocked until renderer-service fixtures define
+  file and tagged-frame resource returns, cache reuse/refresh behavior, auth
+  propagation, and tests.

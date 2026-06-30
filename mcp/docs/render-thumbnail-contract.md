@@ -1,6 +1,7 @@
 # Render Thumbnail Contract
 
-Status: P25.4 descriptor-only contract; runtime registration pending.
+Status: P25.4 descriptor-only contract; P25.6 runtime boundary audited and
+runtime registration still blocked.
 
 This document defines the `render.thumbnail` contract before MCP or CLI
 execution is enabled. The contract follows Penpot's existing dashboard
@@ -118,6 +119,17 @@ Shared contract shape:
   delegate to a stable renderer service.
 - Exporter service execution is out of scope for this command unless a later
   task explicitly maps thumbnail rendering to exporter-compatible semantics.
+- P25.6 selects a future dedicated thumbnail renderer service as the executable
+  owner. MCP Node direct rendering is rejected, frontend worker and exporter
+  paths are deferred, and the backend cache wrapper is insufficient by itself.
+- Tagged frame thumbnail registration remains blocked until the service or
+  backend can normalize `create-file-object-thumbnail` into downloadable
+  resource metadata equivalent to file thumbnail returns.
+
+See `render-thumbnail-runtime-boundary.md` and
+`render-thumbnail-runtime-boundary-fixtures.json` for the executable boundary
+audit, resource-return rules, cache refresh behavior, auth expectations, and
+future test strategy.
 
 ## Fixtures
 

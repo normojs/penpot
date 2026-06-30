@@ -130,7 +130,7 @@ state for them.
 | `export.page` | Registered descriptor and MCP tool. | Exporter/read-only plus plugin-live. | Exporter path requires explicit ids; plugin-live can use bound workspace page. | Keep behavior. |
 | `render.preview` | Registered descriptor and MCP tool. | Exporter/read-only plus plugin-live. | Exporter path requires explicit file/page/object ids; plugin-live can preview page/shape/selection. | Keep behavior. |
 | `export.file` | Registered descriptor and MCP tool; `penpot-cli export file` also uses backend-rpc. | MCP and CLI backend-rpc file archive export. | MCP calls backend `export-binfile`, reads the SSE resource URI, and returns resource metadata plus `downloadUri`; CLI can additionally download the returned `.penpot` archive with `--output`. | Keep exporter/plugin-live out of `export.file`; use `export.page` or `render.preview` for page/object artifacts. |
-| `render.thumbnail` | Name exists in `ToolNames.ts` and command-runtime descriptor-only entries; no registered MCP tool, CLI command, or executable adapter. P25.4 adds a fixture-backed contract. | Descriptor-only dashboard thumbnail contract. | File thumbnails use `get-file-data-for-thumbnail` plus `create-file-thumbnail`; tagged frame thumbnails use `fileId/pageId/objectId/tag` and `create-file-object-thumbnail`. | Keep adapters empty until a future task implements a renderer/runtime boundary and resource return behavior. |
+| `render.thumbnail` | Name exists in `ToolNames.ts` and command-runtime descriptor-only entries; no registered MCP tool, CLI command, or executable adapter. P25.4 adds a fixture-backed contract and P25.6 audits the runtime boundary. | Descriptor-only dashboard thumbnail contract; future dedicated thumbnail renderer service selected but unregistered. | File thumbnails use `get-file-data-for-thumbnail` plus `create-file-thumbnail`; tagged frame thumbnails use `fileId/pageId/objectId/tag` and `create-file-object-thumbnail`. | Keep adapters empty until renderer-service API fixtures define resource return, tagged-frame URI normalization, cache reuse/refresh, auth, and tests. |
 | `component.create`, `component.instantiate`, `tokens.list`, `tokens.apply` | Names exist in `ToolNames.ts`, not registered. | Unsupported or descriptor-only. | No runtime task or backend helper found. | Leave for a future components/tokens wave. |
 | `debug.get_plugin_state`, `debug.get_agent_logs` | Names exist in `ToolNames.ts`, not registered. | Unsupported or descriptor-only. | Diagnostics exist through status/log paths, not these tools. | Keep out of P17.2 unless diagnostics naming is explicitly selected. |
 | Legacy `execute_code`, `export_shape`, `import_image` | Registered legacy tools. | Legacy live/plugin or local filesystem behavior. | They are compatibility surfaces, not the typed headless path. | Do not expand; keep gated/legacy behavior. |
@@ -403,3 +403,8 @@ points CLI users back to MCP `file.open`, `file.get_context`,
 - P25.5 registers MCP `export.file` on the same backend-rpc `export-binfile`
   SSE/resource contract. MCP returns resource metadata and `downloadUri`;
   local archive writes remain the CLI `--output` responsibility.
+- P25.6 selects a future dedicated thumbnail renderer service for
+  `render.thumbnail`. MCP Node direct rendering is rejected, frontend worker
+  and exporter paths are deferred, backend cache wrapping is insufficient
+  alone, and registration remains blocked until service resource returns are
+  fixture-backed.

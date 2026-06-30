@@ -1,0 +1,99 @@
+{
+  "version": "P25.6",
+  "command": "render.thumbnail",
+  "status": "runtime boundary audited; runtime registration blocked",
+  "selectedBoundary": "thumbnail-renderer-service",
+  "runtimeRegistration": {
+    "mcpToolRegistered": false,
+    "cliCommandRegistered": false,
+    "descriptorAdapters": []
+  },
+  "decisionMatrix": [
+    {
+      "id": "mcp-node-direct",
+      "decision": "rejected",
+      "reason": "The MCP server is a Node TypeScript process without the Penpot ClojureScript render-wasm worker, browser canvas, rasterizer iframe, font, and asset runtime required to produce faithful thumbnail PNG bytes."
+    },
+    {
+      "id": "frontend-worker-bridge",
+      "decision": "defer",
+      "reason": "The browser worker already owns dashboard file thumbnail rendering, but it is tied to a live frontend session and is not a global background or CLI-safe execution boundary."
+    },
+    {
+      "id": "exporter-compatible-service",
+      "decision": "defer",
+      "reason": "The exporter can drive Playwright screenshots for export previews, but it does not currently implement dashboard thumbnail data loading, cache policy, or backend thumbnail persistence semantics."
+    },
+    {
+      "id": "backend-thumbnail-cache-wrapper",
+      "decision": "insufficient",
+      "reason": "The backend owns permission checks, source data, storage, and persistence RPCs, but it does not render PNG bytes."
+    },
+    {
+      "id": "thumbnail-renderer-service",
+      "decision": "selected",
+      "reason": "A dedicated renderer service can host the browser/WASM/rasterizer runtime, reuse backend thumbnail RPCs, persist cache entries, and return normalized resource metadata for MCP and CLI callers."
+    }
+  ],
+  "executionBoundary": {
+    "owner": "thumbnail-renderer-service",
+    "adapterName": "renderer-service",
+    "addAdapterNow": false,
+    "backendDataCommand": "get-file-data-for-thumbnail",
+    "filePersistCommand": "create-file-thumbnail",
+    "framePersistCommand": "create-file-object-thumbnail",
+    "rendererRuntime": [
+      "browser canvas or OffscreenCanvas",
+      "Penpot render-wasm worker bridge",
+      "frontend rasterizer-compatible fallback",
+      "font and media asset loading"
+    ]
+  },
+  "resourceReturn": {
+    "mcp": {
+      "localFileWrites": false,
+      "shape": {
+        "artifact": "png thumbnail metadata",
+        "cache": "cache policy, scope, and key",
+        "resourceUri": "backend persisted thumbnail resource URI when available",
+        "downloadUri": "absolute authenticated download URI when available"
+      }
+    },
+    "cli": {
+      "localFileWrites": "only when a future --output path is supplied",
+      "shape": "same resource metadata as MCP plus optional output metadata"
+    },
+    "targets": {
+      "file": {
+        "persistCommand": "create-file-thumbnail",
+        "resourceSource": "persist response uri/id"
+      },
+      "frame": {
+        "persistCommand": "create-file-object-thumbnail",
+        "resourceSource": "requires service or backend URI normalization",
+        "registrationBlocker": "tagged-frame-download-uri"
+      }
+    }
+  },
+  "cacheRefresh": {
+    "reuse": "May return an existing resource only when the service can prove the file revn or tagged object key is current.",
+    "refresh": "Must render a fresh PNG, persist it through the target-specific backend command, and return the persisted resource metadata."
+  },
+  "auth": {
+    "data": "get-file-data-for-thumbnail keeps backend read-permission checks.",
+    "filePersist": "create-file-thumbnail currently accepts read permission for dashboard thumbnail updates.",
+    "framePersist": "create-file-object-thumbnail requires edition permission.",
+    "service": "The renderer service must use the caller session/token and must not mint unaudited storage writes."
+  },
+  "testStrategy": [
+    "Keep command-runtime descriptor tests asserting render.thumbnail adapters stay empty until the service API exists.",
+    "Add renderer-service contract tests for file and tagged-frame inputs, cache policies, PNG metadata, and resource normalization.",
+    "Add MCP tests only after registration, covering auth, adapter rejection, refresh/reuse semantics, and resource return shape.",
+    "Add CLI smoke tests only after the service exists, covering dry-run, resource metadata, --output download, and missing-token errors."
+  ],
+  "nextTask": {
+    "id": "P25.7",
+    "title": "Define thumbnail renderer service API fixtures",
+    "modules": ["command-runtime", "mcp/docs", "todo.md"]
+  }
+}

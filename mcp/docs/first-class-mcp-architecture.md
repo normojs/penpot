@@ -2105,6 +2105,22 @@ P25.5 MCP export.file runtime result:
 - `PenpotRpcClient.postSse` centralizes SSE/Transit parsing and stream error
   handling for backend-rpc resource-return calls.
 
+P25.6 render.thumbnail runtime boundary result:
+
+- Future `render.thumbnail` execution should be owned by a dedicated thumbnail
+  renderer service that hosts the browser/WASM/rasterizer runtime and uses
+  backend thumbnail RPCs for auth, source data, persistence, and cache
+  ownership.
+- MCP Node direct rendering is rejected. Frontend worker bridging and
+  exporter-compatible rendering are deferred until they can satisfy global
+  MCP/CLI execution and dashboard thumbnail cache semantics.
+- Backend thumbnail cache wrapping is insufficient alone because backend RPCs
+  persist uploaded blobs but do not render PNG bytes.
+- `render.thumbnail` remains descriptor-only with `adapters: []`; registration
+  is blocked until renderer-service API fixtures define resource returns,
+  tagged-frame URI normalization, cache reuse/refresh, auth propagation, and
+  tests.
+
 ### 8.5 Export and Render Tools
 
 May start file-bound and later move to headless:
@@ -2121,9 +2137,10 @@ P25.1 reserves `export.file` and `render.thumbnail` in the shared command
 catalog. P25.2 gives `export.file` a backend binary export contract, P25.3
 enables the CLI backend-rpc path for `penpot-cli export file`, P25.4 gives
 `render.thumbnail` a dashboard-thumbnail contract, and P25.5 registers MCP
-`export.file` for backend-rpc resource metadata returns. `render.thumbnail`
-runtime behavior remains future work until its renderer execution boundary is
-implemented.
+`export.file` for backend-rpc resource metadata returns. P25.6 selects a
+future dedicated thumbnail renderer service for `render.thumbnail`, but runtime
+behavior remains unregistered until its service API fixtures and resource
+normalization are implemented.
 
 ### 8.6 Advanced Tools
 

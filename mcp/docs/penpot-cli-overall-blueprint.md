@@ -235,7 +235,10 @@ Current state:
   writing files on the MCP server filesystem.
 - Done: `render.thumbnail` has a fixture-backed dashboard thumbnail contract
   for file and tagged frame targets, cache policy, PNG artifact metadata, and
-  backend data/persist boundaries; runtime registration remains future work.
+  backend data/persist boundaries.
+- Done: `render.thumbnail` runtime execution is assigned to a future thumbnail
+  renderer service boundary; registration remains blocked until service API
+  fixtures define resource returns and cache/auth behavior.
 - Done: focused command-runtime tests cover descriptor groups, lookup,
   adapter-selection priority/error cases, and token-safe envelopes.
 - Status: complete. Later command coverage gaps were tracked by the P15.1
@@ -594,6 +597,16 @@ P25.5 is complete:
    and returns `.penpot` resource metadata plus `downloadUri`.
 3. MCP keeps file writing out of scope; CLI `--output` remains the local
    archive download path.
+
+P25.6 is complete:
+
+1. `render.thumbnail` future execution is assigned to a dedicated thumbnail
+   renderer service boundary, not direct MCP Node rendering.
+2. Frontend worker and exporter-compatible routes remain deferred until they can
+   satisfy global MCP/CLI execution plus dashboard thumbnail cache persistence.
+3. MCP and CLI thumbnail registration remain blocked until renderer-service API
+   fixtures define resource returns, tagged-frame URI normalization, cache
+   reuse/refresh, auth, and tests.
 
 Keep manual configuration behavior stable while moving command metadata and
 envelopes; transport-specific formatting should stay at the MCP/CLI edges.

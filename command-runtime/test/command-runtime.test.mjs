@@ -63,6 +63,9 @@ const exportFileContractFixtures = JSON.parse(
 const renderThumbnailContractFixtures = JSON.parse(
     readFileSync(new URL("../../mcp/docs/render-thumbnail-contract-fixtures.json", import.meta.url), "utf8")
 );
+const renderThumbnailRuntimeBoundaryFixtures = JSON.parse(
+    readFileSync(new URL("../../mcp/docs/render-thumbnail-runtime-boundary-fixtures.json", import.meta.url), "utf8")
+);
 
 test("descriptor groups expose stable command ids", () => {
     assert.deepEqual(
@@ -342,6 +345,42 @@ test("render.thumbnail contract validates target, format, cache, and dimensions"
         () => createRenderThumbnailContract({ fileId: "file-1", width: 0 }),
         /render\.thumbnail width must be an integer/
     );
+});
+
+test("render.thumbnail runtime boundary keeps execution unregistered until renderer service exists", () => {
+    const boundary = renderThumbnailRuntimeBoundaryFixtures;
+    const selected = boundary.decisionMatrix.find((option) => option.decision === "selected");
+    const rejected = boundary.decisionMatrix.find((option) => option.id === "mcp-node-direct");
+
+    assert.equal(boundary.command, "render.thumbnail");
+    assert.equal(boundary.selectedBoundary, "thumbnail-renderer-service");
+    assert.equal(boundary.executionBoundary.owner, "thumbnail-renderer-service");
+    assert.equal(boundary.executionBoundary.adapterName, "renderer-service");
+    assert.equal(boundary.executionBoundary.addAdapterNow, false);
+    assert.equal(selected.id, "thumbnail-renderer-service");
+    assert.equal(rejected.decision, "rejected");
+    assert.deepEqual(CommandDescriptors.RENDER_THUMBNAIL.adapters, boundary.runtimeRegistration.descriptorAdapters);
+    assert.equal(CommandDescriptors.RENDER_THUMBNAIL.cliCommand, undefined);
+    assert.equal(boundary.runtimeRegistration.mcpToolRegistered, false);
+    assert.equal(boundary.runtimeRegistration.cliCommandRegistered, false);
+
+    const contract = createRenderThumbnailContract({
+        fileId: "file-1",
+        pageId: "page-1",
+        objectId: "frame-1",
+        target: "frame",
+    });
+    assert.equal(contract.executable, false);
+    assert.equal(contract.adapter, null);
+    assert.equal(contract.backendRpc.data.command, boundary.executionBoundary.backendDataCommand);
+    assert.equal(contract.backendRpc.persist.command, boundary.executionBoundary.framePersistCommand);
+    assert.equal(boundary.resourceReturn.mcp.localFileWrites, false);
+    assert.equal(boundary.resourceReturn.targets.file.persistCommand, "create-file-thumbnail");
+    assert.equal(boundary.resourceReturn.targets.frame.persistCommand, "create-file-object-thumbnail");
+    assert.equal(boundary.resourceReturn.targets.frame.registrationBlocker, "tagged-frame-download-uri");
+    assert.match(boundary.cacheRefresh.refresh, /persist/);
+    assert.match(boundary.auth.service, /caller session\/token/);
+    assert.ok(boundary.testStrategy.some((item) => item.includes("descriptor tests")));
 });
 
 test("file open helpers produce stable workspace URLs and handoff actions", () => {
