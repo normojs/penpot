@@ -308,7 +308,7 @@ they already exist in MCP, CLI, or both.
 | `export.page` | file | MCP plugin task, CLI exporter execution | `exporter`, fallback `plugin-live` |
 | `export.file` | file | MCP and CLI backend `export-binfile` RPC/SSE execution | `backend-rpc`; MCP returns resource metadata, CLI can write the archive with `--output` |
 | `render.preview` | file | MCP plugin task, MCP/CLI exporter preview execution | `exporter`, fallback `plugin-live` |
-| `render.thumbnail` | file | Descriptor-only dashboard thumbnail data/render/cache contract | adapterless until renderer-service API fixtures define resource returns and cache/auth behavior |
+| `render.thumbnail` | file | Descriptor-only dashboard thumbnail data/render/cache contract plus future renderer-service API fixtures | adapterless until a renderer-service implementation, dry-run/client boundary, file cache probe, and tagged-frame source/resource capabilities exist |
 
 ## Schema Strategy
 
@@ -777,3 +777,14 @@ P25.6 audits the executable `render.thumbnail` boundary:
 - MCP and CLI registration remain blocked until renderer-service fixtures define
   file and tagged-frame resource returns, cache reuse/refresh behavior, auth
   propagation, and tests.
+
+P25.7 defines the future renderer-service API fixtures:
+
+- `render-thumbnail-renderer-service-api.md` specifies the service request and
+  response shape for `thumbnail.render`.
+- `render-thumbnail-renderer-service-fixtures.json` covers file refresh, file
+  cache reuse, tagged frame refresh, missing frame target errors, auth
+  forwarding, resource URI normalization, and future MCP/CLI test expectations.
+- The command descriptor still keeps `adapters: []`; these fixtures prepare the
+  future service and entry-adapter implementation rather than enabling
+  execution.

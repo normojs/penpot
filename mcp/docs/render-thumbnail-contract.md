@@ -130,6 +130,9 @@ See `render-thumbnail-runtime-boundary.md` and
 `render-thumbnail-runtime-boundary-fixtures.json` for the executable boundary
 audit, resource-return rules, cache refresh behavior, auth expectations, and
 future test strategy.
+See `render-thumbnail-renderer-service-api.md` and
+`render-thumbnail-renderer-service-fixtures.json` for the P25.7 future
+renderer-service request/response API.
 
 ## Fixtures
 

@@ -239,6 +239,9 @@ Current state:
 - Done: `render.thumbnail` runtime execution is assigned to a future thumbnail
   renderer service boundary; registration remains blocked until service API
   fixtures define resource returns and cache/auth behavior.
+- Done: `render.thumbnail` renderer-service API fixtures define future file
+  refresh, file reuse, tagged frame refresh, auth forwarding, resource URI
+  normalization, and MCP/CLI test expectations.
 - Done: focused command-runtime tests cover descriptor groups, lookup,
   adapter-selection priority/error cases, and token-safe envelopes.
 - Status: complete. Later command coverage gaps were tracked by the P15.1
@@ -607,6 +610,15 @@ P25.6 is complete:
 3. MCP and CLI thumbnail registration remain blocked until renderer-service API
    fixtures define resource returns, tagged-frame URI normalization, cache
    reuse/refresh, auth, and tests.
+
+P25.7 is complete:
+
+1. The future `thumbnail.render` renderer-service request/response API is
+   documented and fixture-backed.
+2. Fixtures cover file refresh, file cache reuse, tagged frame refresh, missing
+   frame target errors, caller auth forwarding, and resource URI normalization.
+3. `render.thumbnail` remains adapterless until a renderer-service
+   implementation and dry-run/client boundary exist.
 
 Keep manual configuration behavior stable while moving command metadata and
 envelopes; transport-specific formatting should stay at the MCP/CLI edges.

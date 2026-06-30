@@ -66,6 +66,9 @@ const renderThumbnailContractFixtures = JSON.parse(
 const renderThumbnailRuntimeBoundaryFixtures = JSON.parse(
     readFileSync(new URL("../../mcp/docs/render-thumbnail-runtime-boundary-fixtures.json", import.meta.url), "utf8")
 );
+const renderThumbnailRendererServiceFixtures = JSON.parse(
+    readFileSync(new URL("../../mcp/docs/render-thumbnail-renderer-service-fixtures.json", import.meta.url), "utf8")
+);
 
 test("descriptor groups expose stable command ids", () => {
     assert.deepEqual(
@@ -381,6 +384,65 @@ test("render.thumbnail runtime boundary keeps execution unregistered until rende
     assert.match(boundary.cacheRefresh.refresh, /persist/);
     assert.match(boundary.auth.service, /caller session\/token/);
     assert.ok(boundary.testStrategy.some((item) => item.includes("descriptor tests")));
+});
+
+test("render.thumbnail renderer-service API fixtures define future requests without registering execution", async (t) => {
+    const fixtures = renderThumbnailRendererServiceFixtures;
+
+    assert.equal(fixtures.command, "render.thumbnail");
+    assert.equal(fixtures.adapter, "renderer-service");
+    assert.equal(fixtures.serviceApi.operation, "thumbnail.render");
+    assert.equal(fixtures.serviceApi.localFileWrites, false);
+    assert.equal(fixtures.serviceApi.requestAuth.mode, "caller-session");
+    assert.deepEqual(CommandDescriptors.RENDER_THUMBNAIL.adapters, fixtures.runtimeRegistration.commandDescriptorAdapters);
+    assert.equal(fixtures.runtimeRegistration.mcpToolRegistered, false);
+    assert.equal(fixtures.runtimeRegistration.cliCommandRegistered, false);
+    assert.ok(fixtures.registrationGates.allTargets.includes("thumbnail-renderer-service-implementation"));
+    assert.ok(fixtures.registrationGates.frame.includes("frame-source-data-provider"));
+    assert.ok(fixtures.registrationGates.frame.includes("tagged-frame-resource-normalizer"));
+
+    for (const fixture of fixtures.cases) {
+        await t.test(fixture.id, () => {
+            const contract = createRenderThumbnailContract(fixture.input);
+            assert.equal(fixture.serviceRequest.command, contract.command);
+            assert.equal(fixture.serviceRequest.operation, fixtures.serviceApi.operation);
+            assert.equal(fixture.serviceRequest.adapter, fixtures.adapter);
+            assert.equal(fixture.serviceRequest.target.kind, contract.target.kind);
+            assert.equal(fixture.serviceRequest.target.fileId, contract.target.fileId);
+            assert.equal(fixture.serviceRequest.artifact.format, contract.artifact.format);
+            assert.equal(fixture.serviceRequest.artifact.width, contract.artifact.width);
+            assert.equal(fixture.serviceRequest.artifact.height, contract.artifact.height);
+            assert.equal(fixture.serviceRequest.cache.policy, contract.cache.policy);
+            assert.equal(fixture.serviceRequest.cache.scope, contract.cache.scope);
+            assert.equal(fixture.serviceRequest.cache.key, contract.cache.key);
+
+            if (fixture.serviceRequest.backendRpc.data.command === "get-file-data-for-thumbnail") {
+                assert.deepEqual(fixture.serviceRequest.backendRpc.data.request, contract.backendRpc.data.request);
+            }
+            if (fixture.serviceRequest.backendRpc.persist) {
+                assert.equal(fixture.serviceRequest.backendRpc.persist.command, contract.backendRpc.persist.command);
+            }
+            if (contract.target.kind === RenderThumbnailTargets.FRAME) {
+                assert.equal(
+                    fixture.serviceRequest.target.objectKey,
+                    `${contract.target.fileId}/${contract.target.pageId}/${contract.target.objectId}/${contract.target.tag}`
+                );
+                assert.ok(fixture.requiredCapabilities.includes("frame-source-data-provider"));
+            }
+            assert.equal(fixture.expectedResponse.status, "ok");
+            assert.match(fixture.expectedResponse.resource.resourceUri, /^\/assets\/by-id\//);
+            assert.match(fixture.expectedResponse.resource.downloadUri, /^https:\/\/penpot\.example\.test\/assets\/by-id\//);
+            assert.equal(fixture.expectedResponse.resource.contentType, "image/png");
+        });
+    }
+
+    for (const fixture of fixtures.errorCases) {
+        await t.test(fixture.id, () => {
+            const contract = createRenderThumbnailContract(fixture.input);
+            assert.deepEqual(contract.requires, fixture.expectedError.requires);
+            assert.equal(fixture.expectedError.dispatchServiceRequest, false);
+        });
+    }
 });
 
 test("file open helpers produce stable workspace URLs and handoff actions", () => {

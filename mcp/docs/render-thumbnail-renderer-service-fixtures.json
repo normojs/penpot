@@ -1,0 +1,303 @@
+{
+  "version": "P25.7",
+  "command": "render.thumbnail",
+  "status": "renderer-service API fixtures; runtime registration blocked",
+  "adapter": "renderer-service",
+  "runtimeRegistration": {
+    "mcpToolRegistered": false,
+    "cliCommandRegistered": false,
+    "commandDescriptorAdapters": []
+  },
+  "serviceApi": {
+    "operation": "thumbnail.render",
+    "transport": "internal-http-or-worker-rpc",
+    "localFileWrites": false,
+    "requestAuth": {
+      "mode": "caller-session",
+      "forwardHeaders": ["authorization", "cookie"],
+      "auditContext": [
+        "x-penpot-mcp-tool",
+        "x-penpot-mcp-session",
+        "x-penpot-mcp-adapter",
+        "x-penpot-cli-command"
+      ]
+    },
+    "resourceNormalization": {
+      "mediaUriTemplate": "/assets/by-id/{mediaId}",
+      "downloadUriResolver": "entry-adapter backendUri/publicUri + resourceUri",
+      "filePersistSource": "create-file-thumbnail response uri/id",
+      "framePersistSource": "create-file-object-thumbnail response media-id"
+    },
+    "requiredRendererRuntime": [
+      "browser canvas or OffscreenCanvas",
+      "Penpot render-wasm worker bridge",
+      "frontend rasterizer-compatible fallback",
+      "font and media asset loading"
+    ]
+  },
+  "registrationGates": {
+    "allTargets": ["thumbnail-renderer-service-implementation"],
+    "file": ["file-thumbnail-cache-probe"],
+    "frame": [
+      "frame-source-data-provider",
+      "tagged-frame-resource-normalizer"
+    ]
+  },
+  "cases": [
+    {
+      "id": "file-refresh-default",
+      "input": {
+        "fileId": "file-1",
+        "revn": 7,
+        "cachePolicy": "refresh"
+      },
+      "serviceRequest": {
+        "command": "render.thumbnail",
+        "operation": "thumbnail.render",
+        "adapter": "renderer-service",
+        "target": {
+          "kind": "file",
+          "fileId": "file-1",
+          "pageId": null,
+          "objectId": null,
+          "tag": null,
+          "revn": 7
+        },
+        "artifact": {
+          "format": "png",
+          "mimeType": "image/png",
+          "width": 252,
+          "height": 168,
+          "extension": ".png"
+        },
+        "cache": {
+          "policy": "refresh",
+          "scope": "file-thumbnail",
+          "key": "file:file-1:revn:7"
+        },
+        "backendRpc": {
+          "data": {
+            "command": "get-file-data-for-thumbnail",
+            "request": {
+              "file-id": "file-1",
+              "strip-frames-with-thumbnails": false
+            }
+          },
+          "persist": {
+            "command": "create-file-thumbnail",
+            "request": {
+              "file-id": "file-1",
+              "revn": 7,
+              "media": "<rendered png blob>"
+            }
+          }
+        },
+        "render": {
+          "required": true,
+          "runtime": "render-wasm-worker",
+          "fallback": "frontend-rasterizer"
+        }
+      },
+      "expectedResponse": {
+        "status": "ok",
+        "cache": {
+          "outcome": "refreshed",
+          "scope": "file-thumbnail",
+          "key": "file:file-1:revn:7"
+        },
+        "resource": {
+          "mediaId": "media-file-thumb-7",
+          "resourceUri": "/assets/by-id/media-file-thumb-7",
+          "downloadUri": "https://penpot.example.test/assets/by-id/media-file-thumb-7",
+          "contentType": "image/png"
+        },
+        "renderer": {
+          "runtime": "render-wasm-worker",
+          "fallbackUsed": false
+        }
+      }
+    },
+    {
+      "id": "file-reuse-current",
+      "input": {
+        "fileId": "file-1",
+        "revn": 7,
+        "cachePolicy": "reuse"
+      },
+      "serviceRequest": {
+        "command": "render.thumbnail",
+        "operation": "thumbnail.render",
+        "adapter": "renderer-service",
+        "target": {
+          "kind": "file",
+          "fileId": "file-1",
+          "pageId": null,
+          "objectId": null,
+          "tag": null,
+          "revn": 7
+        },
+        "artifact": {
+          "format": "png",
+          "mimeType": "image/png",
+          "width": 252,
+          "height": 168,
+          "extension": ".png"
+        },
+        "cache": {
+          "policy": "reuse",
+          "scope": "file-thumbnail",
+          "key": "file:file-1:revn:7",
+          "probe": "file-thumbnail-by-file-id-and-revn"
+        },
+        "backendRpc": {
+          "data": {
+            "command": "get-file-data-for-thumbnail",
+            "request": {
+              "file-id": "file-1",
+              "strip-frames-with-thumbnails": false
+            }
+          },
+          "persist": null
+        },
+        "render": {
+          "required": false,
+          "reason": "cache hit for current file revn"
+        }
+      },
+      "expectedResponse": {
+        "status": "ok",
+        "cache": {
+          "outcome": "hit",
+          "scope": "file-thumbnail",
+          "key": "file:file-1:revn:7"
+        },
+        "resource": {
+          "mediaId": "media-file-thumb-7",
+          "resourceUri": "/assets/by-id/media-file-thumb-7",
+          "downloadUri": "https://penpot.example.test/assets/by-id/media-file-thumb-7",
+          "contentType": "image/png"
+        },
+        "renderer": {
+          "runtime": null,
+          "fallbackUsed": false
+        }
+      }
+    },
+    {
+      "id": "tagged-frame-refresh-component",
+      "input": {
+        "fileId": "file-1",
+        "pageId": "page-1",
+        "objectId": "frame-1",
+        "target": "frame",
+        "tag": "component",
+        "width": 300,
+        "cachePolicy": "refresh"
+      },
+      "requiredCapabilities": [
+        "frame-source-data-provider",
+        "tagged-frame-resource-normalizer"
+      ],
+      "serviceRequest": {
+        "command": "render.thumbnail",
+        "operation": "thumbnail.render",
+        "adapter": "renderer-service",
+        "target": {
+          "kind": "frame",
+          "fileId": "file-1",
+          "pageId": "page-1",
+          "objectId": "frame-1",
+          "tag": "component",
+          "objectKey": "file-1/page-1/frame-1/component",
+          "revn": null
+        },
+        "artifact": {
+          "format": "png",
+          "mimeType": "image/png",
+          "width": 300,
+          "height": 200,
+          "extension": ".png"
+        },
+        "cache": {
+          "policy": "refresh",
+          "scope": "file-object-thumbnail",
+          "key": "file-1/page-1/frame-1/component"
+        },
+        "backendRpc": {
+          "data": {
+            "command": "get-file-frame-data-for-thumbnail",
+            "status": "required-future-capability",
+            "request": {
+              "file-id": "file-1",
+              "page-id": "page-1",
+              "object-id": "frame-1"
+            }
+          },
+          "persist": {
+            "command": "create-file-object-thumbnail",
+            "request": {
+              "file-id": "file-1",
+              "object-id": "file-1/page-1/frame-1/component",
+              "tag": "component",
+              "media": "<rendered png blob>"
+            }
+          }
+        },
+        "render": {
+          "required": true,
+          "runtime": "render-wasm-worker",
+          "fallback": "frontend-rasterizer"
+        }
+      },
+      "expectedResponse": {
+        "status": "ok",
+        "cache": {
+          "outcome": "refreshed",
+          "scope": "file-object-thumbnail",
+          "key": "file-1/page-1/frame-1/component"
+        },
+        "resource": {
+          "mediaId": "media-frame-component",
+          "resourceUri": "/assets/by-id/media-frame-component",
+          "downloadUri": "https://penpot.example.test/assets/by-id/media-frame-component",
+          "contentType": "image/png"
+        },
+        "renderer": {
+          "runtime": "render-wasm-worker",
+          "fallbackUsed": false
+        }
+      }
+    }
+  ],
+  "errorCases": [
+    {
+      "id": "missing-frame-target",
+      "input": {
+        "fileId": "file-1",
+        "target": "frame"
+      },
+      "expectedError": {
+        "code": "thumbnail_target_required",
+        "requires": ["pageId", "objectId"],
+        "dispatchServiceRequest": false
+      }
+    }
+  ],
+  "futureMcpTests": [
+    "returns resource metadata without MCP server file writes",
+    "forwards caller auth and MCP audit context to renderer-service",
+    "rejects unsupported adapters while render.thumbnail descriptor is adapterless",
+    "reports structured errors for missing frame target and missing resourceUri"
+  ],
+  "futureCliTests": [
+    "dry-run prints the renderer-service request without rendering",
+    "execution returns resource metadata",
+    "--output downloads the returned PNG resource",
+    "missing token fails before contacting renderer-service"
+  ],
+  "nextTask": {
+    "id": "P25.8",
+    "title": "Add thumbnail renderer-service dry-run/client boundary",
+    "modules": ["command-runtime", "penpot-cli", "mcp/docs", "todo.md"]
+  }
+}

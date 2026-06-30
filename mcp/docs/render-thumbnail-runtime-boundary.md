@@ -131,3 +131,9 @@ Before `render.thumbnail` becomes executable:
 
 `render-thumbnail-runtime-boundary-fixtures.json` is the canonical machine
 readable audit fixture for this decision.
+
+P25.7 adds `render-thumbnail-renderer-service-api.md` and
+`render-thumbnail-renderer-service-fixtures.json` as the service-facing API
+contract for future implementation. That API fixture still keeps
+`render.thumbnail` unregistered until a renderer service, file cache probe,
+tagged-frame source-data provider, and tagged-frame resource normalizer exist.

@@ -2121,6 +2121,18 @@ P25.6 render.thumbnail runtime boundary result:
   tagged-frame URI normalization, cache reuse/refresh, auth propagation, and
   tests.
 
+P25.7 render.thumbnail renderer-service API result:
+
+- `render-thumbnail-renderer-service-api.md` defines the future
+  `thumbnail.render` service request and response shape for a
+  `renderer-service` adapter.
+- `render-thumbnail-renderer-service-fixtures.json` covers file refresh, file
+  cache reuse, tagged frame refresh, and missing frame target errors.
+- The API contract names auth forwarding, resource URI normalization,
+  file-cache probing, tagged-frame source-data, and MCP/CLI test expectations.
+- Runtime registration remains blocked; the command descriptor still has
+  `adapters: []`.
+
 ### 8.5 Export and Render Tools
 
 May start file-bound and later move to headless:
@@ -2138,9 +2150,10 @@ catalog. P25.2 gives `export.file` a backend binary export contract, P25.3
 enables the CLI backend-rpc path for `penpot-cli export file`, P25.4 gives
 `render.thumbnail` a dashboard-thumbnail contract, and P25.5 registers MCP
 `export.file` for backend-rpc resource metadata returns. P25.6 selects a
-future dedicated thumbnail renderer service for `render.thumbnail`, but runtime
-behavior remains unregistered until its service API fixtures and resource
-normalization are implemented.
+future dedicated thumbnail renderer service for `render.thumbnail`, and P25.7
+defines its service API fixtures. Runtime behavior remains unregistered until
+the renderer-service implementation, dry-run/client boundary, cache probe, and
+tagged-frame capabilities are implemented.
 
 ### 8.6 Advanced Tools
 

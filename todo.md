@@ -184,8 +184,11 @@ resolved `downloadUri` without writing files on the MCP server filesystem.
 P25.6 is complete: executable `render.thumbnail` should use a future dedicated
 thumbnail renderer service boundary; MCP, CLI, and command-runtime adapters
 remain unregistered until that service API and resource normalization are
-defined. P25.7 is the next task: define thumbnail renderer service API
-fixtures before any executable thumbnail tool is registered.
+defined. P25.7 is complete: thumbnail renderer-service API fixtures now define
+future file refresh, file reuse, tagged frame refresh, auth forwarding,
+resource URI normalization, and MCP/CLI test expectations. P25.8 is the next
+task: add a renderer-service dry-run/client boundary without enabling runtime
+thumbnail rendering.
 
 ## Feature Roadmap
 
@@ -228,7 +231,7 @@ remain the execution plan.
 | F32 | done | Export/render descriptor boundary planning | Phase 25 | Agents can discover planned file-export and thumbnail-render command names without mistaking them for executable tools | Completed 2026-06-29; P25.1 added descriptor-only `export.file` and `render.thumbnail` command-runtime entries with no adapters, and P25.2 defined the fixture-backed `export.file` backend binary archive contract |
 | F33 | done | Thumbnail render contract | Phase 25 | Agents can request thumbnail rendering only after target/cache/artifact semantics are explicit | Completed 2026-06-29; P25.4 defines descriptor-only `render.thumbnail` target, cache, artifact, renderer, and backend persistence contracts |
 | F34 | done | MCP file export resource return | Phase 25 | Agents can export a `.penpot` archive through MCP once backend-rpc resource handling is explicit | Completed 2026-06-29; P25.5 registers MCP `export.file` around the existing backend `export-binfile` SSE/resource contract and returns resource metadata plus `downloadUri` |
-| F35 | done | Thumbnail runtime execution boundary | Phase 25 | Agents can render thumbnails only after the renderer owner and resource return semantics are explicit | Completed 2026-07-01; P25.6 selects a future dedicated thumbnail renderer service, documents resource/cache/auth/test requirements, and keeps `render.thumbnail` adapterless until service API fixtures exist |
+| F35 | done | Thumbnail runtime execution boundary | Phase 25 | Agents can render thumbnails only after the renderer owner and resource return semantics are explicit | Completed 2026-07-01; P25.6 selects a future dedicated thumbnail renderer service and P25.7 defines service API fixtures for file refresh, file reuse, tagged frame refresh, auth forwarding, resource URI normalization, and future MCP/CLI tests while keeping `render.thumbnail` adapterless |
 
 ## Detailed Upcoming Task Queue
 
@@ -763,8 +766,9 @@ continue within Phase 25:
    downloads, and P25.4 defines the `render.thumbnail` descriptor-only target,
    cache, renderer, and artifact contract. P25.5 registers MCP `export.file`
    through backend-rpc SSE resource returns. P25.6 selects a future dedicated
-   thumbnail renderer service boundary. Remaining work: define renderer-service
-   API fixtures before implementing executable `render.thumbnail`.
+   thumbnail renderer service boundary, and P25.7 defines renderer-service API
+   fixtures. Remaining work: add a dry-run/client boundary before implementing
+   executable `render.thumbnail`.
 
 ## Phase 21: Design Editing Alias Contracts
 
@@ -825,4 +829,5 @@ catalog before adding executable MCP, CLI, or exporter behavior.
 | P25.4 | done | Define render.thumbnail target/cache/artifact contract | `command-runtime`, `mcp/docs`, `todo.md` | Completed 2026-06-29; command-runtime tests consume `render-thumbnail-contract-fixtures.json` and prove file/frame targets, cache keys, PNG dimensions, backend data/persist commands, and validation errors | Contract maps thumbnails to dashboard thumbnail data/render/cache semantics, not exporter `export-shapes`; descriptor remains adapterless until a renderer/runtime boundary is implemented |
 | P25.5 | done | Register MCP export.file backend-rpc resource return | `mcp`, `command-runtime`, `mcp/docs`, `todo.md` | Completed 2026-06-29; `ExportFileTool` tests cover backend-rpc SSE resource return, string resource normalization, auth, adapter, incomplete stream, and missing resource errors; `PenpotRpcClient` tests cover SSE/Transit parsing and stream errors | MCP `export.file` calls backend `export-binfile`, parses SSE `end`, returns resource metadata plus `downloadUri`, and keeps local archive writes in CLI `--output` |
 | P25.6 | done | Audit render.thumbnail executable runtime boundary | `mcp`, `frontend`, `render-wasm`, `exporter`, `mcp/docs`, `todo.md` | Completed 2026-07-01; command-runtime tests consume `render-thumbnail-runtime-boundary-fixtures.json` and prove the descriptor remains unregistered while a renderer-service boundary is selected | Dedicated thumbnail renderer service is the future owner; MCP Node direct rendering is rejected, frontend worker/exporter paths are deferred, backend cache wrapper is insufficient, and tagged-frame resource URI normalization blocks registration |
-| P25.7 | pending | Define thumbnail renderer service API fixtures | `command-runtime`, `mcp/docs`, `todo.md` | Pending | Define request/response fixtures for renderer-service execution, including file and tagged-frame targets, resource URI normalization, cache reuse/refresh, auth propagation, and future MCP/CLI test contracts |
+| P25.7 | done | Define thumbnail renderer service API fixtures | `command-runtime`, `mcp/docs`, `todo.md` | Completed 2026-07-01; command-runtime tests consume `render-thumbnail-renderer-service-fixtures.json` and prove future renderer-service request/response fixtures align with the existing descriptor-only thumbnail contract | API fixtures cover file refresh, file cache reuse, tagged frame refresh, missing frame target errors, auth forwarding, resource URI normalization, and future MCP/CLI test contracts without registering execution |
+| P25.8 | pending | Add thumbnail renderer-service dry-run/client boundary | `command-runtime`, `penpot-cli`, `mcp/docs`, `todo.md` | Pending | Add a non-rendering renderer-service client/dry-run boundary so CLI/MCP planning can print the future request shape while execution still reports unavailable until the service implementation exists |
