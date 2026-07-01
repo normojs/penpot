@@ -1,6 +1,7 @@
 const DEFAULT_PRIORITIES = Object.freeze({
     "backend-rpc": 10,
     "backend-command": 10,
+    "renderer-service": 15,
     exporter: 20,
     "browser-url": 30,
     "local-fs": 40,
@@ -466,14 +467,15 @@ export const CommandDescriptors = Object.freeze({
     RENDER_THUMBNAIL: Object.freeze({
         id: "render.thumbnail",
         mcpToolName: "render.thumbnail",
+        cliCommand: "render thumbnail",
         title: "Render thumbnail",
         description:
-            "Planned thumbnail render command contract for dashboard file thumbnails and tagged frame thumbnails; no MCP, CLI, or exporter adapter is executable yet.",
+            "Planned thumbnail render command contract for dashboard file thumbnails and tagged frame thumbnails; CLI dry-run can print the renderer-service request shape, but no rendering runtime is executable yet.",
         inputSchema:
             "fileId, target=file|frame?, pageId?, objectId?/frameId?/shapeId?, tag=frame?, revn?, width/size=252?, cachePolicy=reuse|refresh?, format=png?, output?, adapter?",
-        adapters: Object.freeze([]),
+        adapters: Object.freeze(["renderer-service"]),
         responseShape:
-            "contract envelope with PNG thumbnail artifact metadata, cache key, backend thumbnail data/persist RPC boundaries, and renderer plan",
+            "dry-run/client plan with PNG thumbnail artifact metadata, cache key, backend thumbnail data/persist RPC boundaries, and renderer-service request shape; runtime execution unavailable until service implementation exists",
     }),
 });
 
@@ -781,6 +783,140 @@ export function createRenderThumbnailContract(options = EMPTY_OBJECT) {
             thumbnailPersistCommand: persistCommand,
             objectThumbnailIdFormat: "fileId/pageId/objectId/tag",
             frameTargetDataProviderPending: targetKind === RenderThumbnailTargets.FRAME,
+        },
+    };
+}
+
+export function createRenderThumbnailRendererServicePlan(options = EMPTY_OBJECT) {
+    const contract = createRenderThumbnailContract(options);
+    const endpoint = normalizeOptionalString(options.endpoint ?? options.rendererServiceUri ?? options.rendererUri);
+    const publicUri = normalizeOptionalString(options.publicUri) ?? "https://penpot.example.test";
+    const targetKind = contract.target.kind;
+    const frameTarget = targetKind === RenderThumbnailTargets.FRAME;
+    const objectKey =
+        frameTarget && contract.target.fileId && contract.target.pageId && contract.target.objectId
+            ? `${contract.target.fileId}/${contract.target.pageId}/${contract.target.objectId}/${contract.target.tag}`
+            : null;
+    const cacheProbe =
+        contract.cache.policy === RenderThumbnailCachePolicies.REUSE
+            ? frameTarget
+                ? "file-object-thumbnail-by-object-key"
+                : "file-thumbnail-by-file-id-and-revn"
+            : null;
+    const dataRequest = frameTarget
+        ? {
+              command: "get-file-frame-data-for-thumbnail",
+              status: "required-future-capability",
+              request: {
+                  "file-id": contract.target.fileId,
+                  "page-id": contract.target.pageId,
+                  "object-id": contract.target.objectId,
+              },
+          }
+        : {
+              command: contract.backendRpc.data.command,
+              request: contract.backendRpc.data.request,
+          };
+    const requiredCapabilities = [
+        "thumbnail-renderer-service-implementation",
+        contract.cache.policy === RenderThumbnailCachePolicies.REUSE
+            ? frameTarget
+                ? "tagged-frame-cache-probe"
+                : "file-thumbnail-cache-probe"
+            : null,
+        frameTarget ? "frame-source-data-provider" : null,
+        frameTarget ? "tagged-frame-resource-normalizer" : null,
+    ].filter(Boolean);
+
+    return {
+        command: CommandDescriptors.RENDER_THUMBNAIL.id,
+        status: "planned",
+        executable: false,
+        runtimeAvailable: false,
+        adapter: "renderer-service",
+        endpoint,
+        contract,
+        target: {
+            ...contract.target,
+            objectKey,
+        },
+        artifact: contract.artifact,
+        cache: {
+            ...contract.cache,
+            ...(cacheProbe ? { probe: cacheProbe } : {}),
+        },
+        service: {
+            operation: "thumbnail.render",
+            transport: "internal-http-or-worker-rpc",
+            adapter: "renderer-service",
+            endpoint,
+            localFileWrites: false,
+            resourceNormalization: {
+                mediaUriTemplate: "/assets/by-id/{mediaId}",
+                downloadUriResolver: "entry-adapter backendUri/publicUri + resourceUri",
+                exampleDownloadUri: `${publicUri.replace(/\/+$/, "")}/assets/by-id/{mediaId}`,
+            },
+        },
+        serviceRequest: {
+            command: CommandDescriptors.RENDER_THUMBNAIL.id,
+            operation: "thumbnail.render",
+            adapter: "renderer-service",
+            target: {
+                kind: targetKind,
+                fileId: contract.target.fileId,
+                pageId: contract.target.pageId,
+                objectId: contract.target.objectId,
+                tag: contract.target.tag,
+                objectKey,
+                revn: contract.target.revn,
+            },
+            artifact: {
+                format: contract.artifact.format,
+                mimeType: contract.artifact.mimeType,
+                width: contract.artifact.width,
+                height: contract.artifact.height,
+                extension: contract.artifact.extension,
+            },
+            cache: {
+                policy: contract.cache.policy,
+                scope: contract.cache.scope,
+                key: contract.cache.key,
+                ...(cacheProbe ? { probe: cacheProbe } : {}),
+            },
+            backendRpc: {
+                data: dataRequest,
+                persist:
+                    contract.cache.policy === RenderThumbnailCachePolicies.REFRESH
+                        ? contract.backendRpc.persist
+                        : null,
+                cacheMissPersist:
+                    contract.cache.policy === RenderThumbnailCachePolicies.REUSE
+                        ? contract.backendRpc.persist
+                        : null,
+            },
+            render: {
+                required:
+                    contract.cache.policy === RenderThumbnailCachePolicies.REFRESH
+                        ? true
+                        : "on-cache-miss",
+                runtime: contract.renderer.primary,
+                fallback: contract.renderer.fallback,
+            },
+        },
+        requires: contract.requires,
+        requiredCapabilities,
+        nextActions: [
+            "Use --dry-run or equivalent planning mode to inspect this renderer-service request without rendering.",
+            "Implement and configure the thumbnail renderer service before executing the plan.",
+            "Keep MCP resource returns metadata-only; only CLI --output may write downloaded PNG bytes after execution exists.",
+        ],
+        diagnostics: {
+            adapterBoundary: "renderer-service-dry-run",
+            descriptorAdapters: CommandDescriptors.RENDER_THUMBNAIL.adapters,
+            cliCommandRegistered: true,
+            mcpToolRegistered: false,
+            runtimeExecutionRegistered: false,
+            serviceOperation: "thumbnail.render",
         },
     };
 }

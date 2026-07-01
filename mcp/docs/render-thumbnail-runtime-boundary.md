@@ -13,9 +13,9 @@ The future executable owner should be a dedicated thumbnail renderer service,
 exposed later through a `renderer-service` style adapter after its API is
 defined and tested.
 
-Do not register MCP `render.thumbnail`, add a CLI `render thumbnail` command,
-or add a new command-runtime adapter in P25.6. The current shared descriptor
-must keep `adapters: []`.
+P25.6 did not register MCP `render.thumbnail`, add a CLI `render thumbnail`
+command, or add a new command-runtime adapter. P25.8 later adds only the CLI
+dry-run/client planning adapter; runtime execution remains blocked.
 
 ## Existing Surfaces
 
@@ -132,8 +132,10 @@ Before `render.thumbnail` becomes executable:
 `render-thumbnail-runtime-boundary-fixtures.json` is the canonical machine
 readable audit fixture for this decision.
 
-P25.7 adds `render-thumbnail-renderer-service-api.md` and
+P25.7 added `render-thumbnail-renderer-service-api.md` and
 `render-thumbnail-renderer-service-fixtures.json` as the service-facing API
-contract for future implementation. That API fixture still keeps
-`render.thumbnail` unregistered until a renderer service, file cache probe,
-tagged-frame source-data provider, and tagged-frame resource normalizer exist.
+contract for future implementation. P25.8 adds the CLI dry-run/client boundary:
+`penpot-cli render thumbnail --dry-run` can print the future request shape, but
+execution still returns `renderer_service_unavailable` until a renderer service,
+file cache probe, tagged-frame source-data provider, and tagged-frame resource
+normalizer exist.

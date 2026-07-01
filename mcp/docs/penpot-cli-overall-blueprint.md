@@ -242,6 +242,9 @@ Current state:
 - Done: `render.thumbnail` renderer-service API fixtures define future file
   refresh, file reuse, tagged frame refresh, auth forwarding, resource URI
   normalization, and MCP/CLI test expectations.
+- Done: `penpot-cli render thumbnail --dry-run` prints the future
+  renderer-service request shape while execution returns
+  `renderer_service_unavailable` until the renderer exists.
 - Done: focused command-runtime tests cover descriptor groups, lookup,
   adapter-selection priority/error cases, and token-safe envelopes.
 - Status: complete. Later command coverage gaps were tracked by the P15.1
@@ -590,8 +593,9 @@ P25.4 is complete:
    not exporter `export-shapes`.
 2. File thumbnail and tagged frame thumbnail targets have explicit cache keys,
    PNG artifact dimensions, renderer plan, and backend persist commands.
-3. The descriptor remains adapterless until a future runtime owns worker or
-   renderer-service execution.
+3. At P25.4 the descriptor remained adapterless until a future runtime owned
+   worker or renderer-service execution; P25.8 later adds only a planning
+   adapter.
 
 P25.5 is complete:
 
@@ -617,8 +621,17 @@ P25.7 is complete:
    documented and fixture-backed.
 2. Fixtures cover file refresh, file cache reuse, tagged frame refresh, missing
    frame target errors, caller auth forwarding, and resource URI normalization.
-3. `render.thumbnail` remains adapterless until a renderer-service
-   implementation and dry-run/client boundary exist.
+3. At the P25.7 boundary, `render.thumbnail` remained adapterless until a
+   renderer-service implementation and dry-run/client boundary existed.
+
+P25.8 is complete:
+
+1. `@penpot/command-runtime` exposes the renderer-service plan helper and marks
+   `render.thumbnail` with the `renderer-service` planning adapter.
+2. `penpot-cli render thumbnail --dry-run` prints the future service request
+   without contacting a renderer or backend service.
+3. Runtime execution remains blocked with `renderer_service_unavailable`; MCP
+   `render.thumbnail` is still unregistered.
 
 Keep manual configuration behavior stable while moving command metadata and
 envelopes; transport-specific formatting should stay at the MCP/CLI edges.

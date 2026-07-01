@@ -1,7 +1,7 @@
 # Render Thumbnail Contract
 
-Status: P25.4 descriptor-only contract; P25.6 runtime boundary audited and
-runtime registration still blocked.
+Status: P25.4 descriptor contract; P25.8 renderer-service dry-run/client
+boundary defined and runtime execution still blocked.
 
 This document defines the `render.thumbnail` contract before MCP or CLI
 execution is enabled. The contract follows Penpot's existing dashboard
@@ -112,11 +112,15 @@ Shared contract shape:
 
 - `@penpot/command-runtime` exposes `createRenderThumbnailContract` and fixture
   coverage for request, cache, renderer, and persist mapping.
-- The `render.thumbnail` descriptor keeps `adapters: []` and no CLI command.
+- The `render.thumbnail` descriptor exposes the planning adapter
+  `renderer-service` and CLI command `render thumbnail` for dry-run/client
+  inspection only.
 - MCP must not register `render.thumbnail` until a runtime owns the
   worker/rasterizer execution boundary and resource return shape.
-- CLI must not add `render thumbnail` until it can render the PNG bytes or
-  delegate to a stable renderer service.
+- CLI `render thumbnail --dry-run` may print the future renderer-service
+  request shape. CLI execution without `--dry-run` must keep returning
+  `renderer_service_unavailable` until it can render PNG bytes or delegate to a
+  stable renderer service.
 - Exporter service execution is out of scope for this command unless a later
   task explicitly maps thumbnail rendering to exporter-compatible semantics.
 - P25.6 selects a future dedicated thumbnail renderer service as the executable
@@ -131,8 +135,8 @@ See `render-thumbnail-runtime-boundary.md` and
 audit, resource-return rules, cache refresh behavior, auth expectations, and
 future test strategy.
 See `render-thumbnail-renderer-service-api.md` and
-`render-thumbnail-renderer-service-fixtures.json` for the P25.7 future
-renderer-service request/response API.
+`render-thumbnail-renderer-service-fixtures.json` for the P25.8 future
+renderer-service request/response API and CLI dry-run/client boundary.
 
 ## Fixtures
 

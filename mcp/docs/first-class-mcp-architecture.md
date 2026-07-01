@@ -2091,8 +2091,9 @@ P25.4 render.thumbnail contract result:
 - PNG artifact metadata is fixed at default width `252`, derived height `168`,
   and `3:2` aspect ratio unless a caller overrides width in a future runtime.
 - Cache policy is explicit: `reuse` or `refresh`.
-- The descriptor stays adapterless and unregistered until an MCP/CLI runtime
-  owns worker/rasterizer execution and resource return behavior.
+- At P25.4 the descriptor stayed adapterless and unregistered until an MCP/CLI
+  runtime owned worker/rasterizer execution and resource return behavior. P25.8
+  later adds only a planning adapter.
 
 P25.5 MCP export.file runtime result:
 
@@ -2116,10 +2117,10 @@ P25.6 render.thumbnail runtime boundary result:
   MCP/CLI execution and dashboard thumbnail cache semantics.
 - Backend thumbnail cache wrapping is insufficient alone because backend RPCs
   persist uploaded blobs but do not render PNG bytes.
-- `render.thumbnail` remains descriptor-only with `adapters: []`; registration
-  is blocked until renderer-service API fixtures define resource returns,
-  tagged-frame URI normalization, cache reuse/refresh, auth propagation, and
-  tests.
+- At P25.6 `render.thumbnail` remained descriptor-only with `adapters: []`;
+  registration was blocked until renderer-service API fixtures defined resource
+  returns, tagged-frame URI normalization, cache reuse/refresh, auth
+  propagation, and tests. P25.8 later adds only the CLI planning adapter.
 
 P25.7 render.thumbnail renderer-service API result:
 
@@ -2130,8 +2131,23 @@ P25.7 render.thumbnail renderer-service API result:
   cache reuse, tagged frame refresh, and missing frame target errors.
 - The API contract names auth forwarding, resource URI normalization,
   file-cache probing, tagged-frame source-data, and MCP/CLI test expectations.
-- Runtime registration remains blocked; the command descriptor still has
-  `adapters: []`.
+- Runtime registration remains blocked. P25.8 later adds the descriptor
+  planning adapter, but still no executable renderer.
+
+P25.8 render.thumbnail dry-run/client boundary result:
+
+- `@penpot/command-runtime` now exposes
+  `createRenderThumbnailRendererServicePlan` and advertises
+  `cliCommand: "render thumbnail"` with the `renderer-service` planning
+  adapter.
+- `penpot-cli render thumbnail --dry-run` prints the future
+  `thumbnail.render` service request for file and tagged frame targets without
+  contacting the network.
+- `penpot-cli render thumbnail` without `--dry-run` returns
+  `renderer_service_unavailable`, including required capabilities and the
+  planned service request.
+- MCP `render.thumbnail` remains unregistered and no PNG thumbnail runtime
+  execution exists yet.
 
 ### 8.5 Export and Render Tools
 
@@ -2151,9 +2167,9 @@ enables the CLI backend-rpc path for `penpot-cli export file`, P25.4 gives
 `render.thumbnail` a dashboard-thumbnail contract, and P25.5 registers MCP
 `export.file` for backend-rpc resource metadata returns. P25.6 selects a
 future dedicated thumbnail renderer service for `render.thumbnail`, and P25.7
-defines its service API fixtures. Runtime behavior remains unregistered until
-the renderer-service implementation, dry-run/client boundary, cache probe, and
-tagged-frame capabilities are implemented.
+defines its service API fixtures. P25.8 adds the CLI dry-run/client boundary.
+Runtime behavior remains unavailable until the renderer-service implementation,
+cache probe, and tagged-frame capabilities are implemented.
 
 ### 8.6 Advanced Tools
 

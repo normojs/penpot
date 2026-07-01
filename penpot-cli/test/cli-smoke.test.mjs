@@ -111,6 +111,7 @@ test("top-level help lists first-class MCP, shape, and export commands", async (
     assert.match(result.stdout, /penpot-cli export page/);
     assert.match(result.stdout, /penpot-cli export file/);
     assert.match(result.stdout, /penpot-cli render preview/);
+    assert.match(result.stdout, /penpot-cli render thumbnail/);
 });
 
 test("command runtime exposes low-risk command descriptors", () => {
@@ -165,9 +166,10 @@ test("command runtime exposes migrated shape and export descriptors", () => {
     assert.equal(CommandDescriptors.EXPORT_FILE.cliCommand, "export file");
     assert.deepEqual(CommandDescriptors.EXPORT_FILE.adapters, ["backend-rpc"]);
     assert.equal(CommandDescriptors.RENDER_THUMBNAIL.mcpToolName, "render.thumbnail");
-    assert.equal(CommandDescriptors.RENDER_THUMBNAIL.cliCommand, undefined);
-    assert.deepEqual(CommandDescriptors.RENDER_THUMBNAIL.adapters, []);
+    assert.equal(CommandDescriptors.RENDER_THUMBNAIL.cliCommand, "render thumbnail");
+    assert.deepEqual(CommandDescriptors.RENDER_THUMBNAIL.adapters, ["renderer-service"]);
     assert.match(CommandDescriptors.RENDER_THUMBNAIL.description, /dashboard file thumbnails/);
+    assert.match(CommandDescriptors.RENDER_THUMBNAIL.description, /dry-run/);
     assert.match(CommandDescriptors.RENDER_THUMBNAIL.inputSchema, /cachePolicy=reuse\|refresh/);
     assert.equal(getCommandDescriptor("shape create-frame").id, "shape.create_frame");
     assert.equal(getCommandDescriptor("shape create-image").id, "shape.create_image");
@@ -178,6 +180,7 @@ test("command runtime exposes migrated shape and export descriptors", () => {
     assert.equal(getCommandDescriptor("render.preview").title, "Render preview");
     assert.equal(getCommandDescriptor("render preview").cliCommand, "render preview");
     assert.equal(getCommandDescriptor("render.thumbnail").title, "Render thumbnail");
+    assert.equal(getCommandDescriptor("render thumbnail").id, "render.thumbnail");
 });
 
 test("command runtime exposes live-gap descriptor boundaries", () => {
@@ -2547,6 +2550,112 @@ test("render preview dry-run returns exporter adapter plan and artifact metadata
     assert.equal(body.data.request.cmd, "export-shapes");
     assert.equal(body.data.request.exports[0].type, "png");
     assert.equal(body.data.request.exports[0].scale, 1.5);
+});
+
+test("render thumbnail dry-run returns renderer-service request plan", async () => {
+    const originalFetch = globalThis.fetch;
+    globalThis.fetch = async () => {
+        throw new Error("render thumbnail dry-run should not call fetch");
+    };
+
+    try {
+        const result = await runCli(
+            [
+                "render",
+                "thumbnail",
+                "--file",
+                UUIDS.file,
+                "--target",
+                "frame",
+                "--page",
+                UUIDS.page,
+                "--object",
+                UUIDS.object,
+                "--tag",
+                "component",
+                "--width",
+                "300",
+                "--cache-policy",
+                "refresh",
+                "--renderer-service-uri",
+                "http://127.0.0.1:6070/thumbnail",
+                "--public-uri",
+                "https://penpot.example.test",
+                "--dry-run",
+                "--format",
+                "json",
+            ]
+        );
+        const body = parseJson(result.stdout);
+
+        assert.equal(result.exitCode, 0);
+        assert.equal(result.stderr, "");
+        assert.equal(body.status, "ok");
+        assert.equal(body.data.command, "render.thumbnail");
+        assert.equal(body.data.adapter, "renderer-service");
+        assert.equal(body.data.runtimeAvailable, false);
+        assert.equal(body.data.endpoint, "http://127.0.0.1:6070/thumbnail");
+        assert.equal(body.data.artifact.width, 300);
+        assert.equal(body.data.artifact.height, 200);
+        assert.equal(body.data.target.objectKey, `${UUIDS.file}/${UUIDS.page}/${UUIDS.object}/component`);
+        assert.equal(body.data.serviceRequest.operation, "thumbnail.render");
+        assert.equal(body.data.serviceRequest.backendRpc.data.command, "get-file-frame-data-for-thumbnail");
+        assert.equal(body.data.serviceRequest.backendRpc.persist.command, "create-file-object-thumbnail");
+        assert.equal(body.data.diagnostics.runtimeExecutionRegistered, false);
+    } finally {
+        globalThis.fetch = originalFetch;
+    }
+});
+
+test("render thumbnail execution reports renderer-service unavailable without calling fetch", async () => {
+    const originalFetch = globalThis.fetch;
+    globalThis.fetch = async () => {
+        throw new Error("render thumbnail unavailable should not call fetch");
+    };
+
+    try {
+        const result = await runCli([
+            "render",
+            "thumbnail",
+            "--file",
+            UUIDS.file,
+            "--format",
+            "json",
+        ]);
+        const body = parseJson(result.stdout);
+
+        assert.equal(result.exitCode, 2);
+        assert.equal(result.stderr, "");
+        assert.equal(body.status, "error");
+        assert.equal(body.error.code, "renderer_service_unavailable");
+        assert.equal(body.error.data.command, "render.thumbnail");
+        assert.equal(body.error.data.adapter, "renderer-service");
+        assert.equal(body.error.data.serviceRequest.operation, "thumbnail.render");
+    } finally {
+        globalThis.fetch = originalFetch;
+    }
+});
+
+test("render thumbnail rejects exporter adapter with structured error", async () => {
+    const result = await runCli([
+        "render",
+        "thumbnail",
+        "--file",
+        UUIDS.file,
+        "--adapter",
+        "exporter",
+        "--dry-run",
+        "--format",
+        "json",
+    ]);
+    const body = parseJson(result.stdout);
+
+    assert.equal(result.exitCode, 2);
+    assert.equal(result.stderr, "");
+    assert.equal(body.status, "error");
+    assert.equal(body.error.code, "adapter_not_available");
+    assert.equal(body.error.data.adapterSelection.command, "render.thumbnail");
+    assert.equal(body.error.data.adapterSelection.requested, "exporter");
 });
 
 test("render preview executes exporter request and writes output artifact", async () => {

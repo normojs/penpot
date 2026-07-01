@@ -15,6 +15,7 @@ import {
     createCommandResultEnvelope,
     createExportFileContract,
     createFileOpenHandoff,
+    createRenderThumbnailRendererServicePlan,
     createWorkspaceUrl as createCommandWorkspaceUrl,
     getAdapterSelectionReason,
     selectCommandAdapter,
@@ -27,6 +28,7 @@ import type {
     CreateCommandRequestEnvelopeOptions,
     CreateCommandResultEnvelopeOptions,
     ExportFileContract,
+    RenderThumbnailRendererServicePlan,
     RequestedCommandAdapter,
 } from "@penpot/command-runtime";
 
@@ -39,6 +41,7 @@ const DEFAULT_LOCAL_MCP_WEBSOCKET_URI = "ws://localhost:4402";
 const DEFAULT_LOCAL_MCP_STATUS_URI = "http://localhost:4401/status";
 const DEFAULT_BACKEND_URI = "http://localhost:6060";
 const DEFAULT_EXPORTER_URI = "http://localhost:6061";
+const DEFAULT_RENDERER_SERVICE_URI = "http://localhost:6070/thumbnail";
 const DEFAULT_PLUGIN_PREVIEW_URI = "http://localhost:4400/manifest.json";
 
 const HELP_TEXT = `penpot-cli ${VERSION}
@@ -74,7 +77,8 @@ Usage:
   penpot-cli prototype duplicate-interaction --file <file-id> [--interaction-id <id>] [--source <shape-id> --index <n>] [--insertion-index <n>] [--format text|json]
   penpot-cli export page --file <file-id> --page <page-id> --object <object-id> [--adapter auto|exporter] [--output <path>] [--dry-run] [--format text|json]
   penpot-cli export file --file <file-id> [--library-mode all|merge|detach] [--adapter auto|backend-rpc] [--output <path>] [--dry-run] [--format text|json]
-  penpot-cli render preview --file <file-id> --page <page-id> --object <object-id> [--adapter auto|exporter] [--output <path>] [--dry-run] [--format text|json]`;
+  penpot-cli render preview --file <file-id> --page <page-id> --object <object-id> [--adapter auto|exporter] [--output <path>] [--dry-run] [--format text|json]
+  penpot-cli render thumbnail --file <file-id> [--target file|frame] [--page <page-id>] [--object <object-id>] [--cache-policy reuse|refresh] [--width <px>] [--adapter auto|renderer-service] [--dry-run] [--format text|json]`;
 
 const MCP_HELP_TEXT = `penpot-cli mcp
 
@@ -202,14 +206,18 @@ const RENDER_HELP_TEXT = `penpot-cli render
 
 Usage:
   penpot-cli render preview --file <file-id> --page <page-id> --object <object-id> [--scale <n>] [--output <path>] [--exporter-uri <uri>] [--backend-uri <uri>] [--token <token>] [--adapter auto|exporter] [--dry-run] [--format text|json]
+  penpot-cli render thumbnail --file <file-id> [--target file|frame] [--page <page-id>] [--object <object-id>] [--tag <tag>] [--revn <n>] [--width <px>] [--cache-policy reuse|refresh] [--output <path>] [--renderer-service-uri <uri>] [--public-uri <uri>] [--adapter auto|renderer-service] [--dry-run] [--format text|json]
 
 Notes:
   Preview rendering uses the exporter adapter and always requests PNG output.
   It requires explicit file, page, and object ids because CLI commands cannot infer live selection state.
+  Thumbnail rendering is currently planning-only. Use --dry-run to inspect the future renderer-service request shape; execution returns renderer_service_unavailable until the renderer service exists.
 
 Environment:
   PENPOT_EXPORTER_URI      Exporter HTTP URI, default http://localhost:6061
+  PENPOT_RENDERER_SERVICE_URI  Future thumbnail renderer-service URI, default http://localhost:6070/thumbnail
   PENPOT_BACKEND_URI       Backend RPC base URI used to resolve profile id
+  PENPOT_PUBLIC_URI        Public Penpot base URI used for future thumbnail download URI derivation
   PENPOT_PROFILE_ID        Optional profile id for the direct exporter request
   PENPOT_CLI_TOKEN         Penpot auth-token/session token for exporter execution
   PENPOT_MCP_USER_TOKEN    Penpot MCP user token fallback for exporter execution
@@ -472,6 +480,12 @@ interface ExportFileResult {
     resource: Record<string, unknown>;
     downloadedResource?: DownloadedResourceMetadata;
 }
+
+type RenderThumbnailPlan = RenderThumbnailRendererServicePlan & {
+    adapterSelection: CommandAdapterSelection;
+    dryRun: boolean;
+    output: string | null;
+};
 
 type ShapeCreateKind = "frame" | "rect" | "text";
 type ShapeLayoutType = "none" | "flex" | "grid";
@@ -1024,6 +1038,14 @@ function getExporterUri(args: string[], env: NodeJS.ProcessEnv): string {
     return trimTrailingSlash(readOption(args, ["--exporter-uri"]) ?? env.PENPOT_EXPORTER_URI ?? DEFAULT_EXPORTER_URI);
 }
 
+function getRendererServiceUri(args: string[], env: NodeJS.ProcessEnv): string {
+    return trimTrailingSlash(
+        readOption(args, ["--renderer-service-uri", "--renderer-uri"]) ??
+            env.PENPOT_RENDERER_SERVICE_URI ??
+            DEFAULT_RENDERER_SERVICE_URI
+    );
+}
+
 function readRequestedAdapter(args: string[]): RequestedCommandAdapter | string {
     const adapter = readOption(args, ["--adapter"]);
     switch (adapter) {
@@ -1032,6 +1054,7 @@ function readRequestedAdapter(args: string[]): RequestedCommandAdapter | string 
         case "auto":
         case "backend-rpc":
         case "backend-command":
+        case "renderer-service":
         case "plugin-live":
         case "exporter":
         case "browser-url":
@@ -1085,6 +1108,28 @@ function selectCliExportFileAdapter(command: string, args: string[]): CommandAda
                 available: false,
                 priority: 20,
                 reason: "export.file uses backend export-binfile; exporter export-shapes is only for page/object rendering.",
+            },
+            {
+                kind: "plugin-live",
+                available: false,
+                priority: 50,
+                reason: getAdapterSelectionReason(AdapterSelectionReasonCodes.CLI_EXPORT_PLUGIN_LIVE_UNSUPPORTED),
+            },
+        ],
+    });
+}
+
+function selectCliRenderThumbnailAdapter(command: string, args: string[]): CommandAdapterSelection {
+    return selectCommandAdapter({
+        command,
+        requestedAdapter: readRequestedAdapter(args),
+        candidates: [
+            { kind: "renderer-service", available: true, priority: 15 },
+            {
+                kind: "exporter",
+                available: false,
+                priority: 20,
+                reason: "render.thumbnail uses dashboard thumbnail data/cache semantics, not exporter export-shapes.",
             },
             {
                 kind: "plugin-live",
@@ -1592,6 +1637,37 @@ function createRenderPreviewPlan(args: string[], env: NodeJS.ProcessEnv): Export
         allowExportFormat: false,
         outputMode: "exporter-preview-resource-upload",
     });
+}
+
+function createRenderThumbnailPlan(args: string[], env: NodeJS.ProcessEnv): RenderThumbnailPlan {
+    const adapterSelection = selectCliRenderThumbnailAdapter(CommandDescriptors.RENDER_THUMBNAIL.id, args);
+    const endpoint = getRendererServiceUri(args, env);
+    const publicUri =
+        readOption(args, ["--public-uri"]) ??
+        env.PENPOT_PUBLIC_URI ??
+        env.PENPOT_MCP_PUBLIC_URI ??
+        DEFAULT_PUBLIC_URI;
+    const plan = createRenderThumbnailRendererServicePlan({
+        fileId: readOption(args, ["--file", "--file-id"]) ?? null,
+        pageId: readOption(args, ["--page", "--page-id"]) ?? null,
+        objectId: readOption(args, ["--object", "--object-id", "--frame", "--frame-id", "--shape", "--shape-id"]) ?? null,
+        target: readOption(args, ["--target", "--type"]),
+        tag: readOption(args, ["--tag"]) ?? null,
+        revn: readOption(args, ["--revn", "--revision"]),
+        width: readOption(args, ["--width", "--size"]),
+        cachePolicy: readOption(args, ["--cache-policy", "--cache"]),
+        format: readOption(args, ["--export-format", "--format-thumbnail"]),
+        output: readOption(args, ["--output"]) ?? null,
+        endpoint,
+        publicUri,
+    });
+
+    return {
+        ...plan,
+        adapterSelection,
+        dryRun: hasFlag(args, "--dry-run"),
+        output: plan.artifact.output,
+    };
 }
 
 function readExportFileLibraryMode(args: string[]): ExportFileLibraryMode | undefined {
@@ -4284,6 +4360,45 @@ function writeExportFileResultText(io: CliIO, result: ExportFileResult): void {
     }
 }
 
+function writeRenderThumbnailPlanText(io: CliIO, plan: RenderThumbnailPlan): void {
+    writeLine(io.stdout, "Render thumbnail plan");
+    writeLine(io.stdout, `command: ${plan.command}`);
+    writeLine(io.stdout, `adapter: ${plan.adapter}`);
+    writeLine(io.stdout, `requestedAdapter: ${plan.adapterSelection.requested}`);
+    writeLine(io.stdout, `adapterSelection: ${plan.adapterSelection.status}`);
+    writeLine(io.stdout, `status: ${plan.status}`);
+    writeLine(io.stdout, `runtimeAvailable: ${String(plan.runtimeAvailable)}`);
+    writeLine(io.stdout, `rendererService: ${plan.service.operation} ${plan.endpoint ?? "<not configured>"}`);
+    writeLine(io.stdout, `fileId: ${plan.target.fileId ?? "<missing>"}`);
+    writeLine(io.stdout, `target: ${plan.target.kind}`);
+    writeLine(io.stdout, `pageId: ${plan.target.pageId ?? "<none>"}`);
+    writeLine(io.stdout, `objectId: ${plan.target.objectId ?? "<none>"}`);
+    writeLine(io.stdout, `objectKey: ${plan.target.objectKey ?? "<none>"}`);
+    writeLine(io.stdout, `mimeType: ${plan.artifact.mimeType}`);
+    writeLine(io.stdout, `width: ${plan.artifact.width}`);
+    writeLine(io.stdout, `height: ${plan.artifact.height}`);
+    writeLine(io.stdout, `cachePolicy: ${plan.cache.policy}`);
+    writeLine(io.stdout, `cacheScope: ${plan.cache.scope}`);
+    writeLine(io.stdout, `cacheKey: ${plan.cache.key ?? "<pending>"}`);
+    writeLine(io.stdout, `output: ${plan.output ?? "<resource metadata only>"}`);
+    if (plan.requires.length > 0) {
+        writeLine(io.stdout, "requires:");
+        for (const requirement of plan.requires) {
+            writeLine(io.stdout, `  ${requirement}`);
+        }
+    }
+    if (plan.requiredCapabilities.length > 0) {
+        writeLine(io.stdout, "requiredCapabilities:");
+        for (const capability of plan.requiredCapabilities) {
+            writeLine(io.stdout, `  ${capability}`);
+        }
+    }
+    writeLine(io.stdout, "nextActions:");
+    for (const action of plan.nextActions) {
+        writeLine(io.stdout, `  ${action}`);
+    }
+}
+
 function asRecord(value: unknown): Record<string, unknown> {
     return value !== null && typeof value === "object" && !Array.isArray(value) ? (value as Record<string, unknown>) : {};
 }
@@ -5997,6 +6112,25 @@ function exportFileContractErrorResponse(io: CliIO, format: Format, cause: unkno
     return 2;
 }
 
+function renderThumbnailContractErrorResponse(io: CliIO, format: Format, cause: unknown): number {
+    const message = cause instanceof Error ? cause.message : "Invalid render thumbnail options.";
+    writeError(
+        io,
+        format,
+        "render_thumbnail_contract_invalid",
+        message,
+        [
+            "Use --target file or --target frame.",
+            "Use --cache-policy reuse or refresh.",
+            "Use --width <integer> between 1 and 4096.",
+        ],
+        {
+            details: asRecord(cause),
+        }
+    );
+    return 2;
+}
+
 async function handleExportFile(args: string[], io: CliIO, env: NodeJS.ProcessEnv): Promise<number> {
     const format = parseFormat(args, io);
     if (!format) {
@@ -6089,6 +6223,70 @@ async function handleRenderPreview(args: string[], io: CliIO, env: NodeJS.Proces
     }
 }
 
+async function handleRenderThumbnail(args: string[], io: CliIO, env: NodeJS.ProcessEnv): Promise<number> {
+    const format = parseFormat(args, io);
+    if (!format) {
+        return 2;
+    }
+
+    let plan: RenderThumbnailPlan;
+    try {
+        plan = createRenderThumbnailPlan(args, env);
+    } catch (cause) {
+        return renderThumbnailContractErrorResponse(io, format, cause);
+    }
+
+    if (plan.requires.includes("fileId")) {
+        writeError(io, format, "file_id_required", "render thumbnail requires --file <file-id>.", [
+            "Open or list files first, then pass --file <file-id>.",
+        ]);
+        return 2;
+    }
+
+    if (plan.requires.includes("pageId")) {
+        writeError(io, format, "page_id_required", "render thumbnail --target frame requires --page <page-id>.", [
+            "Pass --page <page-id> together with --object <object-id> for tagged frame thumbnails.",
+        ]);
+        return 2;
+    }
+
+    if (plan.requires.includes("objectId")) {
+        writeError(io, format, "object_id_required", "render thumbnail --target frame requires --object <object-id>.", [
+            "Pass --object <object-id> together with --page <page-id> for tagged frame thumbnails.",
+        ]);
+        return 2;
+    }
+
+    if (plan.adapterSelection.status !== "selected" || plan.adapterSelection.selected !== "renderer-service") {
+        return adapterSelectionFailure(io, format, plan.adapterSelection);
+    }
+
+    if (plan.dryRun) {
+        writeOk(io, format, plan, () => writeRenderThumbnailPlanText(io, plan));
+        return 0;
+    }
+
+    writeError(
+        io,
+        format,
+        "renderer_service_unavailable",
+        "render thumbnail execution is not available until the thumbnail renderer service is implemented.",
+        [
+            "Re-run with --dry-run to inspect the renderer-service request without rendering.",
+            "Implement and configure the thumbnail renderer service before executing this command.",
+            "Keep using render preview or export page for existing exporter-backed object previews.",
+        ],
+        {
+            command: plan.command,
+            adapter: plan.adapter,
+            endpoint: plan.endpoint,
+            requiredCapabilities: plan.requiredCapabilities,
+            serviceRequest: plan.serviceRequest,
+        }
+    );
+    return 2;
+}
+
 async function handleExportCommand(args: string[], io: CliIO, env: NodeJS.ProcessEnv): Promise<number> {
     const [subcommand, ...rest] = args;
 
@@ -6120,6 +6318,8 @@ async function handleRenderCommand(args: string[], io: CliIO, env: NodeJS.Proces
     switch (subcommand) {
         case "preview":
             return await handleRenderPreview(rest, io, env);
+        case "thumbnail":
+            return await handleRenderThumbnail(rest, io, env);
         default:
             writeLine(io.stderr, `Unknown render command: ${subcommand}`);
             writeLine(io.stderr, 'Run "penpot-cli render --help" for usage.');

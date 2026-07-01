@@ -1,12 +1,13 @@
 {
-  "version": "P25.7",
+  "version": "P25.8",
   "command": "render.thumbnail",
-  "status": "renderer-service API fixtures; runtime registration blocked",
+  "status": "renderer-service API fixtures with CLI dry-run/client boundary; runtime execution blocked",
   "adapter": "renderer-service",
   "runtimeRegistration": {
     "mcpToolRegistered": false,
-    "cliCommandRegistered": false,
-    "commandDescriptorAdapters": []
+    "cliCommandRegistered": true,
+    "runtimeExecutionRegistered": false,
+    "commandDescriptorAdapters": ["renderer-service"]
   },
   "serviceApi": {
     "operation": "thumbnail.render",
@@ -286,18 +287,18 @@
   "futureMcpTests": [
     "returns resource metadata without MCP server file writes",
     "forwards caller auth and MCP audit context to renderer-service",
-    "rejects unsupported adapters while render.thumbnail descriptor is adapterless",
+    "rejects unsupported adapters while render.thumbnail runtime execution is unavailable",
     "reports structured errors for missing frame target and missing resourceUri"
   ],
   "futureCliTests": [
     "dry-run prints the renderer-service request without rendering",
-    "execution returns resource metadata",
+    "execution reports renderer_service_unavailable without contacting the network",
     "--output downloads the returned PNG resource",
     "missing token fails before contacting renderer-service"
   ],
   "nextTask": {
-    "id": "P25.8",
-    "title": "Add thumbnail renderer-service dry-run/client boundary",
-    "modules": ["command-runtime", "penpot-cli", "mcp/docs", "todo.md"]
+    "id": "P25.9",
+    "title": "Add MCP render.thumbnail dry-run tool boundary",
+    "modules": ["mcp", "command-runtime", "mcp/docs", "todo.md"]
   }
 }

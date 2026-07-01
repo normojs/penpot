@@ -18,6 +18,7 @@ import {
     createCommandResultEnvelope,
     createExportFileContract,
     createRenderThumbnailContract,
+    createRenderThumbnailRendererServicePlan,
     createFileOpenHandoff,
     createWorkspaceUrl,
     getAdapterSelectionReason,
@@ -191,12 +192,13 @@ test("shape/export descriptors document planned file and thumbnail boundaries", 
     assert.match(CommandDescriptors.EXPORT_FILE.inputSchema, /includeLibraries/);
     assert.match(CommandDescriptors.EXPORT_FILE.responseShape, /export-binfile/);
     assert.equal(CommandDescriptors.RENDER_THUMBNAIL.mcpToolName, "render.thumbnail");
-    assert.equal(CommandDescriptors.RENDER_THUMBNAIL.cliCommand, undefined);
-    assert.deepEqual(CommandDescriptors.RENDER_THUMBNAIL.adapters, []);
+    assert.equal(CommandDescriptors.RENDER_THUMBNAIL.cliCommand, "render thumbnail");
+    assert.deepEqual(CommandDescriptors.RENDER_THUMBNAIL.adapters, ["renderer-service"]);
     assert.match(CommandDescriptors.RENDER_THUMBNAIL.description, /dashboard file thumbnails/);
+    assert.match(CommandDescriptors.RENDER_THUMBNAIL.description, /dry-run/);
     assert.match(CommandDescriptors.RENDER_THUMBNAIL.description, /tagged frame thumbnails/);
     assert.match(CommandDescriptors.RENDER_THUMBNAIL.inputSchema, /cachePolicy=reuse\|refresh/);
-    assert.match(CommandDescriptors.RENDER_THUMBNAIL.responseShape, /backend thumbnail data\/persist RPC boundaries/);
+    assert.match(CommandDescriptors.RENDER_THUMBNAIL.responseShape, /renderer-service request shape/);
 });
 
 test("export.file contract maps CLI binary archive requests to backend RPC semantics", () => {
@@ -362,8 +364,9 @@ test("render.thumbnail runtime boundary keeps execution unregistered until rende
     assert.equal(boundary.executionBoundary.addAdapterNow, false);
     assert.equal(selected.id, "thumbnail-renderer-service");
     assert.equal(rejected.decision, "rejected");
-    assert.deepEqual(CommandDescriptors.RENDER_THUMBNAIL.adapters, boundary.runtimeRegistration.descriptorAdapters);
-    assert.equal(CommandDescriptors.RENDER_THUMBNAIL.cliCommand, undefined);
+    assert.deepEqual(boundary.runtimeRegistration.descriptorAdapters, []);
+    assert.deepEqual(CommandDescriptors.RENDER_THUMBNAIL.adapters, ["renderer-service"]);
+    assert.equal(CommandDescriptors.RENDER_THUMBNAIL.cliCommand, "render thumbnail");
     assert.equal(boundary.runtimeRegistration.mcpToolRegistered, false);
     assert.equal(boundary.runtimeRegistration.cliCommandRegistered, false);
 
@@ -394,9 +397,11 @@ test("render.thumbnail renderer-service API fixtures define future requests with
     assert.equal(fixtures.serviceApi.operation, "thumbnail.render");
     assert.equal(fixtures.serviceApi.localFileWrites, false);
     assert.equal(fixtures.serviceApi.requestAuth.mode, "caller-session");
-    assert.deepEqual(CommandDescriptors.RENDER_THUMBNAIL.adapters, fixtures.runtimeRegistration.commandDescriptorAdapters);
+    assert.deepEqual(fixtures.runtimeRegistration.commandDescriptorAdapters, ["renderer-service"]);
+    assert.deepEqual(CommandDescriptors.RENDER_THUMBNAIL.adapters, ["renderer-service"]);
     assert.equal(fixtures.runtimeRegistration.mcpToolRegistered, false);
-    assert.equal(fixtures.runtimeRegistration.cliCommandRegistered, false);
+    assert.equal(fixtures.runtimeRegistration.cliCommandRegistered, true);
+    assert.equal(fixtures.runtimeRegistration.runtimeExecutionRegistered, false);
     assert.ok(fixtures.registrationGates.allTargets.includes("thumbnail-renderer-service-implementation"));
     assert.ok(fixtures.registrationGates.frame.includes("frame-source-data-provider"));
     assert.ok(fixtures.registrationGates.frame.includes("tagged-frame-resource-normalizer"));
@@ -443,6 +448,44 @@ test("render.thumbnail renderer-service API fixtures define future requests with
             assert.equal(fixture.expectedError.dispatchServiceRequest, false);
         });
     }
+});
+
+test("render.thumbnail renderer-service plan exposes dry-run client request while runtime is unavailable", () => {
+    const plan = createRenderThumbnailRendererServicePlan({
+        fileId: "file-1",
+        pageId: "page-1",
+        objectId: "frame-1",
+        target: "frame",
+        tag: "component",
+        width: 300,
+        cachePolicy: "refresh",
+        endpoint: "http://127.0.0.1:6070/thumbnail",
+        publicUri: "https://penpot.example.test",
+    });
+
+    assert.equal(plan.command, "render.thumbnail");
+    assert.equal(plan.status, "planned");
+    assert.equal(plan.executable, false);
+    assert.equal(plan.runtimeAvailable, false);
+    assert.equal(plan.adapter, "renderer-service");
+    assert.equal(plan.endpoint, "http://127.0.0.1:6070/thumbnail");
+    assert.equal(plan.service.operation, "thumbnail.render");
+    assert.equal(plan.service.localFileWrites, false);
+    assert.equal(plan.service.resourceNormalization.exampleDownloadUri, "https://penpot.example.test/assets/by-id/{mediaId}");
+    assert.equal(plan.target.objectKey, "file-1/page-1/frame-1/component");
+    assert.equal(plan.artifact.width, 300);
+    assert.equal(plan.artifact.height, 200);
+    assert.equal(plan.cache.key, "file-1/page-1/frame-1/component");
+    assert.equal(plan.serviceRequest.backendRpc.data.command, "get-file-frame-data-for-thumbnail");
+    assert.equal(plan.serviceRequest.backendRpc.data.status, "required-future-capability");
+    assert.equal(plan.serviceRequest.backendRpc.persist.command, "create-file-object-thumbnail");
+    assert.equal(plan.serviceRequest.render.required, true);
+    assert.deepEqual(plan.requires, []);
+    assert.ok(plan.requiredCapabilities.includes("thumbnail-renderer-service-implementation"));
+    assert.ok(plan.requiredCapabilities.includes("frame-source-data-provider"));
+    assert.ok(plan.requiredCapabilities.includes("tagged-frame-resource-normalizer"));
+    assert.equal(plan.diagnostics.adapterBoundary, "renderer-service-dry-run");
+    assert.equal(plan.diagnostics.runtimeExecutionRegistered, false);
 });
 
 test("file open helpers produce stable workspace URLs and handoff actions", () => {

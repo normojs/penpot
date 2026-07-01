@@ -1,6 +1,7 @@
 export type CommandAdapterKind =
     | "backend-rpc"
     | "backend-command"
+    | "renderer-service"
     | "plugin-live"
     | "exporter"
     | "browser-url"
@@ -379,6 +380,103 @@ export interface RenderThumbnailContract {
     };
 }
 
+export interface CreateRenderThumbnailRendererServicePlanOptions extends CreateRenderThumbnailContractOptions {
+    endpoint?: string | null;
+    rendererServiceUri?: string | null;
+    rendererUri?: string | null;
+    publicUri?: string | null;
+}
+
+export interface RenderThumbnailRendererServicePlan {
+    command: "render.thumbnail";
+    status: "planned";
+    executable: false;
+    runtimeAvailable: false;
+    adapter: "renderer-service";
+    endpoint: string | null;
+    contract: RenderThumbnailContract;
+    target: RenderThumbnailContract["target"] & {
+        objectKey: string | null;
+    };
+    artifact: RenderThumbnailContract["artifact"];
+    cache: RenderThumbnailContract["cache"] & {
+        probe?: "file-thumbnail-by-file-id-and-revn" | "file-object-thumbnail-by-object-key";
+    };
+    service: {
+        operation: "thumbnail.render";
+        transport: "internal-http-or-worker-rpc";
+        adapter: "renderer-service";
+        endpoint: string | null;
+        localFileWrites: false;
+        resourceNormalization: {
+            mediaUriTemplate: "/assets/by-id/{mediaId}";
+            downloadUriResolver: string;
+            exampleDownloadUri: string;
+        };
+    };
+    serviceRequest: {
+        command: "render.thumbnail";
+        operation: "thumbnail.render";
+        adapter: "renderer-service";
+        target: {
+            kind: RenderThumbnailTarget;
+            fileId: string | null;
+            pageId: string | null;
+            objectId: string | null;
+            tag: string | null;
+            objectKey: string | null;
+            revn: number | null;
+        };
+        artifact: {
+            format: RenderThumbnailFormat;
+            mimeType: "image/png";
+            width: number;
+            height: number;
+            extension: ".png";
+        };
+        cache: {
+            policy: RenderThumbnailCachePolicy;
+            scope: "file-thumbnail" | "file-object-thumbnail";
+            key: string | null;
+            probe?: "file-thumbnail-by-file-id-and-revn" | "file-object-thumbnail-by-object-key";
+        };
+        backendRpc: {
+            data:
+                | {
+                      command: "get-file-data-for-thumbnail";
+                      request: RenderThumbnailContract["backendRpc"]["data"]["request"];
+                  }
+                | {
+                      command: "get-file-frame-data-for-thumbnail";
+                      status: "required-future-capability";
+                      request: {
+                          "file-id": string | null;
+                          "page-id": string | null;
+                          "object-id": string | null;
+                      };
+                  };
+            persist: RenderThumbnailContract["backendRpc"]["persist"] | null;
+            cacheMissPersist: RenderThumbnailContract["backendRpc"]["persist"] | null;
+        };
+        render: {
+            required: true | "on-cache-miss";
+            runtime: "render-wasm-worker";
+            fallback: "frontend-rasterizer";
+        };
+    };
+    requires: string[];
+    requiredCapabilities: string[];
+    nextActions: string[];
+    diagnostics: {
+        adapterBoundary: "renderer-service-dry-run";
+        descriptorAdapters: readonly string[];
+        cliCommandRegistered: true;
+        mcpToolRegistered: false;
+        runtimeExecutionRegistered: false;
+        serviceOperation: "thumbnail.render";
+    };
+}
+
 export interface LowRiskCommandDescriptorCatalog {
     MCP_STATUS: CommandDescriptor & { id: "mcp.status"; mcpToolName: "mcp.get_status"; cliCommand: "mcp status" };
     MCP_CONFIG: CommandDescriptor & { id: "mcp.config"; cliCommand: "mcp config" };
@@ -493,6 +591,7 @@ export interface CommandDescriptorCatalog extends LowRiskCommandDescriptorCatalo
     RENDER_THUMBNAIL: CommandDescriptor & {
         id: "render.thumbnail";
         mcpToolName: "render.thumbnail";
+        cliCommand: "render thumbnail";
     };
 }
 
@@ -524,6 +623,9 @@ export function createWorkspaceUrl(options: CreateWorkspaceUrlOptions): string;
 export function createFileOpenHandoff(options: CreateFileOpenHandoffOptions): FileOpenHandoff;
 export function createExportFileContract(options?: CreateExportFileContractOptions): ExportFileContract;
 export function createRenderThumbnailContract(options?: CreateRenderThumbnailContractOptions): RenderThumbnailContract;
+export function createRenderThumbnailRendererServicePlan(
+    options?: CreateRenderThumbnailRendererServicePlanOptions
+): RenderThumbnailRendererServicePlan;
 export function createCommandErrorPayload(
     code: CommandErrorCode | string,
     message: string,

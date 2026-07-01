@@ -92,8 +92,8 @@
     "Add CLI smoke tests only after the service exists, covering dry-run, resource metadata, --output download, and missing-token errors."
   ],
   "nextTask": {
-    "id": "P25.8",
-    "title": "Add thumbnail renderer-service dry-run/client boundary",
-    "modules": ["command-runtime", "penpot-cli", "mcp/docs", "todo.md"]
+    "id": "P25.9",
+    "title": "Add MCP render.thumbnail dry-run tool boundary",
+    "modules": ["mcp", "command-runtime", "mcp/docs", "todo.md"]
   }
 }

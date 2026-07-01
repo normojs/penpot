@@ -308,7 +308,7 @@ they already exist in MCP, CLI, or both.
 | `export.page` | file | MCP plugin task, CLI exporter execution | `exporter`, fallback `plugin-live` |
 | `export.file` | file | MCP and CLI backend `export-binfile` RPC/SSE execution | `backend-rpc`; MCP returns resource metadata, CLI can write the archive with `--output` |
 | `render.preview` | file | MCP plugin task, MCP/CLI exporter preview execution | `exporter`, fallback `plugin-live` |
-| `render.thumbnail` | file | Descriptor-only dashboard thumbnail data/render/cache contract plus future renderer-service API fixtures | adapterless until a renderer-service implementation, dry-run/client boundary, file cache probe, and tagged-frame source/resource capabilities exist |
+| `render.thumbnail` | file | Dashboard thumbnail data/render/cache contract plus renderer-service API fixtures and CLI dry-run/client boundary | `renderer-service` planning adapter only; runtime execution unavailable until a renderer-service implementation, file cache probe, and tagged-frame source/resource capabilities exist |
 
 ## Schema Strategy
 
@@ -752,8 +752,9 @@ P25.4 defines the descriptor-only `render.thumbnail` contract:
 - PNG artifact metadata is fixed in the shared contract: default width `252`,
   derived height `168`, and `3:2` aspect ratio.
 - Cache policy is explicit as `reuse` or `refresh`.
-- The descriptor keeps `adapters: []`; MCP and CLI execution need a later
-  worker/rasterizer or renderer-service boundary.
+- At P25.4 the descriptor kept `adapters: []`; MCP and CLI execution still
+  needed a later worker/rasterizer or renderer-service boundary. P25.8 later
+  adds only the renderer-service planning adapter.
 
 P25.5 registers MCP `export.file`:
 
@@ -785,6 +786,19 @@ P25.7 defines the future renderer-service API fixtures:
 - `render-thumbnail-renderer-service-fixtures.json` covers file refresh, file
   cache reuse, tagged frame refresh, missing frame target errors, auth
   forwarding, resource URI normalization, and future MCP/CLI test expectations.
-- The command descriptor still keeps `adapters: []`; these fixtures prepare the
-  future service and entry-adapter implementation rather than enabling
-  execution.
+- P25.7 did not enable execution; the fixtures prepared the future service and
+  entry-adapter implementation. P25.8 later adds only the planning adapter.
+
+P25.8 adds the renderer-service dry-run/client boundary:
+
+- `@penpot/command-runtime` exposes
+  `createRenderThumbnailRendererServicePlan`, which wraps the existing
+  thumbnail contract in a future `thumbnail.render` service request.
+- `penpot-cli render thumbnail --dry-run` prints that request shape without
+  contacting a renderer or backend service.
+- `penpot-cli render thumbnail` without `--dry-run` returns
+  `renderer_service_unavailable` with required capabilities and the planned
+  service request.
+- The descriptor now advertises `cliCommand: "render thumbnail"` and the
+  `renderer-service` planning adapter, but MCP remains unregistered and no PNG
+  rendering execution exists yet.
