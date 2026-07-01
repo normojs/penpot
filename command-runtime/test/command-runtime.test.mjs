@@ -18,6 +18,7 @@ import {
     createCommandResultEnvelope,
     createExportFileContract,
     createRenderThumbnailContract,
+    createRenderThumbnailRendererServiceClientRequest,
     createRenderThumbnailRendererServiceErrorPayload,
     createRenderThumbnailRendererServicePlan,
     createRenderThumbnailRendererServiceResult,
@@ -403,6 +404,11 @@ test("render.thumbnail renderer-service API fixtures define planning requests wi
     assert.equal(fixtures.serviceApi.responseNormalization.successStatus, "ok");
     assert.equal(fixtures.serviceApi.responseNormalization.localFileWrites, false);
     assert.equal(fixtures.serviceApi.errorShape.retryable, "derived-from-status");
+    assert.equal(fixtures.serviceApi.clientRequestScaffold.status, "scaffolded");
+    assert.equal(fixtures.serviceApi.clientRequestScaffold.dispatch, false);
+    assert.equal(fixtures.serviceApi.clientRequestScaffold.method, "POST");
+    assert.deepEqual(fixtures.serviceApi.clientRequestScaffold.authForwarding.headerNames, ["authorization", "cookie"]);
+    assert.equal(fixtures.serviceApi.clientRequestScaffold.authForwarding.tokenValuesIncluded, false);
     assert.deepEqual(fixtures.runtimeRegistration.commandDescriptorAdapters, ["renderer-service"]);
     assert.deepEqual(CommandDescriptors.RENDER_THUMBNAIL.adapters, ["renderer-service"]);
     assert.equal(fixtures.runtimeRegistration.mcpToolRegistered, true);
@@ -477,6 +483,10 @@ test("render.thumbnail renderer-service plan exposes dry-run client request whil
         endpoint: "http://127.0.0.1:6070/thumbnail",
         publicUri: "https://penpot.example.test",
         probeTimeoutMs: 3500,
+        clientRequest: {
+            entrypoint: "cli",
+            cliCommand: "render thumbnail",
+        },
     });
 
     assert.equal(plan.command, "render.thumbnail");
@@ -496,6 +506,16 @@ test("render.thumbnail renderer-service plan exposes dry-run client request whil
     assert.equal(plan.availability.checked, false);
     assert.deepEqual(plan.service.client, plan.client);
     assert.deepEqual(plan.service.availability, plan.availability);
+    assert.equal(plan.clientRequest.status, "scaffolded");
+    assert.equal(plan.clientRequest.dispatch, false);
+    assert.equal(plan.clientRequest.method, "POST");
+    assert.equal(plan.clientRequest.endpoint, "http://127.0.0.1:6070/thumbnail");
+    assert.equal(plan.clientRequest.timeoutMs, 3500);
+    assert.equal(plan.clientRequest.headers["x-penpot-entrypoint"], "cli");
+    assert.equal(plan.clientRequest.headers["x-penpot-cli-command"], "render thumbnail");
+    assert.equal(plan.clientRequest.authForwarding.tokenValuesIncluded, false);
+    assert.deepEqual(plan.clientRequest.body, plan.serviceRequest);
+    assert.deepEqual(plan.service.clientRequest, plan.clientRequest);
     assert.equal(plan.service.resourceNormalization.exampleDownloadUri, "https://penpot.example.test/assets/by-id/{mediaId}");
     assert.equal(plan.target.objectKey, "file-1/page-1/frame-1/component");
     assert.equal(plan.artifact.width, 300);
@@ -523,6 +543,29 @@ test("render.thumbnail renderer-service plan reports not-configured availability
     assert.equal(plan.client.probeTimeoutMs, 2500);
     assert.equal(plan.availability.status, "not-configured");
     assert.equal(plan.availability.networkProbe, false);
+});
+
+test("render.thumbnail renderer-service client request scaffold adds MCP audit headers without dispatch", () => {
+    const plan = createRenderThumbnailRendererServicePlan({
+        fileId: "file-1",
+        endpoint: "http://127.0.0.1:6070/thumbnail",
+    });
+    const request = createRenderThumbnailRendererServiceClientRequest(plan, {
+        entrypoint: "mcp",
+        mcpToolName: "render.thumbnail",
+        mcpSessionId: "session-1",
+    });
+
+    assert.equal(request.status, "scaffolded");
+    assert.equal(request.dispatch, false);
+    assert.equal(request.method, "POST");
+    assert.equal(request.headers["x-penpot-command"], "render.thumbnail");
+    assert.equal(request.headers["x-penpot-renderer-operation"], "thumbnail.render");
+    assert.equal(request.headers["x-penpot-entrypoint"], "mcp");
+    assert.equal(request.headers["x-penpot-mcp-tool"], "render.thumbnail");
+    assert.equal(request.headers["x-penpot-mcp-session"], "session-1");
+    assert.deepEqual(request.authForwarding.headerNames, ["authorization", "cookie"]);
+    assert.equal(request.authForwarding.tokenValuesIncluded, false);
 });
 
 test("render.thumbnail renderer-service result normalizes resource metadata", () => {

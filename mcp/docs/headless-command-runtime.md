@@ -833,3 +833,13 @@ P25.11 defines renderer-service response and error normalization:
 - Renderer-service errors normalize into shared error payloads with status,
   retryability, endpoint, and service data. No MCP/CLI network execution is
   enabled by this contract.
+
+P25.12 adds the disabled renderer-service client request scaffold:
+
+- Plans include a future POST request shape with JSON content headers,
+  `serviceRequest` body, timeout, MCP/CLI audit headers, and caller-session
+  auth forwarding header names.
+- `clientRequest.dispatch` is always `false`; the scaffold is visible in MCP
+  and CLI dry-run/unavailable responses but cannot send network traffic.
+- Runtime execution still requires an explicit gate, service implementation,
+  and integration tests.

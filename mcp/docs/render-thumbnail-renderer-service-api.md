@@ -1,8 +1,8 @@
 # Render Thumbnail Renderer Service API
 
-Status: P25.11 API fixtures, MCP/CLI dry-run/client boundaries, metadata-only
-availability probes, and response normalization contracts defined; executable
-runtime registration remains blocked.
+Status: P25.12 API fixtures, MCP/CLI dry-run/client boundaries, metadata-only
+availability probes, response normalization contracts, and disabled client
+request scaffold defined; executable runtime registration remains blocked.
 
 P25.6 selected a dedicated thumbnail renderer service as the future executable
 owner for `render.thumbnail`. This document defines the service-facing request
@@ -26,6 +26,11 @@ service response is normalized into cache metadata, resource/download URI,
 renderer metadata, and a `serviceResponse.localFileWrites: false` marker.
 Service errors normalize to a shared error payload with service status,
 retryability, endpoint, and service data.
+
+P25.12 defines the future execution client request scaffold. The scaffold
+contains POST metadata, JSON headers, MCP/CLI audit headers, caller-session auth
+forwarding header names, timeout, and the `serviceRequest` body. It always has
+`dispatch: false` until an explicit execution gate and integration tests exist.
 
 ## Service Boundary
 
@@ -69,6 +74,28 @@ If only `mediaId` is returned, callers derive `/assets/by-id/{mediaId}` and
 then resolve `downloadUri` from the entry adapter `publicUri` or backend URI.
 MCP never writes files; future CLI `--output` may download only after a
 successful normalized result exists.
+
+Future client request scaffold:
+
+```json
+{
+  "clientRequest": {
+    "status": "scaffolded",
+    "dispatch": false,
+    "method": "POST",
+    "headers": {
+      "x-penpot-command": "render.thumbnail",
+      "x-penpot-renderer-operation": "thumbnail.render",
+      "x-penpot-entrypoint": "mcp"
+    },
+    "authForwarding": {
+      "mode": "caller-session",
+      "headerNames": ["authorization", "cookie"],
+      "tokenValuesIncluded": false
+    }
+  }
+}
+```
 
 The renderer service owns:
 
@@ -216,6 +243,8 @@ Before `render.thumbnail` becomes executable:
 - normalize tagged frame media ids to resource URIs
 - keep response normalization covered by fixtures before any network client is
   enabled
+- keep `clientRequest.dispatch` false until an explicit execution gate and
+  integration tests exist
 - extend MCP tests from dry-run/unavailable planning into auth forwarding,
   resource metadata, and renderer-service error responses
 - add CLI smoke tests for dry-run, execution metadata, `--output`, and missing

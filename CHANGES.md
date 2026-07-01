@@ -122,6 +122,7 @@
 - Register MCP `render.thumbnail` as a planning-only dry-run tool that returns the same renderer-service request metadata while keeping runtime execution unavailable.
 - Add renderer-service client configuration and metadata-only availability probes to `render.thumbnail` planning responses.
 - Define renderer-service thumbnail response normalization and error payload contracts without enabling network execution.
+- Add a disabled renderer-service client request scaffold with MCP/CLI audit headers for future `render.thumbnail` execution.
 - Add rate limiting and concurrency safety for file snapshot operations [#9723](https://github.com/penpot/penpot/issues/9723) (PR: [#9722](https://github.com/penpot/penpot/pull/9722))
 - Prevent concurrent font uploads from causing excessive simultaneous requests [#9922](https://github.com/penpot/penpot/issues/9922) (PR: [#9921](https://github.com/penpot/penpot/pull/9921))
 

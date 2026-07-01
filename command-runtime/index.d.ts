@@ -388,6 +388,7 @@ export interface CreateRenderThumbnailRendererServicePlanOptions extends CreateR
     probeTimeoutMs?: number | string | null;
     timeoutMs?: number | string | null;
     rendererServiceTimeoutMs?: number | string | null;
+    clientRequest?: CreateRenderThumbnailRendererServiceClientRequestOptions | null;
 }
 
 export interface RenderThumbnailRendererServicePlan {
@@ -413,26 +414,28 @@ export interface RenderThumbnailRendererServicePlan {
         client: RenderThumbnailRendererServiceClientConfig;
         availability: RenderThumbnailRendererServiceAvailability;
         localFileWrites: false;
-            resourceNormalization: {
-                mediaUriTemplate: "/assets/by-id/{mediaId}";
-                downloadUriResolver: string;
-                exampleDownloadUri: string;
-            };
-            responseNormalization: {
-                successStatus: "ok";
-                resourceFields: string[];
-                downloadUriResolver: string;
-                localFileWrites: false;
-            };
-            errorShape: {
-                code: "renderer_service_error";
-                retryable: "derived-from-status";
-                includeServiceStatus: true;
-                includeServiceData: true;
-            };
+        resourceNormalization: {
+            mediaUriTemplate: "/assets/by-id/{mediaId}";
+            downloadUriResolver: string;
+            exampleDownloadUri: string;
         };
+        responseNormalization: {
+            successStatus: "ok";
+            resourceFields: string[];
+            downloadUriResolver: string;
+            localFileWrites: false;
+        };
+        errorShape: {
+            code: "renderer_service_error";
+            retryable: "derived-from-status";
+            includeServiceStatus: true;
+            includeServiceData: true;
+        };
+        clientRequest: RenderThumbnailRendererServiceClientRequest;
+    };
     client: RenderThumbnailRendererServiceClientConfig;
     availability: RenderThumbnailRendererServiceAvailability;
+    clientRequest: RenderThumbnailRendererServiceClientRequest;
     serviceRequest: {
         command: "render.thumbnail";
         operation: "thumbnail.render";
@@ -494,6 +497,7 @@ export interface RenderThumbnailRendererServicePlan {
         runtimeExecutionRegistered: false;
         serviceOperation: "thumbnail.render";
         availabilityProbe: "metadata-only";
+        clientRequestDispatch: false;
     };
 }
 
@@ -518,6 +522,36 @@ export interface RenderThumbnailRendererServiceAvailability {
     healthEndpoint: string | null;
     reason: string;
     nextActions: string[];
+}
+
+export interface CreateRenderThumbnailRendererServiceClientRequestOptions {
+    entrypoint?: "mcp" | "cli" | string | null;
+    mcpToolName?: string | null;
+    mcpSessionId?: string | null;
+    cliCommand?: string | null;
+}
+
+export interface RenderThumbnailRendererServiceClientRequest {
+    status: "scaffolded";
+    dispatch: false;
+    reason: string;
+    method: "POST";
+    endpoint: string | null;
+    timeoutMs: number;
+    headers: Record<string, string>;
+    body: RenderThumbnailRendererServicePlan["serviceRequest"] | null;
+    audit: {
+        entrypoint: string;
+        mcpToolName: string | null;
+        mcpSessionId: string | null;
+        cliCommand: string | null;
+        adapter: "renderer-service";
+    };
+    authForwarding: {
+        mode: "caller-session";
+        headerNames: ["authorization", "cookie"];
+        tokenValuesIncluded: false;
+    };
 }
 
 export interface CreateRenderThumbnailRendererServiceResultOptions {
@@ -715,6 +749,10 @@ export function createRenderThumbnailContract(options?: CreateRenderThumbnailCon
 export function createRenderThumbnailRendererServicePlan(
     options?: CreateRenderThumbnailRendererServicePlanOptions
 ): RenderThumbnailRendererServicePlan;
+export function createRenderThumbnailRendererServiceClientRequest(
+    plan: Partial<RenderThumbnailRendererServicePlan>,
+    options?: CreateRenderThumbnailRendererServiceClientRequestOptions
+): RenderThumbnailRendererServiceClientRequest;
 export function createRenderThumbnailRendererServiceResult(
     plan: RenderThumbnailRendererServicePlan,
     response?: unknown,

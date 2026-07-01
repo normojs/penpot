@@ -1,7 +1,7 @@
 {
-  "version": "P25.11",
+  "version": "P25.12",
   "command": "render.thumbnail",
-  "status": "renderer-service API fixtures with MCP/CLI dry-run/client boundaries, metadata-only availability probes, and response normalization contracts; runtime execution blocked",
+  "status": "renderer-service API fixtures with MCP/CLI dry-run/client boundaries, metadata-only availability probes, response normalization contracts, and disabled client request scaffold; runtime execution blocked",
   "adapter": "renderer-service",
   "runtimeRegistration": {
     "mcpToolRegistered": true,
@@ -40,6 +40,27 @@
       "retryable": "derived-from-status",
       "includeServiceStatus": true,
       "includeServiceData": true
+    },
+    "clientRequestScaffold": {
+      "status": "scaffolded",
+      "dispatch": false,
+      "method": "POST",
+      "headers": [
+        "accept",
+        "content-type",
+        "x-penpot-command",
+        "x-penpot-renderer-operation",
+        "x-penpot-renderer-adapter",
+        "x-penpot-entrypoint",
+        "x-penpot-mcp-tool",
+        "x-penpot-mcp-session",
+        "x-penpot-cli-command"
+      ],
+      "authForwarding": {
+        "mode": "caller-session",
+        "headerNames": ["authorization", "cookie"],
+        "tokenValuesIncluded": false
+      }
     },
     "clientConfiguration": {
       "endpointFields": ["endpoint", "rendererServiceUri", "rendererUri"],
@@ -329,6 +350,7 @@
     "dryRun false reports renderer_service_unavailable without contacting the network",
     "dry-run and unavailable execution include client configuration and metadata-only availability status",
     "dry-run exposes response normalization and error shape contracts",
+    "dry-run exposes disabled renderer-service client request scaffold with MCP audit headers",
     "rejects unsupported adapters while render.thumbnail runtime execution is unavailable",
     "reports structured errors for missing frame target before runtime dispatch"
   ],
@@ -342,12 +364,13 @@
     "execution reports renderer_service_unavailable without contacting the network",
     "client configuration and availability metadata survive text and JSON output",
     "response normalization metadata survives dry-run JSON output",
+    "disabled client request scaffold survives dry-run JSON output",
     "--output downloads the returned PNG resource",
     "missing token fails before contacting renderer-service"
   ],
   "nextTask": {
-    "id": "P25.12",
-    "title": "Add renderer-service execution client scaffold behind unavailable gate",
+    "id": "P25.13",
+    "title": "Add renderer-service execution gate configuration and integration-test plan",
     "modules": ["mcp", "penpot-cli", "command-runtime", "mcp/docs", "todo.md"]
   }
 }

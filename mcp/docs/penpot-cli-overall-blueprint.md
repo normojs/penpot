@@ -253,6 +253,8 @@ Current state:
   without probing the network.
 - Done: renderer-service response normalization and error payload contracts are
   defined without enabling network execution.
+- Done: disabled renderer-service client request scaffolding is defined with
+  audit headers and caller-session auth forwarding names.
 - Done: focused command-runtime tests cover descriptor groups, lookup,
   adapter-selection priority/error cases, and token-safe envelopes.
 - Status: complete. Later command coverage gaps were tracked by the P15.1
@@ -666,6 +668,13 @@ P25.11 is complete:
    retryability, and service data.
 3. MCP and CLI planning expose the response/error contracts while execution
    remains unavailable.
+
+P25.12 is complete:
+
+1. Shared plans include a disabled renderer-service `clientRequest` scaffold.
+2. MCP and CLI add audit headers for their entrypoints while keeping token
+   values out of the plan.
+3. `dispatch:false` remains part of dry-run and unavailable execution payloads.
 
 Keep manual configuration behavior stable while moving command metadata and
 envelopes; transport-specific formatting should stay at the MCP/CLI edges.

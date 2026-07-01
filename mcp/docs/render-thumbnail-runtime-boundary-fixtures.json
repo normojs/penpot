@@ -1,7 +1,7 @@
 {
-  "version": "P25.11",
+  "version": "P25.12",
   "command": "render.thumbnail",
-  "status": "runtime boundary audited; MCP/CLI planning, metadata-only availability probes, and response normalization contracts registered; runtime execution blocked",
+  "status": "runtime boundary audited; MCP/CLI planning, metadata-only availability probes, response normalization contracts, and disabled client request scaffold registered; runtime execution blocked",
   "selectedBoundary": "thumbnail-renderer-service",
   "runtimeRegistration": {
     "mcpToolRegistered": true,
@@ -92,11 +92,12 @@
     "MCP planning tests cover dry-run metadata, unavailable execution, adapter rejection, missing frame targets, and no runtime calls.",
     "Metadata-only availability tests cover endpoint configuration, health endpoint derivation, probe timeout, and unavailable diagnostics without network calls.",
     "Response normalization tests cover resource URI derivation, download URI resolution, renderer metadata, and retryable error payloads.",
+    "Disabled client request scaffold tests cover POST metadata, audit headers, auth-forwarding header names, request body mapping, and dispatch false.",
     "Add CLI smoke tests only after the service exists, covering dry-run, resource metadata, --output download, and missing-token errors."
   ],
   "nextTask": {
-    "id": "P25.12",
-    "title": "Add renderer-service execution client scaffold behind unavailable gate",
+    "id": "P25.13",
+    "title": "Add renderer-service execution gate configuration and integration-test plan",
     "modules": ["mcp", "penpot-cli", "command-runtime", "mcp/docs", "todo.md"]
   }
 }

@@ -1665,6 +1665,10 @@ function createRenderThumbnailPlan(args: string[], env: NodeJS.ProcessEnv): Rend
             readOption(args, ["--renderer-timeout-ms", "--renderer-service-timeout-ms", "--probe-timeout-ms"]) ??
             env.PENPOT_RENDERER_SERVICE_TIMEOUT_MS ??
             null,
+        clientRequest: {
+            entrypoint: "cli",
+            cliCommand: "render thumbnail",
+        },
     });
 
     return {
@@ -6291,6 +6295,7 @@ async function handleRenderThumbnail(args: string[], io: CliIO, env: NodeJS.Proc
             endpoint: plan.endpoint,
             client: plan.client,
             availability: plan.availability,
+            clientRequest: plan.clientRequest,
             requiredCapabilities: plan.requiredCapabilities,
             serviceRequest: plan.serviceRequest,
         }

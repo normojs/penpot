@@ -355,6 +355,11 @@ test("RenderThumbnailTool dry-run returns renderer-service request metadata with
         assert.equal(body.data.service.responseNormalization.successStatus, "ok");
         assert.equal(body.data.service.responseNormalization.localFileWrites, false);
         assert.equal(body.data.service.errorShape.code, "renderer_service_error");
+        assert.equal(body.data.clientRequest.dispatch, false);
+        assert.equal(body.data.clientRequest.headers["x-penpot-entrypoint"], "mcp");
+        assert.equal(body.data.clientRequest.headers["x-penpot-mcp-tool"], "render.thumbnail");
+        assert.equal(body.data.clientRequest.headers["x-penpot-mcp-session"], "session-1");
+        assert.equal(body.data.clientRequest.authForwarding.tokenValuesIncluded, false);
         assert.equal(body.data.serviceRequest.operation, "thumbnail.render");
         assert.equal(body.data.serviceRequest.target.objectKey, `${UUIDS.file}/${UUIDS.page}/${UUIDS.object}/cover`);
         assert.equal(body.data.serviceRequest.artifact.width, 320);
@@ -400,6 +405,7 @@ test("RenderThumbnailTool execution reports renderer service unavailable without
         assert.equal(body.error.data.client.configured, false);
         assert.equal(body.error.data.availability.status, "not-configured");
         assert.equal(body.error.data.availability.networkProbe, false);
+        assert.equal(body.error.data.clientRequest.dispatch, false);
         assert.equal(body.error.data.serviceRequest.operation, "thumbnail.render");
         assert.deepEqual(body.error.data.requiredCapabilities, ["thumbnail-renderer-service-implementation", "file-thumbnail-cache-probe"]);
     } finally {

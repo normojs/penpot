@@ -2606,6 +2606,10 @@ test("render thumbnail dry-run returns renderer-service request plan", async () 
         assert.equal(body.data.service.responseNormalization.successStatus, "ok");
         assert.equal(body.data.service.responseNormalization.localFileWrites, false);
         assert.equal(body.data.service.errorShape.code, "renderer_service_error");
+        assert.equal(body.data.clientRequest.dispatch, false);
+        assert.equal(body.data.clientRequest.headers["x-penpot-entrypoint"], "cli");
+        assert.equal(body.data.clientRequest.headers["x-penpot-cli-command"], "render thumbnail");
+        assert.equal(body.data.clientRequest.authForwarding.tokenValuesIncluded, false);
         assert.equal(body.data.artifact.width, 300);
         assert.equal(body.data.artifact.height, 200);
         assert.equal(body.data.target.objectKey, `${UUIDS.file}/${UUIDS.page}/${UUIDS.object}/component`);
@@ -2643,6 +2647,7 @@ test("render thumbnail execution reports renderer-service unavailable without ca
         assert.equal(body.error.data.adapter, "renderer-service");
         assert.equal(body.error.data.client.healthEndpoint, "http://localhost:6070/thumbnail/health");
         assert.equal(body.error.data.availability.status, "configured-unverified");
+        assert.equal(body.error.data.clientRequest.dispatch, false);
         assert.equal(body.error.data.serviceRequest.operation, "thumbnail.render");
     } finally {
         globalThis.fetch = originalFetch;

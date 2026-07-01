@@ -2179,6 +2179,16 @@ P25.11 render.thumbnail response normalization result:
 - MCP and CLI dry-run plans expose the response and error shape contract, but
   no renderer-service network execution is enabled.
 
+P25.12 render.thumbnail client scaffold result:
+
+- Shared plans include a disabled `clientRequest` with POST metadata, JSON
+  headers, MCP/CLI audit headers, caller-session auth forwarding names, timeout,
+  and the future `thumbnail.render` body.
+- `clientRequest.dispatch` remains `false` in MCP and CLI responses, including
+  unavailable execution errors.
+- This creates the future execution interface without making renderer-service
+  calls possible.
+
 ### 8.5 Export and Render Tools
 
 May start file-bound and later move to headless:
@@ -2200,8 +2210,9 @@ future dedicated thumbnail renderer service for `render.thumbnail`, and P25.7
 defines its service API fixtures. P25.8 adds the CLI dry-run/client boundary,
 P25.9 registers MCP `render.thumbnail` as planning-only, and P25.10 adds
 metadata-only renderer-service availability probes. P25.11 defines response
-normalization and error payloads. Runtime behavior remains unavailable until
-the renderer-service implementation, cache probe, execution client, and
+normalization and error payloads. P25.12 adds the disabled execution client
+request scaffold. Runtime behavior remains unavailable until an explicit gate,
+renderer-service implementation, cache probe, executable client, and
 tagged-frame capabilities are implemented.
 
 ### 8.6 Advanced Tools

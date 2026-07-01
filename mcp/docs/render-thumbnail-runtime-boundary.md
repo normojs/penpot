@@ -17,7 +17,8 @@ P25.6 did not register MCP `render.thumbnail`, add a CLI `render thumbnail`
 command, or add a new command-runtime adapter. P25.8 later adds the CLI
 dry-run/client planning adapter, P25.9 adds the MCP planning-only dry-run tool,
 P25.10 adds metadata-only availability probes, and P25.11 defines response and
-error normalization contracts; runtime execution remains blocked.
+error normalization contracts. P25.12 adds disabled client request scaffolding;
+runtime execution remains blocked.
 
 ## Existing Surfaces
 
@@ -139,9 +140,10 @@ P25.7 added `render-thumbnail-renderer-service-api.md` and
 contract for future implementation. P25.8 adds the CLI dry-run/client
 boundary, P25.9 adds the MCP planning-only dry-run boundary, P25.10 adds client
 configuration plus metadata-only availability status, and P25.11 defines
-response/error normalization. MCP `render.thumbnail` and `penpot-cli render
-thumbnail --dry-run` can print the future request shape, configured/not
-configured service metadata, and response/error contracts, but execution still
-returns `renderer_service_unavailable` until a renderer service, file cache
-probe, tagged-frame source-data provider, and tagged-frame resource normalizer
-exist.
+response/error normalization. P25.12 adds the disabled future client request
+scaffold. MCP `render.thumbnail` and `penpot-cli render thumbnail --dry-run`
+can print the future request shape, configured/not configured service metadata,
+response/error contracts, and `clientRequest.dispatch:false`, but execution
+still returns `renderer_service_unavailable` until a renderer service, file
+cache probe, tagged-frame source-data provider, and tagged-frame resource
+normalizer exist.

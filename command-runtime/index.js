@@ -863,6 +863,59 @@ export function createRenderThumbnailRendererServicePlan(options = EMPTY_OBJECT)
         frameTarget ? "frame-source-data-provider" : null,
         frameTarget ? "tagged-frame-resource-normalizer" : null,
     ].filter(Boolean);
+    const clientRequest = createRenderThumbnailRendererServiceClientRequest(
+        {
+            endpoint,
+            client,
+            serviceRequest: {
+                command: CommandDescriptors.RENDER_THUMBNAIL.id,
+                operation: "thumbnail.render",
+                adapter: "renderer-service",
+                target: {
+                    kind: targetKind,
+                    fileId: contract.target.fileId,
+                    pageId: contract.target.pageId,
+                    objectId: contract.target.objectId,
+                    tag: contract.target.tag,
+                    objectKey,
+                    revn: contract.target.revn,
+                },
+                artifact: {
+                    format: contract.artifact.format,
+                    mimeType: contract.artifact.mimeType,
+                    width: contract.artifact.width,
+                    height: contract.artifact.height,
+                    extension: contract.artifact.extension,
+                },
+                cache: {
+                    policy: contract.cache.policy,
+                    scope: contract.cache.scope,
+                    key: contract.cache.key,
+                    ...(cacheProbe ? { probe: cacheProbe } : {}),
+                },
+                backendRpc: {
+                    data: dataRequest,
+                    persist:
+                        contract.cache.policy === RenderThumbnailCachePolicies.REFRESH
+                            ? contract.backendRpc.persist
+                            : null,
+                    cacheMissPersist:
+                        contract.cache.policy === RenderThumbnailCachePolicies.REUSE
+                            ? contract.backendRpc.persist
+                            : null,
+                },
+                render: {
+                    required:
+                        contract.cache.policy === RenderThumbnailCachePolicies.REFRESH
+                            ? true
+                            : "on-cache-miss",
+                    runtime: contract.renderer.primary,
+                    fallback: contract.renderer.fallback,
+                },
+            },
+        },
+        options.clientRequest
+    );
 
     return {
         command: CommandDescriptors.RENDER_THUMBNAIL.id,
@@ -906,9 +959,11 @@ export function createRenderThumbnailRendererServicePlan(options = EMPTY_OBJECT)
                 includeServiceStatus: true,
                 includeServiceData: true,
             },
+            clientRequest,
         },
         client,
         availability,
+        clientRequest,
         serviceRequest: {
             command: CommandDescriptors.RENDER_THUMBNAIL.id,
             operation: "thumbnail.render",
@@ -970,6 +1025,47 @@ export function createRenderThumbnailRendererServicePlan(options = EMPTY_OBJECT)
             runtimeExecutionRegistered: false,
             serviceOperation: "thumbnail.render",
             availabilityProbe: "metadata-only",
+            clientRequestDispatch: false,
+        },
+    };
+}
+
+export function createRenderThumbnailRendererServiceClientRequest(plan, options = EMPTY_OBJECT) {
+    const endpoint = normalizeOptionalString(plan?.endpoint ?? plan?.client?.endpoint);
+    const serviceRequest = plan?.serviceRequest ?? null;
+    const entrypoint = normalizeOptionalString(options.entrypoint) ?? "unknown";
+    const headers = compactRecord({
+        accept: "application/json",
+        "content-type": "application/json",
+        "x-penpot-command": CommandDescriptors.RENDER_THUMBNAIL.id,
+        "x-penpot-renderer-operation": "thumbnail.render",
+        "x-penpot-renderer-adapter": "renderer-service",
+        "x-penpot-entrypoint": entrypoint,
+        "x-penpot-mcp-tool": normalizeOptionalString(options.mcpToolName),
+        "x-penpot-mcp-session": normalizeOptionalString(options.mcpSessionId),
+        "x-penpot-cli-command": normalizeOptionalString(options.cliCommand),
+    });
+
+    return {
+        status: "scaffolded",
+        dispatch: false,
+        reason: "renderer-service execution client is scaffolded but disabled until the runtime implementation and integration tests exist",
+        method: "POST",
+        endpoint,
+        timeoutMs: plan?.client?.probeTimeoutMs ?? 2500,
+        headers,
+        body: serviceRequest,
+        audit: {
+            entrypoint,
+            mcpToolName: normalizeOptionalString(options.mcpToolName),
+            mcpSessionId: normalizeOptionalString(options.mcpSessionId),
+            cliCommand: normalizeOptionalString(options.cliCommand),
+            adapter: "renderer-service",
+        },
+        authForwarding: {
+            mode: "caller-session",
+            headerNames: ["authorization", "cookie"],
+            tokenValuesIncluded: false,
         },
     };
 }
