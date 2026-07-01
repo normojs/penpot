@@ -12,10 +12,11 @@ import {
     createCommandRequestEnvelope,
     createCommandResultEnvelope,
     createExportFileContract,
+    createRenderThumbnailRendererServicePlan,
     getAdapterSelectionReason,
     selectCommandAdapter,
 } from "@penpot/command-runtime";
-import type { CommandAdapterSelection } from "@penpot/command-runtime";
+import type { CommandAdapterSelection, RenderThumbnailRendererServicePlan } from "@penpot/command-runtime";
 
 const uuidSchema = z.string().uuid();
 const formatSchema = z.enum(["png", "jpeg", "svg", "pdf"]);
@@ -31,6 +32,9 @@ type RenderPreviewAdapterArgs = {
     pageId?: string;
     objectId?: string;
     shapeId?: string;
+    adapter?: string;
+};
+type RenderThumbnailAdapterArgs = {
     adapter?: string;
 };
 
@@ -772,5 +776,187 @@ export class RenderPreviewTool extends ExportTool<RenderPreviewArgs> {
             },
             adapterSelection
         );
+    }
+}
+
+export class RenderThumbnailArgs {
+    static schema = {
+        fileId: uuidSchema.optional().describe("File id for dashboard file or tagged frame thumbnail planning."),
+        target: z.enum(["file", "frame"]).optional().describe("Thumbnail target. Defaults to file."),
+        pageId: uuidSchema.optional().describe("Page id for target: frame."),
+        objectId: uuidSchema.optional().describe("Frame/object id for target: frame."),
+        frameId: uuidSchema.optional().describe("Alias for objectId when target is frame."),
+        shapeId: uuidSchema.optional().describe("Alias for objectId when target is frame."),
+        tag: z.string().min(1).max(120).optional().describe("Tagged frame thumbnail tag. Defaults to frame."),
+        revn: z.number().int().nonnegative().optional().describe("Optional file revision for file thumbnail cache keys."),
+        width: z.number().int().positive().max(4096).optional().describe("Thumbnail width in pixels."),
+        size: z.number().int().positive().max(4096).optional().describe("Alias for width."),
+        cachePolicy: z.enum(["reuse", "refresh"]).optional().describe("Cache policy. Defaults to reuse."),
+        format: z.enum(["png"]).optional().describe("Thumbnail format. Only png is supported."),
+        endpoint: z.string().url().optional().describe("Future renderer-service endpoint for planning metadata."),
+        rendererServiceUri: z.string().url().optional().describe("Alias for endpoint."),
+        rendererUri: z.string().url().optional().describe("Alias for endpoint."),
+        publicUri: z.string().url().optional().describe("Public Penpot URI for future download URI examples."),
+        output: z
+            .string()
+            .min(1)
+            .optional()
+            .describe("CLI-only future output path metadata; MCP planning never writes local files."),
+        adapter: z.string().optional().describe("Optional adapter request: auto or renderer-service."),
+        dryRun: z.boolean().optional().describe("Planning mode. Defaults to true; false reports runtime unavailable."),
+    };
+
+    fileId?: string;
+    target?: "file" | "frame";
+    pageId?: string;
+    objectId?: string;
+    frameId?: string;
+    shapeId?: string;
+    tag?: string;
+    revn?: number;
+    width?: number;
+    size?: number;
+    cachePolicy?: "reuse" | "refresh";
+    format?: "png";
+    endpoint?: string;
+    rendererServiceUri?: string;
+    rendererUri?: string;
+    publicUri?: string;
+    output?: string;
+    adapter?: string;
+    dryRun?: boolean;
+}
+
+export class RenderThumbnailTool extends PenpotRpcTool<RenderThumbnailArgs> {
+    constructor(mcpServer: PenpotMcpServer) {
+        super(mcpServer, RenderThumbnailArgs.schema);
+    }
+
+    public getToolName(): string {
+        return CommandDescriptors.RENDER_THUMBNAIL.mcpToolName;
+    }
+
+    public getToolDescription(): string {
+        return CommandDescriptors.RENDER_THUMBNAIL.description;
+    }
+
+    protected async executeCore(args: RenderThumbnailArgs): Promise<ToolResponse> {
+        const adapterSelection = this.selectRenderThumbnailAdapter(args);
+        if (adapterSelection.status !== "selected" || adapterSelection.selected !== "renderer-service") {
+            return this.adapterSelectionFailure(adapterSelection);
+        }
+
+        let plan: RenderThumbnailRendererServicePlan;
+        try {
+            plan = this.createMcpRenderThumbnailPlan(args);
+        } catch (cause) {
+            return this.error(
+                "render_thumbnail_contract_invalid",
+                cause instanceof Error ? cause.message : "Invalid render.thumbnail request.",
+                [
+                    "Use target: 'file' or target: 'frame'.",
+                    "Use cachePolicy: 'reuse' or 'refresh'.",
+                    "Use width or size as a positive integer up to 4096.",
+                ],
+                { details: asRecord(cause) }
+            );
+        }
+
+        if (plan.requires.includes("fileId")) {
+            return this.error("file_id_required", "render.thumbnail requires fileId.", [
+                "Pass fileId for the Penpot file thumbnail source.",
+            ], {
+                requires: plan.requires,
+            });
+        }
+
+        if (plan.requires.includes("pageId")) {
+            return this.error("page_id_required", "render.thumbnail target frame requires pageId.", [
+                "Pass pageId together with objectId for tagged frame thumbnails.",
+            ], {
+                requires: plan.requires,
+            });
+        }
+
+        if (plan.requires.includes("objectId")) {
+            return this.error("object_id_required", "render.thumbnail target frame requires objectId.", [
+                "Pass objectId, frameId, or shapeId together with pageId for tagged frame thumbnails.",
+            ], {
+                requires: plan.requires,
+            });
+        }
+
+        if (args.dryRun === false) {
+            return this.error(
+                "renderer_service_unavailable",
+                "render.thumbnail execution is not available until the thumbnail renderer service is implemented.",
+                [
+                    "Call render.thumbnail with dryRun omitted or true to inspect the renderer-service request.",
+                    "Implement and configure the thumbnail renderer service before enabling execution.",
+                    "Keep MCP thumbnail returns metadata-only; do not write local files from the MCP server.",
+                ],
+                {
+                    command: plan.command,
+                    adapter: plan.adapter,
+                    endpoint: plan.endpoint,
+                    requiredCapabilities: plan.requiredCapabilities,
+                    serviceRequest: plan.serviceRequest,
+                }
+            );
+        }
+
+        return this.ok({
+            ...plan,
+            adapterSelection,
+        });
+    }
+
+    private selectRenderThumbnailAdapter(args: RenderThumbnailAdapterArgs): CommandAdapterSelection {
+        return selectCommandAdapter({
+            command: CommandDescriptors.RENDER_THUMBNAIL.id,
+            requestedAdapter: args.adapter ?? "auto",
+            candidates: [
+                { kind: "renderer-service", available: true, priority: 10 },
+                {
+                    kind: "exporter",
+                    available: false,
+                    priority: 20,
+                    reason: "render.thumbnail uses dashboard thumbnail data/cache semantics, not exporter export-shapes.",
+                },
+                {
+                    kind: "backend-rpc",
+                    available: false,
+                    priority: 30,
+                    reason: "Backend thumbnail RPCs authorize, load, and persist thumbnail data but do not render PNG bytes.",
+                },
+                {
+                    kind: "plugin-live",
+                    available: false,
+                    priority: 50,
+                    reason: "render.thumbnail is a global planning boundary and cannot depend on a live editor plugin session.",
+                },
+            ],
+        });
+    }
+
+    private createMcpRenderThumbnailPlan(args: RenderThumbnailArgs): RenderThumbnailRendererServicePlan {
+        const plan = createRenderThumbnailRendererServicePlan(args);
+        return {
+            ...plan,
+            diagnostics: {
+                ...plan.diagnostics,
+                mcpToolRegistered: true,
+            },
+        };
+    }
+
+    private adapterSelectionFailure(selection: CommandAdapterSelection): ToolResponse {
+        const error = createAdapterSelectionError(selection, {
+            actions: [
+                "Use adapter: 'auto' or 'renderer-service' to inspect the planning-only renderer-service request.",
+                "Use render.preview or export.page for existing exporter-backed preview/export flows.",
+            ],
+        });
+        return this.error(error.code, error.message, error.actions, error.data);
     }
 }

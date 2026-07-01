@@ -14,8 +14,9 @@ exposed later through a `renderer-service` style adapter after its API is
 defined and tested.
 
 P25.6 did not register MCP `render.thumbnail`, add a CLI `render thumbnail`
-command, or add a new command-runtime adapter. P25.8 later adds only the CLI
-dry-run/client planning adapter; runtime execution remains blocked.
+command, or add a new command-runtime adapter. P25.8 later adds the CLI
+dry-run/client planning adapter, and P25.9 adds the MCP planning-only dry-run
+tool; runtime execution remains blocked.
 
 ## Existing Surfaces
 
@@ -134,8 +135,9 @@ readable audit fixture for this decision.
 
 P25.7 added `render-thumbnail-renderer-service-api.md` and
 `render-thumbnail-renderer-service-fixtures.json` as the service-facing API
-contract for future implementation. P25.8 adds the CLI dry-run/client boundary:
-`penpot-cli render thumbnail --dry-run` can print the future request shape, but
-execution still returns `renderer_service_unavailable` until a renderer service,
-file cache probe, tagged-frame source-data provider, and tagged-frame resource
-normalizer exist.
+contract for future implementation. P25.8 adds the CLI dry-run/client
+boundary, and P25.9 adds the MCP planning-only dry-run boundary. MCP
+`render.thumbnail` and `penpot-cli render thumbnail --dry-run` can print the
+future request shape, but execution still returns
+`renderer_service_unavailable` until a renderer service, file cache probe,
+tagged-frame source-data provider, and tagged-frame resource normalizer exist.

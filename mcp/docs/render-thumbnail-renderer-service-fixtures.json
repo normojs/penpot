@@ -1,10 +1,10 @@
 {
-  "version": "P25.8",
+  "version": "P25.9",
   "command": "render.thumbnail",
-  "status": "renderer-service API fixtures with CLI dry-run/client boundary; runtime execution blocked",
+  "status": "renderer-service API fixtures with MCP/CLI dry-run/client boundaries; runtime execution blocked",
   "adapter": "renderer-service",
   "runtimeRegistration": {
-    "mcpToolRegistered": false,
+    "mcpToolRegistered": true,
     "cliCommandRegistered": true,
     "runtimeExecutionRegistered": false,
     "commandDescriptorAdapters": ["renderer-service"]
@@ -284,11 +284,16 @@
       }
     }
   ],
-  "futureMcpTests": [
-    "returns resource metadata without MCP server file writes",
-    "forwards caller auth and MCP audit context to renderer-service",
+  "mcpTests": [
+    "dry-run returns the renderer-service request without contacting renderer/backend/exporter/plugin runtimes",
+    "dryRun false reports renderer_service_unavailable without contacting the network",
     "rejects unsupported adapters while render.thumbnail runtime execution is unavailable",
-    "reports structured errors for missing frame target and missing resourceUri"
+    "reports structured errors for missing frame target before runtime dispatch"
+  ],
+  "futureMcpTests": [
+    "returns resource metadata without MCP server file writes after renderer-service execution exists",
+    "forwards caller auth and MCP audit context to renderer-service",
+    "reports structured errors for missing resourceUri"
   ],
   "futureCliTests": [
     "dry-run prints the renderer-service request without rendering",
@@ -297,8 +302,8 @@
     "missing token fails before contacting renderer-service"
   ],
   "nextTask": {
-    "id": "P25.9",
-    "title": "Add MCP render.thumbnail dry-run tool boundary",
-    "modules": ["mcp", "command-runtime", "mcp/docs", "todo.md"]
+    "id": "P25.10",
+    "title": "Add renderer-service availability and client configuration probes",
+    "modules": ["mcp", "penpot-cli", "command-runtime", "mcp/docs", "todo.md"]
   }
 }

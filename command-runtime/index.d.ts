@@ -471,7 +471,7 @@ export interface RenderThumbnailRendererServicePlan {
         adapterBoundary: "renderer-service-dry-run";
         descriptorAdapters: readonly string[];
         cliCommandRegistered: true;
-        mcpToolRegistered: false;
+        mcpToolRegistered: boolean;
         runtimeExecutionRegistered: false;
         serviceOperation: "thumbnail.render";
     };

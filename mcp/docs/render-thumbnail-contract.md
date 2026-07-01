@@ -1,10 +1,10 @@
 # Render Thumbnail Contract
 
-Status: P25.4 descriptor contract; P25.8 renderer-service dry-run/client
-boundary defined and runtime execution still blocked.
+Status: P25.4 descriptor contract; P25.9 MCP/CLI renderer-service dry-run
+boundaries defined and runtime execution still blocked.
 
-This document defines the `render.thumbnail` contract before MCP or CLI
-execution is enabled. The contract follows Penpot's existing dashboard
+This document defines the `render.thumbnail` contract before executable MCP or
+CLI rendering is enabled. The contract follows Penpot's existing dashboard
 thumbnail pipeline instead of the exporter `export-shapes` path.
 
 ## Existing Penpot Surface
@@ -113,10 +113,11 @@ Shared contract shape:
 - `@penpot/command-runtime` exposes `createRenderThumbnailContract` and fixture
   coverage for request, cache, renderer, and persist mapping.
 - The `render.thumbnail` descriptor exposes the planning adapter
-  `renderer-service` and CLI command `render thumbnail` for dry-run/client
-  inspection only.
-- MCP must not register `render.thumbnail` until a runtime owns the
-  worker/rasterizer execution boundary and resource return shape.
+  `renderer-service`, CLI command `render thumbnail`, and MCP
+  `render.thumbnail` dry-run tool for request inspection only.
+- MCP may return the renderer-service plan but must not execute
+  `render.thumbnail` until a runtime owns the worker/rasterizer execution
+  boundary and resource return shape.
 - CLI `render thumbnail --dry-run` may print the future renderer-service
   request shape. CLI execution without `--dry-run` must keep returning
   `renderer_service_unavailable` until it can render PNG bytes or delegate to a
@@ -135,8 +136,8 @@ See `render-thumbnail-runtime-boundary.md` and
 audit, resource-return rules, cache refresh behavior, auth expectations, and
 future test strategy.
 See `render-thumbnail-renderer-service-api.md` and
-`render-thumbnail-renderer-service-fixtures.json` for the P25.8 future
-renderer-service request/response API and CLI dry-run/client boundary.
+`render-thumbnail-renderer-service-fixtures.json` for the P25.9 future
+renderer-service request/response API and MCP/CLI dry-run/client boundary.
 
 ## Fixtures
 

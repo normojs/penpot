@@ -3,7 +3,13 @@ import { AsyncLocalStorage } from "async_hooks";
 import { SSEServerTransport } from "@modelcontextprotocol/sdk/server/sse.js";
 import { StreamableHTTPServerTransport } from "@modelcontextprotocol/sdk/server/streamableHttp.js";
 import { ExecuteCodeTool } from "./tools/ExecuteCodeTool";
-import { ExportFileTool, ExportPageTool, ExportShapeDataTool, RenderPreviewTool } from "./tools/ExportTools";
+import {
+    ExportFileTool,
+    ExportPageTool,
+    ExportShapeDataTool,
+    RenderPreviewTool,
+    RenderThumbnailTool,
+} from "./tools/ExportTools";
 import { PluginBridge } from "./PluginBridge";
 import { ConfigurationLoader } from "./ConfigurationLoader";
 import { createLogger, getLogStatus } from "./logger";
@@ -301,6 +307,7 @@ export class PenpotMcpServer {
             new ExportPageTool(this),
             new ExportFileTool(this),
             new RenderPreviewTool(this),
+            new RenderThumbnailTool(this),
             new ExecuteCodeTool(this),
             new HighLevelOverviewTool(this),
             new PenpotApiInfoTool(this, this.apiDocs),

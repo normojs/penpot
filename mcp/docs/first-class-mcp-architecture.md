@@ -2146,8 +2146,18 @@ P25.8 render.thumbnail dry-run/client boundary result:
 - `penpot-cli render thumbnail` without `--dry-run` returns
   `renderer_service_unavailable`, including required capabilities and the
   planned service request.
-- MCP `render.thumbnail` remains unregistered and no PNG thumbnail runtime
-  execution exists yet.
+- MCP `render.thumbnail` is registered as planning-only and no PNG thumbnail
+  runtime execution exists yet.
+
+P25.9 render.thumbnail MCP dry-run boundary result:
+
+- `RenderThumbnailTool` returns the shared renderer-service plan for file and
+  tagged frame targets without contacting renderer, backend, exporter, or
+  plugin runtimes.
+- `dryRun:false` reports `renderer_service_unavailable`, including required
+  capabilities and the future `thumbnail.render` service request.
+- Adapter rejection and missing frame-target validation happen before any
+  runtime dispatch.
 
 ### 8.5 Export and Render Tools
 
@@ -2167,9 +2177,10 @@ enables the CLI backend-rpc path for `penpot-cli export file`, P25.4 gives
 `render.thumbnail` a dashboard-thumbnail contract, and P25.5 registers MCP
 `export.file` for backend-rpc resource metadata returns. P25.6 selects a
 future dedicated thumbnail renderer service for `render.thumbnail`, and P25.7
-defines its service API fixtures. P25.8 adds the CLI dry-run/client boundary.
-Runtime behavior remains unavailable until the renderer-service implementation,
-cache probe, and tagged-frame capabilities are implemented.
+defines its service API fixtures. P25.8 adds the CLI dry-run/client boundary,
+and P25.9 registers MCP `render.thumbnail` as planning-only. Runtime behavior
+remains unavailable until the renderer-service implementation, cache probe, and
+tagged-frame capabilities are implemented.
 
 ### 8.6 Advanced Tools
 

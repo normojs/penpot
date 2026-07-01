@@ -4,7 +4,7 @@ import { CommandDescriptors, CommandErrorCodes } from "@penpot/command-runtime";
 import { FileContextRegistry } from "../src/FileContextRegistry.js";
 import type { PenpotRpcRequestContext, PenpotSseEvent } from "../src/PenpotRpcClient.js";
 import { PenpotMcpServer } from "../src/PenpotMcpServer.js";
-import { ExportFileTool, RenderPreviewTool } from "../src/tools/ExportTools.js";
+import { ExportFileTool, RenderPreviewTool, RenderThumbnailTool } from "../src/tools/ExportTools.js";
 
 const UUIDS = {
     file: "00000000-0000-0000-0000-000000000001",
@@ -301,4 +301,127 @@ test("RenderPreviewTool rejects partial explicit exporter targets", async () => 
     assert.equal(body.error.code, "adapter_not_available");
     assert.equal(body.error.data.adapterSelection.command, "render.preview");
     assert.equal(body.error.data.adapterSelection.selected, null);
+});
+
+test("RenderThumbnailTool dry-run returns renderer-service request metadata without network calls", async () => {
+    const originalFetch = globalThis.fetch;
+    let fetchCalled = false;
+    let sseCalled = false;
+    globalThis.fetch = async () => {
+        fetchCalled = true;
+        throw new Error("render.thumbnail dry-run must not call fetch");
+    };
+
+    try {
+        const tool = new RenderThumbnailTool(
+            mcpServerWithSse(async () => {
+                sseCalled = true;
+                throw new Error("render.thumbnail dry-run must not call backend SSE");
+            })
+        );
+
+        const response = await tool.execute({
+            fileId: UUIDS.file,
+            target: "frame",
+            pageId: UUIDS.page,
+            objectId: UUIDS.object,
+            tag: "cover",
+            width: 320,
+            cachePolicy: "refresh",
+            endpoint: "http://127.0.0.1:6070/thumbnail",
+        });
+        const body = parseJsonResponse(response);
+
+        assert.equal(fetchCalled, false);
+        assert.equal(sseCalled, false);
+        assert.equal(body.status, "ok");
+        assert.equal(body.data.command, CommandDescriptors.RENDER_THUMBNAIL.id);
+        assert.equal(body.data.status, "planned");
+        assert.equal(body.data.executable, false);
+        assert.equal(body.data.runtimeAvailable, false);
+        assert.equal(body.data.adapter, "renderer-service");
+        assert.equal(body.data.adapterSelection.selected, "renderer-service");
+        assert.equal(body.data.endpoint, "http://127.0.0.1:6070/thumbnail");
+        assert.equal(body.data.service.operation, "thumbnail.render");
+        assert.equal(body.data.service.localFileWrites, false);
+        assert.equal(body.data.serviceRequest.operation, "thumbnail.render");
+        assert.equal(body.data.serviceRequest.target.objectKey, `${UUIDS.file}/${UUIDS.page}/${UUIDS.object}/cover`);
+        assert.equal(body.data.serviceRequest.artifact.width, 320);
+        assert.equal(body.data.serviceRequest.backendRpc.data.command, "get-file-frame-data-for-thumbnail");
+        assert.equal(body.data.serviceRequest.backendRpc.persist.command, "create-file-object-thumbnail");
+        assert.deepEqual(body.data.requires, []);
+        assert.equal(body.data.diagnostics.mcpToolRegistered, true);
+        assert.equal(body.data.diagnostics.runtimeExecutionRegistered, false);
+    } finally {
+        globalThis.fetch = originalFetch;
+    }
+});
+
+test("RenderThumbnailTool execution reports renderer service unavailable without network calls", async () => {
+    const originalFetch = globalThis.fetch;
+    let fetchCalled = false;
+    let sseCalled = false;
+    globalThis.fetch = async () => {
+        fetchCalled = true;
+        throw new Error("render.thumbnail unavailable path must not call fetch");
+    };
+
+    try {
+        const tool = new RenderThumbnailTool(
+            mcpServerWithSse(async () => {
+                sseCalled = true;
+                throw new Error("render.thumbnail unavailable path must not call backend SSE");
+            })
+        );
+
+        const response = await tool.execute({
+            fileId: UUIDS.file,
+            dryRun: false,
+        });
+        const body = parseJsonResponse(response);
+
+        assert.equal(fetchCalled, false);
+        assert.equal(sseCalled, false);
+        assert.equal(body.status, "error");
+        assert.equal(body.error.code, "renderer_service_unavailable");
+        assert.equal(body.error.data.command, CommandDescriptors.RENDER_THUMBNAIL.id);
+        assert.equal(body.error.data.adapter, "renderer-service");
+        assert.equal(body.error.data.serviceRequest.operation, "thumbnail.render");
+        assert.deepEqual(body.error.data.requiredCapabilities, ["thumbnail-renderer-service-implementation", "file-thumbnail-cache-probe"]);
+    } finally {
+        globalThis.fetch = originalFetch;
+    }
+});
+
+test("RenderThumbnailTool rejects unavailable adapters and incomplete frame targets", async () => {
+    let sseCalled = false;
+    const tool = new RenderThumbnailTool(
+        mcpServerWithSse(async () => {
+            sseCalled = true;
+            return [];
+        })
+    );
+
+    const unsupportedAdapter = parseJsonResponse(
+        await tool.execute({
+            fileId: UUIDS.file,
+            adapter: "exporter",
+        })
+    );
+    const missingObject = parseJsonResponse(
+        await tool.execute({
+            fileId: UUIDS.file,
+            target: "frame",
+            pageId: UUIDS.page,
+        })
+    );
+
+    assert.equal(sseCalled, false);
+    assert.equal(unsupportedAdapter.status, "error");
+    assert.equal(unsupportedAdapter.error.code, "adapter_not_available");
+    assert.equal(unsupportedAdapter.error.data.adapterSelection.command, "render.thumbnail");
+    assert.equal(unsupportedAdapter.error.data.adapterSelection.requested, "exporter");
+    assert.equal(missingObject.status, "error");
+    assert.equal(missingObject.error.code, "object_id_required");
+    assert.deepEqual(missingObject.error.data.requires, ["objectId"]);
 });

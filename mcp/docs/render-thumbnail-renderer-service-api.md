@@ -1,18 +1,18 @@
 # Render Thumbnail Renderer Service API
 
-Status: P25.8 API fixtures and CLI dry-run/client boundary defined; executable
-runtime registration remains blocked.
+Status: P25.9 API fixtures and MCP/CLI dry-run/client boundaries defined;
+executable runtime registration remains blocked.
 
 P25.6 selected a dedicated thumbnail renderer service as the future executable
 owner for `render.thumbnail`. This document defines the service-facing request
 and response contract that MCP and `penpot-cli` should share once a renderer
 service exists.
 
-This is not a renderer implementation. MCP `render.thumbnail` is still
-unregistered. The CLI can print a `render thumbnail --dry-run` plan and returns
-`renderer_service_unavailable` for execution until the service exists. The
-shared command descriptor now advertises the planning adapter
-`renderer-service`, but runtime execution remains unavailable.
+This is not a renderer implementation. MCP `render.thumbnail` and CLI
+`render thumbnail --dry-run` can print the future renderer-service plan, and
+execution returns `renderer_service_unavailable` until the service exists. The
+shared command descriptor advertises the planning adapter `renderer-service`,
+but runtime execution remains unavailable.
 
 ## Service Boundary
 
@@ -157,13 +157,13 @@ server filesystem. CLI should return the same metadata, and a future
 Before `render.thumbnail` becomes executable:
 
 - implement the thumbnail renderer service
-- keep `penpot-cli render thumbnail --dry-run` as the request inspection path
-  until execution exists
+- keep MCP `render.thumbnail` dry-run and `penpot-cli render thumbnail
+  --dry-run` as request inspection paths until execution exists
 - add a file thumbnail cache probe for `reuse`
 - add or expose explicit frame source-data loading for tagged frame targets
 - normalize tagged frame media ids to resource URIs
-- add MCP tests for auth forwarding, adapter rejection, resource metadata, and
-  error responses
+- extend MCP tests from dry-run/unavailable planning into auth forwarding,
+  resource metadata, and renderer-service error responses
 - add CLI smoke tests for dry-run, execution metadata, `--output`, and missing
   token behavior
 

@@ -352,7 +352,7 @@ test("render.thumbnail contract validates target, format, cache, and dimensions"
     );
 });
 
-test("render.thumbnail runtime boundary keeps execution unregistered until renderer service exists", () => {
+test("render.thumbnail runtime boundary keeps execution unavailable until renderer service exists", () => {
     const boundary = renderThumbnailRuntimeBoundaryFixtures;
     const selected = boundary.decisionMatrix.find((option) => option.decision === "selected");
     const rejected = boundary.decisionMatrix.find((option) => option.id === "mcp-node-direct");
@@ -364,11 +364,12 @@ test("render.thumbnail runtime boundary keeps execution unregistered until rende
     assert.equal(boundary.executionBoundary.addAdapterNow, false);
     assert.equal(selected.id, "thumbnail-renderer-service");
     assert.equal(rejected.decision, "rejected");
-    assert.deepEqual(boundary.runtimeRegistration.descriptorAdapters, []);
+    assert.deepEqual(boundary.runtimeRegistration.descriptorAdapters, ["renderer-service"]);
     assert.deepEqual(CommandDescriptors.RENDER_THUMBNAIL.adapters, ["renderer-service"]);
     assert.equal(CommandDescriptors.RENDER_THUMBNAIL.cliCommand, "render thumbnail");
-    assert.equal(boundary.runtimeRegistration.mcpToolRegistered, false);
-    assert.equal(boundary.runtimeRegistration.cliCommandRegistered, false);
+    assert.equal(boundary.runtimeRegistration.mcpToolRegistered, true);
+    assert.equal(boundary.runtimeRegistration.cliCommandRegistered, true);
+    assert.equal(boundary.runtimeRegistration.runtimeExecutionRegistered, false);
 
     const contract = createRenderThumbnailContract({
         fileId: "file-1",
@@ -389,7 +390,7 @@ test("render.thumbnail runtime boundary keeps execution unregistered until rende
     assert.ok(boundary.testStrategy.some((item) => item.includes("descriptor tests")));
 });
 
-test("render.thumbnail renderer-service API fixtures define future requests without registering execution", async (t) => {
+test("render.thumbnail renderer-service API fixtures define planning requests without registering execution", async (t) => {
     const fixtures = renderThumbnailRendererServiceFixtures;
 
     assert.equal(fixtures.command, "render.thumbnail");
@@ -399,7 +400,7 @@ test("render.thumbnail renderer-service API fixtures define future requests with
     assert.equal(fixtures.serviceApi.requestAuth.mode, "caller-session");
     assert.deepEqual(fixtures.runtimeRegistration.commandDescriptorAdapters, ["renderer-service"]);
     assert.deepEqual(CommandDescriptors.RENDER_THUMBNAIL.adapters, ["renderer-service"]);
-    assert.equal(fixtures.runtimeRegistration.mcpToolRegistered, false);
+    assert.equal(fixtures.runtimeRegistration.mcpToolRegistered, true);
     assert.equal(fixtures.runtimeRegistration.cliCommandRegistered, true);
     assert.equal(fixtures.runtimeRegistration.runtimeExecutionRegistered, false);
     assert.ok(fixtures.registrationGates.allTargets.includes("thumbnail-renderer-service-implementation"));

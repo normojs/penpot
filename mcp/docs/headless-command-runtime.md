@@ -308,7 +308,7 @@ they already exist in MCP, CLI, or both.
 | `export.page` | file | MCP plugin task, CLI exporter execution | `exporter`, fallback `plugin-live` |
 | `export.file` | file | MCP and CLI backend `export-binfile` RPC/SSE execution | `backend-rpc`; MCP returns resource metadata, CLI can write the archive with `--output` |
 | `render.preview` | file | MCP plugin task, MCP/CLI exporter preview execution | `exporter`, fallback `plugin-live` |
-| `render.thumbnail` | file | Dashboard thumbnail data/render/cache contract plus renderer-service API fixtures and CLI dry-run/client boundary | `renderer-service` planning adapter only; runtime execution unavailable until a renderer-service implementation, file cache probe, and tagged-frame source/resource capabilities exist |
+| `render.thumbnail` | file | Dashboard thumbnail data/render/cache contract plus renderer-service API fixtures and MCP/CLI dry-run/client boundaries | `renderer-service` planning adapter only; runtime execution unavailable until a renderer-service implementation, file cache probe, and tagged-frame source/resource capabilities exist |
 
 ## Schema Strategy
 
@@ -800,5 +800,15 @@ P25.8 adds the renderer-service dry-run/client boundary:
   `renderer_service_unavailable` with required capabilities and the planned
   service request.
 - The descriptor now advertises `cliCommand: "render thumbnail"` and the
-  `renderer-service` planning adapter, but MCP remains unregistered and no PNG
-  rendering execution exists yet.
+  `renderer-service` planning adapter. MCP also registers `render.thumbnail`
+  as planning-only, but no PNG rendering execution exists yet.
+
+P25.9 adds the MCP planning-only dry-run boundary:
+
+- MCP `render.thumbnail` returns the same `thumbnail.render` renderer-service
+  request metadata as CLI dry-run without contacting renderer, backend,
+  exporter, or plugin runtimes.
+- `dryRun:false` reports `renderer_service_unavailable` with required
+  capabilities and the planned service request.
+- Unsupported adapters and incomplete frame targets fail before any runtime
+  dispatch.

@@ -245,6 +245,9 @@ Current state:
 - Done: `penpot-cli render thumbnail --dry-run` prints the future
   renderer-service request shape while execution returns
   `renderer_service_unavailable` until the renderer exists.
+- Done: MCP `render.thumbnail` is registered as a planning-only dry-run tool
+  that returns the shared renderer-service request metadata while execution
+  remains unavailable.
 - Done: focused command-runtime tests cover descriptor groups, lookup,
   adapter-selection priority/error cases, and token-safe envelopes.
 - Status: complete. Later command coverage gaps were tracked by the P15.1
@@ -630,8 +633,16 @@ P25.8 is complete:
    `render.thumbnail` with the `renderer-service` planning adapter.
 2. `penpot-cli render thumbnail --dry-run` prints the future service request
    without contacting a renderer or backend service.
-3. Runtime execution remains blocked with `renderer_service_unavailable`; MCP
-   `render.thumbnail` is still unregistered.
+3. Runtime execution remains blocked with `renderer_service_unavailable`.
+
+P25.9 is complete:
+
+1. MCP `render.thumbnail` is registered as a planning-only dry-run tool.
+2. It returns the shared renderer-service request metadata for file and tagged
+   frame targets without contacting renderer, backend, exporter, or plugin
+   runtimes.
+3. `dryRun:false`, unsupported adapters, and incomplete frame targets return
+   structured errors before runtime dispatch.
 
 Keep manual configuration behavior stable while moving command metadata and
 envelopes; transport-specific formatting should stay at the MCP/CLI edges.
