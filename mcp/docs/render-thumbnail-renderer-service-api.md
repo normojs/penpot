@@ -1,8 +1,9 @@
 # Render Thumbnail Renderer Service API
 
-Status: P25.12 API fixtures, MCP/CLI dry-run/client boundaries, metadata-only
-availability probes, response normalization contracts, and disabled client
-request scaffold defined; executable runtime registration remains blocked.
+Status: P25.13 API fixtures, MCP/CLI dry-run/client boundaries, metadata-only
+availability probes, response normalization contracts, disabled client request
+scaffold, and closed execution gate defined; executable runtime registration
+remains blocked.
 
 P25.6 selected a dedicated thumbnail renderer service as the future executable
 owner for `render.thumbnail`. This document defines the service-facing request
@@ -32,6 +33,12 @@ contains POST metadata, JSON headers, MCP/CLI audit headers, caller-session auth
 forwarding header names, timeout, and the `serviceRequest` body. It always has
 `dispatch: false` until an explicit execution gate and integration tests exist.
 
+P25.13 defines that explicit execution gate as planning data. The gate is
+closed by default, requires `PENPOT_RENDER_THUMBNAIL_EXECUTION=renderer-service`,
+records required renderer-service config, names failure modes, and embeds the
+integration-test plan that must pass before any future client can dispatch.
+P25.13 still does not contact the renderer service.
+
 ## Service Boundary
 
 The future service operation is `thumbnail.render` behind a
@@ -54,6 +61,31 @@ Planning responses include:
     "status": "configured-unverified",
     "probe": "metadata-only",
     "checked": false
+  }
+}
+```
+
+Execution gate scaffold:
+
+```json
+{
+  "executionGate": {
+    "status": "closed",
+    "dispatch": false,
+    "optIn": {
+      "env": "PENPOT_RENDER_THUMBNAIL_EXECUTION",
+      "expectedValue": "renderer-service"
+    },
+    "failureModes": [
+      { "code": "renderer_service_execution_disabled" },
+      { "code": "renderer_service_not_configured" },
+      { "code": "renderer_service_integration_tests_missing" },
+      { "code": "renderer_service_capability_missing" }
+    ],
+    "integrationTestPlan": {
+      "status": "required-before-dispatch",
+      "requiredBeforeDispatch": true
+    }
   }
 }
 ```
@@ -245,6 +277,9 @@ Before `render.thumbnail` becomes executable:
   enabled
 - keep `clientRequest.dispatch` false until an explicit execution gate and
   integration tests exist
+- keep `executionGate.dispatch` false until opt-in env, endpoint config,
+  service implementation, integration tests, target/cache capabilities, and
+  runtime registration all exist
 - extend MCP tests from dry-run/unavailable planning into auth forwarding,
   resource metadata, and renderer-service error responses
 - add CLI smoke tests for dry-run, execution metadata, `--output`, and missing

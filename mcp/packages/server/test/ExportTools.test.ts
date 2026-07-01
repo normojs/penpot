@@ -351,6 +351,11 @@ test("RenderThumbnailTool dry-run returns renderer-service request metadata with
         assert.equal(body.data.availability.status, "configured-unverified");
         assert.equal(body.data.availability.probe, "metadata-only");
         assert.equal(body.data.availability.checked, false);
+        assert.equal(body.data.executionGate.status, "closed");
+        assert.equal(body.data.executionGate.dispatch, false);
+        assert.equal(body.data.executionGate.optIn.env, "PENPOT_RENDER_THUMBNAIL_EXECUTION");
+        assert.ok(body.data.executionGate.blockers.includes("explicit-opt-in"));
+        assert.equal(body.data.executionGate.integrationTestPlan.requiredBeforeDispatch, true);
         assert.deepEqual(body.data.service.client, body.data.client);
         assert.equal(body.data.service.responseNormalization.successStatus, "ok");
         assert.equal(body.data.service.responseNormalization.localFileWrites, false);
@@ -405,6 +410,8 @@ test("RenderThumbnailTool execution reports renderer service unavailable without
         assert.equal(body.error.data.client.configured, false);
         assert.equal(body.error.data.availability.status, "not-configured");
         assert.equal(body.error.data.availability.networkProbe, false);
+        assert.equal(body.error.data.executionGate.status, "closed");
+        assert.ok(body.error.data.executionGate.blockers.includes("renderer-service-endpoint"));
         assert.equal(body.error.data.clientRequest.dispatch, false);
         assert.equal(body.error.data.serviceRequest.operation, "thumbnail.render");
         assert.deepEqual(body.error.data.requiredCapabilities, ["thumbnail-renderer-service-implementation", "file-thumbnail-cache-probe"]);

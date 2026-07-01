@@ -16,9 +16,10 @@ defined and tested.
 P25.6 did not register MCP `render.thumbnail`, add a CLI `render thumbnail`
 command, or add a new command-runtime adapter. P25.8 later adds the CLI
 dry-run/client planning adapter, P25.9 adds the MCP planning-only dry-run tool,
-P25.10 adds metadata-only availability probes, and P25.11 defines response and
-error normalization contracts. P25.12 adds disabled client request scaffolding;
-runtime execution remains blocked.
+P25.10 adds metadata-only availability probes, P25.11 defines response and
+error normalization contracts, P25.12 adds disabled client request scaffolding,
+and P25.13 adds the closed execution gate plus integration-test plan; runtime
+execution remains blocked.
 
 ## Existing Surfaces
 
@@ -139,11 +140,12 @@ P25.7 added `render-thumbnail-renderer-service-api.md` and
 `render-thumbnail-renderer-service-fixtures.json` as the service-facing API
 contract for future implementation. P25.8 adds the CLI dry-run/client
 boundary, P25.9 adds the MCP planning-only dry-run boundary, P25.10 adds client
-configuration plus metadata-only availability status, and P25.11 defines
-response/error normalization. P25.12 adds the disabled future client request
-scaffold. MCP `render.thumbnail` and `penpot-cli render thumbnail --dry-run`
-can print the future request shape, configured/not configured service metadata,
-response/error contracts, and `clientRequest.dispatch:false`, but execution
-still returns `renderer_service_unavailable` until a renderer service, file
-cache probe, tagged-frame source-data provider, and tagged-frame resource
-normalizer exist.
+configuration plus metadata-only availability status, P25.11 defines
+response/error normalization, P25.12 adds the disabled future client request
+scaffold, and P25.13 adds the closed execution gate. MCP `render.thumbnail` and
+`penpot-cli render thumbnail --dry-run` can print the future request shape,
+configured/not configured service metadata, response/error contracts,
+`clientRequest.dispatch:false`, and `executionGate.dispatch:false`, but
+execution still returns `renderer_service_unavailable` until explicit opt-in,
+renderer service, integration tests, file cache probe, tagged-frame source-data
+provider, and tagged-frame resource normalizer exist.

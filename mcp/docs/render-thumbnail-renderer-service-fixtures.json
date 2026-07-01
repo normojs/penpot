@@ -1,7 +1,7 @@
 {
-  "version": "P25.12",
+  "version": "P25.13",
   "command": "render.thumbnail",
-  "status": "renderer-service API fixtures with MCP/CLI dry-run/client boundaries, metadata-only availability probes, response normalization contracts, and disabled client request scaffold; runtime execution blocked",
+  "status": "renderer-service API fixtures with MCP/CLI dry-run/client boundaries, metadata-only availability probes, response normalization contracts, disabled client request scaffold, and explicit execution gate; runtime execution blocked",
   "adapter": "renderer-service",
   "runtimeRegistration": {
     "mcpToolRegistered": true,
@@ -62,6 +62,31 @@
         "tokenValuesIncluded": false
       }
     },
+    "executionGate": {
+      "status": "closed",
+      "dispatch": false,
+      "optIn": {
+        "env": "PENPOT_RENDER_THUMBNAIL_EXECUTION",
+        "expectedValue": "renderer-service"
+      },
+      "requiredConfig": [
+        "PENPOT_RENDERER_SERVICE_URI",
+        "PENPOT_RENDERER_SERVICE_TIMEOUT_MS"
+      ],
+      "blockers": [
+        "explicit-opt-in",
+        "renderer-service-endpoint",
+        "thumbnail-renderer-service-implementation",
+        "renderer-service-integration-tests",
+        "runtime-execution-registration"
+      ],
+      "failureModes": [
+        "renderer_service_execution_disabled",
+        "renderer_service_not_configured",
+        "renderer_service_integration_tests_missing",
+        "renderer_service_capability_missing"
+      ]
+    },
     "clientConfiguration": {
       "endpointFields": ["endpoint", "rendererServiceUri", "rendererUri"],
       "environment": ["PENPOT_RENDERER_SERVICE_URI", "PENPOT_RENDERER_SERVICE_TIMEOUT_MS"],
@@ -79,6 +104,13 @@
     ]
   },
   "registrationGates": {
+    "executionGate": [
+      "PENPOT_RENDER_THUMBNAIL_EXECUTION=renderer-service",
+      "renderer-service endpoint configured",
+      "renderer-service implementation exists",
+      "integration tests pass",
+      "runtime execution registration is explicitly enabled"
+    ],
     "allTargets": ["thumbnail-renderer-service-implementation"],
     "file": ["file-thumbnail-cache-probe"],
     "frame": [
@@ -351,6 +383,7 @@
     "dry-run and unavailable execution include client configuration and metadata-only availability status",
     "dry-run exposes response normalization and error shape contracts",
     "dry-run exposes disabled renderer-service client request scaffold with MCP audit headers",
+    "dry-run and unavailable execution expose closed execution gate configuration and integration-test plan",
     "rejects unsupported adapters while render.thumbnail runtime execution is unavailable",
     "reports structured errors for missing frame target before runtime dispatch"
   ],
@@ -365,12 +398,13 @@
     "client configuration and availability metadata survive text and JSON output",
     "response normalization metadata survives dry-run JSON output",
     "disabled client request scaffold survives dry-run JSON output",
+    "closed execution gate metadata survives dry-run and unavailable execution JSON output",
     "--output downloads the returned PNG resource",
     "missing token fails before contacting renderer-service"
   ],
   "nextTask": {
-    "id": "P25.13",
-    "title": "Add renderer-service execution gate configuration and integration-test plan",
+    "id": "P25.14",
+    "title": "Plan renderer-service health preflight and executable client harness",
     "modules": ["mcp", "penpot-cli", "command-runtime", "mcp/docs", "todo.md"]
   }
 }

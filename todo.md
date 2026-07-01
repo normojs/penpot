@@ -201,8 +201,11 @@ resource/download URI, renderer metadata, retryability, and service data
 without enabling network execution. P25.12 is complete: renderer-service
 client request scaffold now defines future POST dispatch metadata, audit
 headers, caller-session auth forwarding names, timeout, and request body while
-keeping `dispatch:false`. P25.13 is the next task: add renderer-service
-execution gate configuration and integration-test plan.
+keeping `dispatch:false`. P25.13 is complete: renderer-service execution now
+has a closed explicit opt-in gate, required env/config metadata, failure modes,
+and integration-test plan while still keeping dispatch disabled. P25.14 is the
+next task: plan the renderer-service health preflight and executable client
+harness.
 
 ## Feature Roadmap
 
@@ -245,7 +248,7 @@ remain the execution plan.
 | F32 | done | Export/render descriptor boundary planning | Phase 25 | Agents can discover planned file-export and thumbnail-render command names without mistaking them for executable tools | Completed 2026-06-29; P25.1 added descriptor-only `export.file` and `render.thumbnail` command-runtime entries with no adapters, and P25.2 defined the fixture-backed `export.file` backend binary archive contract |
 | F33 | done | Thumbnail render contract | Phase 25 | Agents can request thumbnail rendering only after target/cache/artifact semantics are explicit | Completed 2026-06-29; P25.4 defines descriptor-only `render.thumbnail` target, cache, artifact, renderer, and backend persistence contracts |
 | F34 | done | MCP file export resource return | Phase 25 | Agents can export a `.penpot` archive through MCP once backend-rpc resource handling is explicit | Completed 2026-06-29; P25.5 registers MCP `export.file` around the existing backend `export-binfile` SSE/resource contract and returns resource metadata plus `downloadUri` |
-| F35 | done | Thumbnail runtime execution boundary | Phase 25 | Agents can render thumbnails only after the renderer owner and resource return semantics are explicit | Completed 2026-07-02; P25.6 selects a future dedicated thumbnail renderer service, P25.7 defines service API fixtures, P25.8 adds the CLI dry-run/client boundary, P25.9 registers MCP planning-only dry-run, P25.10 adds metadata-only availability probes, P25.11 defines response/error normalization, and P25.12 adds disabled client request scaffolding while runtime execution remains blocked |
+| F35 | done | Thumbnail runtime execution boundary | Phase 25 | Agents can render thumbnails only after the renderer owner and resource return semantics are explicit | Completed 2026-07-02; P25.6 selects a future dedicated thumbnail renderer service, P25.7 defines service API fixtures, P25.8 adds the CLI dry-run/client boundary, P25.9 registers MCP planning-only dry-run, P25.10 adds metadata-only availability probes, P25.11 defines response/error normalization, P25.12 adds disabled client request scaffolding, and P25.13 adds a closed execution gate plus integration-test plan while runtime execution remains blocked |
 
 ## Detailed Upcoming Task Queue
 
@@ -786,9 +789,11 @@ continue within Phase 25:
    configuration and metadata-only availability probes while keeping execution
    unavailable. P25.11 defines renderer-service response/resource metadata and
    error normalization. P25.12 adds a disabled renderer-service client request
-   scaffold with audit headers and caller-session auth forwarding names.
-   Remaining work: add execution gate configuration and integration-test plan
-   before implementing executable `render.thumbnail`.
+   scaffold with audit headers and caller-session auth forwarding names. P25.13
+   adds a closed execution gate with explicit opt-in, required config,
+   integration-test plan, and failure modes. Remaining work: plan the
+   renderer-service health preflight and executable client harness before
+   implementing executable `render.thumbnail`.
 
 ## Phase 21: Design Editing Alias Contracts
 
@@ -855,4 +860,5 @@ catalog before adding executable MCP, CLI, or exporter behavior.
 | P25.10 | done | Add renderer-service availability and client configuration probes | `mcp`, `penpot-cli`, `command-runtime`, `mcp/docs`, `todo.md` | Completed 2026-07-02; command-runtime, MCP, and CLI tests cover endpoint, health endpoint, timeout, metadata-only probe status, unavailable execution payloads, and no runtime calls | `render.thumbnail` planning now reports renderer-service client configuration and availability as `configured-unverified` or `not-configured` without contacting the service or rendering PNG bytes |
 | P25.11 | done | Define renderer-service execution response and resource metadata handling | `command-runtime`, `mcp`, `penpot-cli`, `mcp/docs`, `todo.md` | Completed 2026-07-02; command-runtime tests cover successful response normalization, media/resource/download URI derivation, local-file-write exclusion, and retryable service error payloads; MCP/CLI dry-run tests assert the response/error contracts are exposed | `thumbnail.render` response contracts are now defined, but MCP/CLI still do not contact renderer-service or enable PNG rendering |
 | P25.12 | done | Add renderer-service execution client scaffold behind unavailable gate | `mcp`, `penpot-cli`, `command-runtime`, `mcp/docs`, `todo.md` | Completed 2026-07-02; command-runtime tests cover disabled client request scaffolding, POST metadata, MCP/CLI audit headers, caller-session auth forwarding names, body mapping to `serviceRequest`, and `dispatch:false`; MCP/CLI tests assert the scaffold is visible without network calls | Future renderer-service calls now have a shared request scaffold, but runtime execution remains unavailable and no HTTP dispatch occurs |
-| P25.13 | pending | Add renderer-service execution gate configuration and integration-test plan | `mcp`, `penpot-cli`, `command-runtime`, `mcp/docs`, `todo.md` | Pending | Define the explicit opt-in gate, required env/config flags, integration-test fixture strategy, and failure modes needed before any renderer-service client can dispatch |
+| P25.13 | done | Add renderer-service execution gate configuration and integration-test plan | `mcp`, `penpot-cli`, `command-runtime`, `mcp/docs`, `todo.md` | Completed 2026-07-02; command-runtime tests cover the closed execution gate, explicit opt-in env, endpoint/config readiness, integration-test blocker, failure modes, and `dispatch:false`; MCP/CLI tests assert dry-run and unavailable execution expose the gate without network calls | Future renderer-service dispatch now has an explicit closed gate and fixture-backed integration-test plan; no HTTP dispatch or renderer execution is enabled |
+| P25.14 | pending | Plan renderer-service health preflight and executable client harness | `mcp`, `penpot-cli`, `command-runtime`, `mcp/docs`, `todo.md` | Pending | Define the health preflight request/result contract, disabled executable client harness shape, and test matrix needed before replacing metadata-only availability with real gated probes |

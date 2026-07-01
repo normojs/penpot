@@ -1,7 +1,7 @@
 {
-  "version": "P25.12",
+  "version": "P25.13",
   "command": "render.thumbnail",
-  "status": "runtime boundary audited; MCP/CLI planning, metadata-only availability probes, response normalization contracts, and disabled client request scaffold registered; runtime execution blocked",
+  "status": "runtime boundary audited; MCP/CLI planning, metadata-only availability probes, response normalization contracts, disabled client request scaffold, and closed execution gate registered; runtime execution blocked",
   "selectedBoundary": "thumbnail-renderer-service",
   "runtimeRegistration": {
     "mcpToolRegistered": true,
@@ -86,6 +86,32 @@
     "framePersist": "create-file-object-thumbnail requires edition permission.",
     "service": "The renderer service must use the caller session/token and must not mint unaudited storage writes."
   },
+  "executionGate": {
+    "status": "closed",
+    "dispatch": false,
+    "optIn": {
+      "env": "PENPOT_RENDER_THUMBNAIL_EXECUTION",
+      "expectedValue": "renderer-service"
+    },
+    "requiredConfig": [
+      "PENPOT_RENDERER_SERVICE_URI",
+      "PENPOT_RENDERER_SERVICE_TIMEOUT_MS"
+    ],
+    "failureModes": [
+      "renderer_service_execution_disabled",
+      "renderer_service_not_configured",
+      "renderer_service_integration_tests_missing",
+      "renderer_service_capability_missing"
+    ],
+    "integrationTestPlan": [
+      "file refresh renders PNG, persists through create-file-thumbnail, and returns resource metadata",
+      "file reuse proves cache freshness before skipping render",
+      "tagged frame refresh loads frame source data and normalizes create-file-object-thumbnail media resource",
+      "MCP returns resource metadata without server-local file writes",
+      "CLI --output downloads only after normalized resource metadata exists",
+      "missing endpoint, missing opt-in, and missing integration tests fail before network dispatch"
+    ]
+  },
   "testStrategy": [
     "Keep command-runtime descriptor tests asserting render.thumbnail only exposes the renderer-service planning adapter until execution exists.",
     "Add renderer-service contract tests for file and tagged-frame inputs, cache policies, PNG metadata, and resource normalization.",
@@ -93,11 +119,12 @@
     "Metadata-only availability tests cover endpoint configuration, health endpoint derivation, probe timeout, and unavailable diagnostics without network calls.",
     "Response normalization tests cover resource URI derivation, download URI resolution, renderer metadata, and retryable error payloads.",
     "Disabled client request scaffold tests cover POST metadata, audit headers, auth-forwarding header names, request body mapping, and dispatch false.",
+    "Execution gate tests cover explicit opt-in, required config, integration-test blockers, failure modes, and dispatch false.",
     "Add CLI smoke tests only after the service exists, covering dry-run, resource metadata, --output download, and missing-token errors."
   ],
   "nextTask": {
-    "id": "P25.13",
-    "title": "Add renderer-service execution gate configuration and integration-test plan",
+    "id": "P25.14",
+    "title": "Plan renderer-service health preflight and executable client harness",
     "modules": ["mcp", "penpot-cli", "command-runtime", "mcp/docs", "todo.md"]
   }
 }

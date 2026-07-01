@@ -843,3 +843,14 @@ P25.12 adds the disabled renderer-service client request scaffold:
   and CLI dry-run/unavailable responses but cannot send network traffic.
 - Runtime execution still requires an explicit gate, service implementation,
   and integration tests.
+
+P25.13 adds the closed renderer-service execution gate:
+
+- Plans include `executionGate` with the required opt-in env
+  `PENPOT_RENDER_THUMBNAIL_EXECUTION=renderer-service`, endpoint/config
+  readiness, failure modes, blockers, and integration-test plan.
+- `executionGate.dispatch` is always `false`; dry-run and unavailable
+  execution responses expose the gate without contacting renderer-service.
+- Future executable work must open this gate only after service implementation,
+  health/preflight coverage, target/cache capabilities, and integration tests
+  are in place.

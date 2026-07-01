@@ -907,6 +907,7 @@ export class RenderThumbnailTool extends PenpotRpcTool<RenderThumbnailArgs> {
                     endpoint: plan.endpoint,
                     client: plan.client,
                     availability: plan.availability,
+                    executionGate: plan.executionGate,
                     clientRequest: plan.clientRequest,
                     requiredCapabilities: plan.requiredCapabilities,
                     serviceRequest: plan.serviceRequest,
@@ -963,6 +964,9 @@ export class RenderThumbnailTool extends PenpotRpcTool<RenderThumbnailArgs> {
                 entrypoint: "mcp",
                 mcpToolName: this.getToolName(),
                 mcpSessionId: this.getSessionContext()?.mcpSessionId,
+            },
+            executionGate: {
+                optInValue: process.env.PENPOT_RENDER_THUMBNAIL_EXECUTION ?? null,
             },
         });
         return {

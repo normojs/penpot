@@ -19,6 +19,7 @@ import {
     createExportFileContract,
     createRenderThumbnailContract,
     createRenderThumbnailRendererServiceClientRequest,
+    createRenderThumbnailRendererServiceExecutionGate,
     createRenderThumbnailRendererServiceErrorPayload,
     createRenderThumbnailRendererServicePlan,
     createRenderThumbnailRendererServiceResult,
@@ -390,6 +391,9 @@ test("render.thumbnail runtime boundary keeps execution unavailable until render
     assert.equal(boundary.resourceReturn.targets.frame.registrationBlocker, "tagged-frame-download-uri");
     assert.match(boundary.cacheRefresh.refresh, /persist/);
     assert.match(boundary.auth.service, /caller session\/token/);
+    assert.equal(boundary.executionGate.status, "closed");
+    assert.equal(boundary.executionGate.dispatch, false);
+    assert.ok(boundary.executionGate.integrationTestPlan.some((entry) => entry.includes("missing endpoint")));
     assert.ok(boundary.testStrategy.some((item) => item.includes("descriptor tests")));
 });
 
@@ -409,6 +413,10 @@ test("render.thumbnail renderer-service API fixtures define planning requests wi
     assert.equal(fixtures.serviceApi.clientRequestScaffold.method, "POST");
     assert.deepEqual(fixtures.serviceApi.clientRequestScaffold.authForwarding.headerNames, ["authorization", "cookie"]);
     assert.equal(fixtures.serviceApi.clientRequestScaffold.authForwarding.tokenValuesIncluded, false);
+    assert.equal(fixtures.serviceApi.executionGate.status, "closed");
+    assert.equal(fixtures.serviceApi.executionGate.dispatch, false);
+    assert.equal(fixtures.serviceApi.executionGate.optIn.env, "PENPOT_RENDER_THUMBNAIL_EXECUTION");
+    assert.ok(fixtures.serviceApi.executionGate.failureModes.includes("renderer_service_integration_tests_missing"));
     assert.deepEqual(fixtures.runtimeRegistration.commandDescriptorAdapters, ["renderer-service"]);
     assert.deepEqual(CommandDescriptors.RENDER_THUMBNAIL.adapters, ["renderer-service"]);
     assert.equal(fixtures.runtimeRegistration.mcpToolRegistered, true);
@@ -506,6 +514,14 @@ test("render.thumbnail renderer-service plan exposes dry-run client request whil
     assert.equal(plan.availability.checked, false);
     assert.deepEqual(plan.service.client, plan.client);
     assert.deepEqual(plan.service.availability, plan.availability);
+    assert.equal(plan.executionGate.status, "closed");
+    assert.equal(plan.executionGate.dispatch, false);
+    assert.equal(plan.executionGate.optIn.env, "PENPOT_RENDER_THUMBNAIL_EXECUTION");
+    assert.equal(plan.executionGate.optIn.configured, false);
+    assert.ok(plan.executionGate.blockers.includes("explicit-opt-in"));
+    assert.ok(plan.executionGate.blockers.includes("renderer-service-integration-tests"));
+    assert.equal(plan.executionGate.integrationTestPlan.requiredBeforeDispatch, true);
+    assert.deepEqual(plan.service.executionGate, plan.executionGate);
     assert.equal(plan.clientRequest.status, "scaffolded");
     assert.equal(plan.clientRequest.dispatch, false);
     assert.equal(plan.clientRequest.method, "POST");
@@ -532,6 +548,7 @@ test("render.thumbnail renderer-service plan exposes dry-run client request whil
     assert.equal(plan.diagnostics.adapterBoundary, "renderer-service-dry-run");
     assert.equal(plan.diagnostics.runtimeExecutionRegistered, false);
     assert.equal(plan.diagnostics.availabilityProbe, "metadata-only");
+    assert.equal(plan.diagnostics.executionGateStatus, "closed");
 });
 
 test("render.thumbnail renderer-service plan reports not-configured availability without endpoint", () => {
@@ -543,6 +560,35 @@ test("render.thumbnail renderer-service plan reports not-configured availability
     assert.equal(plan.client.probeTimeoutMs, 2500);
     assert.equal(plan.availability.status, "not-configured");
     assert.equal(plan.availability.networkProbe, false);
+    assert.ok(plan.executionGate.blockers.includes("renderer-service-endpoint"));
+});
+
+test("render.thumbnail renderer-service execution gate requires explicit opt-in and integration tests before dispatch", () => {
+    const gate = createRenderThumbnailRendererServiceExecutionGate({
+        endpoint: "http://127.0.0.1:6070/thumbnail",
+        targetKind: "file",
+        cachePolicy: "reuse",
+        requiredCapabilities: ["thumbnail-renderer-service-implementation", "file-thumbnail-cache-probe"],
+        executionGate: {
+            optInValue: "renderer-service",
+            serviceImplemented: true,
+            integrationTestsReady: false,
+        },
+    });
+
+    assert.equal(gate.status, "closed");
+    assert.equal(gate.dispatch, false);
+    assert.equal(gate.optIn.configured, true);
+    assert.equal(gate.readiness.endpointConfigured, true);
+    assert.equal(gate.readiness.serviceImplemented, true);
+    assert.equal(gate.readiness.integrationTestsReady, false);
+    assert.ok(gate.blockers.includes("renderer-service-integration-tests"));
+    assert.ok(gate.blockers.includes("file-thumbnail-cache-probe"));
+    assert.equal(gate.blockers.includes("thumbnail-renderer-service-implementation"), false);
+    assert.ok(gate.blockers.includes("runtime-execution-registration"));
+    assert.equal(gate.integrationTestPlan.status, "required-before-dispatch");
+    assert.ok(gate.integrationTestPlan.cases.some((entry) => entry.includes("file reuse")));
+    assert.ok(gate.failureModes.some((entry) => entry.code === "renderer_service_execution_disabled"));
 });
 
 test("render.thumbnail renderer-service client request scaffold adds MCP audit headers without dispatch", () => {

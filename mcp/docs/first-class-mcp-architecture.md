@@ -2189,6 +2189,17 @@ P25.12 render.thumbnail client scaffold result:
 - This creates the future execution interface without making renderer-service
   calls possible.
 
+P25.13 render.thumbnail execution gate result:
+
+- Shared plans include a closed `executionGate` with explicit opt-in
+  `PENPOT_RENDER_THUMBNAIL_EXECUTION=renderer-service`, required config,
+  readiness blockers, failure modes, and integration-test plan.
+- `executionGate.dispatch` remains `false` in MCP/CLI dry-run and unavailable
+  execution errors.
+- This prevents future renderer-service client work from becoming executable
+  before opt-in, endpoint config, service implementation, integration tests,
+  target/cache capabilities, and runtime registration are all present.
+
 ### 8.5 Export and Render Tools
 
 May start file-bound and later move to headless:
@@ -2210,8 +2221,9 @@ future dedicated thumbnail renderer service for `render.thumbnail`, and P25.7
 defines its service API fixtures. P25.8 adds the CLI dry-run/client boundary,
 P25.9 registers MCP `render.thumbnail` as planning-only, and P25.10 adds
 metadata-only renderer-service availability probes. P25.11 defines response
-normalization and error payloads. P25.12 adds the disabled execution client
-request scaffold. Runtime behavior remains unavailable until an explicit gate,
+normalization and error payloads, P25.12 adds the disabled execution client
+request scaffold, and P25.13 adds the closed execution gate plus
+integration-test plan. Runtime behavior remains unavailable until opt-in,
 renderer-service implementation, cache probe, executable client, and
 tagged-frame capabilities are implemented.
 

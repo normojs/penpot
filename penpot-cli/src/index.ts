@@ -217,6 +217,7 @@ Environment:
   PENPOT_EXPORTER_URI      Exporter HTTP URI, default http://localhost:6061
   PENPOT_RENDERER_SERVICE_URI  Future thumbnail renderer-service URI, default http://localhost:6070/thumbnail
   PENPOT_RENDERER_SERVICE_TIMEOUT_MS  Future renderer-service health probe timeout, default 2500
+  PENPOT_RENDER_THUMBNAIL_EXECUTION  Future explicit execution gate value, expected renderer-service
   PENPOT_BACKEND_URI       Backend RPC base URI used to resolve profile id
   PENPOT_PUBLIC_URI        Public Penpot base URI used for future thumbnail download URI derivation
   PENPOT_PROFILE_ID        Optional profile id for the direct exporter request
@@ -1668,6 +1669,9 @@ function createRenderThumbnailPlan(args: string[], env: NodeJS.ProcessEnv): Rend
         clientRequest: {
             entrypoint: "cli",
             cliCommand: "render thumbnail",
+        },
+        executionGate: {
+            optInValue: env.PENPOT_RENDER_THUMBNAIL_EXECUTION ?? null,
         },
     });
 
@@ -6295,6 +6299,7 @@ async function handleRenderThumbnail(args: string[], io: CliIO, env: NodeJS.Proc
             endpoint: plan.endpoint,
             client: plan.client,
             availability: plan.availability,
+            executionGate: plan.executionGate,
             clientRequest: plan.clientRequest,
             requiredCapabilities: plan.requiredCapabilities,
             serviceRequest: plan.serviceRequest,

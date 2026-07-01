@@ -255,6 +255,9 @@ Current state:
   defined without enabling network execution.
 - Done: disabled renderer-service client request scaffolding is defined with
   audit headers and caller-session auth forwarding names.
+- Done: a closed renderer-service execution gate records explicit opt-in,
+  required config, failure modes, and integration-test plan while keeping
+  dispatch disabled.
 - Done: focused command-runtime tests cover descriptor groups, lookup,
   adapter-selection priority/error cases, and token-safe envelopes.
 - Status: complete. Later command coverage gaps were tracked by the P15.1
@@ -675,6 +678,15 @@ P25.12 is complete:
 2. MCP and CLI add audit headers for their entrypoints while keeping token
    values out of the plan.
 3. `dispatch:false` remains part of dry-run and unavailable execution payloads.
+
+P25.13 is complete:
+
+1. Shared plans include closed `executionGate` metadata for future
+   renderer-service dispatch.
+2. The gate names `PENPOT_RENDER_THUMBNAIL_EXECUTION=renderer-service`,
+   required endpoint config, blockers, and failure modes.
+3. MCP and CLI expose the gate in dry-run and unavailable execution responses
+   without contacting renderer-service.
 
 Keep manual configuration behavior stable while moving command metadata and
 envelopes; transport-specific formatting should stay at the MCP/CLI edges.

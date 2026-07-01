@@ -389,6 +389,7 @@ export interface CreateRenderThumbnailRendererServicePlanOptions extends CreateR
     timeoutMs?: number | string | null;
     rendererServiceTimeoutMs?: number | string | null;
     clientRequest?: CreateRenderThumbnailRendererServiceClientRequestOptions | null;
+    executionGate?: CreateRenderThumbnailRendererServiceExecutionGateOptions | null;
 }
 
 export interface RenderThumbnailRendererServicePlan {
@@ -431,10 +432,12 @@ export interface RenderThumbnailRendererServicePlan {
             includeServiceStatus: true;
             includeServiceData: true;
         };
+        executionGate: RenderThumbnailRendererServiceExecutionGate;
         clientRequest: RenderThumbnailRendererServiceClientRequest;
     };
     client: RenderThumbnailRendererServiceClientConfig;
     availability: RenderThumbnailRendererServiceAvailability;
+    executionGate: RenderThumbnailRendererServiceExecutionGate;
     clientRequest: RenderThumbnailRendererServiceClientRequest;
     serviceRequest: {
         command: "render.thumbnail";
@@ -498,6 +501,7 @@ export interface RenderThumbnailRendererServicePlan {
         serviceOperation: "thumbnail.render";
         availabilityProbe: "metadata-only";
         clientRequestDispatch: false;
+        executionGateStatus: "closed";
     };
 }
 
@@ -522,6 +526,68 @@ export interface RenderThumbnailRendererServiceAvailability {
     healthEndpoint: string | null;
     reason: string;
     nextActions: string[];
+}
+
+export interface CreateRenderThumbnailRendererServiceExecutionGateOptions {
+    optInValue?: string | null;
+    value?: string | null;
+    serviceImplemented?: boolean | null;
+    integrationTestsReady?: boolean | null;
+}
+
+export interface RenderThumbnailRendererServiceExecutionGate {
+    status: "closed";
+    dispatch: false;
+    reason: string;
+    optIn: {
+        required: true;
+        env: "PENPOT_RENDER_THUMBNAIL_EXECUTION";
+        expectedValue: "renderer-service";
+        configuredValue: string | null;
+        configured: boolean;
+    };
+    requiredConfig: Array<
+        | {
+              name: "rendererServiceUri";
+              env: "PENPOT_RENDERER_SERVICE_URI";
+              configured: boolean;
+              valueIncluded: boolean;
+          }
+        | {
+              name: "rendererServiceTimeoutMs";
+              env: "PENPOT_RENDERER_SERVICE_TIMEOUT_MS";
+              configured: true;
+              defaultValue: 2500;
+          }
+    >;
+    readiness: {
+        serviceImplemented: boolean;
+        integrationTestsReady: boolean;
+        runtimeExecutionRegistered: false;
+        endpointConfigured: boolean;
+        explicitOptInConfigured: boolean;
+        requiredCapabilities: Array<{
+            name: string;
+            satisfied: boolean;
+            reason: string;
+        }>;
+    };
+    blockers: string[];
+    failureModes: Array<{
+        code:
+            | "renderer_service_execution_disabled"
+            | "renderer_service_not_configured"
+            | "renderer_service_integration_tests_missing"
+            | "renderer_service_capability_missing";
+        when: string;
+    }>;
+    integrationTestPlan: {
+        status: "required-before-dispatch";
+        runner: "future renderer-service integration suite";
+        requiredBeforeDispatch: true;
+        cases: string[];
+        requiredAssertions: string[];
+    };
 }
 
 export interface CreateRenderThumbnailRendererServiceClientRequestOptions {
@@ -749,6 +815,15 @@ export function createRenderThumbnailContract(options?: CreateRenderThumbnailCon
 export function createRenderThumbnailRendererServicePlan(
     options?: CreateRenderThumbnailRendererServicePlanOptions
 ): RenderThumbnailRendererServicePlan;
+export function createRenderThumbnailRendererServiceExecutionGate(
+    options?: {
+        endpoint?: string | null;
+        targetKind?: RenderThumbnailTarget | string | null;
+        cachePolicy?: RenderThumbnailCachePolicy | string | null;
+        requiredCapabilities?: string[] | null;
+        executionGate?: CreateRenderThumbnailRendererServiceExecutionGateOptions | null;
+    }
+): RenderThumbnailRendererServiceExecutionGate;
 export function createRenderThumbnailRendererServiceClientRequest(
     plan: Partial<RenderThumbnailRendererServicePlan>,
     options?: CreateRenderThumbnailRendererServiceClientRequestOptions

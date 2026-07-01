@@ -863,6 +863,13 @@ export function createRenderThumbnailRendererServicePlan(options = EMPTY_OBJECT)
         frameTarget ? "frame-source-data-provider" : null,
         frameTarget ? "tagged-frame-resource-normalizer" : null,
     ].filter(Boolean);
+    const executionGate = createRenderThumbnailRendererServiceExecutionGate({
+        endpoint,
+        targetKind,
+        cachePolicy: contract.cache.policy,
+        requiredCapabilities,
+        executionGate: options.executionGate,
+    });
     const clientRequest = createRenderThumbnailRendererServiceClientRequest(
         {
             endpoint,
@@ -959,10 +966,12 @@ export function createRenderThumbnailRendererServicePlan(options = EMPTY_OBJECT)
                 includeServiceStatus: true,
                 includeServiceData: true,
             },
+            executionGate,
             clientRequest,
         },
         client,
         availability,
+        executionGate,
         clientRequest,
         serviceRequest: {
             command: CommandDescriptors.RENDER_THUMBNAIL.id,
@@ -1026,6 +1035,117 @@ export function createRenderThumbnailRendererServicePlan(options = EMPTY_OBJECT)
             serviceOperation: "thumbnail.render",
             availabilityProbe: "metadata-only",
             clientRequestDispatch: false,
+            executionGateStatus: executionGate.status,
+        },
+    };
+}
+
+export function createRenderThumbnailRendererServiceExecutionGate(options = EMPTY_OBJECT) {
+    const gateOptions = options.executionGate ?? EMPTY_OBJECT;
+    const endpoint = normalizeOptionalString(options.endpoint);
+    const targetKind = normalizeOptionalString(options.targetKind) ?? RenderThumbnailTargets.FILE;
+    const cachePolicy = normalizeOptionalString(options.cachePolicy) ?? RenderThumbnailCachePolicies.REUSE;
+    const optInValue = normalizeOptionalString(gateOptions.optInValue ?? gateOptions.value);
+    const serviceImplemented = Boolean(gateOptions.serviceImplemented);
+    const integrationTestsReady = Boolean(gateOptions.integrationTestsReady);
+    const endpointConfigured = Boolean(endpoint);
+    const explicitOptInConfigured = optInValue === "renderer-service";
+    const requiredCapabilities = Array.isArray(options.requiredCapabilities)
+        ? options.requiredCapabilities.map((item) => normalizeOptionalString(item)).filter(Boolean)
+        : [];
+    const requiredCapabilityChecks = requiredCapabilities.map((name) => {
+        const satisfied = name === "thumbnail-renderer-service-implementation" ? serviceImplemented : false;
+        return {
+            name,
+            satisfied,
+            reason: satisfied
+                ? "capability readiness was provided by execution gate configuration"
+                : "future capability is documented but no executable implementation is registered",
+        };
+    });
+    const missing = Array.from(new Set([
+        explicitOptInConfigured ? null : "explicit-opt-in",
+        endpointConfigured ? null : "renderer-service-endpoint",
+        serviceImplemented ? null : "thumbnail-renderer-service-implementation",
+        integrationTestsReady ? null : "renderer-service-integration-tests",
+        ...requiredCapabilityChecks.map((check) => (check.satisfied ? null : check.name)),
+        "runtime-execution-registration",
+    ].filter(Boolean)));
+
+    return {
+        status: "closed",
+        dispatch: false,
+        reason: "renderer-service execution is gated until explicit opt-in, service implementation, integration tests, and runtime registration all exist",
+        optIn: {
+            required: true,
+            env: "PENPOT_RENDER_THUMBNAIL_EXECUTION",
+            expectedValue: "renderer-service",
+            configuredValue: optInValue,
+            configured: explicitOptInConfigured,
+        },
+        requiredConfig: [
+            {
+                name: "rendererServiceUri",
+                env: "PENPOT_RENDERER_SERVICE_URI",
+                configured: endpointConfigured,
+                valueIncluded: endpointConfigured,
+            },
+            {
+                name: "rendererServiceTimeoutMs",
+                env: "PENPOT_RENDERER_SERVICE_TIMEOUT_MS",
+                configured: true,
+                defaultValue: 2500,
+            },
+        ],
+        readiness: {
+            serviceImplemented,
+            integrationTestsReady,
+            runtimeExecutionRegistered: false,
+            endpointConfigured,
+            explicitOptInConfigured,
+            requiredCapabilities: requiredCapabilityChecks,
+        },
+        blockers: missing,
+        failureModes: [
+            {
+                code: "renderer_service_execution_disabled",
+                when: "explicit opt-in is absent or not equal to renderer-service",
+            },
+            {
+                code: "renderer_service_not_configured",
+                when: "renderer-service endpoint is missing",
+            },
+            {
+                code: "renderer_service_integration_tests_missing",
+                when: "the renderer-service integration fixture suite is not present or not passing",
+            },
+            {
+                code: "renderer_service_capability_missing",
+                when: "target/cache-specific renderer capabilities are not implemented",
+            },
+        ],
+        integrationTestPlan: {
+            status: "required-before-dispatch",
+            runner: "future renderer-service integration suite",
+            requiredBeforeDispatch: true,
+            cases: [
+                "file refresh renders PNG, persists via create-file-thumbnail, and returns resource metadata",
+                "file reuse proves cache freshness before skipping render",
+                targetKind === RenderThumbnailTargets.FRAME
+                    ? "tagged frame refresh loads frame source data and normalizes create-file-object-thumbnail media resource"
+                    : null,
+                cachePolicy === RenderThumbnailCachePolicies.REUSE
+                    ? "cache miss falls back to render and persists through the target-specific backend RPC"
+                    : null,
+                "MCP returns resource metadata without server-local file writes",
+                "CLI --output downloads only after a normalized resource result exists",
+                "service errors normalize retryability and never include forwarded token values",
+            ].filter(Boolean),
+            requiredAssertions: [
+                "clientRequest.dispatch remains false until this gate is opened by a future implementation task",
+                "caller auth is forwarded by header name only in planning responses",
+                "missing endpoint, missing opt-in, and missing integration tests fail before network dispatch",
+            ],
         },
     };
 }
