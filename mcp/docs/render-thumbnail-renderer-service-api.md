@@ -1,7 +1,8 @@
 # Render Thumbnail Renderer Service API
 
-Status: P25.9 API fixtures and MCP/CLI dry-run/client boundaries defined;
-executable runtime registration remains blocked.
+Status: P25.10 API fixtures, MCP/CLI dry-run/client boundaries, and
+metadata-only availability probes defined; executable runtime registration
+remains blocked.
 
 P25.6 selected a dedicated thumbnail renderer service as the future executable
 owner for `render.thumbnail`. This document defines the service-facing request
@@ -14,11 +15,37 @@ execution returns `renderer_service_unavailable` until the service exists. The
 shared command descriptor advertises the planning adapter `renderer-service`,
 but runtime execution remains unavailable.
 
+P25.10 adds client configuration metadata to the plan. Callers can inspect the
+configured endpoint, derived `/health` endpoint, probe timeout, content types,
+and availability status without contacting the service. `configured-unverified`
+means an endpoint exists but was not probed; `not-configured` means no endpoint
+was provided by arguments or environment.
+
 ## Service Boundary
 
 The future service operation is `thumbnail.render` behind a
 `renderer-service` adapter. The transport can be an internal HTTP endpoint or a
 worker RPC; callers should treat it as an implementation detail.
+
+Planning responses include:
+
+```json
+{
+  "client": {
+    "endpoint": "http://127.0.0.1:6070/thumbnail",
+    "configured": true,
+    "healthEndpoint": "http://127.0.0.1:6070/thumbnail/health",
+    "healthMethod": "GET",
+    "probeTimeoutMs": 2500,
+    "networkProbe": false
+  },
+  "availability": {
+    "status": "configured-unverified",
+    "probe": "metadata-only",
+    "checked": false
+  }
+}
+```
 
 The renderer service owns:
 
@@ -159,6 +186,8 @@ Before `render.thumbnail` becomes executable:
 - implement the thumbnail renderer service
 - keep MCP `render.thumbnail` dry-run and `penpot-cli render thumbnail
   --dry-run` as request inspection paths until execution exists
+- keep availability probes metadata-only until a real health endpoint and
+  execution client are implemented
 - add a file thumbnail cache probe for `reuse`
 - add or expose explicit frame source-data loading for tagged frame targets
 - normalize tagged frame media ids to resource URIs

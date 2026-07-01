@@ -329,6 +329,7 @@ test("RenderThumbnailTool dry-run returns renderer-service request metadata with
             width: 320,
             cachePolicy: "refresh",
             endpoint: "http://127.0.0.1:6070/thumbnail",
+            probeTimeoutMs: 3500,
         });
         const body = parseJsonResponse(response);
 
@@ -344,6 +345,13 @@ test("RenderThumbnailTool dry-run returns renderer-service request metadata with
         assert.equal(body.data.endpoint, "http://127.0.0.1:6070/thumbnail");
         assert.equal(body.data.service.operation, "thumbnail.render");
         assert.equal(body.data.service.localFileWrites, false);
+        assert.equal(body.data.client.healthEndpoint, "http://127.0.0.1:6070/thumbnail/health");
+        assert.equal(body.data.client.probeTimeoutMs, 3500);
+        assert.equal(body.data.client.networkProbe, false);
+        assert.equal(body.data.availability.status, "configured-unverified");
+        assert.equal(body.data.availability.probe, "metadata-only");
+        assert.equal(body.data.availability.checked, false);
+        assert.deepEqual(body.data.service.client, body.data.client);
         assert.equal(body.data.serviceRequest.operation, "thumbnail.render");
         assert.equal(body.data.serviceRequest.target.objectKey, `${UUIDS.file}/${UUIDS.page}/${UUIDS.object}/cover`);
         assert.equal(body.data.serviceRequest.artifact.width, 320);
@@ -386,6 +394,9 @@ test("RenderThumbnailTool execution reports renderer service unavailable without
         assert.equal(body.error.code, "renderer_service_unavailable");
         assert.equal(body.error.data.command, CommandDescriptors.RENDER_THUMBNAIL.id);
         assert.equal(body.error.data.adapter, "renderer-service");
+        assert.equal(body.error.data.client.configured, false);
+        assert.equal(body.error.data.availability.status, "not-configured");
+        assert.equal(body.error.data.availability.networkProbe, false);
         assert.equal(body.error.data.serviceRequest.operation, "thumbnail.render");
         assert.deepEqual(body.error.data.requiredCapabilities, ["thumbnail-renderer-service-implementation", "file-thumbnail-cache-probe"]);
     } finally {

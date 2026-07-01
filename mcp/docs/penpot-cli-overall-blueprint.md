@@ -248,6 +248,9 @@ Current state:
 - Done: MCP `render.thumbnail` is registered as a planning-only dry-run tool
   that returns the shared renderer-service request metadata while execution
   remains unavailable.
+- Done: renderer-service planning responses include client configuration,
+  derived health endpoint, timeout, and metadata-only availability status
+  without probing the network.
 - Done: focused command-runtime tests cover descriptor groups, lookup,
   adapter-selection priority/error cases, and token-safe envelopes.
 - Status: complete. Later command coverage gaps were tracked by the P15.1
@@ -643,6 +646,15 @@ P25.9 is complete:
    runtimes.
 3. `dryRun:false`, unsupported adapters, and incomplete frame targets return
    structured errors before runtime dispatch.
+
+P25.10 is complete:
+
+1. Shared renderer-service plans include `client` and `availability` metadata.
+2. CLI accepts `--renderer-timeout-ms` and
+   `PENPOT_RENDERER_SERVICE_TIMEOUT_MS`; MCP accepts equivalent tool input and
+   environment configuration.
+3. Availability remains metadata-only, so dry-run and unavailable execution do
+   not contact renderer-service, backend, exporter, plugin, or local files.
 
 Keep manual configuration behavior stable while moving command metadata and
 envelopes; transport-specific formatting should stay at the MCP/CLI edges.

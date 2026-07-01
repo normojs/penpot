@@ -1,7 +1,8 @@
 # Render Thumbnail Contract
 
-Status: P25.4 descriptor contract; P25.9 MCP/CLI renderer-service dry-run
-boundaries defined and runtime execution still blocked.
+Status: P25.4 descriptor contract; P25.10 MCP/CLI renderer-service dry-run
+boundaries and metadata-only availability probes defined; runtime execution
+still blocked.
 
 This document defines the `render.thumbnail` contract before executable MCP or
 CLI rendering is enabled. The contract follows Penpot's existing dashboard
@@ -122,6 +123,9 @@ Shared contract shape:
   request shape. CLI execution without `--dry-run` must keep returning
   `renderer_service_unavailable` until it can render PNG bytes or delegate to a
   stable renderer service.
+- P25.10 availability fields are metadata-only. They may derive a health
+  endpoint and timeout from configuration, but they must not contact the
+  renderer service during planning.
 - Exporter service execution is out of scope for this command unless a later
   task explicitly maps thumbnail rendering to exporter-compatible semantics.
 - P25.6 selects a future dedicated thumbnail renderer service as the executable
@@ -136,8 +140,9 @@ See `render-thumbnail-runtime-boundary.md` and
 audit, resource-return rules, cache refresh behavior, auth expectations, and
 future test strategy.
 See `render-thumbnail-renderer-service-api.md` and
-`render-thumbnail-renderer-service-fixtures.json` for the P25.9 future
-renderer-service request/response API and MCP/CLI dry-run/client boundary.
+`render-thumbnail-renderer-service-fixtures.json` for the P25.10 future
+renderer-service request/response API, MCP/CLI dry-run/client boundary, and
+metadata-only availability probe.
 
 ## Fixtures
 

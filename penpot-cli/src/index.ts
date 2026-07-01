@@ -78,7 +78,7 @@ Usage:
   penpot-cli export page --file <file-id> --page <page-id> --object <object-id> [--adapter auto|exporter] [--output <path>] [--dry-run] [--format text|json]
   penpot-cli export file --file <file-id> [--library-mode all|merge|detach] [--adapter auto|backend-rpc] [--output <path>] [--dry-run] [--format text|json]
   penpot-cli render preview --file <file-id> --page <page-id> --object <object-id> [--adapter auto|exporter] [--output <path>] [--dry-run] [--format text|json]
-  penpot-cli render thumbnail --file <file-id> [--target file|frame] [--page <page-id>] [--object <object-id>] [--cache-policy reuse|refresh] [--width <px>] [--adapter auto|renderer-service] [--dry-run] [--format text|json]`;
+  penpot-cli render thumbnail --file <file-id> [--target file|frame] [--page <page-id>] [--object <object-id>] [--cache-policy reuse|refresh] [--width <px>] [--renderer-service-uri <uri>] [--renderer-timeout-ms <n>] [--adapter auto|renderer-service] [--dry-run] [--format text|json]`;
 
 const MCP_HELP_TEXT = `penpot-cli mcp
 
@@ -206,7 +206,7 @@ const RENDER_HELP_TEXT = `penpot-cli render
 
 Usage:
   penpot-cli render preview --file <file-id> --page <page-id> --object <object-id> [--scale <n>] [--output <path>] [--exporter-uri <uri>] [--backend-uri <uri>] [--token <token>] [--adapter auto|exporter] [--dry-run] [--format text|json]
-  penpot-cli render thumbnail --file <file-id> [--target file|frame] [--page <page-id>] [--object <object-id>] [--tag <tag>] [--revn <n>] [--width <px>] [--cache-policy reuse|refresh] [--output <path>] [--renderer-service-uri <uri>] [--public-uri <uri>] [--adapter auto|renderer-service] [--dry-run] [--format text|json]
+  penpot-cli render thumbnail --file <file-id> [--target file|frame] [--page <page-id>] [--object <object-id>] [--tag <tag>] [--revn <n>] [--width <px>] [--cache-policy reuse|refresh] [--output <path>] [--renderer-service-uri <uri>] [--renderer-timeout-ms <n>] [--public-uri <uri>] [--adapter auto|renderer-service] [--dry-run] [--format text|json]
 
 Notes:
   Preview rendering uses the exporter adapter and always requests PNG output.
@@ -216,6 +216,7 @@ Notes:
 Environment:
   PENPOT_EXPORTER_URI      Exporter HTTP URI, default http://localhost:6061
   PENPOT_RENDERER_SERVICE_URI  Future thumbnail renderer-service URI, default http://localhost:6070/thumbnail
+  PENPOT_RENDERER_SERVICE_TIMEOUT_MS  Future renderer-service health probe timeout, default 2500
   PENPOT_BACKEND_URI       Backend RPC base URI used to resolve profile id
   PENPOT_PUBLIC_URI        Public Penpot base URI used for future thumbnail download URI derivation
   PENPOT_PROFILE_ID        Optional profile id for the direct exporter request
@@ -1660,6 +1661,10 @@ function createRenderThumbnailPlan(args: string[], env: NodeJS.ProcessEnv): Rend
         output: readOption(args, ["--output"]) ?? null,
         endpoint,
         publicUri,
+        probeTimeoutMs:
+            readOption(args, ["--renderer-timeout-ms", "--renderer-service-timeout-ms", "--probe-timeout-ms"]) ??
+            env.PENPOT_RENDERER_SERVICE_TIMEOUT_MS ??
+            null,
     });
 
     return {
@@ -4369,6 +4374,10 @@ function writeRenderThumbnailPlanText(io: CliIO, plan: RenderThumbnailPlan): voi
     writeLine(io.stdout, `status: ${plan.status}`);
     writeLine(io.stdout, `runtimeAvailable: ${String(plan.runtimeAvailable)}`);
     writeLine(io.stdout, `rendererService: ${plan.service.operation} ${plan.endpoint ?? "<not configured>"}`);
+    writeLine(io.stdout, `rendererServiceAvailability: ${plan.availability.status}`);
+    writeLine(io.stdout, `rendererServiceHealth: ${plan.client.healthEndpoint ?? "<not configured>"}`);
+    writeLine(io.stdout, `rendererServiceProbe: ${plan.availability.probe}`);
+    writeLine(io.stdout, `rendererServiceProbeTimeoutMs: ${plan.client.probeTimeoutMs}`);
     writeLine(io.stdout, `fileId: ${plan.target.fileId ?? "<missing>"}`);
     writeLine(io.stdout, `target: ${plan.target.kind}`);
     writeLine(io.stdout, `pageId: ${plan.target.pageId ?? "<none>"}`);
@@ -6280,6 +6289,8 @@ async function handleRenderThumbnail(args: string[], io: CliIO, env: NodeJS.Proc
             command: plan.command,
             adapter: plan.adapter,
             endpoint: plan.endpoint,
+            client: plan.client,
+            availability: plan.availability,
             requiredCapabilities: plan.requiredCapabilities,
             serviceRequest: plan.serviceRequest,
         }

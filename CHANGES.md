@@ -120,6 +120,7 @@
 - Define the future `render.thumbnail` renderer-service API fixtures for file refresh, file cache reuse, tagged frame refresh, auth forwarding, resource URI normalization, and MCP/CLI test expectations.
 - Add a `penpot-cli render thumbnail --dry-run` renderer-service planning boundary that prints the future thumbnail request shape while execution remains unavailable.
 - Register MCP `render.thumbnail` as a planning-only dry-run tool that returns the same renderer-service request metadata while keeping runtime execution unavailable.
+- Add renderer-service client configuration and metadata-only availability probes to `render.thumbnail` planning responses.
 - Add rate limiting and concurrency safety for file snapshot operations [#9723](https://github.com/penpot/penpot/issues/9723) (PR: [#9722](https://github.com/penpot/penpot/pull/9722))
 - Prevent concurrent font uploads from causing excessive simultaneous requests [#9922](https://github.com/penpot/penpot/issues/9922) (PR: [#9921](https://github.com/penpot/penpot/pull/9921))
 

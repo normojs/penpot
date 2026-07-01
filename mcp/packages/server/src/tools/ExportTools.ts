@@ -796,6 +796,9 @@ export class RenderThumbnailArgs {
         endpoint: z.string().url().optional().describe("Future renderer-service endpoint for planning metadata."),
         rendererServiceUri: z.string().url().optional().describe("Alias for endpoint."),
         rendererUri: z.string().url().optional().describe("Alias for endpoint."),
+        probeTimeoutMs: z.number().int().positive().max(60000).optional().describe("Future renderer-service health probe timeout in milliseconds."),
+        timeoutMs: z.number().int().positive().max(60000).optional().describe("Alias for probeTimeoutMs."),
+        rendererServiceTimeoutMs: z.number().int().positive().max(60000).optional().describe("Alias for probeTimeoutMs."),
         publicUri: z.string().url().optional().describe("Public Penpot URI for future download URI examples."),
         output: z
             .string()
@@ -821,6 +824,9 @@ export class RenderThumbnailArgs {
     endpoint?: string;
     rendererServiceUri?: string;
     rendererUri?: string;
+    probeTimeoutMs?: number;
+    timeoutMs?: number;
+    rendererServiceTimeoutMs?: number;
     publicUri?: string;
     output?: string;
     adapter?: string;
@@ -899,6 +905,8 @@ export class RenderThumbnailTool extends PenpotRpcTool<RenderThumbnailArgs> {
                     command: plan.command,
                     adapter: plan.adapter,
                     endpoint: plan.endpoint,
+                    client: plan.client,
+                    availability: plan.availability,
                     requiredCapabilities: plan.requiredCapabilities,
                     serviceRequest: plan.serviceRequest,
                 }
@@ -940,7 +948,17 @@ export class RenderThumbnailTool extends PenpotRpcTool<RenderThumbnailArgs> {
     }
 
     private createMcpRenderThumbnailPlan(args: RenderThumbnailArgs): RenderThumbnailRendererServicePlan {
-        const plan = createRenderThumbnailRendererServicePlan(args);
+        const plan = createRenderThumbnailRendererServicePlan({
+            ...args,
+            endpoint: args.endpoint ?? args.rendererServiceUri ?? args.rendererUri ?? process.env.PENPOT_RENDERER_SERVICE_URI ?? null,
+            publicUri: args.publicUri ?? process.env.PENPOT_PUBLIC_URI ?? process.env.PENPOT_MCP_PUBLIC_URI ?? null,
+            probeTimeoutMs:
+                args.probeTimeoutMs ??
+                args.timeoutMs ??
+                args.rendererServiceTimeoutMs ??
+                process.env.PENPOT_RENDERER_SERVICE_TIMEOUT_MS ??
+                null,
+        });
         return {
             ...plan,
             diagnostics: {

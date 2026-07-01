@@ -812,3 +812,13 @@ P25.9 adds the MCP planning-only dry-run boundary:
   capabilities and the planned service request.
 - Unsupported adapters and incomplete frame targets fail before any runtime
   dispatch.
+
+P25.10 adds renderer-service client configuration and availability probes:
+
+- `createRenderThumbnailRendererServicePlan` now includes `client` and
+  `availability` blocks with endpoint, derived `/health` endpoint, probe
+  timeout, and `metadata-only` probe status.
+- MCP and CLI planning responses report `configured-unverified` when an
+  endpoint is configured and `not-configured` when it is absent.
+- The probe is descriptive only: it does not perform HTTP requests, render PNG
+  bytes, persist thumbnails, or make runtime execution available.

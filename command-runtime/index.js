@@ -791,6 +791,42 @@ export function createRenderThumbnailRendererServicePlan(options = EMPTY_OBJECT)
     const contract = createRenderThumbnailContract(options);
     const endpoint = normalizeOptionalString(options.endpoint ?? options.rendererServiceUri ?? options.rendererUri);
     const publicUri = normalizeOptionalString(options.publicUri) ?? "https://penpot.example.test";
+    const probeTimeoutMs = normalizeProbeTimeoutMs(
+        options.probeTimeoutMs ?? options.timeoutMs ?? options.rendererServiceTimeoutMs,
+        2500
+    );
+    const healthEndpoint = endpoint ? joinUrlPath(endpoint, "health") : null;
+    const client = {
+        endpoint,
+        configured: Boolean(endpoint),
+        healthEndpoint,
+        healthMethod: "GET",
+        probeTimeoutMs,
+        networkProbe: false,
+        requestContentType: "application/json",
+        responseContentType: "application/json",
+        auth: "caller-session-forwarded-when-execution-exists",
+    };
+    const availability = {
+        status: endpoint ? "configured-unverified" : "not-configured",
+        probe: "metadata-only",
+        networkProbe: false,
+        checked: false,
+        endpoint,
+        healthEndpoint,
+        reason: endpoint
+            ? "renderer-service endpoint is configured but was not contacted during dry-run planning"
+            : "renderer-service endpoint is not configured for this MCP/CLI entry",
+        nextActions: endpoint
+            ? [
+                  "Implement the renderer-service health endpoint before enabling execution.",
+                  "Keep dry-run planning from contacting the renderer-service.",
+              ]
+            : [
+                  "Configure rendererServiceUri, rendererUri, or endpoint before enabling execution.",
+                  "Keep dry-run planning from contacting the renderer-service.",
+              ],
+    };
     const targetKind = contract.target.kind;
     const frameTarget = targetKind === RenderThumbnailTargets.FRAME;
     const objectKey =
@@ -850,6 +886,8 @@ export function createRenderThumbnailRendererServicePlan(options = EMPTY_OBJECT)
             transport: "internal-http-or-worker-rpc",
             adapter: "renderer-service",
             endpoint,
+            client,
+            availability,
             localFileWrites: false,
             resourceNormalization: {
                 mediaUriTemplate: "/assets/by-id/{mediaId}",
@@ -857,6 +895,8 @@ export function createRenderThumbnailRendererServicePlan(options = EMPTY_OBJECT)
                 exampleDownloadUri: `${publicUri.replace(/\/+$/, "")}/assets/by-id/{mediaId}`,
             },
         },
+        client,
+        availability,
         serviceRequest: {
             command: CommandDescriptors.RENDER_THUMBNAIL.id,
             operation: "thumbnail.render",
@@ -917,6 +957,7 @@ export function createRenderThumbnailRendererServicePlan(options = EMPTY_OBJECT)
             mcpToolRegistered: false,
             runtimeExecutionRegistered: false,
             serviceOperation: "thumbnail.render",
+            availabilityProbe: "metadata-only",
         },
     };
 }
@@ -1048,6 +1089,21 @@ function normalizePositiveInteger(value, fallback, label) {
         throw new TypeError(`${label} must be an integer between 1 and 4096.`);
     }
     return number;
+}
+
+function normalizeProbeTimeoutMs(value, fallback) {
+    if (value === undefined || value === null || value === "") {
+        return fallback;
+    }
+    const number = Number(value);
+    if (!Number.isInteger(number) || number <= 0 || number > 60000) {
+        throw new TypeError("render.thumbnail renderer-service probeTimeoutMs must be an integer between 1 and 60000.");
+    }
+    return number;
+}
+
+function joinUrlPath(uri, path) {
+    return `${uri.replace(/\/+$/, "")}/${path.replace(/^\/+/, "")}`;
 }
 
 function normalizeExportFileFormat(value) {

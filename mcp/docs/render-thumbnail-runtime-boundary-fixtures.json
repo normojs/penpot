@@ -1,7 +1,7 @@
 {
-  "version": "P25.9",
+  "version": "P25.10",
   "command": "render.thumbnail",
-  "status": "runtime boundary audited; MCP/CLI planning registered; runtime execution blocked",
+  "status": "runtime boundary audited; MCP/CLI planning and metadata-only availability probes registered; runtime execution blocked",
   "selectedBoundary": "thumbnail-renderer-service",
   "runtimeRegistration": {
     "mcpToolRegistered": true,
@@ -90,11 +90,12 @@
     "Keep command-runtime descriptor tests asserting render.thumbnail only exposes the renderer-service planning adapter until execution exists.",
     "Add renderer-service contract tests for file and tagged-frame inputs, cache policies, PNG metadata, and resource normalization.",
     "MCP planning tests cover dry-run metadata, unavailable execution, adapter rejection, missing frame targets, and no runtime calls.",
+    "Metadata-only availability tests cover endpoint configuration, health endpoint derivation, probe timeout, and unavailable diagnostics without network calls.",
     "Add CLI smoke tests only after the service exists, covering dry-run, resource metadata, --output download, and missing-token errors."
   ],
   "nextTask": {
-    "id": "P25.10",
-    "title": "Add renderer-service availability and client configuration probes",
+    "id": "P25.11",
+    "title": "Define renderer-service execution response and resource metadata handling",
     "modules": ["mcp", "penpot-cli", "command-runtime", "mcp/docs", "todo.md"]
   }
 }

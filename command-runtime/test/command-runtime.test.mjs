@@ -462,6 +462,7 @@ test("render.thumbnail renderer-service plan exposes dry-run client request whil
         cachePolicy: "refresh",
         endpoint: "http://127.0.0.1:6070/thumbnail",
         publicUri: "https://penpot.example.test",
+        probeTimeoutMs: 3500,
     });
 
     assert.equal(plan.command, "render.thumbnail");
@@ -472,6 +473,15 @@ test("render.thumbnail renderer-service plan exposes dry-run client request whil
     assert.equal(plan.endpoint, "http://127.0.0.1:6070/thumbnail");
     assert.equal(plan.service.operation, "thumbnail.render");
     assert.equal(plan.service.localFileWrites, false);
+    assert.equal(plan.client.configured, true);
+    assert.equal(plan.client.healthEndpoint, "http://127.0.0.1:6070/thumbnail/health");
+    assert.equal(plan.client.probeTimeoutMs, 3500);
+    assert.equal(plan.client.networkProbe, false);
+    assert.equal(plan.availability.status, "configured-unverified");
+    assert.equal(plan.availability.probe, "metadata-only");
+    assert.equal(plan.availability.checked, false);
+    assert.deepEqual(plan.service.client, plan.client);
+    assert.deepEqual(plan.service.availability, plan.availability);
     assert.equal(plan.service.resourceNormalization.exampleDownloadUri, "https://penpot.example.test/assets/by-id/{mediaId}");
     assert.equal(plan.target.objectKey, "file-1/page-1/frame-1/component");
     assert.equal(plan.artifact.width, 300);
@@ -487,6 +497,18 @@ test("render.thumbnail renderer-service plan exposes dry-run client request whil
     assert.ok(plan.requiredCapabilities.includes("tagged-frame-resource-normalizer"));
     assert.equal(plan.diagnostics.adapterBoundary, "renderer-service-dry-run");
     assert.equal(plan.diagnostics.runtimeExecutionRegistered, false);
+    assert.equal(plan.diagnostics.availabilityProbe, "metadata-only");
+});
+
+test("render.thumbnail renderer-service plan reports not-configured availability without endpoint", () => {
+    const plan = createRenderThumbnailRendererServicePlan({ fileId: "file-1" });
+
+    assert.equal(plan.endpoint, null);
+    assert.equal(plan.client.configured, false);
+    assert.equal(plan.client.healthEndpoint, null);
+    assert.equal(plan.client.probeTimeoutMs, 2500);
+    assert.equal(plan.availability.status, "not-configured");
+    assert.equal(plan.availability.networkProbe, false);
 });
 
 test("file open helpers produce stable workspace URLs and handoff actions", () => {

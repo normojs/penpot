@@ -385,6 +385,9 @@ export interface CreateRenderThumbnailRendererServicePlanOptions extends CreateR
     rendererServiceUri?: string | null;
     rendererUri?: string | null;
     publicUri?: string | null;
+    probeTimeoutMs?: number | string | null;
+    timeoutMs?: number | string | null;
+    rendererServiceTimeoutMs?: number | string | null;
 }
 
 export interface RenderThumbnailRendererServicePlan {
@@ -407,6 +410,8 @@ export interface RenderThumbnailRendererServicePlan {
         transport: "internal-http-or-worker-rpc";
         adapter: "renderer-service";
         endpoint: string | null;
+        client: RenderThumbnailRendererServiceClientConfig;
+        availability: RenderThumbnailRendererServiceAvailability;
         localFileWrites: false;
         resourceNormalization: {
             mediaUriTemplate: "/assets/by-id/{mediaId}";
@@ -414,6 +419,8 @@ export interface RenderThumbnailRendererServicePlan {
             exampleDownloadUri: string;
         };
     };
+    client: RenderThumbnailRendererServiceClientConfig;
+    availability: RenderThumbnailRendererServiceAvailability;
     serviceRequest: {
         command: "render.thumbnail";
         operation: "thumbnail.render";
@@ -474,7 +481,31 @@ export interface RenderThumbnailRendererServicePlan {
         mcpToolRegistered: boolean;
         runtimeExecutionRegistered: false;
         serviceOperation: "thumbnail.render";
+        availabilityProbe: "metadata-only";
     };
+}
+
+export interface RenderThumbnailRendererServiceClientConfig {
+    endpoint: string | null;
+    configured: boolean;
+    healthEndpoint: string | null;
+    healthMethod: "GET";
+    probeTimeoutMs: number;
+    networkProbe: false;
+    requestContentType: "application/json";
+    responseContentType: "application/json";
+    auth: "caller-session-forwarded-when-execution-exists";
+}
+
+export interface RenderThumbnailRendererServiceAvailability {
+    status: "configured-unverified" | "not-configured";
+    probe: "metadata-only";
+    networkProbe: false;
+    checked: false;
+    endpoint: string | null;
+    healthEndpoint: string | null;
+    reason: string;
+    nextActions: string[];
 }
 
 export interface LowRiskCommandDescriptorCatalog {
