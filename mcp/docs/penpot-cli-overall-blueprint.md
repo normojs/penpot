@@ -251,6 +251,8 @@ Current state:
 - Done: renderer-service planning responses include client configuration,
   derived health endpoint, timeout, and metadata-only availability status
   without probing the network.
+- Done: renderer-service response normalization and error payload contracts are
+  defined without enabling network execution.
 - Done: focused command-runtime tests cover descriptor groups, lookup,
   adapter-selection priority/error cases, and token-safe envelopes.
 - Status: complete. Later command coverage gaps were tracked by the P15.1
@@ -655,6 +657,15 @@ P25.10 is complete:
    environment configuration.
 3. Availability remains metadata-only, so dry-run and unavailable execution do
    not contact renderer-service, backend, exporter, plugin, or local files.
+
+P25.11 is complete:
+
+1. Shared helpers normalize future renderer-service success responses into
+   cache, resource/download URI, renderer, and service-response metadata.
+2. Shared error payloads include renderer-service status, endpoint,
+   retryability, and service data.
+3. MCP and CLI planning expose the response/error contracts while execution
+   remains unavailable.
 
 Keep manual configuration behavior stable while moving command metadata and
 envelopes; transport-specific formatting should stay at the MCP/CLI edges.

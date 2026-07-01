@@ -413,12 +413,24 @@ export interface RenderThumbnailRendererServicePlan {
         client: RenderThumbnailRendererServiceClientConfig;
         availability: RenderThumbnailRendererServiceAvailability;
         localFileWrites: false;
-        resourceNormalization: {
-            mediaUriTemplate: "/assets/by-id/{mediaId}";
-            downloadUriResolver: string;
-            exampleDownloadUri: string;
+            resourceNormalization: {
+                mediaUriTemplate: "/assets/by-id/{mediaId}";
+                downloadUriResolver: string;
+                exampleDownloadUri: string;
+            };
+            responseNormalization: {
+                successStatus: "ok";
+                resourceFields: string[];
+                downloadUriResolver: string;
+                localFileWrites: false;
+            };
+            errorShape: {
+                code: "renderer_service_error";
+                retryable: "derived-from-status";
+                includeServiceStatus: true;
+                includeServiceData: true;
+            };
         };
-    };
     client: RenderThumbnailRendererServiceClientConfig;
     availability: RenderThumbnailRendererServiceAvailability;
     serviceRequest: {
@@ -506,6 +518,52 @@ export interface RenderThumbnailRendererServiceAvailability {
     healthEndpoint: string | null;
     reason: string;
     nextActions: string[];
+}
+
+export interface CreateRenderThumbnailRendererServiceResultOptions {
+    publicUri?: string | null;
+    backendUri?: string | null;
+}
+
+export interface RenderThumbnailRendererServiceResult {
+    command: "render.thumbnail";
+    status: "ok";
+    adapter: "renderer-service";
+    operation: "thumbnail.render";
+    target: RenderThumbnailRendererServicePlan["target"] | null;
+    artifact: RenderThumbnailRendererServicePlan["artifact"] | null;
+    cache: {
+        outcome: string;
+        policy: RenderThumbnailCachePolicy | null;
+        scope: "file-thumbnail" | "file-object-thumbnail" | string | null;
+        key: string | null;
+    };
+    resource: {
+        mediaId: string | null;
+        resourceUri: string;
+        downloadUri: string;
+        contentType: string;
+    };
+    renderer: {
+        runtime: "render-wasm-worker" | string | null;
+        fallbackUsed: boolean;
+    };
+    serviceResponse: {
+        normalized: true;
+        localFileWrites: false;
+    };
+}
+
+export interface RenderThumbnailRendererServiceErrorPayload extends CommandErrorPayload {
+    data: {
+        command: "render.thumbnail";
+        adapter: "renderer-service";
+        operation: "thumbnail.render";
+        endpoint: string | null;
+        status: number | null;
+        retryable: boolean;
+        serviceData: Record<string, unknown> | null;
+    };
 }
 
 export interface LowRiskCommandDescriptorCatalog {
@@ -657,6 +715,15 @@ export function createRenderThumbnailContract(options?: CreateRenderThumbnailCon
 export function createRenderThumbnailRendererServicePlan(
     options?: CreateRenderThumbnailRendererServicePlanOptions
 ): RenderThumbnailRendererServicePlan;
+export function createRenderThumbnailRendererServiceResult(
+    plan: RenderThumbnailRendererServicePlan,
+    response?: unknown,
+    options?: CreateRenderThumbnailRendererServiceResultOptions
+): RenderThumbnailRendererServiceResult;
+export function createRenderThumbnailRendererServiceErrorPayload(
+    plan: RenderThumbnailRendererServicePlan,
+    cause?: unknown
+): RenderThumbnailRendererServiceErrorPayload;
 export function createCommandErrorPayload(
     code: CommandErrorCode | string,
     message: string,

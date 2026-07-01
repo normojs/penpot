@@ -112,7 +112,7 @@ MCP server tool classes and `penpot-cli`.
 | `export.page` | `ExportPageArgs` | plugin-live task | JSON/base64 export task data | `ExportPluginTask.test.ts` serialization only |
 | `export.file` | `ExportFileArgs`; CLI contract implemented | MCP and CLI backend-rpc `export-binfile` RPC/SSE execution | `.penpot` artifact metadata plus backend resource URI; CLI can additionally write the archive with `--output` | `ExportTools.test.ts` covers MCP SSE resource return; `PenpotRpcClient.test.ts` covers SSE parsing/errors; `command-runtime.test.mjs` consumes `export-file-contract-fixtures.json`; `cli-smoke.test.mjs` covers dry-run, SSE, output write, adapter error, and auth error |
 | `render.preview` | `RenderPreviewArgs` | exporter HTTP service for explicit targets; plugin-live task for bound workspace context | JSON exporter resource metadata or JSON/base64 render task data | `ExportTools.test.ts` covers exporter/plugin-live/adapter errors; `ExportPluginTask.test.ts` covers serialization |
-| `render.thumbnail` | `RenderThumbnailArgs`; MCP and CLI dry-run/client boundaries | dashboard thumbnail data/render/cache contract with `renderer-service` planning adapter and metadata-only availability probe; runtime execution remains unavailable | MCP/CLI dry-run plan with PNG thumbnail artifact metadata, renderer-service request shape, client config, and availability status; `dryRun:false`/execution reports `renderer_service_unavailable` and no runtime rendering | `command-runtime.test.mjs` consumes `render-thumbnail-contract-fixtures.json`, `render-thumbnail-runtime-boundary-fixtures.json`, and `render-thumbnail-renderer-service-fixtures.json`; MCP `ExportTools.test.ts` and CLI smoke tests cover dry-run, unavailable execution, client availability, and adapter errors |
+| `render.thumbnail` | `RenderThumbnailArgs`; MCP and CLI dry-run/client boundaries | dashboard thumbnail data/render/cache contract with `renderer-service` planning adapter, metadata-only availability probe, and response/error normalization; runtime execution remains unavailable | MCP/CLI dry-run plan with PNG thumbnail artifact metadata, renderer-service request shape, client config, availability status, and response/error contracts; `dryRun:false`/execution reports `renderer_service_unavailable` and no runtime rendering | `command-runtime.test.mjs` consumes `render-thumbnail-contract-fixtures.json`, `render-thumbnail-runtime-boundary-fixtures.json`, and `render-thumbnail-renderer-service-fixtures.json`; MCP `ExportTools.test.ts` and CLI smoke tests cover dry-run, unavailable execution, client availability, response contract exposure, and adapter errors |
 | `execute_code` | `ExecuteCodeArgs` | plugin-live task, disabled unless `PENPOT_MCP_ENABLE_EXECUTE_CODE=true` | JSON disabled error or text execution result | `ExecuteCodeTool.test.ts` |
 | `high_level_overview` | `EmptyToolArgs` | local static overview | text overview | gap: no focused test |
 | `penpot_api_info` | `PenpotApiInfoArgs` | local API docs index | text/JSON API info | gap: no focused test |
@@ -143,8 +143,9 @@ not register yet:
   CLI through backend-rpc; `render.thumbnail` has a fixture-backed
   target/cache/artifact contract, a P25.6 renderer-service boundary audit,
   P25.7 renderer-service API fixtures, a P25.8 CLI dry-run/client boundary,
-  a P25.9 MCP planning-only dry-run tool, and P25.10 metadata-only client
-  availability probes while runtime execution remains unavailable
+  a P25.9 MCP planning-only dry-run tool, P25.10 metadata-only client
+  availability probes, and P25.11 response/error normalization contracts while
+  runtime execution remains unavailable
 - debug: `debug.get_plugin_state`, `debug.get_agent_logs`
 
 Do not migrate these as executable descriptors until their implementation is

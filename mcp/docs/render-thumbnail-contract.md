@@ -1,8 +1,8 @@
 # Render Thumbnail Contract
 
-Status: P25.4 descriptor contract; P25.10 MCP/CLI renderer-service dry-run
-boundaries and metadata-only availability probes defined; runtime execution
-still blocked.
+Status: P25.4 descriptor contract; P25.11 MCP/CLI renderer-service dry-run
+boundaries, metadata-only availability probes, and response normalization
+contracts defined; runtime execution still blocked.
 
 This document defines the `render.thumbnail` contract before executable MCP or
 CLI rendering is enabled. The contract follows Penpot's existing dashboard
@@ -126,6 +126,9 @@ Shared contract shape:
 - P25.10 availability fields are metadata-only. They may derive a health
   endpoint and timeout from configuration, but they must not contact the
   renderer service during planning.
+- P25.11 response fields are normalization contracts only. They define how a
+  future service response becomes resource metadata and how service errors are
+  shaped, but they must not trigger renderer-service execution.
 - Exporter service execution is out of scope for this command unless a later
   task explicitly maps thumbnail rendering to exporter-compatible semantics.
 - P25.6 selects a future dedicated thumbnail renderer service as the executable
@@ -140,9 +143,9 @@ See `render-thumbnail-runtime-boundary.md` and
 audit, resource-return rules, cache refresh behavior, auth expectations, and
 future test strategy.
 See `render-thumbnail-renderer-service-api.md` and
-`render-thumbnail-renderer-service-fixtures.json` for the P25.10 future
+`render-thumbnail-renderer-service-fixtures.json` for the P25.11 future
 renderer-service request/response API, MCP/CLI dry-run/client boundary, and
-metadata-only availability probe.
+metadata-only availability probe plus response/error normalization.
 
 ## Fixtures
 

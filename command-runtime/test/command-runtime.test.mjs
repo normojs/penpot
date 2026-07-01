@@ -18,7 +18,9 @@ import {
     createCommandResultEnvelope,
     createExportFileContract,
     createRenderThumbnailContract,
+    createRenderThumbnailRendererServiceErrorPayload,
     createRenderThumbnailRendererServicePlan,
+    createRenderThumbnailRendererServiceResult,
     createFileOpenHandoff,
     createWorkspaceUrl,
     getAdapterSelectionReason,
@@ -398,6 +400,9 @@ test("render.thumbnail renderer-service API fixtures define planning requests wi
     assert.equal(fixtures.serviceApi.operation, "thumbnail.render");
     assert.equal(fixtures.serviceApi.localFileWrites, false);
     assert.equal(fixtures.serviceApi.requestAuth.mode, "caller-session");
+    assert.equal(fixtures.serviceApi.responseNormalization.successStatus, "ok");
+    assert.equal(fixtures.serviceApi.responseNormalization.localFileWrites, false);
+    assert.equal(fixtures.serviceApi.errorShape.retryable, "derived-from-status");
     assert.deepEqual(fixtures.runtimeRegistration.commandDescriptorAdapters, ["renderer-service"]);
     assert.deepEqual(CommandDescriptors.RENDER_THUMBNAIL.adapters, ["renderer-service"]);
     assert.equal(fixtures.runtimeRegistration.mcpToolRegistered, true);
@@ -444,6 +449,15 @@ test("render.thumbnail renderer-service API fixtures define planning requests wi
 
     for (const fixture of fixtures.errorCases) {
         await t.test(fixture.id, () => {
+            if (fixture.serviceError) {
+                const plan = createRenderThumbnailRendererServicePlan(fixture.input);
+                const error = createRenderThumbnailRendererServiceErrorPayload(plan, fixture.serviceError);
+                assert.equal(error.code, fixture.expectedError.code);
+                assert.equal(error.data.retryable, fixture.expectedError.retryable);
+                assert.equal(fixture.expectedError.dispatchServiceRequest, false);
+                return;
+            }
+
             const contract = createRenderThumbnailContract(fixture.input);
             assert.deepEqual(contract.requires, fixture.expectedError.requires);
             assert.equal(fixture.expectedError.dispatchServiceRequest, false);
@@ -509,6 +523,64 @@ test("render.thumbnail renderer-service plan reports not-configured availability
     assert.equal(plan.client.probeTimeoutMs, 2500);
     assert.equal(plan.availability.status, "not-configured");
     assert.equal(plan.availability.networkProbe, false);
+});
+
+test("render.thumbnail renderer-service result normalizes resource metadata", () => {
+    const plan = createRenderThumbnailRendererServicePlan({
+        fileId: "file-1",
+        revn: 7,
+        cachePolicy: "refresh",
+        endpoint: "http://127.0.0.1:6070/thumbnail",
+        publicUri: "https://penpot.example.test",
+    });
+    const fixture = renderThumbnailRendererServiceFixtures.cases.find((entry) => entry.id === "file-refresh-default");
+    const result = createRenderThumbnailRendererServiceResult(plan, fixture.expectedResponse, {
+        publicUri: "https://penpot.example.test",
+    });
+
+    assert.equal(result.command, "render.thumbnail");
+    assert.equal(result.status, "ok");
+    assert.equal(result.adapter, "renderer-service");
+    assert.equal(result.operation, "thumbnail.render");
+    assert.equal(result.cache.outcome, "refreshed");
+    assert.equal(result.cache.scope, "file-thumbnail");
+    assert.equal(result.cache.key, "file:file-1:revn:7");
+    assert.equal(result.resource.mediaId, "media-file-thumb-7");
+    assert.equal(result.resource.resourceUri, "/assets/by-id/media-file-thumb-7");
+    assert.equal(result.resource.downloadUri, "https://penpot.example.test/assets/by-id/media-file-thumb-7");
+    assert.equal(result.resource.contentType, "image/png");
+    assert.equal(result.renderer.runtime, "render-wasm-worker");
+    assert.equal(result.renderer.fallbackUsed, false);
+    assert.equal(result.serviceResponse.localFileWrites, false);
+});
+
+test("render.thumbnail renderer-service result derives resource URI and errors consistently", () => {
+    const plan = createRenderThumbnailRendererServicePlan({ fileId: "file-1" });
+    const result = createRenderThumbnailRendererServiceResult(plan, {
+        resource: {
+            mediaId: "media-derived",
+            contentType: "image/png",
+        },
+    });
+    const error = createRenderThumbnailRendererServiceErrorPayload(plan, {
+        status: 503,
+        code: "renderer_service_unavailable",
+        message: "Renderer service unavailable.",
+        data: { outage: true },
+    });
+
+    assert.equal(result.resource.resourceUri, "/assets/by-id/media-derived");
+    assert.equal(result.resource.downloadUri, "https://penpot.example.test/assets/by-id/media-derived");
+    assert.throws(
+        () => createRenderThumbnailRendererServiceResult(plan, { resource: {} }),
+        /renderer-service response requires/
+    );
+    assert.equal(error.code, "renderer_service_unavailable");
+    assert.equal(error.message, "Renderer service unavailable.");
+    assert.equal(error.data.command, "render.thumbnail");
+    assert.equal(error.data.status, 503);
+    assert.equal(error.data.retryable, true);
+    assert.deepEqual(error.data.serviceData, { outage: true });
 });
 
 test("file open helpers produce stable workspace URLs and handoff actions", () => {

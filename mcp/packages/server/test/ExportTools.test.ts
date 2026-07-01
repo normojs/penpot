@@ -352,6 +352,9 @@ test("RenderThumbnailTool dry-run returns renderer-service request metadata with
         assert.equal(body.data.availability.probe, "metadata-only");
         assert.equal(body.data.availability.checked, false);
         assert.deepEqual(body.data.service.client, body.data.client);
+        assert.equal(body.data.service.responseNormalization.successStatus, "ok");
+        assert.equal(body.data.service.responseNormalization.localFileWrites, false);
+        assert.equal(body.data.service.errorShape.code, "renderer_service_error");
         assert.equal(body.data.serviceRequest.operation, "thumbnail.render");
         assert.equal(body.data.serviceRequest.target.objectKey, `${UUIDS.file}/${UUIDS.page}/${UUIDS.object}/cover`);
         assert.equal(body.data.serviceRequest.artifact.width, 320);

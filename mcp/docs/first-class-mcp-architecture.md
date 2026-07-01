@@ -2169,6 +2169,16 @@ P25.10 render.thumbnail availability probe result:
 - MCP and CLI continue to avoid renderer-service, backend, exporter, plugin,
   persistence, and filesystem side effects while execution is unavailable.
 
+P25.11 render.thumbnail response normalization result:
+
+- `createRenderThumbnailRendererServiceResult` normalizes future
+  `thumbnail.render` success payloads into cache, resource/download URI,
+  renderer, and service-response metadata.
+- `createRenderThumbnailRendererServiceErrorPayload` defines retryable service
+  error payloads with status, endpoint, and service data.
+- MCP and CLI dry-run plans expose the response and error shape contract, but
+  no renderer-service network execution is enabled.
+
 ### 8.5 Export and Render Tools
 
 May start file-bound and later move to headless:
@@ -2189,9 +2199,10 @@ enables the CLI backend-rpc path for `penpot-cli export file`, P25.4 gives
 future dedicated thumbnail renderer service for `render.thumbnail`, and P25.7
 defines its service API fixtures. P25.8 adds the CLI dry-run/client boundary,
 P25.9 registers MCP `render.thumbnail` as planning-only, and P25.10 adds
-metadata-only renderer-service availability probes. Runtime behavior remains
-unavailable until the renderer-service implementation, cache probe, response
-normalization, and tagged-frame capabilities are implemented.
+metadata-only renderer-service availability probes. P25.11 defines response
+normalization and error payloads. Runtime behavior remains unavailable until
+the renderer-service implementation, cache probe, execution client, and
+tagged-frame capabilities are implemented.
 
 ### 8.6 Advanced Tools
 

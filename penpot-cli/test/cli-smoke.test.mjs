@@ -2603,6 +2603,9 @@ test("render thumbnail dry-run returns renderer-service request plan", async () 
         assert.equal(body.data.availability.status, "configured-unverified");
         assert.equal(body.data.availability.probe, "metadata-only");
         assert.equal(body.data.availability.checked, false);
+        assert.equal(body.data.service.responseNormalization.successStatus, "ok");
+        assert.equal(body.data.service.responseNormalization.localFileWrites, false);
+        assert.equal(body.data.service.errorShape.code, "renderer_service_error");
         assert.equal(body.data.artifact.width, 300);
         assert.equal(body.data.artifact.height, 200);
         assert.equal(body.data.target.objectKey, `${UUIDS.file}/${UUIDS.page}/${UUIDS.object}/component`);

@@ -1,7 +1,7 @@
 {
-  "version": "P25.10",
+  "version": "P25.11",
   "command": "render.thumbnail",
-  "status": "renderer-service API fixtures with MCP/CLI dry-run/client boundaries and metadata-only availability probes; runtime execution blocked",
+  "status": "renderer-service API fixtures with MCP/CLI dry-run/client boundaries, metadata-only availability probes, and response normalization contracts; runtime execution blocked",
   "adapter": "renderer-service",
   "runtimeRegistration": {
     "mcpToolRegistered": true,
@@ -28,6 +28,18 @@
       "downloadUriResolver": "entry-adapter backendUri/publicUri + resourceUri",
       "filePersistSource": "create-file-thumbnail response uri/id",
       "framePersistSource": "create-file-object-thumbnail response media-id"
+    },
+    "responseNormalization": {
+      "successStatus": "ok",
+      "requiredResourceFields": ["resource.resourceUri or resource.uri or resource.resource-uri or resource.mediaId"],
+      "normalizedResultFields": ["cache", "resource", "renderer", "serviceResponse"],
+      "localFileWrites": false
+    },
+    "errorShape": {
+      "code": "renderer_service_error",
+      "retryable": "derived-from-status",
+      "includeServiceStatus": true,
+      "includeServiceData": true
     },
     "clientConfiguration": {
       "endpointFields": ["endpoint", "rendererServiceUri", "rendererUri"],
@@ -291,12 +303,32 @@
         "requires": ["pageId", "objectId"],
         "dispatchServiceRequest": false
       }
+    },
+    {
+      "id": "renderer-service-unavailable",
+      "input": {
+        "fileId": "file-1"
+      },
+      "serviceError": {
+        "status": 503,
+        "code": "renderer_service_unavailable",
+        "message": "Renderer service unavailable.",
+        "data": {
+          "outage": true
+        }
+      },
+      "expectedError": {
+        "code": "renderer_service_unavailable",
+        "retryable": true,
+        "dispatchServiceRequest": false
+      }
     }
   ],
   "mcpTests": [
     "dry-run returns the renderer-service request without contacting renderer/backend/exporter/plugin runtimes",
     "dryRun false reports renderer_service_unavailable without contacting the network",
     "dry-run and unavailable execution include client configuration and metadata-only availability status",
+    "dry-run exposes response normalization and error shape contracts",
     "rejects unsupported adapters while render.thumbnail runtime execution is unavailable",
     "reports structured errors for missing frame target before runtime dispatch"
   ],
@@ -309,12 +341,13 @@
     "dry-run prints the renderer-service request without rendering",
     "execution reports renderer_service_unavailable without contacting the network",
     "client configuration and availability metadata survive text and JSON output",
+    "response normalization metadata survives dry-run JSON output",
     "--output downloads the returned PNG resource",
     "missing token fails before contacting renderer-service"
   ],
   "nextTask": {
-    "id": "P25.11",
-    "title": "Define renderer-service execution response and resource metadata handling",
+    "id": "P25.12",
+    "title": "Add renderer-service execution client scaffold behind unavailable gate",
     "modules": ["mcp", "penpot-cli", "command-runtime", "mcp/docs", "todo.md"]
   }
 }

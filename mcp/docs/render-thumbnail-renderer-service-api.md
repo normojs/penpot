@@ -1,8 +1,8 @@
 # Render Thumbnail Renderer Service API
 
-Status: P25.10 API fixtures, MCP/CLI dry-run/client boundaries, and
-metadata-only availability probes defined; executable runtime registration
-remains blocked.
+Status: P25.11 API fixtures, MCP/CLI dry-run/client boundaries, metadata-only
+availability probes, and response normalization contracts defined; executable
+runtime registration remains blocked.
 
 P25.6 selected a dedicated thumbnail renderer service as the future executable
 owner for `render.thumbnail`. This document defines the service-facing request
@@ -20,6 +20,12 @@ configured endpoint, derived `/health` endpoint, probe timeout, content types,
 and availability status without contacting the service. `configured-unverified`
 means an endpoint exists but was not probed; `not-configured` means no endpoint
 was provided by arguments or environment.
+
+P25.11 defines response normalization before execution exists. A successful
+service response is normalized into cache metadata, resource/download URI,
+renderer metadata, and a `serviceResponse.localFileWrites: false` marker.
+Service errors normalize to a shared error payload with service status,
+retryability, endpoint, and service data.
 
 ## Service Boundary
 
@@ -46,6 +52,23 @@ Planning responses include:
   }
 }
 ```
+
+Successful response normalization expects one of these resource inputs:
+
+```json
+{
+  "resource": {
+    "resourceUri": "/assets/by-id/media-file-thumb-7",
+    "downloadUri": "https://penpot.example.test/assets/by-id/media-file-thumb-7",
+    "contentType": "image/png"
+  }
+}
+```
+
+If only `mediaId` is returned, callers derive `/assets/by-id/{mediaId}` and
+then resolve `downloadUri` from the entry adapter `publicUri` or backend URI.
+MCP never writes files; future CLI `--output` may download only after a
+successful normalized result exists.
 
 The renderer service owns:
 
@@ -191,6 +214,8 @@ Before `render.thumbnail` becomes executable:
 - add a file thumbnail cache probe for `reuse`
 - add or expose explicit frame source-data loading for tagged frame targets
 - normalize tagged frame media ids to resource URIs
+- keep response normalization covered by fixtures before any network client is
+  enabled
 - extend MCP tests from dry-run/unavailable planning into auth forwarding,
   resource metadata, and renderer-service error responses
 - add CLI smoke tests for dry-run, execution metadata, `--output`, and missing

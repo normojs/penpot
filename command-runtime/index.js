@@ -894,6 +894,18 @@ export function createRenderThumbnailRendererServicePlan(options = EMPTY_OBJECT)
                 downloadUriResolver: "entry-adapter backendUri/publicUri + resourceUri",
                 exampleDownloadUri: `${publicUri.replace(/\/+$/, "")}/assets/by-id/{mediaId}`,
             },
+            responseNormalization: {
+                successStatus: "ok",
+                resourceFields: ["resource.resourceUri", "resource.uri", "resource.resource-uri", "resource.mediaId"],
+                downloadUriResolver: "entry-adapter publicUri/backendUri + resourceUri",
+                localFileWrites: false,
+            },
+            errorShape: {
+                code: "renderer_service_error",
+                retryable: "derived-from-status",
+                includeServiceStatus: true,
+                includeServiceData: true,
+            },
         },
         client,
         availability,
@@ -960,6 +972,96 @@ export function createRenderThumbnailRendererServicePlan(options = EMPTY_OBJECT)
             availabilityProbe: "metadata-only",
         },
     };
+}
+
+export function createRenderThumbnailRendererServiceResult(plan, response = EMPTY_OBJECT, options = EMPTY_OBJECT) {
+    const responseRecord = asRecord(response);
+    const resourceRecord = asRecord(responseRecord.resource);
+    const cacheRecord = asRecord(responseRecord.cache);
+    const rendererRecord = asRecord(responseRecord.renderer);
+    const publicUri =
+        normalizeOptionalString(options.publicUri) ??
+        normalizeOptionalString(options.backendUri) ??
+        normalizeOptionalString(plan?.publicUri) ??
+        "https://penpot.example.test";
+    const mediaId =
+        normalizeOptionalString(resourceRecord.mediaId ?? resourceRecord["media-id"] ?? resourceRecord.id) ??
+        mediaIdFromResourceUri(resourceRecord.resourceUri ?? resourceRecord.uri ?? resourceRecord["resource-uri"]);
+    const resourceUri =
+        normalizeOptionalString(resourceRecord.resourceUri ?? resourceRecord.uri ?? resourceRecord["resource-uri"]) ??
+        (mediaId ? `/assets/by-id/${mediaId}` : null);
+    if (!resourceUri) {
+        throw new TypeError("render.thumbnail renderer-service response requires resourceUri, uri, resource-uri, or mediaId.");
+    }
+    const downloadUri =
+        normalizeOptionalString(resourceRecord.downloadUri ?? resourceRecord["download-uri"]) ??
+        resolveDownloadUri(resourceUri, publicUri);
+    const contentType =
+        normalizeOptionalString(resourceRecord.contentType ?? resourceRecord["content-type"] ?? resourceRecord.mtype) ??
+        plan?.artifact?.mimeType ??
+        "image/png";
+    const cacheOutcome =
+        normalizeOptionalString(cacheRecord.outcome) ??
+        (plan?.cache?.policy === RenderThumbnailCachePolicies.REUSE ? "hit-or-rendered" : "refreshed");
+
+    return {
+        command: CommandDescriptors.RENDER_THUMBNAIL.id,
+        status: "ok",
+        adapter: "renderer-service",
+        operation: "thumbnail.render",
+        target: plan?.target ?? null,
+        artifact: plan?.artifact ?? null,
+        cache: {
+            outcome: cacheOutcome,
+            policy: plan?.cache?.policy ?? null,
+            scope: normalizeOptionalString(cacheRecord.scope) ?? plan?.cache?.scope ?? null,
+            key: normalizeOptionalString(cacheRecord.key) ?? plan?.cache?.key ?? null,
+        },
+        resource: {
+            mediaId,
+            resourceUri,
+            downloadUri,
+            contentType,
+        },
+        renderer: {
+            runtime: normalizeOptionalString(rendererRecord.runtime) ?? plan?.serviceRequest?.render?.runtime ?? null,
+            fallbackUsed: Boolean(rendererRecord.fallbackUsed ?? rendererRecord["fallback-used"] ?? false),
+        },
+        serviceResponse: {
+            normalized: true,
+            localFileWrites: false,
+        },
+    };
+}
+
+export function createRenderThumbnailRendererServiceErrorPayload(plan, cause = EMPTY_OBJECT) {
+    const errorRecord = asRecord(cause);
+    const dataRecord = asRecord(errorRecord.data);
+    const status = typeof errorRecord.status === "number" ? errorRecord.status : null;
+    const code =
+        normalizeOptionalString(errorRecord.code) ??
+        normalizeOptionalString(dataRecord.code) ??
+        "renderer_service_error";
+    const message =
+        normalizeOptionalString(errorRecord.message) ??
+        normalizeOptionalString(dataRecord.message) ??
+        "thumbnail renderer service request failed.";
+
+    return createCommandErrorPayload(code, message, {
+        actions: [
+            "Inspect renderer-service health and logs before retrying.",
+            "Keep MCP resource returns metadata-only; CLI --output may download only after execution succeeds.",
+        ],
+        data: {
+            command: CommandDescriptors.RENDER_THUMBNAIL.id,
+            adapter: "renderer-service",
+            operation: "thumbnail.render",
+            endpoint: plan?.endpoint ?? null,
+            status,
+            retryable: status === null || status === 0 || status === 408 || status === 429 || status >= 500,
+            serviceData: Object.keys(dataRecord).length > 0 ? dataRecord : null,
+        },
+    });
 }
 
 export function createCommandErrorPayload(code, message, options = EMPTY_OBJECT) {
@@ -1104,6 +1206,26 @@ function normalizeProbeTimeoutMs(value, fallback) {
 
 function joinUrlPath(uri, path) {
     return `${uri.replace(/\/+$/, "")}/${path.replace(/^\/+/, "")}`;
+}
+
+function asRecord(value) {
+    return value !== null && typeof value === "object" && !Array.isArray(value) ? value : EMPTY_OBJECT;
+}
+
+function mediaIdFromResourceUri(value) {
+    const uri = normalizeOptionalString(value);
+    if (!uri) {
+        return null;
+    }
+    const match = uri.match(/\/assets\/by-id\/([^/?#]+)/);
+    return match ? decodeURIComponent(match[1]) : null;
+}
+
+function resolveDownloadUri(resourceUri, publicUri) {
+    if (/^https?:\/\//.test(resourceUri)) {
+        return resourceUri;
+    }
+    return `${publicUri.replace(/\/+$/, "")}/${resourceUri.replace(/^\/+/, "")}`;
 }
 
 function normalizeExportFileFormat(value) {

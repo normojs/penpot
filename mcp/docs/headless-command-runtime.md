@@ -822,3 +822,14 @@ P25.10 adds renderer-service client configuration and availability probes:
   endpoint is configured and `not-configured` when it is absent.
 - The probe is descriptive only: it does not perform HTTP requests, render PNG
   bytes, persist thumbnails, or make runtime execution available.
+
+P25.11 defines renderer-service response and error normalization:
+
+- Successful `thumbnail.render` responses normalize cache outcome,
+  resource/download URI, content type, renderer runtime, and fallback metadata.
+- If a response contains only `mediaId`, the shared helper derives
+  `/assets/by-id/{mediaId}` and resolves a download URI from the entry adapter
+  public/backend URI.
+- Renderer-service errors normalize into shared error payloads with status,
+  retryability, endpoint, and service data. No MCP/CLI network execution is
+  enabled by this contract.
