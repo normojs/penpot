@@ -1,7 +1,7 @@
 {
-  "version": "P25.17",
+  "version": "P25.18",
   "command": "render.thumbnail",
-  "status": "renderer-service API fixtures with MCP/CLI dry-run/client boundaries, metadata-only availability probes, response normalization contracts, disabled client request scaffold, explicit execution gate, health preflight plan, executable client harness plan, dispatch adapter boundary, opt-in configuration surfaces, and unavailable error taxonomy; runtime execution blocked",
+  "status": "renderer-service API fixtures with MCP/CLI dry-run/client boundaries, metadata-only availability probes, response normalization contracts, disabled client request scaffold, explicit execution gate, health preflight plan, executable client harness plan, dispatch adapter boundary, opt-in configuration surfaces, unavailable error taxonomy, and integration fixture harness; runtime execution blocked",
   "adapter": "renderer-service",
   "runtimeRegistration": {
     "mcpToolRegistered": true,
@@ -195,6 +195,39 @@
         "mcp": ["localFileWrites:false", "resource metadata only"],
         "cli": ["optional output metadata only after resource downloadUri exists"]
       }
+    },
+    "integrationFixtureHarness": {
+      "status": "planned-disabled",
+      "dispatch": false,
+      "networkDispatch": false,
+      "localFileWrites": false,
+      "harnessVersion": "P25.18",
+      "runner": "future renderer-service integration fixture harness",
+      "sequence": [
+        "resolveConfig",
+        "assertClosedGate",
+        "healthPreflightFixture",
+        "renderDispatchFixture",
+        "normalizeResultOrError",
+        "assertMcpCliResourceSemantics"
+      ],
+      "cases": [
+        "closed-gate-no-network",
+        "missing-endpoint-not-configured",
+        "health-unavailable-prevents-render",
+        "render-success-mcp-resource-metadata",
+        "render-success-cli-output-download",
+        "service-error-normalization",
+        "auth-forwarding-token-safe"
+      ],
+      "requiredBeforeDispatch": [
+        "closed gate fixture passes without fetch",
+        "health unavailable and invalid fixtures prevent render POST",
+        "render success fixture normalizes MCP resource metadata",
+        "render success fixture gates CLI --output download on downloadUri",
+        "service error fixture maps stable taxonomy codes and retryability",
+        "auth fixture proves token values are not serialized"
+      ]
     },
     "clientConfiguration": {
       "endpointFields": ["endpoint", "rendererServiceUri", "rendererUri"],
@@ -496,6 +529,7 @@
     "dry-run and unavailable execution expose disabled health preflight and executable client harness plans",
     "dry-run and unavailable execution expose disabled dispatch adapter boundary and result mapping",
     "dry-run and unavailable execution expose opt-in configuration surfaces without enabling execution",
+    "dry-run and unavailable execution expose integration fixture harness metadata without enabling execution",
     "rejects unsupported adapters while render.thumbnail runtime execution is unavailable",
     "reports structured errors for missing frame target before runtime dispatch"
   ],
@@ -514,12 +548,13 @@
     "disabled health preflight and execution harness metadata survive dry-run and unavailable execution JSON output",
     "disabled dispatch adapter boundary metadata survives dry-run and unavailable execution JSON output",
     "opt-in configuration surface metadata survives dry-run and unavailable execution JSON output",
+    "integration fixture harness metadata survives dry-run and unavailable execution JSON output",
     "--output downloads the returned PNG resource",
     "missing token fails before contacting renderer-service"
   ],
   "nextTask": {
-    "id": "P25.17",
-    "title": "Plan renderer-service unavailable error taxonomy",
+    "id": "P25.18",
+    "title": "Plan renderer-service integration fixture harness",
     "modules": ["mcp", "penpot-cli", "command-runtime", "mcp/docs", "todo.md"]
   }
 }

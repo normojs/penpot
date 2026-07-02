@@ -892,3 +892,11 @@ P25.17 adds renderer-service unavailable error taxonomy:
   pre-implementation gate/config/dispatch failures are non-retryable.
 - MCP/CLI dry-run and unavailable responses expose the taxonomy while
   `unavailableErrorTaxonomy.dispatch` remains `false`.
+
+P25.18 adds renderer-service integration fixture harness:
+
+- Plans include `integrationFixtureHarness` with fixture cases for closed gate,
+  missing endpoint, health failure, render success, service error, MCP resource
+  metadata, CLI output gating, and token-safe auth.
+- The harness records the future suite required before executable dispatch,
+  while `dispatch`, `networkDispatch`, and `localFileWrites` remain `false`.

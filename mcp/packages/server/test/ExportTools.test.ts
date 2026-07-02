@@ -375,6 +375,14 @@ test("RenderThumbnailTool dry-run returns renderer-service request metadata with
                     entry.code === "renderer_service_health_unavailable" && entry.retryable === true
             )
         );
+        assert.equal(body.data.integrationFixtureHarness.harnessVersion, "P25.18");
+        assert.equal(body.data.integrationFixtureHarness.dispatch, false);
+        assert.equal(body.data.integrationFixtureHarness.networkDispatch, false);
+        assert.ok(
+            body.data.integrationFixtureHarness.cases.some(
+                (entry: { id: string }) => entry.id === "render-success-mcp-resource-metadata"
+            )
+        );
         assert.deepEqual(body.data.service.client, body.data.client);
         assert.equal(body.data.service.responseNormalization.successStatus, "ok");
         assert.equal(body.data.service.responseNormalization.localFileWrites, false);
@@ -439,6 +447,9 @@ test("RenderThumbnailTool execution reports renderer service unavailable without
         assert.equal(body.error.data.unavailableErrorTaxonomy.taxonomyVersion, "P25.17");
         assert.equal(body.error.data.unavailableErrorTaxonomy.dispatch, false);
         assert.equal(body.error.data.unavailableErrorTaxonomy.defaultCode, "renderer_service_unavailable");
+        assert.equal(body.error.data.integrationFixtureHarness.harnessVersion, "P25.18");
+        assert.equal(body.error.data.integrationFixtureHarness.dispatch, false);
+        assert.equal(body.error.data.integrationFixtureHarness.networkDispatch, false);
         assert.equal(body.error.data.clientRequest.dispatch, false);
         assert.equal(body.error.data.serviceRequest.operation, "thumbnail.render");
         assert.deepEqual(body.error.data.requiredCapabilities, ["thumbnail-renderer-service-implementation", "file-thumbnail-cache-probe"]);

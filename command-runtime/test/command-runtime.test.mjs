@@ -23,6 +23,7 @@ import {
     createRenderThumbnailRendererServiceExecutionGate,
     createRenderThumbnailRendererServiceExecutionClientHarness,
     createRenderThumbnailRendererServiceHealthPreflight,
+    createRenderThumbnailRendererServiceIntegrationFixtureHarness,
     createRenderThumbnailRendererServiceOptInConfiguration,
     createRenderThumbnailRendererServiceUnavailableErrorTaxonomy,
     createRenderThumbnailRendererServiceErrorPayload,
@@ -441,6 +442,9 @@ test("render.thumbnail renderer-service API fixtures define planning requests wi
     assert.equal(fixtures.serviceApi.unavailableErrorTaxonomy.taxonomyVersion, "P25.17");
     assert.equal(fixtures.serviceApi.unavailableErrorTaxonomy.dispatch, false);
     assert.ok(fixtures.serviceApi.unavailableErrorTaxonomy.codes.includes("renderer_service_health_unavailable"));
+    assert.equal(fixtures.serviceApi.integrationFixtureHarness.harnessVersion, "P25.18");
+    assert.equal(fixtures.serviceApi.integrationFixtureHarness.dispatch, false);
+    assert.ok(fixtures.serviceApi.integrationFixtureHarness.cases.includes("closed-gate-no-network"));
     assert.deepEqual(fixtures.runtimeRegistration.commandDescriptorAdapters, ["renderer-service"]);
     assert.deepEqual(CommandDescriptors.RENDER_THUMBNAIL.adapters, ["renderer-service"]);
     assert.equal(fixtures.runtimeRegistration.mcpToolRegistered, true);
@@ -578,6 +582,12 @@ test("render.thumbnail renderer-service plan exposes dry-run client request whil
     assert.equal(plan.unavailableErrorTaxonomy.dispatch, false);
     assert.equal(plan.unavailableErrorTaxonomy.defaultCode, "renderer_service_unavailable");
     assert.deepEqual(plan.service.unavailableErrorTaxonomy, plan.unavailableErrorTaxonomy);
+    assert.equal(plan.integrationFixtureHarness.harnessVersion, "P25.18");
+    assert.equal(plan.integrationFixtureHarness.dispatch, false);
+    assert.equal(plan.integrationFixtureHarness.networkDispatch, false);
+    assert.equal(plan.integrationFixtureHarness.localFileWrites, false);
+    assert.ok(plan.integrationFixtureHarness.cases.some((entry) => entry.id === "render-success-cli-output-download"));
+    assert.deepEqual(plan.service.integrationFixtureHarness, plan.integrationFixtureHarness);
     assert.equal(plan.clientRequest.status, "scaffolded");
     assert.equal(plan.clientRequest.dispatch, false);
     assert.equal(plan.clientRequest.method, "POST");
@@ -611,6 +621,7 @@ test("render.thumbnail renderer-service plan exposes dry-run client request whil
     assert.equal(plan.diagnostics.dispatchAdapterBoundaryStatus, "planned-disabled");
     assert.equal(plan.diagnostics.dispatchAdapterBoundaryDispatch, false);
     assert.equal(plan.diagnostics.unavailableErrorTaxonomyVersion, "P25.17");
+    assert.equal(plan.diagnostics.integrationFixtureHarnessVersion, "P25.18");
 });
 
 test("render.thumbnail renderer-service plan reports not-configured availability without endpoint", () => {
@@ -762,6 +773,52 @@ test("render.thumbnail renderer-service unavailable error taxonomy defines stabl
     assert.equal(taxonomy.current.clientConfigured, true);
     assert.equal(taxonomy.current.availabilityStatus, "configured-unverified");
     assert.equal(taxonomy.current.dispatchAdapterBoundaryStatus, "planned-disabled");
+});
+
+test("render.thumbnail renderer-service integration fixture harness plans no-dispatch cases", () => {
+    const harness = createRenderThumbnailRendererServiceIntegrationFixtureHarness({
+        targetKind: "frame",
+        cachePolicy: "refresh",
+        client: { configured: true },
+        executionGate: { status: "closed" },
+        healthPreflight: { status: "planned-disabled" },
+        dispatchAdapterBoundary: { status: "planned-disabled" },
+        unavailableErrorTaxonomy: { taxonomyVersion: "P25.17" },
+    });
+    const caseIds = harness.cases.map((entry) => entry.id);
+
+    assert.equal(harness.status, "planned-disabled");
+    assert.equal(harness.dispatch, false);
+    assert.equal(harness.networkDispatch, false);
+    assert.equal(harness.localFileWrites, false);
+    assert.equal(harness.harnessVersion, "P25.18");
+    assert.equal(harness.current.targetKind, "frame");
+    assert.equal(harness.current.cachePolicy, "refresh");
+    assert.equal(harness.current.clientConfigured, true);
+    assert.deepEqual(harness.sequence, [
+        "resolveConfig",
+        "assertClosedGate",
+        "healthPreflightFixture",
+        "renderDispatchFixture",
+        "normalizeResultOrError",
+        "assertMcpCliResourceSemantics",
+    ]);
+    assert.deepEqual(caseIds, [
+        "closed-gate-no-network",
+        "missing-endpoint-not-configured",
+        "health-unavailable-prevents-render",
+        "render-success-mcp-resource-metadata",
+        "render-success-cli-output-download",
+        "service-error-normalization",
+        "auth-forwarding-token-safe",
+    ]);
+    assert.ok(harness.cases.every((entry) => entry.dispatch === false && entry.networkDispatch === false));
+    assert.equal(harness.cases.find((entry) => entry.id === "health-unavailable-prevents-render").expectedCode, "renderer_service_health_unavailable");
+    assert.equal(harness.entrypointExpectations.mcp.localFileWrites, false);
+    assert.equal(harness.entrypointExpectations.cli.outputDownload, "future executable path only");
+    assert.equal(harness.fixtureInputs.fileRefresh.expectedPersistCommand, "create-file-thumbnail");
+    assert.equal(harness.fixtureInputs.frameRefresh.expectedPersistCommand, "create-file-object-thumbnail");
+    assert.ok(harness.requiredBeforeDispatch.some((entry) => entry.includes("closed gate fixture")));
 });
 
 test("render.thumbnail renderer-service client request scaffold adds MCP audit headers without dispatch", () => {

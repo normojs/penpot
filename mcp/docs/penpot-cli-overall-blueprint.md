@@ -270,6 +270,9 @@ Current state:
 - Done: renderer-service unavailable error taxonomy records stable
   configuration, execution-gate, health-preflight, dispatch, response, and
   resource error codes with retryability and MCP/CLI payload fields.
+- Done: renderer-service integration fixture harness records future closed
+  gate, health failure, render success, service failure, MCP metadata, CLI
+  output, and token-safe auth cases without enabling dispatch.
 - Done: focused command-runtime tests cover descriptor groups, lookup,
   adapter-selection priority/error cases, and token-safe envelopes.
 - Status: complete. Later command coverage gaps were tracked by the P15.1
@@ -736,6 +739,16 @@ P25.17 is complete:
    without enabling renderer-service network dispatch.
 3. `renderer_service_health_unavailable` is the only planned retryable code;
    pre-implementation config/gate/dispatch errors remain non-retryable.
+
+P25.18 is complete:
+
+1. Shared plans include `integrationFixtureHarness` metadata for the future
+   renderer-service integration suite.
+2. MCP and CLI dry-run plus unavailable execution payloads expose the harness
+   without enabling renderer-service network dispatch.
+3. Harness fixtures define the required cases before executable dispatch:
+   closed gate, missing endpoint, health failure, render success, service
+   error, MCP resource metadata, CLI output gating, and token-safe auth.
 
 Keep manual configuration behavior stable while moving command metadata and
 envelopes; transport-specific formatting should stay at the MCP/CLI edges.

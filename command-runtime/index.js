@@ -895,6 +895,15 @@ export function createRenderThumbnailRendererServicePlan(options = EMPTY_OBJECT)
         healthPreflight,
         dispatchAdapterBoundary,
     });
+    const integrationFixtureHarness = createRenderThumbnailRendererServiceIntegrationFixtureHarness({
+        targetKind,
+        cachePolicy: contract.cache.policy,
+        client,
+        executionGate,
+        healthPreflight,
+        dispatchAdapterBoundary,
+        unavailableErrorTaxonomy,
+    });
     const clientRequest = createRenderThumbnailRendererServiceClientRequest(
         {
             endpoint,
@@ -997,6 +1006,7 @@ export function createRenderThumbnailRendererServicePlan(options = EMPTY_OBJECT)
             executionClientHarness,
             dispatchAdapterBoundary,
             unavailableErrorTaxonomy,
+            integrationFixtureHarness,
             clientRequest,
         },
         client,
@@ -1007,6 +1017,7 @@ export function createRenderThumbnailRendererServicePlan(options = EMPTY_OBJECT)
         executionClientHarness,
         dispatchAdapterBoundary,
         unavailableErrorTaxonomy,
+        integrationFixtureHarness,
         clientRequest,
         serviceRequest: {
             command: CommandDescriptors.RENDER_THUMBNAIL.id,
@@ -1077,6 +1088,169 @@ export function createRenderThumbnailRendererServicePlan(options = EMPTY_OBJECT)
             dispatchAdapterBoundaryStatus: dispatchAdapterBoundary.status,
             dispatchAdapterBoundaryDispatch: false,
             unavailableErrorTaxonomyVersion: unavailableErrorTaxonomy.taxonomyVersion,
+            integrationFixtureHarnessVersion: integrationFixtureHarness.harnessVersion,
+        },
+    };
+}
+
+export function createRenderThumbnailRendererServiceIntegrationFixtureHarness(options = EMPTY_OBJECT) {
+    const targetKind = normalizeOptionalString(options.targetKind) ?? RenderThumbnailTargets.FILE;
+    const cachePolicy = normalizeOptionalString(options.cachePolicy) ?? RenderThumbnailCachePolicies.REUSE;
+    const client = options.client ?? EMPTY_OBJECT;
+    const executionGate = options.executionGate ?? EMPTY_OBJECT;
+    const healthPreflight = options.healthPreflight ?? EMPTY_OBJECT;
+    const dispatchAdapterBoundary = options.dispatchAdapterBoundary ?? EMPTY_OBJECT;
+    const unavailableErrorTaxonomy = options.unavailableErrorTaxonomy ?? EMPTY_OBJECT;
+
+    return {
+        status: "planned-disabled",
+        dispatch: false,
+        networkDispatch: false,
+        localFileWrites: false,
+        harnessVersion: "P25.18",
+        runner: "future renderer-service integration fixture harness",
+        reason: "fixture-driven integration coverage is planned before renderer-service execution can be registered",
+        current: {
+            targetKind,
+            cachePolicy,
+            clientConfigured: Boolean(client.configured),
+            executionGateStatus: executionGate.status ?? "closed",
+            healthPreflightStatus: healthPreflight.status ?? "planned-disabled",
+            dispatchAdapterBoundaryStatus: dispatchAdapterBoundary.status ?? "planned-disabled",
+            unavailableErrorTaxonomyVersion: unavailableErrorTaxonomy.taxonomyVersion ?? "P25.17",
+        },
+        sequence: [
+            "resolveConfig",
+            "assertClosedGate",
+            "healthPreflightFixture",
+            "renderDispatchFixture",
+            "normalizeResultOrError",
+            "assertMcpCliResourceSemantics",
+        ],
+        cases: [
+            {
+                id: "closed-gate-no-network",
+                stage: "execution-gate",
+                dispatch: false,
+                networkDispatch: false,
+                expectedCode: "renderer_service_execution_disabled",
+                asserts: [
+                    "executionGate.status remains closed",
+                    "health preflight is not dispatched",
+                    "render POST is not dispatched",
+                    "MCP and CLI receive structured unavailable metadata",
+                ],
+            },
+            {
+                id: "missing-endpoint-not-configured",
+                stage: "configuration",
+                dispatch: false,
+                networkDispatch: false,
+                expectedCode: "renderer_service_not_configured",
+                asserts: [
+                    "client.configured is false",
+                    "availability.status is not-configured",
+                    "failure occurs before health preflight",
+                ],
+            },
+            {
+                id: "health-unavailable-prevents-render",
+                stage: "health-preflight",
+                dispatch: false,
+                networkDispatch: false,
+                expectedCode: "renderer_service_health_unavailable",
+                asserts: [
+                    "future health preflight failure is retryable",
+                    "render POST is not dispatched after failed health",
+                    "service error payload uses unavailable taxonomy retryability",
+                ],
+            },
+            {
+                id: "render-success-mcp-resource-metadata",
+                stage: "response-normalization",
+                dispatch: false,
+                networkDispatch: false,
+                expectedStatus: "ok",
+                asserts: [
+                    "createRenderThumbnailRendererServiceResult normalizes resourceUri and downloadUri",
+                    "MCP returns resource metadata only",
+                    "MCP localFileWrites remains false",
+                ],
+            },
+            {
+                id: "render-success-cli-output-download",
+                stage: "resource-normalization",
+                dispatch: false,
+                networkDispatch: false,
+                expectedStatus: "ok",
+                asserts: [
+                    "CLI output download is allowed only after normalized downloadUri exists",
+                    "CLI writes no file during planning or unavailable execution",
+                    "output metadata is separate from renderer-service dispatch",
+                ],
+            },
+            {
+                id: "service-error-normalization",
+                stage: "response-normalization",
+                dispatch: false,
+                networkDispatch: false,
+                expectedCode: "renderer_service_response_invalid",
+                asserts: [
+                    "createRenderThumbnailRendererServiceErrorPayload preserves stable code",
+                    "retryable is derived from status or taxonomy",
+                    "service data is included without forwarded token values",
+                ],
+            },
+            {
+                id: "auth-forwarding-token-safe",
+                stage: "dispatch-adapter",
+                dispatch: false,
+                networkDispatch: false,
+                expectedStatus: "planned",
+                asserts: [
+                    "caller-session auth forwarding is represented by header names only",
+                    "authorization and cookie token values are not present in fixtures",
+                    "MCP audit and CLI audit headers remain distinct",
+                ],
+            },
+        ],
+        requiredBeforeDispatch: [
+            "closed gate fixture passes without fetch",
+            "health unavailable and invalid fixtures prevent render POST",
+            "render success fixture normalizes MCP resource metadata",
+            "render success fixture gates CLI --output download on downloadUri",
+            "service error fixture maps stable taxonomy codes and retryability",
+            "auth fixture proves token values are not serialized",
+        ],
+        entrypointExpectations: {
+            mcp: {
+                localFileWrites: false,
+                resourceReturn: "metadata-only",
+                outputDownload: false,
+            },
+            cli: {
+                localFileWrites: "only after normalized downloadUri exists",
+                resourceReturn: "metadata plus optional output result",
+                outputDownload: "future executable path only",
+            },
+        },
+        fixtureInputs: {
+            fileRefresh: {
+                target: "file",
+                cachePolicy: "refresh",
+                expectedPersistCommand: "create-file-thumbnail",
+            },
+            fileReuse: {
+                target: "file",
+                cachePolicy: "reuse",
+                expectedCacheProbe: "file-thumbnail-by-file-id-and-revn",
+            },
+            frameRefresh: {
+                target: "frame",
+                cachePolicy: "refresh",
+                expectedPersistCommand: "create-file-object-thumbnail",
+                requires: ["frame-source-data-provider", "tagged-frame-resource-normalizer"],
+            },
         },
     };
 }

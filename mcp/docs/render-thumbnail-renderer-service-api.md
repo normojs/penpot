@@ -1,11 +1,11 @@
 # Render Thumbnail Renderer Service API
 
-Status: P25.17 API fixtures, MCP/CLI dry-run/client boundaries, metadata-only
+Status: P25.18 API fixtures, MCP/CLI dry-run/client boundaries, metadata-only
 availability probes, response normalization contracts, disabled client request
 scaffold, closed execution gate, disabled health preflight, and executable
 client harness plus dispatch adapter boundary plans, and opt-in configuration
-surfaces plus unavailable error taxonomy defined; executable runtime
-registration remains blocked.
+surfaces plus unavailable error taxonomy and integration fixture harness
+defined; executable runtime registration remains blocked.
 
 P25.6 selected a dedicated thumbnail renderer service as the future executable
 owner for `render.thumbnail`. This document defines the service-facing request
@@ -61,6 +61,12 @@ stable configuration, execution-gate, health-preflight, dispatch,
 response-normalization, and resource-normalization error codes with
 retryability and MCP/CLI payload fields. It remains planning data with
 `dispatch:false`.
+
+P25.18 defines the renderer-service integration fixture harness. Plans now
+name fixture cases for closed gate, missing endpoint, health failure, render
+success, service failure, MCP metadata returns, CLI output gating, and
+token-safe auth. It remains planning data with `dispatch:false`,
+`networkDispatch:false`, and `localFileWrites:false`.
 
 ## Service Boundary
 
@@ -365,6 +371,9 @@ Before `render.thumbnail` becomes executable:
 - keep `unavailableErrorTaxonomy.dispatch` false and expose stable
   unavailable/preflight/dispatch/resource codes in dry-run and unavailable
   responses before executable network paths exist
+- keep `integrationFixtureHarness.dispatch`, `networkDispatch`, and
+  `localFileWrites` false while using fixture cases to define the future
+  integration suite required before executable renderer-service dispatch
 - extend MCP tests from dry-run/unavailable planning into auth forwarding,
   resource metadata, and renderer-service error responses
 - add CLI smoke tests for dry-run, execution metadata, `--output`, and missing
