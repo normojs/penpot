@@ -873,3 +873,12 @@ P25.15 adds the disabled renderer-service dispatch adapter boundary:
   helper mapping, and no-dispatch defaults.
 - `dispatchAdapterBoundary.dispatch` is always `false`; this step does not
   register executable runtime behavior or replace metadata-only availability.
+
+P25.16 adds renderer-service opt-in configuration surfaces:
+
+- Plans include `optInConfiguration` with CLI flag, MCP arg, environment,
+  profile, and backend config sources plus source precedence diagnostics.
+- Valid opt-in values are recorded as diagnostics only; invalid values are
+  reported without enabling execution.
+- `optInConfiguration.dispatch` is always `false`, and configuration alone
+  cannot open the execution gate.

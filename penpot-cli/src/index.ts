@@ -78,7 +78,7 @@ Usage:
   penpot-cli export page --file <file-id> --page <page-id> --object <object-id> [--adapter auto|exporter] [--output <path>] [--dry-run] [--format text|json]
   penpot-cli export file --file <file-id> [--library-mode all|merge|detach] [--adapter auto|backend-rpc] [--output <path>] [--dry-run] [--format text|json]
   penpot-cli render preview --file <file-id> --page <page-id> --object <object-id> [--adapter auto|exporter] [--output <path>] [--dry-run] [--format text|json]
-  penpot-cli render thumbnail --file <file-id> [--target file|frame] [--page <page-id>] [--object <object-id>] [--cache-policy reuse|refresh] [--width <px>] [--renderer-service-uri <uri>] [--renderer-timeout-ms <n>] [--adapter auto|renderer-service] [--dry-run] [--format text|json]`;
+  penpot-cli render thumbnail --file <file-id> [--target file|frame] [--page <page-id>] [--object <object-id>] [--cache-policy reuse|refresh] [--width <px>] [--renderer-service-uri <uri>] [--renderer-timeout-ms <n>] [--render-thumbnail-execution renderer-service] [--adapter auto|renderer-service] [--dry-run] [--format text|json]`;
 
 const MCP_HELP_TEXT = `penpot-cli mcp
 
@@ -206,7 +206,7 @@ const RENDER_HELP_TEXT = `penpot-cli render
 
 Usage:
   penpot-cli render preview --file <file-id> --page <page-id> --object <object-id> [--scale <n>] [--output <path>] [--exporter-uri <uri>] [--backend-uri <uri>] [--token <token>] [--adapter auto|exporter] [--dry-run] [--format text|json]
-  penpot-cli render thumbnail --file <file-id> [--target file|frame] [--page <page-id>] [--object <object-id>] [--tag <tag>] [--revn <n>] [--width <px>] [--cache-policy reuse|refresh] [--output <path>] [--renderer-service-uri <uri>] [--renderer-timeout-ms <n>] [--public-uri <uri>] [--adapter auto|renderer-service] [--dry-run] [--format text|json]
+  penpot-cli render thumbnail --file <file-id> [--target file|frame] [--page <page-id>] [--object <object-id>] [--tag <tag>] [--revn <n>] [--width <px>] [--cache-policy reuse|refresh] [--output <path>] [--renderer-service-uri <uri>] [--renderer-timeout-ms <n>] [--render-thumbnail-execution renderer-service] [--public-uri <uri>] [--adapter auto|renderer-service] [--dry-run] [--format text|json]
 
 Notes:
   Preview rendering uses the exporter adapter and always requests PNG output.
@@ -1671,7 +1671,19 @@ function createRenderThumbnailPlan(args: string[], env: NodeJS.ProcessEnv): Rend
             cliCommand: "render thumbnail",
         },
         executionGate: {
-            optInValue: env.PENPOT_RENDER_THUMBNAIL_EXECUTION ?? null,
+            optInValue:
+                readOption(args, ["--render-thumbnail-execution", "--renderer-service-execution", "--thumbnail-execution"]) ??
+                env.PENPOT_RENDER_THUMBNAIL_EXECUTION ??
+                null,
+        },
+        optInConfiguration: {
+            entrypoint: "cli",
+            cliFlagValue: readOption(args, [
+                "--render-thumbnail-execution",
+                "--renderer-service-execution",
+                "--thumbnail-execution",
+            ]) ?? null,
+            envValue: env.PENPOT_RENDER_THUMBNAIL_EXECUTION ?? null,
         },
     });
 
@@ -6299,6 +6311,7 @@ async function handleRenderThumbnail(args: string[], io: CliIO, env: NodeJS.Proc
             endpoint: plan.endpoint,
             client: plan.client,
             availability: plan.availability,
+            optInConfiguration: plan.optInConfiguration,
             executionGate: plan.executionGate,
             healthPreflight: plan.healthPreflight,
             executionClientHarness: plan.executionClientHarness,

@@ -23,6 +23,7 @@ import {
     createRenderThumbnailRendererServiceExecutionGate,
     createRenderThumbnailRendererServiceExecutionClientHarness,
     createRenderThumbnailRendererServiceHealthPreflight,
+    createRenderThumbnailRendererServiceOptInConfiguration,
     createRenderThumbnailRendererServiceErrorPayload,
     createRenderThumbnailRendererServicePlan,
     createRenderThumbnailRendererServiceResult,
@@ -402,6 +403,9 @@ test("render.thumbnail runtime boundary keeps execution unavailable until render
     assert.equal(boundary.executionClientHarness.dispatch, false);
     assert.equal(boundary.dispatchAdapterBoundary.dispatch, false);
     assert.equal(boundary.dispatchAdapterBoundary.resultMapping.successHelper, "createRenderThumbnailRendererServiceResult");
+    assert.equal(boundary.optInConfiguration.status, "planned-disabled");
+    assert.equal(boundary.optInConfiguration.dispatch, false);
+    assert.equal(boundary.optInConfiguration.executionEnabledByConfiguration, false);
     assert.ok(boundary.testStrategy.some((item) => item.includes("descriptor tests")));
 });
 
@@ -430,6 +434,9 @@ test("render.thumbnail renderer-service API fixtures define planning requests wi
     assert.equal(fixtures.serviceApi.executionClientHarness.dispatch, false);
     assert.equal(fixtures.serviceApi.dispatchAdapterBoundary.dispatch, false);
     assert.deepEqual(fixtures.serviceApi.dispatchAdapterBoundary.sequence, ["executionGate", "healthPreflight", "clientRequest", "normalizeResult"]);
+    assert.equal(fixtures.serviceApi.optInConfiguration.status, "planned-disabled");
+    assert.equal(fixtures.serviceApi.optInConfiguration.dispatch, false);
+    assert.equal(fixtures.serviceApi.optInConfiguration.expectedValue, "renderer-service");
     assert.deepEqual(fixtures.runtimeRegistration.commandDescriptorAdapters, ["renderer-service"]);
     assert.deepEqual(CommandDescriptors.RENDER_THUMBNAIL.adapters, ["renderer-service"]);
     assert.equal(fixtures.runtimeRegistration.mcpToolRegistered, true);
@@ -504,6 +511,11 @@ test("render.thumbnail renderer-service plan exposes dry-run client request whil
         endpoint: "http://127.0.0.1:6070/thumbnail",
         publicUri: "https://penpot.example.test",
         probeTimeoutMs: 3500,
+        optInConfiguration: {
+            entrypoint: "cli",
+            cliFlagValue: "renderer-service",
+            envValue: "ignored-env",
+        },
         clientRequest: {
             entrypoint: "cli",
             cliCommand: "render thumbnail",
@@ -527,11 +539,17 @@ test("render.thumbnail renderer-service plan exposes dry-run client request whil
     assert.equal(plan.availability.checked, false);
     assert.deepEqual(plan.service.client, plan.client);
     assert.deepEqual(plan.service.availability, plan.availability);
+    assert.equal(plan.optInConfiguration.status, "planned-disabled");
+    assert.equal(plan.optInConfiguration.dispatch, false);
+    assert.equal(plan.optInConfiguration.resolution.selectedSource, "cli-flag");
+    assert.equal(plan.optInConfiguration.resolution.selectedValue, "renderer-service");
+    assert.equal(plan.optInConfiguration.diagnostics.executionEnabledByConfiguration, false);
+    assert.deepEqual(plan.service.optInConfiguration, plan.optInConfiguration);
     assert.equal(plan.executionGate.status, "closed");
     assert.equal(plan.executionGate.dispatch, false);
     assert.equal(plan.executionGate.optIn.env, "PENPOT_RENDER_THUMBNAIL_EXECUTION");
-    assert.equal(plan.executionGate.optIn.configured, false);
-    assert.ok(plan.executionGate.blockers.includes("explicit-opt-in"));
+    assert.equal(plan.executionGate.optIn.configured, true);
+    assert.equal(plan.executionGate.blockers.includes("explicit-opt-in"), false);
     assert.ok(plan.executionGate.blockers.includes("renderer-service-integration-tests"));
     assert.equal(plan.executionGate.integrationTestPlan.requiredBeforeDispatch, true);
     assert.deepEqual(plan.service.executionGate, plan.executionGate);
@@ -578,6 +596,7 @@ test("render.thumbnail renderer-service plan exposes dry-run client request whil
     assert.equal(plan.diagnostics.adapterBoundary, "renderer-service-dry-run");
     assert.equal(plan.diagnostics.runtimeExecutionRegistered, false);
     assert.equal(plan.diagnostics.availabilityProbe, "metadata-only");
+    assert.equal(plan.diagnostics.optInConfigurationStatus, "planned-disabled");
     assert.equal(plan.diagnostics.executionGateStatus, "closed");
     assert.equal(plan.diagnostics.healthPreflightDispatch, false);
     assert.equal(plan.diagnostics.executionClientHarnessDispatch, false);
@@ -623,6 +642,31 @@ test("render.thumbnail renderer-service execution gate requires explicit opt-in 
     assert.equal(gate.integrationTestPlan.status, "required-before-dispatch");
     assert.ok(gate.integrationTestPlan.cases.some((entry) => entry.includes("file reuse")));
     assert.ok(gate.failureModes.some((entry) => entry.code === "renderer_service_execution_disabled"));
+});
+
+test("render.thumbnail renderer-service opt-in configuration resolves sources without enabling execution", () => {
+    const config = createRenderThumbnailRendererServiceOptInConfiguration({
+        entrypoint: "mcp",
+        mcpArgValue: "renderer-service",
+        envValue: "ignored-env",
+        profileValue: "ignored-profile",
+    });
+    const invalid = createRenderThumbnailRendererServiceOptInConfiguration({
+        entrypoint: "cli",
+        envValue: "enabled",
+    });
+
+    assert.equal(config.status, "planned-disabled");
+    assert.equal(config.dispatch, false);
+    assert.equal(config.resolution.selectedSource, "mcp-arg");
+    assert.equal(config.resolution.selectedValue, "renderer-service");
+    assert.equal(config.resolution.valid, true);
+    assert.equal(config.diagnostics.executionEnabledByConfiguration, false);
+    assert.equal(config.diagnostics.gateCanOpenFromConfigurationOnly, false);
+    assert.ok(config.futureSurfaces.cliFlags.includes("--render-thumbnail-execution renderer-service"));
+    assert.equal(invalid.resolution.selectedSource, "environment");
+    assert.equal(invalid.resolution.valid, false);
+    assert.match(invalid.resolution.diagnostics, /unsupported opt-in value/);
 });
 
 test("render.thumbnail renderer-service health preflight and client harness stay disabled", () => {

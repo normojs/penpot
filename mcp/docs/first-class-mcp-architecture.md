@@ -2221,6 +2221,15 @@ P25.15 render.thumbnail dispatch adapter boundary result:
 - This documents the future executable adapter transition without registering
   runtime rendering.
 
+P25.16 render.thumbnail opt-in configuration result:
+
+- Shared plans include `optInConfiguration` metadata for the future CLI flag,
+  MCP arg, environment variable, profile key, and backend config key.
+- Source precedence and invalid values are reported as diagnostics; token
+  values are never included.
+- `optInConfiguration.dispatch` remains `false`, and configuration alone cannot
+  open the execution gate.
+
 ### 8.5 Export and Render Tools
 
 May start file-bound and later move to headless:
@@ -2245,10 +2254,10 @@ metadata-only renderer-service availability probes. P25.11 defines response
 normalization and error payloads, P25.12 adds the disabled execution client
 request scaffold, P25.13 adds the closed execution gate plus integration-test
 plan, P25.14 adds disabled health preflight plus executable client harness
-plans, and P25.15 adds the disabled dispatch adapter boundary. Runtime behavior
-remains unavailable until opt-in config surfaces, renderer-service
-implementation, health preflight, cache probe, executable client, and
-tagged-frame capabilities are implemented.
+plans, P25.15 adds the disabled dispatch adapter boundary, and P25.16 adds
+opt-in configuration surfaces. Runtime behavior remains unavailable
+until opt-in config surfaces, renderer-service implementation, health preflight,
+cache probe, executable client, and tagged-frame capabilities are implemented.
 
 ### 8.6 Advanced Tools
 

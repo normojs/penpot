@@ -390,6 +390,7 @@ export interface CreateRenderThumbnailRendererServicePlanOptions extends CreateR
     rendererServiceTimeoutMs?: number | string | null;
     clientRequest?: CreateRenderThumbnailRendererServiceClientRequestOptions | null;
     executionGate?: CreateRenderThumbnailRendererServiceExecutionGateOptions | null;
+    optInConfiguration?: CreateRenderThumbnailRendererServiceOptInConfigurationOptions | null;
 }
 
 export interface RenderThumbnailRendererServicePlan {
@@ -432,6 +433,7 @@ export interface RenderThumbnailRendererServicePlan {
             includeServiceStatus: true;
             includeServiceData: true;
         };
+        optInConfiguration: RenderThumbnailRendererServiceOptInConfiguration;
         executionGate: RenderThumbnailRendererServiceExecutionGate;
         healthPreflight: RenderThumbnailRendererServiceHealthPreflight;
         executionClientHarness: RenderThumbnailRendererServiceExecutionClientHarness;
@@ -440,6 +442,7 @@ export interface RenderThumbnailRendererServicePlan {
     };
     client: RenderThumbnailRendererServiceClientConfig;
     availability: RenderThumbnailRendererServiceAvailability;
+    optInConfiguration: RenderThumbnailRendererServiceOptInConfiguration;
     executionGate: RenderThumbnailRendererServiceExecutionGate;
     healthPreflight: RenderThumbnailRendererServiceHealthPreflight;
     executionClientHarness: RenderThumbnailRendererServiceExecutionClientHarness;
@@ -506,6 +509,7 @@ export interface RenderThumbnailRendererServicePlan {
         runtimeExecutionRegistered: false;
         serviceOperation: "thumbnail.render";
         availabilityProbe: "metadata-only";
+        optInConfigurationStatus: "planned-disabled";
         clientRequestDispatch: false;
         executionGateStatus: "closed";
         healthPreflightDispatch: false;
@@ -543,6 +547,53 @@ export interface CreateRenderThumbnailRendererServiceExecutionGateOptions {
     value?: string | null;
     serviceImplemented?: boolean | null;
     integrationTestsReady?: boolean | null;
+}
+
+export interface CreateRenderThumbnailRendererServiceOptInConfigurationOptions {
+    entrypoint?: "cli" | "mcp" | string | null;
+    cliFlagValue?: string | null;
+    mcpArgValue?: string | null;
+    envValue?: string | null;
+    profileValue?: string | null;
+    backendValue?: string | null;
+}
+
+export interface RenderThumbnailRendererServiceOptInConfiguration {
+    status: "planned-disabled";
+    dispatch: false;
+    entrypoint: string;
+    reason: string;
+    expectedValue: "renderer-service";
+    sources: Array<{
+        source: "cli-flag" | "mcp-arg" | "environment" | "profile" | "backend-config";
+        name: string;
+        entrypoints: string[];
+        precedence: number;
+        value: string | null;
+        configured: boolean;
+    }>;
+    resolution: {
+        selectedSource: "cli-flag" | "mcp-arg" | "environment" | "profile" | "backend-config" | null;
+        selectedName: string | null;
+        selectedValue: string | null;
+        valid: boolean;
+        configured: boolean;
+        precedence: number | null;
+        diagnostics: string;
+    };
+    diagnostics: {
+        tokenValuesIncluded: false;
+        executionEnabledByConfiguration: false;
+        gateCanOpenFromConfigurationOnly: false;
+        noDispatchDefault: true;
+    };
+    futureSurfaces: {
+        cliFlags: string[];
+        mcpArgs: string[];
+        environment: string[];
+        profileKeys: string[];
+        backendConfigKeys: string[];
+    };
 }
 
 export interface RenderThumbnailRendererServiceExecutionGate {
@@ -930,6 +981,9 @@ export function createRenderThumbnailRendererServiceExecutionGate(
         executionGate?: CreateRenderThumbnailRendererServiceExecutionGateOptions | null;
     }
 ): RenderThumbnailRendererServiceExecutionGate;
+export function createRenderThumbnailRendererServiceOptInConfiguration(
+    options?: CreateRenderThumbnailRendererServiceOptInConfigurationOptions | null
+): RenderThumbnailRendererServiceOptInConfiguration;
 export function createRenderThumbnailRendererServiceHealthPreflight(
     options?: {
         client?: Partial<RenderThumbnailRendererServiceClientConfig> | null;

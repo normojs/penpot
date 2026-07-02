@@ -1,7 +1,7 @@
 {
-  "version": "P25.15",
+  "version": "P25.16",
   "command": "render.thumbnail",
-  "status": "renderer-service API fixtures with MCP/CLI dry-run/client boundaries, metadata-only availability probes, response normalization contracts, disabled client request scaffold, explicit execution gate, health preflight plan, executable client harness plan, and dispatch adapter boundary; runtime execution blocked",
+  "status": "renderer-service API fixtures with MCP/CLI dry-run/client boundaries, metadata-only availability probes, response normalization contracts, disabled client request scaffold, explicit execution gate, health preflight plan, executable client harness plan, dispatch adapter boundary, and opt-in configuration surfaces; runtime execution blocked",
   "adapter": "renderer-service",
   "runtimeRegistration": {
     "mcpToolRegistered": true,
@@ -86,6 +86,23 @@
         "renderer_service_integration_tests_missing",
         "renderer_service_capability_missing"
       ]
+    },
+    "optInConfiguration": {
+      "status": "planned-disabled",
+      "dispatch": false,
+      "expectedValue": "renderer-service",
+      "sources": [
+        "cli-flag: --render-thumbnail-execution",
+        "mcp-arg: rendererServiceExecution",
+        "environment: PENPOT_RENDER_THUMBNAIL_EXECUTION",
+        "profile: renderer.thumbnail.execution",
+        "backend-config: renderer.thumbnail.execution"
+      ],
+      "diagnostics": {
+        "executionEnabledByConfiguration": false,
+        "gateCanOpenFromConfigurationOnly": false,
+        "tokenValuesIncluded": false
+      }
     },
     "healthPreflight": {
       "status": "planned-disabled",
@@ -434,6 +451,7 @@
     "dry-run and unavailable execution expose closed execution gate configuration and integration-test plan",
     "dry-run and unavailable execution expose disabled health preflight and executable client harness plans",
     "dry-run and unavailable execution expose disabled dispatch adapter boundary and result mapping",
+    "dry-run and unavailable execution expose opt-in configuration surfaces without enabling execution",
     "rejects unsupported adapters while render.thumbnail runtime execution is unavailable",
     "reports structured errors for missing frame target before runtime dispatch"
   ],
@@ -451,12 +469,13 @@
     "closed execution gate metadata survives dry-run and unavailable execution JSON output",
     "disabled health preflight and execution harness metadata survive dry-run and unavailable execution JSON output",
     "disabled dispatch adapter boundary metadata survives dry-run and unavailable execution JSON output",
+    "opt-in configuration surface metadata survives dry-run and unavailable execution JSON output",
     "--output downloads the returned PNG resource",
     "missing token fails before contacting renderer-service"
   ],
   "nextTask": {
-    "id": "P25.16",
-    "title": "Plan renderer-service opt-in configuration surfaces",
+    "id": "P25.17",
+    "title": "Plan renderer-service unavailable error taxonomy",
     "modules": ["mcp", "penpot-cli", "command-runtime", "mcp/docs", "todo.md"]
   }
 }

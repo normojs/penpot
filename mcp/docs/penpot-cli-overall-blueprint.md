@@ -264,6 +264,9 @@ Current state:
 - Done: disabled renderer-service dispatch adapter boundary records config
   precedence, gate/preflight/request consumption, result/error mapping, and
   no-dispatch defaults.
+- Done: renderer-service opt-in configuration surfaces record CLI flag, MCP
+  arg, environment, profile/backend keys, precedence diagnostics, and
+  invalid-value diagnostics without enabling dispatch.
 - Done: focused command-runtime tests cover descriptor groups, lookup,
   adapter-selection priority/error cases, and token-safe envelopes.
 - Status: complete. Later command coverage gaps were tracked by the P15.1
@@ -711,6 +714,16 @@ P25.15 is complete:
    result/error helper mapping, and no-dispatch defaults.
 3. MCP and CLI expose the boundary in dry-run and unavailable execution
    responses without registering runtime dispatch.
+
+P25.16 is complete:
+
+1. Shared plans include `optInConfiguration` metadata for future renderer
+   execution opt-in surfaces.
+2. CLI exposes `--render-thumbnail-execution renderer-service`; MCP exposes
+   `rendererServiceExecution`; env/profile/backend config sources are recorded
+   as future surfaces.
+3. Valid and invalid values are diagnostic only; configuration alone cannot
+   open the gate or enable dispatch.
 
 Keep manual configuration behavior stable while moving command metadata and
 envelopes; transport-specific formatting should stay at the MCP/CLI edges.

@@ -863,12 +863,16 @@ export function createRenderThumbnailRendererServicePlan(options = EMPTY_OBJECT)
         frameTarget ? "frame-source-data-provider" : null,
         frameTarget ? "tagged-frame-resource-normalizer" : null,
     ].filter(Boolean);
+    const optInConfiguration = createRenderThumbnailRendererServiceOptInConfiguration(options.optInConfiguration);
     const executionGate = createRenderThumbnailRendererServiceExecutionGate({
         endpoint,
         targetKind,
         cachePolicy: contract.cache.policy,
         requiredCapabilities,
-        executionGate: options.executionGate,
+        executionGate: {
+            ...(options.executionGate ?? EMPTY_OBJECT),
+            optInValue: optInConfiguration.resolution.selectedValue ?? options.executionGate?.optInValue,
+        },
     });
     const healthPreflight = createRenderThumbnailRendererServiceHealthPreflight({
         client,
@@ -980,6 +984,7 @@ export function createRenderThumbnailRendererServicePlan(options = EMPTY_OBJECT)
                 includeServiceStatus: true,
                 includeServiceData: true,
             },
+            optInConfiguration,
             executionGate,
             healthPreflight,
             executionClientHarness,
@@ -988,6 +993,7 @@ export function createRenderThumbnailRendererServicePlan(options = EMPTY_OBJECT)
         },
         client,
         availability,
+        optInConfiguration,
         executionGate,
         healthPreflight,
         executionClientHarness,
@@ -1054,12 +1060,103 @@ export function createRenderThumbnailRendererServicePlan(options = EMPTY_OBJECT)
             runtimeExecutionRegistered: false,
             serviceOperation: "thumbnail.render",
             availabilityProbe: "metadata-only",
+            optInConfigurationStatus: optInConfiguration.status,
             clientRequestDispatch: false,
             executionGateStatus: executionGate.status,
             healthPreflightDispatch: false,
             executionClientHarnessDispatch: false,
             dispatchAdapterBoundaryStatus: dispatchAdapterBoundary.status,
             dispatchAdapterBoundaryDispatch: false,
+        },
+    };
+}
+
+export function createRenderThumbnailRendererServiceOptInConfiguration(options = EMPTY_OBJECT) {
+    const entrypoint = normalizeOptionalString(options.entrypoint) ?? "unknown";
+    const expectedValue = "renderer-service";
+    const cliFlagValue = normalizeOptionalString(options.cliFlagValue);
+    const mcpArgValue = normalizeOptionalString(options.mcpArgValue);
+    const envValue = normalizeOptionalString(options.envValue);
+    const profileValue = normalizeOptionalString(options.profileValue);
+    const backendValue = normalizeOptionalString(options.backendValue);
+    const sources = [
+        {
+            source: "cli-flag",
+            name: "--render-thumbnail-execution",
+            entrypoints: ["cli"],
+            precedence: 10,
+            value: cliFlagValue,
+            configured: Boolean(cliFlagValue),
+        },
+        {
+            source: "mcp-arg",
+            name: "rendererServiceExecution",
+            entrypoints: ["mcp"],
+            precedence: 20,
+            value: mcpArgValue,
+            configured: Boolean(mcpArgValue),
+        },
+        {
+            source: "environment",
+            name: "PENPOT_RENDER_THUMBNAIL_EXECUTION",
+            entrypoints: ["cli", "mcp"],
+            precedence: 30,
+            value: envValue,
+            configured: Boolean(envValue),
+        },
+        {
+            source: "profile",
+            name: "renderer.thumbnail.execution",
+            entrypoints: ["cli", "mcp"],
+            precedence: 40,
+            value: profileValue,
+            configured: Boolean(profileValue),
+        },
+        {
+            source: "backend-config",
+            name: "renderer.thumbnail.execution",
+            entrypoints: ["mcp"],
+            precedence: 50,
+            value: backendValue,
+            configured: Boolean(backendValue),
+        },
+    ];
+    const selected = sources.find((source) => source.configured) ?? null;
+    const selectedValue = selected?.value ?? null;
+    const valid = selectedValue === null || selectedValue === expectedValue;
+
+    return {
+        status: "planned-disabled",
+        dispatch: false,
+        entrypoint,
+        reason: "renderer-service opt-in configuration surfaces are documented but cannot enable execution until runtime dispatch is implemented",
+        expectedValue,
+        sources,
+        resolution: {
+            selectedSource: selected?.source ?? null,
+            selectedName: selected?.name ?? null,
+            selectedValue,
+            valid,
+            configured: Boolean(selected),
+            precedence: selected?.precedence ?? null,
+            diagnostics: valid
+                ? selected
+                    ? "opt-in value is recognized but execution remains disabled"
+                    : "no opt-in source is configured"
+                : `unsupported opt-in value '${selectedValue}'`,
+        },
+        diagnostics: {
+            tokenValuesIncluded: false,
+            executionEnabledByConfiguration: false,
+            gateCanOpenFromConfigurationOnly: false,
+            noDispatchDefault: true,
+        },
+        futureSurfaces: {
+            cliFlags: ["--render-thumbnail-execution renderer-service"],
+            mcpArgs: ["rendererServiceExecution: renderer-service"],
+            environment: ["PENPOT_RENDER_THUMBNAIL_EXECUTION=renderer-service"],
+            profileKeys: ["renderer.thumbnail.execution"],
+            backendConfigKeys: ["renderer.thumbnail.execution"],
         },
     };
 }

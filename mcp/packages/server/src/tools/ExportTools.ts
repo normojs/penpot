@@ -799,6 +799,10 @@ export class RenderThumbnailArgs {
         probeTimeoutMs: z.number().int().positive().max(60000).optional().describe("Future renderer-service health probe timeout in milliseconds."),
         timeoutMs: z.number().int().positive().max(60000).optional().describe("Alias for probeTimeoutMs."),
         rendererServiceTimeoutMs: z.number().int().positive().max(60000).optional().describe("Alias for probeTimeoutMs."),
+        rendererServiceExecution: z
+            .enum(["renderer-service"])
+            .optional()
+            .describe("Future explicit opt-in value for renderer-service execution planning. Does not enable execution yet."),
         publicUri: z.string().url().optional().describe("Public Penpot URI for future download URI examples."),
         output: z
             .string()
@@ -827,6 +831,7 @@ export class RenderThumbnailArgs {
     probeTimeoutMs?: number;
     timeoutMs?: number;
     rendererServiceTimeoutMs?: number;
+    rendererServiceExecution?: "renderer-service";
     publicUri?: string;
     output?: string;
     adapter?: string;
@@ -907,6 +912,7 @@ export class RenderThumbnailTool extends PenpotRpcTool<RenderThumbnailArgs> {
                     endpoint: plan.endpoint,
                     client: plan.client,
                     availability: plan.availability,
+                    optInConfiguration: plan.optInConfiguration,
                     executionGate: plan.executionGate,
                     healthPreflight: plan.healthPreflight,
                     executionClientHarness: plan.executionClientHarness,
@@ -969,7 +975,12 @@ export class RenderThumbnailTool extends PenpotRpcTool<RenderThumbnailArgs> {
                 mcpSessionId: this.getSessionContext()?.mcpSessionId,
             },
             executionGate: {
-                optInValue: process.env.PENPOT_RENDER_THUMBNAIL_EXECUTION ?? null,
+                optInValue: args.rendererServiceExecution ?? process.env.PENPOT_RENDER_THUMBNAIL_EXECUTION ?? null,
+            },
+            optInConfiguration: {
+                entrypoint: "mcp",
+                mcpArgValue: args.rendererServiceExecution ?? null,
+                envValue: process.env.PENPOT_RENDER_THUMBNAIL_EXECUTION ?? null,
             },
         });
         return {

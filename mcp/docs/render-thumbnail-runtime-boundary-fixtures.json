@@ -1,7 +1,7 @@
 {
-  "version": "P25.15",
+  "version": "P25.16",
   "command": "render.thumbnail",
-  "status": "runtime boundary audited; MCP/CLI planning, metadata-only availability probes, response normalization contracts, disabled client request scaffold, closed execution gate, health preflight plan, executable client harness plan, and dispatch adapter boundary registered; runtime execution blocked",
+  "status": "runtime boundary audited; MCP/CLI planning, metadata-only availability probes, response normalization contracts, disabled client request scaffold, closed execution gate, health preflight plan, executable client harness plan, dispatch adapter boundary, and opt-in configuration surfaces registered; runtime execution blocked",
   "selectedBoundary": "thumbnail-renderer-service",
   "runtimeRegistration": {
     "mcpToolRegistered": true,
@@ -112,6 +112,24 @@
       "missing endpoint, missing opt-in, and missing integration tests fail before network dispatch"
     ]
   },
+  "optInConfiguration": {
+    "status": "planned-disabled",
+    "dispatch": false,
+    "expectedValue": "renderer-service",
+    "sourcePrecedence": [
+      "cli flag",
+      "MCP arg",
+      "environment",
+      "profile/backend config"
+    ],
+    "surfaces": [
+      "--render-thumbnail-execution renderer-service",
+      "rendererServiceExecution: renderer-service",
+      "PENPOT_RENDER_THUMBNAIL_EXECUTION=renderer-service",
+      "renderer.thumbnail.execution"
+    ],
+    "executionEnabledByConfiguration": false
+  },
   "healthPreflight": {
     "status": "planned-disabled",
     "dispatch": false,
@@ -168,11 +186,12 @@
     "Execution gate tests cover explicit opt-in, required config, integration-test blockers, failure modes, and dispatch false.",
     "Health preflight and client harness tests cover GET metadata, closed-gate no-network behavior, sequence ordering, and dispatch false.",
     "Dispatch adapter boundary tests cover config precedence, gate/preflight consumption, result/error mapping, and no-dispatch defaults.",
+    "Opt-in configuration tests cover CLI flag, MCP arg, environment fallback, invalid values, diagnostics, and no-dispatch defaults.",
     "Add CLI smoke tests only after the service exists, covering dry-run, resource metadata, --output download, and missing-token errors."
   ],
   "nextTask": {
-    "id": "P25.16",
-    "title": "Plan renderer-service opt-in configuration surfaces",
+    "id": "P25.17",
+    "title": "Plan renderer-service unavailable error taxonomy",
     "modules": ["mcp", "penpot-cli", "command-runtime", "mcp/docs", "todo.md"]
   }
 }

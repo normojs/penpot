@@ -1,10 +1,10 @@
 # Render Thumbnail Renderer Service API
 
-Status: P25.15 API fixtures, MCP/CLI dry-run/client boundaries, metadata-only
+Status: P25.16 API fixtures, MCP/CLI dry-run/client boundaries, metadata-only
 availability probes, response normalization contracts, disabled client request
 scaffold, closed execution gate, disabled health preflight, and executable
-client harness plus dispatch adapter boundary plans defined; executable runtime
-registration remains blocked.
+client harness plus dispatch adapter boundary plans, and opt-in configuration
+surfaces defined; executable runtime registration remains blocked.
 
 P25.6 selected a dedicated thumbnail renderer service as the future executable
 owner for `render.thumbnail`. This document defines the service-facing request
@@ -50,6 +50,10 @@ P25.15 defines the future dispatch adapter boundary. It records config
 precedence, gate/preflight/client request consumption, no-dispatch defaults,
 and result/error mapping helpers. It still has `dispatch:false` and does not
 replace metadata-only availability or perform health/render network calls.
+
+P25.16 defines the future opt-in configuration surfaces. CLI, MCP, environment,
+profile, and backend config sources are resolved into diagnostics, but
+configuration alone cannot open the gate or enable dispatch.
 
 ## Service Boundary
 
@@ -112,6 +116,18 @@ Health preflight and execution harness scaffold:
     "resultMapping": {
       "successHelper": "createRenderThumbnailRendererServiceResult",
       "errorHelper": "createRenderThumbnailRendererServiceErrorPayload"
+    }
+  },
+  "optInConfiguration": {
+    "status": "planned-disabled",
+    "dispatch": false,
+    "expectedValue": "renderer-service",
+    "futureSurfaces": {
+      "cliFlags": ["--render-thumbnail-execution renderer-service"],
+      "mcpArgs": ["rendererServiceExecution: renderer-service"],
+      "environment": ["PENPOT_RENDER_THUMBNAIL_EXECUTION=renderer-service"],
+      "profileKeys": ["renderer.thumbnail.execution"],
+      "backendConfigKeys": ["renderer.thumbnail.execution"]
     }
   }
 }
@@ -337,6 +353,8 @@ Before `render.thumbnail` becomes executable:
   is explicitly implemented
 - keep `dispatchAdapterBoundary.dispatch` false until opt-in configuration
   surfaces and executable adapter registration are implemented
+- keep `optInConfiguration.dispatch` false and treat opt-in values as
+  diagnostics-only until runtime dispatch is explicitly implemented
 - extend MCP tests from dry-run/unavailable planning into auth forwarding,
   resource metadata, and renderer-service error responses
 - add CLI smoke tests for dry-run, execution metadata, `--output`, and missing

@@ -2581,6 +2581,8 @@ test("render thumbnail dry-run returns renderer-service request plan", async () 
                 "http://127.0.0.1:6070/thumbnail",
                 "--renderer-timeout-ms",
                 "3500",
+                "--render-thumbnail-execution",
+                "renderer-service",
                 "--public-uri",
                 "https://penpot.example.test",
                 "--dry-run",
@@ -2603,10 +2605,14 @@ test("render thumbnail dry-run returns renderer-service request plan", async () 
         assert.equal(body.data.availability.status, "configured-unverified");
         assert.equal(body.data.availability.probe, "metadata-only");
         assert.equal(body.data.availability.checked, false);
+        assert.equal(body.data.optInConfiguration.status, "planned-disabled");
+        assert.equal(body.data.optInConfiguration.resolution.selectedSource, "cli-flag");
+        assert.equal(body.data.optInConfiguration.resolution.selectedValue, "renderer-service");
+        assert.equal(body.data.optInConfiguration.diagnostics.executionEnabledByConfiguration, false);
         assert.equal(body.data.executionGate.status, "closed");
         assert.equal(body.data.executionGate.dispatch, false);
         assert.equal(body.data.executionGate.optIn.env, "PENPOT_RENDER_THUMBNAIL_EXECUTION");
-        assert.ok(body.data.executionGate.blockers.includes("explicit-opt-in"));
+        assert.equal(body.data.executionGate.blockers.includes("explicit-opt-in"), false);
         assert.equal(body.data.executionGate.integrationTestPlan.requiredBeforeDispatch, true);
         assert.equal(body.data.healthPreflight.dispatch, false);
         assert.equal(body.data.healthPreflight.endpoint, "http://127.0.0.1:6070/thumbnail/health");
@@ -2657,6 +2663,8 @@ test("render thumbnail execution reports renderer-service unavailable without ca
         assert.equal(body.error.data.adapter, "renderer-service");
         assert.equal(body.error.data.client.healthEndpoint, "http://localhost:6070/thumbnail/health");
         assert.equal(body.error.data.availability.status, "configured-unverified");
+        assert.equal(body.error.data.optInConfiguration.status, "planned-disabled");
+        assert.equal(body.error.data.optInConfiguration.resolution.configured, false);
         assert.equal(body.error.data.executionGate.status, "closed");
         assert.ok(body.error.data.executionGate.blockers.includes("explicit-opt-in"));
         assert.equal(body.error.data.healthPreflight.dispatch, false);

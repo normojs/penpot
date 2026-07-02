@@ -1,10 +1,10 @@
 # Render Thumbnail Contract
 
-Status: P25.4 descriptor contract; P25.15 MCP/CLI renderer-service dry-run
+Status: P25.4 descriptor contract; P25.16 MCP/CLI renderer-service dry-run
 boundaries, metadata-only availability probes, response normalization
 contracts, disabled client request scaffolding, closed execution gate, disabled
 health preflight, executable client harness plan, and dispatch adapter boundary
-defined; runtime execution still blocked.
+plus opt-in configuration surfaces defined; runtime execution still blocked.
 
 This document defines the `render.thumbnail` contract before executable MCP or
 CLI rendering is enabled. The contract follows Penpot's existing dashboard
@@ -143,6 +143,9 @@ Shared contract shape:
 - P25.15 dispatch adapter boundary fields are planning-only. They define config
   precedence, gate/preflight/request consumption, result/error mapping, and
   no-dispatch defaults with `dispatchAdapterBoundary.dispatch:false`.
+- P25.16 opt-in configuration fields are planning-only. They define CLI, MCP,
+  environment, profile, and backend config surfaces plus diagnostics with
+  `optInConfiguration.dispatch:false`.
 - Exporter service execution is out of scope for this command unless a later
   task explicitly maps thumbnail rendering to exporter-compatible semantics.
 - P25.6 selects a future dedicated thumbnail renderer service as the executable
@@ -157,11 +160,12 @@ See `render-thumbnail-runtime-boundary.md` and
 audit, resource-return rules, cache refresh behavior, auth expectations, and
 future test strategy.
 See `render-thumbnail-renderer-service-api.md` and
-`render-thumbnail-renderer-service-fixtures.json` for the P25.15 future
+`render-thumbnail-renderer-service-fixtures.json` for the P25.16 future
 renderer-service request/response API, MCP/CLI dry-run/client boundary, and
 metadata-only availability probe plus response/error normalization and disabled
 client request, execution gate, health preflight, and execution harness
-scaffolding, plus the dispatch adapter boundary.
+scaffolding, plus the dispatch adapter boundary and opt-in configuration
+surfaces.
 
 ## Fixtures
 

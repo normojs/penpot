@@ -330,6 +330,7 @@ test("RenderThumbnailTool dry-run returns renderer-service request metadata with
             cachePolicy: "refresh",
             endpoint: "http://127.0.0.1:6070/thumbnail",
             probeTimeoutMs: 3500,
+            rendererServiceExecution: "renderer-service",
         });
         const body = parseJsonResponse(response);
 
@@ -351,10 +352,14 @@ test("RenderThumbnailTool dry-run returns renderer-service request metadata with
         assert.equal(body.data.availability.status, "configured-unverified");
         assert.equal(body.data.availability.probe, "metadata-only");
         assert.equal(body.data.availability.checked, false);
+        assert.equal(body.data.optInConfiguration.status, "planned-disabled");
+        assert.equal(body.data.optInConfiguration.resolution.selectedSource, "mcp-arg");
+        assert.equal(body.data.optInConfiguration.resolution.selectedValue, "renderer-service");
+        assert.equal(body.data.optInConfiguration.diagnostics.executionEnabledByConfiguration, false);
         assert.equal(body.data.executionGate.status, "closed");
         assert.equal(body.data.executionGate.dispatch, false);
         assert.equal(body.data.executionGate.optIn.env, "PENPOT_RENDER_THUMBNAIL_EXECUTION");
-        assert.ok(body.data.executionGate.blockers.includes("explicit-opt-in"));
+        assert.equal(body.data.executionGate.blockers.includes("explicit-opt-in"), false);
         assert.equal(body.data.executionGate.integrationTestPlan.requiredBeforeDispatch, true);
         assert.equal(body.data.healthPreflight.dispatch, false);
         assert.equal(body.data.healthPreflight.endpoint, "http://127.0.0.1:6070/thumbnail/health");
@@ -415,6 +420,8 @@ test("RenderThumbnailTool execution reports renderer service unavailable without
         assert.equal(body.error.data.client.configured, false);
         assert.equal(body.error.data.availability.status, "not-configured");
         assert.equal(body.error.data.availability.networkProbe, false);
+        assert.equal(body.error.data.optInConfiguration.status, "planned-disabled");
+        assert.equal(body.error.data.optInConfiguration.resolution.configured, false);
         assert.equal(body.error.data.executionGate.status, "closed");
         assert.ok(body.error.data.executionGate.blockers.includes("renderer-service-endpoint"));
         assert.equal(body.error.data.healthPreflight.dispatch, false);
