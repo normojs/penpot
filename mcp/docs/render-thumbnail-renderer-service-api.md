@@ -1,13 +1,13 @@
 # Render Thumbnail Renderer Service API
 
-Status: P25.21 API fixtures, MCP/CLI dry-run/client boundaries, metadata-only
+Status: P25.22 API fixtures, MCP/CLI dry-run/client boundaries, metadata-only
 availability probes, response normalization contracts, disabled client request
 scaffold, closed execution gate, disabled health preflight, and executable
 client harness plus dispatch adapter boundary plans, and opt-in configuration
 surfaces plus unavailable error taxonomy and integration fixture harness
 plus dispatch registration preflight and executable adapter registration
-scaffold plus adapter registry manifest defined; executable runtime
-registration remains blocked.
+scaffold plus adapter registry manifest and final enablement checklist defined;
+executable runtime registration remains blocked.
 
 P25.6 selected a dedicated thumbnail renderer service as the future executable
 owner for `render.thumbnail`. This document defines the service-facing request
@@ -87,6 +87,11 @@ P25.21 defines the disabled adapter registry manifest. Plans now include
 key, MCP/CLI entrypoint wiring, and no-op guarantees while keeping
 `dispatch:false`, `networkDispatch:false`, `runtimeRegistration:false`, and
 `localFileWrites:false`.
+
+P25.22 defines the final disabled enablement checklist. Plans now include
+`enablementChecklist`, which summarizes the remaining opt-in, health,
+integration, adapter registration, registry, and target/cache capability gates
+before executable runtime registration can be selected.
 
 ## Service Boundary
 
@@ -403,6 +408,9 @@ Before `render.thumbnail` becomes executable:
 - keep `adapterRegistryManifest.dispatch`, `networkDispatch`,
   `runtimeRegistration`, and `localFileWrites` false while exposing future
   registry and entrypoint wiring as metadata only
+- keep `enablementChecklist.dispatch`, `networkDispatch`,
+  `runtimeRegistration`, and `localFileWrites` false while using it as the
+  final metadata-only gate summary before implementation work
 - extend MCP tests from dry-run/unavailable planning into auth forwarding,
   resource metadata, and renderer-service error responses
 - add CLI smoke tests for dry-run, execution metadata, `--output`, and missing

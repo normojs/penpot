@@ -2282,6 +2282,16 @@ P25.21 render.thumbnail adapter registry manifest result:
 - `adapterRegistryManifest.dispatch`, `networkDispatch`,
   `runtimeRegistration`, and `localFileWrites` remain `false`.
 
+P25.22 render.thumbnail enablement checklist result:
+
+- Shared plans include `enablementChecklist` with the final opt-in, health,
+  integration, adapter registration, registry, and target/cache capability
+  gates required before executable runtime work can be selected.
+- MCP and CLI expose the checklist in dry-run and unavailable execution
+  payloads without changing runtime behavior.
+- `enablementChecklist.dispatch`, `networkDispatch`, `runtimeRegistration`,
+  and `localFileWrites` remain `false`.
+
 ### 8.5 Export and Render Tools
 
 May start file-bound and later move to headless:
@@ -2310,7 +2320,8 @@ plans, P25.15 adds the disabled dispatch adapter boundary, P25.16 adds
 opt-in configuration surfaces, P25.17 adds unavailable error taxonomy,
 P25.18 adds the integration fixture harness, P25.19 adds dispatch registration
 preflight, P25.20 adds the disabled executable adapter registration scaffold,
-and P25.21 adds the disabled adapter registry manifest.
+P25.21 adds the disabled adapter registry manifest, and P25.22 adds the final
+disabled enablement checklist.
 Runtime behavior remains unavailable
 until opt-in config surfaces, renderer-service implementation, health preflight,
 cache probe, executable client, and tagged-frame capabilities are implemented.

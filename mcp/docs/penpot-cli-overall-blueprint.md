@@ -282,6 +282,9 @@ Current state:
 - Done: renderer-service adapter registry manifest records future
   `renderer-service` registry key and MCP/CLI entrypoint wiring without
   mutating the runtime registry or enabling dispatch.
+- Done: renderer-service enablement checklist records final opt-in, health,
+  integration, adapter registration, registry, and target/cache gates without
+  enabling runtime dispatch.
 - Done: focused command-runtime tests cover descriptor groups, lookup,
   adapter-selection priority/error cases, and token-safe envelopes.
 - Status: complete. Later command coverage gaps were tracked by the P15.1
@@ -785,6 +788,16 @@ P25.21 is complete:
    without mutating the runtime registry or registering executable handlers.
 3. `adapterRegistryManifest.dispatch`, `networkDispatch`,
    `runtimeRegistration`, and `localFileWrites` remain false.
+
+P25.22 is complete:
+
+1. Shared plans include `enablementChecklist` metadata for the final
+   renderer-service runtime enablement gates.
+2. MCP and CLI dry-run plus unavailable execution payloads expose the
+   checklist without enabling runtime registration, network dispatch, or local
+   writes.
+3. `enablementChecklist.dispatch`, `networkDispatch`, `runtimeRegistration`,
+   and `localFileWrites` remain false.
 
 Keep manual configuration behavior stable while moving command metadata and
 envelopes; transport-specific formatting should stay at the MCP/CLI edges.

@@ -1,7 +1,7 @@
 {
-  "version": "P25.21",
+  "version": "P25.22",
   "command": "render.thumbnail",
-  "status": "runtime boundary audited; MCP/CLI planning, metadata-only availability probes, response normalization contracts, disabled client request scaffold, closed execution gate, health preflight plan, executable client harness plan, dispatch adapter boundary, opt-in configuration surfaces, unavailable error taxonomy, integration fixture harness, dispatch registration preflight, disabled executable adapter registration scaffold, and disabled adapter registry manifest registered; runtime execution blocked",
+  "status": "runtime boundary audited; MCP/CLI planning, metadata-only availability probes, response normalization contracts, disabled client request scaffold, closed execution gate, health preflight plan, executable client harness plan, dispatch adapter boundary, opt-in configuration surfaces, unavailable error taxonomy, integration fixture harness, dispatch registration preflight, disabled executable adapter registration scaffold, disabled adapter registry manifest, and final disabled enablement checklist registered; runtime execution blocked",
   "selectedBoundary": "thumbnail-renderer-service",
   "runtimeRegistration": {
     "mcpToolRegistered": true,
@@ -301,6 +301,29 @@
       "do not write local files"
     ]
   },
+  "enablementChecklist": {
+    "status": "planned-disabled",
+    "checklistVersion": "P25.22",
+    "adapter": "renderer-service",
+    "dispatch": false,
+    "networkDispatch": false,
+    "runtimeRegistration": false,
+    "localFileWrites": false,
+    "readiness": {
+      "allGatesSatisfied": false,
+      "mayEnableRuntime": false,
+      "mayDispatchNetwork": false,
+      "mayWriteLocalFiles": false
+    },
+    "requires": [
+      "renderer-service runtime and health endpoint",
+      "file thumbnail cache reuse and refresh fixtures",
+      "tagged frame source data and resource normalization",
+      "explicit opt-in and endpoint config validation",
+      "dedicated runtime registration implementation task",
+      "MCP metadata-only returns and CLI output download gating"
+    ]
+  },
   "testStrategy": [
     "Keep command-runtime descriptor tests asserting render.thumbnail only exposes the renderer-service planning adapter until execution exists.",
     "Add renderer-service contract tests for file and tagged-frame inputs, cache policies, PNG metadata, and resource normalization.",
@@ -316,11 +339,12 @@
     "Dispatch registration preflight tests cover final readiness checks and hard-disabled runtime registration.",
     "Executable adapter registration scaffold tests cover consumed preflight/boundary/request metadata and no-op behavior.",
     "Adapter registry manifest tests cover entrypoint wiring and metadata-only registry guarantees.",
+    "Enablement checklist tests cover final blocked runtime gates and no-dispatch readiness.",
     "Add CLI smoke tests only after the service exists, covering dry-run, resource metadata, --output download, and missing-token errors."
   ],
   "nextTask": {
-    "id": "P25.21",
-    "title": "Plan disabled renderer-service adapter registry manifest",
+    "id": "P25.22",
+    "title": "Plan final disabled renderer-service enablement checklist",
     "modules": ["mcp", "penpot-cli", "command-runtime", "mcp/docs", "todo.md"]
   }
 }

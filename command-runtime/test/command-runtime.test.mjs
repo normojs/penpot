@@ -25,6 +25,7 @@ import {
     createRenderThumbnailRendererServiceExecutableAdapterRegistrationScaffold,
     createRenderThumbnailRendererServiceExecutionGate,
     createRenderThumbnailRendererServiceExecutionClientHarness,
+    createRenderThumbnailRendererServiceEnablementChecklist,
     createRenderThumbnailRendererServiceHealthPreflight,
     createRenderThumbnailRendererServiceIntegrationFixtureHarness,
     createRenderThumbnailRendererServiceOptInConfiguration,
@@ -460,6 +461,10 @@ test("render.thumbnail renderer-service API fixtures define planning requests wi
     assert.equal(fixtures.serviceApi.adapterRegistryManifest.dispatch, false);
     assert.equal(fixtures.serviceApi.adapterRegistryManifest.runtimeRegistration, false);
     assert.equal(fixtures.serviceApi.adapterRegistryManifest.registry.runtimeExecutionRegistered, false);
+    assert.equal(fixtures.serviceApi.enablementChecklist.checklistVersion, "P25.22");
+    assert.equal(fixtures.serviceApi.enablementChecklist.dispatch, false);
+    assert.equal(fixtures.serviceApi.enablementChecklist.runtimeRegistration, false);
+    assert.equal(fixtures.serviceApi.enablementChecklist.readiness.mayEnableRuntime, false);
     assert.deepEqual(fixtures.runtimeRegistration.commandDescriptorAdapters, ["renderer-service"]);
     assert.deepEqual(CommandDescriptors.RENDER_THUMBNAIL.adapters, ["renderer-service"]);
     assert.equal(fixtures.runtimeRegistration.mcpToolRegistered, true);
@@ -632,6 +637,20 @@ test("render.thumbnail renderer-service plan exposes dry-run client request whil
     assert.equal(plan.adapterRegistryManifest.entrypoints.mcp.dryRunOnly, true);
     assert.equal(plan.adapterRegistryManifest.entrypoints.cli.outputWritesRequireNormalizedDownloadUri, true);
     assert.deepEqual(plan.service.adapterRegistryManifest, plan.adapterRegistryManifest);
+    assert.equal(plan.enablementChecklist.checklistVersion, "P25.22");
+    assert.equal(plan.enablementChecklist.dispatch, false);
+    assert.equal(plan.enablementChecklist.networkDispatch, false);
+    assert.equal(plan.enablementChecklist.runtimeRegistration, false);
+    assert.equal(plan.enablementChecklist.localFileWrites, false);
+    assert.equal(plan.enablementChecklist.readiness.allGatesSatisfied, false);
+    assert.equal(plan.enablementChecklist.readiness.mayEnableRuntime, false);
+    assert.equal(plan.enablementChecklist.readiness.mayDispatchNetwork, false);
+    assert.equal(plan.enablementChecklist.readiness.mayWriteLocalFiles, false);
+    assert.equal(plan.enablementChecklist.versions.adapterRegistryManifest, "P25.21");
+    assert.ok(plan.enablementChecklist.blockers.includes("renderer-service-adapter-registry"));
+    assert.ok(plan.enablementChecklist.blockers.includes("runtime-execution-registration"));
+    assert.ok(plan.enablementChecklist.blockers.includes("thumbnail-renderer-service-implementation"));
+    assert.deepEqual(plan.service.enablementChecklist, plan.enablementChecklist);
     assert.equal(plan.clientRequest.status, "scaffolded");
     assert.equal(plan.clientRequest.dispatch, false);
     assert.equal(plan.clientRequest.method, "POST");
@@ -669,6 +688,7 @@ test("render.thumbnail renderer-service plan exposes dry-run client request whil
     assert.equal(plan.diagnostics.dispatchRegistrationPreflightVersion, "P25.19");
     assert.equal(plan.diagnostics.executableAdapterRegistrationScaffoldVersion, "P25.20");
     assert.equal(plan.diagnostics.adapterRegistryManifestVersion, "P25.21");
+    assert.equal(plan.diagnostics.enablementChecklistVersion, "P25.22");
 });
 
 test("render.thumbnail renderer-service plan reports not-configured availability without endpoint", () => {
@@ -988,6 +1008,48 @@ test("render.thumbnail renderer-service adapter registry manifest stays metadata
     assert.ok(manifest.noOpGuarantees.includes("do not mutate command runtime adapter registry"));
     assert.ok(manifest.noOpGuarantees.includes("do not call renderer-service network endpoints"));
     assert.ok(manifest.requiredBeforeEnablement.some((entry) => entry.includes("P25.20")));
+});
+
+test("render.thumbnail renderer-service enablement checklist stays hard-disabled", () => {
+    const checklist = createRenderThumbnailRendererServiceEnablementChecklist({
+        optInConfiguration: { status: "planned-disabled" },
+        executionGate: { status: "closed" },
+        healthPreflight: { status: "planned-disabled" },
+        executionClientHarness: { status: "planned-disabled" },
+        dispatchAdapterBoundary: { status: "planned-disabled" },
+        unavailableErrorTaxonomy: { taxonomyVersion: "P25.17" },
+        integrationFixtureHarness: { status: "planned-disabled", harnessVersion: "P25.18" },
+        dispatchRegistrationPreflight: { status: "planned-disabled", preflightVersion: "P25.19" },
+        executableAdapterRegistrationScaffold: { status: "planned-disabled", scaffoldVersion: "P25.20" },
+        adapterRegistryManifest: { status: "planned-disabled", manifestVersion: "P25.21" },
+        requiredCapabilities: ["thumbnail-renderer-service-implementation", "file-thumbnail-cache-probe"],
+    });
+    const gateIds = checklist.gates.map((entry) => entry.id);
+
+    assert.equal(checklist.status, "planned-disabled");
+    assert.equal(checklist.checklistVersion, "P25.22");
+    assert.equal(checklist.adapter, "renderer-service");
+    assert.equal(checklist.command, "render.thumbnail");
+    assert.equal(checklist.dispatch, false);
+    assert.equal(checklist.networkDispatch, false);
+    assert.equal(checklist.runtimeRegistration, false);
+    assert.equal(checklist.localFileWrites, false);
+    assert.ok(gateIds.includes("opt-in-configuration"));
+    assert.ok(gateIds.includes("adapter-registry-ready"));
+    assert.ok(gateIds.includes("capability:thumbnail-renderer-service-implementation"));
+    assert.equal(checklist.readiness.allGatesSatisfied, false);
+    assert.equal(checklist.readiness.mayEnableRuntime, false);
+    assert.equal(checklist.readiness.mayDispatchNetwork, false);
+    assert.equal(checklist.readiness.mayWriteLocalFiles, false);
+    assert.equal(checklist.versions.unavailableErrorTaxonomy, "P25.17");
+    assert.equal(checklist.versions.integrationFixtureHarness, "P25.18");
+    assert.equal(checklist.versions.dispatchRegistrationPreflight, "P25.19");
+    assert.equal(checklist.versions.executableAdapterRegistrationScaffold, "P25.20");
+    assert.equal(checklist.versions.adapterRegistryManifest, "P25.21");
+    assert.ok(checklist.blockers.includes("renderer-service-adapter-registry"));
+    assert.ok(checklist.blockers.includes("thumbnail-renderer-service-implementation"));
+    assert.ok(checklist.requiredBeforeEnablement.includes("implement renderer-service runtime and health endpoint"));
+    assert.ok(checklist.requiredBeforeEnablement.some((entry) => entry.includes("CLI --output")));
 });
 
 test("render.thumbnail renderer-service client request scaffold adds MCP audit headers without dispatch", () => {

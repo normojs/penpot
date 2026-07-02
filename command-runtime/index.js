@@ -980,6 +980,19 @@ export function createRenderThumbnailRendererServicePlan(options = EMPTY_OBJECT)
         dispatchRegistrationPreflight,
         dispatchAdapterBoundary,
     });
+    const enablementChecklist = createRenderThumbnailRendererServiceEnablementChecklist({
+        optInConfiguration,
+        executionGate,
+        healthPreflight,
+        executionClientHarness,
+        dispatchAdapterBoundary,
+        unavailableErrorTaxonomy,
+        integrationFixtureHarness,
+        dispatchRegistrationPreflight,
+        executableAdapterRegistrationScaffold,
+        adapterRegistryManifest,
+        requiredCapabilities,
+    });
 
     return {
         command: CommandDescriptors.RENDER_THUMBNAIL.id,
@@ -1033,6 +1046,7 @@ export function createRenderThumbnailRendererServicePlan(options = EMPTY_OBJECT)
             dispatchRegistrationPreflight,
             executableAdapterRegistrationScaffold,
             adapterRegistryManifest,
+            enablementChecklist,
             clientRequest,
         },
         client,
@@ -1047,6 +1061,7 @@ export function createRenderThumbnailRendererServicePlan(options = EMPTY_OBJECT)
         dispatchRegistrationPreflight,
         executableAdapterRegistrationScaffold,
         adapterRegistryManifest,
+        enablementChecklist,
         clientRequest,
         serviceRequest: {
             command: CommandDescriptors.RENDER_THUMBNAIL.id,
@@ -1121,7 +1136,145 @@ export function createRenderThumbnailRendererServicePlan(options = EMPTY_OBJECT)
             dispatchRegistrationPreflightVersion: dispatchRegistrationPreflight.preflightVersion,
             executableAdapterRegistrationScaffoldVersion: executableAdapterRegistrationScaffold.scaffoldVersion,
             adapterRegistryManifestVersion: adapterRegistryManifest.manifestVersion,
+            enablementChecklistVersion: enablementChecklist.checklistVersion,
         },
+    };
+}
+
+export function createRenderThumbnailRendererServiceEnablementChecklist(options = EMPTY_OBJECT) {
+    const optInConfiguration = options.optInConfiguration ?? EMPTY_OBJECT;
+    const executionGate = options.executionGate ?? EMPTY_OBJECT;
+    const healthPreflight = options.healthPreflight ?? EMPTY_OBJECT;
+    const executionClientHarness = options.executionClientHarness ?? EMPTY_OBJECT;
+    const dispatchAdapterBoundary = options.dispatchAdapterBoundary ?? EMPTY_OBJECT;
+    const unavailableErrorTaxonomy = options.unavailableErrorTaxonomy ?? EMPTY_OBJECT;
+    const integrationFixtureHarness = options.integrationFixtureHarness ?? EMPTY_OBJECT;
+    const dispatchRegistrationPreflight = options.dispatchRegistrationPreflight ?? EMPTY_OBJECT;
+    const executableAdapterRegistrationScaffold =
+        options.executableAdapterRegistrationScaffold ?? EMPTY_OBJECT;
+    const adapterRegistryManifest = options.adapterRegistryManifest ?? EMPTY_OBJECT;
+    const requiredCapabilities = Array.isArray(options.requiredCapabilities)
+        ? options.requiredCapabilities.map((item) => normalizeOptionalString(item)).filter(Boolean)
+        : [];
+    const gates = [
+        {
+            id: "opt-in-configuration",
+            source: "optInConfiguration",
+            requiredStatus: "ready",
+            currentStatus: optInConfiguration.status ?? "planned-disabled",
+            satisfied: false,
+            blocker: "renderer-service-opt-in-configuration",
+        },
+        {
+            id: "execution-gate-open",
+            source: "executionGate",
+            requiredStatus: "open",
+            currentStatus: executionGate.status ?? "closed",
+            satisfied: false,
+            blocker: "renderer-service-execution-gate",
+        },
+        {
+            id: "health-preflight-ok",
+            source: "healthPreflight",
+            requiredStatus: "ok",
+            currentStatus: healthPreflight.status ?? "planned-disabled",
+            satisfied: false,
+            blocker: "renderer-service-health-preflight",
+        },
+        {
+            id: "execution-client-ready",
+            source: "executionClientHarness",
+            requiredStatus: "ready",
+            currentStatus: executionClientHarness.status ?? "planned-disabled",
+            satisfied: false,
+            blocker: "renderer-service-execution-client",
+        },
+        {
+            id: "dispatch-adapter-ready",
+            source: "dispatchAdapterBoundary",
+            requiredStatus: "ready",
+            currentStatus: dispatchAdapterBoundary.status ?? "planned-disabled",
+            satisfied: false,
+            blocker: "renderer-service-dispatch-adapter",
+        },
+        {
+            id: "integration-fixtures-ready",
+            source: "integrationFixtureHarness",
+            requiredStatus: "ready",
+            currentStatus: integrationFixtureHarness.status ?? "planned-disabled",
+            satisfied: false,
+            blocker: "renderer-service-integration-fixtures",
+        },
+        {
+            id: "dispatch-registration-ready",
+            source: "dispatchRegistrationPreflight",
+            requiredStatus: "ready",
+            currentStatus: dispatchRegistrationPreflight.status ?? "planned-disabled",
+            satisfied: false,
+            blocker: "runtime-execution-registration",
+        },
+        {
+            id: "adapter-registration-ready",
+            source: "executableAdapterRegistrationScaffold",
+            requiredStatus: "ready",
+            currentStatus: executableAdapterRegistrationScaffold.status ?? "planned-disabled",
+            satisfied: false,
+            blocker: "renderer-service-adapter-registration",
+        },
+        {
+            id: "adapter-registry-ready",
+            source: "adapterRegistryManifest",
+            requiredStatus: "ready",
+            currentStatus: adapterRegistryManifest.status ?? "planned-disabled",
+            satisfied: false,
+            blocker: "renderer-service-adapter-registry",
+        },
+    ];
+    const capabilityGates = requiredCapabilities.map((name) => ({
+        id: `capability:${name}`,
+        source: "requiredCapabilities",
+        requiredStatus: "available",
+        currentStatus: "planned",
+        satisfied: false,
+        blocker: name,
+    }));
+    const allGates = [...gates, ...capabilityGates];
+    const blockers = Array.from(new Set(allGates.filter((gate) => !gate.satisfied).map((gate) => gate.blocker)));
+
+    return {
+        status: "planned-disabled",
+        checklistVersion: "P25.22",
+        adapter: "renderer-service",
+        command: CommandDescriptors.RENDER_THUMBNAIL.id,
+        dispatch: false,
+        networkDispatch: false,
+        runtimeRegistration: false,
+        localFileWrites: false,
+        reason: "renderer-service enablement checklist is metadata-only; executable runtime registration remains disabled until every gate is implemented and tested",
+        gates: allGates,
+        blockers,
+        readiness: {
+            allGatesSatisfied: false,
+            mayEnableRuntime: false,
+            mayDispatchNetwork: false,
+            mayWriteLocalFiles: false,
+        },
+        versions: {
+            unavailableErrorTaxonomy: unavailableErrorTaxonomy.taxonomyVersion ?? "P25.17",
+            integrationFixtureHarness: integrationFixtureHarness.harnessVersion ?? "P25.18",
+            dispatchRegistrationPreflight: dispatchRegistrationPreflight.preflightVersion ?? "P25.19",
+            executableAdapterRegistrationScaffold:
+                executableAdapterRegistrationScaffold.scaffoldVersion ?? "P25.20",
+            adapterRegistryManifest: adapterRegistryManifest.manifestVersion ?? "P25.21",
+        },
+        requiredBeforeEnablement: [
+            "implement renderer-service runtime and health endpoint",
+            "prove file thumbnail cache reuse and refresh through integration fixtures",
+            "prove tagged frame source data and resource normalization",
+            "open execution gate only after explicit opt-in and endpoint config are validated",
+            "register executable adapter only in a dedicated implementation task",
+            "preserve MCP metadata-only resource returns and CLI --output download gating",
+        ],
     };
 }
 

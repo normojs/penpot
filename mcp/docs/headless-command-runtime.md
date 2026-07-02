@@ -925,3 +925,11 @@ P25.21 adds renderer-service adapter registry manifest:
 - The manifest is metadata-only: it does not mutate the command-runtime
   adapter registry, register executable MCP/CLI handlers, call network
   endpoints, or write local files.
+
+P25.22 adds renderer-service enablement checklist:
+
+- Plans include `enablementChecklist` with the final opt-in, health,
+  integration, adapter registration, registry, and target/cache capability
+  gates required before executable dispatch can be selected.
+- The checklist remains hard-disabled with `dispatch`, `networkDispatch`,
+  `runtimeRegistration`, and `localFileWrites` all `false`.
