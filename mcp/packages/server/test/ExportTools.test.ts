@@ -398,6 +398,13 @@ test("RenderThumbnailTool dry-run returns renderer-service request metadata with
         );
         assert.equal(body.data.executableAdapterRegistrationScaffold.consumes.clientRequest.currentDispatch, false);
         assert.equal(body.data.executableAdapterRegistrationScaffold.registrationSurface.runtimeExecutionRegistered, false);
+        assert.equal(body.data.adapterRegistryManifest.manifestVersion, "P25.21");
+        assert.equal(body.data.adapterRegistryManifest.dispatch, false);
+        assert.equal(body.data.adapterRegistryManifest.networkDispatch, false);
+        assert.equal(body.data.adapterRegistryManifest.runtimeRegistration, false);
+        assert.equal(body.data.adapterRegistryManifest.localFileWrites, false);
+        assert.equal(body.data.adapterRegistryManifest.registry.runtimeExecutionRegistered, false);
+        assert.equal(body.data.adapterRegistryManifest.entrypoints.mcp.dryRunOnly, true);
         assert.deepEqual(body.data.service.client, body.data.client);
         assert.equal(body.data.service.responseNormalization.successStatus, "ok");
         assert.equal(body.data.service.responseNormalization.localFileWrites, false);
@@ -473,6 +480,11 @@ test("RenderThumbnailTool execution reports renderer service unavailable without
         assert.equal(body.error.data.executableAdapterRegistrationScaffold.networkDispatch, false);
         assert.equal(body.error.data.executableAdapterRegistrationScaffold.runtimeRegistration, false);
         assert.equal(body.error.data.executableAdapterRegistrationScaffold.localFileWrites, false);
+        assert.equal(body.error.data.adapterRegistryManifest.manifestVersion, "P25.21");
+        assert.equal(body.error.data.adapterRegistryManifest.dispatch, false);
+        assert.equal(body.error.data.adapterRegistryManifest.networkDispatch, false);
+        assert.equal(body.error.data.adapterRegistryManifest.runtimeRegistration, false);
+        assert.equal(body.error.data.adapterRegistryManifest.localFileWrites, false);
         assert.equal(body.error.data.clientRequest.dispatch, false);
         assert.equal(body.error.data.serviceRequest.operation, "thumbnail.render");
         assert.deepEqual(body.error.data.requiredCapabilities, ["thumbnail-renderer-service-implementation", "file-thumbnail-cache-probe"]);

@@ -442,6 +442,7 @@ export interface RenderThumbnailRendererServicePlan {
         integrationFixtureHarness: RenderThumbnailRendererServiceIntegrationFixtureHarness;
         dispatchRegistrationPreflight: RenderThumbnailRendererServiceDispatchRegistrationPreflight;
         executableAdapterRegistrationScaffold: RenderThumbnailRendererServiceExecutableAdapterRegistrationScaffold;
+        adapterRegistryManifest: RenderThumbnailRendererServiceAdapterRegistryManifest;
         clientRequest: RenderThumbnailRendererServiceClientRequest;
     };
     client: RenderThumbnailRendererServiceClientConfig;
@@ -455,6 +456,7 @@ export interface RenderThumbnailRendererServicePlan {
     integrationFixtureHarness: RenderThumbnailRendererServiceIntegrationFixtureHarness;
     dispatchRegistrationPreflight: RenderThumbnailRendererServiceDispatchRegistrationPreflight;
     executableAdapterRegistrationScaffold: RenderThumbnailRendererServiceExecutableAdapterRegistrationScaffold;
+    adapterRegistryManifest: RenderThumbnailRendererServiceAdapterRegistryManifest;
     clientRequest: RenderThumbnailRendererServiceClientRequest;
     serviceRequest: {
         command: "render.thumbnail";
@@ -528,6 +530,7 @@ export interface RenderThumbnailRendererServicePlan {
         integrationFixtureHarnessVersion: "P25.18";
         dispatchRegistrationPreflightVersion: "P25.19";
         executableAdapterRegistrationScaffoldVersion: "P25.20";
+        adapterRegistryManifestVersion: "P25.21";
     };
 }
 
@@ -965,6 +968,60 @@ export interface RenderThumbnailRendererServiceExecutableAdapterRegistrationScaf
     requiredBeforeEnablement: string[];
 }
 
+export interface RenderThumbnailRendererServiceAdapterRegistryManifest {
+    status: "planned-disabled";
+    manifestVersion: "P25.21";
+    adapter: "renderer-service";
+    command: "render.thumbnail";
+    dispatch: false;
+    networkDispatch: false;
+    runtimeRegistration: false;
+    localFileWrites: false;
+    reason: string;
+    consumes: {
+        executableAdapterRegistrationScaffold: {
+            requiredStatus: "ready";
+            currentStatus: string;
+            scaffoldVersion: string;
+            runtimeExecutionRegistered: false;
+        };
+        dispatchRegistrationPreflight: {
+            requiredStatus: "ready";
+            currentStatus: string;
+            preflightVersion: string;
+        };
+        dispatchAdapterBoundary: {
+            requiredStatus: "ready";
+            currentStatus: string;
+            currentDispatch: boolean;
+        };
+    };
+    registry: {
+        namespace: "render.thumbnail.adapters";
+        key: "renderer-service";
+        descriptorAdapterAlreadyPresent: true;
+        runtimeExecutionRegistered: false;
+        defaultEnabled: false;
+        activation: string;
+    };
+    entrypoints: {
+        mcp: {
+            tool: string | undefined;
+            dryRunOnly: true;
+            unavailablePayloadIncludesManifest: true;
+            localFileWrites: false;
+        };
+        cli: {
+            command: string | undefined;
+            dryRunOnly: true;
+            unavailablePayloadIncludesManifest: true;
+            outputWritesRequireNormalizedDownloadUri: true;
+        };
+    };
+    noOpGuarantees: string[];
+    requiredBeforeEnablement: string[];
+}
+
 export interface CreateRenderThumbnailRendererServiceClientRequestOptions {
     entrypoint?: "mcp" | "cli" | string | null;
     mcpToolName?: string | null;
@@ -1263,6 +1320,13 @@ export function createRenderThumbnailRendererServiceExecutableAdapterRegistratio
         clientRequest?: Partial<RenderThumbnailRendererServiceClientRequest> | null;
     }
 ): RenderThumbnailRendererServiceExecutableAdapterRegistrationScaffold;
+export function createRenderThumbnailRendererServiceAdapterRegistryManifest(
+    options?: {
+        executableAdapterRegistrationScaffold?: Partial<RenderThumbnailRendererServiceExecutableAdapterRegistrationScaffold> | null;
+        dispatchRegistrationPreflight?: Partial<RenderThumbnailRendererServiceDispatchRegistrationPreflight> | null;
+        dispatchAdapterBoundary?: Partial<RenderThumbnailRendererServiceDispatchAdapterBoundary> | null;
+    }
+): RenderThumbnailRendererServiceAdapterRegistryManifest;
 export function createRenderThumbnailRendererServiceClientRequest(
     plan: Partial<RenderThumbnailRendererServicePlan>,
     options?: CreateRenderThumbnailRendererServiceClientRequestOptions

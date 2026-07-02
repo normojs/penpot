@@ -1,7 +1,7 @@
 {
-  "version": "P25.20",
+  "version": "P25.21",
   "command": "render.thumbnail",
-  "status": "renderer-service API fixtures with MCP/CLI dry-run/client boundaries, metadata-only availability probes, response normalization contracts, disabled client request scaffold, explicit execution gate, health preflight plan, executable client harness plan, dispatch adapter boundary, opt-in configuration surfaces, unavailable error taxonomy, integration fixture harness, dispatch registration preflight, and disabled executable adapter registration scaffold; runtime execution blocked",
+  "status": "renderer-service API fixtures with MCP/CLI dry-run/client boundaries, metadata-only availability probes, response normalization contracts, disabled client request scaffold, explicit execution gate, health preflight plan, executable client harness plan, dispatch adapter boundary, opt-in configuration surfaces, unavailable error taxonomy, integration fixture harness, dispatch registration preflight, disabled executable adapter registration scaffold, and disabled adapter registry manifest; runtime execution blocked",
   "adapter": "renderer-service",
   "runtimeRegistration": {
     "mcpToolRegistered": true,
@@ -298,6 +298,63 @@
         "renderer-service dispatch adapter boundary reports ready",
         "client request dispatch is enabled by a dedicated implementation task",
         "MCP and CLI unavailable-path tests are replaced with gated execution tests"
+      ]
+    },
+    "adapterRegistryManifest": {
+      "status": "planned-disabled",
+      "manifestVersion": "P25.21",
+      "adapter": "renderer-service",
+      "command": "render.thumbnail",
+      "dispatch": false,
+      "networkDispatch": false,
+      "runtimeRegistration": false,
+      "localFileWrites": false,
+      "consumes": {
+        "executableAdapterRegistrationScaffold": {
+          "requiredStatus": "ready",
+          "currentStatus": "planned-disabled",
+          "scaffoldVersion": "P25.20",
+          "runtimeExecutionRegistered": false
+        },
+        "dispatchRegistrationPreflight": {
+          "requiredStatus": "ready",
+          "currentStatus": "planned-disabled",
+          "preflightVersion": "P25.19"
+        },
+        "dispatchAdapterBoundary": {
+          "requiredStatus": "ready",
+          "currentStatus": "planned-disabled",
+          "currentDispatch": false
+        }
+      },
+      "registry": {
+        "namespace": "render.thumbnail.adapters",
+        "key": "renderer-service",
+        "descriptorAdapterAlreadyPresent": true,
+        "runtimeExecutionRegistered": false,
+        "defaultEnabled": false,
+        "activation": "future gated implementation task"
+      },
+      "entrypoints": {
+        "mcp": {
+          "tool": "render.thumbnail",
+          "dryRunOnly": true,
+          "unavailablePayloadIncludesManifest": true,
+          "localFileWrites": false
+        },
+        "cli": {
+          "command": "render thumbnail",
+          "dryRunOnly": true,
+          "unavailablePayloadIncludesManifest": true,
+          "outputWritesRequireNormalizedDownloadUri": true
+        }
+      },
+      "noOpGuarantees": [
+        "do not mutate command runtime adapter registry",
+        "do not register executable MCP handlers",
+        "do not register executable CLI handlers",
+        "do not call renderer-service network endpoints",
+        "do not write local files"
       ]
     },
     "clientConfiguration": {
@@ -603,6 +660,7 @@
     "dry-run and unavailable execution expose integration fixture harness metadata without enabling execution",
     "dry-run and unavailable execution expose dispatch registration preflight metadata without enabling execution",
     "dry-run and unavailable execution expose disabled executable adapter registration scaffold metadata without enabling execution",
+    "dry-run and unavailable execution expose disabled adapter registry manifest metadata without enabling execution",
     "rejects unsupported adapters while render.thumbnail runtime execution is unavailable",
     "reports structured errors for missing frame target before runtime dispatch"
   ],
@@ -624,12 +682,13 @@
     "integration fixture harness metadata survives dry-run and unavailable execution JSON output",
     "dispatch registration preflight metadata survives dry-run and unavailable execution JSON output",
     "executable adapter registration scaffold metadata survives dry-run and unavailable execution JSON output",
+    "adapter registry manifest metadata survives dry-run and unavailable execution JSON output",
     "--output downloads the returned PNG resource",
     "missing token fails before contacting renderer-service"
   ],
   "nextTask": {
-    "id": "P25.20",
-    "title": "Add disabled renderer-service executable adapter registration scaffold",
+    "id": "P25.21",
+    "title": "Plan disabled renderer-service adapter registry manifest",
     "modules": ["mcp", "penpot-cli", "command-runtime", "mcp/docs", "todo.md"]
   }
 }

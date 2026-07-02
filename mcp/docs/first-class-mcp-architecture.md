@@ -2272,6 +2272,16 @@ P25.20 render.thumbnail executable adapter registration scaffold result:
 - `executableAdapterRegistrationScaffold.dispatch`, `networkDispatch`,
   `runtimeRegistration`, and `localFileWrites` remain `false`.
 
+P25.21 render.thumbnail adapter registry manifest result:
+
+- Shared plans include `adapterRegistryManifest` with the future
+  `renderer-service` registry key and MCP/CLI entrypoint wiring.
+- The manifest is metadata-only: it does not mutate the command-runtime
+  registry, register executable entrypoints, call renderer-service endpoints,
+  or write local files.
+- `adapterRegistryManifest.dispatch`, `networkDispatch`,
+  `runtimeRegistration`, and `localFileWrites` remain `false`.
+
 ### 8.5 Export and Render Tools
 
 May start file-bound and later move to headless:
@@ -2299,8 +2309,8 @@ plan, P25.14 adds disabled health preflight plus executable client harness
 plans, P25.15 adds the disabled dispatch adapter boundary, P25.16 adds
 opt-in configuration surfaces, P25.17 adds unavailable error taxonomy,
 P25.18 adds the integration fixture harness, P25.19 adds dispatch registration
-preflight, and P25.20 adds the disabled executable adapter registration
-scaffold.
+preflight, P25.20 adds the disabled executable adapter registration scaffold,
+and P25.21 adds the disabled adapter registry manifest.
 Runtime behavior remains unavailable
 until opt-in config surfaces, renderer-service implementation, health preflight,
 cache probe, executable client, and tagged-frame capabilities are implemented.

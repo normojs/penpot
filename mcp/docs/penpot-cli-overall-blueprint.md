@@ -279,6 +279,9 @@ Current state:
 - Done: renderer-service executable adapter registration scaffold records the
   future no-op MCP/CLI registration surface without enabling dispatch,
   runtime registration, or local file writes.
+- Done: renderer-service adapter registry manifest records future
+  `renderer-service` registry key and MCP/CLI entrypoint wiring without
+  mutating the runtime registry or enabling dispatch.
 - Done: focused command-runtime tests cover descriptor groups, lookup,
   adapter-selection priority/error cases, and token-safe envelopes.
 - Status: complete. Later command coverage gaps were tracked by the P15.1
@@ -772,6 +775,15 @@ P25.20 is complete:
 2. MCP and CLI dry-run plus unavailable execution payloads expose the scaffold
    without registering runtime dispatch.
 3. `executableAdapterRegistrationScaffold.dispatch`, `networkDispatch`,
+   `runtimeRegistration`, and `localFileWrites` remain false.
+
+P25.21 is complete:
+
+1. Shared plans include `adapterRegistryManifest` metadata for the future
+   `renderer-service` adapter registry key and MCP/CLI entrypoint wiring.
+2. MCP and CLI dry-run plus unavailable execution payloads expose the manifest
+   without mutating the runtime registry or registering executable handlers.
+3. `adapterRegistryManifest.dispatch`, `networkDispatch`,
    `runtimeRegistration`, and `localFileWrites` remain false.
 
 Keep manual configuration behavior stable while moving command metadata and

@@ -975,6 +975,11 @@ export function createRenderThumbnailRendererServicePlan(options = EMPTY_OBJECT)
             dispatchAdapterBoundary,
             clientRequest,
         });
+    const adapterRegistryManifest = createRenderThumbnailRendererServiceAdapterRegistryManifest({
+        executableAdapterRegistrationScaffold,
+        dispatchRegistrationPreflight,
+        dispatchAdapterBoundary,
+    });
 
     return {
         command: CommandDescriptors.RENDER_THUMBNAIL.id,
@@ -1027,6 +1032,7 @@ export function createRenderThumbnailRendererServicePlan(options = EMPTY_OBJECT)
             integrationFixtureHarness,
             dispatchRegistrationPreflight,
             executableAdapterRegistrationScaffold,
+            adapterRegistryManifest,
             clientRequest,
         },
         client,
@@ -1040,6 +1046,7 @@ export function createRenderThumbnailRendererServicePlan(options = EMPTY_OBJECT)
         integrationFixtureHarness,
         dispatchRegistrationPreflight,
         executableAdapterRegistrationScaffold,
+        adapterRegistryManifest,
         clientRequest,
         serviceRequest: {
             command: CommandDescriptors.RENDER_THUMBNAIL.id,
@@ -1113,7 +1120,80 @@ export function createRenderThumbnailRendererServicePlan(options = EMPTY_OBJECT)
             integrationFixtureHarnessVersion: integrationFixtureHarness.harnessVersion,
             dispatchRegistrationPreflightVersion: dispatchRegistrationPreflight.preflightVersion,
             executableAdapterRegistrationScaffoldVersion: executableAdapterRegistrationScaffold.scaffoldVersion,
+            adapterRegistryManifestVersion: adapterRegistryManifest.manifestVersion,
         },
+    };
+}
+
+export function createRenderThumbnailRendererServiceAdapterRegistryManifest(options = EMPTY_OBJECT) {
+    const executableAdapterRegistrationScaffold =
+        options.executableAdapterRegistrationScaffold ?? EMPTY_OBJECT;
+    const dispatchRegistrationPreflight = options.dispatchRegistrationPreflight ?? EMPTY_OBJECT;
+    const dispatchAdapterBoundary = options.dispatchAdapterBoundary ?? EMPTY_OBJECT;
+
+    return {
+        status: "planned-disabled",
+        manifestVersion: "P25.21",
+        adapter: "renderer-service",
+        command: CommandDescriptors.RENDER_THUMBNAIL.id,
+        dispatch: false,
+        networkDispatch: false,
+        runtimeRegistration: false,
+        localFileWrites: false,
+        reason: "renderer-service adapter registry manifest is documented as metadata-only until runtime registration is explicitly enabled",
+        consumes: {
+            executableAdapterRegistrationScaffold: {
+                requiredStatus: "ready",
+                currentStatus: executableAdapterRegistrationScaffold.status ?? "planned-disabled",
+                scaffoldVersion: executableAdapterRegistrationScaffold.scaffoldVersion ?? "P25.20",
+                runtimeExecutionRegistered: false,
+            },
+            dispatchRegistrationPreflight: {
+                requiredStatus: "ready",
+                currentStatus: dispatchRegistrationPreflight.status ?? "planned-disabled",
+                preflightVersion: dispatchRegistrationPreflight.preflightVersion ?? "P25.19",
+            },
+            dispatchAdapterBoundary: {
+                requiredStatus: "ready",
+                currentStatus: dispatchAdapterBoundary.status ?? "planned-disabled",
+                currentDispatch: Boolean(dispatchAdapterBoundary.dispatch),
+            },
+        },
+        registry: {
+            namespace: "render.thumbnail.adapters",
+            key: "renderer-service",
+            descriptorAdapterAlreadyPresent: true,
+            runtimeExecutionRegistered: false,
+            defaultEnabled: false,
+            activation: "future gated implementation task",
+        },
+        entrypoints: {
+            mcp: {
+                tool: CommandDescriptors.RENDER_THUMBNAIL.mcpToolName,
+                dryRunOnly: true,
+                unavailablePayloadIncludesManifest: true,
+                localFileWrites: false,
+            },
+            cli: {
+                command: CommandDescriptors.RENDER_THUMBNAIL.cliCommand,
+                dryRunOnly: true,
+                unavailablePayloadIncludesManifest: true,
+                outputWritesRequireNormalizedDownloadUri: true,
+            },
+        },
+        noOpGuarantees: [
+            "do not mutate command runtime adapter registry",
+            "do not register executable MCP handlers",
+            "do not register executable CLI handlers",
+            "do not call renderer-service network endpoints",
+            "do not write local files",
+        ],
+        requiredBeforeEnablement: [
+            "adapter registry manifest status becomes ready in a dedicated implementation task",
+            "P25.20 executable adapter registration scaffold becomes ready",
+            "runtime execution registration is covered by MCP and CLI integration tests",
+            "dry-run and unavailable payload contracts are preserved or versioned",
+        ],
     };
 }
 

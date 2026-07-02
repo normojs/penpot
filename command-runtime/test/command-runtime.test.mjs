@@ -18,6 +18,7 @@ import {
     createCommandResultEnvelope,
     createExportFileContract,
     createRenderThumbnailContract,
+    createRenderThumbnailRendererServiceAdapterRegistryManifest,
     createRenderThumbnailRendererServiceClientRequest,
     createRenderThumbnailRendererServiceDispatchAdapterBoundary,
     createRenderThumbnailRendererServiceDispatchRegistrationPreflight,
@@ -455,6 +456,10 @@ test("render.thumbnail renderer-service API fixtures define planning requests wi
     assert.equal(fixtures.serviceApi.executableAdapterRegistrationScaffold.dispatch, false);
     assert.equal(fixtures.serviceApi.executableAdapterRegistrationScaffold.runtimeRegistration, false);
     assert.ok(fixtures.serviceApi.executableAdapterRegistrationScaffold.noOpBehavior.includes("do not call fetch"));
+    assert.equal(fixtures.serviceApi.adapterRegistryManifest.manifestVersion, "P25.21");
+    assert.equal(fixtures.serviceApi.adapterRegistryManifest.dispatch, false);
+    assert.equal(fixtures.serviceApi.adapterRegistryManifest.runtimeRegistration, false);
+    assert.equal(fixtures.serviceApi.adapterRegistryManifest.registry.runtimeExecutionRegistered, false);
     assert.deepEqual(fixtures.runtimeRegistration.commandDescriptorAdapters, ["renderer-service"]);
     assert.deepEqual(CommandDescriptors.RENDER_THUMBNAIL.adapters, ["renderer-service"]);
     assert.equal(fixtures.runtimeRegistration.mcpToolRegistered, true);
@@ -616,6 +621,17 @@ test("render.thumbnail renderer-service plan exposes dry-run client request whil
     assert.equal(plan.executableAdapterRegistrationScaffold.consumes.clientRequest.currentDispatch, false);
     assert.equal(plan.executableAdapterRegistrationScaffold.registrationSurface.runtimeExecutionRegistered, false);
     assert.deepEqual(plan.service.executableAdapterRegistrationScaffold, plan.executableAdapterRegistrationScaffold);
+    assert.equal(plan.adapterRegistryManifest.manifestVersion, "P25.21");
+    assert.equal(plan.adapterRegistryManifest.dispatch, false);
+    assert.equal(plan.adapterRegistryManifest.networkDispatch, false);
+    assert.equal(plan.adapterRegistryManifest.runtimeRegistration, false);
+    assert.equal(plan.adapterRegistryManifest.localFileWrites, false);
+    assert.equal(plan.adapterRegistryManifest.consumes.executableAdapterRegistrationScaffold.scaffoldVersion, "P25.20");
+    assert.equal(plan.adapterRegistryManifest.registry.key, "renderer-service");
+    assert.equal(plan.adapterRegistryManifest.registry.runtimeExecutionRegistered, false);
+    assert.equal(plan.adapterRegistryManifest.entrypoints.mcp.dryRunOnly, true);
+    assert.equal(plan.adapterRegistryManifest.entrypoints.cli.outputWritesRequireNormalizedDownloadUri, true);
+    assert.deepEqual(plan.service.adapterRegistryManifest, plan.adapterRegistryManifest);
     assert.equal(plan.clientRequest.status, "scaffolded");
     assert.equal(plan.clientRequest.dispatch, false);
     assert.equal(plan.clientRequest.method, "POST");
@@ -652,6 +668,7 @@ test("render.thumbnail renderer-service plan exposes dry-run client request whil
     assert.equal(plan.diagnostics.integrationFixtureHarnessVersion, "P25.18");
     assert.equal(plan.diagnostics.dispatchRegistrationPreflightVersion, "P25.19");
     assert.equal(plan.diagnostics.executableAdapterRegistrationScaffoldVersion, "P25.20");
+    assert.equal(plan.diagnostics.adapterRegistryManifestVersion, "P25.21");
 });
 
 test("render.thumbnail renderer-service plan reports not-configured availability without endpoint", () => {
@@ -926,6 +943,51 @@ test("render.thumbnail renderer-service executable adapter registration scaffold
     assert.ok(scaffold.noOpBehavior.includes("do not call backend RPC"));
     assert.ok(scaffold.noOpBehavior.includes("return renderer_service_unavailable while disabled"));
     assert.ok(scaffold.requiredBeforeEnablement.some((entry) => entry.includes("P25.19")));
+});
+
+test("render.thumbnail renderer-service adapter registry manifest stays metadata-only", () => {
+    const manifest = createRenderThumbnailRendererServiceAdapterRegistryManifest({
+        executableAdapterRegistrationScaffold: {
+            status: "planned-disabled",
+            scaffoldVersion: "P25.20",
+        },
+        dispatchRegistrationPreflight: {
+            status: "planned-disabled",
+            preflightVersion: "P25.19",
+        },
+        dispatchAdapterBoundary: {
+            status: "planned-disabled",
+            dispatch: false,
+        },
+    });
+
+    assert.equal(manifest.status, "planned-disabled");
+    assert.equal(manifest.manifestVersion, "P25.21");
+    assert.equal(manifest.adapter, "renderer-service");
+    assert.equal(manifest.command, "render.thumbnail");
+    assert.equal(manifest.dispatch, false);
+    assert.equal(manifest.networkDispatch, false);
+    assert.equal(manifest.runtimeRegistration, false);
+    assert.equal(manifest.localFileWrites, false);
+    assert.equal(manifest.consumes.executableAdapterRegistrationScaffold.requiredStatus, "ready");
+    assert.equal(manifest.consumes.executableAdapterRegistrationScaffold.currentStatus, "planned-disabled");
+    assert.equal(manifest.consumes.executableAdapterRegistrationScaffold.scaffoldVersion, "P25.20");
+    assert.equal(manifest.consumes.dispatchRegistrationPreflight.preflightVersion, "P25.19");
+    assert.equal(manifest.consumes.dispatchAdapterBoundary.currentDispatch, false);
+    assert.equal(manifest.registry.namespace, "render.thumbnail.adapters");
+    assert.equal(manifest.registry.key, "renderer-service");
+    assert.equal(manifest.registry.descriptorAdapterAlreadyPresent, true);
+    assert.equal(manifest.registry.runtimeExecutionRegistered, false);
+    assert.equal(manifest.registry.defaultEnabled, false);
+    assert.equal(manifest.entrypoints.mcp.tool, "render.thumbnail");
+    assert.equal(manifest.entrypoints.mcp.dryRunOnly, true);
+    assert.equal(manifest.entrypoints.mcp.localFileWrites, false);
+    assert.equal(manifest.entrypoints.cli.command, "render thumbnail");
+    assert.equal(manifest.entrypoints.cli.dryRunOnly, true);
+    assert.equal(manifest.entrypoints.cli.outputWritesRequireNormalizedDownloadUri, true);
+    assert.ok(manifest.noOpGuarantees.includes("do not mutate command runtime adapter registry"));
+    assert.ok(manifest.noOpGuarantees.includes("do not call renderer-service network endpoints"));
+    assert.ok(manifest.requiredBeforeEnablement.some((entry) => entry.includes("P25.20")));
 });
 
 test("render.thumbnail renderer-service client request scaffold adds MCP audit headers without dispatch", () => {

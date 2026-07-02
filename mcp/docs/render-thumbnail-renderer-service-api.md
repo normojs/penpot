@@ -1,12 +1,13 @@
 # Render Thumbnail Renderer Service API
 
-Status: P25.20 API fixtures, MCP/CLI dry-run/client boundaries, metadata-only
+Status: P25.21 API fixtures, MCP/CLI dry-run/client boundaries, metadata-only
 availability probes, response normalization contracts, disabled client request
 scaffold, closed execution gate, disabled health preflight, and executable
 client harness plus dispatch adapter boundary plans, and opt-in configuration
 surfaces plus unavailable error taxonomy and integration fixture harness
 plus dispatch registration preflight and executable adapter registration
-scaffold defined; executable runtime registration remains blocked.
+scaffold plus adapter registry manifest defined; executable runtime
+registration remains blocked.
 
 P25.6 selected a dedicated thumbnail renderer service as the future executable
 owner for `render.thumbnail`. This document defines the service-facing request
@@ -78,6 +79,12 @@ with `dispatch:false`, `networkDispatch:false`, and `runtimeRegistration:false`.
 P25.20 defines the disabled executable adapter registration scaffold. Plans now
 include `executableAdapterRegistrationScaffold`, which consumes the P25.19
 preflight, dispatch adapter boundary, and client request metadata while keeping
+`dispatch:false`, `networkDispatch:false`, `runtimeRegistration:false`, and
+`localFileWrites:false`.
+
+P25.21 defines the disabled adapter registry manifest. Plans now include
+`adapterRegistryManifest`, which records the future `renderer-service` registry
+key, MCP/CLI entrypoint wiring, and no-op guarantees while keeping
 `dispatch:false`, `networkDispatch:false`, `runtimeRegistration:false`, and
 `localFileWrites:false`.
 
@@ -393,6 +400,9 @@ Before `render.thumbnail` becomes executable:
 - keep `executableAdapterRegistrationScaffold.dispatch`, `networkDispatch`,
   `runtimeRegistration`, and `localFileWrites` false while exposing the no-op
   registration surface in MCP/CLI dry-run and unavailable responses
+- keep `adapterRegistryManifest.dispatch`, `networkDispatch`,
+  `runtimeRegistration`, and `localFileWrites` false while exposing future
+  registry and entrypoint wiring as metadata only
 - extend MCP tests from dry-run/unavailable planning into auth forwarding,
   resource metadata, and renderer-service error responses
 - add CLI smoke tests for dry-run, execution metadata, `--output`, and missing

@@ -917,3 +917,11 @@ P25.20 adds renderer-service executable adapter registration scaffold:
 - The scaffold consumes the P25.19 preflight, dispatch adapter boundary, and
   client request metadata, but keeps `dispatch`, `networkDispatch`,
   `runtimeRegistration`, and `localFileWrites` all `false`.
+
+P25.21 adds renderer-service adapter registry manifest:
+
+- Plans include `adapterRegistryManifest` with the future `renderer-service`
+  registry key plus MCP and CLI entrypoint wiring.
+- The manifest is metadata-only: it does not mutate the command-runtime
+  adapter registry, register executable MCP/CLI handlers, call network
+  endpoints, or write local files.
