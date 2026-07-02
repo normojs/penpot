@@ -1,7 +1,7 @@
 {
-  "version": "P25.13",
+  "version": "P25.14",
   "command": "render.thumbnail",
-  "status": "renderer-service API fixtures with MCP/CLI dry-run/client boundaries, metadata-only availability probes, response normalization contracts, disabled client request scaffold, and explicit execution gate; runtime execution blocked",
+  "status": "renderer-service API fixtures with MCP/CLI dry-run/client boundaries, metadata-only availability probes, response normalization contracts, disabled client request scaffold, explicit execution gate, health preflight plan, and executable client harness plan; runtime execution blocked",
   "adapter": "renderer-service",
   "runtimeRegistration": {
     "mcpToolRegistered": true,
@@ -86,6 +86,30 @@
         "renderer_service_integration_tests_missing",
         "renderer_service_capability_missing"
       ]
+    },
+    "healthPreflight": {
+      "status": "planned-disabled",
+      "dispatch": false,
+      "networkProbe": false,
+      "method": "GET",
+      "endpoint": "{rendererServiceUri}/health",
+      "expected": {
+        "okStatuses": [200],
+        "contentType": "application/json",
+        "bodyStatus": "ok",
+        "requiredFields": ["status", "renderer", "version"]
+      },
+      "failureModes": [
+        "renderer_service_preflight_disabled",
+        "renderer_service_health_unavailable",
+        "renderer_service_health_invalid"
+      ]
+    },
+    "executionClientHarness": {
+      "status": "planned-disabled",
+      "dispatch": false,
+      "sequence": ["executionGate", "healthPreflight", "clientRequest", "normalizeResult"],
+      "localFileWrites": false
     },
     "clientConfiguration": {
       "endpointFields": ["endpoint", "rendererServiceUri", "rendererUri"],
@@ -384,6 +408,7 @@
     "dry-run exposes response normalization and error shape contracts",
     "dry-run exposes disabled renderer-service client request scaffold with MCP audit headers",
     "dry-run and unavailable execution expose closed execution gate configuration and integration-test plan",
+    "dry-run and unavailable execution expose disabled health preflight and executable client harness plans",
     "rejects unsupported adapters while render.thumbnail runtime execution is unavailable",
     "reports structured errors for missing frame target before runtime dispatch"
   ],
@@ -399,12 +424,13 @@
     "response normalization metadata survives dry-run JSON output",
     "disabled client request scaffold survives dry-run JSON output",
     "closed execution gate metadata survives dry-run and unavailable execution JSON output",
+    "disabled health preflight and execution harness metadata survive dry-run and unavailable execution JSON output",
     "--output downloads the returned PNG resource",
     "missing token fails before contacting renderer-service"
   ],
   "nextTask": {
-    "id": "P25.14",
-    "title": "Plan renderer-service health preflight and executable client harness",
+    "id": "P25.15",
+    "title": "Design renderer-service executable dispatch adapter boundary",
     "modules": ["mcp", "penpot-cli", "command-runtime", "mcp/docs", "todo.md"]
   }
 }

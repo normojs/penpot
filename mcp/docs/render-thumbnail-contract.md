@@ -1,9 +1,10 @@
 # Render Thumbnail Contract
 
-Status: P25.4 descriptor contract; P25.13 MCP/CLI renderer-service dry-run
+Status: P25.4 descriptor contract; P25.14 MCP/CLI renderer-service dry-run
 boundaries, metadata-only availability probes, response normalization
-contracts, disabled client request scaffolding, and closed execution gate
-defined; runtime execution still blocked.
+contracts, disabled client request scaffolding, closed execution gate, disabled
+health preflight, and executable client harness plan defined; runtime execution
+still blocked.
 
 This document defines the `render.thumbnail` contract before executable MCP or
 CLI rendering is enabled. The contract follows Penpot's existing dashboard
@@ -135,6 +136,10 @@ Shared contract shape:
 - P25.13 execution gate fields are planning-only. They define explicit opt-in,
   required config, blockers, failure modes, and integration-test plan with
   `executionGate.dispatch:false`.
+- P25.14 health preflight and execution harness fields are planning-only. They
+  define future GET `/health`, execution ordering, failure modes, and test
+  expectations with `healthPreflight.dispatch:false` and
+  `executionClientHarness.dispatch:false`.
 - Exporter service execution is out of scope for this command unless a later
   task explicitly maps thumbnail rendering to exporter-compatible semantics.
 - P25.6 selects a future dedicated thumbnail renderer service as the executable
@@ -149,10 +154,11 @@ See `render-thumbnail-runtime-boundary.md` and
 audit, resource-return rules, cache refresh behavior, auth expectations, and
 future test strategy.
 See `render-thumbnail-renderer-service-api.md` and
-`render-thumbnail-renderer-service-fixtures.json` for the P25.13 future
+`render-thumbnail-renderer-service-fixtures.json` for the P25.14 future
 renderer-service request/response API, MCP/CLI dry-run/client boundary, and
 metadata-only availability probe plus response/error normalization and disabled
-client request plus execution gate scaffolding.
+client request, execution gate, health preflight, and execution harness
+scaffolding.
 
 ## Fixtures
 

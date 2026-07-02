@@ -2200,6 +2200,17 @@ P25.13 render.thumbnail execution gate result:
   before opt-in, endpoint config, service implementation, integration tests,
   target/cache capabilities, and runtime registration are all present.
 
+P25.14 render.thumbnail preflight/harness result:
+
+- Shared plans include disabled `healthPreflight` metadata for the future
+  renderer-service GET `/health` check, including expected JSON fields and
+  preflight failure modes.
+- Shared plans include a disabled `executionClientHarness` sequence:
+  `executionGate -> healthPreflight -> clientRequest -> normalizeResult`.
+- `healthPreflight.dispatch`, `healthPreflight.networkProbe`, and
+  `executionClientHarness.dispatch` remain `false` in MCP/CLI dry-run and
+  unavailable execution errors.
+
 ### 8.5 Export and Render Tools
 
 May start file-bound and later move to headless:
@@ -2222,9 +2233,10 @@ defines its service API fixtures. P25.8 adds the CLI dry-run/client boundary,
 P25.9 registers MCP `render.thumbnail` as planning-only, and P25.10 adds
 metadata-only renderer-service availability probes. P25.11 defines response
 normalization and error payloads, P25.12 adds the disabled execution client
-request scaffold, and P25.13 adds the closed execution gate plus
-integration-test plan. Runtime behavior remains unavailable until opt-in,
-renderer-service implementation, cache probe, executable client, and
+request scaffold, P25.13 adds the closed execution gate plus integration-test
+plan, and P25.14 adds disabled health preflight plus executable client harness
+plans. Runtime behavior remains unavailable until opt-in, renderer-service
+implementation, health preflight, cache probe, executable client, and
 tagged-frame capabilities are implemented.
 
 ### 8.6 Advanced Tools

@@ -258,6 +258,9 @@ Current state:
 - Done: a closed renderer-service execution gate records explicit opt-in,
   required config, failure modes, and integration-test plan while keeping
   dispatch disabled.
+- Done: disabled renderer-service health preflight and executable client
+  harness plans define future GET `/health`, execution ordering, and failure
+  modes while keeping dispatch disabled.
 - Done: focused command-runtime tests cover descriptor groups, lookup,
   adapter-selection priority/error cases, and token-safe envelopes.
 - Status: complete. Later command coverage gaps were tracked by the P15.1
@@ -687,6 +690,15 @@ P25.13 is complete:
    required endpoint config, blockers, and failure modes.
 3. MCP and CLI expose the gate in dry-run and unavailable execution responses
    without contacting renderer-service.
+
+P25.14 is complete:
+
+1. Shared plans include disabled `healthPreflight` metadata for the future
+   renderer-service GET `/health` check.
+2. Shared plans include disabled `executionClientHarness` metadata for the
+   future gate/preflight/request/normalization sequence.
+3. MCP and CLI expose both plans in dry-run and unavailable execution responses
+   without network probes or render dispatch.
 
 Keep manual configuration behavior stable while moving command metadata and
 envelopes; transport-specific formatting should stay at the MCP/CLI edges.

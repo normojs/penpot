@@ -870,6 +870,14 @@ export function createRenderThumbnailRendererServicePlan(options = EMPTY_OBJECT)
         requiredCapabilities,
         executionGate: options.executionGate,
     });
+    const healthPreflight = createRenderThumbnailRendererServiceHealthPreflight({
+        client,
+        executionGate,
+    });
+    const executionClientHarness = createRenderThumbnailRendererServiceExecutionClientHarness({
+        executionGate,
+        healthPreflight,
+    });
     const clientRequest = createRenderThumbnailRendererServiceClientRequest(
         {
             endpoint,
@@ -967,11 +975,15 @@ export function createRenderThumbnailRendererServicePlan(options = EMPTY_OBJECT)
                 includeServiceData: true,
             },
             executionGate,
+            healthPreflight,
+            executionClientHarness,
             clientRequest,
         },
         client,
         availability,
         executionGate,
+        healthPreflight,
+        executionClientHarness,
         clientRequest,
         serviceRequest: {
             command: CommandDescriptors.RENDER_THUMBNAIL.id,
@@ -1036,6 +1048,101 @@ export function createRenderThumbnailRendererServicePlan(options = EMPTY_OBJECT)
             availabilityProbe: "metadata-only",
             clientRequestDispatch: false,
             executionGateStatus: executionGate.status,
+            healthPreflightDispatch: false,
+            executionClientHarnessDispatch: false,
+        },
+    };
+}
+
+export function createRenderThumbnailRendererServiceHealthPreflight(options = EMPTY_OBJECT) {
+    const client = options.client ?? EMPTY_OBJECT;
+    const executionGate = options.executionGate ?? EMPTY_OBJECT;
+    const endpoint = normalizeOptionalString(client.healthEndpoint);
+    const timeoutMs = client.probeTimeoutMs ?? 2500;
+
+    return {
+        status: "planned-disabled",
+        dispatch: false,
+        networkProbe: false,
+        reason: "renderer-service health preflight is planned but disabled until the execution gate opens and integration tests exist",
+        method: "GET",
+        endpoint,
+        timeoutMs,
+        headers: {
+            accept: "application/json",
+            "x-penpot-command": CommandDescriptors.RENDER_THUMBNAIL.id,
+            "x-penpot-preflight": "renderer-service-health",
+        },
+        gate: {
+            requiredStatus: "open",
+            currentStatus: executionGate.status ?? "closed",
+        },
+        expected: {
+            okStatuses: [200],
+            contentType: "application/json",
+            bodyStatus: "ok",
+            requiredFields: ["status", "renderer", "version"],
+        },
+        failureModes: [
+            {
+                code: "renderer_service_preflight_disabled",
+                when: "the execution gate is closed",
+            },
+            {
+                code: "renderer_service_health_unavailable",
+                when: "the future health endpoint is unreachable or returns a non-2xx status",
+            },
+            {
+                code: "renderer_service_health_invalid",
+                when: "the future health response is missing required renderer metadata",
+            },
+        ],
+        integrationTestPlan: {
+            status: "required-before-network-probe",
+            cases: [
+                "closed execution gate skips health preflight without fetch",
+                "configured endpoint derives /health and sends GET with audit headers",
+                "healthy response enables the later execution harness only inside the gated integration suite",
+                "unhealthy and malformed responses normalize structured preflight errors",
+            ],
+        },
+    };
+}
+
+export function createRenderThumbnailRendererServiceExecutionClientHarness(options = EMPTY_OBJECT) {
+    const executionGate = options.executionGate ?? EMPTY_OBJECT;
+    const healthPreflight = options.healthPreflight ?? EMPTY_OBJECT;
+
+    return {
+        status: "planned-disabled",
+        dispatch: false,
+        reason: "renderer-service executable client harness is documented but disabled until health preflight and integration tests pass",
+        sequence: ["executionGate", "healthPreflight", "clientRequest", "normalizeResult"],
+        preconditions: [
+            "executionGate.status must be open",
+            "healthPreflight must pass inside the integration suite",
+            "clientRequest.dispatch must be explicitly enabled by a future implementation task",
+        ],
+        current: {
+            executionGateStatus: executionGate.status ?? "closed",
+            healthPreflightStatus: healthPreflight.status ?? "planned-disabled",
+            dispatch: false,
+        },
+        resultHandling: [
+            "normalize successful renderer-service responses through createRenderThumbnailRendererServiceResult",
+            "normalize renderer-service failures through createRenderThumbnailRendererServiceErrorPayload",
+            "return MCP resource metadata without server-local file writes",
+            "allow CLI --output only after a normalized resource downloadUri exists",
+        ],
+        integrationTestPlan: {
+            status: "required-before-dispatch",
+            cases: [
+                "closed gate prevents health and render network calls",
+                "health preflight failure prevents render POST",
+                "successful render POST maps service resource into MCP/CLI metadata",
+                "CLI --output downloads the normalized resource only after render success",
+                "auth forwarding uses caller session headers without exposing token values in planning output",
+            ],
         },
     };
 }

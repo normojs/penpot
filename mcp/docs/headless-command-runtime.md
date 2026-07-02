@@ -854,3 +854,14 @@ P25.13 adds the closed renderer-service execution gate:
 - Future executable work must open this gate only after service implementation,
   health/preflight coverage, target/cache capabilities, and integration tests
   are in place.
+
+P25.14 adds disabled health preflight and executable client harness plans:
+
+- Plans include `healthPreflight` for the future renderer-service GET
+  `/health` check, expected JSON health fields, and preflight failure modes.
+- Plans include `executionClientHarness` with the future execution sequence:
+  execution gate, health preflight, render POST request, and result
+  normalization.
+- `healthPreflight.dispatch`, `healthPreflight.networkProbe`, and
+  `executionClientHarness.dispatch` are always `false`; no network checks or
+  render POSTs are enabled by this step.

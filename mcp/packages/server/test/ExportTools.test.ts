@@ -356,6 +356,9 @@ test("RenderThumbnailTool dry-run returns renderer-service request metadata with
         assert.equal(body.data.executionGate.optIn.env, "PENPOT_RENDER_THUMBNAIL_EXECUTION");
         assert.ok(body.data.executionGate.blockers.includes("explicit-opt-in"));
         assert.equal(body.data.executionGate.integrationTestPlan.requiredBeforeDispatch, true);
+        assert.equal(body.data.healthPreflight.dispatch, false);
+        assert.equal(body.data.healthPreflight.endpoint, "http://127.0.0.1:6070/thumbnail/health");
+        assert.equal(body.data.executionClientHarness.dispatch, false);
         assert.deepEqual(body.data.service.client, body.data.client);
         assert.equal(body.data.service.responseNormalization.successStatus, "ok");
         assert.equal(body.data.service.responseNormalization.localFileWrites, false);
@@ -412,6 +415,8 @@ test("RenderThumbnailTool execution reports renderer service unavailable without
         assert.equal(body.error.data.availability.networkProbe, false);
         assert.equal(body.error.data.executionGate.status, "closed");
         assert.ok(body.error.data.executionGate.blockers.includes("renderer-service-endpoint"));
+        assert.equal(body.error.data.healthPreflight.dispatch, false);
+        assert.equal(body.error.data.executionClientHarness.dispatch, false);
         assert.equal(body.error.data.clientRequest.dispatch, false);
         assert.equal(body.error.data.serviceRequest.operation, "thumbnail.render");
         assert.deepEqual(body.error.data.requiredCapabilities, ["thumbnail-renderer-service-implementation", "file-thumbnail-cache-probe"]);

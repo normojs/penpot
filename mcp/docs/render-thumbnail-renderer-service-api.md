@@ -1,9 +1,9 @@
 # Render Thumbnail Renderer Service API
 
-Status: P25.13 API fixtures, MCP/CLI dry-run/client boundaries, metadata-only
+Status: P25.14 API fixtures, MCP/CLI dry-run/client boundaries, metadata-only
 availability probes, response normalization contracts, disabled client request
-scaffold, and closed execution gate defined; executable runtime registration
-remains blocked.
+scaffold, closed execution gate, disabled health preflight, and executable
+client harness plan defined; executable runtime registration remains blocked.
 
 P25.6 selected a dedicated thumbnail renderer service as the future executable
 owner for `render.thumbnail`. This document defines the service-facing request
@@ -39,6 +39,12 @@ records required renderer-service config, names failure modes, and embeds the
 integration-test plan that must pass before any future client can dispatch.
 P25.13 still does not contact the renderer service.
 
+P25.14 defines the next disabled planning layer: a future GET `/health`
+preflight and an executable client harness sequence. Both are returned in
+MCP/CLI planning and unavailable execution responses with `dispatch:false` and
+`networkProbe:false`; they document the order `executionGate -> healthPreflight
+-> clientRequest -> normalizeResult` without enabling network probes.
+
 ## Service Boundary
 
 The future service operation is `thumbnail.render` behind a
@@ -61,6 +67,31 @@ Planning responses include:
     "status": "configured-unverified",
     "probe": "metadata-only",
     "checked": false
+  }
+}
+```
+
+Health preflight and execution harness scaffold:
+
+```json
+{
+  "healthPreflight": {
+    "status": "planned-disabled",
+    "dispatch": false,
+    "networkProbe": false,
+    "method": "GET",
+    "endpoint": "http://127.0.0.1:6070/thumbnail/health",
+    "expected": {
+      "okStatuses": [200],
+      "contentType": "application/json",
+      "bodyStatus": "ok",
+      "requiredFields": ["status", "renderer", "version"]
+    }
+  },
+  "executionClientHarness": {
+    "status": "planned-disabled",
+    "dispatch": false,
+    "sequence": ["executionGate", "healthPreflight", "clientRequest", "normalizeResult"]
   }
 }
 ```
@@ -280,6 +311,9 @@ Before `render.thumbnail` becomes executable:
 - keep `executionGate.dispatch` false until opt-in env, endpoint config,
   service implementation, integration tests, target/cache capabilities, and
   runtime registration all exist
+- keep `healthPreflight.dispatch`, `healthPreflight.networkProbe`, and
+  `executionClientHarness.dispatch` false until the executable adapter boundary
+  is explicitly implemented
 - extend MCP tests from dry-run/unavailable planning into auth forwarding,
   resource metadata, and renderer-service error responses
 - add CLI smoke tests for dry-run, execution metadata, `--output`, and missing

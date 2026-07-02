@@ -433,11 +433,15 @@ export interface RenderThumbnailRendererServicePlan {
             includeServiceData: true;
         };
         executionGate: RenderThumbnailRendererServiceExecutionGate;
+        healthPreflight: RenderThumbnailRendererServiceHealthPreflight;
+        executionClientHarness: RenderThumbnailRendererServiceExecutionClientHarness;
         clientRequest: RenderThumbnailRendererServiceClientRequest;
     };
     client: RenderThumbnailRendererServiceClientConfig;
     availability: RenderThumbnailRendererServiceAvailability;
     executionGate: RenderThumbnailRendererServiceExecutionGate;
+    healthPreflight: RenderThumbnailRendererServiceHealthPreflight;
+    executionClientHarness: RenderThumbnailRendererServiceExecutionClientHarness;
     clientRequest: RenderThumbnailRendererServiceClientRequest;
     serviceRequest: {
         command: "render.thumbnail";
@@ -502,6 +506,8 @@ export interface RenderThumbnailRendererServicePlan {
         availabilityProbe: "metadata-only";
         clientRequestDispatch: false;
         executionGateStatus: "closed";
+        healthPreflightDispatch: false;
+        executionClientHarnessDispatch: false;
     };
 }
 
@@ -587,6 +593,56 @@ export interface RenderThumbnailRendererServiceExecutionGate {
         requiredBeforeDispatch: true;
         cases: string[];
         requiredAssertions: string[];
+    };
+}
+
+export interface RenderThumbnailRendererServiceHealthPreflight {
+    status: "planned-disabled";
+    dispatch: false;
+    networkProbe: false;
+    reason: string;
+    method: "GET";
+    endpoint: string | null;
+    timeoutMs: number;
+    headers: Record<string, string>;
+    gate: {
+        requiredStatus: "open";
+        currentStatus: string;
+    };
+    expected: {
+        okStatuses: number[];
+        contentType: "application/json";
+        bodyStatus: "ok";
+        requiredFields: string[];
+    };
+    failureModes: Array<{
+        code:
+            | "renderer_service_preflight_disabled"
+            | "renderer_service_health_unavailable"
+            | "renderer_service_health_invalid";
+        when: string;
+    }>;
+    integrationTestPlan: {
+        status: "required-before-network-probe";
+        cases: string[];
+    };
+}
+
+export interface RenderThumbnailRendererServiceExecutionClientHarness {
+    status: "planned-disabled";
+    dispatch: false;
+    reason: string;
+    sequence: ["executionGate", "healthPreflight", "clientRequest", "normalizeResult"];
+    preconditions: string[];
+    current: {
+        executionGateStatus: string;
+        healthPreflightStatus: string;
+        dispatch: false;
+    };
+    resultHandling: string[];
+    integrationTestPlan: {
+        status: "required-before-dispatch";
+        cases: string[];
     };
 }
 
@@ -824,6 +880,18 @@ export function createRenderThumbnailRendererServiceExecutionGate(
         executionGate?: CreateRenderThumbnailRendererServiceExecutionGateOptions | null;
     }
 ): RenderThumbnailRendererServiceExecutionGate;
+export function createRenderThumbnailRendererServiceHealthPreflight(
+    options?: {
+        client?: Partial<RenderThumbnailRendererServiceClientConfig> | null;
+        executionGate?: Partial<RenderThumbnailRendererServiceExecutionGate> | null;
+    }
+): RenderThumbnailRendererServiceHealthPreflight;
+export function createRenderThumbnailRendererServiceExecutionClientHarness(
+    options?: {
+        executionGate?: Partial<RenderThumbnailRendererServiceExecutionGate> | null;
+        healthPreflight?: Partial<RenderThumbnailRendererServiceHealthPreflight> | null;
+    }
+): RenderThumbnailRendererServiceExecutionClientHarness;
 export function createRenderThumbnailRendererServiceClientRequest(
     plan: Partial<RenderThumbnailRendererServicePlan>,
     options?: CreateRenderThumbnailRendererServiceClientRequestOptions

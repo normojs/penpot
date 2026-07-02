@@ -20,6 +20,8 @@ import {
     createRenderThumbnailContract,
     createRenderThumbnailRendererServiceClientRequest,
     createRenderThumbnailRendererServiceExecutionGate,
+    createRenderThumbnailRendererServiceExecutionClientHarness,
+    createRenderThumbnailRendererServiceHealthPreflight,
     createRenderThumbnailRendererServiceErrorPayload,
     createRenderThumbnailRendererServicePlan,
     createRenderThumbnailRendererServiceResult,
@@ -394,6 +396,9 @@ test("render.thumbnail runtime boundary keeps execution unavailable until render
     assert.equal(boundary.executionGate.status, "closed");
     assert.equal(boundary.executionGate.dispatch, false);
     assert.ok(boundary.executionGate.integrationTestPlan.some((entry) => entry.includes("missing endpoint")));
+    assert.equal(boundary.healthPreflight.status, "planned-disabled");
+    assert.equal(boundary.healthPreflight.dispatch, false);
+    assert.equal(boundary.executionClientHarness.dispatch, false);
     assert.ok(boundary.testStrategy.some((item) => item.includes("descriptor tests")));
 });
 
@@ -417,6 +422,9 @@ test("render.thumbnail renderer-service API fixtures define planning requests wi
     assert.equal(fixtures.serviceApi.executionGate.dispatch, false);
     assert.equal(fixtures.serviceApi.executionGate.optIn.env, "PENPOT_RENDER_THUMBNAIL_EXECUTION");
     assert.ok(fixtures.serviceApi.executionGate.failureModes.includes("renderer_service_integration_tests_missing"));
+    assert.equal(fixtures.serviceApi.healthPreflight.status, "planned-disabled");
+    assert.equal(fixtures.serviceApi.healthPreflight.dispatch, false);
+    assert.equal(fixtures.serviceApi.executionClientHarness.dispatch, false);
     assert.deepEqual(fixtures.runtimeRegistration.commandDescriptorAdapters, ["renderer-service"]);
     assert.deepEqual(CommandDescriptors.RENDER_THUMBNAIL.adapters, ["renderer-service"]);
     assert.equal(fixtures.runtimeRegistration.mcpToolRegistered, true);
@@ -522,6 +530,16 @@ test("render.thumbnail renderer-service plan exposes dry-run client request whil
     assert.ok(plan.executionGate.blockers.includes("renderer-service-integration-tests"));
     assert.equal(plan.executionGate.integrationTestPlan.requiredBeforeDispatch, true);
     assert.deepEqual(plan.service.executionGate, plan.executionGate);
+    assert.equal(plan.healthPreflight.status, "planned-disabled");
+    assert.equal(plan.healthPreflight.dispatch, false);
+    assert.equal(plan.healthPreflight.method, "GET");
+    assert.equal(plan.healthPreflight.endpoint, "http://127.0.0.1:6070/thumbnail/health");
+    assert.equal(plan.healthPreflight.networkProbe, false);
+    assert.equal(plan.executionClientHarness.status, "planned-disabled");
+    assert.equal(plan.executionClientHarness.dispatch, false);
+    assert.deepEqual(plan.executionClientHarness.sequence, ["executionGate", "healthPreflight", "clientRequest", "normalizeResult"]);
+    assert.deepEqual(plan.service.healthPreflight, plan.healthPreflight);
+    assert.deepEqual(plan.service.executionClientHarness, plan.executionClientHarness);
     assert.equal(plan.clientRequest.status, "scaffolded");
     assert.equal(plan.clientRequest.dispatch, false);
     assert.equal(plan.clientRequest.method, "POST");
@@ -549,6 +567,8 @@ test("render.thumbnail renderer-service plan exposes dry-run client request whil
     assert.equal(plan.diagnostics.runtimeExecutionRegistered, false);
     assert.equal(plan.diagnostics.availabilityProbe, "metadata-only");
     assert.equal(plan.diagnostics.executionGateStatus, "closed");
+    assert.equal(plan.diagnostics.healthPreflightDispatch, false);
+    assert.equal(plan.diagnostics.executionClientHarnessDispatch, false);
 });
 
 test("render.thumbnail renderer-service plan reports not-configured availability without endpoint", () => {
@@ -589,6 +609,34 @@ test("render.thumbnail renderer-service execution gate requires explicit opt-in 
     assert.equal(gate.integrationTestPlan.status, "required-before-dispatch");
     assert.ok(gate.integrationTestPlan.cases.some((entry) => entry.includes("file reuse")));
     assert.ok(gate.failureModes.some((entry) => entry.code === "renderer_service_execution_disabled"));
+});
+
+test("render.thumbnail renderer-service health preflight and client harness stay disabled", () => {
+    const healthPreflight = createRenderThumbnailRendererServiceHealthPreflight({
+        client: {
+            healthEndpoint: "http://127.0.0.1:6070/thumbnail/health",
+            probeTimeoutMs: 4100,
+        },
+        executionGate: {
+            status: "closed",
+        },
+    });
+    const harness = createRenderThumbnailRendererServiceExecutionClientHarness({
+        executionGate: { status: "closed" },
+        healthPreflight,
+    });
+
+    assert.equal(healthPreflight.status, "planned-disabled");
+    assert.equal(healthPreflight.dispatch, false);
+    assert.equal(healthPreflight.method, "GET");
+    assert.equal(healthPreflight.endpoint, "http://127.0.0.1:6070/thumbnail/health");
+    assert.equal(healthPreflight.timeoutMs, 4100);
+    assert.equal(healthPreflight.headers["x-penpot-preflight"], "renderer-service-health");
+    assert.ok(healthPreflight.failureModes.some((entry) => entry.code === "renderer_service_preflight_disabled"));
+    assert.equal(harness.status, "planned-disabled");
+    assert.equal(harness.dispatch, false);
+    assert.equal(harness.current.healthPreflightStatus, "planned-disabled");
+    assert.ok(harness.integrationTestPlan.cases.some((entry) => entry.includes("health preflight failure")));
 });
 
 test("render.thumbnail renderer-service client request scaffold adds MCP audit headers without dispatch", () => {

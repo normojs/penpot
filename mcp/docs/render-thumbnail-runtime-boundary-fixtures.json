@@ -1,7 +1,7 @@
 {
-  "version": "P25.13",
+  "version": "P25.14",
   "command": "render.thumbnail",
-  "status": "runtime boundary audited; MCP/CLI planning, metadata-only availability probes, response normalization contracts, disabled client request scaffold, and closed execution gate registered; runtime execution blocked",
+  "status": "runtime boundary audited; MCP/CLI planning, metadata-only availability probes, response normalization contracts, disabled client request scaffold, closed execution gate, health preflight plan, and executable client harness plan registered; runtime execution blocked",
   "selectedBoundary": "thumbnail-renderer-service",
   "runtimeRegistration": {
     "mcpToolRegistered": true,
@@ -112,6 +112,30 @@
       "missing endpoint, missing opt-in, and missing integration tests fail before network dispatch"
     ]
   },
+  "healthPreflight": {
+    "status": "planned-disabled",
+    "dispatch": false,
+    "networkProbe": false,
+    "method": "GET",
+    "endpoint": "{rendererServiceUri}/health",
+    "expected": "200 application/json body with status, renderer, and version",
+    "failureModes": [
+      "renderer_service_preflight_disabled",
+      "renderer_service_health_unavailable",
+      "renderer_service_health_invalid"
+    ]
+  },
+  "executionClientHarness": {
+    "status": "planned-disabled",
+    "dispatch": false,
+    "sequence": ["executionGate", "healthPreflight", "clientRequest", "normalizeResult"],
+    "resultHandling": [
+      "normalize service success into resource metadata",
+      "normalize service error payloads",
+      "keep MCP local file writes disabled",
+      "allow CLI output only after resource downloadUri exists"
+    ]
+  },
   "testStrategy": [
     "Keep command-runtime descriptor tests asserting render.thumbnail only exposes the renderer-service planning adapter until execution exists.",
     "Add renderer-service contract tests for file and tagged-frame inputs, cache policies, PNG metadata, and resource normalization.",
@@ -120,11 +144,12 @@
     "Response normalization tests cover resource URI derivation, download URI resolution, renderer metadata, and retryable error payloads.",
     "Disabled client request scaffold tests cover POST metadata, audit headers, auth-forwarding header names, request body mapping, and dispatch false.",
     "Execution gate tests cover explicit opt-in, required config, integration-test blockers, failure modes, and dispatch false.",
+    "Health preflight and client harness tests cover GET metadata, closed-gate no-network behavior, sequence ordering, and dispatch false.",
     "Add CLI smoke tests only after the service exists, covering dry-run, resource metadata, --output download, and missing-token errors."
   ],
   "nextTask": {
-    "id": "P25.14",
-    "title": "Plan renderer-service health preflight and executable client harness",
+    "id": "P25.15",
+    "title": "Design renderer-service executable dispatch adapter boundary",
     "modules": ["mcp", "penpot-cli", "command-runtime", "mcp/docs", "todo.md"]
   }
 }
