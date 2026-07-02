@@ -2211,6 +2211,16 @@ P25.14 render.thumbnail preflight/harness result:
   `executionClientHarness.dispatch` remain `false` in MCP/CLI dry-run and
   unavailable execution errors.
 
+P25.15 render.thumbnail dispatch adapter boundary result:
+
+- Shared plans include disabled `dispatchAdapterBoundary` metadata with config
+  precedence, gate/preflight/request consumption, no-dispatch defaults, and
+  result/error helper mapping.
+- `dispatchAdapterBoundary.dispatch` remains `false` in MCP/CLI dry-run and
+  unavailable execution errors.
+- This documents the future executable adapter transition without registering
+  runtime rendering.
+
 ### 8.5 Export and Render Tools
 
 May start file-bound and later move to headless:
@@ -2234,8 +2244,9 @@ P25.9 registers MCP `render.thumbnail` as planning-only, and P25.10 adds
 metadata-only renderer-service availability probes. P25.11 defines response
 normalization and error payloads, P25.12 adds the disabled execution client
 request scaffold, P25.13 adds the closed execution gate plus integration-test
-plan, and P25.14 adds disabled health preflight plus executable client harness
-plans. Runtime behavior remains unavailable until opt-in, renderer-service
+plan, P25.14 adds disabled health preflight plus executable client harness
+plans, and P25.15 adds the disabled dispatch adapter boundary. Runtime behavior
+remains unavailable until opt-in config surfaces, renderer-service
 implementation, health preflight, cache probe, executable client, and
 tagged-frame capabilities are implemented.
 

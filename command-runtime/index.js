@@ -878,6 +878,12 @@ export function createRenderThumbnailRendererServicePlan(options = EMPTY_OBJECT)
         executionGate,
         healthPreflight,
     });
+    const dispatchAdapterBoundary = createRenderThumbnailRendererServiceDispatchAdapterBoundary({
+        client,
+        executionGate,
+        healthPreflight,
+        executionClientHarness,
+    });
     const clientRequest = createRenderThumbnailRendererServiceClientRequest(
         {
             endpoint,
@@ -977,6 +983,7 @@ export function createRenderThumbnailRendererServicePlan(options = EMPTY_OBJECT)
             executionGate,
             healthPreflight,
             executionClientHarness,
+            dispatchAdapterBoundary,
             clientRequest,
         },
         client,
@@ -984,6 +991,7 @@ export function createRenderThumbnailRendererServicePlan(options = EMPTY_OBJECT)
         executionGate,
         healthPreflight,
         executionClientHarness,
+        dispatchAdapterBoundary,
         clientRequest,
         serviceRequest: {
             command: CommandDescriptors.RENDER_THUMBNAIL.id,
@@ -1050,6 +1058,79 @@ export function createRenderThumbnailRendererServicePlan(options = EMPTY_OBJECT)
             executionGateStatus: executionGate.status,
             healthPreflightDispatch: false,
             executionClientHarnessDispatch: false,
+            dispatchAdapterBoundaryStatus: dispatchAdapterBoundary.status,
+            dispatchAdapterBoundaryDispatch: false,
+        },
+    };
+}
+
+export function createRenderThumbnailRendererServiceDispatchAdapterBoundary(options = EMPTY_OBJECT) {
+    const client = options.client ?? EMPTY_OBJECT;
+    const executionGate = options.executionGate ?? EMPTY_OBJECT;
+    const healthPreflight = options.healthPreflight ?? EMPTY_OBJECT;
+    const executionClientHarness = options.executionClientHarness ?? EMPTY_OBJECT;
+
+    return {
+        status: "planned-disabled",
+        adapter: "renderer-service",
+        dispatch: false,
+        reason: "renderer-service dispatch adapter boundary is documented but disabled until a future task explicitly registers executable runtime behavior",
+        configPrecedence: [
+            "explicit command args",
+            "entrypoint environment",
+            "profile/backend config source",
+            "development defaults",
+        ],
+        consumes: {
+            executionGate: {
+                requiredStatus: "open",
+                currentStatus: executionGate.status ?? "closed",
+            },
+            healthPreflight: {
+                requiredStatus: "ok",
+                currentStatus: healthPreflight.status ?? "planned-disabled",
+            },
+            clientRequest: {
+                requiredDispatch: true,
+                currentDispatch: false,
+            },
+        },
+        noDispatchDefaults: {
+            metadataOnlyAvailability: true,
+            healthPreflightDispatch: false,
+            renderPostDispatch: false,
+            localFileWrites: false,
+        },
+        transitionRules: [
+            "keep adapter selected for planning even while executable dispatch is disabled",
+            "fail before network dispatch when executionGate.status is not open",
+            "fail before render POST when health preflight does not return ok",
+            "normalize service success and errors through shared command-runtime helpers",
+            "keep MCP local file writes disabled; CLI output writes only after normalized downloadUri exists",
+        ],
+        resultMapping: {
+            successHelper: "createRenderThumbnailRendererServiceResult",
+            errorHelper: "createRenderThumbnailRendererServiceErrorPayload",
+            mcpReturn: "resource metadata only",
+            cliReturn: "resource metadata plus optional --output download",
+        },
+        current: {
+            clientConfigured: Boolean(client.configured),
+            executionGateStatus: executionGate.status ?? "closed",
+            healthPreflightStatus: healthPreflight.status ?? "planned-disabled",
+            executionClientHarnessStatus: executionClientHarness.status ?? "planned-disabled",
+            dispatch: false,
+        },
+        integrationTestPlan: {
+            status: "required-before-adapter-dispatch",
+            cases: [
+                "config precedence resolves endpoint and timeout without exposing token values",
+                "closed gate returns renderer_service_execution_disabled before health preflight",
+                "failed health preflight prevents render POST",
+                "successful render POST maps response through result normalization",
+                "service failure maps through renderer-service error normalization",
+                "MCP returns resource metadata only and CLI writes output only after downloadUri exists",
+            ],
         },
     };
 }

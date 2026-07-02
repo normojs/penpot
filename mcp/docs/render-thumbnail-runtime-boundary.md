@@ -19,8 +19,8 @@ dry-run/client planning adapter, P25.9 adds the MCP planning-only dry-run tool,
 P25.10 adds metadata-only availability probes, P25.11 defines response and
 error normalization contracts, P25.12 adds disabled client request scaffolding,
 P25.13 adds the closed execution gate plus integration-test plan, and P25.14
-adds disabled health preflight plus executable client harness plans; runtime
-execution remains blocked.
+adds disabled health preflight plus executable client harness plans. P25.15
+adds the disabled dispatch adapter boundary; runtime execution remains blocked.
 
 ## Existing Surfaces
 
@@ -144,11 +144,13 @@ boundary, P25.9 adds the MCP planning-only dry-run boundary, P25.10 adds client
 configuration plus metadata-only availability status, P25.11 defines
 response/error normalization, P25.12 adds the disabled future client request
 scaffold, P25.13 adds the closed execution gate, and P25.14 adds disabled
-health preflight plus executable client harness plans. MCP `render.thumbnail`
-and `penpot-cli render thumbnail --dry-run` can print the future request shape,
-configured/not configured service metadata, response/error contracts,
-`clientRequest.dispatch:false`, `executionGate.dispatch:false`,
-`healthPreflight.dispatch:false`, and `executionClientHarness.dispatch:false`,
+health preflight plus executable client harness plans. P25.15 adds the disabled
+dispatch adapter boundary. MCP `render.thumbnail` and `penpot-cli render
+thumbnail --dry-run` can print the future request shape, configured/not
+configured service metadata, response/error contracts, `clientRequest.dispatch:false`,
+`executionGate.dispatch:false`, `healthPreflight.dispatch:false`,
+`executionClientHarness.dispatch:false`, and `dispatchAdapterBoundary.dispatch:false`,
 but execution still returns `renderer_service_unavailable` until explicit
-opt-in, renderer service, integration tests, health preflight, file cache probe,
-tagged-frame source-data provider, and tagged-frame resource normalizer exist.
+opt-in, config surfaces, renderer service, integration tests, health preflight,
+file cache probe, tagged-frame source-data provider, and tagged-frame resource
+normalizer exist.

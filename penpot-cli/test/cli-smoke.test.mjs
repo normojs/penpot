@@ -2611,6 +2611,8 @@ test("render thumbnail dry-run returns renderer-service request plan", async () 
         assert.equal(body.data.healthPreflight.dispatch, false);
         assert.equal(body.data.healthPreflight.endpoint, "http://127.0.0.1:6070/thumbnail/health");
         assert.equal(body.data.executionClientHarness.dispatch, false);
+        assert.equal(body.data.dispatchAdapterBoundary.dispatch, false);
+        assert.equal(body.data.dispatchAdapterBoundary.resultMapping.cliReturn, "resource metadata plus optional --output download");
         assert.equal(body.data.service.responseNormalization.successStatus, "ok");
         assert.equal(body.data.service.responseNormalization.localFileWrites, false);
         assert.equal(body.data.service.errorShape.code, "renderer_service_error");
@@ -2659,6 +2661,7 @@ test("render thumbnail execution reports renderer-service unavailable without ca
         assert.ok(body.error.data.executionGate.blockers.includes("explicit-opt-in"));
         assert.equal(body.error.data.healthPreflight.dispatch, false);
         assert.equal(body.error.data.executionClientHarness.dispatch, false);
+        assert.equal(body.error.data.dispatchAdapterBoundary.dispatch, false);
         assert.equal(body.error.data.clientRequest.dispatch, false);
         assert.equal(body.error.data.serviceRequest.operation, "thumbnail.render");
     } finally {

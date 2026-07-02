@@ -435,6 +435,7 @@ export interface RenderThumbnailRendererServicePlan {
         executionGate: RenderThumbnailRendererServiceExecutionGate;
         healthPreflight: RenderThumbnailRendererServiceHealthPreflight;
         executionClientHarness: RenderThumbnailRendererServiceExecutionClientHarness;
+        dispatchAdapterBoundary: RenderThumbnailRendererServiceDispatchAdapterBoundary;
         clientRequest: RenderThumbnailRendererServiceClientRequest;
     };
     client: RenderThumbnailRendererServiceClientConfig;
@@ -442,6 +443,7 @@ export interface RenderThumbnailRendererServicePlan {
     executionGate: RenderThumbnailRendererServiceExecutionGate;
     healthPreflight: RenderThumbnailRendererServiceHealthPreflight;
     executionClientHarness: RenderThumbnailRendererServiceExecutionClientHarness;
+    dispatchAdapterBoundary: RenderThumbnailRendererServiceDispatchAdapterBoundary;
     clientRequest: RenderThumbnailRendererServiceClientRequest;
     serviceRequest: {
         command: "render.thumbnail";
@@ -508,6 +510,8 @@ export interface RenderThumbnailRendererServicePlan {
         executionGateStatus: "closed";
         healthPreflightDispatch: false;
         executionClientHarnessDispatch: false;
+        dispatchAdapterBoundaryStatus: "planned-disabled";
+        dispatchAdapterBoundaryDispatch: false;
     };
 }
 
@@ -642,6 +646,52 @@ export interface RenderThumbnailRendererServiceExecutionClientHarness {
     resultHandling: string[];
     integrationTestPlan: {
         status: "required-before-dispatch";
+        cases: string[];
+    };
+}
+
+export interface RenderThumbnailRendererServiceDispatchAdapterBoundary {
+    status: "planned-disabled";
+    adapter: "renderer-service";
+    dispatch: false;
+    reason: string;
+    configPrecedence: string[];
+    consumes: {
+        executionGate: {
+            requiredStatus: "open";
+            currentStatus: string;
+        };
+        healthPreflight: {
+            requiredStatus: "ok";
+            currentStatus: string;
+        };
+        clientRequest: {
+            requiredDispatch: true;
+            currentDispatch: false;
+        };
+    };
+    noDispatchDefaults: {
+        metadataOnlyAvailability: true;
+        healthPreflightDispatch: false;
+        renderPostDispatch: false;
+        localFileWrites: false;
+    };
+    transitionRules: string[];
+    resultMapping: {
+        successHelper: "createRenderThumbnailRendererServiceResult";
+        errorHelper: "createRenderThumbnailRendererServiceErrorPayload";
+        mcpReturn: "resource metadata only";
+        cliReturn: "resource metadata plus optional --output download";
+    };
+    current: {
+        clientConfigured: boolean;
+        executionGateStatus: string;
+        healthPreflightStatus: string;
+        executionClientHarnessStatus: string;
+        dispatch: false;
+    };
+    integrationTestPlan: {
+        status: "required-before-adapter-dispatch";
         cases: string[];
     };
 }
@@ -892,6 +942,14 @@ export function createRenderThumbnailRendererServiceExecutionClientHarness(
         healthPreflight?: Partial<RenderThumbnailRendererServiceHealthPreflight> | null;
     }
 ): RenderThumbnailRendererServiceExecutionClientHarness;
+export function createRenderThumbnailRendererServiceDispatchAdapterBoundary(
+    options?: {
+        client?: Partial<RenderThumbnailRendererServiceClientConfig> | null;
+        executionGate?: Partial<RenderThumbnailRendererServiceExecutionGate> | null;
+        healthPreflight?: Partial<RenderThumbnailRendererServiceHealthPreflight> | null;
+        executionClientHarness?: Partial<RenderThumbnailRendererServiceExecutionClientHarness> | null;
+    }
+): RenderThumbnailRendererServiceDispatchAdapterBoundary;
 export function createRenderThumbnailRendererServiceClientRequest(
     plan: Partial<RenderThumbnailRendererServicePlan>,
     options?: CreateRenderThumbnailRendererServiceClientRequestOptions

@@ -19,6 +19,7 @@ import {
     createExportFileContract,
     createRenderThumbnailContract,
     createRenderThumbnailRendererServiceClientRequest,
+    createRenderThumbnailRendererServiceDispatchAdapterBoundary,
     createRenderThumbnailRendererServiceExecutionGate,
     createRenderThumbnailRendererServiceExecutionClientHarness,
     createRenderThumbnailRendererServiceHealthPreflight,
@@ -399,6 +400,8 @@ test("render.thumbnail runtime boundary keeps execution unavailable until render
     assert.equal(boundary.healthPreflight.status, "planned-disabled");
     assert.equal(boundary.healthPreflight.dispatch, false);
     assert.equal(boundary.executionClientHarness.dispatch, false);
+    assert.equal(boundary.dispatchAdapterBoundary.dispatch, false);
+    assert.equal(boundary.dispatchAdapterBoundary.resultMapping.successHelper, "createRenderThumbnailRendererServiceResult");
     assert.ok(boundary.testStrategy.some((item) => item.includes("descriptor tests")));
 });
 
@@ -425,6 +428,8 @@ test("render.thumbnail renderer-service API fixtures define planning requests wi
     assert.equal(fixtures.serviceApi.healthPreflight.status, "planned-disabled");
     assert.equal(fixtures.serviceApi.healthPreflight.dispatch, false);
     assert.equal(fixtures.serviceApi.executionClientHarness.dispatch, false);
+    assert.equal(fixtures.serviceApi.dispatchAdapterBoundary.dispatch, false);
+    assert.deepEqual(fixtures.serviceApi.dispatchAdapterBoundary.sequence, ["executionGate", "healthPreflight", "clientRequest", "normalizeResult"]);
     assert.deepEqual(fixtures.runtimeRegistration.commandDescriptorAdapters, ["renderer-service"]);
     assert.deepEqual(CommandDescriptors.RENDER_THUMBNAIL.adapters, ["renderer-service"]);
     assert.equal(fixtures.runtimeRegistration.mcpToolRegistered, true);
@@ -538,8 +543,15 @@ test("render.thumbnail renderer-service plan exposes dry-run client request whil
     assert.equal(plan.executionClientHarness.status, "planned-disabled");
     assert.equal(plan.executionClientHarness.dispatch, false);
     assert.deepEqual(plan.executionClientHarness.sequence, ["executionGate", "healthPreflight", "clientRequest", "normalizeResult"]);
+    assert.equal(plan.dispatchAdapterBoundary.status, "planned-disabled");
+    assert.equal(plan.dispatchAdapterBoundary.dispatch, false);
+    assert.equal(plan.dispatchAdapterBoundary.adapter, "renderer-service");
+    assert.ok(plan.dispatchAdapterBoundary.configPrecedence.includes("explicit command args"));
+    assert.equal(plan.dispatchAdapterBoundary.resultMapping.successHelper, "createRenderThumbnailRendererServiceResult");
+    assert.deepEqual(plan.dispatchAdapterBoundary.noDispatchDefaults.healthPreflightDispatch, false);
     assert.deepEqual(plan.service.healthPreflight, plan.healthPreflight);
     assert.deepEqual(plan.service.executionClientHarness, plan.executionClientHarness);
+    assert.deepEqual(plan.service.dispatchAdapterBoundary, plan.dispatchAdapterBoundary);
     assert.equal(plan.clientRequest.status, "scaffolded");
     assert.equal(plan.clientRequest.dispatch, false);
     assert.equal(plan.clientRequest.method, "POST");
@@ -569,6 +581,8 @@ test("render.thumbnail renderer-service plan exposes dry-run client request whil
     assert.equal(plan.diagnostics.executionGateStatus, "closed");
     assert.equal(plan.diagnostics.healthPreflightDispatch, false);
     assert.equal(plan.diagnostics.executionClientHarnessDispatch, false);
+    assert.equal(plan.diagnostics.dispatchAdapterBoundaryStatus, "planned-disabled");
+    assert.equal(plan.diagnostics.dispatchAdapterBoundaryDispatch, false);
 });
 
 test("render.thumbnail renderer-service plan reports not-configured availability without endpoint", () => {
@@ -637,6 +651,27 @@ test("render.thumbnail renderer-service health preflight and client harness stay
     assert.equal(harness.dispatch, false);
     assert.equal(harness.current.healthPreflightStatus, "planned-disabled");
     assert.ok(harness.integrationTestPlan.cases.some((entry) => entry.includes("health preflight failure")));
+});
+
+test("render.thumbnail renderer-service dispatch adapter boundary stays no-dispatch", () => {
+    const boundary = createRenderThumbnailRendererServiceDispatchAdapterBoundary({
+        client: { configured: true },
+        executionGate: { status: "closed" },
+        healthPreflight: { status: "planned-disabled" },
+        executionClientHarness: { status: "planned-disabled" },
+    });
+
+    assert.equal(boundary.status, "planned-disabled");
+    assert.equal(boundary.adapter, "renderer-service");
+    assert.equal(boundary.dispatch, false);
+    assert.equal(boundary.current.clientConfigured, true);
+    assert.equal(boundary.consumes.executionGate.currentStatus, "closed");
+    assert.equal(boundary.consumes.healthPreflight.currentStatus, "planned-disabled");
+    assert.equal(boundary.consumes.clientRequest.currentDispatch, false);
+    assert.equal(boundary.noDispatchDefaults.metadataOnlyAvailability, true);
+    assert.equal(boundary.noDispatchDefaults.renderPostDispatch, false);
+    assert.equal(boundary.resultMapping.errorHelper, "createRenderThumbnailRendererServiceErrorPayload");
+    assert.ok(boundary.integrationTestPlan.cases.some((entry) => entry.includes("config precedence")));
 });
 
 test("render.thumbnail renderer-service client request scaffold adds MCP audit headers without dispatch", () => {

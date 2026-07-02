@@ -1,7 +1,7 @@
 {
-  "version": "P25.14",
+  "version": "P25.15",
   "command": "render.thumbnail",
-  "status": "runtime boundary audited; MCP/CLI planning, metadata-only availability probes, response normalization contracts, disabled client request scaffold, closed execution gate, health preflight plan, and executable client harness plan registered; runtime execution blocked",
+  "status": "runtime boundary audited; MCP/CLI planning, metadata-only availability probes, response normalization contracts, disabled client request scaffold, closed execution gate, health preflight plan, executable client harness plan, and dispatch adapter boundary registered; runtime execution blocked",
   "selectedBoundary": "thumbnail-renderer-service",
   "runtimeRegistration": {
     "mcpToolRegistered": true,
@@ -136,6 +136,28 @@
       "allow CLI output only after resource downloadUri exists"
     ]
   },
+  "dispatchAdapterBoundary": {
+    "status": "planned-disabled",
+    "adapter": "renderer-service",
+    "dispatch": false,
+    "configPrecedence": [
+      "explicit command args",
+      "entrypoint environment",
+      "profile/backend config source",
+      "development defaults"
+    ],
+    "sequence": ["executionGate", "healthPreflight", "clientRequest", "normalizeResult"],
+    "resultMapping": {
+      "successHelper": "createRenderThumbnailRendererServiceResult",
+      "errorHelper": "createRenderThumbnailRendererServiceErrorPayload"
+    },
+    "noDispatchDefaults": {
+      "metadataOnlyAvailability": true,
+      "healthPreflightDispatch": false,
+      "renderPostDispatch": false,
+      "localFileWrites": false
+    }
+  },
   "testStrategy": [
     "Keep command-runtime descriptor tests asserting render.thumbnail only exposes the renderer-service planning adapter until execution exists.",
     "Add renderer-service contract tests for file and tagged-frame inputs, cache policies, PNG metadata, and resource normalization.",
@@ -145,11 +167,12 @@
     "Disabled client request scaffold tests cover POST metadata, audit headers, auth-forwarding header names, request body mapping, and dispatch false.",
     "Execution gate tests cover explicit opt-in, required config, integration-test blockers, failure modes, and dispatch false.",
     "Health preflight and client harness tests cover GET metadata, closed-gate no-network behavior, sequence ordering, and dispatch false.",
+    "Dispatch adapter boundary tests cover config precedence, gate/preflight consumption, result/error mapping, and no-dispatch defaults.",
     "Add CLI smoke tests only after the service exists, covering dry-run, resource metadata, --output download, and missing-token errors."
   ],
   "nextTask": {
-    "id": "P25.15",
-    "title": "Design renderer-service executable dispatch adapter boundary",
+    "id": "P25.16",
+    "title": "Plan renderer-service opt-in configuration surfaces",
     "modules": ["mcp", "penpot-cli", "command-runtime", "mcp/docs", "todo.md"]
   }
 }

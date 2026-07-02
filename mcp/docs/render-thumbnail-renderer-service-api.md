@@ -1,9 +1,10 @@
 # Render Thumbnail Renderer Service API
 
-Status: P25.14 API fixtures, MCP/CLI dry-run/client boundaries, metadata-only
+Status: P25.15 API fixtures, MCP/CLI dry-run/client boundaries, metadata-only
 availability probes, response normalization contracts, disabled client request
 scaffold, closed execution gate, disabled health preflight, and executable
-client harness plan defined; executable runtime registration remains blocked.
+client harness plus dispatch adapter boundary plans defined; executable runtime
+registration remains blocked.
 
 P25.6 selected a dedicated thumbnail renderer service as the future executable
 owner for `render.thumbnail`. This document defines the service-facing request
@@ -44,6 +45,11 @@ preflight and an executable client harness sequence. Both are returned in
 MCP/CLI planning and unavailable execution responses with `dispatch:false` and
 `networkProbe:false`; they document the order `executionGate -> healthPreflight
 -> clientRequest -> normalizeResult` without enabling network probes.
+
+P25.15 defines the future dispatch adapter boundary. It records config
+precedence, gate/preflight/client request consumption, no-dispatch defaults,
+and result/error mapping helpers. It still has `dispatch:false` and does not
+replace metadata-only availability or perform health/render network calls.
 
 ## Service Boundary
 
@@ -92,6 +98,21 @@ Health preflight and execution harness scaffold:
     "status": "planned-disabled",
     "dispatch": false,
     "sequence": ["executionGate", "healthPreflight", "clientRequest", "normalizeResult"]
+  },
+  "dispatchAdapterBoundary": {
+    "status": "planned-disabled",
+    "adapter": "renderer-service",
+    "dispatch": false,
+    "configPrecedence": [
+      "explicit command args",
+      "entrypoint environment",
+      "profile/backend config source",
+      "development defaults"
+    ],
+    "resultMapping": {
+      "successHelper": "createRenderThumbnailRendererServiceResult",
+      "errorHelper": "createRenderThumbnailRendererServiceErrorPayload"
+    }
   }
 }
 ```
@@ -314,6 +335,8 @@ Before `render.thumbnail` becomes executable:
 - keep `healthPreflight.dispatch`, `healthPreflight.networkProbe`, and
   `executionClientHarness.dispatch` false until the executable adapter boundary
   is explicitly implemented
+- keep `dispatchAdapterBoundary.dispatch` false until opt-in configuration
+  surfaces and executable adapter registration are implemented
 - extend MCP tests from dry-run/unavailable planning into auth forwarding,
   resource metadata, and renderer-service error responses
 - add CLI smoke tests for dry-run, execution metadata, `--output`, and missing

@@ -1,7 +1,7 @@
 {
-  "version": "P25.14",
+  "version": "P25.15",
   "command": "render.thumbnail",
-  "status": "renderer-service API fixtures with MCP/CLI dry-run/client boundaries, metadata-only availability probes, response normalization contracts, disabled client request scaffold, explicit execution gate, health preflight plan, and executable client harness plan; runtime execution blocked",
+  "status": "renderer-service API fixtures with MCP/CLI dry-run/client boundaries, metadata-only availability probes, response normalization contracts, disabled client request scaffold, explicit execution gate, health preflight plan, executable client harness plan, and dispatch adapter boundary; runtime execution blocked",
   "adapter": "renderer-service",
   "runtimeRegistration": {
     "mcpToolRegistered": true,
@@ -110,6 +110,30 @@
       "dispatch": false,
       "sequence": ["executionGate", "healthPreflight", "clientRequest", "normalizeResult"],
       "localFileWrites": false
+    },
+    "dispatchAdapterBoundary": {
+      "status": "planned-disabled",
+      "adapter": "renderer-service",
+      "dispatch": false,
+      "configPrecedence": [
+        "explicit command args",
+        "entrypoint environment",
+        "profile/backend config source",
+        "development defaults"
+      ],
+      "sequence": ["executionGate", "healthPreflight", "clientRequest", "normalizeResult"],
+      "resultMapping": {
+        "successHelper": "createRenderThumbnailRendererServiceResult",
+        "errorHelper": "createRenderThumbnailRendererServiceErrorPayload",
+        "mcpReturn": "resource metadata only",
+        "cliReturn": "resource metadata plus optional --output download"
+      },
+      "noDispatchDefaults": {
+        "metadataOnlyAvailability": true,
+        "healthPreflightDispatch": false,
+        "renderPostDispatch": false,
+        "localFileWrites": false
+      }
     },
     "clientConfiguration": {
       "endpointFields": ["endpoint", "rendererServiceUri", "rendererUri"],
@@ -409,6 +433,7 @@
     "dry-run exposes disabled renderer-service client request scaffold with MCP audit headers",
     "dry-run and unavailable execution expose closed execution gate configuration and integration-test plan",
     "dry-run and unavailable execution expose disabled health preflight and executable client harness plans",
+    "dry-run and unavailable execution expose disabled dispatch adapter boundary and result mapping",
     "rejects unsupported adapters while render.thumbnail runtime execution is unavailable",
     "reports structured errors for missing frame target before runtime dispatch"
   ],
@@ -425,12 +450,13 @@
     "disabled client request scaffold survives dry-run JSON output",
     "closed execution gate metadata survives dry-run and unavailable execution JSON output",
     "disabled health preflight and execution harness metadata survive dry-run and unavailable execution JSON output",
+    "disabled dispatch adapter boundary metadata survives dry-run and unavailable execution JSON output",
     "--output downloads the returned PNG resource",
     "missing token fails before contacting renderer-service"
   ],
   "nextTask": {
-    "id": "P25.15",
-    "title": "Design renderer-service executable dispatch adapter boundary",
+    "id": "P25.16",
+    "title": "Plan renderer-service opt-in configuration surfaces",
     "modules": ["mcp", "penpot-cli", "command-runtime", "mcp/docs", "todo.md"]
   }
 }

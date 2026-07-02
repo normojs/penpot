@@ -6302,6 +6302,7 @@ async function handleRenderThumbnail(args: string[], io: CliIO, env: NodeJS.Proc
             executionGate: plan.executionGate,
             healthPreflight: plan.healthPreflight,
             executionClientHarness: plan.executionClientHarness,
+            dispatchAdapterBoundary: plan.dispatchAdapterBoundary,
             clientRequest: plan.clientRequest,
             requiredCapabilities: plan.requiredCapabilities,
             serviceRequest: plan.serviceRequest,

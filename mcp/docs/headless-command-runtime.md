@@ -865,3 +865,11 @@ P25.14 adds disabled health preflight and executable client harness plans:
 - `healthPreflight.dispatch`, `healthPreflight.networkProbe`, and
   `executionClientHarness.dispatch` are always `false`; no network checks or
   render POSTs are enabled by this step.
+
+P25.15 adds the disabled renderer-service dispatch adapter boundary:
+
+- Plans include `dispatchAdapterBoundary` with config precedence, consumption
+  of execution gate / health preflight / client request states, result/error
+  helper mapping, and no-dispatch defaults.
+- `dispatchAdapterBoundary.dispatch` is always `false`; this step does not
+  register executable runtime behavior or replace metadata-only availability.

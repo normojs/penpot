@@ -261,6 +261,9 @@ Current state:
 - Done: disabled renderer-service health preflight and executable client
   harness plans define future GET `/health`, execution ordering, and failure
   modes while keeping dispatch disabled.
+- Done: disabled renderer-service dispatch adapter boundary records config
+  precedence, gate/preflight/request consumption, result/error mapping, and
+  no-dispatch defaults.
 - Done: focused command-runtime tests cover descriptor groups, lookup,
   adapter-selection priority/error cases, and token-safe envelopes.
 - Status: complete. Later command coverage gaps were tracked by the P15.1
@@ -699,6 +702,15 @@ P25.14 is complete:
    future gate/preflight/request/normalization sequence.
 3. MCP and CLI expose both plans in dry-run and unavailable execution responses
    without network probes or render dispatch.
+
+P25.15 is complete:
+
+1. Shared plans include disabled `dispatchAdapterBoundary` metadata for the
+   future renderer-service executable adapter.
+2. The boundary records config precedence, gate/preflight/request consumption,
+   result/error helper mapping, and no-dispatch defaults.
+3. MCP and CLI expose the boundary in dry-run and unavailable execution
+   responses without registering runtime dispatch.
 
 Keep manual configuration behavior stable while moving command metadata and
 envelopes; transport-specific formatting should stay at the MCP/CLI edges.
