@@ -444,6 +444,7 @@ export interface RenderThumbnailRendererServicePlan {
         executableAdapterRegistrationScaffold: RenderThumbnailRendererServiceExecutableAdapterRegistrationScaffold;
         adapterRegistryManifest: RenderThumbnailRendererServiceAdapterRegistryManifest;
         enablementChecklist: RenderThumbnailRendererServiceEnablementChecklist;
+        implementationSliceAudit: RenderThumbnailRendererServiceImplementationSliceAudit;
         clientRequest: RenderThumbnailRendererServiceClientRequest;
     };
     client: RenderThumbnailRendererServiceClientConfig;
@@ -459,6 +460,7 @@ export interface RenderThumbnailRendererServicePlan {
     executableAdapterRegistrationScaffold: RenderThumbnailRendererServiceExecutableAdapterRegistrationScaffold;
     adapterRegistryManifest: RenderThumbnailRendererServiceAdapterRegistryManifest;
     enablementChecklist: RenderThumbnailRendererServiceEnablementChecklist;
+    implementationSliceAudit: RenderThumbnailRendererServiceImplementationSliceAudit;
     clientRequest: RenderThumbnailRendererServiceClientRequest;
     serviceRequest: {
         command: "render.thumbnail";
@@ -534,6 +536,7 @@ export interface RenderThumbnailRendererServicePlan {
         executableAdapterRegistrationScaffoldVersion: "P25.20";
         adapterRegistryManifestVersion: "P25.21";
         enablementChecklistVersion: "P25.22";
+        implementationSliceAuditVersion: "P25.23";
     };
 }
 
@@ -1060,6 +1063,73 @@ export interface RenderThumbnailRendererServiceEnablementChecklist {
     requiredBeforeEnablement: string[];
 }
 
+export interface RenderThumbnailRendererServiceImplementationSliceAudit {
+    status: "planned-disabled";
+    auditVersion: "P25.23";
+    adapter: "renderer-service";
+    command: "render.thumbnail";
+    dispatch: false;
+    networkDispatch: false;
+    runtimeRegistration: false;
+    localFileWrites: false;
+    selectedSlice: {
+        id: "renderer-service-health-and-noop-contract";
+        title: string;
+        selected: true;
+        dispatch: false;
+        networkDispatch: false;
+        runtimeRegistration: false;
+        localFileWrites: false;
+        enablesRuntimeDispatch: false;
+        reason: string;
+    };
+    auditedSurfaces: {
+        backendRpc: string[];
+        frontendRuntime: string[];
+        renderer: string[];
+        entrypoints: string[];
+    };
+    implementationSlices: Array<{
+        id: string;
+        selected: boolean;
+        dispatch: false;
+        networkDispatch?: false;
+        runtimeRegistration?: false;
+        localFileWrites?: false;
+        scope?: string[];
+        exitCriteria?: string[];
+        blockers?: string[];
+    }>;
+    consumes: {
+        enablementChecklist: {
+            requiredStatus: "ready";
+            currentStatus: string;
+            checklistVersion: string;
+            mayEnableRuntime: false;
+        };
+        adapterRegistryManifest: {
+            requiredStatus: "ready";
+            currentStatus: string;
+            manifestVersion: string;
+            runtimeExecutionRegistered: false;
+        };
+        executableAdapterRegistrationScaffold: {
+            requiredStatus: "ready";
+            currentStatus: string;
+            scaffoldVersion: string;
+            runtimeRegistration: false;
+        };
+        dispatchRegistrationPreflight: {
+            requiredStatus: "ready";
+            currentStatus: string;
+            preflightVersion: string;
+            runtimeRegistration: false;
+        };
+    };
+    blockers: string[];
+    requiredBeforeRuntimeDispatch: string[];
+}
+
 export interface CreateRenderThumbnailRendererServiceClientRequestOptions {
     entrypoint?: "mcp" | "cli" | string | null;
     mcpToolName?: string | null;
@@ -1380,6 +1450,15 @@ export function createRenderThumbnailRendererServiceEnablementChecklist(
         requiredCapabilities?: string[] | null;
     }
 ): RenderThumbnailRendererServiceEnablementChecklist;
+export function createRenderThumbnailRendererServiceImplementationSliceAudit(
+    options?: {
+        enablementChecklist?: Partial<RenderThumbnailRendererServiceEnablementChecklist> | null;
+        adapterRegistryManifest?: Partial<RenderThumbnailRendererServiceAdapterRegistryManifest> | null;
+        executableAdapterRegistrationScaffold?: Partial<RenderThumbnailRendererServiceExecutableAdapterRegistrationScaffold> | null;
+        dispatchRegistrationPreflight?: Partial<RenderThumbnailRendererServiceDispatchRegistrationPreflight> | null;
+        requiredCapabilities?: string[] | null;
+    }
+): RenderThumbnailRendererServiceImplementationSliceAudit;
 export function createRenderThumbnailRendererServiceClientRequest(
     plan: Partial<RenderThumbnailRendererServicePlan>,
     options?: CreateRenderThumbnailRendererServiceClientRequestOptions

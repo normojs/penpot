@@ -2665,6 +2665,13 @@ test("render thumbnail dry-run returns renderer-service request plan", async () 
         assert.equal(body.data.enablementChecklist.localFileWrites, false);
         assert.equal(body.data.enablementChecklist.readiness.mayEnableRuntime, false);
         assert.ok(body.data.enablementChecklist.blockers.includes("renderer-service-adapter-registry"));
+        assert.equal(body.data.implementationSliceAudit.auditVersion, "P25.23");
+        assert.equal(body.data.implementationSliceAudit.dispatch, false);
+        assert.equal(body.data.implementationSliceAudit.networkDispatch, false);
+        assert.equal(body.data.implementationSliceAudit.runtimeRegistration, false);
+        assert.equal(body.data.implementationSliceAudit.localFileWrites, false);
+        assert.equal(body.data.implementationSliceAudit.selectedSlice.id, "renderer-service-health-and-noop-contract");
+        assert.equal(body.data.implementationSliceAudit.selectedSlice.enablesRuntimeDispatch, false);
         assert.equal(body.data.service.responseNormalization.successStatus, "ok");
         assert.equal(body.data.service.responseNormalization.localFileWrites, false);
         assert.equal(body.data.service.errorShape.code, "renderer_service_error");
@@ -2740,6 +2747,12 @@ test("render thumbnail execution reports renderer-service unavailable without ca
         assert.equal(body.error.data.enablementChecklist.networkDispatch, false);
         assert.equal(body.error.data.enablementChecklist.runtimeRegistration, false);
         assert.equal(body.error.data.enablementChecklist.localFileWrites, false);
+        assert.equal(body.error.data.implementationSliceAudit.auditVersion, "P25.23");
+        assert.equal(body.error.data.implementationSliceAudit.dispatch, false);
+        assert.equal(body.error.data.implementationSliceAudit.networkDispatch, false);
+        assert.equal(body.error.data.implementationSliceAudit.runtimeRegistration, false);
+        assert.equal(body.error.data.implementationSliceAudit.localFileWrites, false);
+        assert.equal(body.error.data.implementationSliceAudit.selectedSlice.enablesRuntimeDispatch, false);
         assert.equal(body.error.data.clientRequest.dispatch, false);
         assert.equal(body.error.data.serviceRequest.operation, "thumbnail.render");
     } finally {

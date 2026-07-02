@@ -1,13 +1,14 @@
 # Render Thumbnail Contract
 
-Status: P25.4 descriptor contract; P25.22 MCP/CLI renderer-service dry-run
+Status: P25.4 descriptor contract; P25.23 MCP/CLI renderer-service dry-run
 boundaries, metadata-only availability probes, response normalization
 contracts, disabled client request scaffolding, closed execution gate, disabled
 health preflight, executable client harness plan, and dispatch adapter boundary
 plus opt-in configuration surfaces, unavailable error taxonomy, and integration
 fixture harness plus dispatch registration preflight and executable adapter
 registration scaffold plus adapter registry manifest and final enablement
-checklist defined; runtime execution still blocked.
+checklist plus implementation slice audit defined; runtime execution still
+blocked.
 
 This document defines the `render.thumbnail` contract before executable MCP or
 CLI rendering is enabled. The contract follows Penpot's existing dashboard
@@ -174,6 +175,11 @@ Shared contract shape:
   remaining runtime gates with `enablementChecklist.dispatch:false`,
   `networkDispatch:false`, `runtimeRegistration:false`, and
   `localFileWrites:false`.
+- P25.23 implementation slice audit fields are planning-only. They select the
+  health/no-op contract fixture slice as the first safe implementation step
+  while keeping `implementationSliceAudit.dispatch:false`,
+  `networkDispatch:false`, `runtimeRegistration:false`, and
+  `localFileWrites:false`.
 - Exporter service execution is out of scope for this command unless a later
   task explicitly maps thumbnail rendering to exporter-compatible semantics.
 - P25.6 selects a future dedicated thumbnail renderer service as the executable
@@ -188,14 +194,15 @@ See `render-thumbnail-runtime-boundary.md` and
 audit, resource-return rules, cache refresh behavior, auth expectations, and
 future test strategy.
 See `render-thumbnail-renderer-service-api.md` and
-`render-thumbnail-renderer-service-fixtures.json` for the P25.22 future
+`render-thumbnail-renderer-service-fixtures.json` for the P25.23 future
 renderer-service request/response API, MCP/CLI dry-run/client boundary, and
 metadata-only availability probe plus response/error normalization and disabled
 client request, execution gate, health preflight, and execution harness
 scaffolding, plus the dispatch adapter boundary, opt-in configuration surfaces,
 unavailable error taxonomy, integration fixture harness, and dispatch
 registration preflight plus executable adapter registration scaffold and
-adapter registry manifest plus enablement checklist.
+adapter registry manifest plus enablement checklist and implementation slice
+audit.
 
 ## Fixtures
 

@@ -27,6 +27,7 @@ import {
     createRenderThumbnailRendererServiceExecutionClientHarness,
     createRenderThumbnailRendererServiceEnablementChecklist,
     createRenderThumbnailRendererServiceHealthPreflight,
+    createRenderThumbnailRendererServiceImplementationSliceAudit,
     createRenderThumbnailRendererServiceIntegrationFixtureHarness,
     createRenderThumbnailRendererServiceOptInConfiguration,
     createRenderThumbnailRendererServiceUnavailableErrorTaxonomy,
@@ -465,6 +466,13 @@ test("render.thumbnail renderer-service API fixtures define planning requests wi
     assert.equal(fixtures.serviceApi.enablementChecklist.dispatch, false);
     assert.equal(fixtures.serviceApi.enablementChecklist.runtimeRegistration, false);
     assert.equal(fixtures.serviceApi.enablementChecklist.readiness.mayEnableRuntime, false);
+    assert.equal(fixtures.serviceApi.implementationSliceAudit.auditVersion, "P25.23");
+    assert.equal(fixtures.serviceApi.implementationSliceAudit.dispatch, false);
+    assert.equal(fixtures.serviceApi.implementationSliceAudit.networkDispatch, false);
+    assert.equal(fixtures.serviceApi.implementationSliceAudit.runtimeRegistration, false);
+    assert.equal(fixtures.serviceApi.implementationSliceAudit.localFileWrites, false);
+    assert.equal(fixtures.serviceApi.implementationSliceAudit.selectedSlice.id, "renderer-service-health-and-noop-contract");
+    assert.equal(fixtures.serviceApi.implementationSliceAudit.selectedSlice.enablesRuntimeDispatch, false);
     assert.deepEqual(fixtures.runtimeRegistration.commandDescriptorAdapters, ["renderer-service"]);
     assert.deepEqual(CommandDescriptors.RENDER_THUMBNAIL.adapters, ["renderer-service"]);
     assert.equal(fixtures.runtimeRegistration.mcpToolRegistered, true);
@@ -651,6 +659,16 @@ test("render.thumbnail renderer-service plan exposes dry-run client request whil
     assert.ok(plan.enablementChecklist.blockers.includes("runtime-execution-registration"));
     assert.ok(plan.enablementChecklist.blockers.includes("thumbnail-renderer-service-implementation"));
     assert.deepEqual(plan.service.enablementChecklist, plan.enablementChecklist);
+    assert.equal(plan.implementationSliceAudit.auditVersion, "P25.23");
+    assert.equal(plan.implementationSliceAudit.dispatch, false);
+    assert.equal(plan.implementationSliceAudit.networkDispatch, false);
+    assert.equal(plan.implementationSliceAudit.runtimeRegistration, false);
+    assert.equal(plan.implementationSliceAudit.localFileWrites, false);
+    assert.equal(plan.implementationSliceAudit.selectedSlice.id, "renderer-service-health-and-noop-contract");
+    assert.equal(plan.implementationSliceAudit.selectedSlice.enablesRuntimeDispatch, false);
+    assert.ok(plan.implementationSliceAudit.blockers.includes("runtime-execution-registration"));
+    assert.ok(plan.implementationSliceAudit.blockers.includes("thumbnail-renderer-service-implementation"));
+    assert.deepEqual(plan.service.implementationSliceAudit, plan.implementationSliceAudit);
     assert.equal(plan.clientRequest.status, "scaffolded");
     assert.equal(plan.clientRequest.dispatch, false);
     assert.equal(plan.clientRequest.method, "POST");
@@ -689,6 +707,7 @@ test("render.thumbnail renderer-service plan exposes dry-run client request whil
     assert.equal(plan.diagnostics.executableAdapterRegistrationScaffoldVersion, "P25.20");
     assert.equal(plan.diagnostics.adapterRegistryManifestVersion, "P25.21");
     assert.equal(plan.diagnostics.enablementChecklistVersion, "P25.22");
+    assert.equal(plan.diagnostics.implementationSliceAuditVersion, "P25.23");
 });
 
 test("render.thumbnail renderer-service plan reports not-configured availability without endpoint", () => {
@@ -1050,6 +1069,36 @@ test("render.thumbnail renderer-service enablement checklist stays hard-disabled
     assert.ok(checklist.blockers.includes("thumbnail-renderer-service-implementation"));
     assert.ok(checklist.requiredBeforeEnablement.includes("implement renderer-service runtime and health endpoint"));
     assert.ok(checklist.requiredBeforeEnablement.some((entry) => entry.includes("CLI --output")));
+});
+
+test("render.thumbnail renderer-service implementation slice audit selects no-op health contract", () => {
+    const audit = createRenderThumbnailRendererServiceImplementationSliceAudit({
+        enablementChecklist: { status: "planned-disabled", checklistVersion: "P25.22" },
+        adapterRegistryManifest: { status: "planned-disabled", manifestVersion: "P25.21" },
+        executableAdapterRegistrationScaffold: { status: "planned-disabled", scaffoldVersion: "P25.20" },
+        dispatchRegistrationPreflight: { status: "planned-disabled", preflightVersion: "P25.19" },
+        requiredCapabilities: ["thumbnail-renderer-service-implementation", "file-thumbnail-cache-probe"],
+    });
+
+    assert.equal(audit.status, "planned-disabled");
+    assert.equal(audit.auditVersion, "P25.23");
+    assert.equal(audit.adapter, "renderer-service");
+    assert.equal(audit.command, "render.thumbnail");
+    assert.equal(audit.dispatch, false);
+    assert.equal(audit.networkDispatch, false);
+    assert.equal(audit.runtimeRegistration, false);
+    assert.equal(audit.localFileWrites, false);
+    assert.equal(audit.selectedSlice.id, "renderer-service-health-and-noop-contract");
+    assert.equal(audit.selectedSlice.selected, true);
+    assert.equal(audit.selectedSlice.enablesRuntimeDispatch, false);
+    assert.ok(audit.auditedSurfaces.backendRpc.includes("get-file-data-for-thumbnail"));
+    assert.ok(audit.auditedSurfaces.entrypoints.includes("penpot-cli render thumbnail"));
+    assert.ok(audit.implementationSlices.some((entry) => entry.id === "file-refresh-render" && entry.selected === false));
+    assert.equal(audit.consumes.enablementChecklist.checklistVersion, "P25.22");
+    assert.equal(audit.consumes.adapterRegistryManifest.runtimeExecutionRegistered, false);
+    assert.ok(audit.blockers.includes("renderer-service-health-endpoint-contract"));
+    assert.ok(audit.blockers.includes("thumbnail-renderer-service-implementation"));
+    assert.ok(audit.requiredBeforeRuntimeDispatch.includes("enable command-runtime dispatch in a separate reviewed task"));
 });
 
 test("render.thumbnail renderer-service client request scaffold adds MCP audit headers without dispatch", () => {

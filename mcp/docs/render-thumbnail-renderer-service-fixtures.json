@@ -1,13 +1,15 @@
 {
-  "version": "P25.22",
+  "version": "P25.23",
   "command": "render.thumbnail",
-  "status": "renderer-service API fixtures with MCP/CLI dry-run/client boundaries, metadata-only availability probes, response normalization contracts, disabled client request scaffold, explicit execution gate, health preflight plan, executable client harness plan, dispatch adapter boundary, opt-in configuration surfaces, unavailable error taxonomy, integration fixture harness, dispatch registration preflight, disabled executable adapter registration scaffold, disabled adapter registry manifest, and final disabled enablement checklist; runtime execution blocked",
+  "status": "renderer-service API fixtures with MCP/CLI dry-run/client boundaries, metadata-only availability probes, response normalization contracts, disabled client request scaffold, explicit execution gate, health preflight plan, executable client harness plan, dispatch adapter boundary, opt-in configuration surfaces, unavailable error taxonomy, integration fixture harness, dispatch registration preflight, disabled executable adapter registration scaffold, disabled adapter registry manifest, final disabled enablement checklist, and concrete implementation slice audit; runtime execution blocked",
   "adapter": "renderer-service",
   "runtimeRegistration": {
     "mcpToolRegistered": true,
     "cliCommandRegistered": true,
     "runtimeExecutionRegistered": false,
-    "commandDescriptorAdapters": ["renderer-service"]
+    "commandDescriptorAdapters": [
+      "renderer-service"
+    ]
   },
   "serviceApi": {
     "operation": "thumbnail.render",
@@ -15,7 +17,10 @@
     "localFileWrites": false,
     "requestAuth": {
       "mode": "caller-session",
-      "forwardHeaders": ["authorization", "cookie"],
+      "forwardHeaders": [
+        "authorization",
+        "cookie"
+      ],
       "auditContext": [
         "x-penpot-mcp-tool",
         "x-penpot-mcp-session",
@@ -31,8 +36,15 @@
     },
     "responseNormalization": {
       "successStatus": "ok",
-      "requiredResourceFields": ["resource.resourceUri or resource.uri or resource.resource-uri or resource.mediaId"],
-      "normalizedResultFields": ["cache", "resource", "renderer", "serviceResponse"],
+      "requiredResourceFields": [
+        "resource.resourceUri or resource.uri or resource.resource-uri or resource.mediaId"
+      ],
+      "normalizedResultFields": [
+        "cache",
+        "resource",
+        "renderer",
+        "serviceResponse"
+      ],
       "localFileWrites": false
     },
     "errorShape": {
@@ -58,7 +70,10 @@
       ],
       "authForwarding": {
         "mode": "caller-session",
-        "headerNames": ["authorization", "cookie"],
+        "headerNames": [
+          "authorization",
+          "cookie"
+        ],
         "tokenValuesIncluded": false
       }
     },
@@ -111,10 +126,16 @@
       "method": "GET",
       "endpoint": "{rendererServiceUri}/health",
       "expected": {
-        "okStatuses": [200],
+        "okStatuses": [
+          200
+        ],
         "contentType": "application/json",
         "bodyStatus": "ok",
-        "requiredFields": ["status", "renderer", "version"]
+        "requiredFields": [
+          "status",
+          "renderer",
+          "version"
+        ]
       },
       "failureModes": [
         "renderer_service_preflight_disabled",
@@ -125,7 +146,12 @@
     "executionClientHarness": {
       "status": "planned-disabled",
       "dispatch": false,
-      "sequence": ["executionGate", "healthPreflight", "clientRequest", "normalizeResult"],
+      "sequence": [
+        "executionGate",
+        "healthPreflight",
+        "clientRequest",
+        "normalizeResult"
+      ],
       "localFileWrites": false
     },
     "dispatchAdapterBoundary": {
@@ -138,7 +164,12 @@
         "profile/backend config source",
         "development defaults"
       ],
-      "sequence": ["executionGate", "healthPreflight", "clientRequest", "normalizeResult"],
+      "sequence": [
+        "executionGate",
+        "healthPreflight",
+        "clientRequest",
+        "normalizeResult"
+      ],
       "resultMapping": {
         "successHelper": "createRenderThumbnailRendererServiceResult",
         "errorHelper": "createRenderThumbnailRendererServiceErrorPayload",
@@ -176,7 +207,9 @@
         "response-normalization",
         "resource-normalization"
       ],
-      "retryableCodes": ["renderer_service_health_unavailable"],
+      "retryableCodes": [
+        "renderer_service_health_unavailable"
+      ],
       "payloadFields": {
         "common": [
           "command",
@@ -192,8 +225,13 @@
           "serviceRequest",
           "unavailableErrorTaxonomy"
         ],
-        "mcp": ["localFileWrites:false", "resource metadata only"],
-        "cli": ["optional output metadata only after resource downloadUri exists"]
+        "mcp": [
+          "localFileWrites:false",
+          "resource metadata only"
+        ],
+        "cli": [
+          "optional output metadata only after resource downloadUri exists"
+        ]
       }
     },
     "integrationFixtureHarness": {
@@ -282,7 +320,10 @@
       "registrationSurface": {
         "command": "render.thumbnail",
         "adapter": "renderer-service",
-        "entrypoints": ["mcp", "cli"],
+        "entrypoints": [
+          "mcp",
+          "cli"
+        ],
         "helper": "createRenderThumbnailRendererServiceExecutableAdapterRegistrationScaffold",
         "runtimeExecutionRegistered": false
       },
@@ -401,20 +442,163 @@
       ]
     },
     "clientConfiguration": {
-      "endpointFields": ["endpoint", "rendererServiceUri", "rendererUri"],
-      "environment": ["PENPOT_RENDERER_SERVICE_URI", "PENPOT_RENDERER_SERVICE_TIMEOUT_MS"],
+      "endpointFields": [
+        "endpoint",
+        "rendererServiceUri",
+        "rendererUri"
+      ],
+      "environment": [
+        "PENPOT_RENDERER_SERVICE_URI",
+        "PENPOT_RENDERER_SERVICE_TIMEOUT_MS"
+      ],
       "healthPath": "/health",
       "healthMethod": "GET",
       "defaultProbeTimeoutMs": 2500,
       "networkProbeDuringPlanning": false,
-      "availabilityStatuses": ["configured-unverified", "not-configured"]
+      "availabilityStatuses": [
+        "configured-unverified",
+        "not-configured"
+      ]
     },
     "requiredRendererRuntime": [
       "browser canvas or OffscreenCanvas",
       "Penpot render-wasm worker bridge",
       "frontend rasterizer-compatible fallback",
       "font and media asset loading"
-    ]
+    ],
+    "implementationSliceAudit": {
+      "status": "planned-disabled",
+      "auditVersion": "P25.23",
+      "adapter": "renderer-service",
+      "command": "render.thumbnail",
+      "dispatch": false,
+      "networkDispatch": false,
+      "runtimeRegistration": false,
+      "localFileWrites": false,
+      "selectedSlice": {
+        "id": "renderer-service-health-and-noop-contract",
+        "title": "Renderer-service health and no-op contract fixtures",
+        "selected": true,
+        "dispatch": false,
+        "networkDispatch": false,
+        "runtimeRegistration": false,
+        "localFileWrites": false,
+        "enablesRuntimeDispatch": false,
+        "reason": "This is the smallest safe implementation slice because it can define service liveness, request/response shape, and fixture assertions without rendering thumbnails or registering command-runtime dispatch."
+      },
+      "auditedSurfaces": {
+        "backendRpc": [
+          "get-file-data-for-thumbnail",
+          "create-file-thumbnail",
+          "create-file-object-thumbnail"
+        ],
+        "frontendRuntime": [
+          "app.main.data.workspace.thumbnails/render-thumbnail",
+          "app.util.thumbnails"
+        ],
+        "renderer": [
+          "render-wasm worker/browser canvas runtime",
+          "frontend rasterizer fallback"
+        ],
+        "entrypoints": [
+          "mcp render.thumbnail",
+          "penpot-cli render thumbnail"
+        ]
+      },
+      "implementationSlices": [
+        {
+          "id": "renderer-service-health-and-noop-contract",
+          "selected": true,
+          "dispatch": false,
+          "networkDispatch": false,
+          "runtimeRegistration": false,
+          "localFileWrites": false,
+          "scope": [
+            "document health endpoint semantics",
+            "document no-op thumbnail.render request/response fixtures",
+            "keep MCP and CLI execution paths returning renderer_service_unavailable"
+          ],
+          "exitCriteria": [
+            "fixtures parse and assert dispatch:false",
+            "MCP/CLI unavailable payloads expose the audit",
+            "no renderer-service HTTP client is called"
+          ]
+        },
+        {
+          "id": "file-refresh-render",
+          "selected": false,
+          "dispatch": false,
+          "blockers": [
+            "renderer-service runtime implementation",
+            "backend thumbnail data auth/session forwarding",
+            "PNG resource normalization contract",
+            "integration tests with real service fixture"
+          ]
+        },
+        {
+          "id": "file-reuse-cache-probe",
+          "selected": false,
+          "dispatch": false,
+          "blockers": [
+            "file thumbnail cache probe API",
+            "cache miss fallback to refresh render",
+            "stale revn behavior contract"
+          ]
+        },
+        {
+          "id": "tagged-frame-refresh",
+          "selected": false,
+          "dispatch": false,
+          "blockers": [
+            "frame source data provider",
+            "file object thumbnail cache probe",
+            "tagged frame resource normalizer"
+          ]
+        }
+      ],
+      "consumes": {
+        "enablementChecklist": {
+          "requiredStatus": "ready",
+          "currentStatus": "planned-disabled",
+          "checklistVersion": "P25.22",
+          "mayEnableRuntime": false
+        },
+        "adapterRegistryManifest": {
+          "requiredStatus": "ready",
+          "currentStatus": "planned-disabled",
+          "manifestVersion": "P25.21",
+          "runtimeExecutionRegistered": false
+        },
+        "executableAdapterRegistrationScaffold": {
+          "requiredStatus": "ready",
+          "currentStatus": "planned-disabled",
+          "scaffoldVersion": "P25.20",
+          "runtimeRegistration": false
+        },
+        "dispatchRegistrationPreflight": {
+          "requiredStatus": "ready",
+          "currentStatus": "planned-disabled",
+          "preflightVersion": "P25.19",
+          "runtimeRegistration": false
+        }
+      },
+      "blockers": [
+        "renderer-service-health-endpoint-contract",
+        "renderer-service-noop-fixture-harness",
+        "renderer-service-runtime-implementation",
+        "runtime-execution-registration",
+        "thumbnail-renderer-service-implementation",
+        "file-thumbnail-cache-probe"
+      ],
+      "requiredBeforeRuntimeDispatch": [
+        "implement the selected health/no-op contract slice first",
+        "replace no-op fixtures with a gated renderer-service fixture harness",
+        "prove backend RPC data/persist calls through a dedicated service boundary",
+        "prove MCP resource returns stay metadata-only",
+        "prove CLI --output writes only after normalized download URI execution exists",
+        "enable command-runtime dispatch in a separate reviewed task"
+      ]
+    }
   },
   "registrationGates": {
     "executionGate": [
@@ -424,8 +608,12 @@
       "integration tests pass",
       "runtime execution registration is explicitly enabled"
     ],
-    "allTargets": ["thumbnail-renderer-service-implementation"],
-    "file": ["file-thumbnail-cache-probe"],
+    "allTargets": [
+      "thumbnail-renderer-service-implementation"
+    ],
+    "file": [
+      "file-thumbnail-cache-probe"
+    ],
     "frame": [
       "frame-source-data-provider",
       "tagged-frame-resource-normalizer"
@@ -666,7 +854,10 @@
       },
       "expectedError": {
         "code": "thumbnail_target_required",
-        "requires": ["pageId", "objectId"],
+        "requires": [
+          "pageId",
+          "objectId"
+        ],
         "dispatchServiceRequest": false
       }
     },
@@ -710,6 +901,7 @@
   ],
   "futureMcpTests": [
     "returns resource metadata without MCP server file writes after renderer-service execution exists",
+    "implementation slice audit metadata survives dry-run and unavailable execution JSON output",
     "forwards caller auth and MCP audit context to renderer-service",
     "reports structured errors for missing resourceUri"
   ],
@@ -728,12 +920,19 @@
     "executable adapter registration scaffold metadata survives dry-run and unavailable execution JSON output",
     "adapter registry manifest metadata survives dry-run and unavailable execution JSON output",
     "enablement checklist metadata survives dry-run and unavailable execution JSON output",
+    "implementation slice audit metadata survives dry-run and unavailable execution JSON output",
     "--output downloads the returned PNG resource",
     "missing token fails before contacting renderer-service"
   ],
   "nextTask": {
-    "id": "P25.22",
-    "title": "Plan final disabled renderer-service enablement checklist",
-    "modules": ["mcp", "penpot-cli", "command-runtime", "mcp/docs", "todo.md"]
+    "id": "P25.24",
+    "title": "Plan renderer-service health/no-op contract fixtures",
+    "modules": [
+      "mcp",
+      "penpot-cli",
+      "command-runtime",
+      "mcp/docs",
+      "todo.md"
+    ]
   }
 }

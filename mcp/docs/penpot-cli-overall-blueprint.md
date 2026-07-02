@@ -285,6 +285,9 @@ Current state:
 - Done: renderer-service enablement checklist records final opt-in, health,
   integration, adapter registration, registry, and target/cache gates without
   enabling runtime dispatch.
+- Done: renderer-service implementation slice audit selects the health/no-op
+  contract fixture as the first safe implementation step without enabling
+  runtime dispatch.
 - Done: focused command-runtime tests cover descriptor groups, lookup,
   adapter-selection priority/error cases, and token-safe envelopes.
 - Status: complete. Later command coverage gaps were tracked by the P15.1
@@ -798,6 +801,15 @@ P25.22 is complete:
    writes.
 3. `enablementChecklist.dispatch`, `networkDispatch`, `runtimeRegistration`,
    and `localFileWrites` remain false.
+
+P25.23 is complete:
+
+1. Shared plans include `implementationSliceAudit` metadata for the first
+   concrete renderer-service implementation slice.
+2. The selected next slice is the renderer-service health/no-op contract
+   fixture, not PNG rendering.
+3. `implementationSliceAudit.dispatch`, `networkDispatch`,
+   `runtimeRegistration`, and `localFileWrites` remain false.
 
 Keep manual configuration behavior stable while moving command metadata and
 envelopes; transport-specific formatting should stay at the MCP/CLI edges.

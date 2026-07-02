@@ -1,13 +1,14 @@
 # Render Thumbnail Renderer Service API
 
-Status: P25.22 API fixtures, MCP/CLI dry-run/client boundaries, metadata-only
+Status: P25.23 API fixtures, MCP/CLI dry-run/client boundaries, metadata-only
 availability probes, response normalization contracts, disabled client request
 scaffold, closed execution gate, disabled health preflight, and executable
 client harness plus dispatch adapter boundary plans, and opt-in configuration
 surfaces plus unavailable error taxonomy and integration fixture harness
 plus dispatch registration preflight and executable adapter registration
-scaffold plus adapter registry manifest and final enablement checklist defined;
-executable runtime registration remains blocked.
+scaffold plus adapter registry manifest, final enablement checklist, and
+implementation slice audit defined; executable runtime registration remains
+blocked.
 
 P25.6 selected a dedicated thumbnail renderer service as the future executable
 owner for `render.thumbnail`. This document defines the service-facing request
@@ -92,6 +93,11 @@ P25.22 defines the final disabled enablement checklist. Plans now include
 `enablementChecklist`, which summarizes the remaining opt-in, health,
 integration, adapter registration, registry, and target/cache capability gates
 before executable runtime registration can be selected.
+
+P25.23 audits the first concrete implementation slice. Plans now include
+`implementationSliceAudit`, which selects the renderer-service health/no-op
+contract fixture slice and keeps dispatch, network dispatch, runtime
+registration, and local file writes disabled.
 
 ## Service Boundary
 

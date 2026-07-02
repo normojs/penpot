@@ -933,3 +933,10 @@ P25.22 adds renderer-service enablement checklist:
   gates required before executable dispatch can be selected.
 - The checklist remains hard-disabled with `dispatch`, `networkDispatch`,
   `runtimeRegistration`, and `localFileWrites` all `false`.
+
+P25.23 adds renderer-service implementation slice audit:
+
+- Plans include `implementationSliceAudit`, selecting the health/no-op
+  contract fixture as the first concrete implementation slice.
+- The audit remains planning-only with `dispatch`, `networkDispatch`,
+  `runtimeRegistration`, and `localFileWrites` all `false`.

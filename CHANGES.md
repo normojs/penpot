@@ -133,6 +133,7 @@
 - Add renderer-service executable adapter registration scaffold planning for future `render.thumbnail` execution.
 - Add renderer-service adapter registry manifest planning for future `render.thumbnail` execution.
 - Add renderer-service enablement checklist planning for future `render.thumbnail` execution.
+- Add renderer-service implementation slice audit planning for future `render.thumbnail` execution.
 - Add rate limiting and concurrency safety for file snapshot operations [#9723](https://github.com/penpot/penpot/issues/9723) (PR: [#9722](https://github.com/penpot/penpot/pull/9722))
 - Prevent concurrent font uploads from causing excessive simultaneous requests [#9922](https://github.com/penpot/penpot/issues/9922) (PR: [#9921](https://github.com/penpot/penpot/pull/9921))
 

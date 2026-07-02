@@ -993,6 +993,13 @@ export function createRenderThumbnailRendererServicePlan(options = EMPTY_OBJECT)
         adapterRegistryManifest,
         requiredCapabilities,
     });
+    const implementationSliceAudit = createRenderThumbnailRendererServiceImplementationSliceAudit({
+        enablementChecklist,
+        adapterRegistryManifest,
+        executableAdapterRegistrationScaffold,
+        dispatchRegistrationPreflight,
+        requiredCapabilities,
+    });
 
     return {
         command: CommandDescriptors.RENDER_THUMBNAIL.id,
@@ -1047,6 +1054,7 @@ export function createRenderThumbnailRendererServicePlan(options = EMPTY_OBJECT)
             executableAdapterRegistrationScaffold,
             adapterRegistryManifest,
             enablementChecklist,
+            implementationSliceAudit,
             clientRequest,
         },
         client,
@@ -1062,6 +1070,7 @@ export function createRenderThumbnailRendererServicePlan(options = EMPTY_OBJECT)
         executableAdapterRegistrationScaffold,
         adapterRegistryManifest,
         enablementChecklist,
+        implementationSliceAudit,
         clientRequest,
         serviceRequest: {
             command: CommandDescriptors.RENDER_THUMBNAIL.id,
@@ -1137,7 +1146,151 @@ export function createRenderThumbnailRendererServicePlan(options = EMPTY_OBJECT)
             executableAdapterRegistrationScaffoldVersion: executableAdapterRegistrationScaffold.scaffoldVersion,
             adapterRegistryManifestVersion: adapterRegistryManifest.manifestVersion,
             enablementChecklistVersion: enablementChecklist.checklistVersion,
+            implementationSliceAuditVersion: implementationSliceAudit.auditVersion,
         },
+    };
+}
+
+export function createRenderThumbnailRendererServiceImplementationSliceAudit(options = EMPTY_OBJECT) {
+    const enablementChecklist = options.enablementChecklist ?? EMPTY_OBJECT;
+    const adapterRegistryManifest = options.adapterRegistryManifest ?? EMPTY_OBJECT;
+    const executableAdapterRegistrationScaffold =
+        options.executableAdapterRegistrationScaffold ?? EMPTY_OBJECT;
+    const dispatchRegistrationPreflight = options.dispatchRegistrationPreflight ?? EMPTY_OBJECT;
+    const requiredCapabilities = Array.isArray(options.requiredCapabilities)
+        ? options.requiredCapabilities.map((item) => normalizeOptionalString(item)).filter(Boolean)
+        : [];
+
+    return {
+        status: "planned-disabled",
+        auditVersion: "P25.23",
+        adapter: "renderer-service",
+        command: CommandDescriptors.RENDER_THUMBNAIL.id,
+        dispatch: false,
+        networkDispatch: false,
+        runtimeRegistration: false,
+        localFileWrites: false,
+        selectedSlice: {
+            id: "renderer-service-health-and-noop-contract",
+            title: "Renderer-service health and no-op contract fixtures",
+            selected: true,
+            dispatch: false,
+            networkDispatch: false,
+            runtimeRegistration: false,
+            localFileWrites: false,
+            enablesRuntimeDispatch: false,
+            reason: "This is the smallest safe implementation slice because it can define service liveness, request/response shape, and fixture assertions without rendering thumbnails or registering command-runtime dispatch.",
+        },
+        auditedSurfaces: {
+            backendRpc: [
+                "get-file-data-for-thumbnail",
+                "create-file-thumbnail",
+                "create-file-object-thumbnail",
+            ],
+            frontendRuntime: [
+                "app.main.data.workspace.thumbnails/render-thumbnail",
+                "app.util.thumbnails",
+            ],
+            renderer: [
+                "render-wasm worker/browser canvas runtime",
+                "frontend rasterizer fallback",
+            ],
+            entrypoints: ["mcp render.thumbnail", "penpot-cli render thumbnail"],
+        },
+        implementationSlices: [
+            {
+                id: "renderer-service-health-and-noop-contract",
+                selected: true,
+                dispatch: false,
+                networkDispatch: false,
+                runtimeRegistration: false,
+                localFileWrites: false,
+                scope: [
+                    "document health endpoint semantics",
+                    "document no-op thumbnail.render request/response fixtures",
+                    "keep MCP and CLI execution paths returning renderer_service_unavailable",
+                ],
+                exitCriteria: [
+                    "fixtures parse and assert dispatch:false",
+                    "MCP/CLI unavailable payloads expose the audit",
+                    "no renderer-service HTTP client is called",
+                ],
+            },
+            {
+                id: "file-refresh-render",
+                selected: false,
+                dispatch: false,
+                blockers: [
+                    "renderer-service runtime implementation",
+                    "backend thumbnail data auth/session forwarding",
+                    "PNG resource normalization contract",
+                    "integration tests with real service fixture",
+                ],
+            },
+            {
+                id: "file-reuse-cache-probe",
+                selected: false,
+                dispatch: false,
+                blockers: [
+                    "file thumbnail cache probe API",
+                    "cache miss fallback to refresh render",
+                    "stale revn behavior contract",
+                ],
+            },
+            {
+                id: "tagged-frame-refresh",
+                selected: false,
+                dispatch: false,
+                blockers: [
+                    "frame source data provider",
+                    "file object thumbnail cache probe",
+                    "tagged frame resource normalizer",
+                ],
+            },
+        ],
+        consumes: {
+            enablementChecklist: {
+                requiredStatus: "ready",
+                currentStatus: enablementChecklist.status ?? "planned-disabled",
+                checklistVersion: enablementChecklist.checklistVersion ?? "P25.22",
+                mayEnableRuntime: false,
+            },
+            adapterRegistryManifest: {
+                requiredStatus: "ready",
+                currentStatus: adapterRegistryManifest.status ?? "planned-disabled",
+                manifestVersion: adapterRegistryManifest.manifestVersion ?? "P25.21",
+                runtimeExecutionRegistered: false,
+            },
+            executableAdapterRegistrationScaffold: {
+                requiredStatus: "ready",
+                currentStatus: executableAdapterRegistrationScaffold.status ?? "planned-disabled",
+                scaffoldVersion: executableAdapterRegistrationScaffold.scaffoldVersion ?? "P25.20",
+                runtimeRegistration: false,
+            },
+            dispatchRegistrationPreflight: {
+                requiredStatus: "ready",
+                currentStatus: dispatchRegistrationPreflight.status ?? "planned-disabled",
+                preflightVersion: dispatchRegistrationPreflight.preflightVersion ?? "P25.19",
+                runtimeRegistration: false,
+            },
+        },
+        blockers: Array.from(
+            new Set([
+                "renderer-service-health-endpoint-contract",
+                "renderer-service-noop-fixture-harness",
+                "renderer-service-runtime-implementation",
+                "runtime-execution-registration",
+                ...requiredCapabilities,
+            ])
+        ),
+        requiredBeforeRuntimeDispatch: [
+            "implement the selected health/no-op contract slice first",
+            "replace no-op fixtures with a gated renderer-service fixture harness",
+            "prove backend RPC data/persist calls through a dedicated service boundary",
+            "prove MCP resource returns stay metadata-only",
+            "prove CLI --output writes only after normalized download URI execution exists",
+            "enable command-runtime dispatch in a separate reviewed task",
+        ],
     };
 }
 

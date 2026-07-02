@@ -412,6 +412,13 @@ test("RenderThumbnailTool dry-run returns renderer-service request metadata with
         assert.equal(body.data.enablementChecklist.localFileWrites, false);
         assert.equal(body.data.enablementChecklist.readiness.mayEnableRuntime, false);
         assert.ok(body.data.enablementChecklist.blockers.includes("renderer-service-adapter-registry"));
+        assert.equal(body.data.implementationSliceAudit.auditVersion, "P25.23");
+        assert.equal(body.data.implementationSliceAudit.dispatch, false);
+        assert.equal(body.data.implementationSliceAudit.networkDispatch, false);
+        assert.equal(body.data.implementationSliceAudit.runtimeRegistration, false);
+        assert.equal(body.data.implementationSliceAudit.localFileWrites, false);
+        assert.equal(body.data.implementationSliceAudit.selectedSlice.id, "renderer-service-health-and-noop-contract");
+        assert.equal(body.data.implementationSliceAudit.selectedSlice.enablesRuntimeDispatch, false);
         assert.deepEqual(body.data.service.client, body.data.client);
         assert.equal(body.data.service.responseNormalization.successStatus, "ok");
         assert.equal(body.data.service.responseNormalization.localFileWrites, false);
@@ -497,6 +504,12 @@ test("RenderThumbnailTool execution reports renderer service unavailable without
         assert.equal(body.error.data.enablementChecklist.networkDispatch, false);
         assert.equal(body.error.data.enablementChecklist.runtimeRegistration, false);
         assert.equal(body.error.data.enablementChecklist.localFileWrites, false);
+        assert.equal(body.error.data.implementationSliceAudit.auditVersion, "P25.23");
+        assert.equal(body.error.data.implementationSliceAudit.dispatch, false);
+        assert.equal(body.error.data.implementationSliceAudit.networkDispatch, false);
+        assert.equal(body.error.data.implementationSliceAudit.runtimeRegistration, false);
+        assert.equal(body.error.data.implementationSliceAudit.localFileWrites, false);
+        assert.equal(body.error.data.implementationSliceAudit.selectedSlice.enablesRuntimeDispatch, false);
         assert.equal(body.error.data.clientRequest.dispatch, false);
         assert.equal(body.error.data.serviceRequest.operation, "thumbnail.render");
         assert.deepEqual(body.error.data.requiredCapabilities, ["thumbnail-renderer-service-implementation", "file-thumbnail-cache-probe"]);

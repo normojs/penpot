@@ -230,9 +230,11 @@ renderer-service adapter registry manifest now records the future registry key
 and MCP/CLI entrypoint wiring while keeping runtime registration disabled.
 P25.22 is complete: the final disabled renderer-service enablement checklist
 now summarizes opt-in, health, integration, adapter registration, registry, and
-target/cache gates while runtime execution remains disabled. P25.23 is the next
-task: audit the concrete renderer-service implementation slice before any
-executable runtime registration is enabled.
+target/cache gates while runtime execution remains disabled. P25.23 is complete:
+the concrete renderer-service implementation slice audit now selects the
+health/no-op contract fixture as the first safe implementation slice while
+runtime execution remains disabled. P25.24 is the next task: plan that
+health/no-op contract fixture without enabling renderer-service dispatch.
 
 ## Feature Roadmap
 
@@ -275,7 +277,7 @@ remain the execution plan.
 | F32 | done | Export/render descriptor boundary planning | Phase 25 | Agents can discover planned file-export and thumbnail-render command names without mistaking them for executable tools | Completed 2026-06-29; P25.1 added descriptor-only `export.file` and `render.thumbnail` command-runtime entries with no adapters, and P25.2 defined the fixture-backed `export.file` backend binary archive contract |
 | F33 | done | Thumbnail render contract | Phase 25 | Agents can request thumbnail rendering only after target/cache/artifact semantics are explicit | Completed 2026-06-29; P25.4 defines descriptor-only `render.thumbnail` target, cache, artifact, renderer, and backend persistence contracts |
 | F34 | done | MCP file export resource return | Phase 25 | Agents can export a `.penpot` archive through MCP once backend-rpc resource handling is explicit | Completed 2026-06-29; P25.5 registers MCP `export.file` around the existing backend `export-binfile` SSE/resource contract and returns resource metadata plus `downloadUri` |
-| F35 | done | Thumbnail runtime execution boundary | Phase 25 | Agents can render thumbnails only after the renderer owner and resource return semantics are explicit | Completed 2026-07-03; P25.6 selects a future dedicated thumbnail renderer service, P25.7 defines service API fixtures, P25.8 adds the CLI dry-run/client boundary, P25.9 registers MCP planning-only dry-run, P25.10 adds metadata-only availability probes, P25.11 defines response/error normalization, P25.12 adds disabled client request scaffolding, P25.13 adds a closed execution gate plus integration-test plan, P25.14 adds disabled health preflight and executable client harness plans, P25.15 adds a disabled dispatch adapter boundary, P25.16 adds opt-in configuration surfaces, P25.17 adds unavailable error taxonomy, P25.18 adds integration fixture harness, P25.19 adds dispatch registration preflight, P25.20 adds disabled executable adapter registration scaffold, P25.21 adds disabled adapter registry manifest, and P25.22 adds final disabled enablement checklist while runtime execution remains blocked |
+| F35 | done | Thumbnail runtime execution boundary | Phase 25 | Agents can render thumbnails only after the renderer owner and resource return semantics are explicit | Completed 2026-07-03; P25.6 selects a future dedicated thumbnail renderer service, P25.7 defines service API fixtures, P25.8 adds the CLI dry-run/client boundary, P25.9 registers MCP planning-only dry-run, P25.10 adds metadata-only availability probes, P25.11 defines response/error normalization, P25.12 adds disabled client request scaffolding, P25.13 adds a closed execution gate plus integration-test plan, P25.14 adds disabled health preflight and executable client harness plans, P25.15 adds a disabled dispatch adapter boundary, P25.16 adds opt-in configuration surfaces, P25.17 adds unavailable error taxonomy, P25.18 adds integration fixture harness, P25.19 adds dispatch registration preflight, P25.20 adds disabled executable adapter registration scaffold, P25.21 adds disabled adapter registry manifest, P25.22 adds final disabled enablement checklist, and P25.23 audits the concrete implementation slice while runtime execution remains blocked |
 
 ## Detailed Upcoming Task Queue
 
@@ -826,10 +828,10 @@ continue within Phase 25:
    error taxonomy, P25.18 adds integration fixture harness metadata, P25.19
    adds dispatch registration preflight metadata, and P25.20 adds disabled
    executable adapter registration scaffold metadata. P25.21 adds disabled
-   adapter registry manifest metadata, and P25.22 adds final disabled
-   enablement checklist metadata. Remaining work: audit the concrete
-   renderer-service implementation slice before implementing executable
-   `render.thumbnail`.
+   adapter registry manifest metadata, P25.22 adds final disabled enablement
+   checklist metadata, and P25.23 audits the concrete renderer-service
+   implementation slice. Remaining work: plan the health/no-op contract fixture
+   before implementing executable `render.thumbnail`.
 
 ## Phase 21: Design Editing Alias Contracts
 
@@ -906,4 +908,5 @@ catalog before adding executable MCP, CLI, or exporter behavior.
 | P25.20 | done | Add disabled renderer-service executable adapter registration scaffold | `mcp`, `penpot-cli`, `command-runtime`, `mcp/docs`, `todo.md` | Completed 2026-07-03; command-runtime tests cover the no-op scaffold, consumed preflight/boundary/request metadata, service mirror, diagnostics, and hard-disabled `dispatch:false`/`networkDispatch:false`/`runtimeRegistration:false`/`localFileWrites:false`; MCP/CLI tests assert dry-run and unavailable execution expose scaffold metadata without network calls | Future renderer-service execution now has a disabled executable adapter registration scaffold, but runtime dispatch remains disabled |
 | P25.21 | done | Plan disabled renderer-service adapter registry manifest | `mcp`, `penpot-cli`, `command-runtime`, `mcp/docs`, `todo.md` | Completed 2026-07-03; command-runtime tests cover metadata-only registry key, MCP/CLI entrypoint wiring, consumed scaffold/preflight/boundary metadata, and hard-disabled `dispatch:false`/`networkDispatch:false`/`runtimeRegistration:false`/`localFileWrites:false`; MCP/CLI tests assert dry-run and unavailable execution expose manifest metadata without network calls | Future renderer-service execution now has a disabled adapter registry manifest, but runtime dispatch remains disabled |
 | P25.22 | done | Plan final disabled renderer-service enablement checklist | `mcp`, `penpot-cli`, `command-runtime`, `mcp/docs`, `todo.md` | Completed 2026-07-03; command-runtime tests cover final blocked gates, P25.17-P25.21 version linkage, required capabilities, readiness flags, and hard-disabled `dispatch:false`/`networkDispatch:false`/`runtimeRegistration:false`/`localFileWrites:false`; MCP/CLI tests assert dry-run and unavailable execution expose checklist metadata without network calls | Future renderer-service execution now has a final disabled enablement checklist, but runtime dispatch remains disabled |
-| P25.23 | pending | Audit concrete renderer-service implementation slice | `mcp`, `penpot-cli`, `command-runtime`, `mcp/docs`, `todo.md` | Pending | Identify the smallest safe implementation slice for a real renderer-service runtime without enabling command-runtime dispatch yet |
+| P25.23 | done | Audit concrete renderer-service implementation slice | `mcp`, `penpot-cli`, `command-runtime`, `mcp/docs`, `todo.md` | Completed 2026-07-03; command-runtime tests cover `implementationSliceAudit`, selected health/no-op contract slice, consumed P25.19-P25.22 metadata, audited surfaces, and hard-disabled `dispatch:false`/`networkDispatch:false`/`runtimeRegistration:false`/`localFileWrites:false`; MCP/CLI tests assert dry-run and unavailable execution expose audit metadata without network calls | Future renderer-service execution now has a concrete first implementation slice selected, but runtime dispatch remains disabled |
+| P25.24 | pending | Plan renderer-service health/no-op contract fixtures | `mcp`, `penpot-cli`, `command-runtime`, `mcp/docs`, `todo.md` | Not started | Define the selected health endpoint and no-op thumbnail.render fixture contract while keeping command-runtime dispatch disabled |
