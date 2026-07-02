@@ -21,8 +21,9 @@ error normalization contracts, P25.12 adds disabled client request scaffolding,
 P25.13 adds the closed execution gate plus integration-test plan, and P25.14
 adds disabled health preflight plus executable client harness plans. P25.15
 adds the disabled dispatch adapter boundary, and P25.16 adds opt-in
-configuration surfaces. P25.17 adds the unavailable error taxonomy, and P25.18
-adds the integration fixture harness; runtime execution remains blocked.
+configuration surfaces. P25.17 adds the unavailable error taxonomy, P25.18
+adds the integration fixture harness, and P25.19 adds dispatch registration
+preflight; runtime execution remains blocked.
 
 ## Existing Surfaces
 
@@ -151,7 +152,8 @@ dispatch adapter boundary, P25.16 adds opt-in configuration surfaces, and
 P25.17 adds stable unavailable/preflight/dispatch/resource error taxonomy
 metadata. P25.18 adds fixture harness metadata for closed gate, health failure,
 render success, service failure, MCP metadata, CLI output gating, and token-safe
-auth cases. MCP
+auth cases. P25.19 adds dispatch registration preflight metadata for the final
+readiness checks before executable runtime registration. MCP
 `render.thumbnail` and `penpot-cli render thumbnail --dry-run` can print the
 future request shape, configured/not configured service metadata,
 response/error contracts, `clientRequest.dispatch:false`,
@@ -159,6 +161,7 @@ response/error contracts, `clientRequest.dispatch:false`,
 `executionClientHarness.dispatch:false`, `dispatchAdapterBoundary.dispatch:false`,
 `optInConfiguration.dispatch:false`, and `unavailableErrorTaxonomy.dispatch:false`,
 plus `integrationFixtureHarness.dispatch:false` and `networkDispatch:false`,
+and `dispatchRegistrationPreflight.runtimeRegistration:false`,
 but execution still returns
 `renderer_service_unavailable` until explicit opt-in, config surfaces, renderer
 service, integration tests, health preflight, file cache probe, tagged-frame

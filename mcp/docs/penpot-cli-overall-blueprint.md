@@ -273,6 +273,9 @@ Current state:
 - Done: renderer-service integration fixture harness records future closed
   gate, health failure, render success, service failure, MCP metadata, CLI
   output, and token-safe auth cases without enabling dispatch.
+- Done: renderer-service dispatch registration preflight records the final
+  readiness checklist for future executable dispatch without enabling runtime
+  registration.
 - Done: focused command-runtime tests cover descriptor groups, lookup,
   adapter-selection priority/error cases, and token-safe envelopes.
 - Status: complete. Later command coverage gaps were tracked by the P15.1
@@ -749,6 +752,15 @@ P25.18 is complete:
 3. Harness fixtures define the required cases before executable dispatch:
    closed gate, missing endpoint, health failure, render success, service
    error, MCP resource metadata, CLI output gating, and token-safe auth.
+
+P25.19 is complete:
+
+1. Shared plans include `dispatchRegistrationPreflight` metadata for final
+   renderer-service dispatch readiness checks.
+2. MCP and CLI dry-run plus unavailable execution payloads expose the
+   preflight without enabling runtime registration.
+3. `dispatchRegistrationPreflight.dispatch`, `networkDispatch`,
+   `runtimeRegistration`, and `localFileWrites` remain false.
 
 Keep manual configuration behavior stable while moving command metadata and
 envelopes; transport-specific formatting should stay at the MCP/CLI edges.

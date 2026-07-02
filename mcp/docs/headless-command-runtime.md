@@ -900,3 +900,12 @@ P25.18 adds renderer-service integration fixture harness:
   metadata, CLI output gating, and token-safe auth.
 - The harness records the future suite required before executable dispatch,
   while `dispatch`, `networkDispatch`, and `localFileWrites` remain `false`.
+
+P25.19 adds renderer-service dispatch registration preflight:
+
+- Plans include `dispatchRegistrationPreflight` with final readiness checks
+  for opt-in, endpoint config, service implementation, integration fixtures,
+  health preflight, dispatch adapter, runtime registration, and target/cache
+  capabilities.
+- The preflight remains hard-disabled: `dispatch`, `networkDispatch`,
+  `runtimeRegistration`, and `localFileWrites` are all `false`.

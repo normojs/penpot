@@ -2635,6 +2635,10 @@ test("render thumbnail dry-run returns renderer-service request plan", async () 
                 (entry) => entry.id === "render-success-cli-output-download"
             )
         );
+        assert.equal(body.data.dispatchRegistrationPreflight.preflightVersion, "P25.19");
+        assert.equal(body.data.dispatchRegistrationPreflight.dispatch, false);
+        assert.equal(body.data.dispatchRegistrationPreflight.runtimeRegistration, false);
+        assert.ok(body.data.dispatchRegistrationPreflight.blockers.includes("runtime-execution-registration"));
         assert.equal(body.data.service.responseNormalization.successStatus, "ok");
         assert.equal(body.data.service.responseNormalization.localFileWrites, false);
         assert.equal(body.data.service.errorShape.code, "renderer_service_error");
@@ -2692,6 +2696,9 @@ test("render thumbnail execution reports renderer-service unavailable without ca
         assert.equal(body.error.data.integrationFixtureHarness.harnessVersion, "P25.18");
         assert.equal(body.error.data.integrationFixtureHarness.dispatch, false);
         assert.equal(body.error.data.integrationFixtureHarness.networkDispatch, false);
+        assert.equal(body.error.data.dispatchRegistrationPreflight.preflightVersion, "P25.19");
+        assert.equal(body.error.data.dispatchRegistrationPreflight.dispatch, false);
+        assert.equal(body.error.data.dispatchRegistrationPreflight.runtimeRegistration, false);
         assert.equal(body.error.data.clientRequest.dispatch, false);
         assert.equal(body.error.data.serviceRequest.operation, "thumbnail.render");
     } finally {

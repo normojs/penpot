@@ -1,7 +1,7 @@
 {
-  "version": "P25.18",
+  "version": "P25.19",
   "command": "render.thumbnail",
-  "status": "runtime boundary audited; MCP/CLI planning, metadata-only availability probes, response normalization contracts, disabled client request scaffold, closed execution gate, health preflight plan, executable client harness plan, dispatch adapter boundary, opt-in configuration surfaces, unavailable error taxonomy, and integration fixture harness registered; runtime execution blocked",
+  "status": "runtime boundary audited; MCP/CLI planning, metadata-only availability probes, response normalization contracts, disabled client request scaffold, closed execution gate, health preflight plan, executable client harness plan, dispatch adapter boundary, opt-in configuration surfaces, unavailable error taxonomy, integration fixture harness, and dispatch registration preflight registered; runtime execution blocked",
   "selectedBoundary": "thumbnail-renderer-service",
   "runtimeRegistration": {
     "mcpToolRegistered": true,
@@ -233,6 +233,24 @@
       "auth fixture proves token values are not serialized"
     ]
   },
+  "dispatchRegistrationPreflight": {
+    "status": "planned-disabled",
+    "dispatch": false,
+    "networkDispatch": false,
+    "runtimeRegistration": false,
+    "localFileWrites": false,
+    "preflightVersion": "P25.19",
+    "requiredChecks": [
+      "explicit-opt-in",
+      "endpoint-configured",
+      "service-implemented",
+      "integration-fixtures-ready",
+      "health-preflight-ready",
+      "dispatch-adapter-ready",
+      "runtime-registration-ready",
+      "target-cache-capabilities-ready"
+    ]
+  },
   "testStrategy": [
     "Keep command-runtime descriptor tests asserting render.thumbnail only exposes the renderer-service planning adapter until execution exists.",
     "Add renderer-service contract tests for file and tagged-frame inputs, cache policies, PNG metadata, and resource normalization.",
@@ -245,11 +263,12 @@
     "Dispatch adapter boundary tests cover config precedence, gate/preflight consumption, result/error mapping, and no-dispatch defaults.",
     "Opt-in configuration tests cover CLI flag, MCP arg, environment fallback, invalid values, diagnostics, and no-dispatch defaults.",
     "Integration fixture harness tests cover closed gate, health failure, render success, service error, MCP metadata, CLI output gating, and token-safe auth without dispatch.",
+    "Dispatch registration preflight tests cover final readiness checks and hard-disabled runtime registration.",
     "Add CLI smoke tests only after the service exists, covering dry-run, resource metadata, --output download, and missing-token errors."
   ],
   "nextTask": {
-    "id": "P25.18",
-    "title": "Plan renderer-service integration fixture harness",
+    "id": "P25.19",
+    "title": "Plan renderer-service executable dispatch registration preflight",
     "modules": ["mcp", "penpot-cli", "command-runtime", "mcp/docs", "todo.md"]
   }
 }

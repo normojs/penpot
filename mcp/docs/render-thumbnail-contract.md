@@ -1,11 +1,12 @@
 # Render Thumbnail Contract
 
-Status: P25.4 descriptor contract; P25.18 MCP/CLI renderer-service dry-run
+Status: P25.4 descriptor contract; P25.19 MCP/CLI renderer-service dry-run
 boundaries, metadata-only availability probes, response normalization
 contracts, disabled client request scaffolding, closed execution gate, disabled
 health preflight, executable client harness plan, and dispatch adapter boundary
 plus opt-in configuration surfaces, unavailable error taxonomy, and integration
-fixture harness defined; runtime execution still blocked.
+fixture harness plus dispatch registration preflight defined; runtime execution
+still blocked.
 
 This document defines the `render.thumbnail` contract before executable MCP or
 CLI rendering is enabled. The contract follows Penpot's existing dashboard
@@ -155,6 +156,10 @@ Shared contract shape:
   future closed-gate, health-failure, render-success, service-error, MCP
   metadata, CLI output, and token-safe auth fixtures with
   `integrationFixtureHarness.dispatch:false` and `networkDispatch:false`.
+- P25.19 dispatch registration preflight fields are planning-only. They define
+  final readiness checks for future executable registration with
+  `dispatchRegistrationPreflight.dispatch:false`,
+  `networkDispatch:false`, and `runtimeRegistration:false`.
 - Exporter service execution is out of scope for this command unless a later
   task explicitly maps thumbnail rendering to exporter-compatible semantics.
 - P25.6 selects a future dedicated thumbnail renderer service as the executable
@@ -169,12 +174,13 @@ See `render-thumbnail-runtime-boundary.md` and
 audit, resource-return rules, cache refresh behavior, auth expectations, and
 future test strategy.
 See `render-thumbnail-renderer-service-api.md` and
-`render-thumbnail-renderer-service-fixtures.json` for the P25.18 future
+`render-thumbnail-renderer-service-fixtures.json` for the P25.19 future
 renderer-service request/response API, MCP/CLI dry-run/client boundary, and
 metadata-only availability probe plus response/error normalization and disabled
 client request, execution gate, health preflight, and execution harness
 scaffolding, plus the dispatch adapter boundary, opt-in configuration surfaces,
-unavailable error taxonomy, and integration fixture harness.
+unavailable error taxonomy, integration fixture harness, and dispatch
+registration preflight.
 
 ## Fixtures
 

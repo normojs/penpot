@@ -1,11 +1,12 @@
 # Render Thumbnail Renderer Service API
 
-Status: P25.18 API fixtures, MCP/CLI dry-run/client boundaries, metadata-only
+Status: P25.19 API fixtures, MCP/CLI dry-run/client boundaries, metadata-only
 availability probes, response normalization contracts, disabled client request
 scaffold, closed execution gate, disabled health preflight, and executable
 client harness plus dispatch adapter boundary plans, and opt-in configuration
 surfaces plus unavailable error taxonomy and integration fixture harness
-defined; executable runtime registration remains blocked.
+plus dispatch registration preflight defined; executable runtime registration
+remains blocked.
 
 P25.6 selected a dedicated thumbnail renderer service as the future executable
 owner for `render.thumbnail`. This document defines the service-facing request
@@ -67,6 +68,12 @@ name fixture cases for closed gate, missing endpoint, health failure, render
 success, service failure, MCP metadata returns, CLI output gating, and
 token-safe auth. It remains planning data with `dispatch:false`,
 `networkDispatch:false`, and `localFileWrites:false`.
+
+P25.19 defines the executable dispatch registration preflight. Plans now name
+the final readiness checks for explicit opt-in, endpoint config, service
+implementation, integration fixtures, health preflight, dispatch adapter,
+target/cache capabilities, and runtime registration. It remains hard-disabled
+with `dispatch:false`, `networkDispatch:false`, and `runtimeRegistration:false`.
 
 ## Service Boundary
 
@@ -374,6 +381,9 @@ Before `render.thumbnail` becomes executable:
 - keep `integrationFixtureHarness.dispatch`, `networkDispatch`, and
   `localFileWrites` false while using fixture cases to define the future
   integration suite required before executable renderer-service dispatch
+- keep `dispatchRegistrationPreflight.dispatch`, `networkDispatch`, and
+  `runtimeRegistration` false while using readiness checks to document the
+  final gate before executable renderer-service registration
 - extend MCP tests from dry-run/unavailable planning into auth forwarding,
   resource metadata, and renderer-service error responses
 - add CLI smoke tests for dry-run, execution metadata, `--output`, and missing

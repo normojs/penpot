@@ -904,6 +904,18 @@ export function createRenderThumbnailRendererServicePlan(options = EMPTY_OBJECT)
         dispatchAdapterBoundary,
         unavailableErrorTaxonomy,
     });
+    const dispatchRegistrationPreflight = createRenderThumbnailRendererServiceDispatchRegistrationPreflight({
+        client,
+        availability,
+        optInConfiguration,
+        executionGate,
+        healthPreflight,
+        executionClientHarness,
+        dispatchAdapterBoundary,
+        unavailableErrorTaxonomy,
+        integrationFixtureHarness,
+        requiredCapabilities,
+    });
     const clientRequest = createRenderThumbnailRendererServiceClientRequest(
         {
             endpoint,
@@ -1007,6 +1019,7 @@ export function createRenderThumbnailRendererServicePlan(options = EMPTY_OBJECT)
             dispatchAdapterBoundary,
             unavailableErrorTaxonomy,
             integrationFixtureHarness,
+            dispatchRegistrationPreflight,
             clientRequest,
         },
         client,
@@ -1018,6 +1031,7 @@ export function createRenderThumbnailRendererServicePlan(options = EMPTY_OBJECT)
         dispatchAdapterBoundary,
         unavailableErrorTaxonomy,
         integrationFixtureHarness,
+        dispatchRegistrationPreflight,
         clientRequest,
         serviceRequest: {
             command: CommandDescriptors.RENDER_THUMBNAIL.id,
@@ -1089,7 +1103,132 @@ export function createRenderThumbnailRendererServicePlan(options = EMPTY_OBJECT)
             dispatchAdapterBoundaryDispatch: false,
             unavailableErrorTaxonomyVersion: unavailableErrorTaxonomy.taxonomyVersion,
             integrationFixtureHarnessVersion: integrationFixtureHarness.harnessVersion,
+            dispatchRegistrationPreflightVersion: dispatchRegistrationPreflight.preflightVersion,
         },
+    };
+}
+
+export function createRenderThumbnailRendererServiceDispatchRegistrationPreflight(options = EMPTY_OBJECT) {
+    const client = options.client ?? EMPTY_OBJECT;
+    const availability = options.availability ?? EMPTY_OBJECT;
+    const optInConfiguration = options.optInConfiguration ?? EMPTY_OBJECT;
+    const executionGate = options.executionGate ?? EMPTY_OBJECT;
+    const healthPreflight = options.healthPreflight ?? EMPTY_OBJECT;
+    const executionClientHarness = options.executionClientHarness ?? EMPTY_OBJECT;
+    const dispatchAdapterBoundary = options.dispatchAdapterBoundary ?? EMPTY_OBJECT;
+    const unavailableErrorTaxonomy = options.unavailableErrorTaxonomy ?? EMPTY_OBJECT;
+    const integrationFixtureHarness = options.integrationFixtureHarness ?? EMPTY_OBJECT;
+    const requiredCapabilities = Array.isArray(options.requiredCapabilities)
+        ? options.requiredCapabilities.map((item) => normalizeOptionalString(item)).filter(Boolean)
+        : [];
+    const checks = [
+        {
+            id: "explicit-opt-in",
+            source: "executionGate.optIn.configured",
+            required: true,
+            satisfied: Boolean(executionGate.optIn?.configured),
+            blocker: "explicit-opt-in",
+        },
+        {
+            id: "endpoint-configured",
+            source: "client.configured",
+            required: true,
+            satisfied: Boolean(client.configured),
+            blocker: "renderer-service-endpoint",
+        },
+        {
+            id: "service-implemented",
+            source: "executionGate.readiness.serviceImplemented",
+            required: true,
+            satisfied: Boolean(executionGate.readiness?.serviceImplemented),
+            blocker: "thumbnail-renderer-service-implementation",
+        },
+        {
+            id: "integration-fixtures-ready",
+            source: "integrationFixtureHarness.status",
+            required: true,
+            satisfied: integrationFixtureHarness.status === "ready",
+            blocker: "renderer-service-integration-fixtures",
+        },
+        {
+            id: "health-preflight-ready",
+            source: "healthPreflight.status",
+            required: true,
+            satisfied: healthPreflight.status === "ok",
+            blocker: "renderer-service-health-preflight",
+        },
+        {
+            id: "dispatch-adapter-ready",
+            source: "dispatchAdapterBoundary.status",
+            required: true,
+            satisfied: dispatchAdapterBoundary.status === "ready",
+            blocker: "renderer-service-dispatch-adapter",
+        },
+        {
+            id: "runtime-registration-ready",
+            source: "command-runtime registration",
+            required: true,
+            satisfied: false,
+            blocker: "runtime-execution-registration",
+        },
+    ];
+    const capabilityChecks = requiredCapabilities.map((name) => ({
+        id: `capability:${name}`,
+        source: "executionGate.readiness.requiredCapabilities",
+        required: true,
+        satisfied: Boolean(
+            executionGate.readiness?.requiredCapabilities?.some((capability) => capability.name === name && capability.satisfied)
+        ),
+        blocker: name,
+    }));
+    const allChecks = [...checks, ...capabilityChecks];
+    const blockers = Array.from(new Set(allChecks.filter((check) => !check.satisfied).map((check) => check.blocker)));
+
+    return {
+        status: "planned-disabled",
+        dispatch: false,
+        networkDispatch: false,
+        runtimeRegistration: false,
+        localFileWrites: false,
+        preflightVersion: "P25.19",
+        reason: "renderer-service executable dispatch registration preflight is documented but disabled until all readiness checks pass in a future implementation task",
+        current: {
+            clientConfigured: Boolean(client.configured),
+            availabilityStatus: availability.status ?? "unknown",
+            optInConfigurationStatus: optInConfiguration.status ?? "planned-disabled",
+            executionGateStatus: executionGate.status ?? "closed",
+            healthPreflightStatus: healthPreflight.status ?? "planned-disabled",
+            executionClientHarnessStatus: executionClientHarness.status ?? "planned-disabled",
+            dispatchAdapterBoundaryStatus: dispatchAdapterBoundary.status ?? "planned-disabled",
+            unavailableErrorTaxonomyVersion: unavailableErrorTaxonomy.taxonomyVersion ?? "P25.17",
+            integrationFixtureHarnessVersion: integrationFixtureHarness.harnessVersion ?? "P25.18",
+        },
+        checks: allChecks,
+        blockers,
+        readiness: {
+            allChecksSatisfied: blockers.length === 0,
+            mayRegisterDispatch: false,
+            reason: "runtime registration remains hard-disabled by this planning step even if future readiness inputs are supplied",
+        },
+        registrationPlan: {
+            targetAdapter: "renderer-service",
+            descriptorAdapterAlreadyPresent: true,
+            runtimeExecutionRegistered: false,
+            requiredFutureToggle: "PENPOT_RENDER_THUMBNAIL_EXECUTION=renderer-service",
+            requiredAssertions: [
+                "closed gate and missing endpoint fail before fetch",
+                "health preflight failure prevents render POST",
+                "render success normalizes resource metadata before MCP/CLI return",
+                "CLI --output writes only after normalized downloadUri exists",
+                "service errors map through unavailable error taxonomy",
+                "auth forwarding keeps token values out of planning and test fixtures",
+            ],
+        },
+        nextActions: [
+            "Implement renderer-service integration fixtures before changing this preflight status.",
+            "Only register executable dispatch after all checks are satisfied in a dedicated implementation task.",
+            "Keep dry-run and unavailable execution responses metadata-only until runtime registration is explicitly enabled.",
+        ],
     };
 }
 

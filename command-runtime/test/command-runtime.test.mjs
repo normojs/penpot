@@ -20,6 +20,7 @@ import {
     createRenderThumbnailContract,
     createRenderThumbnailRendererServiceClientRequest,
     createRenderThumbnailRendererServiceDispatchAdapterBoundary,
+    createRenderThumbnailRendererServiceDispatchRegistrationPreflight,
     createRenderThumbnailRendererServiceExecutionGate,
     createRenderThumbnailRendererServiceExecutionClientHarness,
     createRenderThumbnailRendererServiceHealthPreflight,
@@ -445,6 +446,10 @@ test("render.thumbnail renderer-service API fixtures define planning requests wi
     assert.equal(fixtures.serviceApi.integrationFixtureHarness.harnessVersion, "P25.18");
     assert.equal(fixtures.serviceApi.integrationFixtureHarness.dispatch, false);
     assert.ok(fixtures.serviceApi.integrationFixtureHarness.cases.includes("closed-gate-no-network"));
+    assert.equal(fixtures.serviceApi.dispatchRegistrationPreflight.preflightVersion, "P25.19");
+    assert.equal(fixtures.serviceApi.dispatchRegistrationPreflight.dispatch, false);
+    assert.equal(fixtures.serviceApi.dispatchRegistrationPreflight.runtimeRegistration, false);
+    assert.ok(fixtures.serviceApi.dispatchRegistrationPreflight.requiredChecks.includes("runtime-registration-ready"));
     assert.deepEqual(fixtures.runtimeRegistration.commandDescriptorAdapters, ["renderer-service"]);
     assert.deepEqual(CommandDescriptors.RENDER_THUMBNAIL.adapters, ["renderer-service"]);
     assert.equal(fixtures.runtimeRegistration.mcpToolRegistered, true);
@@ -588,6 +593,12 @@ test("render.thumbnail renderer-service plan exposes dry-run client request whil
     assert.equal(plan.integrationFixtureHarness.localFileWrites, false);
     assert.ok(plan.integrationFixtureHarness.cases.some((entry) => entry.id === "render-success-cli-output-download"));
     assert.deepEqual(plan.service.integrationFixtureHarness, plan.integrationFixtureHarness);
+    assert.equal(plan.dispatchRegistrationPreflight.preflightVersion, "P25.19");
+    assert.equal(plan.dispatchRegistrationPreflight.dispatch, false);
+    assert.equal(plan.dispatchRegistrationPreflight.networkDispatch, false);
+    assert.equal(plan.dispatchRegistrationPreflight.runtimeRegistration, false);
+    assert.ok(plan.dispatchRegistrationPreflight.blockers.includes("runtime-execution-registration"));
+    assert.deepEqual(plan.service.dispatchRegistrationPreflight, plan.dispatchRegistrationPreflight);
     assert.equal(plan.clientRequest.status, "scaffolded");
     assert.equal(plan.clientRequest.dispatch, false);
     assert.equal(plan.clientRequest.method, "POST");
@@ -622,6 +633,7 @@ test("render.thumbnail renderer-service plan exposes dry-run client request whil
     assert.equal(plan.diagnostics.dispatchAdapterBoundaryDispatch, false);
     assert.equal(plan.diagnostics.unavailableErrorTaxonomyVersion, "P25.17");
     assert.equal(plan.diagnostics.integrationFixtureHarnessVersion, "P25.18");
+    assert.equal(plan.diagnostics.dispatchRegistrationPreflightVersion, "P25.19");
 });
 
 test("render.thumbnail renderer-service plan reports not-configured availability without endpoint", () => {
@@ -819,6 +831,49 @@ test("render.thumbnail renderer-service integration fixture harness plans no-dis
     assert.equal(harness.fixtureInputs.fileRefresh.expectedPersistCommand, "create-file-thumbnail");
     assert.equal(harness.fixtureInputs.frameRefresh.expectedPersistCommand, "create-file-object-thumbnail");
     assert.ok(harness.requiredBeforeDispatch.some((entry) => entry.includes("closed gate fixture")));
+});
+
+test("render.thumbnail renderer-service dispatch registration preflight stays hard-disabled", () => {
+    const preflight = createRenderThumbnailRendererServiceDispatchRegistrationPreflight({
+        client: { configured: true },
+        availability: { status: "configured-unverified" },
+        optInConfiguration: { status: "planned-disabled" },
+        executionGate: {
+            status: "closed",
+            optIn: { configured: true },
+            readiness: {
+                serviceImplemented: true,
+                requiredCapabilities: [{ name: "thumbnail-renderer-service-implementation", satisfied: true }],
+            },
+        },
+        healthPreflight: { status: "planned-disabled" },
+        executionClientHarness: { status: "planned-disabled" },
+        dispatchAdapterBoundary: { status: "planned-disabled" },
+        unavailableErrorTaxonomy: { taxonomyVersion: "P25.17" },
+        integrationFixtureHarness: { harnessVersion: "P25.18", status: "planned-disabled" },
+        requiredCapabilities: ["thumbnail-renderer-service-implementation", "file-thumbnail-cache-probe"],
+    });
+    const checkIds = preflight.checks.map((entry) => entry.id);
+
+    assert.equal(preflight.status, "planned-disabled");
+    assert.equal(preflight.dispatch, false);
+    assert.equal(preflight.networkDispatch, false);
+    assert.equal(preflight.runtimeRegistration, false);
+    assert.equal(preflight.localFileWrites, false);
+    assert.equal(preflight.preflightVersion, "P25.19");
+    assert.ok(checkIds.includes("explicit-opt-in"));
+    assert.ok(checkIds.includes("integration-fixtures-ready"));
+    assert.ok(checkIds.includes("runtime-registration-ready"));
+    assert.ok(checkIds.includes("capability:file-thumbnail-cache-probe"));
+    assert.equal(preflight.readiness.mayRegisterDispatch, false);
+    assert.equal(preflight.registrationPlan.targetAdapter, "renderer-service");
+    assert.equal(preflight.registrationPlan.runtimeExecutionRegistered, false);
+    assert.ok(preflight.blockers.includes("renderer-service-integration-fixtures"));
+    assert.ok(preflight.blockers.includes("renderer-service-health-preflight"));
+    assert.ok(preflight.blockers.includes("renderer-service-dispatch-adapter"));
+    assert.ok(preflight.blockers.includes("runtime-execution-registration"));
+    assert.ok(preflight.blockers.includes("file-thumbnail-cache-probe"));
+    assert.ok(preflight.nextActions.some((entry) => entry.includes("Only register executable dispatch")));
 });
 
 test("render.thumbnail renderer-service client request scaffold adds MCP audit headers without dispatch", () => {

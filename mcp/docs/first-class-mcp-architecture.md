@@ -2251,6 +2251,18 @@ P25.18 render.thumbnail integration fixture harness result:
 - `integrationFixtureHarness.dispatch`, `networkDispatch`, and
   `localFileWrites` remain `false`.
 
+P25.19 render.thumbnail dispatch registration preflight result:
+
+- Shared plans include `dispatchRegistrationPreflight` with readiness checks
+  for opt-in, endpoint config, service implementation, fixture harness, health
+  preflight, dispatch adapter, runtime registration, and target/cache
+  capabilities.
+- MCP and CLI expose the preflight in dry-run and unavailable execution
+  payloads so the executable registration checklist is visible before runtime
+  paths exist.
+- `dispatchRegistrationPreflight.dispatch`, `networkDispatch`,
+  `runtimeRegistration`, and `localFileWrites` remain `false`.
+
 ### 8.5 Export and Render Tools
 
 May start file-bound and later move to headless:
@@ -2277,7 +2289,8 @@ request scaffold, P25.13 adds the closed execution gate plus integration-test
 plan, P25.14 adds disabled health preflight plus executable client harness
 plans, P25.15 adds the disabled dispatch adapter boundary, P25.16 adds
 opt-in configuration surfaces, P25.17 adds unavailable error taxonomy, and
-P25.18 adds the integration fixture harness.
+P25.18 adds the integration fixture harness. P25.19 adds dispatch registration
+preflight.
 Runtime behavior remains unavailable
 until opt-in config surfaces, renderer-service implementation, health preflight,
 cache probe, executable client, and tagged-frame capabilities are implemented.
