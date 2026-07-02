@@ -1,7 +1,7 @@
 {
-  "version": "P25.16",
+  "version": "P25.17",
   "command": "render.thumbnail",
-  "status": "runtime boundary audited; MCP/CLI planning, metadata-only availability probes, response normalization contracts, disabled client request scaffold, closed execution gate, health preflight plan, executable client harness plan, dispatch adapter boundary, and opt-in configuration surfaces registered; runtime execution blocked",
+  "status": "runtime boundary audited; MCP/CLI planning, metadata-only availability probes, response normalization contracts, disabled client request scaffold, closed execution gate, health preflight plan, executable client harness plan, dispatch adapter boundary, opt-in configuration surfaces, and unavailable error taxonomy registered; runtime execution blocked",
   "selectedBoundary": "thumbnail-renderer-service",
   "runtimeRegistration": {
     "mcpToolRegistered": true,
@@ -175,6 +175,38 @@
       "renderPostDispatch": false,
       "localFileWrites": false
     }
+  },
+  "unavailableErrorTaxonomy": {
+    "status": "planned",
+    "dispatch": false,
+    "taxonomyVersion": "P25.17",
+    "defaultCode": "renderer_service_unavailable",
+    "codes": [
+      "renderer_service_unavailable",
+      "renderer_service_not_configured",
+      "renderer_service_execution_disabled",
+      "renderer_service_preflight_disabled",
+      "renderer_service_health_unavailable",
+      "renderer_service_health_invalid",
+      "renderer_service_dispatch_disabled",
+      "renderer_service_response_invalid",
+      "renderer_service_resource_missing"
+    ],
+    "retryableCodes": ["renderer_service_health_unavailable"],
+    "payloadFields": [
+      "command",
+      "adapter",
+      "endpoint",
+      "client",
+      "availability",
+      "executionGate",
+      "healthPreflight",
+      "dispatchAdapterBoundary",
+      "clientRequest",
+      "requiredCapabilities",
+      "serviceRequest",
+      "unavailableErrorTaxonomy"
+    ]
   },
   "testStrategy": [
     "Keep command-runtime descriptor tests asserting render.thumbnail only exposes the renderer-service planning adapter until execution exists.",

@@ -882,3 +882,13 @@ P25.16 adds renderer-service opt-in configuration surfaces:
   reported without enabling execution.
 - `optInConfiguration.dispatch` is always `false`, and configuration alone
   cannot open the execution gate.
+
+P25.17 adds renderer-service unavailable error taxonomy:
+
+- Plans include `unavailableErrorTaxonomy` with stable configuration,
+  execution-gate, health-preflight, dispatch-adapter, response-normalization,
+  and resource-normalization codes.
+- `renderer_service_health_unavailable` is the only planned retryable code;
+  pre-implementation gate/config/dispatch failures are non-retryable.
+- MCP/CLI dry-run and unavailable responses expose the taxonomy while
+  `unavailableErrorTaxonomy.dispatch` remains `false`.

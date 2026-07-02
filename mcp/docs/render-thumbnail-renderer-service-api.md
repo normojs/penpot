@@ -1,10 +1,11 @@
 # Render Thumbnail Renderer Service API
 
-Status: P25.16 API fixtures, MCP/CLI dry-run/client boundaries, metadata-only
+Status: P25.17 API fixtures, MCP/CLI dry-run/client boundaries, metadata-only
 availability probes, response normalization contracts, disabled client request
 scaffold, closed execution gate, disabled health preflight, and executable
 client harness plus dispatch adapter boundary plans, and opt-in configuration
-surfaces defined; executable runtime registration remains blocked.
+surfaces plus unavailable error taxonomy defined; executable runtime
+registration remains blocked.
 
 P25.6 selected a dedicated thumbnail renderer service as the future executable
 owner for `render.thumbnail`. This document defines the service-facing request
@@ -54,6 +55,12 @@ replace metadata-only availability or perform health/render network calls.
 P25.16 defines the future opt-in configuration surfaces. CLI, MCP, environment,
 profile, and backend config sources are resolved into diagnostics, but
 configuration alone cannot open the gate or enable dispatch.
+
+P25.17 defines the renderer-service unavailable error taxonomy. Plans now name
+stable configuration, execution-gate, health-preflight, dispatch,
+response-normalization, and resource-normalization error codes with
+retryability and MCP/CLI payload fields. It remains planning data with
+`dispatch:false`.
 
 ## Service Boundary
 
@@ -355,6 +362,9 @@ Before `render.thumbnail` becomes executable:
   surfaces and executable adapter registration are implemented
 - keep `optInConfiguration.dispatch` false and treat opt-in values as
   diagnostics-only until runtime dispatch is explicitly implemented
+- keep `unavailableErrorTaxonomy.dispatch` false and expose stable
+  unavailable/preflight/dispatch/resource codes in dry-run and unavailable
+  responses before executable network paths exist
 - extend MCP tests from dry-run/unavailable planning into auth forwarding,
   resource metadata, and renderer-service error responses
 - add CLI smoke tests for dry-run, execution metadata, `--output`, and missing

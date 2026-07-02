@@ -888,6 +888,13 @@ export function createRenderThumbnailRendererServicePlan(options = EMPTY_OBJECT)
         healthPreflight,
         executionClientHarness,
     });
+    const unavailableErrorTaxonomy = createRenderThumbnailRendererServiceUnavailableErrorTaxonomy({
+        client,
+        availability,
+        executionGate,
+        healthPreflight,
+        dispatchAdapterBoundary,
+    });
     const clientRequest = createRenderThumbnailRendererServiceClientRequest(
         {
             endpoint,
@@ -989,6 +996,7 @@ export function createRenderThumbnailRendererServicePlan(options = EMPTY_OBJECT)
             healthPreflight,
             executionClientHarness,
             dispatchAdapterBoundary,
+            unavailableErrorTaxonomy,
             clientRequest,
         },
         client,
@@ -998,6 +1006,7 @@ export function createRenderThumbnailRendererServicePlan(options = EMPTY_OBJECT)
         healthPreflight,
         executionClientHarness,
         dispatchAdapterBoundary,
+        unavailableErrorTaxonomy,
         clientRequest,
         serviceRequest: {
             command: CommandDescriptors.RENDER_THUMBNAIL.id,
@@ -1067,6 +1076,163 @@ export function createRenderThumbnailRendererServicePlan(options = EMPTY_OBJECT)
             executionClientHarnessDispatch: false,
             dispatchAdapterBoundaryStatus: dispatchAdapterBoundary.status,
             dispatchAdapterBoundaryDispatch: false,
+            unavailableErrorTaxonomyVersion: unavailableErrorTaxonomy.taxonomyVersion,
+        },
+    };
+}
+
+export function createRenderThumbnailRendererServiceUnavailableErrorTaxonomy(options = EMPTY_OBJECT) {
+    const client = options.client ?? EMPTY_OBJECT;
+    const availability = options.availability ?? EMPTY_OBJECT;
+    const executionGate = options.executionGate ?? EMPTY_OBJECT;
+    const healthPreflight = options.healthPreflight ?? EMPTY_OBJECT;
+    const dispatchAdapterBoundary = options.dispatchAdapterBoundary ?? EMPTY_OBJECT;
+
+    return {
+        status: "planned",
+        dispatch: false,
+        taxonomyVersion: "P25.17",
+        defaultCode: "renderer_service_unavailable",
+        current: {
+            clientConfigured: Boolean(client.configured),
+            availabilityStatus: availability.status ?? "unknown",
+            executionGateStatus: executionGate.status ?? "closed",
+            healthPreflightStatus: healthPreflight.status ?? "planned-disabled",
+            dispatchAdapterBoundaryStatus: dispatchAdapterBoundary.status ?? "planned-disabled",
+        },
+        errors: [
+            {
+                code: "renderer_service_unavailable",
+                stage: "execution-gate",
+                retryable: false,
+                when: "renderer-service execution is requested while runtime execution remains unimplemented",
+                action: "Use dry-run planning or implement the gated renderer-service runtime before retrying execution.",
+            },
+            {
+                code: "renderer_service_not_configured",
+                stage: "configuration",
+                retryable: false,
+                when: "renderer-service endpoint configuration is missing",
+                action: "Configure rendererServiceUri, rendererUri, endpoint, or PENPOT_RENDERER_SERVICE_URI.",
+            },
+            {
+                code: "renderer_service_execution_disabled",
+                stage: "execution-gate",
+                retryable: false,
+                when: "explicit renderer-service opt-in is absent or runtime registration is closed",
+                action: "Set the documented opt-in value only after the renderer-service implementation and tests exist.",
+            },
+            {
+                code: "renderer_service_preflight_disabled",
+                stage: "health-preflight",
+                retryable: false,
+                when: "the execution gate is closed before the health preflight can run",
+                action: "Open the execution gate through a future implementation task before health probing.",
+            },
+            {
+                code: "renderer_service_health_unavailable",
+                stage: "health-preflight",
+                retryable: true,
+                when: "the future health endpoint is unreachable, times out, or returns a non-ok status",
+                action: "Check renderer-service health, logs, endpoint, and timeout configuration before retrying.",
+            },
+            {
+                code: "renderer_service_health_invalid",
+                stage: "health-preflight",
+                retryable: false,
+                when: "the future health response is malformed or missing required renderer metadata",
+                action: "Fix the renderer-service health response contract before enabling render dispatch.",
+            },
+            {
+                code: "renderer_service_dispatch_disabled",
+                stage: "dispatch-adapter",
+                retryable: false,
+                when: "the dispatch adapter boundary is still metadata-only",
+                action: "Register executable dispatch only after preflight and integration fixture coverage pass.",
+            },
+            {
+                code: "renderer_service_response_invalid",
+                stage: "response-normalization",
+                retryable: false,
+                when: "the renderer-service render response cannot be normalized into thumbnail resource metadata",
+                action: "Return status ok with resourceUri, uri, resource-uri, or mediaId plus image/png metadata.",
+            },
+            {
+                code: "renderer_service_resource_missing",
+                stage: "resource-normalization",
+                retryable: false,
+                when: "a normalized renderer-service response has no downloadable resource reference",
+                action: "Persist the rendered PNG and return a backend-resolvable resource URI before reporting success.",
+            },
+        ],
+        stages: [
+            "configuration",
+            "execution-gate",
+            "health-preflight",
+            "dispatch-adapter",
+            "response-normalization",
+            "resource-normalization",
+        ],
+        retryPolicy: {
+            retryableCodes: ["renderer_service_health_unavailable"],
+            nonRetryableBeforeImplementation: [
+                "renderer_service_unavailable",
+                "renderer_service_not_configured",
+                "renderer_service_execution_disabled",
+                "renderer_service_preflight_disabled",
+                "renderer_service_dispatch_disabled",
+            ],
+        },
+        payloadFields: {
+            common: [
+                "command",
+                "adapter",
+                "endpoint",
+                "client",
+                "availability",
+                "executionGate",
+                "healthPreflight",
+                "dispatchAdapterBoundary",
+                "clientRequest",
+                "requiredCapabilities",
+                "serviceRequest",
+                "unavailableErrorTaxonomy",
+            ],
+            mcp: [
+                "localFileWrites:false",
+                "resource metadata only",
+                "do not expose forwarded token values",
+            ],
+            cli: [
+                "optional output metadata only after resource downloadUri exists",
+                "do not download PNG bytes until normalized render success",
+            ],
+        },
+        actionsByStage: {
+            configuration: [
+                "Resolve endpoint and timeout from command args, environment, profile, or backend config.",
+                "Do not contact the renderer-service during dry-run planning.",
+            ],
+            "execution-gate": [
+                "Return a structured unavailable error before health preflight while the gate is closed.",
+                "Require explicit opt-in, service implementation, integration tests, and runtime registration.",
+            ],
+            "health-preflight": [
+                "Run GET health only after the execution gate opens.",
+                "Normalize unreachable and malformed health responses into stable preflight codes.",
+            ],
+            "dispatch-adapter": [
+                "Send render POST only after gate and preflight pass.",
+                "Keep dispatch false in all current planning responses.",
+            ],
+            "response-normalization": [
+                "Normalize successful render responses through createRenderThumbnailRendererServiceResult.",
+                "Normalize service failures through createRenderThumbnailRendererServiceErrorPayload.",
+            ],
+            "resource-normalization": [
+                "MCP returns resource metadata without local file writes.",
+                "CLI --output downloads only after a normalized downloadUri exists.",
+            ],
         },
     };
 }

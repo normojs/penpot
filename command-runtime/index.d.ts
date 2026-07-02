@@ -438,6 +438,7 @@ export interface RenderThumbnailRendererServicePlan {
         healthPreflight: RenderThumbnailRendererServiceHealthPreflight;
         executionClientHarness: RenderThumbnailRendererServiceExecutionClientHarness;
         dispatchAdapterBoundary: RenderThumbnailRendererServiceDispatchAdapterBoundary;
+        unavailableErrorTaxonomy: RenderThumbnailRendererServiceUnavailableErrorTaxonomy;
         clientRequest: RenderThumbnailRendererServiceClientRequest;
     };
     client: RenderThumbnailRendererServiceClientConfig;
@@ -447,6 +448,7 @@ export interface RenderThumbnailRendererServicePlan {
     healthPreflight: RenderThumbnailRendererServiceHealthPreflight;
     executionClientHarness: RenderThumbnailRendererServiceExecutionClientHarness;
     dispatchAdapterBoundary: RenderThumbnailRendererServiceDispatchAdapterBoundary;
+    unavailableErrorTaxonomy: RenderThumbnailRendererServiceUnavailableErrorTaxonomy;
     clientRequest: RenderThumbnailRendererServiceClientRequest;
     serviceRequest: {
         command: "render.thumbnail";
@@ -516,6 +518,7 @@ export interface RenderThumbnailRendererServicePlan {
         executionClientHarnessDispatch: false;
         dispatchAdapterBoundaryStatus: "planned-disabled";
         dispatchAdapterBoundaryDispatch: false;
+        unavailableErrorTaxonomyVersion: "P25.17";
     };
 }
 
@@ -745,6 +748,57 @@ export interface RenderThumbnailRendererServiceDispatchAdapterBoundary {
         status: "required-before-adapter-dispatch";
         cases: string[];
     };
+}
+
+export type RenderThumbnailRendererServiceUnavailableErrorStage =
+    | "configuration"
+    | "execution-gate"
+    | "health-preflight"
+    | "dispatch-adapter"
+    | "response-normalization"
+    | "resource-normalization";
+
+export type RenderThumbnailRendererServiceUnavailableErrorCode =
+    | "renderer_service_unavailable"
+    | "renderer_service_not_configured"
+    | "renderer_service_execution_disabled"
+    | "renderer_service_preflight_disabled"
+    | "renderer_service_health_unavailable"
+    | "renderer_service_health_invalid"
+    | "renderer_service_dispatch_disabled"
+    | "renderer_service_response_invalid"
+    | "renderer_service_resource_missing";
+
+export interface RenderThumbnailRendererServiceUnavailableErrorTaxonomy {
+    status: "planned";
+    dispatch: false;
+    taxonomyVersion: "P25.17";
+    defaultCode: "renderer_service_unavailable";
+    current: {
+        clientConfigured: boolean;
+        availabilityStatus: string;
+        executionGateStatus: string;
+        healthPreflightStatus: string;
+        dispatchAdapterBoundaryStatus: string;
+    };
+    errors: Array<{
+        code: RenderThumbnailRendererServiceUnavailableErrorCode;
+        stage: RenderThumbnailRendererServiceUnavailableErrorStage;
+        retryable: boolean;
+        when: string;
+        action: string;
+    }>;
+    stages: RenderThumbnailRendererServiceUnavailableErrorStage[];
+    retryPolicy: {
+        retryableCodes: RenderThumbnailRendererServiceUnavailableErrorCode[];
+        nonRetryableBeforeImplementation: RenderThumbnailRendererServiceUnavailableErrorCode[];
+    };
+    payloadFields: {
+        common: string[];
+        mcp: string[];
+        cli: string[];
+    };
+    actionsByStage: Record<RenderThumbnailRendererServiceUnavailableErrorStage, string[]>;
 }
 
 export interface CreateRenderThumbnailRendererServiceClientRequestOptions {
@@ -1004,6 +1058,15 @@ export function createRenderThumbnailRendererServiceDispatchAdapterBoundary(
         executionClientHarness?: Partial<RenderThumbnailRendererServiceExecutionClientHarness> | null;
     }
 ): RenderThumbnailRendererServiceDispatchAdapterBoundary;
+export function createRenderThumbnailRendererServiceUnavailableErrorTaxonomy(
+    options?: {
+        client?: Partial<RenderThumbnailRendererServiceClientConfig> | null;
+        availability?: Partial<RenderThumbnailRendererServiceAvailability> | null;
+        executionGate?: Partial<RenderThumbnailRendererServiceExecutionGate> | null;
+        healthPreflight?: Partial<RenderThumbnailRendererServiceHealthPreflight> | null;
+        dispatchAdapterBoundary?: Partial<RenderThumbnailRendererServiceDispatchAdapterBoundary> | null;
+    }
+): RenderThumbnailRendererServiceUnavailableErrorTaxonomy;
 export function createRenderThumbnailRendererServiceClientRequest(
     plan: Partial<RenderThumbnailRendererServicePlan>,
     options?: CreateRenderThumbnailRendererServiceClientRequestOptions

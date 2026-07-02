@@ -24,6 +24,7 @@ import {
     createRenderThumbnailRendererServiceExecutionClientHarness,
     createRenderThumbnailRendererServiceHealthPreflight,
     createRenderThumbnailRendererServiceOptInConfiguration,
+    createRenderThumbnailRendererServiceUnavailableErrorTaxonomy,
     createRenderThumbnailRendererServiceErrorPayload,
     createRenderThumbnailRendererServicePlan,
     createRenderThumbnailRendererServiceResult,
@@ -437,6 +438,9 @@ test("render.thumbnail renderer-service API fixtures define planning requests wi
     assert.equal(fixtures.serviceApi.optInConfiguration.status, "planned-disabled");
     assert.equal(fixtures.serviceApi.optInConfiguration.dispatch, false);
     assert.equal(fixtures.serviceApi.optInConfiguration.expectedValue, "renderer-service");
+    assert.equal(fixtures.serviceApi.unavailableErrorTaxonomy.taxonomyVersion, "P25.17");
+    assert.equal(fixtures.serviceApi.unavailableErrorTaxonomy.dispatch, false);
+    assert.ok(fixtures.serviceApi.unavailableErrorTaxonomy.codes.includes("renderer_service_health_unavailable"));
     assert.deepEqual(fixtures.runtimeRegistration.commandDescriptorAdapters, ["renderer-service"]);
     assert.deepEqual(CommandDescriptors.RENDER_THUMBNAIL.adapters, ["renderer-service"]);
     assert.equal(fixtures.runtimeRegistration.mcpToolRegistered, true);
@@ -570,6 +574,10 @@ test("render.thumbnail renderer-service plan exposes dry-run client request whil
     assert.deepEqual(plan.service.healthPreflight, plan.healthPreflight);
     assert.deepEqual(plan.service.executionClientHarness, plan.executionClientHarness);
     assert.deepEqual(plan.service.dispatchAdapterBoundary, plan.dispatchAdapterBoundary);
+    assert.equal(plan.unavailableErrorTaxonomy.taxonomyVersion, "P25.17");
+    assert.equal(plan.unavailableErrorTaxonomy.dispatch, false);
+    assert.equal(plan.unavailableErrorTaxonomy.defaultCode, "renderer_service_unavailable");
+    assert.deepEqual(plan.service.unavailableErrorTaxonomy, plan.unavailableErrorTaxonomy);
     assert.equal(plan.clientRequest.status, "scaffolded");
     assert.equal(plan.clientRequest.dispatch, false);
     assert.equal(plan.clientRequest.method, "POST");
@@ -602,6 +610,7 @@ test("render.thumbnail renderer-service plan exposes dry-run client request whil
     assert.equal(plan.diagnostics.executionClientHarnessDispatch, false);
     assert.equal(plan.diagnostics.dispatchAdapterBoundaryStatus, "planned-disabled");
     assert.equal(plan.diagnostics.dispatchAdapterBoundaryDispatch, false);
+    assert.equal(plan.diagnostics.unavailableErrorTaxonomyVersion, "P25.17");
 });
 
 test("render.thumbnail renderer-service plan reports not-configured availability without endpoint", () => {
@@ -716,6 +725,43 @@ test("render.thumbnail renderer-service dispatch adapter boundary stays no-dispa
     assert.equal(boundary.noDispatchDefaults.renderPostDispatch, false);
     assert.equal(boundary.resultMapping.errorHelper, "createRenderThumbnailRendererServiceErrorPayload");
     assert.ok(boundary.integrationTestPlan.cases.some((entry) => entry.includes("config precedence")));
+});
+
+test("render.thumbnail renderer-service unavailable error taxonomy defines stable no-dispatch codes", () => {
+    const taxonomy = createRenderThumbnailRendererServiceUnavailableErrorTaxonomy({
+        client: { configured: true },
+        availability: { status: "configured-unverified" },
+        executionGate: { status: "closed" },
+        healthPreflight: { status: "planned-disabled" },
+        dispatchAdapterBoundary: { status: "planned-disabled" },
+    });
+    const codes = taxonomy.errors.map((entry) => entry.code);
+    const retryable = taxonomy.errors.filter((entry) => entry.retryable).map((entry) => entry.code);
+
+    assert.equal(taxonomy.status, "planned");
+    assert.equal(taxonomy.dispatch, false);
+    assert.equal(taxonomy.taxonomyVersion, "P25.17");
+    assert.equal(taxonomy.defaultCode, "renderer_service_unavailable");
+    assert.deepEqual(codes, [
+        "renderer_service_unavailable",
+        "renderer_service_not_configured",
+        "renderer_service_execution_disabled",
+        "renderer_service_preflight_disabled",
+        "renderer_service_health_unavailable",
+        "renderer_service_health_invalid",
+        "renderer_service_dispatch_disabled",
+        "renderer_service_response_invalid",
+        "renderer_service_resource_missing",
+    ]);
+    assert.deepEqual(retryable, ["renderer_service_health_unavailable"]);
+    assert.ok(taxonomy.stages.includes("configuration"));
+    assert.ok(taxonomy.stages.includes("resource-normalization"));
+    assert.ok(taxonomy.payloadFields.common.includes("unavailableErrorTaxonomy"));
+    assert.ok(taxonomy.payloadFields.mcp.includes("resource metadata only"));
+    assert.ok(taxonomy.payloadFields.cli.includes("do not download PNG bytes until normalized render success"));
+    assert.equal(taxonomy.current.clientConfigured, true);
+    assert.equal(taxonomy.current.availabilityStatus, "configured-unverified");
+    assert.equal(taxonomy.current.dispatchAdapterBoundaryStatus, "planned-disabled");
 });
 
 test("render.thumbnail renderer-service client request scaffold adds MCP audit headers without dispatch", () => {

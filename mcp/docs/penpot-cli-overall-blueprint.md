@@ -267,6 +267,9 @@ Current state:
 - Done: renderer-service opt-in configuration surfaces record CLI flag, MCP
   arg, environment, profile/backend keys, precedence diagnostics, and
   invalid-value diagnostics without enabling dispatch.
+- Done: renderer-service unavailable error taxonomy records stable
+  configuration, execution-gate, health-preflight, dispatch, response, and
+  resource error codes with retryability and MCP/CLI payload fields.
 - Done: focused command-runtime tests cover descriptor groups, lookup,
   adapter-selection priority/error cases, and token-safe envelopes.
 - Status: complete. Later command coverage gaps were tracked by the P15.1
@@ -724,6 +727,15 @@ P25.16 is complete:
    as future surfaces.
 3. Valid and invalid values are diagnostic only; configuration alone cannot
    open the gate or enable dispatch.
+
+P25.17 is complete:
+
+1. Shared plans include `unavailableErrorTaxonomy` metadata for stable
+   renderer-service unavailable/preflight/dispatch/resource error codes.
+2. MCP and CLI dry-run plus unavailable execution payloads expose the taxonomy
+   without enabling renderer-service network dispatch.
+3. `renderer_service_health_unavailable` is the only planned retryable code;
+   pre-implementation config/gate/dispatch errors remain non-retryable.
 
 Keep manual configuration behavior stable while moving command metadata and
 envelopes; transport-specific formatting should stay at the MCP/CLI edges.

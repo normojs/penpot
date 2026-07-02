@@ -2230,6 +2230,16 @@ P25.16 render.thumbnail opt-in configuration result:
 - `optInConfiguration.dispatch` remains `false`, and configuration alone cannot
   open the execution gate.
 
+P25.17 render.thumbnail unavailable error taxonomy result:
+
+- Shared plans include `unavailableErrorTaxonomy` with stable codes for
+  configuration, execution gate, health preflight, dispatch adapter, response
+  normalization, and resource normalization.
+- MCP and CLI expose the taxonomy in dry-run and unavailable execution payloads
+  so agents can reason about retryability before network dispatch exists.
+- `unavailableErrorTaxonomy.dispatch` remains `false`; no renderer-service,
+  backend, exporter, plugin, or local file path is executed by this step.
+
 ### 8.5 Export and Render Tools
 
 May start file-bound and later move to headless:
@@ -2254,8 +2264,9 @@ metadata-only renderer-service availability probes. P25.11 defines response
 normalization and error payloads, P25.12 adds the disabled execution client
 request scaffold, P25.13 adds the closed execution gate plus integration-test
 plan, P25.14 adds disabled health preflight plus executable client harness
-plans, P25.15 adds the disabled dispatch adapter boundary, and P25.16 adds
-opt-in configuration surfaces. Runtime behavior remains unavailable
+plans, P25.15 adds the disabled dispatch adapter boundary, P25.16 adds
+opt-in configuration surfaces, and P25.17 adds unavailable error taxonomy.
+Runtime behavior remains unavailable
 until opt-in config surfaces, renderer-service implementation, health preflight,
 cache probe, executable client, and tagged-frame capabilities are implemented.
 

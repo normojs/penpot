@@ -1,7 +1,7 @@
 {
-  "version": "P25.16",
+  "version": "P25.17",
   "command": "render.thumbnail",
-  "status": "renderer-service API fixtures with MCP/CLI dry-run/client boundaries, metadata-only availability probes, response normalization contracts, disabled client request scaffold, explicit execution gate, health preflight plan, executable client harness plan, dispatch adapter boundary, and opt-in configuration surfaces; runtime execution blocked",
+  "status": "renderer-service API fixtures with MCP/CLI dry-run/client boundaries, metadata-only availability probes, response normalization contracts, disabled client request scaffold, explicit execution gate, health preflight plan, executable client harness plan, dispatch adapter boundary, opt-in configuration surfaces, and unavailable error taxonomy; runtime execution blocked",
   "adapter": "renderer-service",
   "runtimeRegistration": {
     "mcpToolRegistered": true,
@@ -150,6 +150,50 @@
         "healthPreflightDispatch": false,
         "renderPostDispatch": false,
         "localFileWrites": false
+      }
+    },
+    "unavailableErrorTaxonomy": {
+      "status": "planned",
+      "dispatch": false,
+      "taxonomyVersion": "P25.17",
+      "defaultCode": "renderer_service_unavailable",
+      "codes": [
+        "renderer_service_unavailable",
+        "renderer_service_not_configured",
+        "renderer_service_execution_disabled",
+        "renderer_service_preflight_disabled",
+        "renderer_service_health_unavailable",
+        "renderer_service_health_invalid",
+        "renderer_service_dispatch_disabled",
+        "renderer_service_response_invalid",
+        "renderer_service_resource_missing"
+      ],
+      "stages": [
+        "configuration",
+        "execution-gate",
+        "health-preflight",
+        "dispatch-adapter",
+        "response-normalization",
+        "resource-normalization"
+      ],
+      "retryableCodes": ["renderer_service_health_unavailable"],
+      "payloadFields": {
+        "common": [
+          "command",
+          "adapter",
+          "endpoint",
+          "client",
+          "availability",
+          "executionGate",
+          "healthPreflight",
+          "dispatchAdapterBoundary",
+          "clientRequest",
+          "requiredCapabilities",
+          "serviceRequest",
+          "unavailableErrorTaxonomy"
+        ],
+        "mcp": ["localFileWrites:false", "resource metadata only"],
+        "cli": ["optional output metadata only after resource downloadUri exists"]
       }
     },
     "clientConfiguration": {

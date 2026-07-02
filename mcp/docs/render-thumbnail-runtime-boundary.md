@@ -21,7 +21,8 @@ error normalization contracts, P25.12 adds disabled client request scaffolding,
 P25.13 adds the closed execution gate plus integration-test plan, and P25.14
 adds disabled health preflight plus executable client harness plans. P25.15
 adds the disabled dispatch adapter boundary, and P25.16 adds opt-in
-configuration surfaces; runtime execution remains blocked.
+configuration surfaces. P25.17 adds the unavailable error taxonomy; runtime
+execution remains blocked.
 
 ## Existing Surfaces
 
@@ -146,13 +147,16 @@ configuration plus metadata-only availability status, P25.11 defines
 response/error normalization, P25.12 adds the disabled future client request
 scaffold, P25.13 adds the closed execution gate, and P25.14 adds disabled
 health preflight plus executable client harness plans. P25.15 adds the disabled
-dispatch adapter boundary, and P25.16 adds opt-in configuration surfaces. MCP
+dispatch adapter boundary, P25.16 adds opt-in configuration surfaces, and
+P25.17 adds stable unavailable/preflight/dispatch/resource error taxonomy
+metadata. MCP
 `render.thumbnail` and `penpot-cli render thumbnail --dry-run` can print the
 future request shape, configured/not configured service metadata,
 response/error contracts, `clientRequest.dispatch:false`,
 `executionGate.dispatch:false`, `healthPreflight.dispatch:false`,
 `executionClientHarness.dispatch:false`, `dispatchAdapterBoundary.dispatch:false`,
-and `optInConfiguration.dispatch:false`, but execution still returns
+`optInConfiguration.dispatch:false`, and `unavailableErrorTaxonomy.dispatch:false`,
+but execution still returns
 `renderer_service_unavailable` until explicit opt-in, config surfaces, renderer
 service, integration tests, health preflight, file cache probe, tagged-frame
 source-data provider, and tagged-frame resource normalizer exist.

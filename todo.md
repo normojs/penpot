@@ -212,8 +212,11 @@ precedence, gate/preflight consumption, result/error mapping, and no-dispatch
 defaults while runtime dispatch stays disabled. P25.16 is complete:
 renderer-service opt-in configuration surfaces now define CLI flag, MCP arg,
 environment, profile/backend keys, precedence diagnostics, invalid value
-diagnostics, and no-dispatch defaults. P25.17 is the next task: plan the
-renderer-service unavailable error taxonomy.
+diagnostics, and no-dispatch defaults. P25.17 is complete: renderer-service
+unavailable error taxonomy now defines stable configuration, gate, preflight,
+dispatch, response, and resource codes with retryability and MCP/CLI payload
+fields while dispatch stays disabled. P25.18 is the next task: plan the
+renderer-service integration fixture harness.
 
 ## Feature Roadmap
 
@@ -876,4 +879,5 @@ catalog before adding executable MCP, CLI, or exporter behavior.
 | P25.14 | done | Plan renderer-service health preflight and executable client harness | `mcp`, `penpot-cli`, `command-runtime`, `mcp/docs`, `todo.md` | Completed 2026-07-03; command-runtime tests cover disabled health preflight GET metadata, expected health response shape, failure modes, harness sequence ordering, integration-test plan, and `dispatch:false`; MCP/CLI tests assert dry-run and unavailable execution expose preflight/harness metadata without network calls | Future renderer-service execution now has a planned health preflight and executable client harness sequence, but metadata-only availability, preflight, and render dispatch all remain disabled |
 | P25.15 | done | Design renderer-service executable dispatch adapter boundary | `mcp`, `penpot-cli`, `command-runtime`, `mcp/docs`, `todo.md` | Completed 2026-07-03; command-runtime tests cover disabled dispatch adapter boundary metadata, config precedence, gate/preflight consumption, result/error helper mapping, no-dispatch defaults, and `dispatch:false`; MCP/CLI tests assert dry-run and unavailable execution expose boundary metadata without network calls | Future renderer-service execution now has a dispatch adapter boundary contract, but metadata-only availability, health preflight, render POST, and local writes remain disabled |
 | P25.16 | done | Plan renderer-service opt-in configuration surfaces | `mcp`, `penpot-cli`, `command-runtime`, `mcp/docs`, `todo.md` | Completed 2026-07-03; command-runtime tests cover opt-in source precedence, CLI/MCP/env/profile/backend surfaces, invalid value diagnostics, no-dispatch defaults, and gate integration; MCP/CLI tests assert dry-run and unavailable execution expose opt-in metadata without network calls | Future renderer-service execution now has documented opt-in config surfaces, but configuration alone cannot open the gate or enable dispatch |
-| P25.17 | pending | Plan renderer-service unavailable error taxonomy | `mcp`, `penpot-cli`, `command-runtime`, `mcp/docs`, `todo.md` | Pending | Define stable unavailable/preflight/dispatch error codes, retryability, actions, and MCP/CLI payload fields before executable network paths exist |
+| P25.17 | done | Plan renderer-service unavailable error taxonomy | `mcp`, `penpot-cli`, `command-runtime`, `mcp/docs`, `todo.md` | Completed 2026-07-03; command-runtime tests cover stable taxonomy codes, stages, retryability, payload fields, and `dispatch:false`; MCP/CLI tests assert dry-run and unavailable execution expose taxonomy metadata without network calls | Future renderer-service execution now has stable unavailable/preflight/dispatch/response/resource error taxonomy, but no renderer-service, backend, exporter, plugin, or local file dispatch is enabled |
+| P25.18 | pending | Plan renderer-service integration fixture harness | `mcp`, `penpot-cli`, `command-runtime`, `mcp/docs`, `todo.md` | Pending | Define fixture-driven integration harness cases for closed gate, health failure, render success, service failure, MCP resource metadata, and CLI output download before executable dispatch is implemented |

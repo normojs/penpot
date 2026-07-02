@@ -917,6 +917,7 @@ export class RenderThumbnailTool extends PenpotRpcTool<RenderThumbnailArgs> {
                     healthPreflight: plan.healthPreflight,
                     executionClientHarness: plan.executionClientHarness,
                     dispatchAdapterBoundary: plan.dispatchAdapterBoundary,
+                    unavailableErrorTaxonomy: plan.unavailableErrorTaxonomy,
                     clientRequest: plan.clientRequest,
                     requiredCapabilities: plan.requiredCapabilities,
                     serviceRequest: plan.serviceRequest,

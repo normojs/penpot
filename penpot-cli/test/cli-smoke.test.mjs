@@ -2619,6 +2619,14 @@ test("render thumbnail dry-run returns renderer-service request plan", async () 
         assert.equal(body.data.executionClientHarness.dispatch, false);
         assert.equal(body.data.dispatchAdapterBoundary.dispatch, false);
         assert.equal(body.data.dispatchAdapterBoundary.resultMapping.cliReturn, "resource metadata plus optional --output download");
+        assert.equal(body.data.unavailableErrorTaxonomy.taxonomyVersion, "P25.17");
+        assert.equal(body.data.unavailableErrorTaxonomy.dispatch, false);
+        assert.equal(body.data.unavailableErrorTaxonomy.defaultCode, "renderer_service_unavailable");
+        assert.ok(
+            body.data.unavailableErrorTaxonomy.errors.some(
+                (entry) => entry.code === "renderer_service_health_unavailable" && entry.retryable === true
+            )
+        );
         assert.equal(body.data.service.responseNormalization.successStatus, "ok");
         assert.equal(body.data.service.responseNormalization.localFileWrites, false);
         assert.equal(body.data.service.errorShape.code, "renderer_service_error");
@@ -2670,6 +2678,9 @@ test("render thumbnail execution reports renderer-service unavailable without ca
         assert.equal(body.error.data.healthPreflight.dispatch, false);
         assert.equal(body.error.data.executionClientHarness.dispatch, false);
         assert.equal(body.error.data.dispatchAdapterBoundary.dispatch, false);
+        assert.equal(body.error.data.unavailableErrorTaxonomy.taxonomyVersion, "P25.17");
+        assert.equal(body.error.data.unavailableErrorTaxonomy.dispatch, false);
+        assert.equal(body.error.data.unavailableErrorTaxonomy.defaultCode, "renderer_service_unavailable");
         assert.equal(body.error.data.clientRequest.dispatch, false);
         assert.equal(body.error.data.serviceRequest.operation, "thumbnail.render");
     } finally {
