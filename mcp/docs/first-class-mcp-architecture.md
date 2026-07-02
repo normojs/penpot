@@ -2263,6 +2263,15 @@ P25.19 render.thumbnail dispatch registration preflight result:
 - `dispatchRegistrationPreflight.dispatch`, `networkDispatch`,
   `runtimeRegistration`, and `localFileWrites` remain `false`.
 
+P25.20 render.thumbnail executable adapter registration scaffold result:
+
+- Shared plans include `executableAdapterRegistrationScaffold` with the future
+  no-op registration surface for MCP and CLI.
+- The scaffold consumes the P25.19 preflight, dispatch adapter boundary, and
+  client request metadata without registering runtime dispatch.
+- `executableAdapterRegistrationScaffold.dispatch`, `networkDispatch`,
+  `runtimeRegistration`, and `localFileWrites` remain `false`.
+
 ### 8.5 Export and Render Tools
 
 May start file-bound and later move to headless:
@@ -2288,9 +2297,10 @@ normalization and error payloads, P25.12 adds the disabled execution client
 request scaffold, P25.13 adds the closed execution gate plus integration-test
 plan, P25.14 adds disabled health preflight plus executable client harness
 plans, P25.15 adds the disabled dispatch adapter boundary, P25.16 adds
-opt-in configuration surfaces, P25.17 adds unavailable error taxonomy, and
-P25.18 adds the integration fixture harness. P25.19 adds dispatch registration
-preflight.
+opt-in configuration surfaces, P25.17 adds unavailable error taxonomy,
+P25.18 adds the integration fixture harness, P25.19 adds dispatch registration
+preflight, and P25.20 adds the disabled executable adapter registration
+scaffold.
 Runtime behavior remains unavailable
 until opt-in config surfaces, renderer-service implementation, health preflight,
 cache probe, executable client, and tagged-frame capabilities are implemented.

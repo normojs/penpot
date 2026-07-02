@@ -276,6 +276,9 @@ Current state:
 - Done: renderer-service dispatch registration preflight records the final
   readiness checklist for future executable dispatch without enabling runtime
   registration.
+- Done: renderer-service executable adapter registration scaffold records the
+  future no-op MCP/CLI registration surface without enabling dispatch,
+  runtime registration, or local file writes.
 - Done: focused command-runtime tests cover descriptor groups, lookup,
   adapter-selection priority/error cases, and token-safe envelopes.
 - Status: complete. Later command coverage gaps were tracked by the P15.1
@@ -760,6 +763,15 @@ P25.19 is complete:
 2. MCP and CLI dry-run plus unavailable execution payloads expose the
    preflight without enabling runtime registration.
 3. `dispatchRegistrationPreflight.dispatch`, `networkDispatch`,
+   `runtimeRegistration`, and `localFileWrites` remain false.
+
+P25.20 is complete:
+
+1. Shared plans include `executableAdapterRegistrationScaffold` metadata for
+   the future no-op renderer-service adapter registration surface.
+2. MCP and CLI dry-run plus unavailable execution payloads expose the scaffold
+   without registering runtime dispatch.
+3. `executableAdapterRegistrationScaffold.dispatch`, `networkDispatch`,
    `runtimeRegistration`, and `localFileWrites` remain false.
 
 Keep manual configuration behavior stable while moving command metadata and

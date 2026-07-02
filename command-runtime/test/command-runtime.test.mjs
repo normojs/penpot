@@ -21,6 +21,7 @@ import {
     createRenderThumbnailRendererServiceClientRequest,
     createRenderThumbnailRendererServiceDispatchAdapterBoundary,
     createRenderThumbnailRendererServiceDispatchRegistrationPreflight,
+    createRenderThumbnailRendererServiceExecutableAdapterRegistrationScaffold,
     createRenderThumbnailRendererServiceExecutionGate,
     createRenderThumbnailRendererServiceExecutionClientHarness,
     createRenderThumbnailRendererServiceHealthPreflight,
@@ -450,6 +451,10 @@ test("render.thumbnail renderer-service API fixtures define planning requests wi
     assert.equal(fixtures.serviceApi.dispatchRegistrationPreflight.dispatch, false);
     assert.equal(fixtures.serviceApi.dispatchRegistrationPreflight.runtimeRegistration, false);
     assert.ok(fixtures.serviceApi.dispatchRegistrationPreflight.requiredChecks.includes("runtime-registration-ready"));
+    assert.equal(fixtures.serviceApi.executableAdapterRegistrationScaffold.scaffoldVersion, "P25.20");
+    assert.equal(fixtures.serviceApi.executableAdapterRegistrationScaffold.dispatch, false);
+    assert.equal(fixtures.serviceApi.executableAdapterRegistrationScaffold.runtimeRegistration, false);
+    assert.ok(fixtures.serviceApi.executableAdapterRegistrationScaffold.noOpBehavior.includes("do not call fetch"));
     assert.deepEqual(fixtures.runtimeRegistration.commandDescriptorAdapters, ["renderer-service"]);
     assert.deepEqual(CommandDescriptors.RENDER_THUMBNAIL.adapters, ["renderer-service"]);
     assert.equal(fixtures.runtimeRegistration.mcpToolRegistered, true);
@@ -599,6 +604,18 @@ test("render.thumbnail renderer-service plan exposes dry-run client request whil
     assert.equal(plan.dispatchRegistrationPreflight.runtimeRegistration, false);
     assert.ok(plan.dispatchRegistrationPreflight.blockers.includes("runtime-execution-registration"));
     assert.deepEqual(plan.service.dispatchRegistrationPreflight, plan.dispatchRegistrationPreflight);
+    assert.equal(plan.executableAdapterRegistrationScaffold.scaffoldVersion, "P25.20");
+    assert.equal(plan.executableAdapterRegistrationScaffold.dispatch, false);
+    assert.equal(plan.executableAdapterRegistrationScaffold.networkDispatch, false);
+    assert.equal(plan.executableAdapterRegistrationScaffold.runtimeRegistration, false);
+    assert.equal(plan.executableAdapterRegistrationScaffold.localFileWrites, false);
+    assert.equal(
+        plan.executableAdapterRegistrationScaffold.consumes.dispatchRegistrationPreflight.preflightVersion,
+        "P25.19"
+    );
+    assert.equal(plan.executableAdapterRegistrationScaffold.consumes.clientRequest.currentDispatch, false);
+    assert.equal(plan.executableAdapterRegistrationScaffold.registrationSurface.runtimeExecutionRegistered, false);
+    assert.deepEqual(plan.service.executableAdapterRegistrationScaffold, plan.executableAdapterRegistrationScaffold);
     assert.equal(plan.clientRequest.status, "scaffolded");
     assert.equal(plan.clientRequest.dispatch, false);
     assert.equal(plan.clientRequest.method, "POST");
@@ -634,6 +651,7 @@ test("render.thumbnail renderer-service plan exposes dry-run client request whil
     assert.equal(plan.diagnostics.unavailableErrorTaxonomyVersion, "P25.17");
     assert.equal(plan.diagnostics.integrationFixtureHarnessVersion, "P25.18");
     assert.equal(plan.diagnostics.dispatchRegistrationPreflightVersion, "P25.19");
+    assert.equal(plan.diagnostics.executableAdapterRegistrationScaffoldVersion, "P25.20");
 });
 
 test("render.thumbnail renderer-service plan reports not-configured availability without endpoint", () => {
@@ -874,6 +892,40 @@ test("render.thumbnail renderer-service dispatch registration preflight stays ha
     assert.ok(preflight.blockers.includes("runtime-execution-registration"));
     assert.ok(preflight.blockers.includes("file-thumbnail-cache-probe"));
     assert.ok(preflight.nextActions.some((entry) => entry.includes("Only register executable dispatch")));
+});
+
+test("render.thumbnail renderer-service executable adapter registration scaffold stays no-op", () => {
+    const scaffold = createRenderThumbnailRendererServiceExecutableAdapterRegistrationScaffold({
+        dispatchRegistrationPreflight: {
+            status: "planned-disabled",
+            preflightVersion: "P25.19",
+            readiness: { mayRegisterDispatch: false },
+        },
+        dispatchAdapterBoundary: { status: "planned-disabled", dispatch: false },
+        clientRequest: { dispatch: false, method: "POST" },
+    });
+
+    assert.equal(scaffold.status, "planned-disabled");
+    assert.equal(scaffold.scaffoldVersion, "P25.20");
+    assert.equal(scaffold.adapter, "renderer-service");
+    assert.equal(scaffold.dispatch, false);
+    assert.equal(scaffold.networkDispatch, false);
+    assert.equal(scaffold.runtimeRegistration, false);
+    assert.equal(scaffold.localFileWrites, false);
+    assert.equal(scaffold.consumes.dispatchRegistrationPreflight.requiredStatus, "ready");
+    assert.equal(scaffold.consumes.dispatchRegistrationPreflight.currentStatus, "planned-disabled");
+    assert.equal(scaffold.consumes.dispatchRegistrationPreflight.mayRegisterDispatch, false);
+    assert.equal(scaffold.consumes.dispatchRegistrationPreflight.preflightVersion, "P25.19");
+    assert.equal(scaffold.consumes.dispatchAdapterBoundary.currentDispatch, false);
+    assert.equal(scaffold.consumes.clientRequest.requiredDispatch, true);
+    assert.equal(scaffold.consumes.clientRequest.currentDispatch, false);
+    assert.equal(scaffold.registrationSurface.command, "render.thumbnail");
+    assert.deepEqual(scaffold.registrationSurface.entrypoints, ["mcp", "cli"]);
+    assert.equal(scaffold.registrationSurface.runtimeExecutionRegistered, false);
+    assert.ok(scaffold.noOpBehavior.includes("do not call fetch"));
+    assert.ok(scaffold.noOpBehavior.includes("do not call backend RPC"));
+    assert.ok(scaffold.noOpBehavior.includes("return renderer_service_unavailable while disabled"));
+    assert.ok(scaffold.requiredBeforeEnablement.some((entry) => entry.includes("P25.19")));
 });
 
 test("render.thumbnail renderer-service client request scaffold adds MCP audit headers without dispatch", () => {

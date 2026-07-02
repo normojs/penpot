@@ -222,8 +222,12 @@ token-safe auth cases while dispatch stays disabled. P25.19 is complete:
 renderer-service dispatch registration preflight now defines final readiness
 checks for opt-in, endpoint config, service implementation, fixtures, health,
 dispatch adapter, runtime registration, and target/cache capabilities while
-dispatch stays disabled. P25.20 is the next task: add disabled executable
-adapter registration scaffold.
+dispatch stays disabled. P25.20 is complete: renderer-service executable
+adapter registration scaffold now exposes the future no-op MCP/CLI
+registration surface while keeping dispatch, network dispatch, runtime
+registration, and local file writes disabled. P25.21 is the next task: plan
+the disabled renderer-service adapter registry manifest before any runtime
+registration can be enabled.
 
 ## Feature Roadmap
 
@@ -266,7 +270,7 @@ remain the execution plan.
 | F32 | done | Export/render descriptor boundary planning | Phase 25 | Agents can discover planned file-export and thumbnail-render command names without mistaking them for executable tools | Completed 2026-06-29; P25.1 added descriptor-only `export.file` and `render.thumbnail` command-runtime entries with no adapters, and P25.2 defined the fixture-backed `export.file` backend binary archive contract |
 | F33 | done | Thumbnail render contract | Phase 25 | Agents can request thumbnail rendering only after target/cache/artifact semantics are explicit | Completed 2026-06-29; P25.4 defines descriptor-only `render.thumbnail` target, cache, artifact, renderer, and backend persistence contracts |
 | F34 | done | MCP file export resource return | Phase 25 | Agents can export a `.penpot` archive through MCP once backend-rpc resource handling is explicit | Completed 2026-06-29; P25.5 registers MCP `export.file` around the existing backend `export-binfile` SSE/resource contract and returns resource metadata plus `downloadUri` |
-| F35 | done | Thumbnail runtime execution boundary | Phase 25 | Agents can render thumbnails only after the renderer owner and resource return semantics are explicit | Completed 2026-07-03; P25.6 selects a future dedicated thumbnail renderer service, P25.7 defines service API fixtures, P25.8 adds the CLI dry-run/client boundary, P25.9 registers MCP planning-only dry-run, P25.10 adds metadata-only availability probes, P25.11 defines response/error normalization, P25.12 adds disabled client request scaffolding, P25.13 adds a closed execution gate plus integration-test plan, P25.14 adds disabled health preflight and executable client harness plans, P25.15 adds a disabled dispatch adapter boundary, P25.16 adds opt-in configuration surfaces, P25.17 adds unavailable error taxonomy, P25.18 adds integration fixture harness, and P25.19 adds dispatch registration preflight while runtime execution remains blocked |
+| F35 | done | Thumbnail runtime execution boundary | Phase 25 | Agents can render thumbnails only after the renderer owner and resource return semantics are explicit | Completed 2026-07-03; P25.6 selects a future dedicated thumbnail renderer service, P25.7 defines service API fixtures, P25.8 adds the CLI dry-run/client boundary, P25.9 registers MCP planning-only dry-run, P25.10 adds metadata-only availability probes, P25.11 defines response/error normalization, P25.12 adds disabled client request scaffolding, P25.13 adds a closed execution gate plus integration-test plan, P25.14 adds disabled health preflight and executable client harness plans, P25.15 adds a disabled dispatch adapter boundary, P25.16 adds opt-in configuration surfaces, P25.17 adds unavailable error taxonomy, P25.18 adds integration fixture harness, P25.19 adds dispatch registration preflight, and P25.20 adds disabled executable adapter registration scaffold while runtime execution remains blocked |
 
 ## Detailed Upcoming Task Queue
 
@@ -813,9 +817,12 @@ continue within Phase 25:
    preflight and executable client harness plans. P25.15 adds a disabled
    dispatch adapter boundary with config precedence, gate/preflight
    consumption, result/error mapping, and no-dispatch defaults. P25.16 adds
-   opt-in configuration surfaces and diagnostics. Remaining work: plan the
-   unavailable error taxonomy before implementing executable
-   `render.thumbnail`.
+   opt-in configuration surfaces and diagnostics. P25.17 adds unavailable
+   error taxonomy, P25.18 adds integration fixture harness metadata, P25.19
+   adds dispatch registration preflight metadata, and P25.20 adds disabled
+   executable adapter registration scaffold metadata. Remaining work: plan the
+   disabled renderer-service adapter registry manifest before implementing
+   executable `render.thumbnail`.
 
 ## Phase 21: Design Editing Alias Contracts
 
@@ -889,4 +896,5 @@ catalog before adding executable MCP, CLI, or exporter behavior.
 | P25.17 | done | Plan renderer-service unavailable error taxonomy | `mcp`, `penpot-cli`, `command-runtime`, `mcp/docs`, `todo.md` | Completed 2026-07-03; command-runtime tests cover stable taxonomy codes, stages, retryability, payload fields, and `dispatch:false`; MCP/CLI tests assert dry-run and unavailable execution expose taxonomy metadata without network calls | Future renderer-service execution now has stable unavailable/preflight/dispatch/response/resource error taxonomy, but no renderer-service, backend, exporter, plugin, or local file dispatch is enabled |
 | P25.18 | done | Plan renderer-service integration fixture harness | `mcp`, `penpot-cli`, `command-runtime`, `mcp/docs`, `todo.md` | Completed 2026-07-03; command-runtime tests cover no-dispatch harness cases, sequence, entrypoint expectations, fixture inputs, and `networkDispatch:false`; MCP/CLI tests assert dry-run and unavailable execution expose harness metadata without network calls | Future renderer-service execution now has a fixture harness contract for closed gate, health failure, render success, service failure, MCP metadata, CLI output, and token-safe auth before executable dispatch exists |
 | P25.19 | done | Plan renderer-service executable dispatch registration preflight | `mcp`, `penpot-cli`, `command-runtime`, `mcp/docs`, `todo.md` | Completed 2026-07-03; command-runtime tests cover final readiness checks, blockers, registration plan, and hard-disabled `dispatch:false`/`networkDispatch:false`/`runtimeRegistration:false`; MCP/CLI tests assert dry-run and unavailable execution expose preflight metadata without network calls | Future renderer-service execution now has a final registration preflight checklist, but runtime dispatch remains disabled |
-| P25.20 | pending | Add disabled renderer-service executable adapter registration scaffold | `mcp`, `penpot-cli`, `command-runtime`, `mcp/docs`, `todo.md` | Pending | Add a no-op executable adapter registration scaffold behind the P25.19 preflight, keeping network dispatch and runtime registration disabled |
+| P25.20 | done | Add disabled renderer-service executable adapter registration scaffold | `mcp`, `penpot-cli`, `command-runtime`, `mcp/docs`, `todo.md` | Completed 2026-07-03; command-runtime tests cover the no-op scaffold, consumed preflight/boundary/request metadata, service mirror, diagnostics, and hard-disabled `dispatch:false`/`networkDispatch:false`/`runtimeRegistration:false`/`localFileWrites:false`; MCP/CLI tests assert dry-run and unavailable execution expose scaffold metadata without network calls | Future renderer-service execution now has a disabled executable adapter registration scaffold, but runtime dispatch remains disabled |
+| P25.21 | pending | Plan disabled renderer-service adapter registry manifest | `mcp`, `penpot-cli`, `command-runtime`, `mcp/docs`, `todo.md` | Pending | Define the future adapter registry manifest and entrypoint wiring as metadata-only before any runtime registration can be enabled |

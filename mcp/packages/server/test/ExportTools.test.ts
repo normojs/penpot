@@ -387,6 +387,17 @@ test("RenderThumbnailTool dry-run returns renderer-service request metadata with
         assert.equal(body.data.dispatchRegistrationPreflight.dispatch, false);
         assert.equal(body.data.dispatchRegistrationPreflight.runtimeRegistration, false);
         assert.ok(body.data.dispatchRegistrationPreflight.blockers.includes("runtime-execution-registration"));
+        assert.equal(body.data.executableAdapterRegistrationScaffold.scaffoldVersion, "P25.20");
+        assert.equal(body.data.executableAdapterRegistrationScaffold.dispatch, false);
+        assert.equal(body.data.executableAdapterRegistrationScaffold.networkDispatch, false);
+        assert.equal(body.data.executableAdapterRegistrationScaffold.runtimeRegistration, false);
+        assert.equal(body.data.executableAdapterRegistrationScaffold.localFileWrites, false);
+        assert.equal(
+            body.data.executableAdapterRegistrationScaffold.consumes.dispatchRegistrationPreflight.preflightVersion,
+            "P25.19"
+        );
+        assert.equal(body.data.executableAdapterRegistrationScaffold.consumes.clientRequest.currentDispatch, false);
+        assert.equal(body.data.executableAdapterRegistrationScaffold.registrationSurface.runtimeExecutionRegistered, false);
         assert.deepEqual(body.data.service.client, body.data.client);
         assert.equal(body.data.service.responseNormalization.successStatus, "ok");
         assert.equal(body.data.service.responseNormalization.localFileWrites, false);
@@ -457,6 +468,11 @@ test("RenderThumbnailTool execution reports renderer service unavailable without
         assert.equal(body.error.data.dispatchRegistrationPreflight.preflightVersion, "P25.19");
         assert.equal(body.error.data.dispatchRegistrationPreflight.dispatch, false);
         assert.equal(body.error.data.dispatchRegistrationPreflight.runtimeRegistration, false);
+        assert.equal(body.error.data.executableAdapterRegistrationScaffold.scaffoldVersion, "P25.20");
+        assert.equal(body.error.data.executableAdapterRegistrationScaffold.dispatch, false);
+        assert.equal(body.error.data.executableAdapterRegistrationScaffold.networkDispatch, false);
+        assert.equal(body.error.data.executableAdapterRegistrationScaffold.runtimeRegistration, false);
+        assert.equal(body.error.data.executableAdapterRegistrationScaffold.localFileWrites, false);
         assert.equal(body.error.data.clientRequest.dispatch, false);
         assert.equal(body.error.data.serviceRequest.operation, "thumbnail.render");
         assert.deepEqual(body.error.data.requiredCapabilities, ["thumbnail-renderer-service-implementation", "file-thumbnail-cache-probe"]);

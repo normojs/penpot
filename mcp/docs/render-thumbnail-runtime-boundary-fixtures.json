@@ -1,7 +1,7 @@
 {
-  "version": "P25.19",
+  "version": "P25.20",
   "command": "render.thumbnail",
-  "status": "runtime boundary audited; MCP/CLI planning, metadata-only availability probes, response normalization contracts, disabled client request scaffold, closed execution gate, health preflight plan, executable client harness plan, dispatch adapter boundary, opt-in configuration surfaces, unavailable error taxonomy, integration fixture harness, and dispatch registration preflight registered; runtime execution blocked",
+  "status": "runtime boundary audited; MCP/CLI planning, metadata-only availability probes, response normalization contracts, disabled client request scaffold, closed execution gate, health preflight plan, executable client harness plan, dispatch adapter boundary, opt-in configuration surfaces, unavailable error taxonomy, integration fixture harness, dispatch registration preflight, and disabled executable adapter registration scaffold registered; runtime execution blocked",
   "selectedBoundary": "thumbnail-renderer-service",
   "runtimeRegistration": {
     "mcpToolRegistered": true,
@@ -251,6 +251,32 @@
       "target-cache-capabilities-ready"
     ]
   },
+  "executableAdapterRegistrationScaffold": {
+    "status": "planned-disabled",
+    "scaffoldVersion": "P25.20",
+    "adapter": "renderer-service",
+    "dispatch": false,
+    "networkDispatch": false,
+    "runtimeRegistration": false,
+    "localFileWrites": false,
+    "consumes": [
+      "dispatchRegistrationPreflight",
+      "dispatchAdapterBoundary",
+      "clientRequest"
+    ],
+    "registrationSurface": {
+      "command": "render.thumbnail",
+      "entrypoints": ["mcp", "cli"],
+      "runtimeExecutionRegistered": false
+    },
+    "noOpBehavior": [
+      "do not call fetch",
+      "do not call backend RPC",
+      "do not call exporter or plugin runtimes",
+      "do not write local files",
+      "return renderer_service_unavailable while disabled"
+    ]
+  },
   "testStrategy": [
     "Keep command-runtime descriptor tests asserting render.thumbnail only exposes the renderer-service planning adapter until execution exists.",
     "Add renderer-service contract tests for file and tagged-frame inputs, cache policies, PNG metadata, and resource normalization.",
@@ -264,11 +290,12 @@
     "Opt-in configuration tests cover CLI flag, MCP arg, environment fallback, invalid values, diagnostics, and no-dispatch defaults.",
     "Integration fixture harness tests cover closed gate, health failure, render success, service error, MCP metadata, CLI output gating, and token-safe auth without dispatch.",
     "Dispatch registration preflight tests cover final readiness checks and hard-disabled runtime registration.",
+    "Executable adapter registration scaffold tests cover consumed preflight/boundary/request metadata and no-op behavior.",
     "Add CLI smoke tests only after the service exists, covering dry-run, resource metadata, --output download, and missing-token errors."
   ],
   "nextTask": {
-    "id": "P25.19",
-    "title": "Plan renderer-service executable dispatch registration preflight",
+    "id": "P25.20",
+    "title": "Add disabled renderer-service executable adapter registration scaffold",
     "modules": ["mcp", "penpot-cli", "command-runtime", "mcp/docs", "todo.md"]
   }
 }

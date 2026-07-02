@@ -969,6 +969,12 @@ export function createRenderThumbnailRendererServicePlan(options = EMPTY_OBJECT)
         },
         options.clientRequest
     );
+    const executableAdapterRegistrationScaffold =
+        createRenderThumbnailRendererServiceExecutableAdapterRegistrationScaffold({
+            dispatchRegistrationPreflight,
+            dispatchAdapterBoundary,
+            clientRequest,
+        });
 
     return {
         command: CommandDescriptors.RENDER_THUMBNAIL.id,
@@ -1020,6 +1026,7 @@ export function createRenderThumbnailRendererServicePlan(options = EMPTY_OBJECT)
             unavailableErrorTaxonomy,
             integrationFixtureHarness,
             dispatchRegistrationPreflight,
+            executableAdapterRegistrationScaffold,
             clientRequest,
         },
         client,
@@ -1032,6 +1039,7 @@ export function createRenderThumbnailRendererServicePlan(options = EMPTY_OBJECT)
         unavailableErrorTaxonomy,
         integrationFixtureHarness,
         dispatchRegistrationPreflight,
+        executableAdapterRegistrationScaffold,
         clientRequest,
         serviceRequest: {
             command: CommandDescriptors.RENDER_THUMBNAIL.id,
@@ -1104,7 +1112,63 @@ export function createRenderThumbnailRendererServicePlan(options = EMPTY_OBJECT)
             unavailableErrorTaxonomyVersion: unavailableErrorTaxonomy.taxonomyVersion,
             integrationFixtureHarnessVersion: integrationFixtureHarness.harnessVersion,
             dispatchRegistrationPreflightVersion: dispatchRegistrationPreflight.preflightVersion,
+            executableAdapterRegistrationScaffoldVersion: executableAdapterRegistrationScaffold.scaffoldVersion,
         },
+    };
+}
+
+export function createRenderThumbnailRendererServiceExecutableAdapterRegistrationScaffold(options = EMPTY_OBJECT) {
+    const dispatchRegistrationPreflight = options.dispatchRegistrationPreflight ?? EMPTY_OBJECT;
+    const dispatchAdapterBoundary = options.dispatchAdapterBoundary ?? EMPTY_OBJECT;
+    const clientRequest = options.clientRequest ?? EMPTY_OBJECT;
+
+    return {
+        status: "planned-disabled",
+        scaffoldVersion: "P25.20",
+        adapter: "renderer-service",
+        dispatch: false,
+        networkDispatch: false,
+        runtimeRegistration: false,
+        localFileWrites: false,
+        reason: "renderer-service executable adapter registration scaffold is documented as a no-op until the P25.19 preflight can register runtime dispatch",
+        consumes: {
+            dispatchRegistrationPreflight: {
+                requiredStatus: "ready",
+                currentStatus: dispatchRegistrationPreflight.status ?? "planned-disabled",
+                mayRegisterDispatch: false,
+                preflightVersion: dispatchRegistrationPreflight.preflightVersion ?? "P25.19",
+            },
+            dispatchAdapterBoundary: {
+                requiredStatus: "ready",
+                currentStatus: dispatchAdapterBoundary.status ?? "planned-disabled",
+                currentDispatch: Boolean(dispatchAdapterBoundary.dispatch),
+            },
+            clientRequest: {
+                requiredDispatch: true,
+                currentDispatch: Boolean(clientRequest.dispatch),
+                method: clientRequest.method ?? "POST",
+            },
+        },
+        registrationSurface: {
+            command: CommandDescriptors.RENDER_THUMBNAIL.id,
+            adapter: "renderer-service",
+            entrypoints: ["mcp", "cli"],
+            helper: "createRenderThumbnailRendererServiceExecutableAdapterRegistrationScaffold",
+            runtimeExecutionRegistered: false,
+        },
+        noOpBehavior: [
+            "do not call fetch",
+            "do not call backend RPC",
+            "do not call exporter or plugin runtimes",
+            "do not write local files",
+            "return renderer_service_unavailable while disabled",
+        ],
+        requiredBeforeEnablement: [
+            "P25.19 dispatch registration preflight reports ready",
+            "renderer-service dispatch adapter boundary reports ready",
+            "client request dispatch is enabled by a dedicated implementation task",
+            "MCP and CLI unavailable-path tests are replaced with gated execution tests",
+        ],
     };
 }
 

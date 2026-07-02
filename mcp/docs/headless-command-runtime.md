@@ -909,3 +909,11 @@ P25.19 adds renderer-service dispatch registration preflight:
   capabilities.
 - The preflight remains hard-disabled: `dispatch`, `networkDispatch`,
   `runtimeRegistration`, and `localFileWrites` are all `false`.
+
+P25.20 adds renderer-service executable adapter registration scaffold:
+
+- Plans include `executableAdapterRegistrationScaffold` with the no-op future
+  registration surface for MCP and CLI.
+- The scaffold consumes the P25.19 preflight, dispatch adapter boundary, and
+  client request metadata, but keeps `dispatch`, `networkDispatch`,
+  `runtimeRegistration`, and `localFileWrites` all `false`.
