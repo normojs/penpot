@@ -1000,6 +1000,12 @@ export function createRenderThumbnailRendererServicePlan(options = EMPTY_OBJECT)
         dispatchRegistrationPreflight,
         requiredCapabilities,
     });
+    const healthNoopContractFixtures = createRenderThumbnailRendererServiceHealthNoopContractFixtures({
+        client,
+        implementationSliceAudit,
+        healthPreflight,
+        clientRequest,
+    });
 
     return {
         command: CommandDescriptors.RENDER_THUMBNAIL.id,
@@ -1055,6 +1061,7 @@ export function createRenderThumbnailRendererServicePlan(options = EMPTY_OBJECT)
             adapterRegistryManifest,
             enablementChecklist,
             implementationSliceAudit,
+            healthNoopContractFixtures,
             clientRequest,
         },
         client,
@@ -1071,6 +1078,7 @@ export function createRenderThumbnailRendererServicePlan(options = EMPTY_OBJECT)
         adapterRegistryManifest,
         enablementChecklist,
         implementationSliceAudit,
+        healthNoopContractFixtures,
         clientRequest,
         serviceRequest: {
             command: CommandDescriptors.RENDER_THUMBNAIL.id,
@@ -1147,7 +1155,166 @@ export function createRenderThumbnailRendererServicePlan(options = EMPTY_OBJECT)
             adapterRegistryManifestVersion: adapterRegistryManifest.manifestVersion,
             enablementChecklistVersion: enablementChecklist.checklistVersion,
             implementationSliceAuditVersion: implementationSliceAudit.auditVersion,
+            healthNoopContractFixturesVersion: healthNoopContractFixtures.fixtureVersion,
         },
+    };
+}
+
+export function createRenderThumbnailRendererServiceHealthNoopContractFixtures(options = EMPTY_OBJECT) {
+    const client = options.client ?? EMPTY_OBJECT;
+    const implementationSliceAudit = options.implementationSliceAudit ?? EMPTY_OBJECT;
+    const healthPreflight = options.healthPreflight ?? EMPTY_OBJECT;
+    const clientRequest = options.clientRequest ?? EMPTY_OBJECT;
+    const endpoint = normalizeOptionalString(client.endpoint);
+    const healthEndpoint = normalizeOptionalString(client.healthEndpoint) ?? (endpoint ? joinUrlPath(endpoint, "health") : null);
+    const probeTimeoutMs = normalizeProbeTimeoutMs(client.probeTimeoutMs, 2500);
+
+    return {
+        status: "planned-disabled",
+        fixtureVersion: "P25.24",
+        adapter: "renderer-service",
+        command: CommandDescriptors.RENDER_THUMBNAIL.id,
+        dispatch: false,
+        networkDispatch: false,
+        runtimeRegistration: false,
+        localFileWrites: false,
+        selectedSlice: implementationSliceAudit.selectedSlice?.id ?? "renderer-service-health-and-noop-contract",
+        consumes: {
+            implementationSliceAudit: {
+                requiredSelectedSlice: "renderer-service-health-and-noop-contract",
+                currentSelectedSlice:
+                    implementationSliceAudit.selectedSlice?.id ?? "renderer-service-health-and-noop-contract",
+                auditVersion: implementationSliceAudit.auditVersion ?? "P25.23",
+                enablesRuntimeDispatch: false,
+            },
+            healthPreflight: {
+                requiredStatus: "ok",
+                currentStatus: healthPreflight.status ?? "planned-disabled",
+                currentDispatch: Boolean(healthPreflight.dispatch),
+            },
+            clientRequest: {
+                requiredDispatch: true,
+                currentDispatch: Boolean(clientRequest.dispatch),
+                method: clientRequest.method ?? "POST",
+            },
+        },
+        healthContract: {
+            id: "renderer-service-health",
+            method: "GET",
+            path: "/health",
+            endpoint: healthEndpoint,
+            timeoutMs: probeTimeoutMs,
+            dispatch: false,
+            networkDispatch: false,
+            request: {
+                headers: {
+                    accept: "application/json",
+                },
+                body: null,
+            },
+            okResponse: {
+                status: 200,
+                contentType: "application/json",
+                body: {
+                    status: "ok",
+                    renderer: "penpot-thumbnail-renderer",
+                    mode: "noop",
+                    runtimeRegistration: false,
+                    dispatch: false,
+                    capabilities: ["health", "thumbnail.render.noop"],
+                },
+            },
+            unavailableResponse: {
+                status: 503,
+                contentType: "application/json",
+                body: {
+                    status: "unavailable",
+                    code: "renderer_service_health_unavailable",
+                    retryable: true,
+                },
+            },
+        },
+        noopRenderContract: {
+            id: "thumbnail-render-noop",
+            operation: "thumbnail.render",
+            method: "POST",
+            endpoint,
+            dispatch: false,
+            networkDispatch: false,
+            localFileWrites: false,
+            requestFields: [
+                "command",
+                "operation",
+                "adapter",
+                "target",
+                "artifact",
+                "cache",
+                "backendRpc",
+                "render",
+            ],
+            response: {
+                status: 501,
+                contentType: "application/json",
+                body: {
+                    status: "noop",
+                    code: "renderer_service_noop",
+                    message: "renderer-service no-op fixture does not render PNG bytes",
+                    artifact: null,
+                    resource: null,
+                    runtimeRegistration: false,
+                    dispatch: false,
+                    localFileWrites: false,
+                },
+            },
+        },
+        fixtureCases: [
+            {
+                id: "health-ok-no-runtime-registration",
+                contract: "health",
+                expectedStatus: 200,
+                dispatch: false,
+                runtimeRegistration: false,
+            },
+            {
+                id: "health-unavailable-no-dispatch",
+                contract: "health",
+                expectedStatus: 503,
+                dispatch: false,
+                retryable: true,
+            },
+            {
+                id: "thumbnail-render-noop-no-png",
+                contract: "thumbnail.render",
+                expectedStatus: 501,
+                dispatch: false,
+                resource: null,
+            },
+            {
+                id: "mcp-unavailable-payload-no-local-write",
+                contract: "mcp",
+                dispatch: false,
+                localFileWrites: false,
+            },
+            {
+                id: "cli-unavailable-payload-no-output-write",
+                contract: "cli",
+                dispatch: false,
+                localFileWrites: false,
+            },
+        ],
+        noOpGuarantees: [
+            "do not perform health fetches from command-runtime, MCP, or CLI",
+            "do not render PNG bytes",
+            "do not call backend thumbnail RPCs",
+            "do not register runtime dispatch",
+            "do not write CLI --output files",
+        ],
+        requiredBeforeRuntimeDispatch: [
+            "replace the no-op thumbnail.render response with a gated renderer-service implementation",
+            "turn health preflight dispatch on only after endpoint config and opt-in gates are ready",
+            "add integration tests that prove health fetch and render fetch are explicit runtime actions",
+            "preserve unavailable payload compatibility or version it before enabling execution",
+        ],
     };
 }
 

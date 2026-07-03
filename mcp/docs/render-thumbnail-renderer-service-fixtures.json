@@ -1,7 +1,7 @@
 {
-  "version": "P25.23",
+  "version": "P25.24",
   "command": "render.thumbnail",
-  "status": "renderer-service API fixtures with MCP/CLI dry-run/client boundaries, metadata-only availability probes, response normalization contracts, disabled client request scaffold, explicit execution gate, health preflight plan, executable client harness plan, dispatch adapter boundary, opt-in configuration surfaces, unavailable error taxonomy, integration fixture harness, dispatch registration preflight, disabled executable adapter registration scaffold, disabled adapter registry manifest, final disabled enablement checklist, and concrete implementation slice audit; runtime execution blocked",
+  "status": "renderer-service API fixtures with MCP/CLI dry-run/client boundaries, metadata-only availability probes, response normalization contracts, disabled client request scaffold, explicit execution gate, health preflight plan, executable client harness plan, dispatch adapter boundary, opt-in configuration surfaces, unavailable error taxonomy, integration fixture harness, dispatch registration preflight, disabled executable adapter registration scaffold, disabled adapter registry manifest, final disabled enablement checklist, implementation slice audit, and health/no-op contract fixtures; runtime execution blocked",
   "adapter": "renderer-service",
   "runtimeRegistration": {
     "mcpToolRegistered": true,
@@ -598,6 +598,155 @@
         "prove CLI --output writes only after normalized download URI execution exists",
         "enable command-runtime dispatch in a separate reviewed task"
       ]
+    },
+    "healthNoopContractFixtures": {
+      "status": "planned-disabled",
+      "fixtureVersion": "P25.24",
+      "adapter": "renderer-service",
+      "command": "render.thumbnail",
+      "dispatch": false,
+      "networkDispatch": false,
+      "runtimeRegistration": false,
+      "localFileWrites": false,
+      "selectedSlice": "renderer-service-health-and-noop-contract",
+      "consumes": {
+        "implementationSliceAudit": {
+          "requiredSelectedSlice": "renderer-service-health-and-noop-contract",
+          "currentSelectedSlice": "renderer-service-health-and-noop-contract",
+          "auditVersion": "P25.23",
+          "enablesRuntimeDispatch": false
+        },
+        "healthPreflight": {
+          "requiredStatus": "ok",
+          "currentStatus": "planned-disabled",
+          "currentDispatch": false
+        },
+        "clientRequest": {
+          "requiredDispatch": true,
+          "currentDispatch": false,
+          "method": "POST"
+        }
+      },
+      "healthContract": {
+        "id": "renderer-service-health",
+        "method": "GET",
+        "path": "/health",
+        "endpoint": "http://127.0.0.1:6070/thumbnail/health",
+        "timeoutMs": 3000,
+        "dispatch": false,
+        "networkDispatch": false,
+        "request": {
+          "headers": {
+            "accept": "application/json"
+          },
+          "body": null
+        },
+        "okResponse": {
+          "status": 200,
+          "contentType": "application/json",
+          "body": {
+            "status": "ok",
+            "renderer": "penpot-thumbnail-renderer",
+            "mode": "noop",
+            "runtimeRegistration": false,
+            "dispatch": false,
+            "capabilities": [
+              "health",
+              "thumbnail.render.noop"
+            ]
+          }
+        },
+        "unavailableResponse": {
+          "status": 503,
+          "contentType": "application/json",
+          "body": {
+            "status": "unavailable",
+            "code": "renderer_service_health_unavailable",
+            "retryable": true
+          }
+        }
+      },
+      "noopRenderContract": {
+        "id": "thumbnail-render-noop",
+        "operation": "thumbnail.render",
+        "method": "POST",
+        "endpoint": "http://127.0.0.1:6070/thumbnail",
+        "dispatch": false,
+        "networkDispatch": false,
+        "localFileWrites": false,
+        "requestFields": [
+          "command",
+          "operation",
+          "adapter",
+          "target",
+          "artifact",
+          "cache",
+          "backendRpc",
+          "render"
+        ],
+        "response": {
+          "status": 501,
+          "contentType": "application/json",
+          "body": {
+            "status": "noop",
+            "code": "renderer_service_noop",
+            "message": "renderer-service no-op fixture does not render PNG bytes",
+            "artifact": null,
+            "resource": null,
+            "runtimeRegistration": false,
+            "dispatch": false,
+            "localFileWrites": false
+          }
+        }
+      },
+      "fixtureCases": [
+        {
+          "id": "health-ok-no-runtime-registration",
+          "contract": "health",
+          "expectedStatus": 200,
+          "dispatch": false,
+          "runtimeRegistration": false
+        },
+        {
+          "id": "health-unavailable-no-dispatch",
+          "contract": "health",
+          "expectedStatus": 503,
+          "dispatch": false,
+          "retryable": true
+        },
+        {
+          "id": "thumbnail-render-noop-no-png",
+          "contract": "thumbnail.render",
+          "expectedStatus": 501,
+          "dispatch": false,
+          "resource": null
+        },
+        {
+          "id": "mcp-unavailable-payload-no-local-write",
+          "contract": "mcp",
+          "dispatch": false,
+          "localFileWrites": false
+        },
+        {
+          "id": "cli-unavailable-payload-no-output-write",
+          "contract": "cli",
+          "dispatch": false,
+          "localFileWrites": false
+        }
+      ],
+      "noOpGuarantees": [
+        "do not perform health fetches from command-runtime, MCP, or CLI",
+        "do not render PNG bytes",
+        "do not call backend thumbnail RPCs",
+        "do not register runtime dispatch",
+        "do not write CLI --output files"
+      ],
+      "requiredBeforeRuntimeDispatch": [
+        "replace the no-op thumbnail.render response with a gated renderer-service implementation",
+        "turn health preflight dispatch on only after endpoint config and opt-in gates are ready",
+        "add integration tests that prove health fetch and render fetch are explicit runtime actions",
+        "preserve unavailable payload compatibility or version it before enabling execution"
+      ]
     }
   },
   "registrationGates": {
@@ -902,6 +1051,7 @@
   "futureMcpTests": [
     "returns resource metadata without MCP server file writes after renderer-service execution exists",
     "implementation slice audit metadata survives dry-run and unavailable execution JSON output",
+    "health/no-op contract fixtures survive dry-run and unavailable execution JSON output",
     "forwards caller auth and MCP audit context to renderer-service",
     "reports structured errors for missing resourceUri"
   ],
@@ -921,12 +1071,13 @@
     "adapter registry manifest metadata survives dry-run and unavailable execution JSON output",
     "enablement checklist metadata survives dry-run and unavailable execution JSON output",
     "implementation slice audit metadata survives dry-run and unavailable execution JSON output",
+    "health/no-op contract fixtures survive dry-run and unavailable execution JSON output",
     "--output downloads the returned PNG resource",
     "missing token fails before contacting renderer-service"
   ],
   "nextTask": {
-    "id": "P25.24",
-    "title": "Plan renderer-service health/no-op contract fixtures",
+    "id": "P25.25",
+    "title": "Plan renderer-service no-op service host scaffold",
     "modules": [
       "mcp",
       "penpot-cli",

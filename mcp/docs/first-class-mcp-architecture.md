@@ -2302,6 +2302,15 @@ P25.23 render.thumbnail implementation slice audit result:
 - `implementationSliceAudit.dispatch`, `networkDispatch`,
   `runtimeRegistration`, and `localFileWrites` remain `false`.
 
+P25.24 render.thumbnail health/no-op contract fixture result:
+
+- Shared plans include `healthNoopContractFixtures`, defining `/health`
+  OK/unavailable fixtures and a no-op `thumbnail.render` response contract.
+- MCP and CLI expose those fixtures in dry-run and unavailable execution
+  payloads without performing health fetches or renderer-service dispatch.
+- `healthNoopContractFixtures.dispatch`, `networkDispatch`,
+  `runtimeRegistration`, and `localFileWrites` remain `false`.
+
 ### 8.5 Export and Render Tools
 
 May start file-bound and later move to headless:
@@ -2331,8 +2340,8 @@ opt-in configuration surfaces, P25.17 adds unavailable error taxonomy,
 P25.18 adds the integration fixture harness, P25.19 adds dispatch registration
 preflight, P25.20 adds the disabled executable adapter registration scaffold,
 P25.21 adds the disabled adapter registry manifest, P25.22 adds the final
-disabled enablement checklist, and P25.23 audits the first implementation
-slice.
+disabled enablement checklist, P25.23 audits the first implementation slice,
+and P25.24 defines the health/no-op contract fixtures.
 Runtime behavior remains unavailable
 until opt-in config surfaces, renderer-service implementation, health preflight,
 cache probe, executable client, and tagged-frame capabilities are implemented.

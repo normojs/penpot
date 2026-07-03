@@ -25,8 +25,9 @@ configuration surfaces. P25.17 adds the unavailable error taxonomy, P25.18
 adds the integration fixture harness, P25.19 adds dispatch registration
 preflight, P25.20 adds the disabled executable adapter registration scaffold,
 P25.21 adds the disabled adapter registry manifest, P25.22 adds the final
-disabled enablement checklist, and P25.23 audits the first concrete
-implementation slice; runtime execution remains blocked.
+disabled enablement checklist, P25.23 audits the first concrete implementation
+slice, and P25.24 defines the health/no-op contract fixtures; runtime execution
+remains blocked.
 
 ## Existing Surfaces
 
@@ -159,8 +160,9 @@ auth cases. P25.19 adds dispatch registration preflight metadata for the final
 readiness checks before executable runtime registration, P25.20 adds the
 no-op executable adapter registration scaffold behind that preflight, P25.21
 adds the metadata-only adapter registry manifest, P25.22 adds the final
-metadata-only enablement checklist, and P25.23 adds the metadata-only
-implementation slice audit. MCP
+metadata-only enablement checklist, P25.23 adds the metadata-only
+implementation slice audit, and P25.24 adds the metadata-only health/no-op
+contract fixtures. MCP
 `render.thumbnail` and `penpot-cli render thumbnail --dry-run` can print the
 future request shape, configured/not configured service metadata,
 response/error contracts, `clientRequest.dispatch:false`,
@@ -172,7 +174,8 @@ plus `integrationFixtureHarness.dispatch:false` and `networkDispatch:false`,
 `executableAdapterRegistrationScaffold.runtimeRegistration:false`, plus
 `adapterRegistryManifest.runtimeRegistration:false` and
 `enablementChecklist.runtimeRegistration:false`, plus
-`implementationSliceAudit.runtimeRegistration:false`,
+`implementationSliceAudit.runtimeRegistration:false` and
+`healthNoopContractFixtures.runtimeRegistration:false`,
 but execution still returns
 `renderer_service_unavailable` until explicit opt-in, config surfaces, renderer
 service, integration tests, health preflight, file cache probe, tagged-frame

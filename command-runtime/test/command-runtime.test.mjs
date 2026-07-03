@@ -27,6 +27,7 @@ import {
     createRenderThumbnailRendererServiceExecutionClientHarness,
     createRenderThumbnailRendererServiceEnablementChecklist,
     createRenderThumbnailRendererServiceHealthPreflight,
+    createRenderThumbnailRendererServiceHealthNoopContractFixtures,
     createRenderThumbnailRendererServiceImplementationSliceAudit,
     createRenderThumbnailRendererServiceIntegrationFixtureHarness,
     createRenderThumbnailRendererServiceOptInConfiguration,
@@ -473,6 +474,13 @@ test("render.thumbnail renderer-service API fixtures define planning requests wi
     assert.equal(fixtures.serviceApi.implementationSliceAudit.localFileWrites, false);
     assert.equal(fixtures.serviceApi.implementationSliceAudit.selectedSlice.id, "renderer-service-health-and-noop-contract");
     assert.equal(fixtures.serviceApi.implementationSliceAudit.selectedSlice.enablesRuntimeDispatch, false);
+    assert.equal(fixtures.serviceApi.healthNoopContractFixtures.fixtureVersion, "P25.24");
+    assert.equal(fixtures.serviceApi.healthNoopContractFixtures.dispatch, false);
+    assert.equal(fixtures.serviceApi.healthNoopContractFixtures.networkDispatch, false);
+    assert.equal(fixtures.serviceApi.healthNoopContractFixtures.runtimeRegistration, false);
+    assert.equal(fixtures.serviceApi.healthNoopContractFixtures.localFileWrites, false);
+    assert.equal(fixtures.serviceApi.healthNoopContractFixtures.healthContract.okResponse.status, 200);
+    assert.equal(fixtures.serviceApi.healthNoopContractFixtures.noopRenderContract.response.status, 501);
     assert.deepEqual(fixtures.runtimeRegistration.commandDescriptorAdapters, ["renderer-service"]);
     assert.deepEqual(CommandDescriptors.RENDER_THUMBNAIL.adapters, ["renderer-service"]);
     assert.equal(fixtures.runtimeRegistration.mcpToolRegistered, true);
@@ -669,6 +677,20 @@ test("render.thumbnail renderer-service plan exposes dry-run client request whil
     assert.ok(plan.implementationSliceAudit.blockers.includes("runtime-execution-registration"));
     assert.ok(plan.implementationSliceAudit.blockers.includes("thumbnail-renderer-service-implementation"));
     assert.deepEqual(plan.service.implementationSliceAudit, plan.implementationSliceAudit);
+    assert.equal(plan.healthNoopContractFixtures.fixtureVersion, "P25.24");
+    assert.equal(plan.healthNoopContractFixtures.dispatch, false);
+    assert.equal(plan.healthNoopContractFixtures.networkDispatch, false);
+    assert.equal(plan.healthNoopContractFixtures.runtimeRegistration, false);
+    assert.equal(plan.healthNoopContractFixtures.localFileWrites, false);
+    assert.equal(plan.healthNoopContractFixtures.selectedSlice, "renderer-service-health-and-noop-contract");
+    assert.equal(plan.healthNoopContractFixtures.consumes.implementationSliceAudit.auditVersion, "P25.23");
+    assert.equal(plan.healthNoopContractFixtures.consumes.clientRequest.currentDispatch, false);
+    assert.equal(plan.healthNoopContractFixtures.healthContract.endpoint, "http://127.0.0.1:6070/thumbnail/health");
+    assert.equal(plan.healthNoopContractFixtures.healthContract.okResponse.status, 200);
+    assert.equal(plan.healthNoopContractFixtures.noopRenderContract.response.status, 501);
+    assert.equal(plan.healthNoopContractFixtures.noopRenderContract.response.body.resource, null);
+    assert.ok(plan.healthNoopContractFixtures.fixtureCases.some((entry) => entry.id === "thumbnail-render-noop-no-png"));
+    assert.deepEqual(plan.service.healthNoopContractFixtures, plan.healthNoopContractFixtures);
     assert.equal(plan.clientRequest.status, "scaffolded");
     assert.equal(plan.clientRequest.dispatch, false);
     assert.equal(plan.clientRequest.method, "POST");
@@ -708,6 +730,7 @@ test("render.thumbnail renderer-service plan exposes dry-run client request whil
     assert.equal(plan.diagnostics.adapterRegistryManifestVersion, "P25.21");
     assert.equal(plan.diagnostics.enablementChecklistVersion, "P25.22");
     assert.equal(plan.diagnostics.implementationSliceAuditVersion, "P25.23");
+    assert.equal(plan.diagnostics.healthNoopContractFixturesVersion, "P25.24");
 });
 
 test("render.thumbnail renderer-service plan reports not-configured availability without endpoint", () => {
@@ -1099,6 +1122,54 @@ test("render.thumbnail renderer-service implementation slice audit selects no-op
     assert.ok(audit.blockers.includes("renderer-service-health-endpoint-contract"));
     assert.ok(audit.blockers.includes("thumbnail-renderer-service-implementation"));
     assert.ok(audit.requiredBeforeRuntimeDispatch.includes("enable command-runtime dispatch in a separate reviewed task"));
+});
+
+test("render.thumbnail renderer-service health/no-op contract fixtures stay metadata-only", () => {
+    const fixtures = createRenderThumbnailRendererServiceHealthNoopContractFixtures({
+        client: {
+            endpoint: "http://127.0.0.1:6070/thumbnail",
+            healthEndpoint: "http://127.0.0.1:6070/thumbnail/health",
+            probeTimeoutMs: 3000,
+        },
+        implementationSliceAudit: {
+            auditVersion: "P25.23",
+            selectedSlice: { id: "renderer-service-health-and-noop-contract", enablesRuntimeDispatch: false },
+        },
+        healthPreflight: { status: "planned-disabled", dispatch: false },
+        clientRequest: { method: "POST", dispatch: false },
+    });
+
+    assert.equal(fixtures.status, "planned-disabled");
+    assert.equal(fixtures.fixtureVersion, "P25.24");
+    assert.equal(fixtures.adapter, "renderer-service");
+    assert.equal(fixtures.command, "render.thumbnail");
+    assert.equal(fixtures.dispatch, false);
+    assert.equal(fixtures.networkDispatch, false);
+    assert.equal(fixtures.runtimeRegistration, false);
+    assert.equal(fixtures.localFileWrites, false);
+    assert.equal(fixtures.selectedSlice, "renderer-service-health-and-noop-contract");
+    assert.equal(fixtures.consumes.implementationSliceAudit.auditVersion, "P25.23");
+    assert.equal(fixtures.consumes.implementationSliceAudit.enablesRuntimeDispatch, false);
+    assert.equal(fixtures.consumes.healthPreflight.currentDispatch, false);
+    assert.equal(fixtures.consumes.clientRequest.currentDispatch, false);
+    assert.equal(fixtures.healthContract.method, "GET");
+    assert.equal(fixtures.healthContract.endpoint, "http://127.0.0.1:6070/thumbnail/health");
+    assert.equal(fixtures.healthContract.timeoutMs, 3000);
+    assert.equal(fixtures.healthContract.dispatch, false);
+    assert.equal(fixtures.healthContract.networkDispatch, false);
+    assert.equal(fixtures.healthContract.okResponse.status, 200);
+    assert.equal(fixtures.healthContract.okResponse.body.runtimeRegistration, false);
+    assert.ok(fixtures.healthContract.okResponse.body.capabilities.includes("thumbnail.render.noop"));
+    assert.equal(fixtures.noopRenderContract.operation, "thumbnail.render");
+    assert.equal(fixtures.noopRenderContract.dispatch, false);
+    assert.equal(fixtures.noopRenderContract.networkDispatch, false);
+    assert.equal(fixtures.noopRenderContract.localFileWrites, false);
+    assert.equal(fixtures.noopRenderContract.response.status, 501);
+    assert.equal(fixtures.noopRenderContract.response.body.code, "renderer_service_noop");
+    assert.equal(fixtures.noopRenderContract.response.body.resource, null);
+    assert.ok(fixtures.fixtureCases.some((entry) => entry.id === "health-ok-no-runtime-registration"));
+    assert.ok(fixtures.noOpGuarantees.includes("do not perform health fetches from command-runtime, MCP, or CLI"));
+    assert.ok(fixtures.requiredBeforeRuntimeDispatch.includes("replace the no-op thumbnail.render response with a gated renderer-service implementation"));
 });
 
 test("render.thumbnail renderer-service client request scaffold adds MCP audit headers without dispatch", () => {

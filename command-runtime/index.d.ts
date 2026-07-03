@@ -445,6 +445,7 @@ export interface RenderThumbnailRendererServicePlan {
         adapterRegistryManifest: RenderThumbnailRendererServiceAdapterRegistryManifest;
         enablementChecklist: RenderThumbnailRendererServiceEnablementChecklist;
         implementationSliceAudit: RenderThumbnailRendererServiceImplementationSliceAudit;
+        healthNoopContractFixtures: RenderThumbnailRendererServiceHealthNoopContractFixtures;
         clientRequest: RenderThumbnailRendererServiceClientRequest;
     };
     client: RenderThumbnailRendererServiceClientConfig;
@@ -461,6 +462,7 @@ export interface RenderThumbnailRendererServicePlan {
     adapterRegistryManifest: RenderThumbnailRendererServiceAdapterRegistryManifest;
     enablementChecklist: RenderThumbnailRendererServiceEnablementChecklist;
     implementationSliceAudit: RenderThumbnailRendererServiceImplementationSliceAudit;
+    healthNoopContractFixtures: RenderThumbnailRendererServiceHealthNoopContractFixtures;
     clientRequest: RenderThumbnailRendererServiceClientRequest;
     serviceRequest: {
         command: "render.thumbnail";
@@ -537,6 +539,7 @@ export interface RenderThumbnailRendererServicePlan {
         adapterRegistryManifestVersion: "P25.21";
         enablementChecklistVersion: "P25.22";
         implementationSliceAuditVersion: "P25.23";
+        healthNoopContractFixturesVersion: "P25.24";
     };
 }
 
@@ -1130,6 +1133,108 @@ export interface RenderThumbnailRendererServiceImplementationSliceAudit {
     requiredBeforeRuntimeDispatch: string[];
 }
 
+export interface RenderThumbnailRendererServiceHealthNoopContractFixtures {
+    status: "planned-disabled";
+    fixtureVersion: "P25.24";
+    adapter: "renderer-service";
+    command: "render.thumbnail";
+    dispatch: false;
+    networkDispatch: false;
+    runtimeRegistration: false;
+    localFileWrites: false;
+    selectedSlice: string;
+    consumes: {
+        implementationSliceAudit: {
+            requiredSelectedSlice: "renderer-service-health-and-noop-contract";
+            currentSelectedSlice: string;
+            auditVersion: string;
+            enablesRuntimeDispatch: false;
+        };
+        healthPreflight: {
+            requiredStatus: "ok";
+            currentStatus: string;
+            currentDispatch: boolean;
+        };
+        clientRequest: {
+            requiredDispatch: true;
+            currentDispatch: boolean;
+            method: string;
+        };
+    };
+    healthContract: {
+        id: "renderer-service-health";
+        method: "GET";
+        path: "/health";
+        endpoint: string | null;
+        timeoutMs: number;
+        dispatch: false;
+        networkDispatch: false;
+        request: {
+            headers: {
+                accept: "application/json";
+            };
+            body: null;
+        };
+        okResponse: {
+            status: 200;
+            contentType: "application/json";
+            body: {
+                status: "ok";
+                renderer: "penpot-thumbnail-renderer";
+                mode: "noop";
+                runtimeRegistration: false;
+                dispatch: false;
+                capabilities: string[];
+            };
+        };
+        unavailableResponse: {
+            status: 503;
+            contentType: "application/json";
+            body: {
+                status: "unavailable";
+                code: "renderer_service_health_unavailable";
+                retryable: true;
+            };
+        };
+    };
+    noopRenderContract: {
+        id: "thumbnail-render-noop";
+        operation: "thumbnail.render";
+        method: "POST";
+        endpoint: string | null;
+        dispatch: false;
+        networkDispatch: false;
+        localFileWrites: false;
+        requestFields: string[];
+        response: {
+            status: 501;
+            contentType: "application/json";
+            body: {
+                status: "noop";
+                code: "renderer_service_noop";
+                message: string;
+                artifact: null;
+                resource: null;
+                runtimeRegistration: false;
+                dispatch: false;
+                localFileWrites: false;
+            };
+        };
+    };
+    fixtureCases: Array<{
+        id: string;
+        contract: string;
+        expectedStatus?: number;
+        dispatch: false;
+        runtimeRegistration?: false;
+        retryable?: true;
+        resource?: null;
+        localFileWrites?: false;
+    }>;
+    noOpGuarantees: string[];
+    requiredBeforeRuntimeDispatch: string[];
+}
+
 export interface CreateRenderThumbnailRendererServiceClientRequestOptions {
     entrypoint?: "mcp" | "cli" | string | null;
     mcpToolName?: string | null;
@@ -1459,6 +1564,14 @@ export function createRenderThumbnailRendererServiceImplementationSliceAudit(
         requiredCapabilities?: string[] | null;
     }
 ): RenderThumbnailRendererServiceImplementationSliceAudit;
+export function createRenderThumbnailRendererServiceHealthNoopContractFixtures(
+    options?: {
+        client?: Partial<RenderThumbnailRendererServiceClientConfig> | null;
+        implementationSliceAudit?: Partial<RenderThumbnailRendererServiceImplementationSliceAudit> | null;
+        healthPreflight?: Partial<RenderThumbnailRendererServiceHealthPreflight> | null;
+        clientRequest?: Partial<RenderThumbnailRendererServiceClientRequest> | null;
+    }
+): RenderThumbnailRendererServiceHealthNoopContractFixtures;
 export function createRenderThumbnailRendererServiceClientRequest(
     plan: Partial<RenderThumbnailRendererServicePlan>,
     options?: CreateRenderThumbnailRendererServiceClientRequestOptions

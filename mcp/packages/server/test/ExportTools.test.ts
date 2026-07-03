@@ -419,6 +419,13 @@ test("RenderThumbnailTool dry-run returns renderer-service request metadata with
         assert.equal(body.data.implementationSliceAudit.localFileWrites, false);
         assert.equal(body.data.implementationSliceAudit.selectedSlice.id, "renderer-service-health-and-noop-contract");
         assert.equal(body.data.implementationSliceAudit.selectedSlice.enablesRuntimeDispatch, false);
+        assert.equal(body.data.healthNoopContractFixtures.fixtureVersion, "P25.24");
+        assert.equal(body.data.healthNoopContractFixtures.dispatch, false);
+        assert.equal(body.data.healthNoopContractFixtures.networkDispatch, false);
+        assert.equal(body.data.healthNoopContractFixtures.runtimeRegistration, false);
+        assert.equal(body.data.healthNoopContractFixtures.localFileWrites, false);
+        assert.equal(body.data.healthNoopContractFixtures.healthContract.okResponse.status, 200);
+        assert.equal(body.data.healthNoopContractFixtures.noopRenderContract.response.status, 501);
         assert.deepEqual(body.data.service.client, body.data.client);
         assert.equal(body.data.service.responseNormalization.successStatus, "ok");
         assert.equal(body.data.service.responseNormalization.localFileWrites, false);
@@ -510,6 +517,12 @@ test("RenderThumbnailTool execution reports renderer service unavailable without
         assert.equal(body.error.data.implementationSliceAudit.runtimeRegistration, false);
         assert.equal(body.error.data.implementationSliceAudit.localFileWrites, false);
         assert.equal(body.error.data.implementationSliceAudit.selectedSlice.enablesRuntimeDispatch, false);
+        assert.equal(body.error.data.healthNoopContractFixtures.fixtureVersion, "P25.24");
+        assert.equal(body.error.data.healthNoopContractFixtures.dispatch, false);
+        assert.equal(body.error.data.healthNoopContractFixtures.networkDispatch, false);
+        assert.equal(body.error.data.healthNoopContractFixtures.runtimeRegistration, false);
+        assert.equal(body.error.data.healthNoopContractFixtures.localFileWrites, false);
+        assert.equal(body.error.data.healthNoopContractFixtures.noopRenderContract.response.body.resource, null);
         assert.equal(body.error.data.clientRequest.dispatch, false);
         assert.equal(body.error.data.serviceRequest.operation, "thumbnail.render");
         assert.deepEqual(body.error.data.requiredCapabilities, ["thumbnail-renderer-service-implementation", "file-thumbnail-cache-probe"]);

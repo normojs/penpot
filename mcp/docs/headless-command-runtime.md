@@ -940,3 +940,10 @@ P25.23 adds renderer-service implementation slice audit:
   contract fixture as the first concrete implementation slice.
 - The audit remains planning-only with `dispatch`, `networkDispatch`,
   `runtimeRegistration`, and `localFileWrites` all `false`.
+
+P25.24 adds renderer-service health/no-op contract fixtures:
+
+- Plans include `healthNoopContractFixtures`, defining `/health` OK/unavailable
+  fixtures and a no-op `thumbnail.render` response contract.
+- The fixtures remain planning-only with `dispatch`, `networkDispatch`,
+  `runtimeRegistration`, and `localFileWrites` all `false`.

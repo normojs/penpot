@@ -924,6 +924,7 @@ export class RenderThumbnailTool extends PenpotRpcTool<RenderThumbnailArgs> {
                     adapterRegistryManifest: plan.adapterRegistryManifest,
                     enablementChecklist: plan.enablementChecklist,
                     implementationSliceAudit: plan.implementationSliceAudit,
+                    healthNoopContractFixtures: plan.healthNoopContractFixtures,
                     clientRequest: plan.clientRequest,
                     requiredCapabilities: plan.requiredCapabilities,
                     serviceRequest: plan.serviceRequest,

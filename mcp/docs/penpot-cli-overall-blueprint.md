@@ -288,6 +288,8 @@ Current state:
 - Done: renderer-service implementation slice audit selects the health/no-op
   contract fixture as the first safe implementation step without enabling
   runtime dispatch.
+- Done: renderer-service health/no-op contract fixtures define `/health` and
+  no-op `thumbnail.render` responses without enabling runtime dispatch.
 - Done: focused command-runtime tests cover descriptor groups, lookup,
   adapter-selection priority/error cases, and token-safe envelopes.
 - Status: complete. Later command coverage gaps were tracked by the P15.1
@@ -809,6 +811,15 @@ P25.23 is complete:
 2. The selected next slice is the renderer-service health/no-op contract
    fixture, not PNG rendering.
 3. `implementationSliceAudit.dispatch`, `networkDispatch`,
+   `runtimeRegistration`, and `localFileWrites` remain false.
+
+P25.24 is complete:
+
+1. Shared plans include `healthNoopContractFixtures` metadata for `/health`
+   OK/unavailable and no-op `thumbnail.render` fixture responses.
+2. MCP and CLI expose these fixtures in dry-run and unavailable execution
+   payloads without health fetches or renderer-service calls.
+3. `healthNoopContractFixtures.dispatch`, `networkDispatch`,
    `runtimeRegistration`, and `localFileWrites` remain false.
 
 Keep manual configuration behavior stable while moving command metadata and
