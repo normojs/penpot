@@ -319,6 +319,10 @@ Current state:
   metadata-only package/workspace/output batches, readiness checks, commit
   boundary, and rollback plan without approving materialization, creating
   files, mutating workspace state, or registering runtime dispatch.
+- Done: renderer-service package creation dry-run summary defines
+  metadata-only would-create, would-modify, would-generate, and would-run
+  sections without writing files, mutating workspace state, running commands,
+  or registering runtime dispatch.
 - Done: focused command-runtime tests cover descriptor groups, lookup,
   adapter-selection priority/error cases, and token-safe envelopes.
 - Status: complete. Later command coverage gaps were tracked by the P15.1
@@ -953,6 +957,21 @@ P25.32 is complete:
    `fileMaterialization`, `workspaceMutation`, `lockfileMutation`,
    `rootPackageJsonMutation`, `pnpmWorkspaceMutation`, `commandExecution`,
    `buildOutput`, `processSpawn`, `dispatch`, `networkDispatch`,
+   `runtimeRegistration`, and `localFileWrites` remain false.
+
+P25.33 is complete:
+
+1. Shared plans include `packageCreationDryRunSummary` metadata for
+   would-create, would-modify, would-generate, and would-run sections plus
+   blocked-until reasons.
+2. MCP and CLI expose this summary in dry-run and unavailable execution
+   payloads without writing package files, mutating workspace manifests,
+   mutating lockfiles, running commands, emitting build output, or registering
+   runtime dispatch.
+3. `packageCreationDryRunSummary.dryRunOnly` remains true, while
+   `filesWritten`, `fileMaterialization`, `workspaceMutation`,
+   `lockfileMutation`, `commandExecution`, `buildOutput`,
+   `materializationApproved`, `dispatch`, `networkDispatch`,
    `runtimeRegistration`, and `localFileWrites` remain false.
 
 Keep manual configuration behavior stable while moving command metadata and

@@ -2739,6 +2739,12 @@ test("render thumbnail dry-run returns renderer-service request plan", async () 
         assert.equal(body.data.packageMaterializationChecklist.localFileWrites, false);
         assert.equal(body.data.packageMaterializationChecklist.fileMaterialization, false);
         assert.equal(body.data.packageMaterializationChecklist.materializationApproved, false);
+        assert.equal(body.data.packageCreationDryRunSummary.summaryVersion, "P25.33");
+        assert.equal(body.data.packageCreationDryRunSummary.dryRunOnly, true);
+        assert.equal(body.data.packageCreationDryRunSummary.dispatch, false);
+        assert.equal(body.data.packageCreationDryRunSummary.runtimeRegistration, false);
+        assert.equal(body.data.packageCreationDryRunSummary.localFileWrites, false);
+        assert.equal(body.data.packageCreationDryRunSummary.filesWritten, false);
         assert.equal(body.data.service.responseNormalization.successStatus, "ok");
         assert.equal(body.data.service.responseNormalization.localFileWrites, false);
         assert.equal(body.data.service.errorShape.code, "renderer_service_error");
@@ -2885,6 +2891,12 @@ test("render thumbnail execution reports renderer-service unavailable without ca
         assert.equal(body.error.data.packageMaterializationChecklist.localFileWrites, false);
         assert.equal(body.error.data.packageMaterializationChecklist.fileMaterialization, false);
         assert.equal(body.error.data.packageMaterializationChecklist.materializationApproved, false);
+        assert.equal(body.error.data.packageCreationDryRunSummary.summaryVersion, "P25.33");
+        assert.equal(body.error.data.packageCreationDryRunSummary.dryRunOnly, true);
+        assert.equal(body.error.data.packageCreationDryRunSummary.dispatch, false);
+        assert.equal(body.error.data.packageCreationDryRunSummary.runtimeRegistration, false);
+        assert.equal(body.error.data.packageCreationDryRunSummary.localFileWrites, false);
+        assert.equal(body.error.data.packageCreationDryRunSummary.filesWritten, false);
         assert.equal(body.error.data.clientRequest.dispatch, false);
         assert.equal(body.error.data.serviceRequest.operation, "thumbnail.render");
     } finally {

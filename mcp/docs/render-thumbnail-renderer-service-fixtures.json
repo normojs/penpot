@@ -1,5 +1,5 @@
 {
-  "version": "P25.32",
+  "version": "P25.33",
   "command": "render.thumbnail",
   "status": "renderer-service API fixtures with MCP/CLI dry-run/client boundaries, metadata-only availability probes, response normalization contracts, disabled client request scaffold, explicit execution gate, health preflight plan, executable client harness plan, dispatch adapter boundary, opt-in configuration surfaces, unavailable error taxonomy, integration fixture harness, dispatch registration preflight, disabled executable adapter registration scaffold, disabled adapter registry manifest, final disabled enablement checklist, implementation slice audit, health/no-op contract fixtures, no-op service host scaffold, host lifecycle test fixtures, package manifest scaffold, package creation guardrails, package file templates, and package workspace wiring; runtime execution blocked",
   "adapter": "renderer-service",
@@ -1665,6 +1665,139 @@
         "run filtered build, type-check, and test commands after package files exist",
         "keep render.thumbnail execution unavailable until materialized package verification passes"
       ]
+    },
+    "packageCreationDryRunSummary": {
+      "status": "planned-disabled",
+      "summaryVersion": "P25.33",
+      "adapter": "renderer-service",
+      "command": "render.thumbnail",
+      "dryRunOnly": true,
+      "dispatch": false,
+      "networkDispatch": false,
+      "runtimeRegistration": false,
+      "localFileWrites": false,
+      "hostStartup": false,
+      "processSpawn": false,
+      "packageCreated": false,
+      "workspaceMutation": false,
+      "scriptRunnable": false,
+      "fileMaterialization": false,
+      "lockfileMutation": false,
+      "rootPackageJsonMutation": false,
+      "pnpmWorkspaceMutation": false,
+      "commandExecution": false,
+      "buildOutput": false,
+      "packageScriptsRunnable": false,
+      "materializationApproved": false,
+      "filesWritten": false,
+      "consumes": {
+        "packageMaterializationChecklist": {
+          "requiredStatus": "planned-disabled",
+          "currentStatus": "planned-disabled",
+          "checklistVersion": "P25.32",
+          "materializationApproved": false
+        },
+        "packageFileTemplates": {
+          "requiredStatus": "planned-disabled",
+          "currentStatus": "planned-disabled",
+          "templateVersion": "P25.29",
+          "fileMaterialization": false
+        },
+        "packageWorkspaceWiring": {
+          "requiredStatus": "planned-disabled",
+          "currentStatus": "planned-disabled",
+          "wiringVersion": "P25.30",
+          "workspaceMutation": false
+        },
+        "packageBuildVerification": {
+          "requiredStatus": "planned-disabled",
+          "currentStatus": "planned-disabled",
+          "verificationVersion": "P25.31",
+          "commandExecution": false
+        }
+      },
+      "summary": {
+        "title": "renderer-service package creation dry-run",
+        "packageName": "@penpot/renderer-service",
+        "packageDirectory": "renderer-service",
+        "wouldCreateFiles": [
+          "renderer-service/package.json",
+          "renderer-service/tsconfig.json",
+          "renderer-service/src/index.ts",
+          "renderer-service/src/noop-host.ts",
+          "renderer-service/test/noop-host.test.mjs"
+        ],
+        "wouldModifyFiles": [
+          "pnpm-workspace.yaml",
+          "package.json",
+          "pnpm-lock.yaml"
+        ],
+        "wouldGenerateFilesAfterBuild": [
+          "renderer-service/dist/index.js",
+          "renderer-service/dist/index.d.ts",
+          "renderer-service/dist/noop-host.js",
+          "renderer-service/dist/noop-host.d.ts"
+        ],
+        "wouldRunCommands": [
+          "pnpm --filter @penpot/renderer-service build",
+          "pnpm --filter @penpot/renderer-service exec tsc --noEmit",
+          "pnpm --filter @penpot/renderer-service test"
+        ]
+      },
+      "sections": [
+        {
+          "id": "package-files",
+          "title": "Package files",
+          "dryRunOnly": true,
+          "items": [
+            "package.json",
+            "tsconfig.json",
+            "src/index.ts",
+            "src/noop-host.ts",
+            "test/noop-host.test.mjs"
+          ]
+        },
+        {
+          "id": "workspace-wiring",
+          "title": "Workspace wiring",
+          "dryRunOnly": true,
+          "items": [
+            "pnpm-workspace.yaml entry",
+            "root package.json scripts",
+            "pnpm-lock.yaml dependency graph"
+          ]
+        },
+        {
+          "id": "verification",
+          "title": "Verification commands",
+          "dryRunOnly": true,
+          "items": [
+            "filtered build",
+            "type-check without emit",
+            "node test suite"
+          ]
+        }
+      ],
+      "blockedUntil": [
+        "explicit package materialization implementation task",
+        "workspace and lockfile mutation approval",
+        "package file template review",
+        "runtime dispatch remains disabled after package creation"
+      ],
+      "noOpGuarantees": [
+        "dry-run summary does not create renderer-service directory",
+        "dry-run summary does not write package files",
+        "dry-run summary does not edit workspace manifests",
+        "dry-run summary does not mutate lockfiles",
+        "dry-run summary does not run verification commands",
+        "dry-run summary does not register runtime dispatch"
+      ],
+      "requiredBeforeRuntimeDispatch": [
+        "commit dry-run summary before materializing package files",
+        "create package files in a later explicit implementation task",
+        "run package verification after materialization",
+        "keep render.thumbnail unavailable until package creation and verification are complete"
+      ]
     }
   },
   "registrationGates": {
@@ -1978,6 +2111,7 @@
     "package workspace wiring survives dry-run and unavailable execution JSON output",
     "package build verification survives dry-run and unavailable execution JSON output",
     "package materialization checklist survives dry-run and unavailable execution JSON output",
+    "package creation dry-run summary survives dry-run and unavailable execution JSON output",
     "forwards caller auth and MCP audit context to renderer-service",
     "reports structured errors for missing resourceUri"
   ],
@@ -2006,12 +2140,13 @@
     "package workspace wiring survives dry-run and unavailable execution JSON output",
     "package build verification survives dry-run and unavailable execution JSON output",
     "package materialization checklist survives dry-run and unavailable execution JSON output",
+    "package creation dry-run summary survives dry-run and unavailable execution JSON output",
     "--output downloads the returned PNG resource",
     "missing token fails before contacting renderer-service"
   ],
   "nextTask": {
-    "id": "P25.33",
-    "title": "Plan renderer-service package creation dry-run summary",
+    "id": "P25.34",
+    "title": "Plan renderer-service package creation file manifest",
     "status": "pending"
   }
 }

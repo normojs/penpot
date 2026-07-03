@@ -34,6 +34,7 @@ import {
     createRenderThumbnailRendererServiceNoopServiceHostScaffold,
     createRenderThumbnailRendererServicePackageCreationGuardrails,
     createRenderThumbnailRendererServicePackageBuildVerification,
+    createRenderThumbnailRendererServicePackageCreationDryRunSummary,
     createRenderThumbnailRendererServicePackageFileTemplates,
     createRenderThumbnailRendererServicePackageManifestScaffold,
     createRenderThumbnailRendererServicePackageMaterializationChecklist,
@@ -548,6 +549,13 @@ test("render.thumbnail renderer-service API fixtures define planning requests wi
     assert.equal(fixtures.serviceApi.packageMaterializationChecklist.localFileWrites, false);
     assert.equal(fixtures.serviceApi.packageMaterializationChecklist.fileMaterialization, false);
     assert.equal(fixtures.serviceApi.packageMaterializationChecklist.materializationApproved, false);
+    assert.equal(fixtures.serviceApi.packageCreationDryRunSummary.summaryVersion, "P25.33");
+    assert.equal(fixtures.serviceApi.packageCreationDryRunSummary.dryRunOnly, true);
+    assert.equal(fixtures.serviceApi.packageCreationDryRunSummary.dispatch, false);
+    assert.equal(fixtures.serviceApi.packageCreationDryRunSummary.runtimeRegistration, false);
+    assert.equal(fixtures.serviceApi.packageCreationDryRunSummary.localFileWrites, false);
+    assert.equal(fixtures.serviceApi.packageCreationDryRunSummary.fileMaterialization, false);
+    assert.equal(fixtures.serviceApi.packageCreationDryRunSummary.filesWritten, false);
     assert.deepEqual(fixtures.runtimeRegistration.commandDescriptorAdapters, ["renderer-service"]);
     assert.deepEqual(CommandDescriptors.RENDER_THUMBNAIL.adapters, ["renderer-service"]);
     assert.equal(fixtures.runtimeRegistration.mcpToolRegistered, true);
@@ -899,6 +907,26 @@ test("render.thumbnail renderer-service plan exposes dry-run client request whil
     assert.ok(plan.packageMaterializationChecklist.readinessChecklist.every((entry) => entry.satisfied === false));
     assert.equal(plan.packageMaterializationChecklist.commitBoundary.includeRuntimeDispatch, false);
     assert.deepEqual(plan.service.packageMaterializationChecklist, plan.packageMaterializationChecklist);
+    assert.equal(plan.packageCreationDryRunSummary.summaryVersion, "P25.33");
+    assert.equal(plan.packageCreationDryRunSummary.dryRunOnly, true);
+    assert.equal(plan.packageCreationDryRunSummary.dispatch, false);
+    assert.equal(plan.packageCreationDryRunSummary.networkDispatch, false);
+    assert.equal(plan.packageCreationDryRunSummary.runtimeRegistration, false);
+    assert.equal(plan.packageCreationDryRunSummary.localFileWrites, false);
+    assert.equal(plan.packageCreationDryRunSummary.packageCreated, false);
+    assert.equal(plan.packageCreationDryRunSummary.workspaceMutation, false);
+    assert.equal(plan.packageCreationDryRunSummary.fileMaterialization, false);
+    assert.equal(plan.packageCreationDryRunSummary.lockfileMutation, false);
+    assert.equal(plan.packageCreationDryRunSummary.commandExecution, false);
+    assert.equal(plan.packageCreationDryRunSummary.buildOutput, false);
+    assert.equal(plan.packageCreationDryRunSummary.materializationApproved, false);
+    assert.equal(plan.packageCreationDryRunSummary.filesWritten, false);
+    assert.equal(plan.packageCreationDryRunSummary.consumes.packageMaterializationChecklist.checklistVersion, "P25.32");
+    assert.ok(plan.packageCreationDryRunSummary.summary.wouldCreateFiles.includes("renderer-service/package.json"));
+    assert.ok(plan.packageCreationDryRunSummary.summary.wouldModifyFiles.includes("pnpm-lock.yaml"));
+    assert.ok(plan.packageCreationDryRunSummary.summary.wouldRunCommands.includes("pnpm --filter @penpot/renderer-service test"));
+    assert.ok(plan.packageCreationDryRunSummary.sections.some((entry) => entry.id === "verification" && entry.dryRunOnly === true));
+    assert.deepEqual(plan.service.packageCreationDryRunSummary, plan.packageCreationDryRunSummary);
     assert.equal(plan.clientRequest.status, "scaffolded");
     assert.equal(plan.clientRequest.dispatch, false);
     assert.equal(plan.clientRequest.method, "POST");
@@ -947,6 +975,7 @@ test("render.thumbnail renderer-service plan exposes dry-run client request whil
     assert.equal(plan.diagnostics.packageWorkspaceWiringVersion, "P25.30");
     assert.equal(plan.diagnostics.packageBuildVerificationVersion, "P25.31");
     assert.equal(plan.diagnostics.packageMaterializationChecklistVersion, "P25.32");
+    assert.equal(plan.diagnostics.packageCreationDryRunSummaryVersion, "P25.33");
 });
 
 test("render.thumbnail renderer-service plan reports not-configured availability without endpoint", () => {
@@ -1782,6 +1811,67 @@ test("render.thumbnail renderer-service package materialization checklist stays 
     assert.equal(checklist.rollbackPlan.revertRuntimeRegistration, false);
     assert.ok(checklist.noOpGuarantees.includes("do not create renderer-service directory"));
     assert.ok(checklist.requiredBeforeRuntimeDispatch.includes("materialize package files and workspace wiring in a separate implementation task"));
+});
+
+test("render.thumbnail renderer-service package creation dry-run summary stays metadata-only", () => {
+    const summary = createRenderThumbnailRendererServicePackageCreationDryRunSummary({
+        packageMaterializationChecklist: {
+            status: "planned-disabled",
+            checklistVersion: "P25.32",
+            materializationApproved: false,
+        },
+        packageFileTemplates: {
+            status: "planned-disabled",
+            templateVersion: "P25.29",
+            fileMaterialization: false,
+        },
+        packageWorkspaceWiring: {
+            status: "planned-disabled",
+            wiringVersion: "P25.30",
+            workspaceMutation: false,
+        },
+        packageBuildVerification: {
+            status: "planned-disabled",
+            verificationVersion: "P25.31",
+            commandExecution: false,
+        },
+    });
+
+    assert.equal(summary.status, "planned-disabled");
+    assert.equal(summary.summaryVersion, "P25.33");
+    assert.equal(summary.dryRunOnly, true);
+    assert.equal(summary.adapter, "renderer-service");
+    assert.equal(summary.command, "render.thumbnail");
+    assert.equal(summary.dispatch, false);
+    assert.equal(summary.networkDispatch, false);
+    assert.equal(summary.runtimeRegistration, false);
+    assert.equal(summary.localFileWrites, false);
+    assert.equal(summary.hostStartup, false);
+    assert.equal(summary.processSpawn, false);
+    assert.equal(summary.packageCreated, false);
+    assert.equal(summary.workspaceMutation, false);
+    assert.equal(summary.scriptRunnable, false);
+    assert.equal(summary.fileMaterialization, false);
+    assert.equal(summary.lockfileMutation, false);
+    assert.equal(summary.rootPackageJsonMutation, false);
+    assert.equal(summary.pnpmWorkspaceMutation, false);
+    assert.equal(summary.commandExecution, false);
+    assert.equal(summary.buildOutput, false);
+    assert.equal(summary.packageScriptsRunnable, false);
+    assert.equal(summary.materializationApproved, false);
+    assert.equal(summary.filesWritten, false);
+    assert.equal(summary.consumes.packageMaterializationChecklist.checklistVersion, "P25.32");
+    assert.equal(summary.consumes.packageMaterializationChecklist.materializationApproved, false);
+    assert.equal(summary.summary.packageName, "@penpot/renderer-service");
+    assert.equal(summary.summary.packageDirectory, "renderer-service");
+    assert.ok(summary.summary.wouldCreateFiles.includes("renderer-service/src/noop-host.ts"));
+    assert.ok(summary.summary.wouldModifyFiles.includes("pnpm-workspace.yaml"));
+    assert.ok(summary.summary.wouldGenerateFilesAfterBuild.includes("renderer-service/dist/noop-host.js"));
+    assert.ok(summary.summary.wouldRunCommands.includes("pnpm --filter @penpot/renderer-service build"));
+    assert.ok(summary.sections.every((entry) => entry.dryRunOnly === true));
+    assert.ok(summary.blockedUntil.includes("explicit package materialization implementation task"));
+    assert.ok(summary.noOpGuarantees.includes("dry-run summary does not write package files"));
+    assert.ok(summary.requiredBeforeRuntimeDispatch.includes("create package files in a later explicit implementation task"));
 });
 
 test("render.thumbnail renderer-service client request scaffold adds MCP audit headers without dispatch", () => {

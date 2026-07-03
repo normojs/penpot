@@ -1041,6 +1041,12 @@ export function createRenderThumbnailRendererServicePlan(options = EMPTY_OBJECT)
         packageWorkspaceWiring,
         packageBuildVerification,
     });
+    const packageCreationDryRunSummary = createRenderThumbnailRendererServicePackageCreationDryRunSummary({
+        packageMaterializationChecklist,
+        packageFileTemplates,
+        packageWorkspaceWiring,
+        packageBuildVerification,
+    });
 
     return {
         command: CommandDescriptors.RENDER_THUMBNAIL.id,
@@ -1105,6 +1111,7 @@ export function createRenderThumbnailRendererServicePlan(options = EMPTY_OBJECT)
             packageWorkspaceWiring,
             packageBuildVerification,
             packageMaterializationChecklist,
+            packageCreationDryRunSummary,
             clientRequest,
         },
         client,
@@ -1130,6 +1137,7 @@ export function createRenderThumbnailRendererServicePlan(options = EMPTY_OBJECT)
         packageWorkspaceWiring,
         packageBuildVerification,
         packageMaterializationChecklist,
+        packageCreationDryRunSummary,
         clientRequest,
         serviceRequest: {
             command: CommandDescriptors.RENDER_THUMBNAIL.id,
@@ -1215,6 +1223,7 @@ export function createRenderThumbnailRendererServicePlan(options = EMPTY_OBJECT)
             packageWorkspaceWiringVersion: packageWorkspaceWiring.wiringVersion,
             packageBuildVerificationVersion: packageBuildVerification.verificationVersion,
             packageMaterializationChecklistVersion: packageMaterializationChecklist.checklistVersion,
+            packageCreationDryRunSummaryVersion: packageCreationDryRunSummary.summaryVersion,
         },
     };
 }
@@ -1942,6 +1951,129 @@ export function createRenderThumbnailRendererServicePackageMaterializationCheckl
             "materialize package files and workspace wiring in a separate implementation task",
             "run filtered build, type-check, and test commands after package files exist",
             "keep render.thumbnail execution unavailable until materialized package verification passes",
+        ],
+    };
+}
+
+export function createRenderThumbnailRendererServicePackageCreationDryRunSummary(options = EMPTY_OBJECT) {
+    const packageMaterializationChecklist = options.packageMaterializationChecklist ?? EMPTY_OBJECT;
+    const packageFileTemplates = options.packageFileTemplates ?? EMPTY_OBJECT;
+    const packageWorkspaceWiring = options.packageWorkspaceWiring ?? EMPTY_OBJECT;
+    const packageBuildVerification = options.packageBuildVerification ?? EMPTY_OBJECT;
+
+    return {
+        status: "planned-disabled",
+        summaryVersion: "P25.33",
+        adapter: "renderer-service",
+        command: CommandDescriptors.RENDER_THUMBNAIL.id,
+        dryRunOnly: true,
+        dispatch: false,
+        networkDispatch: false,
+        runtimeRegistration: false,
+        localFileWrites: false,
+        hostStartup: false,
+        processSpawn: false,
+        packageCreated: false,
+        workspaceMutation: false,
+        scriptRunnable: false,
+        fileMaterialization: false,
+        lockfileMutation: false,
+        rootPackageJsonMutation: false,
+        pnpmWorkspaceMutation: false,
+        commandExecution: false,
+        buildOutput: false,
+        packageScriptsRunnable: false,
+        materializationApproved: false,
+        filesWritten: false,
+        consumes: {
+            packageMaterializationChecklist: {
+                requiredStatus: "planned-disabled",
+                currentStatus: packageMaterializationChecklist.status ?? "planned-disabled",
+                checklistVersion: packageMaterializationChecklist.checklistVersion ?? "P25.32",
+                materializationApproved: false,
+            },
+            packageFileTemplates: {
+                requiredStatus: "planned-disabled",
+                currentStatus: packageFileTemplates.status ?? "planned-disabled",
+                templateVersion: packageFileTemplates.templateVersion ?? "P25.29",
+                fileMaterialization: false,
+            },
+            packageWorkspaceWiring: {
+                requiredStatus: "planned-disabled",
+                currentStatus: packageWorkspaceWiring.status ?? "planned-disabled",
+                wiringVersion: packageWorkspaceWiring.wiringVersion ?? "P25.30",
+                workspaceMutation: false,
+            },
+            packageBuildVerification: {
+                requiredStatus: "planned-disabled",
+                currentStatus: packageBuildVerification.status ?? "planned-disabled",
+                verificationVersion: packageBuildVerification.verificationVersion ?? "P25.31",
+                commandExecution: false,
+            },
+        },
+        summary: {
+            title: "renderer-service package creation dry-run",
+            packageName: "@penpot/renderer-service",
+            packageDirectory: "renderer-service",
+            wouldCreateFiles: [
+                "renderer-service/package.json",
+                "renderer-service/tsconfig.json",
+                "renderer-service/src/index.ts",
+                "renderer-service/src/noop-host.ts",
+                "renderer-service/test/noop-host.test.mjs",
+            ],
+            wouldModifyFiles: ["pnpm-workspace.yaml", "package.json", "pnpm-lock.yaml"],
+            wouldGenerateFilesAfterBuild: [
+                "renderer-service/dist/index.js",
+                "renderer-service/dist/index.d.ts",
+                "renderer-service/dist/noop-host.js",
+                "renderer-service/dist/noop-host.d.ts",
+            ],
+            wouldRunCommands: [
+                "pnpm --filter @penpot/renderer-service build",
+                "pnpm --filter @penpot/renderer-service exec tsc --noEmit",
+                "pnpm --filter @penpot/renderer-service test",
+            ],
+        },
+        sections: [
+            {
+                id: "package-files",
+                title: "Package files",
+                dryRunOnly: true,
+                items: ["package.json", "tsconfig.json", "src/index.ts", "src/noop-host.ts", "test/noop-host.test.mjs"],
+            },
+            {
+                id: "workspace-wiring",
+                title: "Workspace wiring",
+                dryRunOnly: true,
+                items: ["pnpm-workspace.yaml entry", "root package.json scripts", "pnpm-lock.yaml dependency graph"],
+            },
+            {
+                id: "verification",
+                title: "Verification commands",
+                dryRunOnly: true,
+                items: ["filtered build", "type-check without emit", "node test suite"],
+            },
+        ],
+        blockedUntil: [
+            "explicit package materialization implementation task",
+            "workspace and lockfile mutation approval",
+            "package file template review",
+            "runtime dispatch remains disabled after package creation",
+        ],
+        noOpGuarantees: [
+            "dry-run summary does not create renderer-service directory",
+            "dry-run summary does not write package files",
+            "dry-run summary does not edit workspace manifests",
+            "dry-run summary does not mutate lockfiles",
+            "dry-run summary does not run verification commands",
+            "dry-run summary does not register runtime dispatch",
+        ],
+        requiredBeforeRuntimeDispatch: [
+            "commit dry-run summary before materializing package files",
+            "create package files in a later explicit implementation task",
+            "run package verification after materialization",
+            "keep render.thumbnail unavailable until package creation and verification are complete",
         ],
     };
 }

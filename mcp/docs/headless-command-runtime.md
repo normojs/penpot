@@ -1035,3 +1035,14 @@ P25.32 adds renderer-service package materialization checklist:
   `rootPackageJsonMutation`, `pnpmWorkspaceMutation`, `commandExecution`,
   `buildOutput`, `processSpawn`, `dispatch`, `networkDispatch`,
   `runtimeRegistration`, and `localFileWrites` all `false`.
+
+P25.33 adds renderer-service package creation dry-run summary:
+
+- Plans include `packageCreationDryRunSummary`, defining future would-create,
+  would-modify, would-generate, and would-run sections plus blocked-until
+  reasons.
+- The summary remains planning-only with `dryRunOnly:true`, `filesWritten`,
+  `fileMaterialization`, `workspaceMutation`, `lockfileMutation`,
+  `commandExecution`, `buildOutput`, `materializationApproved`, `dispatch`,
+  `networkDispatch`, `runtimeRegistration`, and `localFileWrites` all `false`
+  except the explicit dry-run marker.
