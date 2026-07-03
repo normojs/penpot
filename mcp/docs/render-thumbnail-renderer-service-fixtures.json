@@ -1,7 +1,7 @@
 {
-  "version": "P25.27",
+  "version": "P25.28",
   "command": "render.thumbnail",
-  "status": "renderer-service API fixtures with MCP/CLI dry-run/client boundaries, metadata-only availability probes, response normalization contracts, disabled client request scaffold, explicit execution gate, health preflight plan, executable client harness plan, dispatch adapter boundary, opt-in configuration surfaces, unavailable error taxonomy, integration fixture harness, dispatch registration preflight, disabled executable adapter registration scaffold, disabled adapter registry manifest, final disabled enablement checklist, implementation slice audit, health/no-op contract fixtures, no-op service host scaffold, host lifecycle test fixtures, and package manifest scaffold; runtime execution blocked",
+  "status": "renderer-service API fixtures with MCP/CLI dry-run/client boundaries, metadata-only availability probes, response normalization contracts, disabled client request scaffold, explicit execution gate, health preflight plan, executable client harness plan, dispatch adapter boundary, opt-in configuration surfaces, unavailable error taxonomy, integration fixture harness, dispatch registration preflight, disabled executable adapter registration scaffold, disabled adapter registry manifest, final disabled enablement checklist, implementation slice audit, health/no-op contract fixtures, no-op service host scaffold, host lifecycle test fixtures, package manifest scaffold, and package creation guardrails; runtime execution blocked",
   "adapter": "renderer-service",
   "runtimeRegistration": {
     "mcpToolRegistered": true,
@@ -1048,6 +1048,108 @@
         "prove noop host lifecycle tests before enabling process startup",
         "keep command-runtime dispatch disabled until package scripts are executable and gated"
       ]
+    },
+    "packageCreationGuardrails": {
+      "status": "planned-disabled",
+      "guardrailVersion": "P25.28",
+      "adapter": "renderer-service",
+      "command": "render.thumbnail",
+      "dispatch": false,
+      "networkDispatch": false,
+      "runtimeRegistration": false,
+      "localFileWrites": false,
+      "hostStartup": false,
+      "processSpawn": false,
+      "packageCreated": false,
+      "workspaceMutation": false,
+      "scriptRunnable": false,
+      "consumes": {
+        "packageManifestScaffold": {
+          "requiredStatus": "planned-disabled",
+          "currentStatus": "planned-disabled",
+          "manifestVersion": "P25.27",
+          "packageCreated": false,
+          "workspaceMutation": false,
+          "scriptRunnable": false
+        },
+        "hostLifecycleTestFixtures": {
+          "requiredStatus": "planned-disabled",
+          "currentStatus": "planned-disabled",
+          "fixtureVersion": "P25.26",
+          "processSpawn": false
+        }
+      },
+      "creationReadiness": {
+        "status": "blocked",
+        "canCreatePackage": false,
+        "requiredChecks": [
+          {
+            "id": "dedicated-package-creation-task",
+            "description": "create renderer-service files only in an explicit package creation task",
+            "requiredBeforePackageCreation": true,
+            "satisfied": false
+          },
+          {
+            "id": "workspace-manifest-review",
+            "description": "review root package scripts and pnpm workspace changes before mutating manifests",
+            "requiredBeforePackageCreation": true,
+            "satisfied": false
+          },
+          {
+            "id": "lockfile-update-plan",
+            "description": "plan pnpm lockfile changes together with package dependency additions",
+            "requiredBeforePackageCreation": true,
+            "satisfied": false
+          },
+          {
+            "id": "noop-host-lifecycle-tests-ready",
+            "description": "prove no-op host lifecycle tests before any script can spawn a process",
+            "requiredBeforePackageCreation": true,
+            "satisfied": false
+          }
+        ]
+      },
+      "blockedMutations": {
+        "packageFiles": [
+          "renderer-service/package.json",
+          "renderer-service/tsconfig.json",
+          "renderer-service/src/index.ts",
+          "renderer-service/src/noop-host.ts",
+          "renderer-service/test/noop-host.test.mjs"
+        ],
+        "workspaceFiles": [
+          "pnpm-workspace.yaml",
+          "pnpm-lock.yaml",
+          "package.json"
+        ],
+        "runtimeFiles": [
+          "command-runtime/index.js runtime adapter registration",
+          "mcp/packages/server runtime dispatch registration",
+          "penpot-cli runtime dispatch execution"
+        ]
+      },
+      "allowedInThisStep": [
+        "metadata-only guardrail planning",
+        "fixture and documentation updates",
+        "dry-run and unavailable payload exposure",
+        "tests that assert no package creation or workspace mutation"
+      ],
+      "deniedInThisStep": [
+        "create renderer-service directory",
+        "edit pnpm workspace manifests",
+        "mutate lockfiles",
+        "add runnable package scripts",
+        "spawn renderer-service processes",
+        "probe renderer-service health endpoints",
+        "register executable command-runtime dispatch"
+      ],
+      "requiredBeforeRuntimeDispatch": [
+        "complete package creation guardrail review in a committed planning task",
+        "create renderer-service package files in a later explicit implementation task",
+        "commit workspace manifest and lockfile changes with focused package tests",
+        "prove no-op host lifecycle tests can run without leaking processes or ports",
+        "keep render.thumbnail unavailable until renderer-service dispatch is explicitly registered"
+      ]
     }
   },
   "registrationGates": {
@@ -1356,6 +1458,7 @@
     "no-op service host scaffold survives dry-run and unavailable execution JSON output",
     "host lifecycle test fixtures survive dry-run and unavailable execution JSON output",
     "package manifest scaffold survives dry-run and unavailable execution JSON output",
+    "package creation guardrails survive dry-run and unavailable execution JSON output",
     "forwards caller auth and MCP audit context to renderer-service",
     "reports structured errors for missing resourceUri"
   ],
@@ -1379,12 +1482,13 @@
     "no-op service host scaffold survives dry-run and unavailable execution JSON output",
     "host lifecycle test fixtures survive dry-run and unavailable execution JSON output",
     "package manifest scaffold survives dry-run and unavailable execution JSON output",
+    "package creation guardrails survive dry-run and unavailable execution JSON output",
     "--output downloads the returned PNG resource",
     "missing token fails before contacting renderer-service"
   ],
   "nextTask": {
-    "id": "P25.28",
-    "title": "Plan renderer-service package creation guardrails",
+    "id": "P25.29",
+    "title": "Plan renderer-service package file templates",
     "modules": [
       "mcp",
       "penpot-cli",

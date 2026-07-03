@@ -449,6 +449,7 @@ export interface RenderThumbnailRendererServicePlan {
         noopServiceHostScaffold: RenderThumbnailRendererServiceNoopServiceHostScaffold;
         hostLifecycleTestFixtures: RenderThumbnailRendererServiceHostLifecycleTestFixtures;
         packageManifestScaffold: RenderThumbnailRendererServicePackageManifestScaffold;
+        packageCreationGuardrails: RenderThumbnailRendererServicePackageCreationGuardrails;
         clientRequest: RenderThumbnailRendererServiceClientRequest;
     };
     client: RenderThumbnailRendererServiceClientConfig;
@@ -469,6 +470,7 @@ export interface RenderThumbnailRendererServicePlan {
     noopServiceHostScaffold: RenderThumbnailRendererServiceNoopServiceHostScaffold;
     hostLifecycleTestFixtures: RenderThumbnailRendererServiceHostLifecycleTestFixtures;
     packageManifestScaffold: RenderThumbnailRendererServicePackageManifestScaffold;
+    packageCreationGuardrails: RenderThumbnailRendererServicePackageCreationGuardrails;
     clientRequest: RenderThumbnailRendererServiceClientRequest;
     serviceRequest: {
         command: "render.thumbnail";
@@ -549,6 +551,7 @@ export interface RenderThumbnailRendererServicePlan {
         noopServiceHostScaffoldVersion: "P25.25";
         hostLifecycleTestFixturesVersion: "P25.26";
         packageManifestScaffoldVersion: "P25.27";
+        packageCreationGuardrailsVersion: "P25.28";
     };
 }
 
@@ -1443,6 +1446,56 @@ export interface RenderThumbnailRendererServicePackageManifestScaffold {
     requiredBeforeRuntimeDispatch: string[];
 }
 
+export interface RenderThumbnailRendererServicePackageCreationGuardrails {
+    status: "planned-disabled";
+    guardrailVersion: "P25.28";
+    adapter: "renderer-service";
+    command: "render.thumbnail";
+    dispatch: false;
+    networkDispatch: false;
+    runtimeRegistration: false;
+    localFileWrites: false;
+    hostStartup: false;
+    processSpawn: false;
+    packageCreated: false;
+    workspaceMutation: false;
+    scriptRunnable: false;
+    consumes: {
+        packageManifestScaffold: {
+            requiredStatus: "planned-disabled";
+            currentStatus: string;
+            manifestVersion: string;
+            packageCreated: false;
+            workspaceMutation: false;
+            scriptRunnable: false;
+        };
+        hostLifecycleTestFixtures: {
+            requiredStatus: "planned-disabled";
+            currentStatus: string;
+            fixtureVersion: string;
+            processSpawn: false;
+        };
+    };
+    creationReadiness: {
+        status: "blocked";
+        canCreatePackage: false;
+        requiredChecks: Array<{
+            id: string;
+            description: string;
+            requiredBeforePackageCreation: true;
+            satisfied: false;
+        }>;
+    };
+    blockedMutations: {
+        packageFiles: string[];
+        workspaceFiles: string[];
+        runtimeFiles: string[];
+    };
+    allowedInThisStep: string[];
+    deniedInThisStep: string[];
+    requiredBeforeRuntimeDispatch: string[];
+}
+
 export interface CreateRenderThumbnailRendererServiceClientRequestOptions {
     entrypoint?: "mcp" | "cli" | string | null;
     mcpToolName?: string | null;
@@ -1799,6 +1852,12 @@ export function createRenderThumbnailRendererServicePackageManifestScaffold(
         hostLifecycleTestFixtures?: Partial<RenderThumbnailRendererServiceHostLifecycleTestFixtures> | null;
     }
 ): RenderThumbnailRendererServicePackageManifestScaffold;
+export function createRenderThumbnailRendererServicePackageCreationGuardrails(
+    options?: {
+        packageManifestScaffold?: Partial<RenderThumbnailRendererServicePackageManifestScaffold> | null;
+        hostLifecycleTestFixtures?: Partial<RenderThumbnailRendererServiceHostLifecycleTestFixtures> | null;
+    }
+): RenderThumbnailRendererServicePackageCreationGuardrails;
 export function createRenderThumbnailRendererServiceClientRequest(
     plan: Partial<RenderThumbnailRendererServicePlan>,
     options?: CreateRenderThumbnailRendererServiceClientRequestOptions

@@ -1019,6 +1019,10 @@ export function createRenderThumbnailRendererServicePlan(options = EMPTY_OBJECT)
         noopServiceHostScaffold,
         hostLifecycleTestFixtures,
     });
+    const packageCreationGuardrails = createRenderThumbnailRendererServicePackageCreationGuardrails({
+        packageManifestScaffold,
+        hostLifecycleTestFixtures,
+    });
 
     return {
         command: CommandDescriptors.RENDER_THUMBNAIL.id,
@@ -1078,6 +1082,7 @@ export function createRenderThumbnailRendererServicePlan(options = EMPTY_OBJECT)
             noopServiceHostScaffold,
             hostLifecycleTestFixtures,
             packageManifestScaffold,
+            packageCreationGuardrails,
             clientRequest,
         },
         client,
@@ -1098,6 +1103,7 @@ export function createRenderThumbnailRendererServicePlan(options = EMPTY_OBJECT)
         noopServiceHostScaffold,
         hostLifecycleTestFixtures,
         packageManifestScaffold,
+        packageCreationGuardrails,
         clientRequest,
         serviceRequest: {
             command: CommandDescriptors.RENDER_THUMBNAIL.id,
@@ -1178,6 +1184,7 @@ export function createRenderThumbnailRendererServicePlan(options = EMPTY_OBJECT)
             noopServiceHostScaffoldVersion: noopServiceHostScaffold.scaffoldVersion,
             hostLifecycleTestFixturesVersion: hostLifecycleTestFixtures.fixtureVersion,
             packageManifestScaffoldVersion: packageManifestScaffold.manifestVersion,
+            packageCreationGuardrailsVersion: packageCreationGuardrails.guardrailVersion,
         },
     };
 }
@@ -1278,6 +1285,114 @@ export function createRenderThumbnailRendererServicePackageManifestScaffold(opti
             "add workspace manifest and lockfile updates with package tests",
             "prove noop host lifecycle tests before enabling process startup",
             "keep command-runtime dispatch disabled until package scripts are executable and gated",
+        ],
+    };
+}
+
+export function createRenderThumbnailRendererServicePackageCreationGuardrails(options = EMPTY_OBJECT) {
+    const packageManifestScaffold = options.packageManifestScaffold ?? EMPTY_OBJECT;
+    const hostLifecycleTestFixtures = options.hostLifecycleTestFixtures ?? EMPTY_OBJECT;
+
+    return {
+        status: "planned-disabled",
+        guardrailVersion: "P25.28",
+        adapter: "renderer-service",
+        command: CommandDescriptors.RENDER_THUMBNAIL.id,
+        dispatch: false,
+        networkDispatch: false,
+        runtimeRegistration: false,
+        localFileWrites: false,
+        hostStartup: false,
+        processSpawn: false,
+        packageCreated: false,
+        workspaceMutation: false,
+        scriptRunnable: false,
+        consumes: {
+            packageManifestScaffold: {
+                requiredStatus: "planned-disabled",
+                currentStatus: packageManifestScaffold.status ?? "planned-disabled",
+                manifestVersion: packageManifestScaffold.manifestVersion ?? "P25.27",
+                packageCreated: false,
+                workspaceMutation: false,
+                scriptRunnable: false,
+            },
+            hostLifecycleTestFixtures: {
+                requiredStatus: "planned-disabled",
+                currentStatus: hostLifecycleTestFixtures.status ?? "planned-disabled",
+                fixtureVersion: hostLifecycleTestFixtures.fixtureVersion ?? "P25.26",
+                processSpawn: false,
+            },
+        },
+        creationReadiness: {
+            status: "blocked",
+            canCreatePackage: false,
+            requiredChecks: [
+                {
+                    id: "dedicated-package-creation-task",
+                    description: "create renderer-service files only in an explicit package creation task",
+                    requiredBeforePackageCreation: true,
+                    satisfied: false,
+                },
+                {
+                    id: "workspace-manifest-review",
+                    description: "review root package scripts and pnpm workspace changes before mutating manifests",
+                    requiredBeforePackageCreation: true,
+                    satisfied: false,
+                },
+                {
+                    id: "lockfile-update-plan",
+                    description: "plan pnpm lockfile changes together with package dependency additions",
+                    requiredBeforePackageCreation: true,
+                    satisfied: false,
+                },
+                {
+                    id: "noop-host-lifecycle-tests-ready",
+                    description: "prove no-op host lifecycle tests before any script can spawn a process",
+                    requiredBeforePackageCreation: true,
+                    satisfied: false,
+                },
+            ],
+        },
+        blockedMutations: {
+            packageFiles: [
+                "renderer-service/package.json",
+                "renderer-service/tsconfig.json",
+                "renderer-service/src/index.ts",
+                "renderer-service/src/noop-host.ts",
+                "renderer-service/test/noop-host.test.mjs",
+            ],
+            workspaceFiles: [
+                "pnpm-workspace.yaml",
+                "pnpm-lock.yaml",
+                "package.json",
+            ],
+            runtimeFiles: [
+                "command-runtime/index.js runtime adapter registration",
+                "mcp/packages/server runtime dispatch registration",
+                "penpot-cli runtime dispatch execution",
+            ],
+        },
+        allowedInThisStep: [
+            "metadata-only guardrail planning",
+            "fixture and documentation updates",
+            "dry-run and unavailable payload exposure",
+            "tests that assert no package creation or workspace mutation",
+        ],
+        deniedInThisStep: [
+            "create renderer-service directory",
+            "edit pnpm workspace manifests",
+            "mutate lockfiles",
+            "add runnable package scripts",
+            "spawn renderer-service processes",
+            "probe renderer-service health endpoints",
+            "register executable command-runtime dispatch",
+        ],
+        requiredBeforeRuntimeDispatch: [
+            "complete package creation guardrail review in a committed planning task",
+            "create renderer-service package files in a later explicit implementation task",
+            "commit workspace manifest and lockfile changes with focused package tests",
+            "prove no-op host lifecycle tests can run without leaking processes or ports",
+            "keep render.thumbnail unavailable until renderer-service dispatch is explicitly registered",
         ],
     };
 }

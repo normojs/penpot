@@ -299,6 +299,10 @@ Current state:
   `@penpot/renderer-service` package metadata, planned scripts, exports,
   dependencies, files, and workspace integration flags without creating a
   package, mutating workspace files, or making scripts runnable.
+- Done: renderer-service package creation guardrails define required checks,
+  blocked package/workspace/runtime mutations, allowed planning work, denied
+  actions, and runtime prerequisites without creating package files or
+  mutating workspace state.
 - Done: focused command-runtime tests cover descriptor groups, lookup,
   adapter-selection priority/error cases, and token-safe envelopes.
 - Status: complete. Later command coverage gaps were tracked by the P15.1
@@ -862,6 +866,20 @@ P25.27 is complete:
 3. `packageManifestScaffold.packageCreated`, `workspaceMutation`,
    `scriptRunnable`, `dispatch`, `networkDispatch`, `runtimeRegistration`, and
    `localFileWrites` remain false.
+
+P25.28 is complete:
+
+1. Shared plans include `packageCreationGuardrails` metadata for required
+   package creation checks, blocked package/workspace/runtime mutations,
+   allowed planning work, denied actions, and runtime-dispatch prerequisites.
+2. MCP and CLI expose these guardrails in dry-run and unavailable execution
+   payloads without creating the package directory, mutating workspace
+   manifests, updating lockfiles, making scripts runnable, or starting
+   processes.
+3. `packageCreationGuardrails.packageCreated`, `workspaceMutation`,
+   `scriptRunnable`, `hostStartup`, `processSpawn`, `dispatch`,
+   `networkDispatch`, `runtimeRegistration`, and `localFileWrites` remain
+   false.
 
 Keep manual configuration behavior stable while moving command metadata and
 envelopes; transport-specific formatting should stay at the MCP/CLI edges.

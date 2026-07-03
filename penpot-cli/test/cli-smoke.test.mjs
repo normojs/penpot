@@ -2700,6 +2700,14 @@ test("render thumbnail dry-run returns renderer-service request plan", async () 
         assert.equal(body.data.packageManifestScaffold.localFileWrites, false);
         assert.equal(body.data.packageManifestScaffold.packageCreated, false);
         assert.equal(body.data.packageManifestScaffold.workspaceMutation, false);
+        assert.equal(body.data.packageCreationGuardrails.guardrailVersion, "P25.28");
+        assert.equal(body.data.packageCreationGuardrails.dispatch, false);
+        assert.equal(body.data.packageCreationGuardrails.networkDispatch, false);
+        assert.equal(body.data.packageCreationGuardrails.runtimeRegistration, false);
+        assert.equal(body.data.packageCreationGuardrails.localFileWrites, false);
+        assert.equal(body.data.packageCreationGuardrails.packageCreated, false);
+        assert.equal(body.data.packageCreationGuardrails.workspaceMutation, false);
+        assert.equal(body.data.packageCreationGuardrails.scriptRunnable, false);
         assert.equal(body.data.service.responseNormalization.successStatus, "ok");
         assert.equal(body.data.service.responseNormalization.localFileWrites, false);
         assert.equal(body.data.service.errorShape.code, "renderer_service_error");
@@ -2807,6 +2815,14 @@ test("render thumbnail execution reports renderer-service unavailable without ca
         assert.equal(body.error.data.packageManifestScaffold.localFileWrites, false);
         assert.equal(body.error.data.packageManifestScaffold.packageCreated, false);
         assert.equal(body.error.data.packageManifestScaffold.workspaceMutation, false);
+        assert.equal(body.error.data.packageCreationGuardrails.guardrailVersion, "P25.28");
+        assert.equal(body.error.data.packageCreationGuardrails.dispatch, false);
+        assert.equal(body.error.data.packageCreationGuardrails.networkDispatch, false);
+        assert.equal(body.error.data.packageCreationGuardrails.runtimeRegistration, false);
+        assert.equal(body.error.data.packageCreationGuardrails.localFileWrites, false);
+        assert.equal(body.error.data.packageCreationGuardrails.packageCreated, false);
+        assert.equal(body.error.data.packageCreationGuardrails.workspaceMutation, false);
+        assert.equal(body.error.data.packageCreationGuardrails.scriptRunnable, false);
         assert.equal(body.error.data.clientRequest.dispatch, false);
         assert.equal(body.error.data.serviceRequest.operation, "thumbnail.render");
     } finally {

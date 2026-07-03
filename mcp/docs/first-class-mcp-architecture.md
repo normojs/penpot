@@ -2344,6 +2344,20 @@ P25.27 render.thumbnail package manifest scaffold result:
   `scriptRunnable`, `dispatch`, `networkDispatch`, `runtimeRegistration`, and
   `localFileWrites` remain `false`.
 
+P25.28 render.thumbnail package creation guardrails result:
+
+- Shared plans include `packageCreationGuardrails`, defining required package
+  creation checks, blocked package/workspace/runtime mutations, allowed
+  planning work, denied actions, and runtime-dispatch prerequisites.
+- MCP and CLI expose the guardrails in dry-run and unavailable execution
+  payloads without creating the package directory, editing workspace manifests,
+  mutating lockfiles, making scripts runnable, starting processes, or
+  registering dispatch.
+- `packageCreationGuardrails.packageCreated`, `workspaceMutation`,
+  `scriptRunnable`, `hostStartup`, `processSpawn`, `dispatch`,
+  `networkDispatch`, `runtimeRegistration`, and `localFileWrites` remain
+  `false`.
+
 ### 8.5 Export and Render Tools
 
 May start file-bound and later move to headless:
@@ -2376,10 +2390,11 @@ P25.21 adds the disabled adapter registry manifest, P25.22 adds the final
 disabled enablement checklist, P25.23 audits the first implementation slice,
 P25.24 defines the health/no-op contract fixtures, and P25.25 defines the
 no-op service host scaffold. P25.26 defines disabled host lifecycle test
-fixtures, and P25.27 defines disabled package manifest scaffold metadata.
+fixtures, P25.27 defines disabled package manifest scaffold metadata, and
+P25.28 defines disabled package creation guardrails.
 Runtime behavior remains unavailable
-until opt-in config surfaces, renderer-service implementation, package creation
-guardrails, health preflight, cache probe, executable client, and tagged-frame
+until opt-in config surfaces, renderer-service implementation, package file
+templates, health preflight, cache probe, executable client, and tagged-frame
 capabilities are implemented.
 
 ### 8.6 Advanced Tools

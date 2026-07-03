@@ -928,6 +928,7 @@ export class RenderThumbnailTool extends PenpotRpcTool<RenderThumbnailArgs> {
                     noopServiceHostScaffold: plan.noopServiceHostScaffold,
                     hostLifecycleTestFixtures: plan.hostLifecycleTestFixtures,
                     packageManifestScaffold: plan.packageManifestScaffold,
+                    packageCreationGuardrails: plan.packageCreationGuardrails,
                     clientRequest: plan.clientRequest,
                     requiredCapabilities: plan.requiredCapabilities,
                     serviceRequest: plan.serviceRequest,

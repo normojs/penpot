@@ -970,3 +970,13 @@ P25.27 adds renderer-service package manifest scaffold:
 - The scaffold remains planning-only with `packageCreated`,
   `workspaceMutation`, `scriptRunnable`, `dispatch`, `networkDispatch`,
   `runtimeRegistration`, and `localFileWrites` all `false`.
+
+P25.28 adds renderer-service package creation guardrails:
+
+- Plans include `packageCreationGuardrails`, defining required creation checks,
+  blocked package/workspace/runtime mutations, allowed planning work, denied
+  actions, and runtime-dispatch prerequisites.
+- The guardrails remain planning-only with `packageCreated`,
+  `workspaceMutation`, `scriptRunnable`, `hostStartup`, `processSpawn`,
+  `dispatch`, `networkDispatch`, `runtimeRegistration`, and `localFileWrites`
+  all `false`.

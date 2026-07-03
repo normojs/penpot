@@ -32,6 +32,7 @@ import {
     createRenderThumbnailRendererServiceImplementationSliceAudit,
     createRenderThumbnailRendererServiceIntegrationFixtureHarness,
     createRenderThumbnailRendererServiceNoopServiceHostScaffold,
+    createRenderThumbnailRendererServicePackageCreationGuardrails,
     createRenderThumbnailRendererServicePackageManifestScaffold,
     createRenderThumbnailRendererServiceOptInConfiguration,
     createRenderThumbnailRendererServiceUnavailableErrorTaxonomy,
@@ -505,6 +506,14 @@ test("render.thumbnail renderer-service API fixtures define planning requests wi
     assert.equal(fixtures.serviceApi.packageManifestScaffold.localFileWrites, false);
     assert.equal(fixtures.serviceApi.packageManifestScaffold.packageCreated, false);
     assert.equal(fixtures.serviceApi.packageManifestScaffold.workspaceMutation, false);
+    assert.equal(fixtures.serviceApi.packageCreationGuardrails.guardrailVersion, "P25.28");
+    assert.equal(fixtures.serviceApi.packageCreationGuardrails.dispatch, false);
+    assert.equal(fixtures.serviceApi.packageCreationGuardrails.networkDispatch, false);
+    assert.equal(fixtures.serviceApi.packageCreationGuardrails.runtimeRegistration, false);
+    assert.equal(fixtures.serviceApi.packageCreationGuardrails.localFileWrites, false);
+    assert.equal(fixtures.serviceApi.packageCreationGuardrails.packageCreated, false);
+    assert.equal(fixtures.serviceApi.packageCreationGuardrails.workspaceMutation, false);
+    assert.equal(fixtures.serviceApi.packageCreationGuardrails.scriptRunnable, false);
     assert.deepEqual(fixtures.runtimeRegistration.commandDescriptorAdapters, ["renderer-service"]);
     assert.deepEqual(CommandDescriptors.RENDER_THUMBNAIL.adapters, ["renderer-service"]);
     assert.equal(fixtures.runtimeRegistration.mcpToolRegistered, true);
@@ -754,6 +763,22 @@ test("render.thumbnail renderer-service plan exposes dry-run client request whil
     assert.equal(plan.packageManifestScaffold.workspaceIntegration.lockfileMutation, false);
     assert.ok(plan.packageManifestScaffold.plannedFiles.includes("renderer-service/package.json"));
     assert.deepEqual(plan.service.packageManifestScaffold, plan.packageManifestScaffold);
+    assert.equal(plan.packageCreationGuardrails.guardrailVersion, "P25.28");
+    assert.equal(plan.packageCreationGuardrails.dispatch, false);
+    assert.equal(plan.packageCreationGuardrails.networkDispatch, false);
+    assert.equal(plan.packageCreationGuardrails.runtimeRegistration, false);
+    assert.equal(plan.packageCreationGuardrails.localFileWrites, false);
+    assert.equal(plan.packageCreationGuardrails.hostStartup, false);
+    assert.equal(plan.packageCreationGuardrails.processSpawn, false);
+    assert.equal(plan.packageCreationGuardrails.packageCreated, false);
+    assert.equal(plan.packageCreationGuardrails.workspaceMutation, false);
+    assert.equal(plan.packageCreationGuardrails.scriptRunnable, false);
+    assert.equal(plan.packageCreationGuardrails.consumes.packageManifestScaffold.manifestVersion, "P25.27");
+    assert.equal(plan.packageCreationGuardrails.creationReadiness.canCreatePackage, false);
+    assert.ok(plan.packageCreationGuardrails.creationReadiness.requiredChecks.some((entry) => entry.id === "workspace-manifest-review" && entry.satisfied === false));
+    assert.ok(plan.packageCreationGuardrails.blockedMutations.workspaceFiles.includes("pnpm-lock.yaml"));
+    assert.ok(plan.packageCreationGuardrails.deniedInThisStep.includes("create renderer-service directory"));
+    assert.deepEqual(plan.service.packageCreationGuardrails, plan.packageCreationGuardrails);
     assert.equal(plan.clientRequest.status, "scaffolded");
     assert.equal(plan.clientRequest.dispatch, false);
     assert.equal(plan.clientRequest.method, "POST");
@@ -797,6 +822,7 @@ test("render.thumbnail renderer-service plan exposes dry-run client request whil
     assert.equal(plan.diagnostics.noopServiceHostScaffoldVersion, "P25.25");
     assert.equal(plan.diagnostics.hostLifecycleTestFixturesVersion, "P25.26");
     assert.equal(plan.diagnostics.packageManifestScaffoldVersion, "P25.27");
+    assert.equal(plan.diagnostics.packageCreationGuardrailsVersion, "P25.28");
 });
 
 test("render.thumbnail renderer-service plan reports not-configured availability without endpoint", () => {
@@ -1379,6 +1405,52 @@ test("render.thumbnail renderer-service package manifest scaffold stays metadata
     assert.ok(scaffold.plannedFiles.includes("renderer-service/src/noop-host.ts"));
     assert.ok(scaffold.noOpGuarantees.includes("do not create renderer-service package files"));
     assert.ok(scaffold.requiredBeforeRuntimeDispatch.includes("create package files in a dedicated implementation task"));
+});
+
+test("render.thumbnail renderer-service package creation guardrails stay metadata-only", () => {
+    const guardrails = createRenderThumbnailRendererServicePackageCreationGuardrails({
+        packageManifestScaffold: {
+            status: "planned-disabled",
+            manifestVersion: "P25.27",
+            packageCreated: false,
+            workspaceMutation: false,
+            scriptRunnable: false,
+        },
+        hostLifecycleTestFixtures: {
+            status: "planned-disabled",
+            fixtureVersion: "P25.26",
+            processSpawn: false,
+        },
+    });
+
+    assert.equal(guardrails.status, "planned-disabled");
+    assert.equal(guardrails.guardrailVersion, "P25.28");
+    assert.equal(guardrails.adapter, "renderer-service");
+    assert.equal(guardrails.command, "render.thumbnail");
+    assert.equal(guardrails.dispatch, false);
+    assert.equal(guardrails.networkDispatch, false);
+    assert.equal(guardrails.runtimeRegistration, false);
+    assert.equal(guardrails.localFileWrites, false);
+    assert.equal(guardrails.hostStartup, false);
+    assert.equal(guardrails.processSpawn, false);
+    assert.equal(guardrails.packageCreated, false);
+    assert.equal(guardrails.workspaceMutation, false);
+    assert.equal(guardrails.scriptRunnable, false);
+    assert.equal(guardrails.consumes.packageManifestScaffold.manifestVersion, "P25.27");
+    assert.equal(guardrails.consumes.packageManifestScaffold.packageCreated, false);
+    assert.equal(guardrails.consumes.packageManifestScaffold.workspaceMutation, false);
+    assert.equal(guardrails.consumes.packageManifestScaffold.scriptRunnable, false);
+    assert.equal(guardrails.consumes.hostLifecycleTestFixtures.fixtureVersion, "P25.26");
+    assert.equal(guardrails.consumes.hostLifecycleTestFixtures.processSpawn, false);
+    assert.equal(guardrails.creationReadiness.status, "blocked");
+    assert.equal(guardrails.creationReadiness.canCreatePackage, false);
+    assert.ok(guardrails.creationReadiness.requiredChecks.every((entry) => entry.requiredBeforePackageCreation === true && entry.satisfied === false));
+    assert.ok(guardrails.blockedMutations.packageFiles.includes("renderer-service/package.json"));
+    assert.ok(guardrails.blockedMutations.workspaceFiles.includes("pnpm-workspace.yaml"));
+    assert.ok(guardrails.blockedMutations.runtimeFiles.some((entry) => entry.includes("command-runtime")));
+    assert.ok(guardrails.allowedInThisStep.includes("metadata-only guardrail planning"));
+    assert.ok(guardrails.deniedInThisStep.includes("mutate lockfiles"));
+    assert.ok(guardrails.requiredBeforeRuntimeDispatch.includes("create renderer-service package files in a later explicit implementation task"));
 });
 
 test("render.thumbnail renderer-service client request scaffold adds MCP audit headers without dispatch", () => {
