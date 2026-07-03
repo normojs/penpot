@@ -1096,3 +1096,16 @@ P25.37 adds renderer-service package materialization write contract:
   `materializationApproved`, `processSpawn`, `packageCreated`, `dispatch`,
   `networkDispatch`, `runtimeRegistration`, and `localFileWrites` all
   `false`.
+
+P25.38 adds renderer-service package materialization rollback contract:
+
+- Plans include `packageMaterializationRollbackContract`, defining pre-write
+  snapshots, rollback phases, failure recovery, and rollback verification for
+  future approved materialization.
+- The rollback contract remains planning-only with `executeNow:false`,
+  `rollbackNow:false`, `approvalRequired:true`, `approved:false`,
+  `dryRunOnly:true`, `filesWritten`, `rollbackExecuted`,
+  `fileMaterialization`, `workspaceMutation`, `lockfileMutation`,
+  `commandExecution`, `buildOutput`, `materializationApproved`,
+  `processSpawn`, `packageCreated`, `dispatch`, `networkDispatch`,
+  `runtimeRegistration`, and `localFileWrites` all `false`.

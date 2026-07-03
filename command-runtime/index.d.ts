@@ -459,6 +459,7 @@ export interface RenderThumbnailRendererServicePlan {
         packageMaterializationApprovalGate: RenderThumbnailRendererServicePackageMaterializationApprovalGate;
         packageMaterializationExecutionDryRun: RenderThumbnailRendererServicePackageMaterializationExecutionDryRun;
         packageMaterializationWriteContract: RenderThumbnailRendererServicePackageMaterializationWriteContract;
+        packageMaterializationRollbackContract: RenderThumbnailRendererServicePackageMaterializationRollbackContract;
         clientRequest: RenderThumbnailRendererServiceClientRequest;
     };
     client: RenderThumbnailRendererServiceClientConfig;
@@ -489,6 +490,7 @@ export interface RenderThumbnailRendererServicePlan {
     packageMaterializationApprovalGate: RenderThumbnailRendererServicePackageMaterializationApprovalGate;
     packageMaterializationExecutionDryRun: RenderThumbnailRendererServicePackageMaterializationExecutionDryRun;
     packageMaterializationWriteContract: RenderThumbnailRendererServicePackageMaterializationWriteContract;
+    packageMaterializationRollbackContract: RenderThumbnailRendererServicePackageMaterializationRollbackContract;
     clientRequest: RenderThumbnailRendererServiceClientRequest;
     serviceRequest: {
         command: "render.thumbnail";
@@ -579,6 +581,7 @@ export interface RenderThumbnailRendererServicePlan {
         packageMaterializationApprovalGateVersion: "P25.35";
         packageMaterializationExecutionDryRunVersion: "P25.36";
         packageMaterializationWriteContractVersion: "P25.37";
+        packageMaterializationRollbackContractVersion: "P25.38";
     };
 }
 
@@ -2253,6 +2256,102 @@ export interface RenderThumbnailRendererServicePackageMaterializationWriteContra
     requiredBeforeRuntimeDispatch: string[];
 }
 
+export interface RenderThumbnailRendererServicePackageMaterializationRollbackContract {
+    status: "planned-disabled";
+    contractVersion: "P25.38";
+    adapter: "renderer-service";
+    command: "render.thumbnail";
+    dryRunOnly: true;
+    approvalRequired: true;
+    approved: false;
+    executeNow: false;
+    rollbackNow: false;
+    dispatch: false;
+    networkDispatch: false;
+    runtimeRegistration: false;
+    localFileWrites: false;
+    hostStartup: false;
+    processSpawn: false;
+    packageCreated: false;
+    workspaceMutation: false;
+    scriptRunnable: false;
+    fileMaterialization: false;
+    lockfileMutation: false;
+    rootPackageJsonMutation: false;
+    pnpmWorkspaceMutation: false;
+    commandExecution: false;
+    buildOutput: false;
+    packageScriptsRunnable: false;
+    materializationApproved: false;
+    materializationApprovedRequired: true;
+    materializationApprovedNow: false;
+    filesWritten: false;
+    rollbackExecuted: false;
+    consumes: {
+        packageMaterializationWriteContract: {
+            requiredStatus: "planned-disabled";
+            currentStatus: string;
+            contractVersion: string;
+            writeNow: false;
+            filesWritten: false;
+        };
+        packageMaterializationExecutionDryRun: {
+            requiredStatus: "planned-disabled";
+            currentStatus: string;
+            dryRunVersion: string;
+            executeNow: false;
+        };
+        packageMaterializationApprovalGate: {
+            requiredStatus: "planned-disabled";
+            currentStatus: string;
+            gateVersion: string;
+            approved: false;
+        };
+    };
+    snapshotPlan: {
+        status: "planned";
+        snapshotNow: false;
+        hashBeforeWrite: true;
+        capturePackageDirectoryExistence: true;
+        captureWorkspaceFileHashes: true;
+        captureLockfileHash: true;
+        packageDirectory: string;
+        workspaceFiles: string[];
+    };
+    rollbackPlan: {
+        status: "blocked";
+        rollbackNow: false;
+        phases: Array<{
+            id: string;
+            order: number;
+            action: string;
+            executesNow: false;
+            dispatch?: false;
+            writesFiles?: boolean;
+            files?: string[];
+            target?: string;
+            commandsRun?: false;
+        }>;
+    };
+    failureRecovery: {
+        status: "planned";
+        rollbackNow: false;
+        recoverableFailures: string[];
+        manualReviewRequiredAfterFailure: true;
+        runtimeDispatchRemainsDisabled: true;
+    };
+    verificationPlan: {
+        verifyNow: false;
+        hashAfterRollback: true;
+        verifyWorkspaceFilesRestored: true;
+        verifyPackageDirectoryAbsentOrPreexisting: true;
+        verifyRuntimeDispatchDisabled: true;
+        commandsRun: false;
+    };
+    noOpGuarantees: string[];
+    requiredBeforeRuntimeDispatch: string[];
+}
+
 export interface CreateRenderThumbnailRendererServiceClientRequestOptions {
     entrypoint?: "mcp" | "cli" | string | null;
     mcpToolName?: string | null;
@@ -2681,6 +2780,13 @@ export function createRenderThumbnailRendererServicePackageMaterializationWriteC
         packageWorkspaceWiring?: Partial<RenderThumbnailRendererServicePackageWorkspaceWiring> | null;
     }
 ): RenderThumbnailRendererServicePackageMaterializationWriteContract;
+export function createRenderThumbnailRendererServicePackageMaterializationRollbackContract(
+    options?: {
+        packageMaterializationWriteContract?: Partial<RenderThumbnailRendererServicePackageMaterializationWriteContract> | null;
+        packageMaterializationExecutionDryRun?: Partial<RenderThumbnailRendererServicePackageMaterializationExecutionDryRun> | null;
+        packageMaterializationApprovalGate?: Partial<RenderThumbnailRendererServicePackageMaterializationApprovalGate> | null;
+    }
+): RenderThumbnailRendererServicePackageMaterializationRollbackContract;
 export function createRenderThumbnailRendererServiceClientRequest(
     plan: Partial<RenderThumbnailRendererServicePlan>,
     options?: CreateRenderThumbnailRendererServiceClientRequestOptions

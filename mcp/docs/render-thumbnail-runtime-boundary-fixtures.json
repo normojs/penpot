@@ -1,7 +1,7 @@
 {
-  "version": "P25.37",
+  "version": "P25.38",
   "command": "render.thumbnail",
-  "status": "runtime boundary audited; MCP/CLI planning, metadata-only availability probes, response normalization contracts, disabled client request scaffold, closed execution gate, health preflight plan, executable client harness plan, dispatch adapter boundary, opt-in configuration surfaces, unavailable error taxonomy, integration fixture harness, dispatch registration preflight, disabled executable adapter registration scaffold, disabled adapter registry manifest, final disabled enablement checklist, implementation slice audit, health/no-op contract fixtures, no-op service host scaffold, host lifecycle test fixtures, package manifest scaffold, package creation guardrails, package file templates, package workspace wiring, package build verification, package materialization checklist, package creation dry-run summary, package creation file manifest, package materialization approval gate, package materialization execution dry-run, and package materialization write contract registered; runtime execution blocked",
+  "status": "runtime boundary audited; MCP/CLI planning, metadata-only availability probes, response normalization contracts, disabled client request scaffold, closed execution gate, health preflight plan, executable client harness plan, dispatch adapter boundary, opt-in configuration surfaces, unavailable error taxonomy, integration fixture harness, dispatch registration preflight, disabled executable adapter registration scaffold, disabled adapter registry manifest, final disabled enablement checklist, implementation slice audit, health/no-op contract fixtures, no-op service host scaffold, host lifecycle test fixtures, package manifest scaffold, package creation guardrails, package file templates, package workspace wiring, package build verification, package materialization checklist, package creation dry-run summary, package creation file manifest, package materialization approval gate, package materialization execution dry-run, package materialization write contract, and package materialization rollback contract registered; runtime execution blocked",
   "selectedBoundary": "thumbnail-renderer-service",
   "runtimeRegistration": {
     "mcpToolRegistered": true,
@@ -375,11 +375,12 @@
     "package creation file manifest survives dry-run and unavailable execution JSON output",
     "package materialization approval gate survives dry-run and unavailable execution JSON output",
     "package materialization execution dry-run survives dry-run and unavailable execution JSON output",
-    "package materialization write contract survives dry-run and unavailable execution JSON output"
+    "package materialization write contract survives dry-run and unavailable execution JSON output",
+    "package materialization rollback contract survives dry-run and unavailable execution JSON output"
   ],
   "nextTask": {
-    "id": "P25.38",
-    "title": "Plan renderer-service package materialization rollback contract",
+    "id": "P25.39",
+    "title": "Plan renderer-service package materialization verification manifest",
     "status": "pending"
   },
   "implementationSliceAudit": {
@@ -2379,6 +2380,164 @@
       "verify hashes and manifest paths after approved writes",
       "run package build, type-check, and tests after materialization",
       "keep render.thumbnail unavailable until rollback and verification contracts pass"
+    ]
+  },
+  "packageMaterializationRollbackContract": {
+    "status": "planned-disabled",
+    "contractVersion": "P25.38",
+    "adapter": "renderer-service",
+    "command": "render.thumbnail",
+    "dryRunOnly": true,
+    "approvalRequired": true,
+    "approved": false,
+    "executeNow": false,
+    "rollbackNow": false,
+    "dispatch": false,
+    "networkDispatch": false,
+    "runtimeRegistration": false,
+    "localFileWrites": false,
+    "hostStartup": false,
+    "processSpawn": false,
+    "packageCreated": false,
+    "workspaceMutation": false,
+    "scriptRunnable": false,
+    "fileMaterialization": false,
+    "lockfileMutation": false,
+    "rootPackageJsonMutation": false,
+    "pnpmWorkspaceMutation": false,
+    "commandExecution": false,
+    "buildOutput": false,
+    "packageScriptsRunnable": false,
+    "materializationApproved": false,
+    "materializationApprovedRequired": true,
+    "materializationApprovedNow": false,
+    "filesWritten": false,
+    "rollbackExecuted": false,
+    "consumes": {
+      "packageMaterializationWriteContract": {
+        "requiredStatus": "planned-disabled",
+        "currentStatus": "planned-disabled",
+        "contractVersion": "P25.37",
+        "writeNow": false,
+        "filesWritten": false
+      },
+      "packageMaterializationExecutionDryRun": {
+        "requiredStatus": "planned-disabled",
+        "currentStatus": "planned-disabled",
+        "dryRunVersion": "P25.36",
+        "executeNow": false
+      },
+      "packageMaterializationApprovalGate": {
+        "requiredStatus": "planned-disabled",
+        "currentStatus": "planned-disabled",
+        "gateVersion": "P25.35",
+        "approved": false
+      }
+    },
+    "snapshotPlan": {
+      "status": "planned",
+      "snapshotNow": false,
+      "hashBeforeWrite": true,
+      "capturePackageDirectoryExistence": true,
+      "captureWorkspaceFileHashes": true,
+      "captureLockfileHash": true,
+      "packageDirectory": "renderer-service",
+      "workspaceFiles": [
+        "pnpm-workspace.yaml",
+        "package.json",
+        "pnpm-lock.yaml"
+      ]
+    },
+    "rollbackPlan": {
+      "status": "blocked",
+      "rollbackNow": false,
+      "phases": [
+        {
+          "id": "stop-new-runtime-dispatch",
+          "order": 1,
+          "action": "keep-runtime-dispatch-disabled",
+          "executesNow": false,
+          "dispatch": false
+        },
+        {
+          "id": "restore-workspace-files",
+          "order": 2,
+          "action": "restore-from-hash-snapshot",
+          "executesNow": false,
+          "writesFiles": true,
+          "files": [
+            "pnpm-workspace.yaml",
+            "package.json",
+            "pnpm-lock.yaml"
+          ]
+        },
+        {
+          "id": "remove-created-package-files",
+          "order": 3,
+          "action": "remove-created-files",
+          "executesNow": false,
+          "writesFiles": true,
+          "files": [
+            "renderer-service/package.json",
+            "renderer-service/tsconfig.json",
+            "renderer-service/src/index.ts",
+            "renderer-service/src/noop-host.ts",
+            "renderer-service/test/noop-host.test.mjs"
+          ]
+        },
+        {
+          "id": "remove-empty-package-directory",
+          "order": 4,
+          "action": "remove-directory-if-created-and-empty",
+          "executesNow": false,
+          "writesFiles": true,
+          "target": "renderer-service"
+        },
+        {
+          "id": "verify-rollback",
+          "order": 5,
+          "action": "verify-hashes-and-absence",
+          "executesNow": false,
+          "writesFiles": false,
+          "commandsRun": false
+        }
+      ]
+    },
+    "failureRecovery": {
+      "status": "planned",
+      "rollbackNow": false,
+      "recoverableFailures": [
+        "package file write failure",
+        "workspace manifest patch failure",
+        "lockfile refresh failure",
+        "post-write verification failure"
+      ],
+      "manualReviewRequiredAfterFailure": true,
+      "runtimeDispatchRemainsDisabled": true
+    },
+    "verificationPlan": {
+      "verifyNow": false,
+      "hashAfterRollback": true,
+      "verifyWorkspaceFilesRestored": true,
+      "verifyPackageDirectoryAbsentOrPreexisting": true,
+      "verifyRuntimeDispatchDisabled": true,
+      "commandsRun": false
+    },
+    "noOpGuarantees": [
+      "rollback contract does not create renderer-service directory",
+      "rollback contract does not remove renderer-service directory",
+      "rollback contract does not write package files",
+      "rollback contract does not restore workspace manifests",
+      "rollback contract does not mutate lockfiles",
+      "rollback contract does not run verification commands",
+      "rollback contract does not register runtime dispatch"
+    ],
+    "requiredBeforeRuntimeDispatch": [
+      "capture rollback snapshots before any approved materialization",
+      "keep rollback plan available for every approved write phase",
+      "verify rollback hashes before enabling renderer-service package scripts",
+      "run package verification only after rollback contract is reviewed",
+      "keep render.thumbnail unavailable until rollback coverage and materialization verification pass"
     ]
   }
 }

@@ -1071,6 +1071,11 @@ export function createRenderThumbnailRendererServicePlan(options = EMPTY_OBJECT)
         packageCreationFileManifest,
         packageWorkspaceWiring,
     });
+    const packageMaterializationRollbackContract = createRenderThumbnailRendererServicePackageMaterializationRollbackContract({
+        packageMaterializationWriteContract,
+        packageMaterializationExecutionDryRun,
+        packageMaterializationApprovalGate,
+    });
 
     return {
         command: CommandDescriptors.RENDER_THUMBNAIL.id,
@@ -1140,6 +1145,7 @@ export function createRenderThumbnailRendererServicePlan(options = EMPTY_OBJECT)
             packageMaterializationApprovalGate,
             packageMaterializationExecutionDryRun,
             packageMaterializationWriteContract,
+            packageMaterializationRollbackContract,
             clientRequest,
         },
         client,
@@ -1170,6 +1176,7 @@ export function createRenderThumbnailRendererServicePlan(options = EMPTY_OBJECT)
         packageMaterializationApprovalGate,
         packageMaterializationExecutionDryRun,
         packageMaterializationWriteContract,
+        packageMaterializationRollbackContract,
         clientRequest,
         serviceRequest: {
             command: CommandDescriptors.RENDER_THUMBNAIL.id,
@@ -1260,6 +1267,7 @@ export function createRenderThumbnailRendererServicePlan(options = EMPTY_OBJECT)
             packageMaterializationApprovalGateVersion: packageMaterializationApprovalGate.gateVersion,
             packageMaterializationExecutionDryRunVersion: packageMaterializationExecutionDryRun.dryRunVersion,
             packageMaterializationWriteContractVersion: packageMaterializationWriteContract.contractVersion,
+            packageMaterializationRollbackContractVersion: packageMaterializationRollbackContract.contractVersion,
         },
     };
 }
@@ -2791,6 +2799,163 @@ export function createRenderThumbnailRendererServicePackageMaterializationWriteC
             "verify hashes and manifest paths after approved writes",
             "run package build, type-check, and tests after materialization",
             "keep render.thumbnail unavailable until rollback and verification contracts pass",
+        ],
+    };
+}
+
+export function createRenderThumbnailRendererServicePackageMaterializationRollbackContract(options = EMPTY_OBJECT) {
+    const packageMaterializationWriteContract = options.packageMaterializationWriteContract ?? EMPTY_OBJECT;
+    const packageMaterializationExecutionDryRun = options.packageMaterializationExecutionDryRun ?? EMPTY_OBJECT;
+    const packageMaterializationApprovalGate = options.packageMaterializationApprovalGate ?? EMPTY_OBJECT;
+
+    return {
+        status: "planned-disabled",
+        contractVersion: "P25.38",
+        adapter: "renderer-service",
+        command: CommandDescriptors.RENDER_THUMBNAIL.id,
+        dryRunOnly: true,
+        approvalRequired: true,
+        approved: false,
+        executeNow: false,
+        rollbackNow: false,
+        dispatch: false,
+        networkDispatch: false,
+        runtimeRegistration: false,
+        localFileWrites: false,
+        hostStartup: false,
+        processSpawn: false,
+        packageCreated: false,
+        workspaceMutation: false,
+        scriptRunnable: false,
+        fileMaterialization: false,
+        lockfileMutation: false,
+        rootPackageJsonMutation: false,
+        pnpmWorkspaceMutation: false,
+        commandExecution: false,
+        buildOutput: false,
+        packageScriptsRunnable: false,
+        materializationApproved: false,
+        materializationApprovedRequired: true,
+        materializationApprovedNow: false,
+        filesWritten: false,
+        rollbackExecuted: false,
+        consumes: {
+            packageMaterializationWriteContract: {
+                requiredStatus: "planned-disabled",
+                currentStatus: packageMaterializationWriteContract.status ?? "planned-disabled",
+                contractVersion: packageMaterializationWriteContract.contractVersion ?? "P25.37",
+                writeNow: false,
+                filesWritten: false,
+            },
+            packageMaterializationExecutionDryRun: {
+                requiredStatus: "planned-disabled",
+                currentStatus: packageMaterializationExecutionDryRun.status ?? "planned-disabled",
+                dryRunVersion: packageMaterializationExecutionDryRun.dryRunVersion ?? "P25.36",
+                executeNow: false,
+            },
+            packageMaterializationApprovalGate: {
+                requiredStatus: "planned-disabled",
+                currentStatus: packageMaterializationApprovalGate.status ?? "planned-disabled",
+                gateVersion: packageMaterializationApprovalGate.gateVersion ?? "P25.35",
+                approved: false,
+            },
+        },
+        snapshotPlan: {
+            status: "planned",
+            snapshotNow: false,
+            hashBeforeWrite: true,
+            capturePackageDirectoryExistence: true,
+            captureWorkspaceFileHashes: true,
+            captureLockfileHash: true,
+            packageDirectory: "renderer-service",
+            workspaceFiles: ["pnpm-workspace.yaml", "package.json", "pnpm-lock.yaml"],
+        },
+        rollbackPlan: {
+            status: "blocked",
+            rollbackNow: false,
+            phases: [
+                {
+                    id: "stop-new-runtime-dispatch",
+                    order: 1,
+                    action: "keep-runtime-dispatch-disabled",
+                    executesNow: false,
+                    dispatch: false,
+                },
+                {
+                    id: "restore-workspace-files",
+                    order: 2,
+                    action: "restore-from-hash-snapshot",
+                    executesNow: false,
+                    writesFiles: true,
+                    files: ["pnpm-workspace.yaml", "package.json", "pnpm-lock.yaml"],
+                },
+                {
+                    id: "remove-created-package-files",
+                    order: 3,
+                    action: "remove-created-files",
+                    executesNow: false,
+                    writesFiles: true,
+                    files: [
+                        "renderer-service/package.json",
+                        "renderer-service/tsconfig.json",
+                        "renderer-service/src/index.ts",
+                        "renderer-service/src/noop-host.ts",
+                        "renderer-service/test/noop-host.test.mjs",
+                    ],
+                },
+                {
+                    id: "remove-empty-package-directory",
+                    order: 4,
+                    action: "remove-directory-if-created-and-empty",
+                    executesNow: false,
+                    writesFiles: true,
+                    target: "renderer-service",
+                },
+                {
+                    id: "verify-rollback",
+                    order: 5,
+                    action: "verify-hashes-and-absence",
+                    executesNow: false,
+                    writesFiles: false,
+                    commandsRun: false,
+                },
+            ],
+        },
+        failureRecovery: {
+            status: "planned",
+            rollbackNow: false,
+            recoverableFailures: [
+                "package file write failure",
+                "workspace manifest patch failure",
+                "lockfile refresh failure",
+                "post-write verification failure",
+            ],
+            manualReviewRequiredAfterFailure: true,
+            runtimeDispatchRemainsDisabled: true,
+        },
+        verificationPlan: {
+            verifyNow: false,
+            hashAfterRollback: true,
+            verifyWorkspaceFilesRestored: true,
+            verifyPackageDirectoryAbsentOrPreexisting: true,
+            verifyRuntimeDispatchDisabled: true,
+            commandsRun: false,
+        },
+        noOpGuarantees: [
+            "rollback contract does not create renderer-service directory",
+            "rollback contract does not remove renderer-service directory",
+            "rollback contract does not write package files",
+            "rollback contract does not restore workspace manifests",
+            "rollback contract does not mutate lockfiles",
+            "rollback contract does not run verification commands",
+            "rollback contract does not register runtime dispatch",
+        ],
+        requiredBeforeRuntimeDispatch: [
+            "capture rollback snapshots before any approved materialization",
+            "keep rollback plan available for every approved write phase",
+            "verify rollback hashes before enabling renderer-service package scripts",
+            "run package verification only after rollback contract is reviewed",
+            "keep render.thumbnail unavailable until rollback coverage and materialization verification pass",
         ],
     };
 }

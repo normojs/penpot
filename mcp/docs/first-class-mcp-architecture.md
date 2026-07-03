@@ -2497,6 +2497,23 @@ P25.37 render.thumbnail package materialization write contract result:
   `networkDispatch`, `runtimeRegistration`, and `localFileWrites` remain
   `false`.
 
+P25.38 render.thumbnail package materialization rollback contract result:
+
+- Shared plans include `packageMaterializationRollbackContract`, defining
+  metadata-only pre-write snapshots, rollback phases, failure recovery, and
+  rollback verification.
+- MCP and CLI expose the rollback contract in dry-run and unavailable
+  execution payloads without granting approval, executing rollback, creating
+  or removing package directories, writing files, restoring workspace
+  manifests, mutating lockfiles, running commands, emitting build output,
+  starting processes, or registering runtime dispatch.
+- `packageMaterializationRollbackContract.executeNow` and `rollbackNow` remain
+  `false`, while `approved`, `filesWritten`, `rollbackExecuted`,
+  `fileMaterialization`, `workspaceMutation`, `lockfileMutation`,
+  `commandExecution`, `buildOutput`, `materializationApproved`,
+  `processSpawn`, `packageCreated`, `dispatch`, `networkDispatch`,
+  `runtimeRegistration`, and `localFileWrites` remain `false`.
+
 ### 8.5 Export and Render Tools
 
 May start file-bound and later move to headless:
@@ -2537,7 +2554,8 @@ package materialization checklist. P25.33 defines disabled package creation
 dry-run summary. P25.34 defines disabled package creation file manifest.
 P25.35 defines disabled package materialization approval gate. P25.36 defines
 disabled package materialization execution dry-run. P25.37 defines disabled
-package materialization write contract.
+package materialization write contract. P25.38 defines disabled package
+materialization rollback contract.
 Runtime behavior remains unavailable
 until opt-in config surfaces, renderer-service implementation, workspace
 wiring, health preflight, cache probe, executable client, and tagged-frame

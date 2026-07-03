@@ -38,7 +38,8 @@ manifest metadata without materializing files. P25.35 defines package
 materialization approval gate metadata without granting approval. P25.36
 defines package materialization execution dry-run metadata without executing
 writes. P25.37 defines package materialization write contract metadata without
-performing writes.
+performing writes. P25.38 defines package materialization rollback contract
+metadata without executing rollback.
 
 ## Existing Surfaces
 
@@ -183,7 +184,8 @@ materialization checklist. P25.33 adds metadata-only package creation dry-run
 summary. P25.34 adds metadata-only package creation file manifest. P25.35 adds
 metadata-only package materialization approval gate. P25.36 adds metadata-only
 package materialization execution dry-run. P25.37 adds metadata-only package
-materialization write contract. MCP
+materialization write contract. P25.38 adds metadata-only package
+materialization rollback contract. MCP
 `render.thumbnail` and `penpot-cli render thumbnail --dry-run` can print the
 future request shape, configured/not configured service metadata,
 response/error contracts, `clientRequest.dispatch:false`,
@@ -257,6 +259,14 @@ plus `packageMaterializationWriteContract.executeNow:false`,
 `packageMaterializationWriteContract.fileMaterialization:false`,
 `packageMaterializationWriteContract.workspaceMutation:false`, and
 `packageMaterializationWriteContract.runtimeRegistration:false`,
+plus `packageMaterializationRollbackContract.executeNow:false`,
+`packageMaterializationRollbackContract.rollbackNow:false`,
+`packageMaterializationRollbackContract.approved:false`,
+`packageMaterializationRollbackContract.filesWritten:false`,
+`packageMaterializationRollbackContract.rollbackExecuted:false`,
+`packageMaterializationRollbackContract.fileMaterialization:false`,
+`packageMaterializationRollbackContract.workspaceMutation:false`, and
+`packageMaterializationRollbackContract.runtimeRegistration:false`,
 but execution still returns
 `renderer_service_unavailable` until explicit opt-in, config surfaces, renderer
 service, integration tests, health preflight, file cache probe, tagged-frame
