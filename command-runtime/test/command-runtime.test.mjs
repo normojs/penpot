@@ -36,6 +36,7 @@ import {
     createRenderThumbnailRendererServicePackageBuildVerification,
     createRenderThumbnailRendererServicePackageFileTemplates,
     createRenderThumbnailRendererServicePackageManifestScaffold,
+    createRenderThumbnailRendererServicePackageMaterializationChecklist,
     createRenderThumbnailRendererServicePackageWorkspaceWiring,
     createRenderThumbnailRendererServiceOptInConfiguration,
     createRenderThumbnailRendererServiceUnavailableErrorTaxonomy,
@@ -540,6 +541,13 @@ test("render.thumbnail renderer-service API fixtures define planning requests wi
     assert.equal(fixtures.serviceApi.packageBuildVerification.processSpawn, false);
     assert.equal(fixtures.serviceApi.packageBuildVerification.commandExecution, false);
     assert.equal(fixtures.serviceApi.packageBuildVerification.buildOutput, false);
+    assert.equal(fixtures.serviceApi.packageMaterializationChecklist.checklistVersion, "P25.32");
+    assert.equal(fixtures.serviceApi.packageMaterializationChecklist.dispatch, false);
+    assert.equal(fixtures.serviceApi.packageMaterializationChecklist.networkDispatch, false);
+    assert.equal(fixtures.serviceApi.packageMaterializationChecklist.runtimeRegistration, false);
+    assert.equal(fixtures.serviceApi.packageMaterializationChecklist.localFileWrites, false);
+    assert.equal(fixtures.serviceApi.packageMaterializationChecklist.fileMaterialization, false);
+    assert.equal(fixtures.serviceApi.packageMaterializationChecklist.materializationApproved, false);
     assert.deepEqual(fixtures.runtimeRegistration.commandDescriptorAdapters, ["renderer-service"]);
     assert.deepEqual(CommandDescriptors.RENDER_THUMBNAIL.adapters, ["renderer-service"]);
     assert.equal(fixtures.runtimeRegistration.mcpToolRegistered, true);
@@ -867,6 +875,30 @@ test("render.thumbnail renderer-service plan exposes dry-run client request whil
     assert.ok(plan.packageBuildVerification.expectedArtifacts.some((entry) => entry.path === "renderer-service/dist/index.js" && entry.producedNow === false));
     assert.equal(plan.packageBuildVerification.verificationReadiness.canRunVerification, false);
     assert.deepEqual(plan.service.packageBuildVerification, plan.packageBuildVerification);
+    assert.equal(plan.packageMaterializationChecklist.checklistVersion, "P25.32");
+    assert.equal(plan.packageMaterializationChecklist.dispatch, false);
+    assert.equal(plan.packageMaterializationChecklist.networkDispatch, false);
+    assert.equal(plan.packageMaterializationChecklist.runtimeRegistration, false);
+    assert.equal(plan.packageMaterializationChecklist.localFileWrites, false);
+    assert.equal(plan.packageMaterializationChecklist.hostStartup, false);
+    assert.equal(plan.packageMaterializationChecklist.processSpawn, false);
+    assert.equal(plan.packageMaterializationChecklist.packageCreated, false);
+    assert.equal(plan.packageMaterializationChecklist.workspaceMutation, false);
+    assert.equal(plan.packageMaterializationChecklist.scriptRunnable, false);
+    assert.equal(plan.packageMaterializationChecklist.fileMaterialization, false);
+    assert.equal(plan.packageMaterializationChecklist.lockfileMutation, false);
+    assert.equal(plan.packageMaterializationChecklist.rootPackageJsonMutation, false);
+    assert.equal(plan.packageMaterializationChecklist.pnpmWorkspaceMutation, false);
+    assert.equal(plan.packageMaterializationChecklist.commandExecution, false);
+    assert.equal(plan.packageMaterializationChecklist.buildOutput, false);
+    assert.equal(plan.packageMaterializationChecklist.packageScriptsRunnable, false);
+    assert.equal(plan.packageMaterializationChecklist.materializationApproved, false);
+    assert.equal(plan.packageMaterializationChecklist.consumes.packageBuildVerification.verificationVersion, "P25.31");
+    assert.ok(plan.packageMaterializationChecklist.materializationBatches.some((entry) => entry.id === "package-files" && entry.materializeNow === false));
+    assert.ok(plan.packageMaterializationChecklist.materializationBatches.some((entry) => entry.id === "workspace-wiring" && entry.files.includes("pnpm-lock.yaml")));
+    assert.ok(plan.packageMaterializationChecklist.readinessChecklist.every((entry) => entry.satisfied === false));
+    assert.equal(plan.packageMaterializationChecklist.commitBoundary.includeRuntimeDispatch, false);
+    assert.deepEqual(plan.service.packageMaterializationChecklist, plan.packageMaterializationChecklist);
     assert.equal(plan.clientRequest.status, "scaffolded");
     assert.equal(plan.clientRequest.dispatch, false);
     assert.equal(plan.clientRequest.method, "POST");
@@ -914,6 +946,7 @@ test("render.thumbnail renderer-service plan exposes dry-run client request whil
     assert.equal(plan.diagnostics.packageFileTemplatesVersion, "P25.29");
     assert.equal(plan.diagnostics.packageWorkspaceWiringVersion, "P25.30");
     assert.equal(plan.diagnostics.packageBuildVerificationVersion, "P25.31");
+    assert.equal(plan.diagnostics.packageMaterializationChecklistVersion, "P25.32");
 });
 
 test("render.thumbnail renderer-service plan reports not-configured availability without endpoint", () => {
@@ -1694,6 +1727,61 @@ test("render.thumbnail renderer-service package build verification stays metadat
     assert.ok(verification.verificationReadiness.blockers.includes("pnpm-workspace-entry"));
     assert.ok(verification.noOpGuarantees.includes("do not run renderer-service build commands"));
     assert.ok(verification.requiredBeforeRuntimeDispatch.includes("prove build, type-check, and test commands pass before making renderer-service scripts runnable"));
+});
+
+test("render.thumbnail renderer-service package materialization checklist stays metadata-only", () => {
+    const checklist = createRenderThumbnailRendererServicePackageMaterializationChecklist({
+        packageFileTemplates: {
+            status: "planned-disabled",
+            templateVersion: "P25.29",
+            fileMaterialization: false,
+        },
+        packageWorkspaceWiring: {
+            status: "planned-disabled",
+            wiringVersion: "P25.30",
+            workspaceMutation: false,
+        },
+        packageBuildVerification: {
+            status: "planned-disabled",
+            verificationVersion: "P25.31",
+            commandExecution: false,
+            buildOutput: false,
+        },
+    });
+
+    assert.equal(checklist.status, "planned-disabled");
+    assert.equal(checklist.checklistVersion, "P25.32");
+    assert.equal(checklist.adapter, "renderer-service");
+    assert.equal(checklist.command, "render.thumbnail");
+    assert.equal(checklist.dispatch, false);
+    assert.equal(checklist.networkDispatch, false);
+    assert.equal(checklist.runtimeRegistration, false);
+    assert.equal(checklist.localFileWrites, false);
+    assert.equal(checklist.hostStartup, false);
+    assert.equal(checklist.processSpawn, false);
+    assert.equal(checklist.packageCreated, false);
+    assert.equal(checklist.workspaceMutation, false);
+    assert.equal(checklist.scriptRunnable, false);
+    assert.equal(checklist.fileMaterialization, false);
+    assert.equal(checklist.lockfileMutation, false);
+    assert.equal(checklist.rootPackageJsonMutation, false);
+    assert.equal(checklist.pnpmWorkspaceMutation, false);
+    assert.equal(checklist.commandExecution, false);
+    assert.equal(checklist.buildOutput, false);
+    assert.equal(checklist.packageScriptsRunnable, false);
+    assert.equal(checklist.materializationApproved, false);
+    assert.equal(checklist.consumes.packageFileTemplates.templateVersion, "P25.29");
+    assert.equal(checklist.consumes.packageWorkspaceWiring.wiringVersion, "P25.30");
+    assert.equal(checklist.consumes.packageBuildVerification.verificationVersion, "P25.31");
+    assert.ok(checklist.materializationBatches.some((entry) => entry.id === "package-files" && entry.files.includes("renderer-service/package.json") && entry.materializeNow === false));
+    assert.ok(checklist.materializationBatches.some((entry) => entry.id === "verification-output" && entry.generatedOnlyAfterBuild === true && entry.materializeNow === false));
+    assert.ok(checklist.readinessChecklist.some((entry) => entry.id === "runtime-dispatch-stays-disabled" && entry.satisfied === false));
+    assert.equal(checklist.commitBoundary.includeRuntimeDispatch, false);
+    assert.equal(checklist.commitBoundary.materializeNow, false);
+    assert.ok(checklist.rollbackPlan.revertWorkspaceFiles.includes("pnpm-lock.yaml"));
+    assert.equal(checklist.rollbackPlan.revertRuntimeRegistration, false);
+    assert.ok(checklist.noOpGuarantees.includes("do not create renderer-service directory"));
+    assert.ok(checklist.requiredBeforeRuntimeDispatch.includes("materialize package files and workspace wiring in a separate implementation task"));
 });
 
 test("render.thumbnail renderer-service client request scaffold adds MCP audit headers without dispatch", () => {

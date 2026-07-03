@@ -1036,6 +1036,11 @@ export function createRenderThumbnailRendererServicePlan(options = EMPTY_OBJECT)
         packageWorkspaceWiring,
         packageFileTemplates,
     });
+    const packageMaterializationChecklist = createRenderThumbnailRendererServicePackageMaterializationChecklist({
+        packageFileTemplates,
+        packageWorkspaceWiring,
+        packageBuildVerification,
+    });
 
     return {
         command: CommandDescriptors.RENDER_THUMBNAIL.id,
@@ -1099,6 +1104,7 @@ export function createRenderThumbnailRendererServicePlan(options = EMPTY_OBJECT)
             packageFileTemplates,
             packageWorkspaceWiring,
             packageBuildVerification,
+            packageMaterializationChecklist,
             clientRequest,
         },
         client,
@@ -1123,6 +1129,7 @@ export function createRenderThumbnailRendererServicePlan(options = EMPTY_OBJECT)
         packageFileTemplates,
         packageWorkspaceWiring,
         packageBuildVerification,
+        packageMaterializationChecklist,
         clientRequest,
         serviceRequest: {
             command: CommandDescriptors.RENDER_THUMBNAIL.id,
@@ -1207,6 +1214,7 @@ export function createRenderThumbnailRendererServicePlan(options = EMPTY_OBJECT)
             packageFileTemplatesVersion: packageFileTemplates.templateVersion,
             packageWorkspaceWiringVersion: packageWorkspaceWiring.wiringVersion,
             packageBuildVerificationVersion: packageBuildVerification.verificationVersion,
+            packageMaterializationChecklistVersion: packageMaterializationChecklist.checklistVersion,
         },
     };
 }
@@ -1797,6 +1805,143 @@ export function createRenderThumbnailRendererServicePackageBuildVerification(opt
             "commit workspace entry and lockfile updates before filtered build verification",
             "prove build, type-check, and test commands pass before making renderer-service scripts runnable",
             "keep render.thumbnail runtime registration disabled until package verification is green",
+        ],
+    };
+}
+
+export function createRenderThumbnailRendererServicePackageMaterializationChecklist(options = EMPTY_OBJECT) {
+    const packageFileTemplates = options.packageFileTemplates ?? EMPTY_OBJECT;
+    const packageWorkspaceWiring = options.packageWorkspaceWiring ?? EMPTY_OBJECT;
+    const packageBuildVerification = options.packageBuildVerification ?? EMPTY_OBJECT;
+
+    return {
+        status: "planned-disabled",
+        checklistVersion: "P25.32",
+        adapter: "renderer-service",
+        command: CommandDescriptors.RENDER_THUMBNAIL.id,
+        dispatch: false,
+        networkDispatch: false,
+        runtimeRegistration: false,
+        localFileWrites: false,
+        hostStartup: false,
+        processSpawn: false,
+        packageCreated: false,
+        workspaceMutation: false,
+        scriptRunnable: false,
+        fileMaterialization: false,
+        lockfileMutation: false,
+        rootPackageJsonMutation: false,
+        pnpmWorkspaceMutation: false,
+        commandExecution: false,
+        buildOutput: false,
+        packageScriptsRunnable: false,
+        materializationApproved: false,
+        consumes: {
+            packageFileTemplates: {
+                requiredStatus: "planned-disabled",
+                currentStatus: packageFileTemplates.status ?? "planned-disabled",
+                templateVersion: packageFileTemplates.templateVersion ?? "P25.29",
+                fileMaterialization: false,
+            },
+            packageWorkspaceWiring: {
+                requiredStatus: "planned-disabled",
+                currentStatus: packageWorkspaceWiring.status ?? "planned-disabled",
+                wiringVersion: packageWorkspaceWiring.wiringVersion ?? "P25.30",
+                workspaceMutation: false,
+            },
+            packageBuildVerification: {
+                requiredStatus: "planned-disabled",
+                currentStatus: packageBuildVerification.status ?? "planned-disabled",
+                verificationVersion: packageBuildVerification.verificationVersion ?? "P25.31",
+                commandExecution: false,
+                buildOutput: false,
+            },
+        },
+        materializationBatches: [
+            {
+                id: "package-files",
+                files: [
+                    "renderer-service/package.json",
+                    "renderer-service/tsconfig.json",
+                    "renderer-service/src/index.ts",
+                    "renderer-service/src/noop-host.ts",
+                    "renderer-service/test/noop-host.test.mjs",
+                ],
+                materializeNow: false,
+                requiresReview: true,
+            },
+            {
+                id: "workspace-wiring",
+                files: ["pnpm-workspace.yaml", "package.json", "pnpm-lock.yaml"],
+                materializeNow: false,
+                requiresReview: true,
+            },
+            {
+                id: "verification-output",
+                files: [
+                    "renderer-service/dist/index.js",
+                    "renderer-service/dist/index.d.ts",
+                    "renderer-service/dist/noop-host.js",
+                    "renderer-service/dist/noop-host.d.ts",
+                ],
+                materializeNow: false,
+                generatedOnlyAfterBuild: true,
+            },
+        ],
+        readinessChecklist: [
+            {
+                id: "templates-reviewed",
+                description: "review package templates before writing renderer-service files",
+                requiredBeforeMaterialization: true,
+                satisfied: false,
+            },
+            {
+                id: "workspace-wiring-reviewed",
+                description: "review pnpm workspace entry, root scripts, and lockfile update together",
+                requiredBeforeMaterialization: true,
+                satisfied: false,
+            },
+            {
+                id: "verification-plan-reviewed",
+                description: "review filtered build, type-check, and test commands before making scripts runnable",
+                requiredBeforeMaterialization: true,
+                satisfied: false,
+            },
+            {
+                id: "runtime-dispatch-stays-disabled",
+                description: "confirm render.thumbnail runtime dispatch remains unavailable after materialization",
+                requiredBeforeMaterialization: true,
+                satisfied: false,
+            },
+        ],
+        commitBoundary: {
+            expectedCommit: "create renderer-service package files and workspace wiring in a dedicated future task",
+            includePackageFiles: true,
+            includeWorkspaceManifests: true,
+            includeLockfile: true,
+            includeRuntimeDispatch: false,
+            materializeNow: false,
+        },
+        rollbackPlan: {
+            deletePackageDirectory: "renderer-service",
+            revertWorkspaceFiles: ["pnpm-workspace.yaml", "package.json", "pnpm-lock.yaml"],
+            revertRuntimeRegistration: false,
+            requiredBeforeMaterialization: true,
+        },
+        noOpGuarantees: [
+            "do not create renderer-service directory",
+            "do not write renderer-service package files",
+            "do not edit pnpm-workspace.yaml",
+            "do not edit root package.json",
+            "do not mutate pnpm-lock.yaml",
+            "do not run package verification commands",
+            "do not register runtime dispatch",
+        ],
+        requiredBeforeRuntimeDispatch: [
+            "complete package materialization checklist in a committed planning task",
+            "materialize package files and workspace wiring in a separate implementation task",
+            "run filtered build, type-check, and test commands after package files exist",
+            "keep render.thumbnail execution unavailable until materialized package verification passes",
         ],
     };
 }

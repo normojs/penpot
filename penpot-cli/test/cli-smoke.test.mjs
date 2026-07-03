@@ -2732,6 +2732,13 @@ test("render thumbnail dry-run returns renderer-service request plan", async () 
         assert.equal(body.data.packageBuildVerification.processSpawn, false);
         assert.equal(body.data.packageBuildVerification.commandExecution, false);
         assert.equal(body.data.packageBuildVerification.buildOutput, false);
+        assert.equal(body.data.packageMaterializationChecklist.checklistVersion, "P25.32");
+        assert.equal(body.data.packageMaterializationChecklist.dispatch, false);
+        assert.equal(body.data.packageMaterializationChecklist.networkDispatch, false);
+        assert.equal(body.data.packageMaterializationChecklist.runtimeRegistration, false);
+        assert.equal(body.data.packageMaterializationChecklist.localFileWrites, false);
+        assert.equal(body.data.packageMaterializationChecklist.fileMaterialization, false);
+        assert.equal(body.data.packageMaterializationChecklist.materializationApproved, false);
         assert.equal(body.data.service.responseNormalization.successStatus, "ok");
         assert.equal(body.data.service.responseNormalization.localFileWrites, false);
         assert.equal(body.data.service.errorShape.code, "renderer_service_error");
@@ -2871,6 +2878,13 @@ test("render thumbnail execution reports renderer-service unavailable without ca
         assert.equal(body.error.data.packageBuildVerification.processSpawn, false);
         assert.equal(body.error.data.packageBuildVerification.commandExecution, false);
         assert.equal(body.error.data.packageBuildVerification.buildOutput, false);
+        assert.equal(body.error.data.packageMaterializationChecklist.checklistVersion, "P25.32");
+        assert.equal(body.error.data.packageMaterializationChecklist.dispatch, false);
+        assert.equal(body.error.data.packageMaterializationChecklist.networkDispatch, false);
+        assert.equal(body.error.data.packageMaterializationChecklist.runtimeRegistration, false);
+        assert.equal(body.error.data.packageMaterializationChecklist.localFileWrites, false);
+        assert.equal(body.error.data.packageMaterializationChecklist.fileMaterialization, false);
+        assert.equal(body.error.data.packageMaterializationChecklist.materializationApproved, false);
         assert.equal(body.error.data.clientRequest.dispatch, false);
         assert.equal(body.error.data.serviceRequest.operation, "thumbnail.render");
     } finally {

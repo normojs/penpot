@@ -56,7 +56,8 @@ Workspace wiring:
   `pnpmWorkspaceMutation:false`, `rootPackageJsonMutation:false`,
   `lockfileMutation:false`, `workspaceMutation:false`, `packageCreated:false`,
   `scriptRunnable:false`, `fileMaterialization:false`, `commandExecution:false`,
-  `buildOutput:false`, `processSpawn:false`, `dispatch:false`,
+  `buildOutput:false`, `processSpawn:false`, `materializationApproved:false`,
+  `dispatch:false`,
   `networkDispatch:false`, `runtimeRegistration:false`, and
   `localFileWrites:false`; no workspace manifests, lockfiles, root
   `package.json`, package files, package scripts, or `dist` outputs are edited
@@ -1023,3 +1024,14 @@ P25.31 adds renderer-service package build verification:
   `buildOutput`, `packageScriptsRunnable`, `processSpawn`, `workspaceMutation`,
   `packageCreated`, `scriptRunnable`, `fileMaterialization`, `dispatch`,
   `networkDispatch`, `runtimeRegistration`, and `localFileWrites` all `false`.
+
+P25.32 adds renderer-service package materialization checklist:
+
+- Plans include `packageMaterializationChecklist`, defining future
+  package/workspace/output batches, readiness checks, commit boundary, and
+  rollback plan.
+- The checklist remains planning-only with `materializationApproved`,
+  `fileMaterialization`, `workspaceMutation`, `lockfileMutation`,
+  `rootPackageJsonMutation`, `pnpmWorkspaceMutation`, `commandExecution`,
+  `buildOutput`, `processSpawn`, `dispatch`, `networkDispatch`,
+  `runtimeRegistration`, and `localFileWrites` all `false`.

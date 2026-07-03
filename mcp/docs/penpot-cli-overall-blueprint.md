@@ -315,6 +315,10 @@ Current state:
   filtered build, type-check, and test commands plus expected `dist` artifacts
   without running package scripts, spawning processes, emitting build output,
   creating package files, or mutating workspace state.
+- Done: renderer-service package materialization checklist defines
+  metadata-only package/workspace/output batches, readiness checks, commit
+  boundary, and rollback plan without approving materialization, creating
+  files, mutating workspace state, or registering runtime dispatch.
 - Done: focused command-runtime tests cover descriptor groups, lookup,
   adapter-selection priority/error cases, and token-safe envelopes.
 - Status: complete. Later command coverage gaps were tracked by the P15.1
@@ -935,6 +939,21 @@ P25.31 is complete:
    `packageCreated`, `scriptRunnable`, `fileMaterialization`, `dispatch`,
    `networkDispatch`, `runtimeRegistration`, and `localFileWrites` remain
    false.
+
+P25.32 is complete:
+
+1. Shared plans include `packageMaterializationChecklist` metadata for
+   package/workspace/output batches, readiness checks, commit boundary, and
+   rollback plan.
+2. MCP and CLI expose this checklist in dry-run and unavailable execution
+   payloads without approving materialization, creating package files,
+   mutating workspace manifests, mutating lockfiles, running commands,
+   emitting build output, or registering runtime dispatch.
+3. `packageMaterializationChecklist.materializationApproved`,
+   `fileMaterialization`, `workspaceMutation`, `lockfileMutation`,
+   `rootPackageJsonMutation`, `pnpmWorkspaceMutation`, `commandExecution`,
+   `buildOutput`, `processSpawn`, `dispatch`, `networkDispatch`,
+   `runtimeRegistration`, and `localFileWrites` remain false.
 
 Keep manual configuration behavior stable while moving command metadata and
 envelopes; transport-specific formatting should stay at the MCP/CLI edges.

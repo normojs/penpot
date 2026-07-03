@@ -1,7 +1,7 @@
 {
-  "version": "P25.31",
+  "version": "P25.32",
   "command": "render.thumbnail",
-  "status": "runtime boundary audited; MCP/CLI planning, metadata-only availability probes, response normalization contracts, disabled client request scaffold, closed execution gate, health preflight plan, executable client harness plan, dispatch adapter boundary, opt-in configuration surfaces, unavailable error taxonomy, integration fixture harness, dispatch registration preflight, disabled executable adapter registration scaffold, disabled adapter registry manifest, final disabled enablement checklist, implementation slice audit, health/no-op contract fixtures, no-op service host scaffold, host lifecycle test fixtures, package manifest scaffold, package creation guardrails, package file templates, and package workspace wiring and package build verification registered; runtime execution blocked",
+  "status": "runtime boundary audited; MCP/CLI planning, metadata-only availability probes, response normalization contracts, disabled client request scaffold, closed execution gate, health preflight plan, executable client harness plan, dispatch adapter boundary, opt-in configuration surfaces, unavailable error taxonomy, integration fixture harness, dispatch registration preflight, disabled executable adapter registration scaffold, disabled adapter registry manifest, final disabled enablement checklist, implementation slice audit, health/no-op contract fixtures, no-op service host scaffold, host lifecycle test fixtures, package manifest scaffold, package creation guardrails, package file templates, and package workspace wiring, package build verification, and package materialization checklist registered; runtime execution blocked",
   "selectedBoundary": "thumbnail-renderer-service",
   "runtimeRegistration": {
     "mcpToolRegistered": true,
@@ -369,11 +369,12 @@
     "Package file template tests cover planned package.json, tsconfig, source, and test shapes without materializing files.",
     "Package workspace wiring tests cover planned workspace entries, root scripts, lockfile touchpoints, and no manifest mutation.",
     "Add CLI smoke tests only after the service exists, covering dry-run, resource metadata, --output download, and missing-token errors.",
-    "Package build verification tests cover planned filtered build, type-check, test commands, expected artifacts, and no command execution."
+    "Package build verification tests cover planned filtered build, type-check, test commands, expected artifacts, and no command execution.",
+    "Package materialization checklist tests cover planned file/workspace batches, readiness checklist, commit boundary, rollback plan, and no file materialization."
   ],
   "nextTask": {
-    "id": "P25.32",
-    "title": "Plan renderer-service package materialization checklist",
+    "id": "P25.33",
+    "title": "Plan renderer-service package creation dry-run summary",
     "status": "pending"
   },
   "implementationSliceAudit": {
@@ -1436,6 +1437,144 @@
       "commit workspace entry and lockfile updates before filtered build verification",
       "prove build, type-check, and test commands pass before making renderer-service scripts runnable",
       "keep render.thumbnail runtime registration disabled until package verification is green"
+    ]
+  },
+  "packageMaterializationChecklist": {
+    "status": "planned-disabled",
+    "checklistVersion": "P25.32",
+    "adapter": "renderer-service",
+    "command": "render.thumbnail",
+    "dispatch": false,
+    "networkDispatch": false,
+    "runtimeRegistration": false,
+    "localFileWrites": false,
+    "hostStartup": false,
+    "processSpawn": false,
+    "packageCreated": false,
+    "workspaceMutation": false,
+    "scriptRunnable": false,
+    "fileMaterialization": false,
+    "lockfileMutation": false,
+    "rootPackageJsonMutation": false,
+    "pnpmWorkspaceMutation": false,
+    "commandExecution": false,
+    "buildOutput": false,
+    "packageScriptsRunnable": false,
+    "materializationApproved": false,
+    "consumes": {
+      "packageFileTemplates": {
+        "requiredStatus": "planned-disabled",
+        "currentStatus": "planned-disabled",
+        "templateVersion": "P25.29",
+        "fileMaterialization": false
+      },
+      "packageWorkspaceWiring": {
+        "requiredStatus": "planned-disabled",
+        "currentStatus": "planned-disabled",
+        "wiringVersion": "P25.30",
+        "workspaceMutation": false
+      },
+      "packageBuildVerification": {
+        "requiredStatus": "planned-disabled",
+        "currentStatus": "planned-disabled",
+        "verificationVersion": "P25.31",
+        "commandExecution": false,
+        "buildOutput": false
+      }
+    },
+    "materializationBatches": [
+      {
+        "id": "package-files",
+        "files": [
+          "renderer-service/package.json",
+          "renderer-service/tsconfig.json",
+          "renderer-service/src/index.ts",
+          "renderer-service/src/noop-host.ts",
+          "renderer-service/test/noop-host.test.mjs"
+        ],
+        "materializeNow": false,
+        "requiresReview": true
+      },
+      {
+        "id": "workspace-wiring",
+        "files": [
+          "pnpm-workspace.yaml",
+          "package.json",
+          "pnpm-lock.yaml"
+        ],
+        "materializeNow": false,
+        "requiresReview": true
+      },
+      {
+        "id": "verification-output",
+        "files": [
+          "renderer-service/dist/index.js",
+          "renderer-service/dist/index.d.ts",
+          "renderer-service/dist/noop-host.js",
+          "renderer-service/dist/noop-host.d.ts"
+        ],
+        "materializeNow": false,
+        "generatedOnlyAfterBuild": true
+      }
+    ],
+    "readinessChecklist": [
+      {
+        "id": "templates-reviewed",
+        "description": "review package templates before writing renderer-service files",
+        "requiredBeforeMaterialization": true,
+        "satisfied": false
+      },
+      {
+        "id": "workspace-wiring-reviewed",
+        "description": "review pnpm workspace entry, root scripts, and lockfile update together",
+        "requiredBeforeMaterialization": true,
+        "satisfied": false
+      },
+      {
+        "id": "verification-plan-reviewed",
+        "description": "review filtered build, type-check, and test commands before making scripts runnable",
+        "requiredBeforeMaterialization": true,
+        "satisfied": false
+      },
+      {
+        "id": "runtime-dispatch-stays-disabled",
+        "description": "confirm render.thumbnail runtime dispatch remains unavailable after materialization",
+        "requiredBeforeMaterialization": true,
+        "satisfied": false
+      }
+    ],
+    "commitBoundary": {
+      "expectedCommit": "create renderer-service package files and workspace wiring in a dedicated future task",
+      "includePackageFiles": true,
+      "includeWorkspaceManifests": true,
+      "includeLockfile": true,
+      "includeRuntimeDispatch": false,
+      "materializeNow": false
+    },
+    "rollbackPlan": {
+      "deletePackageDirectory": "renderer-service",
+      "revertWorkspaceFiles": [
+        "pnpm-workspace.yaml",
+        "package.json",
+        "pnpm-lock.yaml"
+      ],
+      "revertRuntimeRegistration": false,
+      "requiredBeforeMaterialization": true
+    },
+    "noOpGuarantees": [
+      "do not create renderer-service directory",
+      "do not write renderer-service package files",
+      "do not edit pnpm-workspace.yaml",
+      "do not edit root package.json",
+      "do not mutate pnpm-lock.yaml",
+      "do not run package verification commands",
+      "do not register runtime dispatch"
+    ],
+    "requiredBeforeRuntimeDispatch": [
+      "complete package materialization checklist in a committed planning task",
+      "materialize package files and workspace wiring in a separate implementation task",
+      "run filtered build, type-check, and test commands after package files exist",
+      "keep render.thumbnail execution unavailable until materialized package verification passes"
     ]
   }
 }

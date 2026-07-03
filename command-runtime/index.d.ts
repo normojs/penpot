@@ -453,6 +453,7 @@ export interface RenderThumbnailRendererServicePlan {
         packageFileTemplates: RenderThumbnailRendererServicePackageFileTemplates;
         packageWorkspaceWiring: RenderThumbnailRendererServicePackageWorkspaceWiring;
         packageBuildVerification: RenderThumbnailRendererServicePackageBuildVerification;
+        packageMaterializationChecklist: RenderThumbnailRendererServicePackageMaterializationChecklist;
         clientRequest: RenderThumbnailRendererServiceClientRequest;
     };
     client: RenderThumbnailRendererServiceClientConfig;
@@ -477,6 +478,7 @@ export interface RenderThumbnailRendererServicePlan {
     packageFileTemplates: RenderThumbnailRendererServicePackageFileTemplates;
     packageWorkspaceWiring: RenderThumbnailRendererServicePackageWorkspaceWiring;
     packageBuildVerification: RenderThumbnailRendererServicePackageBuildVerification;
+    packageMaterializationChecklist: RenderThumbnailRendererServicePackageMaterializationChecklist;
     clientRequest: RenderThumbnailRendererServiceClientRequest;
     serviceRequest: {
         command: "render.thumbnail";
@@ -561,6 +563,7 @@ export interface RenderThumbnailRendererServicePlan {
         packageFileTemplatesVersion: "P25.29";
         packageWorkspaceWiringVersion: "P25.30";
         packageBuildVerificationVersion: "P25.31";
+        packageMaterializationChecklistVersion: "P25.32";
     };
 }
 
@@ -1724,6 +1727,80 @@ export interface RenderThumbnailRendererServicePackageBuildVerification {
     requiredBeforeRuntimeDispatch: string[];
 }
 
+export interface RenderThumbnailRendererServicePackageMaterializationChecklist {
+    status: "planned-disabled";
+    checklistVersion: "P25.32";
+    adapter: "renderer-service";
+    command: "render.thumbnail";
+    dispatch: false;
+    networkDispatch: false;
+    runtimeRegistration: false;
+    localFileWrites: false;
+    hostStartup: false;
+    processSpawn: false;
+    packageCreated: false;
+    workspaceMutation: false;
+    scriptRunnable: false;
+    fileMaterialization: false;
+    lockfileMutation: false;
+    rootPackageJsonMutation: false;
+    pnpmWorkspaceMutation: false;
+    commandExecution: false;
+    buildOutput: false;
+    packageScriptsRunnable: false;
+    materializationApproved: false;
+    consumes: {
+        packageFileTemplates: {
+            requiredStatus: "planned-disabled";
+            currentStatus: string;
+            templateVersion: string;
+            fileMaterialization: false;
+        };
+        packageWorkspaceWiring: {
+            requiredStatus: "planned-disabled";
+            currentStatus: string;
+            wiringVersion: string;
+            workspaceMutation: false;
+        };
+        packageBuildVerification: {
+            requiredStatus: "planned-disabled";
+            currentStatus: string;
+            verificationVersion: string;
+            commandExecution: false;
+            buildOutput: false;
+        };
+    };
+    materializationBatches: Array<{
+        id: string;
+        files: string[];
+        materializeNow: false;
+        requiresReview?: true;
+        generatedOnlyAfterBuild?: true;
+    }>;
+    readinessChecklist: Array<{
+        id: string;
+        description: string;
+        requiredBeforeMaterialization: true;
+        satisfied: false;
+    }>;
+    commitBoundary: {
+        expectedCommit: string;
+        includePackageFiles: true;
+        includeWorkspaceManifests: true;
+        includeLockfile: true;
+        includeRuntimeDispatch: false;
+        materializeNow: false;
+    };
+    rollbackPlan: {
+        deletePackageDirectory: string;
+        revertWorkspaceFiles: string[];
+        revertRuntimeRegistration: false;
+        requiredBeforeMaterialization: true;
+    };
+    noOpGuarantees: string[];
+    requiredBeforeRuntimeDispatch: string[];
+}
+
 export interface CreateRenderThumbnailRendererServiceClientRequestOptions {
     entrypoint?: "mcp" | "cli" | string | null;
     mcpToolName?: string | null;
@@ -2105,6 +2182,13 @@ export function createRenderThumbnailRendererServicePackageBuildVerification(
         packageFileTemplates?: Partial<RenderThumbnailRendererServicePackageFileTemplates> | null;
     }
 ): RenderThumbnailRendererServicePackageBuildVerification;
+export function createRenderThumbnailRendererServicePackageMaterializationChecklist(
+    options?: {
+        packageFileTemplates?: Partial<RenderThumbnailRendererServicePackageFileTemplates> | null;
+        packageWorkspaceWiring?: Partial<RenderThumbnailRendererServicePackageWorkspaceWiring> | null;
+        packageBuildVerification?: Partial<RenderThumbnailRendererServicePackageBuildVerification> | null;
+    }
+): RenderThumbnailRendererServicePackageMaterializationChecklist;
 export function createRenderThumbnailRendererServiceClientRequest(
     plan: Partial<RenderThumbnailRendererServicePlan>,
     options?: CreateRenderThumbnailRendererServiceClientRequestOptions

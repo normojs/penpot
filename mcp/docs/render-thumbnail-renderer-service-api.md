@@ -1,6 +1,6 @@
 # Render Thumbnail Renderer Service API
 
-Status: P25.31 API fixtures, MCP/CLI dry-run/client boundaries, metadata-only
+Status: P25.32 API fixtures, MCP/CLI dry-run/client boundaries, metadata-only
 availability probes, response normalization contracts, disabled client request
 scaffold, closed execution gate, disabled health preflight, and executable
 client harness plus dispatch adapter boundary plans, and opt-in configuration
@@ -11,7 +11,8 @@ implementation slice audit, health/no-op contract fixtures, and no-op service
 host scaffold plus host lifecycle test fixtures and package manifest scaffold
 plus package creation guardrails, package file templates, and package
 workspace wiring plus package build verification defined; executable runtime
-registration remains blocked.
+registration remains blocked. P25.32 adds package materialization checklist
+metadata without creating package files.
 
 P25.6 selected a dedicated thumbnail renderer service as the future executable
 owner for `render.thumbnail`. This document defines the service-facing request
@@ -153,6 +154,13 @@ test commands plus expected `dist` artifacts while keeping command execution,
 process spawn, build output, package scripts, package creation, workspace
 mutation, file materialization, dispatch, network dispatch, runtime
 registration, and local file writes disabled.
+
+P25.32 defines the package materialization checklist. Plans now include
+`packageMaterializationChecklist`, covering planned package, workspace, and
+generated-output batches plus readiness checks, commit boundary, and rollback
+plan while keeping materialization approval, file materialization, workspace
+mutation, lockfile mutation, command execution, build output, dispatch, network
+dispatch, runtime registration, and local file writes disabled.
 
 ## Service Boundary
 
