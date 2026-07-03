@@ -2716,6 +2716,14 @@ test("render thumbnail dry-run returns renderer-service request plan", async () 
         assert.equal(body.data.packageFileTemplates.packageCreated, false);
         assert.equal(body.data.packageFileTemplates.workspaceMutation, false);
         assert.equal(body.data.packageFileTemplates.fileMaterialization, false);
+        assert.equal(body.data.packageWorkspaceWiring.wiringVersion, "P25.30");
+        assert.equal(body.data.packageWorkspaceWiring.dispatch, false);
+        assert.equal(body.data.packageWorkspaceWiring.networkDispatch, false);
+        assert.equal(body.data.packageWorkspaceWiring.runtimeRegistration, false);
+        assert.equal(body.data.packageWorkspaceWiring.localFileWrites, false);
+        assert.equal(body.data.packageWorkspaceWiring.workspaceMutation, false);
+        assert.equal(body.data.packageWorkspaceWiring.lockfileMutation, false);
+        assert.equal(body.data.packageWorkspaceWiring.pnpmWorkspaceMutation, false);
         assert.equal(body.data.service.responseNormalization.successStatus, "ok");
         assert.equal(body.data.service.responseNormalization.localFileWrites, false);
         assert.equal(body.data.service.errorShape.code, "renderer_service_error");
@@ -2839,6 +2847,14 @@ test("render thumbnail execution reports renderer-service unavailable without ca
         assert.equal(body.error.data.packageFileTemplates.packageCreated, false);
         assert.equal(body.error.data.packageFileTemplates.workspaceMutation, false);
         assert.equal(body.error.data.packageFileTemplates.fileMaterialization, false);
+        assert.equal(body.error.data.packageWorkspaceWiring.wiringVersion, "P25.30");
+        assert.equal(body.error.data.packageWorkspaceWiring.dispatch, false);
+        assert.equal(body.error.data.packageWorkspaceWiring.networkDispatch, false);
+        assert.equal(body.error.data.packageWorkspaceWiring.runtimeRegistration, false);
+        assert.equal(body.error.data.packageWorkspaceWiring.localFileWrites, false);
+        assert.equal(body.error.data.packageWorkspaceWiring.workspaceMutation, false);
+        assert.equal(body.error.data.packageWorkspaceWiring.lockfileMutation, false);
+        assert.equal(body.error.data.packageWorkspaceWiring.pnpmWorkspaceMutation, false);
         assert.equal(body.error.data.clientRequest.dispatch, false);
         assert.equal(body.error.data.serviceRequest.operation, "thumbnail.render");
     } finally {

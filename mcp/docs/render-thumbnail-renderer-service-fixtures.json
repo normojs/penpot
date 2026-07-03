@@ -1,7 +1,7 @@
 {
-  "version": "P25.29",
+  "version": "P25.30",
   "command": "render.thumbnail",
-  "status": "renderer-service API fixtures with MCP/CLI dry-run/client boundaries, metadata-only availability probes, response normalization contracts, disabled client request scaffold, explicit execution gate, health preflight plan, executable client harness plan, dispatch adapter boundary, opt-in configuration surfaces, unavailable error taxonomy, integration fixture harness, dispatch registration preflight, disabled executable adapter registration scaffold, disabled adapter registry manifest, final disabled enablement checklist, implementation slice audit, health/no-op contract fixtures, no-op service host scaffold, host lifecycle test fixtures, package manifest scaffold, package creation guardrails, and package file templates; runtime execution blocked",
+  "status": "renderer-service API fixtures with MCP/CLI dry-run/client boundaries, metadata-only availability probes, response normalization contracts, disabled client request scaffold, explicit execution gate, health preflight plan, executable client harness plan, dispatch adapter boundary, opt-in configuration surfaces, unavailable error taxonomy, integration fixture harness, dispatch registration preflight, disabled executable adapter registration scaffold, disabled adapter registry manifest, final disabled enablement checklist, implementation slice audit, health/no-op contract fixtures, no-op service host scaffold, host lifecycle test fixtures, package manifest scaffold, package creation guardrails, package file templates, and package workspace wiring; runtime execution blocked",
   "adapter": "renderer-service",
   "runtimeRegistration": {
     "mcpToolRegistered": true,
@@ -1309,6 +1309,110 @@
         "prove no-op host templates build before registering process startup",
         "keep render.thumbnail execution unavailable until template files become real package files"
       ]
+    },
+    "packageWorkspaceWiring": {
+      "status": "planned-disabled",
+      "wiringVersion": "P25.30",
+      "adapter": "renderer-service",
+      "command": "render.thumbnail",
+      "dispatch": false,
+      "networkDispatch": false,
+      "runtimeRegistration": false,
+      "localFileWrites": false,
+      "hostStartup": false,
+      "processSpawn": false,
+      "packageCreated": false,
+      "workspaceMutation": false,
+      "scriptRunnable": false,
+      "fileMaterialization": false,
+      "lockfileMutation": false,
+      "rootPackageJsonMutation": false,
+      "pnpmWorkspaceMutation": false,
+      "consumes": {
+        "packageManifestScaffold": {
+          "requiredStatus": "planned-disabled",
+          "currentStatus": "planned-disabled",
+          "manifestVersion": "P25.27",
+          "workspaceRegistered": false
+        },
+        "packageCreationGuardrails": {
+          "requiredStatus": "planned-disabled",
+          "currentStatus": "planned-disabled",
+          "guardrailVersion": "P25.28",
+          "workspaceMutation": false
+        },
+        "packageFileTemplates": {
+          "requiredStatus": "planned-disabled",
+          "currentStatus": "planned-disabled",
+          "templateVersion": "P25.29",
+          "fileMaterialization": false
+        }
+      },
+      "workspaceEntries": [
+        {
+          "file": "pnpm-workspace.yaml",
+          "plannedEntry": "renderer-service",
+          "presentNow": false,
+          "mutateNow": false
+        }
+      ],
+      "rootPackageScripts": [
+        {
+          "file": "package.json",
+          "script": "renderer-service:start:noop",
+          "command": "pnpm --filter @penpot/renderer-service start:noop",
+          "runnable": false,
+          "mutateNow": false
+        },
+        {
+          "file": "package.json",
+          "script": "renderer-service:test",
+          "command": "pnpm --filter @penpot/renderer-service test",
+          "runnable": false,
+          "mutateNow": false
+        }
+      ],
+      "lockfilePlan": {
+        "file": "pnpm-lock.yaml",
+        "requiredWhenPackageMaterializes": true,
+        "mutateNow": false,
+        "dependencyAdditions": [
+          "typescript",
+          "@types/node"
+        ]
+      },
+      "workspaceDependencyPlan": {
+        "packageManager": "pnpm",
+        "packageName": "@penpot/renderer-service",
+        "workspaceFilter": "@penpot/renderer-service",
+        "workspaceRegistered": false,
+        "packageFilesMaterialized": false
+      },
+      "nonTargets": [
+        {
+          "file": "docker-compose.yaml",
+          "reason": "no container wiring until no-op host package exists",
+          "mutateNow": false
+        },
+        {
+          "file": "command-runtime/index.js",
+          "reason": "no executable adapter registration until workspace package is real and tested",
+          "mutateNow": false
+        }
+      ],
+      "noOpGuarantees": [
+        "do not edit pnpm-workspace.yaml",
+        "do not edit root package.json scripts",
+        "do not mutate pnpm-lock.yaml",
+        "do not create renderer-service package files",
+        "do not run pnpm install or package scripts"
+      ],
+      "requiredBeforeRuntimeDispatch": [
+        "materialize renderer-service package files in a dedicated implementation task",
+        "add pnpm workspace entry and lockfile changes in the same package wiring task",
+        "prove workspace filtered build and test commands before making scripts runnable",
+        "keep render.thumbnail runtime registration disabled until workspace wiring is committed and verified"
+      ]
     }
   },
   "registrationGates": {
@@ -1619,6 +1723,7 @@
     "package manifest scaffold survives dry-run and unavailable execution JSON output",
     "package creation guardrails survive dry-run and unavailable execution JSON output",
     "package file templates survive dry-run and unavailable execution JSON output",
+    "package workspace wiring survives dry-run and unavailable execution JSON output",
     "forwards caller auth and MCP audit context to renderer-service",
     "reports structured errors for missing resourceUri"
   ],
@@ -1644,12 +1749,13 @@
     "package manifest scaffold survives dry-run and unavailable execution JSON output",
     "package creation guardrails survive dry-run and unavailable execution JSON output",
     "package file templates survive dry-run and unavailable execution JSON output",
+    "package workspace wiring survives dry-run and unavailable execution JSON output",
     "--output downloads the returned PNG resource",
     "missing token fails before contacting renderer-service"
   ],
   "nextTask": {
-    "id": "P25.30",
-    "title": "Plan renderer-service package workspace wiring",
+    "id": "P25.31",
+    "title": "Plan renderer-service package build verification",
     "modules": [
       "mcp",
       "penpot-cli",

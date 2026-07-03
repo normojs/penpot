@@ -29,8 +29,8 @@ disabled enablement checklist, P25.23 audits the first concrete implementation
 slice, P25.24 defines the health/no-op contract fixtures, and P25.25 defines
 the no-op service host scaffold. P25.26 defines host lifecycle test fixtures,
 P25.27 defines package manifest scaffold metadata, P25.28 defines package
-creation guardrails, and P25.29 defines package file templates; runtime
-execution remains blocked.
+creation guardrails, P25.29 defines package file templates, and P25.30 defines
+package workspace wiring; runtime execution remains blocked.
 
 ## Existing Surfaces
 
@@ -168,8 +168,8 @@ implementation slice audit, P25.24 adds the metadata-only health/no-op
 contract fixtures, and P25.25 adds the metadata-only no-op service host
 scaffold. P25.26 adds metadata-only host lifecycle test fixtures, P25.27 adds
 metadata-only package manifest scaffold fields, P25.28 adds metadata-only
-package creation guardrails, and P25.29 adds metadata-only package file
-templates. MCP
+package creation guardrails, P25.29 adds metadata-only package file templates,
+and P25.30 adds metadata-only package workspace wiring. MCP
 `render.thumbnail` and `penpot-cli render thumbnail --dry-run` can print the
 future request shape, configured/not configured service metadata,
 response/error contracts, `clientRequest.dispatch:false`,
@@ -198,6 +198,13 @@ plus `packageFileTemplates.fileMaterialization:false`,
 `packageFileTemplates.packageCreated:false`,
 `packageFileTemplates.workspaceMutation:false`, and
 `packageFileTemplates.scriptRunnable:false`,
+plus `packageWorkspaceWiring.pnpmWorkspaceMutation:false`,
+`packageWorkspaceWiring.rootPackageJsonMutation:false`,
+`packageWorkspaceWiring.lockfileMutation:false`,
+`packageWorkspaceWiring.workspaceMutation:false`,
+`packageWorkspaceWiring.packageCreated:false`,
+`packageWorkspaceWiring.scriptRunnable:false`, and
+`packageWorkspaceWiring.fileMaterialization:false`,
 but execution still returns
 `renderer_service_unavailable` until explicit opt-in, config surfaces, renderer
 service, integration tests, health preflight, file cache probe, tagged-frame

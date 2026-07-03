@@ -307,6 +307,10 @@ Current state:
   `package.json`, `tsconfig.json`, source, no-op host, and test shapes without
   materializing files, emitting build output, creating a package, or mutating
   workspace state.
+- Done: renderer-service package workspace wiring defines metadata-only planned
+  `pnpm-workspace.yaml` entry, root scripts, lockfile touchpoints, workspace
+  filter, and non-target files without editing manifests, mutating lockfiles,
+  creating package files, or making scripts runnable.
 - Done: focused command-runtime tests cover descriptor groups, lookup,
   adapter-selection priority/error cases, and token-safe envelopes.
 - Status: complete. Later command coverage gaps were tracked by the P15.1
@@ -898,6 +902,21 @@ P25.29 is complete:
    `workspaceMutation`, `scriptRunnable`, `hostStartup`, `processSpawn`,
    `dispatch`, `networkDispatch`, `runtimeRegistration`, and
    `localFileWrites` remain false.
+
+P25.30 is complete:
+
+1. Shared plans include `packageWorkspaceWiring` metadata for the planned
+   `pnpm-workspace.yaml` entry, root scripts, lockfile touchpoints, workspace
+   dependency filter, and non-target files.
+2. MCP and CLI expose this wiring in dry-run and unavailable execution payloads
+   without editing workspace manifests, mutating lockfiles, editing root
+   `package.json`, creating package files, emitting build output, or making
+   scripts runnable.
+3. `packageWorkspaceWiring.pnpmWorkspaceMutation`,
+   `rootPackageJsonMutation`, `lockfileMutation`, `workspaceMutation`,
+   `packageCreated`, `scriptRunnable`, `fileMaterialization`, `dispatch`,
+   `networkDispatch`, `runtimeRegistration`, and `localFileWrites` remain
+   false.
 
 Keep manual configuration behavior stable while moving command metadata and
 envelopes; transport-specific formatting should stay at the MCP/CLI edges.

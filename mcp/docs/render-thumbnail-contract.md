@@ -1,6 +1,6 @@
 # Render Thumbnail Contract
 
-Status: P25.4 descriptor contract; P25.29 MCP/CLI renderer-service dry-run
+Status: P25.4 descriptor contract; P25.30 MCP/CLI renderer-service dry-run
 boundaries, metadata-only availability probes, response normalization
 contracts, disabled client request scaffolding, closed execution gate, disabled
 health preflight, executable client harness plan, and dispatch adapter boundary
@@ -9,8 +9,8 @@ fixture harness plus dispatch registration preflight and executable adapter
 registration scaffold plus adapter registry manifest and final enablement
 checklist plus implementation slice audit and health/no-op contract fixtures
 plus no-op service host scaffold, host lifecycle test fixtures, and package
-manifest scaffold plus package creation guardrails and package file templates
-defined; runtime execution still blocked.
+manifest scaffold plus package creation guardrails, package file templates, and
+package workspace wiring defined; runtime execution still blocked.
 
 This document defines the `render.thumbnail` contract before executable MCP or
 CLI rendering is enabled. The contract follows Penpot's existing dashboard
@@ -217,6 +217,14 @@ Shared contract shape:
   `packageCreated:false`, `workspaceMutation:false`, `scriptRunnable:false`,
   `hostStartup:false`, `processSpawn:false`, `networkDispatch:false`,
   `runtimeRegistration:false`, and `localFileWrites:false`.
+- P25.30 package workspace wiring fields are planning-only. They define the
+  planned `pnpm-workspace.yaml` entry, root scripts, lockfile touchpoints,
+  workspace dependency filter, and non-target files while keeping
+  `packageWorkspaceWiring.pnpmWorkspaceMutation:false`,
+  `rootPackageJsonMutation:false`, `lockfileMutation:false`,
+  `workspaceMutation:false`, `packageCreated:false`, `scriptRunnable:false`,
+  `fileMaterialization:false`, `networkDispatch:false`,
+  `runtimeRegistration:false`, and `localFileWrites:false`.
 - Exporter service execution is out of scope for this command unless a later
   task explicitly maps thumbnail rendering to exporter-compatible semantics.
 - P25.6 selects a future dedicated thumbnail renderer service as the executable
@@ -231,7 +239,7 @@ See `render-thumbnail-runtime-boundary.md` and
 audit, resource-return rules, cache refresh behavior, auth expectations, and
 future test strategy.
 See `render-thumbnail-renderer-service-api.md` and
-`render-thumbnail-renderer-service-fixtures.json` for the P25.29 future
+`render-thumbnail-renderer-service-fixtures.json` for the P25.30 future
 renderer-service request/response API, MCP/CLI dry-run/client boundary, and
 metadata-only availability probe plus response/error normalization and disabled
 client request, execution gate, health preflight, and execution harness
@@ -241,7 +249,7 @@ registration preflight plus executable adapter registration scaffold and
 adapter registry manifest plus enablement checklist and implementation slice
 audit plus health/no-op contract fixtures, no-op service host scaffold, and
 host lifecycle test fixtures plus package manifest scaffold, package creation
-guardrails, and package file templates.
+guardrails, package file templates, and package workspace wiring.
 
 ## Fixtures
 

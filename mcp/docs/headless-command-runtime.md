@@ -48,6 +48,16 @@ Workspace wiring:
 - Keep backend/common implementation in Clojure and expose it through backend
   command/RPC adapters; TypeScript runtime code should call those surfaces
   instead of importing Clojure code.
+- Keep future renderer-service package wiring as command-runtime planning
+  metadata until an explicit implementation task materializes it. P25.30 plans
+  the eventual `renderer-service` workspace entry, root scripts, lockfile
+  touchpoints, and `@penpot/renderer-service` workspace filter while keeping
+  `pnpmWorkspaceMutation:false`, `rootPackageJsonMutation:false`,
+  `lockfileMutation:false`, `workspaceMutation:false`, `packageCreated:false`,
+  `scriptRunnable:false`, `fileMaterialization:false`, `dispatch:false`,
+  `networkDispatch:false`, `runtimeRegistration:false`, and
+  `localFileWrites:false`; no workspace manifests, lockfiles, root
+  `package.json`, or package files are edited in that planning step.
 
 Ownership by module:
 
@@ -76,6 +86,7 @@ type CommandAdapterKind =
   | "backend-command"
   | "plugin-live"
   | "exporter"
+  | "renderer-service"
   | "browser-url"
   | "local-fs";
 
@@ -990,3 +1001,13 @@ P25.29 adds renderer-service package file templates:
   `packageCreated`, `workspaceMutation`, `scriptRunnable`, `hostStartup`,
   `processSpawn`, `dispatch`, `networkDispatch`, `runtimeRegistration`, and
   `localFileWrites` all `false`.
+
+P25.30 adds renderer-service package workspace wiring:
+
+- Plans include `packageWorkspaceWiring`, defining the planned
+  `pnpm-workspace.yaml` entry, root package scripts, lockfile touchpoints,
+  workspace dependency filter, and non-target files.
+- The wiring remains planning-only with `pnpmWorkspaceMutation`,
+  `rootPackageJsonMutation`, `lockfileMutation`, `workspaceMutation`,
+  `packageCreated`, `scriptRunnable`, `fileMaterialization`, `dispatch`,
+  `networkDispatch`, `runtimeRegistration`, and `localFileWrites` all `false`.

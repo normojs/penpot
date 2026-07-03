@@ -1027,6 +1027,11 @@ export function createRenderThumbnailRendererServicePlan(options = EMPTY_OBJECT)
         packageManifestScaffold,
         packageCreationGuardrails,
     });
+    const packageWorkspaceWiring = createRenderThumbnailRendererServicePackageWorkspaceWiring({
+        packageManifestScaffold,
+        packageCreationGuardrails,
+        packageFileTemplates,
+    });
 
     return {
         command: CommandDescriptors.RENDER_THUMBNAIL.id,
@@ -1088,6 +1093,7 @@ export function createRenderThumbnailRendererServicePlan(options = EMPTY_OBJECT)
             packageManifestScaffold,
             packageCreationGuardrails,
             packageFileTemplates,
+            packageWorkspaceWiring,
             clientRequest,
         },
         client,
@@ -1110,6 +1116,7 @@ export function createRenderThumbnailRendererServicePlan(options = EMPTY_OBJECT)
         packageManifestScaffold,
         packageCreationGuardrails,
         packageFileTemplates,
+        packageWorkspaceWiring,
         clientRequest,
         serviceRequest: {
             command: CommandDescriptors.RENDER_THUMBNAIL.id,
@@ -1192,6 +1199,7 @@ export function createRenderThumbnailRendererServicePlan(options = EMPTY_OBJECT)
             packageManifestScaffoldVersion: packageManifestScaffold.manifestVersion,
             packageCreationGuardrailsVersion: packageCreationGuardrails.guardrailVersion,
             packageFileTemplatesVersion: packageFileTemplates.templateVersion,
+            packageWorkspaceWiringVersion: packageWorkspaceWiring.wiringVersion,
         },
     };
 }
@@ -1554,6 +1562,114 @@ export function createRenderThumbnailRendererServicePackageFileTemplates(options
             "commit workspace and lockfile changes with package template tests",
             "prove no-op host templates build before registering process startup",
             "keep render.thumbnail execution unavailable until template files become real package files",
+        ],
+    };
+}
+
+export function createRenderThumbnailRendererServicePackageWorkspaceWiring(options = EMPTY_OBJECT) {
+    const packageManifestScaffold = options.packageManifestScaffold ?? EMPTY_OBJECT;
+    const packageCreationGuardrails = options.packageCreationGuardrails ?? EMPTY_OBJECT;
+    const packageFileTemplates = options.packageFileTemplates ?? EMPTY_OBJECT;
+
+    return {
+        status: "planned-disabled",
+        wiringVersion: "P25.30",
+        adapter: "renderer-service",
+        command: CommandDescriptors.RENDER_THUMBNAIL.id,
+        dispatch: false,
+        networkDispatch: false,
+        runtimeRegistration: false,
+        localFileWrites: false,
+        hostStartup: false,
+        processSpawn: false,
+        packageCreated: false,
+        workspaceMutation: false,
+        scriptRunnable: false,
+        fileMaterialization: false,
+        lockfileMutation: false,
+        rootPackageJsonMutation: false,
+        pnpmWorkspaceMutation: false,
+        consumes: {
+            packageManifestScaffold: {
+                requiredStatus: "planned-disabled",
+                currentStatus: packageManifestScaffold.status ?? "planned-disabled",
+                manifestVersion: packageManifestScaffold.manifestVersion ?? "P25.27",
+                workspaceRegistered: false,
+            },
+            packageCreationGuardrails: {
+                requiredStatus: "planned-disabled",
+                currentStatus: packageCreationGuardrails.status ?? "planned-disabled",
+                guardrailVersion: packageCreationGuardrails.guardrailVersion ?? "P25.28",
+                workspaceMutation: false,
+            },
+            packageFileTemplates: {
+                requiredStatus: "planned-disabled",
+                currentStatus: packageFileTemplates.status ?? "planned-disabled",
+                templateVersion: packageFileTemplates.templateVersion ?? "P25.29",
+                fileMaterialization: false,
+            },
+        },
+        workspaceEntries: [
+            {
+                file: "pnpm-workspace.yaml",
+                plannedEntry: "renderer-service",
+                presentNow: false,
+                mutateNow: false,
+            },
+        ],
+        rootPackageScripts: [
+            {
+                file: "package.json",
+                script: "renderer-service:start:noop",
+                command: "pnpm --filter @penpot/renderer-service start:noop",
+                runnable: false,
+                mutateNow: false,
+            },
+            {
+                file: "package.json",
+                script: "renderer-service:test",
+                command: "pnpm --filter @penpot/renderer-service test",
+                runnable: false,
+                mutateNow: false,
+            },
+        ],
+        lockfilePlan: {
+            file: "pnpm-lock.yaml",
+            requiredWhenPackageMaterializes: true,
+            mutateNow: false,
+            dependencyAdditions: ["typescript", "@types/node"],
+        },
+        workspaceDependencyPlan: {
+            packageManager: "pnpm",
+            packageName: "@penpot/renderer-service",
+            workspaceFilter: "@penpot/renderer-service",
+            workspaceRegistered: false,
+            packageFilesMaterialized: false,
+        },
+        nonTargets: [
+            {
+                file: "docker-compose.yaml",
+                reason: "no container wiring until no-op host package exists",
+                mutateNow: false,
+            },
+            {
+                file: "command-runtime/index.js",
+                reason: "no executable adapter registration until workspace package is real and tested",
+                mutateNow: false,
+            },
+        ],
+        noOpGuarantees: [
+            "do not edit pnpm-workspace.yaml",
+            "do not edit root package.json scripts",
+            "do not mutate pnpm-lock.yaml",
+            "do not create renderer-service package files",
+            "do not run pnpm install or package scripts",
+        ],
+        requiredBeforeRuntimeDispatch: [
+            "materialize renderer-service package files in a dedicated implementation task",
+            "add pnpm workspace entry and lockfile changes in the same package wiring task",
+            "prove workspace filtered build and test commands before making scripts runnable",
+            "keep render.thumbnail runtime registration disabled until workspace wiring is committed and verified",
         ],
     };
 }

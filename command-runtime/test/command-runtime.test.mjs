@@ -35,6 +35,7 @@ import {
     createRenderThumbnailRendererServicePackageCreationGuardrails,
     createRenderThumbnailRendererServicePackageFileTemplates,
     createRenderThumbnailRendererServicePackageManifestScaffold,
+    createRenderThumbnailRendererServicePackageWorkspaceWiring,
     createRenderThumbnailRendererServiceOptInConfiguration,
     createRenderThumbnailRendererServiceUnavailableErrorTaxonomy,
     createRenderThumbnailRendererServiceErrorPayload,
@@ -523,6 +524,13 @@ test("render.thumbnail renderer-service API fixtures define planning requests wi
     assert.equal(fixtures.serviceApi.packageFileTemplates.packageCreated, false);
     assert.equal(fixtures.serviceApi.packageFileTemplates.workspaceMutation, false);
     assert.equal(fixtures.serviceApi.packageFileTemplates.fileMaterialization, false);
+    assert.equal(fixtures.serviceApi.packageWorkspaceWiring.wiringVersion, "P25.30");
+    assert.equal(fixtures.serviceApi.packageWorkspaceWiring.dispatch, false);
+    assert.equal(fixtures.serviceApi.packageWorkspaceWiring.networkDispatch, false);
+    assert.equal(fixtures.serviceApi.packageWorkspaceWiring.runtimeRegistration, false);
+    assert.equal(fixtures.serviceApi.packageWorkspaceWiring.localFileWrites, false);
+    assert.equal(fixtures.serviceApi.packageWorkspaceWiring.workspaceMutation, false);
+    assert.equal(fixtures.serviceApi.packageWorkspaceWiring.lockfileMutation, false);
     assert.deepEqual(fixtures.runtimeRegistration.commandDescriptorAdapters, ["renderer-service"]);
     assert.deepEqual(CommandDescriptors.RENDER_THUMBNAIL.adapters, ["renderer-service"]);
     assert.equal(fixtures.runtimeRegistration.mcpToolRegistered, true);
@@ -807,6 +815,26 @@ test("render.thumbnail renderer-service plan exposes dry-run client request whil
     assert.ok(plan.packageFileTemplates.sourceFiles.some((entry) => entry.path === "renderer-service/src/noop-host.ts" && entry.startsProcess === false));
     assert.ok(plan.packageFileTemplates.testFiles.some((entry) => entry.path === "renderer-service/test/noop-host.test.mjs" && entry.processSpawn === false));
     assert.deepEqual(plan.service.packageFileTemplates, plan.packageFileTemplates);
+    assert.equal(plan.packageWorkspaceWiring.wiringVersion, "P25.30");
+    assert.equal(plan.packageWorkspaceWiring.dispatch, false);
+    assert.equal(plan.packageWorkspaceWiring.networkDispatch, false);
+    assert.equal(plan.packageWorkspaceWiring.runtimeRegistration, false);
+    assert.equal(plan.packageWorkspaceWiring.localFileWrites, false);
+    assert.equal(plan.packageWorkspaceWiring.hostStartup, false);
+    assert.equal(plan.packageWorkspaceWiring.processSpawn, false);
+    assert.equal(plan.packageWorkspaceWiring.packageCreated, false);
+    assert.equal(plan.packageWorkspaceWiring.workspaceMutation, false);
+    assert.equal(plan.packageWorkspaceWiring.scriptRunnable, false);
+    assert.equal(plan.packageWorkspaceWiring.fileMaterialization, false);
+    assert.equal(plan.packageWorkspaceWiring.lockfileMutation, false);
+    assert.equal(plan.packageWorkspaceWiring.rootPackageJsonMutation, false);
+    assert.equal(plan.packageWorkspaceWiring.pnpmWorkspaceMutation, false);
+    assert.equal(plan.packageWorkspaceWiring.consumes.packageFileTemplates.templateVersion, "P25.29");
+    assert.ok(plan.packageWorkspaceWiring.workspaceEntries.some((entry) => entry.file === "pnpm-workspace.yaml" && entry.mutateNow === false));
+    assert.ok(plan.packageWorkspaceWiring.rootPackageScripts.some((entry) => entry.script === "renderer-service:test" && entry.runnable === false));
+    assert.equal(plan.packageWorkspaceWiring.lockfilePlan.mutateNow, false);
+    assert.equal(plan.packageWorkspaceWiring.workspaceDependencyPlan.workspaceRegistered, false);
+    assert.deepEqual(plan.service.packageWorkspaceWiring, plan.packageWorkspaceWiring);
     assert.equal(plan.clientRequest.status, "scaffolded");
     assert.equal(plan.clientRequest.dispatch, false);
     assert.equal(plan.clientRequest.method, "POST");
@@ -852,6 +880,7 @@ test("render.thumbnail renderer-service plan exposes dry-run client request whil
     assert.equal(plan.diagnostics.packageManifestScaffoldVersion, "P25.27");
     assert.equal(plan.diagnostics.packageCreationGuardrailsVersion, "P25.28");
     assert.equal(plan.diagnostics.packageFileTemplatesVersion, "P25.29");
+    assert.equal(plan.diagnostics.packageWorkspaceWiringVersion, "P25.30");
 });
 
 test("render.thumbnail renderer-service plan reports not-configured availability without endpoint", () => {
@@ -1531,6 +1560,59 @@ test("render.thumbnail renderer-service package file templates stay metadata-onl
     assert.ok(templates.templateMatrix.every((entry) => entry.materialized === false && entry.writesFile === false));
     assert.ok(templates.noOpGuarantees.includes("do not create renderer-service template files"));
     assert.ok(templates.requiredBeforeRuntimeDispatch.includes("materialize package file templates in a dedicated implementation task"));
+});
+
+test("render.thumbnail renderer-service package workspace wiring stays metadata-only", () => {
+    const wiring = createRenderThumbnailRendererServicePackageWorkspaceWiring({
+        packageManifestScaffold: {
+            status: "planned-disabled",
+            manifestVersion: "P25.27",
+        },
+        packageCreationGuardrails: {
+            status: "planned-disabled",
+            guardrailVersion: "P25.28",
+            workspaceMutation: false,
+        },
+        packageFileTemplates: {
+            status: "planned-disabled",
+            templateVersion: "P25.29",
+            fileMaterialization: false,
+        },
+    });
+
+    assert.equal(wiring.status, "planned-disabled");
+    assert.equal(wiring.wiringVersion, "P25.30");
+    assert.equal(wiring.adapter, "renderer-service");
+    assert.equal(wiring.command, "render.thumbnail");
+    assert.equal(wiring.dispatch, false);
+    assert.equal(wiring.networkDispatch, false);
+    assert.equal(wiring.runtimeRegistration, false);
+    assert.equal(wiring.localFileWrites, false);
+    assert.equal(wiring.hostStartup, false);
+    assert.equal(wiring.processSpawn, false);
+    assert.equal(wiring.packageCreated, false);
+    assert.equal(wiring.workspaceMutation, false);
+    assert.equal(wiring.scriptRunnable, false);
+    assert.equal(wiring.fileMaterialization, false);
+    assert.equal(wiring.lockfileMutation, false);
+    assert.equal(wiring.rootPackageJsonMutation, false);
+    assert.equal(wiring.pnpmWorkspaceMutation, false);
+    assert.equal(wiring.consumes.packageManifestScaffold.manifestVersion, "P25.27");
+    assert.equal(wiring.consumes.packageManifestScaffold.workspaceRegistered, false);
+    assert.equal(wiring.consumes.packageCreationGuardrails.guardrailVersion, "P25.28");
+    assert.equal(wiring.consumes.packageCreationGuardrails.workspaceMutation, false);
+    assert.equal(wiring.consumes.packageFileTemplates.templateVersion, "P25.29");
+    assert.equal(wiring.consumes.packageFileTemplates.fileMaterialization, false);
+    assert.ok(wiring.workspaceEntries.some((entry) => entry.plannedEntry === "renderer-service" && entry.mutateNow === false));
+    assert.ok(wiring.rootPackageScripts.some((entry) => entry.script === "renderer-service:start:noop" && entry.runnable === false));
+    assert.equal(wiring.lockfilePlan.file, "pnpm-lock.yaml");
+    assert.equal(wiring.lockfilePlan.mutateNow, false);
+    assert.ok(wiring.lockfilePlan.dependencyAdditions.includes("typescript"));
+    assert.equal(wiring.workspaceDependencyPlan.packageName, "@penpot/renderer-service");
+    assert.equal(wiring.workspaceDependencyPlan.workspaceRegistered, false);
+    assert.ok(wiring.nonTargets.some((entry) => entry.file === "docker-compose.yaml" && entry.mutateNow === false));
+    assert.ok(wiring.noOpGuarantees.includes("do not edit pnpm-workspace.yaml"));
+    assert.ok(wiring.requiredBeforeRuntimeDispatch.includes("add pnpm workspace entry and lockfile changes in the same package wiring task"));
 });
 
 test("render.thumbnail renderer-service client request scaffold adds MCP audit headers without dispatch", () => {
