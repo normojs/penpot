@@ -2311,6 +2311,16 @@ P25.24 render.thumbnail health/no-op contract fixture result:
 - `healthNoopContractFixtures.dispatch`, `networkDispatch`,
   `runtimeRegistration`, and `localFileWrites` remain `false`.
 
+P25.25 render.thumbnail no-op service host scaffold result:
+
+- Shared plans include `noopServiceHostScaffold`, defining the future
+  renderer-service no-op host package, routes, config, lifecycle, and
+  observability metadata.
+- MCP and CLI expose the scaffold in dry-run and unavailable execution payloads
+  without starting a host process or registering runtime dispatch.
+- `noopServiceHostScaffold.hostStartup`, `dispatch`, `networkDispatch`,
+  `runtimeRegistration`, and `localFileWrites` remain `false`.
+
 ### 8.5 Export and Render Tools
 
 May start file-bound and later move to headless:
@@ -2341,7 +2351,8 @@ P25.18 adds the integration fixture harness, P25.19 adds dispatch registration
 preflight, P25.20 adds the disabled executable adapter registration scaffold,
 P25.21 adds the disabled adapter registry manifest, P25.22 adds the final
 disabled enablement checklist, P25.23 audits the first implementation slice,
-and P25.24 defines the health/no-op contract fixtures.
+P25.24 defines the health/no-op contract fixtures, and P25.25 defines the
+no-op service host scaffold.
 Runtime behavior remains unavailable
 until opt-in config surfaces, renderer-service implementation, health preflight,
 cache probe, executable client, and tagged-frame capabilities are implemented.

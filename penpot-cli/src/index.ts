@@ -6324,6 +6324,7 @@ async function handleRenderThumbnail(args: string[], io: CliIO, env: NodeJS.Proc
             enablementChecklist: plan.enablementChecklist,
             implementationSliceAudit: plan.implementationSliceAudit,
             healthNoopContractFixtures: plan.healthNoopContractFixtures,
+            noopServiceHostScaffold: plan.noopServiceHostScaffold,
             clientRequest: plan.clientRequest,
             requiredCapabilities: plan.requiredCapabilities,
             serviceRequest: plan.serviceRequest,

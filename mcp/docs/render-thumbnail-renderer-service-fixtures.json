@@ -1,7 +1,7 @@
 {
-  "version": "P25.24",
+  "version": "P25.25",
   "command": "render.thumbnail",
-  "status": "renderer-service API fixtures with MCP/CLI dry-run/client boundaries, metadata-only availability probes, response normalization contracts, disabled client request scaffold, explicit execution gate, health preflight plan, executable client harness plan, dispatch adapter boundary, opt-in configuration surfaces, unavailable error taxonomy, integration fixture harness, dispatch registration preflight, disabled executable adapter registration scaffold, disabled adapter registry manifest, final disabled enablement checklist, implementation slice audit, and health/no-op contract fixtures; runtime execution blocked",
+  "status": "renderer-service API fixtures with MCP/CLI dry-run/client boundaries, metadata-only availability probes, response normalization contracts, disabled client request scaffold, explicit execution gate, health preflight plan, executable client harness plan, dispatch adapter boundary, opt-in configuration surfaces, unavailable error taxonomy, integration fixture harness, dispatch registration preflight, disabled executable adapter registration scaffold, disabled adapter registry manifest, final disabled enablement checklist, implementation slice audit, health/no-op contract fixtures, and no-op service host scaffold; runtime execution blocked",
   "adapter": "renderer-service",
   "runtimeRegistration": {
     "mcpToolRegistered": true,
@@ -747,6 +747,108 @@
         "add integration tests that prove health fetch and render fetch are explicit runtime actions",
         "preserve unavailable payload compatibility or version it before enabling execution"
       ]
+    },
+    "noopServiceHostScaffold": {
+      "status": "planned-disabled",
+      "scaffoldVersion": "P25.25",
+      "adapter": "renderer-service",
+      "command": "render.thumbnail",
+      "dispatch": false,
+      "networkDispatch": false,
+      "runtimeRegistration": false,
+      "localFileWrites": false,
+      "hostStartup": false,
+      "selectedSlice": "renderer-service-health-and-noop-contract",
+      "consumes": {
+        "healthNoopContractFixtures": {
+          "requiredStatus": "planned-disabled",
+          "currentStatus": "planned-disabled",
+          "fixtureVersion": "P25.24",
+          "currentDispatch": false
+        },
+        "implementationSliceAudit": {
+          "auditVersion": "P25.23",
+          "currentSelectedSlice": "renderer-service-health-and-noop-contract",
+          "enablesRuntimeDispatch": false
+        }
+      },
+      "host": {
+        "id": "renderer-service-noop-host",
+        "packageName": "@penpot/renderer-service",
+        "entrypoint": "renderer-service noop-host",
+        "language": "typescript-node",
+        "defaultBindHost": "127.0.0.1",
+        "defaultPort": 6070,
+        "endpoint": "http://127.0.0.1:6070/thumbnail",
+        "healthEndpoint": "http://127.0.0.1:6070/thumbnail/health",
+        "startCommand": "pnpm --filter @penpot/renderer-service start:noop",
+        "startsProcess": false,
+        "registersRuntime": false,
+        "callsBackendRpc": false,
+        "rendersPng": false,
+        "writesLocalFiles": false
+      },
+      "routes": [
+        {
+          "id": "health",
+          "method": "GET",
+          "path": "/health",
+          "fixture": "renderer-service-health",
+          "status": "planned",
+          "dispatch": false
+        },
+        {
+          "id": "thumbnail-render-noop",
+          "method": "POST",
+          "path": "/thumbnail",
+          "operation": "thumbnail.render",
+          "fixture": "thumbnail-render-noop",
+          "status": "planned",
+          "dispatch": false
+        }
+      ],
+      "configuration": {
+        "env": {
+          "host": "PENPOT_RENDERER_SERVICE_HOST",
+          "port": "PENPOT_RENDERER_SERVICE_PORT",
+          "publicUri": "PENPOT_RENDERER_SERVICE_URI",
+          "mode": "PENPOT_RENDERER_SERVICE_MODE"
+        },
+        "defaultMode": "noop",
+        "requiredModeBeforeStartup": "noop",
+        "tokenValuesIncluded": false
+      },
+      "lifecycle": {
+        "start": "manual-future-task",
+        "stop": "manual-future-task",
+        "readiness": "health route fixture only",
+        "supervision": "not implemented",
+        "hostStartup": false
+      },
+      "observability": {
+        "structuredLogs": true,
+        "requestIdHeader": "x-request-id",
+        "auditHeaders": [
+          "x-penpot-command",
+          "x-penpot-renderer-operation",
+          "x-penpot-renderer-adapter",
+          "x-penpot-entrypoint"
+        ],
+        "tokenValuesIncluded": false
+      },
+      "noOpGuarantees": [
+        "do not start a renderer-service process from command-runtime, MCP, or CLI",
+        "do not register renderer-service runtime dispatch",
+        "do not call backend thumbnail RPCs",
+        "do not render PNG bytes",
+        "do not write local output files"
+      ],
+      "requiredBeforeRuntimeDispatch": [
+        "create the renderer-service package and noop host entrypoint in a dedicated implementation task",
+        "add host lifecycle tests before any MCP or CLI startup command can manage it",
+        "wire health preflight to the host only after explicit opt-in and endpoint config are ready",
+        "replace noop thumbnail.render response with a gated render implementation before enabling dispatch"
+      ]
     }
   },
   "registrationGates": {
@@ -1052,6 +1154,7 @@
     "returns resource metadata without MCP server file writes after renderer-service execution exists",
     "implementation slice audit metadata survives dry-run and unavailable execution JSON output",
     "health/no-op contract fixtures survive dry-run and unavailable execution JSON output",
+    "no-op service host scaffold survives dry-run and unavailable execution JSON output",
     "forwards caller auth and MCP audit context to renderer-service",
     "reports structured errors for missing resourceUri"
   ],
@@ -1072,12 +1175,13 @@
     "enablement checklist metadata survives dry-run and unavailable execution JSON output",
     "implementation slice audit metadata survives dry-run and unavailable execution JSON output",
     "health/no-op contract fixtures survive dry-run and unavailable execution JSON output",
+    "no-op service host scaffold survives dry-run and unavailable execution JSON output",
     "--output downloads the returned PNG resource",
     "missing token fails before contacting renderer-service"
   ],
   "nextTask": {
-    "id": "P25.25",
-    "title": "Plan renderer-service no-op service host scaffold",
+    "id": "P25.26",
+    "title": "Plan renderer-service host lifecycle tests",
     "modules": [
       "mcp",
       "penpot-cli",

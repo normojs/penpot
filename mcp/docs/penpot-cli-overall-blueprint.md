@@ -290,6 +290,8 @@ Current state:
   runtime dispatch.
 - Done: renderer-service health/no-op contract fixtures define `/health` and
   no-op `thumbnail.render` responses without enabling runtime dispatch.
+- Done: renderer-service no-op service host scaffold defines future host
+  package, routes, lifecycle, and observability without starting a process.
 - Done: focused command-runtime tests cover descriptor groups, lookup,
   adapter-selection priority/error cases, and token-safe envelopes.
 - Status: complete. Later command coverage gaps were tracked by the P15.1
@@ -820,6 +822,16 @@ P25.24 is complete:
 2. MCP and CLI expose these fixtures in dry-run and unavailable execution
    payloads without health fetches or renderer-service calls.
 3. `healthNoopContractFixtures.dispatch`, `networkDispatch`,
+   `runtimeRegistration`, and `localFileWrites` remain false.
+
+P25.25 is complete:
+
+1. Shared plans include `noopServiceHostScaffold` metadata for the future
+   renderer-service no-op host package, routes, config, lifecycle, and
+   observability.
+2. MCP and CLI expose this scaffold in dry-run and unavailable execution
+   payloads without starting a process or registering runtime dispatch.
+3. `noopServiceHostScaffold.hostStartup`, `dispatch`, `networkDispatch`,
    `runtimeRegistration`, and `localFileWrites` remain false.
 
 Keep manual configuration behavior stable while moving command metadata and

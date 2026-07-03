@@ -1006,6 +1006,11 @@ export function createRenderThumbnailRendererServicePlan(options = EMPTY_OBJECT)
         healthPreflight,
         clientRequest,
     });
+    const noopServiceHostScaffold = createRenderThumbnailRendererServiceNoopServiceHostScaffold({
+        client,
+        healthNoopContractFixtures,
+        implementationSliceAudit,
+    });
 
     return {
         command: CommandDescriptors.RENDER_THUMBNAIL.id,
@@ -1062,6 +1067,7 @@ export function createRenderThumbnailRendererServicePlan(options = EMPTY_OBJECT)
             enablementChecklist,
             implementationSliceAudit,
             healthNoopContractFixtures,
+            noopServiceHostScaffold,
             clientRequest,
         },
         client,
@@ -1079,6 +1085,7 @@ export function createRenderThumbnailRendererServicePlan(options = EMPTY_OBJECT)
         enablementChecklist,
         implementationSliceAudit,
         healthNoopContractFixtures,
+        noopServiceHostScaffold,
         clientRequest,
         serviceRequest: {
             command: CommandDescriptors.RENDER_THUMBNAIL.id,
@@ -1156,7 +1163,121 @@ export function createRenderThumbnailRendererServicePlan(options = EMPTY_OBJECT)
             enablementChecklistVersion: enablementChecklist.checklistVersion,
             implementationSliceAuditVersion: implementationSliceAudit.auditVersion,
             healthNoopContractFixturesVersion: healthNoopContractFixtures.fixtureVersion,
+            noopServiceHostScaffoldVersion: noopServiceHostScaffold.scaffoldVersion,
         },
+    };
+}
+
+export function createRenderThumbnailRendererServiceNoopServiceHostScaffold(options = EMPTY_OBJECT) {
+    const client = options.client ?? EMPTY_OBJECT;
+    const healthNoopContractFixtures = options.healthNoopContractFixtures ?? EMPTY_OBJECT;
+    const implementationSliceAudit = options.implementationSliceAudit ?? EMPTY_OBJECT;
+    const endpoint = normalizeOptionalString(client.endpoint);
+    const healthEndpoint =
+        normalizeOptionalString(client.healthEndpoint) ?? (endpoint ? joinUrlPath(endpoint, "health") : null);
+
+    return {
+        status: "planned-disabled",
+        scaffoldVersion: "P25.25",
+        adapter: "renderer-service",
+        command: CommandDescriptors.RENDER_THUMBNAIL.id,
+        dispatch: false,
+        networkDispatch: false,
+        runtimeRegistration: false,
+        localFileWrites: false,
+        hostStartup: false,
+        selectedSlice: implementationSliceAudit.selectedSlice?.id ?? "renderer-service-health-and-noop-contract",
+        consumes: {
+            healthNoopContractFixtures: {
+                requiredStatus: "planned-disabled",
+                currentStatus: healthNoopContractFixtures.status ?? "planned-disabled",
+                fixtureVersion: healthNoopContractFixtures.fixtureVersion ?? "P25.24",
+                currentDispatch: Boolean(healthNoopContractFixtures.dispatch),
+            },
+            implementationSliceAudit: {
+                auditVersion: implementationSliceAudit.auditVersion ?? "P25.23",
+                currentSelectedSlice:
+                    implementationSliceAudit.selectedSlice?.id ?? "renderer-service-health-and-noop-contract",
+                enablesRuntimeDispatch: false,
+            },
+        },
+        host: {
+            id: "renderer-service-noop-host",
+            packageName: "@penpot/renderer-service",
+            entrypoint: "renderer-service noop-host",
+            language: "typescript-node",
+            defaultBindHost: "127.0.0.1",
+            defaultPort: 6070,
+            endpoint,
+            healthEndpoint,
+            startCommand: "pnpm --filter @penpot/renderer-service start:noop",
+            startsProcess: false,
+            registersRuntime: false,
+            callsBackendRpc: false,
+            rendersPng: false,
+            writesLocalFiles: false,
+        },
+        routes: [
+            {
+                id: "health",
+                method: "GET",
+                path: "/health",
+                fixture: healthNoopContractFixtures.healthContract?.id ?? "renderer-service-health",
+                status: "planned",
+                dispatch: false,
+            },
+            {
+                id: "thumbnail-render-noop",
+                method: "POST",
+                path: "/thumbnail",
+                operation: "thumbnail.render",
+                fixture: healthNoopContractFixtures.noopRenderContract?.id ?? "thumbnail-render-noop",
+                status: "planned",
+                dispatch: false,
+            },
+        ],
+        configuration: {
+            env: {
+                host: "PENPOT_RENDERER_SERVICE_HOST",
+                port: "PENPOT_RENDERER_SERVICE_PORT",
+                publicUri: "PENPOT_RENDERER_SERVICE_URI",
+                mode: "PENPOT_RENDERER_SERVICE_MODE",
+            },
+            defaultMode: "noop",
+            requiredModeBeforeStartup: "noop",
+            tokenValuesIncluded: false,
+        },
+        lifecycle: {
+            start: "manual-future-task",
+            stop: "manual-future-task",
+            readiness: "health route fixture only",
+            supervision: "not implemented",
+            hostStartup: false,
+        },
+        observability: {
+            structuredLogs: true,
+            requestIdHeader: "x-request-id",
+            auditHeaders: [
+                "x-penpot-command",
+                "x-penpot-renderer-operation",
+                "x-penpot-renderer-adapter",
+                "x-penpot-entrypoint",
+            ],
+            tokenValuesIncluded: false,
+        },
+        noOpGuarantees: [
+            "do not start a renderer-service process from command-runtime, MCP, or CLI",
+            "do not register renderer-service runtime dispatch",
+            "do not call backend thumbnail RPCs",
+            "do not render PNG bytes",
+            "do not write local output files",
+        ],
+        requiredBeforeRuntimeDispatch: [
+            "create the renderer-service package and noop host entrypoint in a dedicated implementation task",
+            "add host lifecycle tests before any MCP or CLI startup command can manage it",
+            "wire health preflight to the host only after explicit opt-in and endpoint config are ready",
+            "replace noop thumbnail.render response with a gated render implementation before enabling dispatch",
+        ],
     };
 }
 

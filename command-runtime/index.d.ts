@@ -446,6 +446,7 @@ export interface RenderThumbnailRendererServicePlan {
         enablementChecklist: RenderThumbnailRendererServiceEnablementChecklist;
         implementationSliceAudit: RenderThumbnailRendererServiceImplementationSliceAudit;
         healthNoopContractFixtures: RenderThumbnailRendererServiceHealthNoopContractFixtures;
+        noopServiceHostScaffold: RenderThumbnailRendererServiceNoopServiceHostScaffold;
         clientRequest: RenderThumbnailRendererServiceClientRequest;
     };
     client: RenderThumbnailRendererServiceClientConfig;
@@ -463,6 +464,7 @@ export interface RenderThumbnailRendererServicePlan {
     enablementChecklist: RenderThumbnailRendererServiceEnablementChecklist;
     implementationSliceAudit: RenderThumbnailRendererServiceImplementationSliceAudit;
     healthNoopContractFixtures: RenderThumbnailRendererServiceHealthNoopContractFixtures;
+    noopServiceHostScaffold: RenderThumbnailRendererServiceNoopServiceHostScaffold;
     clientRequest: RenderThumbnailRendererServiceClientRequest;
     serviceRequest: {
         command: "render.thumbnail";
@@ -540,6 +542,7 @@ export interface RenderThumbnailRendererServicePlan {
         enablementChecklistVersion: "P25.22";
         implementationSliceAuditVersion: "P25.23";
         healthNoopContractFixturesVersion: "P25.24";
+        noopServiceHostScaffoldVersion: "P25.25";
     };
 }
 
@@ -1235,6 +1238,83 @@ export interface RenderThumbnailRendererServiceHealthNoopContractFixtures {
     requiredBeforeRuntimeDispatch: string[];
 }
 
+export interface RenderThumbnailRendererServiceNoopServiceHostScaffold {
+    status: "planned-disabled";
+    scaffoldVersion: "P25.25";
+    adapter: "renderer-service";
+    command: "render.thumbnail";
+    dispatch: false;
+    networkDispatch: false;
+    runtimeRegistration: false;
+    localFileWrites: false;
+    hostStartup: false;
+    selectedSlice: string;
+    consumes: {
+        healthNoopContractFixtures: {
+            requiredStatus: "planned-disabled";
+            currentStatus: string;
+            fixtureVersion: string;
+            currentDispatch: boolean;
+        };
+        implementationSliceAudit: {
+            auditVersion: string;
+            currentSelectedSlice: string;
+            enablesRuntimeDispatch: false;
+        };
+    };
+    host: {
+        id: "renderer-service-noop-host";
+        packageName: "@penpot/renderer-service";
+        entrypoint: "renderer-service noop-host";
+        language: "typescript-node";
+        defaultBindHost: "127.0.0.1";
+        defaultPort: 6070;
+        endpoint: string | null;
+        healthEndpoint: string | null;
+        startCommand: "pnpm --filter @penpot/renderer-service start:noop";
+        startsProcess: false;
+        registersRuntime: false;
+        callsBackendRpc: false;
+        rendersPng: false;
+        writesLocalFiles: false;
+    };
+    routes: Array<{
+        id: string;
+        method: "GET" | "POST";
+        path: string;
+        operation?: "thumbnail.render";
+        fixture: string;
+        status: "planned";
+        dispatch: false;
+    }>;
+    configuration: {
+        env: {
+            host: "PENPOT_RENDERER_SERVICE_HOST";
+            port: "PENPOT_RENDERER_SERVICE_PORT";
+            publicUri: "PENPOT_RENDERER_SERVICE_URI";
+            mode: "PENPOT_RENDERER_SERVICE_MODE";
+        };
+        defaultMode: "noop";
+        requiredModeBeforeStartup: "noop";
+        tokenValuesIncluded: false;
+    };
+    lifecycle: {
+        start: "manual-future-task";
+        stop: "manual-future-task";
+        readiness: "health route fixture only";
+        supervision: "not implemented";
+        hostStartup: false;
+    };
+    observability: {
+        structuredLogs: true;
+        requestIdHeader: "x-request-id";
+        auditHeaders: string[];
+        tokenValuesIncluded: false;
+    };
+    noOpGuarantees: string[];
+    requiredBeforeRuntimeDispatch: string[];
+}
+
 export interface CreateRenderThumbnailRendererServiceClientRequestOptions {
     entrypoint?: "mcp" | "cli" | string | null;
     mcpToolName?: string | null;
@@ -1572,6 +1652,13 @@ export function createRenderThumbnailRendererServiceHealthNoopContractFixtures(
         clientRequest?: Partial<RenderThumbnailRendererServiceClientRequest> | null;
     }
 ): RenderThumbnailRendererServiceHealthNoopContractFixtures;
+export function createRenderThumbnailRendererServiceNoopServiceHostScaffold(
+    options?: {
+        client?: Partial<RenderThumbnailRendererServiceClientConfig> | null;
+        healthNoopContractFixtures?: Partial<RenderThumbnailRendererServiceHealthNoopContractFixtures> | null;
+        implementationSliceAudit?: Partial<RenderThumbnailRendererServiceImplementationSliceAudit> | null;
+    }
+): RenderThumbnailRendererServiceNoopServiceHostScaffold;
 export function createRenderThumbnailRendererServiceClientRequest(
     plan: Partial<RenderThumbnailRendererServicePlan>,
     options?: CreateRenderThumbnailRendererServiceClientRequestOptions

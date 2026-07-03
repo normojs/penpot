@@ -30,6 +30,7 @@ import {
     createRenderThumbnailRendererServiceHealthNoopContractFixtures,
     createRenderThumbnailRendererServiceImplementationSliceAudit,
     createRenderThumbnailRendererServiceIntegrationFixtureHarness,
+    createRenderThumbnailRendererServiceNoopServiceHostScaffold,
     createRenderThumbnailRendererServiceOptInConfiguration,
     createRenderThumbnailRendererServiceUnavailableErrorTaxonomy,
     createRenderThumbnailRendererServiceErrorPayload,
@@ -481,6 +482,13 @@ test("render.thumbnail renderer-service API fixtures define planning requests wi
     assert.equal(fixtures.serviceApi.healthNoopContractFixtures.localFileWrites, false);
     assert.equal(fixtures.serviceApi.healthNoopContractFixtures.healthContract.okResponse.status, 200);
     assert.equal(fixtures.serviceApi.healthNoopContractFixtures.noopRenderContract.response.status, 501);
+    assert.equal(fixtures.serviceApi.noopServiceHostScaffold.scaffoldVersion, "P25.25");
+    assert.equal(fixtures.serviceApi.noopServiceHostScaffold.dispatch, false);
+    assert.equal(fixtures.serviceApi.noopServiceHostScaffold.networkDispatch, false);
+    assert.equal(fixtures.serviceApi.noopServiceHostScaffold.runtimeRegistration, false);
+    assert.equal(fixtures.serviceApi.noopServiceHostScaffold.localFileWrites, false);
+    assert.equal(fixtures.serviceApi.noopServiceHostScaffold.hostStartup, false);
+    assert.equal(fixtures.serviceApi.noopServiceHostScaffold.host.startsProcess, false);
     assert.deepEqual(fixtures.runtimeRegistration.commandDescriptorAdapters, ["renderer-service"]);
     assert.deepEqual(CommandDescriptors.RENDER_THUMBNAIL.adapters, ["renderer-service"]);
     assert.equal(fixtures.runtimeRegistration.mcpToolRegistered, true);
@@ -691,6 +699,19 @@ test("render.thumbnail renderer-service plan exposes dry-run client request whil
     assert.equal(plan.healthNoopContractFixtures.noopRenderContract.response.body.resource, null);
     assert.ok(plan.healthNoopContractFixtures.fixtureCases.some((entry) => entry.id === "thumbnail-render-noop-no-png"));
     assert.deepEqual(plan.service.healthNoopContractFixtures, plan.healthNoopContractFixtures);
+    assert.equal(plan.noopServiceHostScaffold.scaffoldVersion, "P25.25");
+    assert.equal(plan.noopServiceHostScaffold.dispatch, false);
+    assert.equal(plan.noopServiceHostScaffold.networkDispatch, false);
+    assert.equal(plan.noopServiceHostScaffold.runtimeRegistration, false);
+    assert.equal(plan.noopServiceHostScaffold.localFileWrites, false);
+    assert.equal(plan.noopServiceHostScaffold.hostStartup, false);
+    assert.equal(plan.noopServiceHostScaffold.consumes.healthNoopContractFixtures.fixtureVersion, "P25.24");
+    assert.equal(plan.noopServiceHostScaffold.host.endpoint, "http://127.0.0.1:6070/thumbnail");
+    assert.equal(plan.noopServiceHostScaffold.host.healthEndpoint, "http://127.0.0.1:6070/thumbnail/health");
+    assert.equal(plan.noopServiceHostScaffold.host.startsProcess, false);
+    assert.equal(plan.noopServiceHostScaffold.host.rendersPng, false);
+    assert.ok(plan.noopServiceHostScaffold.routes.some((entry) => entry.id === "thumbnail-render-noop"));
+    assert.deepEqual(plan.service.noopServiceHostScaffold, plan.noopServiceHostScaffold);
     assert.equal(plan.clientRequest.status, "scaffolded");
     assert.equal(plan.clientRequest.dispatch, false);
     assert.equal(plan.clientRequest.method, "POST");
@@ -731,6 +752,7 @@ test("render.thumbnail renderer-service plan exposes dry-run client request whil
     assert.equal(plan.diagnostics.enablementChecklistVersion, "P25.22");
     assert.equal(plan.diagnostics.implementationSliceAuditVersion, "P25.23");
     assert.equal(plan.diagnostics.healthNoopContractFixturesVersion, "P25.24");
+    assert.equal(plan.diagnostics.noopServiceHostScaffoldVersion, "P25.25");
 });
 
 test("render.thumbnail renderer-service plan reports not-configured availability without endpoint", () => {
@@ -1170,6 +1192,56 @@ test("render.thumbnail renderer-service health/no-op contract fixtures stay meta
     assert.ok(fixtures.fixtureCases.some((entry) => entry.id === "health-ok-no-runtime-registration"));
     assert.ok(fixtures.noOpGuarantees.includes("do not perform health fetches from command-runtime, MCP, or CLI"));
     assert.ok(fixtures.requiredBeforeRuntimeDispatch.includes("replace the no-op thumbnail.render response with a gated renderer-service implementation"));
+});
+
+test("render.thumbnail renderer-service no-op service host scaffold stays disabled", () => {
+    const scaffold = createRenderThumbnailRendererServiceNoopServiceHostScaffold({
+        client: {
+            endpoint: "http://127.0.0.1:6070/thumbnail",
+            healthEndpoint: "http://127.0.0.1:6070/thumbnail/health",
+        },
+        healthNoopContractFixtures: {
+            status: "planned-disabled",
+            fixtureVersion: "P25.24",
+            dispatch: false,
+            healthContract: { id: "renderer-service-health" },
+            noopRenderContract: { id: "thumbnail-render-noop" },
+        },
+        implementationSliceAudit: {
+            auditVersion: "P25.23",
+            selectedSlice: { id: "renderer-service-health-and-noop-contract" },
+        },
+    });
+
+    assert.equal(scaffold.status, "planned-disabled");
+    assert.equal(scaffold.scaffoldVersion, "P25.25");
+    assert.equal(scaffold.adapter, "renderer-service");
+    assert.equal(scaffold.command, "render.thumbnail");
+    assert.equal(scaffold.dispatch, false);
+    assert.equal(scaffold.networkDispatch, false);
+    assert.equal(scaffold.runtimeRegistration, false);
+    assert.equal(scaffold.localFileWrites, false);
+    assert.equal(scaffold.hostStartup, false);
+    assert.equal(scaffold.selectedSlice, "renderer-service-health-and-noop-contract");
+    assert.equal(scaffold.consumes.healthNoopContractFixtures.fixtureVersion, "P25.24");
+    assert.equal(scaffold.consumes.healthNoopContractFixtures.currentDispatch, false);
+    assert.equal(scaffold.consumes.implementationSliceAudit.auditVersion, "P25.23");
+    assert.equal(scaffold.host.id, "renderer-service-noop-host");
+    assert.equal(scaffold.host.packageName, "@penpot/renderer-service");
+    assert.equal(scaffold.host.endpoint, "http://127.0.0.1:6070/thumbnail");
+    assert.equal(scaffold.host.healthEndpoint, "http://127.0.0.1:6070/thumbnail/health");
+    assert.equal(scaffold.host.startsProcess, false);
+    assert.equal(scaffold.host.registersRuntime, false);
+    assert.equal(scaffold.host.callsBackendRpc, false);
+    assert.equal(scaffold.host.rendersPng, false);
+    assert.equal(scaffold.host.writesLocalFiles, false);
+    assert.ok(scaffold.routes.some((entry) => entry.id === "health" && entry.dispatch === false));
+    assert.ok(scaffold.routes.some((entry) => entry.id === "thumbnail-render-noop" && entry.dispatch === false));
+    assert.equal(scaffold.configuration.defaultMode, "noop");
+    assert.equal(scaffold.lifecycle.hostStartup, false);
+    assert.equal(scaffold.observability.tokenValuesIncluded, false);
+    assert.ok(scaffold.noOpGuarantees.includes("do not start a renderer-service process from command-runtime, MCP, or CLI"));
+    assert.ok(scaffold.requiredBeforeRuntimeDispatch.includes("create the renderer-service package and noop host entrypoint in a dedicated implementation task"));
 });
 
 test("render.thumbnail renderer-service client request scaffold adds MCP audit headers without dispatch", () => {

@@ -947,3 +947,10 @@ P25.24 adds renderer-service health/no-op contract fixtures:
   fixtures and a no-op `thumbnail.render` response contract.
 - The fixtures remain planning-only with `dispatch`, `networkDispatch`,
   `runtimeRegistration`, and `localFileWrites` all `false`.
+
+P25.25 adds renderer-service no-op service host scaffold:
+
+- Plans include `noopServiceHostScaffold`, defining the future no-op host
+  package, routes, config, lifecycle, and observability metadata.
+- The scaffold remains planning-only with `hostStartup`, `dispatch`,
+  `networkDispatch`, `runtimeRegistration`, and `localFileWrites` all `false`.

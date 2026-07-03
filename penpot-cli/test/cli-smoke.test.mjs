@@ -2679,6 +2679,13 @@ test("render thumbnail dry-run returns renderer-service request plan", async () 
         assert.equal(body.data.healthNoopContractFixtures.localFileWrites, false);
         assert.equal(body.data.healthNoopContractFixtures.healthContract.okResponse.status, 200);
         assert.equal(body.data.healthNoopContractFixtures.noopRenderContract.response.status, 501);
+        assert.equal(body.data.noopServiceHostScaffold.scaffoldVersion, "P25.25");
+        assert.equal(body.data.noopServiceHostScaffold.dispatch, false);
+        assert.equal(body.data.noopServiceHostScaffold.networkDispatch, false);
+        assert.equal(body.data.noopServiceHostScaffold.runtimeRegistration, false);
+        assert.equal(body.data.noopServiceHostScaffold.localFileWrites, false);
+        assert.equal(body.data.noopServiceHostScaffold.hostStartup, false);
+        assert.equal(body.data.noopServiceHostScaffold.host.startsProcess, false);
         assert.equal(body.data.service.responseNormalization.successStatus, "ok");
         assert.equal(body.data.service.responseNormalization.localFileWrites, false);
         assert.equal(body.data.service.errorShape.code, "renderer_service_error");
@@ -2766,6 +2773,12 @@ test("render thumbnail execution reports renderer-service unavailable without ca
         assert.equal(body.error.data.healthNoopContractFixtures.runtimeRegistration, false);
         assert.equal(body.error.data.healthNoopContractFixtures.localFileWrites, false);
         assert.equal(body.error.data.healthNoopContractFixtures.noopRenderContract.response.body.resource, null);
+        assert.equal(body.error.data.noopServiceHostScaffold.scaffoldVersion, "P25.25");
+        assert.equal(body.error.data.noopServiceHostScaffold.dispatch, false);
+        assert.equal(body.error.data.noopServiceHostScaffold.networkDispatch, false);
+        assert.equal(body.error.data.noopServiceHostScaffold.runtimeRegistration, false);
+        assert.equal(body.error.data.noopServiceHostScaffold.localFileWrites, false);
+        assert.equal(body.error.data.noopServiceHostScaffold.hostStartup, false);
         assert.equal(body.error.data.clientRequest.dispatch, false);
         assert.equal(body.error.data.serviceRequest.operation, "thumbnail.render");
     } finally {
