@@ -27,7 +27,8 @@ preflight, P25.20 adds the disabled executable adapter registration scaffold,
 P25.21 adds the disabled adapter registry manifest, P25.22 adds the final
 disabled enablement checklist, P25.23 audits the first concrete implementation
 slice, P25.24 defines the health/no-op contract fixtures, and P25.25 defines
-the no-op service host scaffold; runtime execution remains blocked.
+the no-op service host scaffold. P25.26 defines host lifecycle test fixtures;
+runtime execution remains blocked.
 
 ## Existing Surfaces
 
@@ -163,7 +164,7 @@ adds the metadata-only adapter registry manifest, P25.22 adds the final
 metadata-only enablement checklist, P25.23 adds the metadata-only
 implementation slice audit, P25.24 adds the metadata-only health/no-op
 contract fixtures, and P25.25 adds the metadata-only no-op service host
-scaffold. MCP
+scaffold. P25.26 adds metadata-only host lifecycle test fixtures. MCP
 `render.thumbnail` and `penpot-cli render thumbnail --dry-run` can print the
 future request shape, configured/not configured service metadata,
 response/error contracts, `clientRequest.dispatch:false`,
@@ -178,7 +179,8 @@ plus `integrationFixtureHarness.dispatch:false` and `networkDispatch:false`,
 `implementationSliceAudit.runtimeRegistration:false` and
 `healthNoopContractFixtures.runtimeRegistration:false`, plus
 `noopServiceHostScaffold.runtimeRegistration:false` and
-`noopServiceHostScaffold.hostStartup:false`,
+`noopServiceHostScaffold.hostStartup:false`, plus
+`hostLifecycleTestFixtures.processSpawn:false`,
 but execution still returns
 `renderer_service_unavailable` until explicit opt-in, config surfaces, renderer
 service, integration tests, health preflight, file cache probe, tagged-frame

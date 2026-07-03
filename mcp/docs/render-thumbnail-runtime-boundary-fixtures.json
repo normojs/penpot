@@ -1,7 +1,7 @@
 {
-  "version": "P25.25",
+  "version": "P25.26",
   "command": "render.thumbnail",
-  "status": "runtime boundary audited; MCP/CLI planning, metadata-only availability probes, response normalization contracts, disabled client request scaffold, closed execution gate, health preflight plan, executable client harness plan, dispatch adapter boundary, opt-in configuration surfaces, unavailable error taxonomy, integration fixture harness, dispatch registration preflight, disabled executable adapter registration scaffold, disabled adapter registry manifest, final disabled enablement checklist, implementation slice audit, health/no-op contract fixtures, and no-op service host scaffold registered; runtime execution blocked",
+  "status": "runtime boundary audited; MCP/CLI planning, metadata-only availability probes, response normalization contracts, disabled client request scaffold, closed execution gate, health preflight plan, executable client harness plan, dispatch adapter boundary, opt-in configuration surfaces, unavailable error taxonomy, integration fixture harness, dispatch registration preflight, disabled executable adapter registration scaffold, disabled adapter registry manifest, final disabled enablement checklist, implementation slice audit, health/no-op contract fixtures, no-op service host scaffold, and host lifecycle test fixtures registered; runtime execution blocked",
   "selectedBoundary": "thumbnail-renderer-service",
   "runtimeRegistration": {
     "mcpToolRegistered": true,
@@ -363,11 +363,12 @@
     "Implementation slice audit tests cover the selected health/no-op contract and keep dispatch, network, runtime registration, and local file writes disabled.",
     "Health/no-op contract fixture tests cover health OK/unavailable and thumbnail.render no-op responses without dispatch, runtime registration, or local file writes.",
     "No-op service host scaffold tests cover host config, planned routes, lifecycle, observability, and no process startup.",
+    "Host lifecycle test fixtures cover start, stop, readiness, supervision, logs, and errors without spawning a process or binding ports.",
     "Add CLI smoke tests only after the service exists, covering dry-run, resource metadata, --output download, and missing-token errors."
   ],
   "nextTask": {
-    "id": "P25.26",
-    "title": "Plan renderer-service host lifecycle tests",
+    "id": "P25.27",
+    "title": "Plan renderer-service package manifest scaffold",
     "modules": [
       "mcp",
       "penpot-cli",
@@ -758,6 +759,108 @@
       "add host lifecycle tests before any MCP or CLI startup command can manage it",
       "wire health preflight to the host only after explicit opt-in and endpoint config are ready",
       "replace noop thumbnail.render response with a gated render implementation before enabling dispatch"
+    ]
+  },
+  "hostLifecycleTestFixtures": {
+    "status": "planned-disabled",
+    "fixtureVersion": "P25.26",
+    "adapter": "renderer-service",
+    "command": "render.thumbnail",
+    "dispatch": false,
+    "networkDispatch": false,
+    "runtimeRegistration": false,
+    "localFileWrites": false,
+    "hostStartup": false,
+    "processSpawn": false,
+    "consumes": {
+      "noopServiceHostScaffold": {
+        "requiredStatus": "planned-disabled",
+        "currentStatus": "planned-disabled",
+        "scaffoldVersion": "P25.25",
+        "hostStartup": false
+      },
+      "healthNoopContractFixtures": {
+        "requiredStatus": "planned-disabled",
+        "currentStatus": "planned-disabled",
+        "fixtureVersion": "P25.24",
+        "currentDispatch": false
+      }
+    },
+    "fixtureMatrix": [
+      {
+        "id": "start-plan-does-not-spawn-process",
+        "lifecycle": "start",
+        "expectedStatus": "planned",
+        "processSpawn": false,
+        "hostStartup": false,
+        "dispatch": false
+      },
+      {
+        "id": "stop-plan-does-not-signal-process",
+        "lifecycle": "stop",
+        "expectedStatus": "planned",
+        "processSignal": false,
+        "hostStartup": false,
+        "dispatch": false
+      },
+      {
+        "id": "readiness-plan-uses-health-fixture",
+        "lifecycle": "readiness",
+        "expectedStatus": "planned",
+        "healthFixture": "renderer-service-health",
+        "networkDispatch": false,
+        "dispatch": false
+      },
+      {
+        "id": "supervision-plan-disabled",
+        "lifecycle": "supervision",
+        "expectedStatus": "planned-disabled",
+        "restartPolicy": "none",
+        "processSpawn": false,
+        "dispatch": false
+      },
+      {
+        "id": "logs-plan-redacts-token-values",
+        "lifecycle": "logs",
+        "expectedStatus": "planned",
+        "structuredLogs": true,
+        "tokenValuesIncluded": false,
+        "localFileWrites": false
+      },
+      {
+        "id": "error-plan-preserves-unavailable-payload",
+        "lifecycle": "error",
+        "expectedStatus": "planned",
+        "errorCode": "renderer_service_unavailable",
+        "dispatch": false,
+        "runtimeRegistration": false
+      }
+    ],
+    "assertions": {
+      "hostStartup": false,
+      "processSpawn": false,
+      "networkDispatch": false,
+      "runtimeRegistration": false,
+      "localFileWrites": false,
+      "tokenValuesIncluded": false,
+      "unavailablePayloadIncludesScaffold": true
+    },
+    "testEntrypoints": {
+      "commandRuntime": "createRenderThumbnailRendererServiceHostLifecycleTestFixtures",
+      "mcp": "render.thumbnail unavailable payload exposes lifecycle fixtures",
+      "cli": "render thumbnail unavailable payload exposes lifecycle fixtures"
+    },
+    "noOpGuarantees": [
+      "do not spawn renderer-service in lifecycle fixture tests",
+      "do not bind TCP ports",
+      "do not probe health endpoints",
+      "do not write lifecycle logs to disk",
+      "do not register runtime dispatch"
+    ],
+    "requiredBeforeRuntimeDispatch": [
+      "implement lifecycle tests against a real no-op host in a dedicated task",
+      "prove process start, readiness, stop, and failure cleanup before enabling host management",
+      "keep unavailable payload compatibility when lifecycle tests become executable"
     ]
   }
 }

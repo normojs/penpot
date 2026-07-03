@@ -1011,6 +1011,10 @@ export function createRenderThumbnailRendererServicePlan(options = EMPTY_OBJECT)
         healthNoopContractFixtures,
         implementationSliceAudit,
     });
+    const hostLifecycleTestFixtures = createRenderThumbnailRendererServiceHostLifecycleTestFixtures({
+        noopServiceHostScaffold,
+        healthNoopContractFixtures,
+    });
 
     return {
         command: CommandDescriptors.RENDER_THUMBNAIL.id,
@@ -1068,6 +1072,7 @@ export function createRenderThumbnailRendererServicePlan(options = EMPTY_OBJECT)
             implementationSliceAudit,
             healthNoopContractFixtures,
             noopServiceHostScaffold,
+            hostLifecycleTestFixtures,
             clientRequest,
         },
         client,
@@ -1086,6 +1091,7 @@ export function createRenderThumbnailRendererServicePlan(options = EMPTY_OBJECT)
         implementationSliceAudit,
         healthNoopContractFixtures,
         noopServiceHostScaffold,
+        hostLifecycleTestFixtures,
         clientRequest,
         serviceRequest: {
             command: CommandDescriptors.RENDER_THUMBNAIL.id,
@@ -1164,7 +1170,116 @@ export function createRenderThumbnailRendererServicePlan(options = EMPTY_OBJECT)
             implementationSliceAuditVersion: implementationSliceAudit.auditVersion,
             healthNoopContractFixturesVersion: healthNoopContractFixtures.fixtureVersion,
             noopServiceHostScaffoldVersion: noopServiceHostScaffold.scaffoldVersion,
+            hostLifecycleTestFixturesVersion: hostLifecycleTestFixtures.fixtureVersion,
         },
+    };
+}
+
+export function createRenderThumbnailRendererServiceHostLifecycleTestFixtures(options = EMPTY_OBJECT) {
+    const noopServiceHostScaffold = options.noopServiceHostScaffold ?? EMPTY_OBJECT;
+    const healthNoopContractFixtures = options.healthNoopContractFixtures ?? EMPTY_OBJECT;
+
+    return {
+        status: "planned-disabled",
+        fixtureVersion: "P25.26",
+        adapter: "renderer-service",
+        command: CommandDescriptors.RENDER_THUMBNAIL.id,
+        dispatch: false,
+        networkDispatch: false,
+        runtimeRegistration: false,
+        localFileWrites: false,
+        hostStartup: false,
+        processSpawn: false,
+        consumes: {
+            noopServiceHostScaffold: {
+                requiredStatus: "planned-disabled",
+                currentStatus: noopServiceHostScaffold.status ?? "planned-disabled",
+                scaffoldVersion: noopServiceHostScaffold.scaffoldVersion ?? "P25.25",
+                hostStartup: false,
+            },
+            healthNoopContractFixtures: {
+                requiredStatus: "planned-disabled",
+                currentStatus: healthNoopContractFixtures.status ?? "planned-disabled",
+                fixtureVersion: healthNoopContractFixtures.fixtureVersion ?? "P25.24",
+                currentDispatch: Boolean(healthNoopContractFixtures.dispatch),
+            },
+        },
+        fixtureMatrix: [
+            {
+                id: "start-plan-does-not-spawn-process",
+                lifecycle: "start",
+                expectedStatus: "planned",
+                processSpawn: false,
+                hostStartup: false,
+                dispatch: false,
+            },
+            {
+                id: "stop-plan-does-not-signal-process",
+                lifecycle: "stop",
+                expectedStatus: "planned",
+                processSignal: false,
+                hostStartup: false,
+                dispatch: false,
+            },
+            {
+                id: "readiness-plan-uses-health-fixture",
+                lifecycle: "readiness",
+                expectedStatus: "planned",
+                healthFixture: healthNoopContractFixtures.healthContract?.id ?? "renderer-service-health",
+                networkDispatch: false,
+                dispatch: false,
+            },
+            {
+                id: "supervision-plan-disabled",
+                lifecycle: "supervision",
+                expectedStatus: "planned-disabled",
+                restartPolicy: "none",
+                processSpawn: false,
+                dispatch: false,
+            },
+            {
+                id: "logs-plan-redacts-token-values",
+                lifecycle: "logs",
+                expectedStatus: "planned",
+                structuredLogs: true,
+                tokenValuesIncluded: false,
+                localFileWrites: false,
+            },
+            {
+                id: "error-plan-preserves-unavailable-payload",
+                lifecycle: "error",
+                expectedStatus: "planned",
+                errorCode: "renderer_service_unavailable",
+                dispatch: false,
+                runtimeRegistration: false,
+            },
+        ],
+        assertions: {
+            hostStartup: false,
+            processSpawn: false,
+            networkDispatch: false,
+            runtimeRegistration: false,
+            localFileWrites: false,
+            tokenValuesIncluded: false,
+            unavailablePayloadIncludesScaffold: true,
+        },
+        testEntrypoints: {
+            commandRuntime: "createRenderThumbnailRendererServiceHostLifecycleTestFixtures",
+            mcp: "render.thumbnail unavailable payload exposes lifecycle fixtures",
+            cli: "render thumbnail unavailable payload exposes lifecycle fixtures",
+        },
+        noOpGuarantees: [
+            "do not spawn renderer-service in lifecycle fixture tests",
+            "do not bind TCP ports",
+            "do not probe health endpoints",
+            "do not write lifecycle logs to disk",
+            "do not register runtime dispatch",
+        ],
+        requiredBeforeRuntimeDispatch: [
+            "implement lifecycle tests against a real no-op host in a dedicated task",
+            "prove process start, readiness, stop, and failure cleanup before enabling host management",
+            "keep unavailable payload compatibility when lifecycle tests become executable",
+        ],
     };
 }
 

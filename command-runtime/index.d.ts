@@ -447,6 +447,7 @@ export interface RenderThumbnailRendererServicePlan {
         implementationSliceAudit: RenderThumbnailRendererServiceImplementationSliceAudit;
         healthNoopContractFixtures: RenderThumbnailRendererServiceHealthNoopContractFixtures;
         noopServiceHostScaffold: RenderThumbnailRendererServiceNoopServiceHostScaffold;
+        hostLifecycleTestFixtures: RenderThumbnailRendererServiceHostLifecycleTestFixtures;
         clientRequest: RenderThumbnailRendererServiceClientRequest;
     };
     client: RenderThumbnailRendererServiceClientConfig;
@@ -465,6 +466,7 @@ export interface RenderThumbnailRendererServicePlan {
     implementationSliceAudit: RenderThumbnailRendererServiceImplementationSliceAudit;
     healthNoopContractFixtures: RenderThumbnailRendererServiceHealthNoopContractFixtures;
     noopServiceHostScaffold: RenderThumbnailRendererServiceNoopServiceHostScaffold;
+    hostLifecycleTestFixtures: RenderThumbnailRendererServiceHostLifecycleTestFixtures;
     clientRequest: RenderThumbnailRendererServiceClientRequest;
     serviceRequest: {
         command: "render.thumbnail";
@@ -543,6 +545,7 @@ export interface RenderThumbnailRendererServicePlan {
         implementationSliceAuditVersion: "P25.23";
         healthNoopContractFixturesVersion: "P25.24";
         noopServiceHostScaffoldVersion: "P25.25";
+        hostLifecycleTestFixturesVersion: "P25.26";
     };
 }
 
@@ -1315,6 +1318,66 @@ export interface RenderThumbnailRendererServiceNoopServiceHostScaffold {
     requiredBeforeRuntimeDispatch: string[];
 }
 
+export interface RenderThumbnailRendererServiceHostLifecycleTestFixtures {
+    status: "planned-disabled";
+    fixtureVersion: "P25.26";
+    adapter: "renderer-service";
+    command: "render.thumbnail";
+    dispatch: false;
+    networkDispatch: false;
+    runtimeRegistration: false;
+    localFileWrites: false;
+    hostStartup: false;
+    processSpawn: false;
+    consumes: {
+        noopServiceHostScaffold: {
+            requiredStatus: "planned-disabled";
+            currentStatus: string;
+            scaffoldVersion: string;
+            hostStartup: false;
+        };
+        healthNoopContractFixtures: {
+            requiredStatus: "planned-disabled";
+            currentStatus: string;
+            fixtureVersion: string;
+            currentDispatch: boolean;
+        };
+    };
+    fixtureMatrix: Array<{
+        id: string;
+        lifecycle: string;
+        expectedStatus: string;
+        processSpawn?: false;
+        processSignal?: false;
+        hostStartup?: false;
+        dispatch?: false;
+        healthFixture?: string;
+        networkDispatch?: false;
+        restartPolicy?: "none";
+        structuredLogs?: true;
+        tokenValuesIncluded?: false;
+        localFileWrites?: false;
+        errorCode?: "renderer_service_unavailable";
+        runtimeRegistration?: false;
+    }>;
+    assertions: {
+        hostStartup: false;
+        processSpawn: false;
+        networkDispatch: false;
+        runtimeRegistration: false;
+        localFileWrites: false;
+        tokenValuesIncluded: false;
+        unavailablePayloadIncludesScaffold: true;
+    };
+    testEntrypoints: {
+        commandRuntime: "createRenderThumbnailRendererServiceHostLifecycleTestFixtures";
+        mcp: string;
+        cli: string;
+    };
+    noOpGuarantees: string[];
+    requiredBeforeRuntimeDispatch: string[];
+}
+
 export interface CreateRenderThumbnailRendererServiceClientRequestOptions {
     entrypoint?: "mcp" | "cli" | string | null;
     mcpToolName?: string | null;
@@ -1659,6 +1722,12 @@ export function createRenderThumbnailRendererServiceNoopServiceHostScaffold(
         implementationSliceAudit?: Partial<RenderThumbnailRendererServiceImplementationSliceAudit> | null;
     }
 ): RenderThumbnailRendererServiceNoopServiceHostScaffold;
+export function createRenderThumbnailRendererServiceHostLifecycleTestFixtures(
+    options?: {
+        noopServiceHostScaffold?: Partial<RenderThumbnailRendererServiceNoopServiceHostScaffold> | null;
+        healthNoopContractFixtures?: Partial<RenderThumbnailRendererServiceHealthNoopContractFixtures> | null;
+    }
+): RenderThumbnailRendererServiceHostLifecycleTestFixtures;
 export function createRenderThumbnailRendererServiceClientRequest(
     plan: Partial<RenderThumbnailRendererServicePlan>,
     options?: CreateRenderThumbnailRendererServiceClientRequestOptions

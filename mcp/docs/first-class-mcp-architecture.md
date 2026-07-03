@@ -2321,6 +2321,16 @@ P25.25 render.thumbnail no-op service host scaffold result:
 - `noopServiceHostScaffold.hostStartup`, `dispatch`, `networkDispatch`,
   `runtimeRegistration`, and `localFileWrites` remain `false`.
 
+P25.26 render.thumbnail host lifecycle test fixture result:
+
+- Shared plans include `hostLifecycleTestFixtures`, defining start, stop,
+  readiness, supervision, logs, and error fixture expectations.
+- MCP and CLI expose these fixtures in dry-run and unavailable execution
+  payloads without spawning a process, binding ports, or probing health.
+- `hostLifecycleTestFixtures.processSpawn`, `hostStartup`,
+  `networkDispatch`, `runtimeRegistration`, and `localFileWrites` remain
+  `false`.
+
 ### 8.5 Export and Render Tools
 
 May start file-bound and later move to headless:
@@ -2352,7 +2362,8 @@ preflight, P25.20 adds the disabled executable adapter registration scaffold,
 P25.21 adds the disabled adapter registry manifest, P25.22 adds the final
 disabled enablement checklist, P25.23 audits the first implementation slice,
 P25.24 defines the health/no-op contract fixtures, and P25.25 defines the
-no-op service host scaffold.
+no-op service host scaffold. P25.26 defines disabled host lifecycle test
+fixtures.
 Runtime behavior remains unavailable
 until opt-in config surfaces, renderer-service implementation, health preflight,
 cache probe, executable client, and tagged-frame capabilities are implemented.

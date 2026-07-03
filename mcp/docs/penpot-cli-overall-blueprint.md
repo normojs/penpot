@@ -292,6 +292,9 @@ Current state:
   no-op `thumbnail.render` responses without enabling runtime dispatch.
 - Done: renderer-service no-op service host scaffold defines future host
   package, routes, lifecycle, and observability without starting a process.
+- Done: renderer-service host lifecycle test fixtures define start, stop,
+  readiness, supervision, logs, and error expectations without spawning a
+  process.
 - Done: focused command-runtime tests cover descriptor groups, lookup,
   adapter-selection priority/error cases, and token-safe envelopes.
 - Status: complete. Later command coverage gaps were tracked by the P15.1
@@ -833,6 +836,16 @@ P25.25 is complete:
    payloads without starting a process or registering runtime dispatch.
 3. `noopServiceHostScaffold.hostStartup`, `dispatch`, `networkDispatch`,
    `runtimeRegistration`, and `localFileWrites` remain false.
+
+P25.26 is complete:
+
+1. Shared plans include `hostLifecycleTestFixtures` metadata for start, stop,
+   readiness, supervision, logs, and errors.
+2. MCP and CLI expose these fixtures in dry-run and unavailable execution
+   payloads without spawning a process, binding ports, or probing health.
+3. `hostLifecycleTestFixtures.processSpawn`, `hostStartup`,
+   `networkDispatch`, `runtimeRegistration`, and `localFileWrites` remain
+   false.
 
 Keep manual configuration behavior stable while moving command metadata and
 envelopes; transport-specific formatting should stay at the MCP/CLI edges.

@@ -1,6 +1,6 @@
 # Render Thumbnail Renderer Service API
 
-Status: P25.25 API fixtures, MCP/CLI dry-run/client boundaries, metadata-only
+Status: P25.26 API fixtures, MCP/CLI dry-run/client boundaries, metadata-only
 availability probes, response normalization contracts, disabled client request
 scaffold, closed execution gate, disabled health preflight, and executable
 client harness plus dispatch adapter boundary plans, and opt-in configuration
@@ -8,7 +8,8 @@ surfaces plus unavailable error taxonomy and integration fixture harness
 plus dispatch registration preflight and executable adapter registration
 scaffold plus adapter registry manifest, final enablement checklist,
 implementation slice audit, health/no-op contract fixtures, and no-op service
-host scaffold defined; executable runtime registration remains blocked.
+host scaffold plus host lifecycle test fixtures defined; executable runtime
+registration remains blocked.
 
 P25.6 selected a dedicated thumbnail renderer service as the future executable
 owner for `render.thumbnail`. This document defines the service-facing request
@@ -109,6 +110,11 @@ include `noopServiceHostScaffold`, covering the future host package, routes,
 configuration, lifecycle, and observability while keeping process startup,
 dispatch, network dispatch, runtime registration, and local file writes
 disabled.
+
+P25.26 defines disabled host lifecycle test fixtures. Plans now include
+`hostLifecycleTestFixtures`, covering start, stop, readiness, supervision,
+logs, and errors while keeping process spawn, port binding, health probes,
+dispatch, runtime registration, and local file writes disabled.
 
 ## Service Boundary
 

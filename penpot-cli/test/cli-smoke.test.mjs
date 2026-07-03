@@ -2686,6 +2686,13 @@ test("render thumbnail dry-run returns renderer-service request plan", async () 
         assert.equal(body.data.noopServiceHostScaffold.localFileWrites, false);
         assert.equal(body.data.noopServiceHostScaffold.hostStartup, false);
         assert.equal(body.data.noopServiceHostScaffold.host.startsProcess, false);
+        assert.equal(body.data.hostLifecycleTestFixtures.fixtureVersion, "P25.26");
+        assert.equal(body.data.hostLifecycleTestFixtures.dispatch, false);
+        assert.equal(body.data.hostLifecycleTestFixtures.networkDispatch, false);
+        assert.equal(body.data.hostLifecycleTestFixtures.runtimeRegistration, false);
+        assert.equal(body.data.hostLifecycleTestFixtures.localFileWrites, false);
+        assert.equal(body.data.hostLifecycleTestFixtures.hostStartup, false);
+        assert.equal(body.data.hostLifecycleTestFixtures.processSpawn, false);
         assert.equal(body.data.service.responseNormalization.successStatus, "ok");
         assert.equal(body.data.service.responseNormalization.localFileWrites, false);
         assert.equal(body.data.service.errorShape.code, "renderer_service_error");
@@ -2779,6 +2786,13 @@ test("render thumbnail execution reports renderer-service unavailable without ca
         assert.equal(body.error.data.noopServiceHostScaffold.runtimeRegistration, false);
         assert.equal(body.error.data.noopServiceHostScaffold.localFileWrites, false);
         assert.equal(body.error.data.noopServiceHostScaffold.hostStartup, false);
+        assert.equal(body.error.data.hostLifecycleTestFixtures.fixtureVersion, "P25.26");
+        assert.equal(body.error.data.hostLifecycleTestFixtures.dispatch, false);
+        assert.equal(body.error.data.hostLifecycleTestFixtures.networkDispatch, false);
+        assert.equal(body.error.data.hostLifecycleTestFixtures.runtimeRegistration, false);
+        assert.equal(body.error.data.hostLifecycleTestFixtures.localFileWrites, false);
+        assert.equal(body.error.data.hostLifecycleTestFixtures.hostStartup, false);
+        assert.equal(body.error.data.hostLifecycleTestFixtures.processSpawn, false);
         assert.equal(body.error.data.clientRequest.dispatch, false);
         assert.equal(body.error.data.serviceRequest.operation, "thumbnail.render");
     } finally {

@@ -954,3 +954,10 @@ P25.25 adds renderer-service no-op service host scaffold:
   package, routes, config, lifecycle, and observability metadata.
 - The scaffold remains planning-only with `hostStartup`, `dispatch`,
   `networkDispatch`, `runtimeRegistration`, and `localFileWrites` all `false`.
+
+P25.26 adds renderer-service host lifecycle test fixtures:
+
+- Plans include `hostLifecycleTestFixtures`, defining start, stop, readiness,
+  supervision, logs, and error fixture expectations.
+- The fixtures remain planning-only with `processSpawn`, `hostStartup`,
+  `networkDispatch`, `runtimeRegistration`, and `localFileWrites` all `false`.
