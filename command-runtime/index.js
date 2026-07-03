@@ -1053,6 +1053,12 @@ export function createRenderThumbnailRendererServicePlan(options = EMPTY_OBJECT)
         packageWorkspaceWiring,
         packageBuildVerification,
     });
+    const packageMaterializationApprovalGate = createRenderThumbnailRendererServicePackageMaterializationApprovalGate({
+        packageMaterializationChecklist,
+        packageCreationFileManifest,
+        packageWorkspaceWiring,
+        packageBuildVerification,
+    });
 
     return {
         command: CommandDescriptors.RENDER_THUMBNAIL.id,
@@ -1119,6 +1125,7 @@ export function createRenderThumbnailRendererServicePlan(options = EMPTY_OBJECT)
             packageMaterializationChecklist,
             packageCreationDryRunSummary,
             packageCreationFileManifest,
+            packageMaterializationApprovalGate,
             clientRequest,
         },
         client,
@@ -1146,6 +1153,7 @@ export function createRenderThumbnailRendererServicePlan(options = EMPTY_OBJECT)
         packageMaterializationChecklist,
         packageCreationDryRunSummary,
         packageCreationFileManifest,
+        packageMaterializationApprovalGate,
         clientRequest,
         serviceRequest: {
             command: CommandDescriptors.RENDER_THUMBNAIL.id,
@@ -1233,6 +1241,7 @@ export function createRenderThumbnailRendererServicePlan(options = EMPTY_OBJECT)
             packageMaterializationChecklistVersion: packageMaterializationChecklist.checklistVersion,
             packageCreationDryRunSummaryVersion: packageCreationDryRunSummary.summaryVersion,
             packageCreationFileManifestVersion: packageCreationFileManifest.manifestVersion,
+            packageMaterializationApprovalGateVersion: packageMaterializationApprovalGate.gateVersion,
         },
     };
 }
@@ -2284,6 +2293,160 @@ export function createRenderThumbnailRendererServicePackageCreationFileManifest(
             "wire workspace and lockfile after files are created",
             "run build, type-check, and tests after materialization",
             "keep render.thumbnail unavailable until materialized package verification passes",
+        ],
+    };
+}
+
+export function createRenderThumbnailRendererServicePackageMaterializationApprovalGate(options = EMPTY_OBJECT) {
+    const packageMaterializationChecklist = options.packageMaterializationChecklist ?? EMPTY_OBJECT;
+    const packageCreationFileManifest = options.packageCreationFileManifest ?? EMPTY_OBJECT;
+    const packageWorkspaceWiring = options.packageWorkspaceWiring ?? EMPTY_OBJECT;
+    const packageBuildVerification = options.packageBuildVerification ?? EMPTY_OBJECT;
+
+    return {
+        status: "planned-disabled",
+        gateVersion: "P25.35",
+        adapter: "renderer-service",
+        command: CommandDescriptors.RENDER_THUMBNAIL.id,
+        dryRunOnly: true,
+        approvalRequired: true,
+        approved: false,
+        dispatch: false,
+        networkDispatch: false,
+        runtimeRegistration: false,
+        localFileWrites: false,
+        hostStartup: false,
+        processSpawn: false,
+        packageCreated: false,
+        workspaceMutation: false,
+        scriptRunnable: false,
+        fileMaterialization: false,
+        lockfileMutation: false,
+        rootPackageJsonMutation: false,
+        pnpmWorkspaceMutation: false,
+        commandExecution: false,
+        buildOutput: false,
+        packageScriptsRunnable: false,
+        materializationApproved: false,
+        filesWritten: false,
+        consumes: {
+            packageMaterializationChecklist: {
+                requiredStatus: "planned-disabled",
+                currentStatus: packageMaterializationChecklist.status ?? "planned-disabled",
+                checklistVersion: packageMaterializationChecklist.checklistVersion ?? "P25.32",
+                materializationApproved: false,
+            },
+            packageCreationFileManifest: {
+                requiredStatus: "planned-disabled",
+                currentStatus: packageCreationFileManifest.status ?? "planned-disabled",
+                manifestVersion: packageCreationFileManifest.manifestVersion ?? "P25.34",
+                filesWritten: false,
+            },
+            packageWorkspaceWiring: {
+                requiredStatus: "planned-disabled",
+                currentStatus: packageWorkspaceWiring.status ?? "planned-disabled",
+                wiringVersion: packageWorkspaceWiring.wiringVersion ?? "P25.30",
+                workspaceMutation: false,
+            },
+            packageBuildVerification: {
+                requiredStatus: "planned-disabled",
+                currentStatus: packageBuildVerification.status ?? "planned-disabled",
+                verificationVersion: packageBuildVerification.verificationVersion ?? "P25.31",
+                commandExecution: false,
+                buildOutput: false,
+            },
+        },
+        approvalInputs: [
+            {
+                id: "explicit-user-approval",
+                label: "Explicit user approval to materialize renderer-service files",
+                required: true,
+                satisfied: false,
+                source: "future implementation task request",
+            },
+            {
+                id: "package-file-manifest-reviewed",
+                label: "Review packageCreationFileManifest file list and generated output list",
+                required: true,
+                satisfied: false,
+                source: "packageCreationFileManifest",
+            },
+            {
+                id: "workspace-mutation-reviewed",
+                label: "Review pnpm-workspace.yaml, package.json, and pnpm-lock.yaml changes together",
+                required: true,
+                satisfied: false,
+                source: "packageWorkspaceWiring",
+            },
+            {
+                id: "runtime-dispatch-disabled",
+                label: "Confirm render.thumbnail runtime dispatch remains disabled after materialization",
+                required: true,
+                satisfied: false,
+                source: "executionGate",
+            },
+        ],
+        approvalScope: {
+            packageDirectory: "renderer-service",
+            packageFiles: [
+                "renderer-service/package.json",
+                "renderer-service/tsconfig.json",
+                "renderer-service/src/index.ts",
+                "renderer-service/src/noop-host.ts",
+                "renderer-service/test/noop-host.test.mjs",
+            ],
+            workspaceFiles: ["pnpm-workspace.yaml", "package.json", "pnpm-lock.yaml"],
+            generatedFilesExcludedUntilBuild: [
+                "renderer-service/dist/index.js",
+                "renderer-service/dist/index.d.ts",
+                "renderer-service/dist/noop-host.js",
+                "renderer-service/dist/noop-host.d.ts",
+            ],
+            runtimeDispatchIncluded: false,
+        },
+        approvalDecision: {
+            status: "blocked",
+            canMaterialize: false,
+            canMutateWorkspace: false,
+            canRunVerification: false,
+            reason: "materialization approval has not been granted",
+        },
+        postApprovalSequence: [
+            {
+                id: "materialize-package-files",
+                allowedBeforeApproval: false,
+                writesFiles: true,
+                runsCommands: false,
+            },
+            {
+                id: "wire-workspace-manifests",
+                allowedBeforeApproval: false,
+                writesFiles: true,
+                runsCommands: false,
+            },
+            {
+                id: "run-package-verification",
+                allowedBeforeApproval: false,
+                writesFiles: false,
+                runsCommands: true,
+            },
+        ],
+        noOpGuarantees: [
+            "approval gate does not grant approval",
+            "approval gate does not create renderer-service directory",
+            "approval gate does not write package files",
+            "approval gate does not edit workspace manifests",
+            "approval gate does not mutate lockfiles",
+            "approval gate does not run verification commands",
+            "approval gate does not generate build output",
+            "approval gate does not register runtime dispatch",
+        ],
+        requiredBeforeRuntimeDispatch: [
+            "obtain explicit materialization approval in a later task",
+            "materialize package files only after approval",
+            "commit workspace and lockfile mutations separately from runtime dispatch",
+            "run package verification after approved materialization",
+            "keep render.thumbnail unavailable until approved package verification passes",
         ],
     };
 }

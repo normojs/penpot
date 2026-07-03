@@ -1057,3 +1057,15 @@ P25.34 adds renderer-service package creation file manifest:
   `commandExecution`, `buildOutput`, `materializationApproved`,
   `processSpawn`, `packageCreated`, `dispatch`, `networkDispatch`,
   `runtimeRegistration`, and `localFileWrites` all `false`.
+
+P25.35 adds renderer-service package materialization approval gate:
+
+- Plans include `packageMaterializationApprovalGate`, defining explicit
+  approval inputs, approval scope, blocked decision state, post-approval
+  sequence, and no-op guarantees before any filesystem materialization.
+- The gate remains planning-only with `approvalRequired:true`,
+  `approved:false`, `dryRunOnly:true`, `filesWritten`,
+  `fileMaterialization`, `workspaceMutation`, `lockfileMutation`,
+  `commandExecution`, `buildOutput`, `materializationApproved`,
+  `processSpawn`, `packageCreated`, `dispatch`, `networkDispatch`,
+  `runtimeRegistration`, and `localFileWrites` all `false`.

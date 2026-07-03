@@ -1,5 +1,5 @@
 {
-  "version": "P25.34",
+  "version": "P25.35",
   "command": "render.thumbnail",
   "status": "renderer-service API fixtures with MCP/CLI dry-run/client boundaries, metadata-only availability probes, response normalization contracts, disabled client request scaffold, explicit execution gate, health preflight plan, executable client harness plan, dispatch adapter boundary, opt-in configuration surfaces, unavailable error taxonomy, integration fixture harness, dispatch registration preflight, disabled executable adapter registration scaffold, disabled adapter registry manifest, final disabled enablement checklist, implementation slice audit, health/no-op contract fixtures, no-op service host scaffold, host lifecycle test fixtures, package manifest scaffold, package creation guardrails, package file templates, and package workspace wiring; runtime execution blocked",
   "adapter": "renderer-service",
@@ -2000,6 +2000,156 @@
         "run build, type-check, and tests after materialization",
         "keep render.thumbnail unavailable until materialized package verification passes"
       ]
+    },
+    "packageMaterializationApprovalGate": {
+      "status": "planned-disabled",
+      "gateVersion": "P25.35",
+      "adapter": "renderer-service",
+      "command": "render.thumbnail",
+      "dryRunOnly": true,
+      "approvalRequired": true,
+      "approved": false,
+      "dispatch": false,
+      "networkDispatch": false,
+      "runtimeRegistration": false,
+      "localFileWrites": false,
+      "hostStartup": false,
+      "processSpawn": false,
+      "packageCreated": false,
+      "workspaceMutation": false,
+      "scriptRunnable": false,
+      "fileMaterialization": false,
+      "lockfileMutation": false,
+      "rootPackageJsonMutation": false,
+      "pnpmWorkspaceMutation": false,
+      "commandExecution": false,
+      "buildOutput": false,
+      "packageScriptsRunnable": false,
+      "materializationApproved": false,
+      "filesWritten": false,
+      "consumes": {
+        "packageMaterializationChecklist": {
+          "requiredStatus": "planned-disabled",
+          "currentStatus": "planned-disabled",
+          "checklistVersion": "P25.32",
+          "materializationApproved": false
+        },
+        "packageCreationFileManifest": {
+          "requiredStatus": "planned-disabled",
+          "currentStatus": "planned-disabled",
+          "manifestVersion": "P25.34",
+          "filesWritten": false
+        },
+        "packageWorkspaceWiring": {
+          "requiredStatus": "planned-disabled",
+          "currentStatus": "planned-disabled",
+          "wiringVersion": "P25.30",
+          "workspaceMutation": false
+        },
+        "packageBuildVerification": {
+          "requiredStatus": "planned-disabled",
+          "currentStatus": "planned-disabled",
+          "verificationVersion": "P25.31",
+          "commandExecution": false,
+          "buildOutput": false
+        }
+      },
+      "approvalInputs": [
+        {
+          "id": "explicit-user-approval",
+          "label": "Explicit user approval to materialize renderer-service files",
+          "required": true,
+          "satisfied": false,
+          "source": "future implementation task request"
+        },
+        {
+          "id": "package-file-manifest-reviewed",
+          "label": "Review packageCreationFileManifest file list and generated output list",
+          "required": true,
+          "satisfied": false,
+          "source": "packageCreationFileManifest"
+        },
+        {
+          "id": "workspace-mutation-reviewed",
+          "label": "Review pnpm-workspace.yaml, package.json, and pnpm-lock.yaml changes together",
+          "required": true,
+          "satisfied": false,
+          "source": "packageWorkspaceWiring"
+        },
+        {
+          "id": "runtime-dispatch-disabled",
+          "label": "Confirm render.thumbnail runtime dispatch remains disabled after materialization",
+          "required": true,
+          "satisfied": false,
+          "source": "executionGate"
+        }
+      ],
+      "approvalScope": {
+        "packageDirectory": "renderer-service",
+        "packageFiles": [
+          "renderer-service/package.json",
+          "renderer-service/tsconfig.json",
+          "renderer-service/src/index.ts",
+          "renderer-service/src/noop-host.ts",
+          "renderer-service/test/noop-host.test.mjs"
+        ],
+        "workspaceFiles": [
+          "pnpm-workspace.yaml",
+          "package.json",
+          "pnpm-lock.yaml"
+        ],
+        "generatedFilesExcludedUntilBuild": [
+          "renderer-service/dist/index.js",
+          "renderer-service/dist/index.d.ts",
+          "renderer-service/dist/noop-host.js",
+          "renderer-service/dist/noop-host.d.ts"
+        ],
+        "runtimeDispatchIncluded": false
+      },
+      "approvalDecision": {
+        "status": "blocked",
+        "canMaterialize": false,
+        "canMutateWorkspace": false,
+        "canRunVerification": false,
+        "reason": "materialization approval has not been granted"
+      },
+      "postApprovalSequence": [
+        {
+          "id": "materialize-package-files",
+          "allowedBeforeApproval": false,
+          "writesFiles": true,
+          "runsCommands": false
+        },
+        {
+          "id": "wire-workspace-manifests",
+          "allowedBeforeApproval": false,
+          "writesFiles": true,
+          "runsCommands": false
+        },
+        {
+          "id": "run-package-verification",
+          "allowedBeforeApproval": false,
+          "writesFiles": false,
+          "runsCommands": true
+        }
+      ],
+      "noOpGuarantees": [
+        "approval gate does not grant approval",
+        "approval gate does not create renderer-service directory",
+        "approval gate does not write package files",
+        "approval gate does not edit workspace manifests",
+        "approval gate does not mutate lockfiles",
+        "approval gate does not run verification commands",
+        "approval gate does not generate build output",
+        "approval gate does not register runtime dispatch"
+      ],
+      "requiredBeforeRuntimeDispatch": [
+        "obtain explicit materialization approval in a later task",
+        "materialize package files only after approval",
+        "commit workspace and lockfile mutations separately from runtime dispatch",
+        "run package verification after approved materialization",
+        "keep render.thumbnail unavailable until approved package verification passes"
+      ]
     }
   },
   "registrationGates": {
@@ -2347,8 +2497,8 @@
     "missing token fails before contacting renderer-service"
   ],
   "nextTask": {
-    "id": "P25.35",
-    "title": "Plan renderer-service package materialization approval gate",
+    "id": "P25.36",
+    "title": "Plan renderer-service package materialization execution dry-run",
     "status": "pending"
   }
 }

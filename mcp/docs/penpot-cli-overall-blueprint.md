@@ -327,6 +327,11 @@ Current state:
   future package directory, package file, generated file, workspace file,
   readiness blocker, and no-op guarantee entries without materializing files,
   mutating workspace state, running commands, or registering runtime dispatch.
+- Done: renderer-service package materialization approval gate defines
+  metadata-only approval inputs, approval scope, blocked decision state,
+  post-approval sequence, and no-op guarantees without granting approval,
+  materializing files, mutating workspace state, running commands, or
+  registering runtime dispatch.
 - Done: focused command-runtime tests cover descriptor groups, lookup,
   adapter-selection priority/error cases, and token-safe envelopes.
 - Status: complete. Later command coverage gaps were tracked by the P15.1
@@ -989,6 +994,22 @@ P25.34 is complete:
    output, starting processes, or registering runtime dispatch.
 3. `packageCreationFileManifest.dryRunOnly` remains true, while
    `filesWritten`, `fileMaterialization`, `workspaceMutation`,
+   `lockfileMutation`, `commandExecution`, `buildOutput`,
+   `materializationApproved`, `processSpawn`, `packageCreated`, `dispatch`,
+   `networkDispatch`, `runtimeRegistration`, and `localFileWrites` remain
+   false.
+
+P25.35 is complete:
+
+1. Shared plans include `packageMaterializationApprovalGate` metadata for
+   explicit approval inputs, approval scope, blocked decision state,
+   post-approval sequence, and no-op guarantees.
+2. MCP and CLI expose this gate in dry-run and unavailable execution payloads
+   without granting approval, creating package directories, writing files,
+   mutating workspace manifests, mutating lockfiles, running commands, emitting
+   build output, starting processes, or registering runtime dispatch.
+3. `packageMaterializationApprovalGate.approvalRequired` remains true, while
+   `approved`, `filesWritten`, `fileMaterialization`, `workspaceMutation`,
    `lockfileMutation`, `commandExecution`, `buildOutput`,
    `materializationApproved`, `processSpawn`, `packageCreated`, `dispatch`,
    `networkDispatch`, `runtimeRegistration`, and `localFileWrites` remain
