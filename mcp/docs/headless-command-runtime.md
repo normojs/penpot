@@ -1046,3 +1046,14 @@ P25.33 adds renderer-service package creation dry-run summary:
   `commandExecution`, `buildOutput`, `materializationApproved`, `dispatch`,
   `networkDispatch`, `runtimeRegistration`, and `localFileWrites` all `false`
   except the explicit dry-run marker.
+
+P25.34 adds renderer-service package creation file manifest:
+
+- Plans include `packageCreationFileManifest`, defining the exact future
+  package directory, package files, generated files, workspace files, readiness
+  blockers, and no-op guarantees before filesystem materialization.
+- The manifest remains planning-only with `dryRunOnly:true`, `filesWritten`,
+  `fileMaterialization`, `workspaceMutation`, `lockfileMutation`,
+  `commandExecution`, `buildOutput`, `materializationApproved`,
+  `processSpawn`, `packageCreated`, `dispatch`, `networkDispatch`,
+  `runtimeRegistration`, and `localFileWrites` all `false`.

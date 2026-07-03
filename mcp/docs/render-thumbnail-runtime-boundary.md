@@ -33,7 +33,8 @@ creation guardrails, P25.29 defines package file templates, and P25.30 defines
 package workspace wiring. P25.31 defines package build verification; runtime
 execution remains blocked. P25.32 defines package materialization checklist
 metadata without creating files. P25.33 defines package creation dry-run
-summary metadata without writing files.
+summary metadata without writing files. P25.34 defines package creation file
+manifest metadata without materializing files.
 
 ## Existing Surfaces
 
@@ -175,7 +176,7 @@ package creation guardrails, P25.29 adds metadata-only package file templates,
 P25.30 adds metadata-only package workspace wiring, and P25.31 adds
 metadata-only package build verification. P25.32 adds metadata-only package
 materialization checklist. P25.33 adds metadata-only package creation dry-run
-summary. MCP
+summary. P25.34 adds metadata-only package creation file manifest. MCP
 `render.thumbnail` and `penpot-cli render thumbnail --dry-run` can print the
 future request shape, configured/not configured service metadata,
 response/error contracts, `clientRequest.dispatch:false`,
@@ -226,6 +227,11 @@ plus `packageCreationDryRunSummary.dryRunOnly:true`,
 `packageCreationDryRunSummary.fileMaterialization:false`,
 `packageCreationDryRunSummary.workspaceMutation:false`, and
 `packageCreationDryRunSummary.runtimeRegistration:false`,
+plus `packageCreationFileManifest.dryRunOnly:true`,
+`packageCreationFileManifest.filesWritten:false`,
+`packageCreationFileManifest.fileMaterialization:false`,
+`packageCreationFileManifest.workspaceMutation:false`, and
+`packageCreationFileManifest.runtimeRegistration:false`,
 but execution still returns
 `renderer_service_unavailable` until explicit opt-in, config surfaces, renderer
 service, integration tests, health preflight, file cache probe, tagged-frame

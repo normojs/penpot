@@ -2745,6 +2745,15 @@ test("render thumbnail dry-run returns renderer-service request plan", async () 
         assert.equal(body.data.packageCreationDryRunSummary.runtimeRegistration, false);
         assert.equal(body.data.packageCreationDryRunSummary.localFileWrites, false);
         assert.equal(body.data.packageCreationDryRunSummary.filesWritten, false);
+        assert.equal(body.data.packageCreationFileManifest.manifestVersion, "P25.34");
+        assert.equal(body.data.packageCreationFileManifest.dryRunOnly, true);
+        assert.equal(body.data.packageCreationFileManifest.dispatch, false);
+        assert.equal(body.data.packageCreationFileManifest.runtimeRegistration, false);
+        assert.equal(body.data.packageCreationFileManifest.localFileWrites, false);
+        assert.equal(body.data.packageCreationFileManifest.fileMaterialization, false);
+        assert.equal(body.data.packageCreationFileManifest.filesWritten, false);
+        assert.ok(body.data.packageCreationFileManifest.files.some((entry) => entry.path === "renderer-service/src/noop-host.ts" && entry.writesFile === false));
+        assert.ok(body.data.packageCreationFileManifest.workspaceFiles.some((entry) => entry.path === "pnpm-lock.yaml" && entry.mutateNow === false));
         assert.equal(body.data.service.responseNormalization.successStatus, "ok");
         assert.equal(body.data.service.responseNormalization.localFileWrites, false);
         assert.equal(body.data.service.errorShape.code, "renderer_service_error");
@@ -2897,6 +2906,13 @@ test("render thumbnail execution reports renderer-service unavailable without ca
         assert.equal(body.error.data.packageCreationDryRunSummary.runtimeRegistration, false);
         assert.equal(body.error.data.packageCreationDryRunSummary.localFileWrites, false);
         assert.equal(body.error.data.packageCreationDryRunSummary.filesWritten, false);
+        assert.equal(body.error.data.packageCreationFileManifest.manifestVersion, "P25.34");
+        assert.equal(body.error.data.packageCreationFileManifest.dryRunOnly, true);
+        assert.equal(body.error.data.packageCreationFileManifest.dispatch, false);
+        assert.equal(body.error.data.packageCreationFileManifest.runtimeRegistration, false);
+        assert.equal(body.error.data.packageCreationFileManifest.localFileWrites, false);
+        assert.equal(body.error.data.packageCreationFileManifest.fileMaterialization, false);
+        assert.equal(body.error.data.packageCreationFileManifest.filesWritten, false);
         assert.equal(body.error.data.clientRequest.dispatch, false);
         assert.equal(body.error.data.serviceRequest.operation, "thumbnail.render");
     } finally {

@@ -1,7 +1,7 @@
 {
-  "version": "P25.33",
+  "version": "P25.34",
   "command": "render.thumbnail",
-  "status": "runtime boundary audited; MCP/CLI planning, metadata-only availability probes, response normalization contracts, disabled client request scaffold, closed execution gate, health preflight plan, executable client harness plan, dispatch adapter boundary, opt-in configuration surfaces, unavailable error taxonomy, integration fixture harness, dispatch registration preflight, disabled executable adapter registration scaffold, disabled adapter registry manifest, final disabled enablement checklist, implementation slice audit, health/no-op contract fixtures, no-op service host scaffold, host lifecycle test fixtures, package manifest scaffold, package creation guardrails, package file templates, and package workspace wiring, package build verification, package materialization checklist, and package creation dry-run summary registered; runtime execution blocked",
+  "status": "runtime boundary audited; MCP/CLI planning, metadata-only availability probes, response normalization contracts, disabled client request scaffold, closed execution gate, health preflight plan, executable client harness plan, dispatch adapter boundary, opt-in configuration surfaces, unavailable error taxonomy, integration fixture harness, dispatch registration preflight, disabled executable adapter registration scaffold, disabled adapter registry manifest, final disabled enablement checklist, implementation slice audit, health/no-op contract fixtures, no-op service host scaffold, host lifecycle test fixtures, package manifest scaffold, package creation guardrails, package file templates, package workspace wiring, package build verification, package materialization checklist, package creation dry-run summary, and package creation file manifest registered; runtime execution blocked",
   "selectedBoundary": "thumbnail-renderer-service",
   "runtimeRegistration": {
     "mcpToolRegistered": true,
@@ -371,11 +371,12 @@
     "Add CLI smoke tests only after the service exists, covering dry-run, resource metadata, --output download, and missing-token errors.",
     "Package build verification tests cover planned filtered build, type-check, test commands, expected artifacts, and no command execution.",
     "Package materialization checklist tests cover planned file/workspace batches, readiness checklist, commit boundary, rollback plan, and no file materialization.",
-    "Package creation dry-run summary tests cover would-create, would-modify, would-generate, would-run, blocked-until, and no file writes."
+    "Package creation dry-run summary tests cover would-create, would-modify, would-generate, would-run, blocked-until, and no file writes.",
+    "package creation file manifest survives dry-run and unavailable execution JSON output"
   ],
   "nextTask": {
-    "id": "P25.34",
-    "title": "Plan renderer-service package creation file manifest",
+    "id": "P25.35",
+    "title": "Plan renderer-service package materialization approval gate",
     "status": "pending"
   },
   "implementationSliceAudit": {
@@ -1709,6 +1710,208 @@
       "create package files in a later explicit implementation task",
       "run package verification after materialization",
       "keep render.thumbnail unavailable until package creation and verification are complete"
+    ]
+  },
+  "packageCreationFileManifest": {
+    "status": "planned-disabled",
+    "manifestVersion": "P25.34",
+    "adapter": "renderer-service",
+    "command": "render.thumbnail",
+    "dryRunOnly": true,
+    "dispatch": false,
+    "networkDispatch": false,
+    "runtimeRegistration": false,
+    "localFileWrites": false,
+    "hostStartup": false,
+    "processSpawn": false,
+    "packageCreated": false,
+    "workspaceMutation": false,
+    "scriptRunnable": false,
+    "fileMaterialization": false,
+    "lockfileMutation": false,
+    "rootPackageJsonMutation": false,
+    "pnpmWorkspaceMutation": false,
+    "commandExecution": false,
+    "buildOutput": false,
+    "packageScriptsRunnable": false,
+    "materializationApproved": false,
+    "filesWritten": false,
+    "consumes": {
+      "packageCreationDryRunSummary": {
+        "requiredStatus": "planned-disabled",
+        "currentStatus": "planned-disabled",
+        "summaryVersion": "P25.33",
+        "dryRunOnly": true,
+        "filesWritten": false
+      },
+      "packageFileTemplates": {
+        "requiredStatus": "planned-disabled",
+        "currentStatus": "planned-disabled",
+        "templateVersion": "P25.29",
+        "fileMaterialization": false
+      },
+      "packageWorkspaceWiring": {
+        "requiredStatus": "planned-disabled",
+        "currentStatus": "planned-disabled",
+        "wiringVersion": "P25.30",
+        "workspaceMutation": false
+      },
+      "packageBuildVerification": {
+        "requiredStatus": "planned-disabled",
+        "currentStatus": "planned-disabled",
+        "verificationVersion": "P25.31",
+        "commandExecution": false,
+        "buildOutput": false
+      }
+    },
+    "packageDirectory": {
+      "path": "renderer-service",
+      "createNow": false,
+      "existsRequiredBeforeMaterialization": false
+    },
+    "files": [
+      {
+        "id": "package-json",
+        "path": "renderer-service/package.json",
+        "kind": "package-manifest",
+        "source": "packageFileTemplates.packageJson",
+        "createNow": false,
+        "writesFile": false,
+        "materialized": false,
+        "requiredBeforeWorkspaceWiring": true,
+        "requiredBeforeVerification": true,
+        "expectedExport": "@penpot/renderer-service"
+      },
+      {
+        "id": "tsconfig",
+        "path": "renderer-service/tsconfig.json",
+        "kind": "typescript-config",
+        "source": "packageFileTemplates.tsconfig",
+        "createNow": false,
+        "writesFile": false,
+        "materialized": false,
+        "requiredBeforeWorkspaceWiring": false,
+        "requiredBeforeVerification": true,
+        "expectedExtends": "../tsconfig.json"
+      },
+      {
+        "id": "entrypoint",
+        "path": "renderer-service/src/index.ts",
+        "kind": "source",
+        "source": "packageFileTemplates.sourceFiles",
+        "createNow": false,
+        "writesFile": false,
+        "materialized": false,
+        "requiredBeforeWorkspaceWiring": false,
+        "requiredBeforeVerification": true,
+        "runtimeRegistration": false,
+        "exports": [
+          "createNoopRendererServiceHost"
+        ]
+      },
+      {
+        "id": "noop-host",
+        "path": "renderer-service/src/noop-host.ts",
+        "kind": "source",
+        "source": "packageFileTemplates.sourceFiles",
+        "createNow": false,
+        "writesFile": false,
+        "materialized": false,
+        "requiredBeforeWorkspaceWiring": false,
+        "requiredBeforeVerification": true,
+        "startsProcess": false,
+        "routes": [
+          "/health",
+          "/thumbnail"
+        ],
+        "rendersPng": false
+      },
+      {
+        "id": "noop-host-test",
+        "path": "renderer-service/test/noop-host.test.mjs",
+        "kind": "test",
+        "source": "packageFileTemplates.testFiles",
+        "createNow": false,
+        "writesFile": false,
+        "materialized": false,
+        "requiredBeforeWorkspaceWiring": false,
+        "requiredBeforeVerification": true,
+        "processSpawn": false,
+        "covers": [
+          "health response metadata",
+          "thumbnail unavailable response",
+          "no process startup"
+        ]
+      }
+    ],
+    "generatedFiles": [
+      {
+        "path": "renderer-service/dist/index.js",
+        "sourceFile": "renderer-service/src/index.ts",
+        "generateNow": false,
+        "producedBy": "pnpm --filter @penpot/renderer-service build"
+      },
+      {
+        "path": "renderer-service/dist/index.d.ts",
+        "sourceFile": "renderer-service/src/index.ts",
+        "generateNow": false,
+        "producedBy": "pnpm --filter @penpot/renderer-service build"
+      },
+      {
+        "path": "renderer-service/dist/noop-host.js",
+        "sourceFile": "renderer-service/src/noop-host.ts",
+        "generateNow": false,
+        "producedBy": "pnpm --filter @penpot/renderer-service build"
+      },
+      {
+        "path": "renderer-service/dist/noop-host.d.ts",
+        "sourceFile": "renderer-service/src/noop-host.ts",
+        "generateNow": false,
+        "producedBy": "pnpm --filter @penpot/renderer-service build"
+      }
+    ],
+    "workspaceFiles": [
+      {
+        "path": "pnpm-workspace.yaml",
+        "plannedChange": "add renderer-service workspace entry",
+        "mutateNow": false
+      },
+      {
+        "path": "package.json",
+        "plannedChange": "add root helper scripts after package materializes",
+        "mutateNow": false
+      },
+      {
+        "path": "pnpm-lock.yaml",
+        "plannedChange": "refresh lockfile after workspace package exists",
+        "mutateNow": false
+      }
+    ],
+    "manifestReadiness": {
+      "status": "blocked",
+      "canMaterializeFiles": false,
+      "blockers": [
+        "explicit file materialization task",
+        "workspace mutation approval",
+        "template review",
+        "runtime dispatch remains disabled"
+      ]
+    },
+    "noOpGuarantees": [
+      "file manifest does not create renderer-service directory",
+      "file manifest does not write renderer-service files",
+      "file manifest does not edit workspace manifests",
+      "file manifest does not mutate lockfiles",
+      "file manifest does not generate dist output",
+      "file manifest does not run verification commands",
+      "file manifest does not register runtime dispatch"
+    ],
+    "requiredBeforeRuntimeDispatch": [
+      "commit file manifest before filesystem materialization",
+      "materialize files in a later explicit implementation task",
+      "wire workspace and lockfile after files are created",
+      "run build, type-check, and tests after materialization",
+      "keep render.thumbnail unavailable until materialized package verification passes"
     ]
   }
 }

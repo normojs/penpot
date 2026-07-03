@@ -2432,6 +2432,22 @@ P25.33 render.thumbnail package creation dry-run summary result:
   `materializationApproved`, `dispatch`, `networkDispatch`,
   `runtimeRegistration`, and `localFileWrites` remain `false`.
 
+P25.34 render.thumbnail package creation file manifest result:
+
+- Shared plans include `packageCreationFileManifest`, defining metadata-only
+  future package directory, package file, generated file, workspace file,
+  readiness blocker, and no-op guarantee entries.
+- MCP and CLI expose the manifest in dry-run and unavailable execution payloads
+  without creating the package directory, writing package files, editing
+  workspace manifests, mutating lockfiles, running commands, emitting build
+  output, starting processes, or registering runtime dispatch.
+- `packageCreationFileManifest.dryRunOnly` remains `true`, while
+  `filesWritten`, `fileMaterialization`, `workspaceMutation`,
+  `lockfileMutation`, `commandExecution`, `buildOutput`,
+  `materializationApproved`, `processSpawn`, `packageCreated`, `dispatch`,
+  `networkDispatch`, `runtimeRegistration`, and `localFileWrites` remain
+  `false`.
+
 ### 8.5 Export and Render Tools
 
 May start file-bound and later move to headless:
@@ -2469,7 +2485,7 @@ P25.28 defines disabled package creation guardrails. P25.29 defines disabled
 package file templates, P25.30 defines disabled package workspace wiring, and
 P25.31 defines disabled package build verification. P25.32 defines disabled
 package materialization checklist. P25.33 defines disabled package creation
-dry-run summary.
+dry-run summary. P25.34 defines disabled package creation file manifest.
 Runtime behavior remains unavailable
 until opt-in config surfaces, renderer-service implementation, workspace
 wiring, health preflight, cache probe, executable client, and tagged-frame

@@ -323,6 +323,10 @@ Current state:
   metadata-only would-create, would-modify, would-generate, and would-run
   sections without writing files, mutating workspace state, running commands,
   or registering runtime dispatch.
+- Done: renderer-service package creation file manifest defines metadata-only
+  future package directory, package file, generated file, workspace file,
+  readiness blocker, and no-op guarantee entries without materializing files,
+  mutating workspace state, running commands, or registering runtime dispatch.
 - Done: focused command-runtime tests cover descriptor groups, lookup,
   adapter-selection priority/error cases, and token-safe envelopes.
 - Status: complete. Later command coverage gaps were tracked by the P15.1
@@ -973,6 +977,22 @@ P25.33 is complete:
    `lockfileMutation`, `commandExecution`, `buildOutput`,
    `materializationApproved`, `dispatch`, `networkDispatch`,
    `runtimeRegistration`, and `localFileWrites` remain false.
+
+P25.34 is complete:
+
+1. Shared plans include `packageCreationFileManifest` metadata for the future
+   package directory, package files, generated files, workspace files,
+   readiness blockers, and no-op guarantees.
+2. MCP and CLI expose this manifest in dry-run and unavailable execution
+   payloads without creating package directories, writing files, mutating
+   workspace manifests, mutating lockfiles, running commands, emitting build
+   output, starting processes, or registering runtime dispatch.
+3. `packageCreationFileManifest.dryRunOnly` remains true, while
+   `filesWritten`, `fileMaterialization`, `workspaceMutation`,
+   `lockfileMutation`, `commandExecution`, `buildOutput`,
+   `materializationApproved`, `processSpawn`, `packageCreated`, `dispatch`,
+   `networkDispatch`, `runtimeRegistration`, and `localFileWrites` remain
+   false.
 
 Keep manual configuration behavior stable while moving command metadata and
 envelopes; transport-specific formatting should stay at the MCP/CLI edges.
