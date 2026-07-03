@@ -37,7 +37,8 @@ summary metadata without writing files. P25.34 defines package creation file
 manifest metadata without materializing files. P25.35 defines package
 materialization approval gate metadata without granting approval. P25.36
 defines package materialization execution dry-run metadata without executing
-writes.
+writes. P25.37 defines package materialization write contract metadata without
+performing writes.
 
 ## Existing Surfaces
 
@@ -181,7 +182,8 @@ metadata-only package build verification. P25.32 adds metadata-only package
 materialization checklist. P25.33 adds metadata-only package creation dry-run
 summary. P25.34 adds metadata-only package creation file manifest. P25.35 adds
 metadata-only package materialization approval gate. P25.36 adds metadata-only
-package materialization execution dry-run. MCP
+package materialization execution dry-run. P25.37 adds metadata-only package
+materialization write contract. MCP
 `render.thumbnail` and `penpot-cli render thumbnail --dry-run` can print the
 future request shape, configured/not configured service metadata,
 response/error contracts, `clientRequest.dispatch:false`,
@@ -249,6 +251,12 @@ plus `packageMaterializationExecutionDryRun.executeNow:false`,
 `packageMaterializationExecutionDryRun.fileMaterialization:false`,
 `packageMaterializationExecutionDryRun.workspaceMutation:false`, and
 `packageMaterializationExecutionDryRun.runtimeRegistration:false`,
+plus `packageMaterializationWriteContract.executeNow:false`,
+`packageMaterializationWriteContract.approved:false`,
+`packageMaterializationWriteContract.filesWritten:false`,
+`packageMaterializationWriteContract.fileMaterialization:false`,
+`packageMaterializationWriteContract.workspaceMutation:false`, and
+`packageMaterializationWriteContract.runtimeRegistration:false`,
 but execution still returns
 `renderer_service_unavailable` until explicit opt-in, config surfaces, renderer
 service, integration tests, health preflight, file cache probe, tagged-frame

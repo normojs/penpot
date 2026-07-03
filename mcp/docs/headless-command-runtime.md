@@ -1082,3 +1082,17 @@ P25.36 adds renderer-service package materialization execution dry-run:
   `materializationApproved`, `processSpawn`, `packageCreated`, `dispatch`,
   `networkDispatch`, `runtimeRegistration`, and `localFileWrites` all
   `false`.
+
+P25.37 adds renderer-service package materialization write contract:
+
+- Plans include `packageMaterializationWriteContract`, defining the exact
+  future package directory, package files, workspace files, integrity checks,
+  atomic write expectations, and rollback contract for approved
+  materialization.
+- The write contract remains planning-only with `executeNow:false`,
+  `approvalRequired:true`, `approved:false`, `dryRunOnly:true`,
+  `filesWritten`, `fileMaterialization`, `workspaceMutation`,
+  `lockfileMutation`, `commandExecution`, `buildOutput`,
+  `materializationApproved`, `processSpawn`, `packageCreated`, `dispatch`,
+  `networkDispatch`, `runtimeRegistration`, and `localFileWrites` all
+  `false`.

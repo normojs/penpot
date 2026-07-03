@@ -2481,6 +2481,22 @@ P25.36 render.thumbnail package materialization execution dry-run result:
   `networkDispatch`, `runtimeRegistration`, and `localFileWrites` remain
   `false`.
 
+P25.37 render.thumbnail package materialization write contract result:
+
+- Shared plans include `packageMaterializationWriteContract`, defining
+  metadata-only future package directory, package file, workspace file,
+  integrity, atomic write, and rollback expectations.
+- MCP and CLI expose the write contract in dry-run and unavailable execution
+  payloads without granting approval, creating package directories, writing
+  files, mutating workspace manifests, mutating lockfiles, running commands,
+  emitting build output, starting processes, or registering runtime dispatch.
+- `packageMaterializationWriteContract.executeNow` remains `false`, while
+  `approved`, `filesWritten`, `fileMaterialization`, `workspaceMutation`,
+  `lockfileMutation`, `commandExecution`, `buildOutput`,
+  `materializationApproved`, `processSpawn`, `packageCreated`, `dispatch`,
+  `networkDispatch`, `runtimeRegistration`, and `localFileWrites` remain
+  `false`.
+
 ### 8.5 Export and Render Tools
 
 May start file-bound and later move to headless:
@@ -2520,7 +2536,8 @@ P25.31 defines disabled package build verification. P25.32 defines disabled
 package materialization checklist. P25.33 defines disabled package creation
 dry-run summary. P25.34 defines disabled package creation file manifest.
 P25.35 defines disabled package materialization approval gate. P25.36 defines
-disabled package materialization execution dry-run.
+disabled package materialization execution dry-run. P25.37 defines disabled
+package materialization write contract.
 Runtime behavior remains unavailable
 until opt-in config surfaces, renderer-service implementation, workspace
 wiring, health preflight, cache probe, executable client, and tagged-frame

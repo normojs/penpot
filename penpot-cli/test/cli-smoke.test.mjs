@@ -2774,6 +2774,19 @@ test("render thumbnail dry-run returns renderer-service request plan", async () 
         assert.equal(body.data.packageMaterializationExecutionDryRun.fileMaterialization, false);
         assert.equal(body.data.packageMaterializationExecutionDryRun.filesWritten, false);
         assert.ok(body.data.packageMaterializationExecutionDryRun.dryRunPlan.steps.some((entry) => entry.id === "write-package-files" && entry.executed === false));
+        assert.equal(body.data.packageMaterializationWriteContract.contractVersion, "P25.37");
+        assert.equal(body.data.packageMaterializationWriteContract.dryRunOnly, true);
+        assert.equal(body.data.packageMaterializationWriteContract.executeNow, false);
+        assert.equal(body.data.packageMaterializationWriteContract.approved, false);
+        assert.equal(body.data.packageMaterializationWriteContract.dispatch, false);
+        assert.equal(body.data.packageMaterializationWriteContract.runtimeRegistration, false);
+        assert.equal(body.data.packageMaterializationWriteContract.localFileWrites, false);
+        assert.equal(body.data.packageMaterializationWriteContract.fileMaterialization, false);
+        assert.equal(body.data.packageMaterializationWriteContract.filesWritten, false);
+        assert.ok(body.data.packageMaterializationWriteContract.writeContract.packageFiles.some((entry) => entry.path === "renderer-service/package.json" && entry.writeNow === false));
+        assert.ok(body.data.packageMaterializationWriteContract.writeContract.workspaceFiles.some((entry) => entry.path === "pnpm-lock.yaml" && entry.writeNow === false));
+        assert.equal(body.data.packageMaterializationWriteContract.integrityPlan.writeNow, false);
+        assert.equal(body.data.packageMaterializationWriteContract.rollbackContract.writeNow, false);
         assert.equal(body.data.service.responseNormalization.successStatus, "ok");
         assert.equal(body.data.service.responseNormalization.localFileWrites, false);
         assert.equal(body.data.service.errorShape.code, "renderer_service_error");
@@ -2950,6 +2963,17 @@ test("render thumbnail execution reports renderer-service unavailable without ca
         assert.equal(body.error.data.packageMaterializationExecutionDryRun.localFileWrites, false);
         assert.equal(body.error.data.packageMaterializationExecutionDryRun.fileMaterialization, false);
         assert.equal(body.error.data.packageMaterializationExecutionDryRun.filesWritten, false);
+        assert.equal(body.error.data.packageMaterializationWriteContract.contractVersion, "P25.37");
+        assert.equal(body.error.data.packageMaterializationWriteContract.dryRunOnly, true);
+        assert.equal(body.error.data.packageMaterializationWriteContract.executeNow, false);
+        assert.equal(body.error.data.packageMaterializationWriteContract.approved, false);
+        assert.equal(body.error.data.packageMaterializationWriteContract.dispatch, false);
+        assert.equal(body.error.data.packageMaterializationWriteContract.runtimeRegistration, false);
+        assert.equal(body.error.data.packageMaterializationWriteContract.localFileWrites, false);
+        assert.equal(body.error.data.packageMaterializationWriteContract.fileMaterialization, false);
+        assert.equal(body.error.data.packageMaterializationWriteContract.filesWritten, false);
+        assert.ok(body.error.data.packageMaterializationWriteContract.writeContract.packageFiles.some((entry) => entry.path === "renderer-service/package.json" && entry.writeNow === false));
+        assert.ok(body.error.data.packageMaterializationWriteContract.writeContract.workspaceFiles.some((entry) => entry.path === "pnpm-lock.yaml" && entry.writeNow === false));
         assert.equal(body.error.data.clientRequest.dispatch, false);
         assert.equal(body.error.data.serviceRequest.operation, "thumbnail.render");
     } finally {

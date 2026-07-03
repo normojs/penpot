@@ -1065,6 +1065,12 @@ export function createRenderThumbnailRendererServicePlan(options = EMPTY_OBJECT)
         packageWorkspaceWiring,
         packageBuildVerification,
     });
+    const packageMaterializationWriteContract = createRenderThumbnailRendererServicePackageMaterializationWriteContract({
+        packageMaterializationExecutionDryRun,
+        packageMaterializationApprovalGate,
+        packageCreationFileManifest,
+        packageWorkspaceWiring,
+    });
 
     return {
         command: CommandDescriptors.RENDER_THUMBNAIL.id,
@@ -1133,6 +1139,7 @@ export function createRenderThumbnailRendererServicePlan(options = EMPTY_OBJECT)
             packageCreationFileManifest,
             packageMaterializationApprovalGate,
             packageMaterializationExecutionDryRun,
+            packageMaterializationWriteContract,
             clientRequest,
         },
         client,
@@ -1162,6 +1169,7 @@ export function createRenderThumbnailRendererServicePlan(options = EMPTY_OBJECT)
         packageCreationFileManifest,
         packageMaterializationApprovalGate,
         packageMaterializationExecutionDryRun,
+        packageMaterializationWriteContract,
         clientRequest,
         serviceRequest: {
             command: CommandDescriptors.RENDER_THUMBNAIL.id,
@@ -1251,6 +1259,7 @@ export function createRenderThumbnailRendererServicePlan(options = EMPTY_OBJECT)
             packageCreationFileManifestVersion: packageCreationFileManifest.manifestVersion,
             packageMaterializationApprovalGateVersion: packageMaterializationApprovalGate.gateVersion,
             packageMaterializationExecutionDryRunVersion: packageMaterializationExecutionDryRun.dryRunVersion,
+            packageMaterializationWriteContractVersion: packageMaterializationWriteContract.contractVersion,
         },
     };
 }
@@ -2605,6 +2614,183 @@ export function createRenderThumbnailRendererServicePackageMaterializationExecut
             "materialize files and workspace updates in a later implementation task",
             "run package verification after approved materialization",
             "keep render.thumbnail unavailable until approved package verification passes",
+        ],
+    };
+}
+
+export function createRenderThumbnailRendererServicePackageMaterializationWriteContract(options = EMPTY_OBJECT) {
+    const packageMaterializationExecutionDryRun = options.packageMaterializationExecutionDryRun ?? EMPTY_OBJECT;
+    const packageMaterializationApprovalGate = options.packageMaterializationApprovalGate ?? EMPTY_OBJECT;
+    const packageCreationFileManifest = options.packageCreationFileManifest ?? EMPTY_OBJECT;
+    const packageWorkspaceWiring = options.packageWorkspaceWiring ?? EMPTY_OBJECT;
+
+    return {
+        status: "planned-disabled",
+        contractVersion: "P25.37",
+        adapter: "renderer-service",
+        command: CommandDescriptors.RENDER_THUMBNAIL.id,
+        dryRunOnly: true,
+        approvalRequired: true,
+        approved: false,
+        executeNow: false,
+        dispatch: false,
+        networkDispatch: false,
+        runtimeRegistration: false,
+        localFileWrites: false,
+        hostStartup: false,
+        processSpawn: false,
+        packageCreated: false,
+        workspaceMutation: false,
+        scriptRunnable: false,
+        fileMaterialization: false,
+        lockfileMutation: false,
+        rootPackageJsonMutation: false,
+        pnpmWorkspaceMutation: false,
+        commandExecution: false,
+        buildOutput: false,
+        packageScriptsRunnable: false,
+        materializationApproved: false,
+        materializationApprovedRequired: true,
+        materializationApprovedNow: false,
+        filesWritten: false,
+        consumes: {
+            packageMaterializationExecutionDryRun: {
+                requiredStatus: "planned-disabled",
+                currentStatus: packageMaterializationExecutionDryRun.status ?? "planned-disabled",
+                dryRunVersion: packageMaterializationExecutionDryRun.dryRunVersion ?? "P25.36",
+                executeNow: false,
+                filesWritten: false,
+            },
+            packageMaterializationApprovalGate: {
+                requiredStatus: "planned-disabled",
+                currentStatus: packageMaterializationApprovalGate.status ?? "planned-disabled",
+                gateVersion: packageMaterializationApprovalGate.gateVersion ?? "P25.35",
+                approved: false,
+            },
+            packageCreationFileManifest: {
+                requiredStatus: "planned-disabled",
+                currentStatus: packageCreationFileManifest.status ?? "planned-disabled",
+                manifestVersion: packageCreationFileManifest.manifestVersion ?? "P25.34",
+                filesWritten: false,
+            },
+            packageWorkspaceWiring: {
+                requiredStatus: "planned-disabled",
+                currentStatus: packageWorkspaceWiring.status ?? "planned-disabled",
+                wiringVersion: packageWorkspaceWiring.wiringVersion ?? "P25.30",
+                workspaceMutation: false,
+            },
+        },
+        writeContract: {
+            packageDirectory: {
+                path: "renderer-service",
+                createMode: "mkdirp",
+                writeNow: false,
+                created: false,
+            },
+            packageFiles: [
+                {
+                    id: "package-json",
+                    path: "renderer-service/package.json",
+                    writeMode: "create",
+                    overwrite: false,
+                    writeNow: false,
+                    source: "packageCreationFileManifest.files.package-json",
+                },
+                {
+                    id: "tsconfig",
+                    path: "renderer-service/tsconfig.json",
+                    writeMode: "create",
+                    overwrite: false,
+                    writeNow: false,
+                    source: "packageCreationFileManifest.files.tsconfig",
+                },
+                {
+                    id: "entrypoint",
+                    path: "renderer-service/src/index.ts",
+                    writeMode: "create",
+                    overwrite: false,
+                    writeNow: false,
+                    source: "packageCreationFileManifest.files.entrypoint",
+                },
+                {
+                    id: "noop-host",
+                    path: "renderer-service/src/noop-host.ts",
+                    writeMode: "create",
+                    overwrite: false,
+                    writeNow: false,
+                    source: "packageCreationFileManifest.files.noop-host",
+                },
+                {
+                    id: "noop-host-test",
+                    path: "renderer-service/test/noop-host.test.mjs",
+                    writeMode: "create",
+                    overwrite: false,
+                    writeNow: false,
+                    source: "packageCreationFileManifest.files.noop-host-test",
+                },
+            ],
+            workspaceFiles: [
+                {
+                    id: "pnpm-workspace",
+                    path: "pnpm-workspace.yaml",
+                    writeMode: "patch",
+                    writeNow: false,
+                    source: "packageWorkspaceWiring.workspaceFiles.pnpm-workspace",
+                },
+                {
+                    id: "root-package-json",
+                    path: "package.json",
+                    writeMode: "patch",
+                    writeNow: false,
+                    source: "packageWorkspaceWiring.workspaceFiles.root-package-json",
+                },
+                {
+                    id: "pnpm-lock",
+                    path: "pnpm-lock.yaml",
+                    writeMode: "refresh",
+                    writeNow: false,
+                    source: "packageWorkspaceWiring.workspaceFiles.pnpm-lock",
+                },
+            ],
+            generatedFilesExcludedUntilBuild: [
+                "renderer-service/dist/index.js",
+                "renderer-service/dist/index.d.ts",
+                "renderer-service/dist/noop-host.js",
+                "renderer-service/dist/noop-host.d.ts",
+            ],
+        },
+        integrityPlan: {
+            hashBeforeWrite: true,
+            hashAfterWrite: true,
+            verifyManifestAfterWrite: true,
+            atomicWrites: true,
+            tempFileSuffix: ".tmp",
+            compareExpectedPaths: true,
+            writeNow: false,
+        },
+        rollbackContract: {
+            writeNow: false,
+            rollbackNow: false,
+            removeCreatedPackageDirectoryOnFailure: true,
+            restoreWorkspaceFilesFromHashSnapshot: true,
+            lockfileRefreshMustBeReversible: true,
+            failureLeavesRuntimeDispatchDisabled: true,
+        },
+        noOpGuarantees: [
+            "write contract does not create renderer-service directory",
+            "write contract does not write package files",
+            "write contract does not edit workspace manifests",
+            "write contract does not mutate lockfiles",
+            "write contract does not run verification commands",
+            "write contract does not generate build output",
+            "write contract does not register runtime dispatch",
+        ],
+        requiredBeforeRuntimeDispatch: [
+            "approve materialization explicitly in a later task",
+            "execute write contract only after approval gate is satisfied",
+            "verify hashes and manifest paths after approved writes",
+            "run package build, type-check, and tests after materialization",
+            "keep render.thumbnail unavailable until rollback and verification contracts pass",
         ],
     };
 }

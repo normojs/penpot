@@ -38,6 +38,7 @@ import {
     createRenderThumbnailRendererServicePackageCreationFileManifest,
     createRenderThumbnailRendererServicePackageMaterializationApprovalGate,
     createRenderThumbnailRendererServicePackageMaterializationExecutionDryRun,
+    createRenderThumbnailRendererServicePackageMaterializationWriteContract,
     createRenderThumbnailRendererServicePackageFileTemplates,
     createRenderThumbnailRendererServicePackageManifestScaffold,
     createRenderThumbnailRendererServicePackageMaterializationChecklist,
@@ -583,6 +584,15 @@ test("render.thumbnail renderer-service API fixtures define planning requests wi
     assert.equal(fixtures.serviceApi.packageMaterializationExecutionDryRun.localFileWrites, false);
     assert.equal(fixtures.serviceApi.packageMaterializationExecutionDryRun.fileMaterialization, false);
     assert.equal(fixtures.serviceApi.packageMaterializationExecutionDryRun.filesWritten, false);
+    assert.equal(fixtures.serviceApi.packageMaterializationWriteContract.contractVersion, "P25.37");
+    assert.equal(fixtures.serviceApi.packageMaterializationWriteContract.dryRunOnly, true);
+    assert.equal(fixtures.serviceApi.packageMaterializationWriteContract.executeNow, false);
+    assert.equal(fixtures.serviceApi.packageMaterializationWriteContract.approved, false);
+    assert.equal(fixtures.serviceApi.packageMaterializationWriteContract.dispatch, false);
+    assert.equal(fixtures.serviceApi.packageMaterializationWriteContract.runtimeRegistration, false);
+    assert.equal(fixtures.serviceApi.packageMaterializationWriteContract.localFileWrites, false);
+    assert.equal(fixtures.serviceApi.packageMaterializationWriteContract.fileMaterialization, false);
+    assert.equal(fixtures.serviceApi.packageMaterializationWriteContract.filesWritten, false);
     assert.deepEqual(fixtures.runtimeRegistration.commandDescriptorAdapters, ["renderer-service"]);
     assert.deepEqual(CommandDescriptors.RENDER_THUMBNAIL.adapters, ["renderer-service"]);
     assert.equal(fixtures.runtimeRegistration.mcpToolRegistered, true);
@@ -1023,6 +1033,34 @@ test("render.thumbnail renderer-service plan exposes dry-run client request whil
     assert.equal(plan.packageMaterializationExecutionDryRun.executionOutputs.packageFilesWritten, false);
     assert.equal(plan.packageMaterializationExecutionDryRun.executionOutputs.commandsRun, false);
     assert.deepEqual(plan.service.packageMaterializationExecutionDryRun, plan.packageMaterializationExecutionDryRun);
+    assert.equal(plan.packageMaterializationWriteContract.contractVersion, "P25.37");
+    assert.equal(plan.packageMaterializationWriteContract.dryRunOnly, true);
+    assert.equal(plan.packageMaterializationWriteContract.executeNow, false);
+    assert.equal(plan.packageMaterializationWriteContract.approvalRequired, true);
+    assert.equal(plan.packageMaterializationWriteContract.approved, false);
+    assert.equal(plan.packageMaterializationWriteContract.dispatch, false);
+    assert.equal(plan.packageMaterializationWriteContract.networkDispatch, false);
+    assert.equal(plan.packageMaterializationWriteContract.runtimeRegistration, false);
+    assert.equal(plan.packageMaterializationWriteContract.localFileWrites, false);
+    assert.equal(plan.packageMaterializationWriteContract.packageCreated, false);
+    assert.equal(plan.packageMaterializationWriteContract.workspaceMutation, false);
+    assert.equal(plan.packageMaterializationWriteContract.fileMaterialization, false);
+    assert.equal(plan.packageMaterializationWriteContract.lockfileMutation, false);
+    assert.equal(plan.packageMaterializationWriteContract.commandExecution, false);
+    assert.equal(plan.packageMaterializationWriteContract.buildOutput, false);
+    assert.equal(plan.packageMaterializationWriteContract.materializationApproved, false);
+    assert.equal(plan.packageMaterializationWriteContract.filesWritten, false);
+    assert.equal(plan.packageMaterializationWriteContract.consumes.packageMaterializationExecutionDryRun.dryRunVersion, "P25.36");
+    assert.equal(plan.packageMaterializationWriteContract.consumes.packageMaterializationApprovalGate.gateVersion, "P25.35");
+    assert.equal(plan.packageMaterializationWriteContract.consumes.packageCreationFileManifest.manifestVersion, "P25.34");
+    assert.equal(plan.packageMaterializationWriteContract.writeContract.packageDirectory.writeNow, false);
+    assert.ok(plan.packageMaterializationWriteContract.writeContract.packageFiles.some((entry) => entry.path === "renderer-service/package.json" && entry.writeNow === false));
+    assert.ok(plan.packageMaterializationWriteContract.writeContract.workspaceFiles.some((entry) => entry.path === "pnpm-lock.yaml" && entry.writeMode === "refresh" && entry.writeNow === false));
+    assert.equal(plan.packageMaterializationWriteContract.integrityPlan.atomicWrites, true);
+    assert.equal(plan.packageMaterializationWriteContract.integrityPlan.writeNow, false);
+    assert.equal(plan.packageMaterializationWriteContract.rollbackContract.writeNow, false);
+    assert.equal(plan.packageMaterializationWriteContract.rollbackContract.failureLeavesRuntimeDispatchDisabled, true);
+    assert.deepEqual(plan.service.packageMaterializationWriteContract, plan.packageMaterializationWriteContract);
     assert.equal(plan.clientRequest.status, "scaffolded");
     assert.equal(plan.clientRequest.dispatch, false);
     assert.equal(plan.clientRequest.method, "POST");
@@ -1075,6 +1113,7 @@ test("render.thumbnail renderer-service plan exposes dry-run client request whil
     assert.equal(plan.diagnostics.packageCreationFileManifestVersion, "P25.34");
     assert.equal(plan.diagnostics.packageMaterializationApprovalGateVersion, "P25.35");
     assert.equal(plan.diagnostics.packageMaterializationExecutionDryRunVersion, "P25.36");
+    assert.equal(plan.diagnostics.packageMaterializationWriteContractVersion, "P25.37");
 });
 
 test("render.thumbnail renderer-service plan reports not-configured availability without endpoint", () => {
@@ -2167,6 +2206,79 @@ test("render.thumbnail renderer-service package materialization execution dry-ru
     assert.equal(dryRun.executionOutputs.commandsRun, false);
     assert.ok(dryRun.noOpGuarantees.includes("execution dry-run does not write package files"));
     assert.ok(dryRun.requiredBeforeRuntimeDispatch.includes("obtain explicit approval before running materialization"));
+});
+
+test("render.thumbnail renderer-service package materialization write contract stays metadata-only", () => {
+    const contract = createRenderThumbnailRendererServicePackageMaterializationWriteContract({
+        packageMaterializationExecutionDryRun: {
+            status: "planned-disabled",
+            dryRunVersion: "P25.36",
+            executeNow: false,
+            filesWritten: false,
+        },
+        packageMaterializationApprovalGate: {
+            status: "planned-disabled",
+            gateVersion: "P25.35",
+            approved: false,
+        },
+        packageCreationFileManifest: {
+            status: "planned-disabled",
+            manifestVersion: "P25.34",
+            filesWritten: false,
+        },
+        packageWorkspaceWiring: {
+            status: "planned-disabled",
+            wiringVersion: "P25.30",
+            workspaceMutation: false,
+        },
+    });
+
+    assert.equal(contract.status, "planned-disabled");
+    assert.equal(contract.contractVersion, "P25.37");
+    assert.equal(contract.dryRunOnly, true);
+    assert.equal(contract.approvalRequired, true);
+    assert.equal(contract.approved, false);
+    assert.equal(contract.executeNow, false);
+    assert.equal(contract.adapter, "renderer-service");
+    assert.equal(contract.command, "render.thumbnail");
+    assert.equal(contract.dispatch, false);
+    assert.equal(contract.networkDispatch, false);
+    assert.equal(contract.runtimeRegistration, false);
+    assert.equal(contract.localFileWrites, false);
+    assert.equal(contract.hostStartup, false);
+    assert.equal(contract.processSpawn, false);
+    assert.equal(contract.packageCreated, false);
+    assert.equal(contract.workspaceMutation, false);
+    assert.equal(contract.scriptRunnable, false);
+    assert.equal(contract.fileMaterialization, false);
+    assert.equal(contract.lockfileMutation, false);
+    assert.equal(contract.rootPackageJsonMutation, false);
+    assert.equal(contract.pnpmWorkspaceMutation, false);
+    assert.equal(contract.commandExecution, false);
+    assert.equal(contract.buildOutput, false);
+    assert.equal(contract.packageScriptsRunnable, false);
+    assert.equal(contract.materializationApproved, false);
+    assert.equal(contract.materializationApprovedRequired, true);
+    assert.equal(contract.materializationApprovedNow, false);
+    assert.equal(contract.filesWritten, false);
+    assert.equal(contract.consumes.packageMaterializationExecutionDryRun.dryRunVersion, "P25.36");
+    assert.equal(contract.consumes.packageMaterializationApprovalGate.gateVersion, "P25.35");
+    assert.equal(contract.consumes.packageCreationFileManifest.manifestVersion, "P25.34");
+    assert.equal(contract.consumes.packageWorkspaceWiring.wiringVersion, "P25.30");
+    assert.equal(contract.writeContract.packageDirectory.path, "renderer-service");
+    assert.equal(contract.writeContract.packageDirectory.writeNow, false);
+    assert.ok(contract.writeContract.packageFiles.some((entry) => entry.path === "renderer-service/package.json" && entry.writeMode === "create" && entry.writeNow === false));
+    assert.ok(contract.writeContract.workspaceFiles.some((entry) => entry.path === "pnpm-lock.yaml" && entry.writeMode === "refresh" && entry.writeNow === false));
+    assert.ok(contract.writeContract.generatedFilesExcludedUntilBuild.includes("renderer-service/dist/index.js"));
+    assert.equal(contract.integrityPlan.hashBeforeWrite, true);
+    assert.equal(contract.integrityPlan.hashAfterWrite, true);
+    assert.equal(contract.integrityPlan.atomicWrites, true);
+    assert.equal(contract.integrityPlan.writeNow, false);
+    assert.equal(contract.rollbackContract.writeNow, false);
+    assert.equal(contract.rollbackContract.rollbackNow, false);
+    assert.equal(contract.rollbackContract.failureLeavesRuntimeDispatchDisabled, true);
+    assert.ok(contract.noOpGuarantees.includes("write contract does not write package files"));
+    assert.ok(contract.requiredBeforeRuntimeDispatch.includes("execute write contract only after approval gate is satisfied"));
 });
 
 test("render.thumbnail renderer-service client request scaffold adds MCP audit headers without dispatch", () => {

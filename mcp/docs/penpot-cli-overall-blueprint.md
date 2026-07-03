@@ -337,6 +337,11 @@ Current state:
   mutation, and verification command steps without granting approval,
   creating directories, writing files, mutating workspace state, running
   commands, or registering runtime dispatch.
+- Done: renderer-service package materialization write contract defines
+  metadata-only future package directory, package file, workspace file,
+  integrity, atomic write, and rollback expectations without granting
+  approval, creating directories, writing files, mutating workspace state,
+  running commands, or registering runtime dispatch.
 - Done: focused command-runtime tests cover descriptor groups, lookup,
   adapter-selection priority/error cases, and token-safe envelopes.
 - Status: complete. Later command coverage gaps were tracked by the P15.1
@@ -1030,6 +1035,22 @@ P25.36 is complete:
    files, mutating workspace manifests, mutating lockfiles, running commands,
    emitting build output, starting processes, or registering runtime dispatch.
 3. `packageMaterializationExecutionDryRun.executeNow` remains false, while
+   `approved`, `filesWritten`, `fileMaterialization`, `workspaceMutation`,
+   `lockfileMutation`, `commandExecution`, `buildOutput`,
+   `materializationApproved`, `processSpawn`, `packageCreated`, `dispatch`,
+   `networkDispatch`, `runtimeRegistration`, and `localFileWrites` remain
+   false.
+
+P25.37 is complete:
+
+1. Shared plans include `packageMaterializationWriteContract` metadata for the
+   future package directory, package files, workspace files, integrity checks,
+   atomic writes, and rollback contract.
+2. MCP and CLI expose this write contract in dry-run and unavailable execution
+   payloads without granting approval, creating package directories, writing
+   files, mutating workspace manifests, mutating lockfiles, running commands,
+   emitting build output, starting processes, or registering runtime dispatch.
+3. `packageMaterializationWriteContract.executeNow` remains false, while
    `approved`, `filesWritten`, `fileMaterialization`, `workspaceMutation`,
    `lockfileMutation`, `commandExecution`, `buildOutput`,
    `materializationApproved`, `processSpawn`, `packageCreated`, `dispatch`,

@@ -1,5 +1,5 @@
 {
-  "version": "P25.36",
+  "version": "P25.37",
   "command": "render.thumbnail",
   "status": "renderer-service API fixtures with MCP/CLI dry-run/client boundaries, metadata-only availability probes, response normalization contracts, disabled client request scaffold, explicit execution gate, health preflight plan, executable client harness plan, dispatch adapter boundary, opt-in configuration surfaces, unavailable error taxonomy, integration fixture harness, dispatch registration preflight, disabled executable adapter registration scaffold, disabled adapter registry manifest, final disabled enablement checklist, implementation slice audit, health/no-op contract fixtures, no-op service host scaffold, host lifecycle test fixtures, package manifest scaffold, package creation guardrails, package file templates, and package workspace wiring; runtime execution blocked",
   "adapter": "renderer-service",
@@ -2295,6 +2295,175 @@
         "run package verification after approved materialization",
         "keep render.thumbnail unavailable until approved package verification passes"
       ]
+    },
+    "packageMaterializationWriteContract": {
+      "status": "planned-disabled",
+      "contractVersion": "P25.37",
+      "adapter": "renderer-service",
+      "command": "render.thumbnail",
+      "dryRunOnly": true,
+      "approvalRequired": true,
+      "approved": false,
+      "executeNow": false,
+      "dispatch": false,
+      "networkDispatch": false,
+      "runtimeRegistration": false,
+      "localFileWrites": false,
+      "hostStartup": false,
+      "processSpawn": false,
+      "packageCreated": false,
+      "workspaceMutation": false,
+      "scriptRunnable": false,
+      "fileMaterialization": false,
+      "lockfileMutation": false,
+      "rootPackageJsonMutation": false,
+      "pnpmWorkspaceMutation": false,
+      "commandExecution": false,
+      "buildOutput": false,
+      "packageScriptsRunnable": false,
+      "materializationApproved": false,
+      "materializationApprovedRequired": true,
+      "materializationApprovedNow": false,
+      "filesWritten": false,
+      "consumes": {
+        "packageMaterializationExecutionDryRun": {
+          "requiredStatus": "planned-disabled",
+          "currentStatus": "planned-disabled",
+          "dryRunVersion": "P25.36",
+          "executeNow": false,
+          "filesWritten": false
+        },
+        "packageMaterializationApprovalGate": {
+          "requiredStatus": "planned-disabled",
+          "currentStatus": "planned-disabled",
+          "gateVersion": "P25.35",
+          "approved": false
+        },
+        "packageCreationFileManifest": {
+          "requiredStatus": "planned-disabled",
+          "currentStatus": "planned-disabled",
+          "manifestVersion": "P25.34",
+          "filesWritten": false
+        },
+        "packageWorkspaceWiring": {
+          "requiredStatus": "planned-disabled",
+          "currentStatus": "planned-disabled",
+          "wiringVersion": "P25.30",
+          "workspaceMutation": false
+        }
+      },
+      "writeContract": {
+        "packageDirectory": {
+          "path": "renderer-service",
+          "createMode": "mkdirp",
+          "writeNow": false,
+          "created": false
+        },
+        "packageFiles": [
+          {
+            "id": "package-json",
+            "path": "renderer-service/package.json",
+            "writeMode": "create",
+            "overwrite": false,
+            "writeNow": false,
+            "source": "packageCreationFileManifest.files.package-json"
+          },
+          {
+            "id": "tsconfig",
+            "path": "renderer-service/tsconfig.json",
+            "writeMode": "create",
+            "overwrite": false,
+            "writeNow": false,
+            "source": "packageCreationFileManifest.files.tsconfig"
+          },
+          {
+            "id": "entrypoint",
+            "path": "renderer-service/src/index.ts",
+            "writeMode": "create",
+            "overwrite": false,
+            "writeNow": false,
+            "source": "packageCreationFileManifest.files.entrypoint"
+          },
+          {
+            "id": "noop-host",
+            "path": "renderer-service/src/noop-host.ts",
+            "writeMode": "create",
+            "overwrite": false,
+            "writeNow": false,
+            "source": "packageCreationFileManifest.files.noop-host"
+          },
+          {
+            "id": "noop-host-test",
+            "path": "renderer-service/test/noop-host.test.mjs",
+            "writeMode": "create",
+            "overwrite": false,
+            "writeNow": false,
+            "source": "packageCreationFileManifest.files.noop-host-test"
+          }
+        ],
+        "workspaceFiles": [
+          {
+            "id": "pnpm-workspace",
+            "path": "pnpm-workspace.yaml",
+            "writeMode": "patch",
+            "writeNow": false,
+            "source": "packageWorkspaceWiring.workspaceFiles.pnpm-workspace"
+          },
+          {
+            "id": "root-package-json",
+            "path": "package.json",
+            "writeMode": "patch",
+            "writeNow": false,
+            "source": "packageWorkspaceWiring.workspaceFiles.root-package-json"
+          },
+          {
+            "id": "pnpm-lock",
+            "path": "pnpm-lock.yaml",
+            "writeMode": "refresh",
+            "writeNow": false,
+            "source": "packageWorkspaceWiring.workspaceFiles.pnpm-lock"
+          }
+        ],
+        "generatedFilesExcludedUntilBuild": [
+          "renderer-service/dist/index.js",
+          "renderer-service/dist/index.d.ts",
+          "renderer-service/dist/noop-host.js",
+          "renderer-service/dist/noop-host.d.ts"
+        ]
+      },
+      "integrityPlan": {
+        "hashBeforeWrite": true,
+        "hashAfterWrite": true,
+        "verifyManifestAfterWrite": true,
+        "atomicWrites": true,
+        "tempFileSuffix": ".tmp",
+        "compareExpectedPaths": true,
+        "writeNow": false
+      },
+      "rollbackContract": {
+        "writeNow": false,
+        "rollbackNow": false,
+        "removeCreatedPackageDirectoryOnFailure": true,
+        "restoreWorkspaceFilesFromHashSnapshot": true,
+        "lockfileRefreshMustBeReversible": true,
+        "failureLeavesRuntimeDispatchDisabled": true
+      },
+      "noOpGuarantees": [
+        "write contract does not create renderer-service directory",
+        "write contract does not write package files",
+        "write contract does not edit workspace manifests",
+        "write contract does not mutate lockfiles",
+        "write contract does not run verification commands",
+        "write contract does not generate build output",
+        "write contract does not register runtime dispatch"
+      ],
+      "requiredBeforeRuntimeDispatch": [
+        "approve materialization explicitly in a later task",
+        "execute write contract only after approval gate is satisfied",
+        "verify hashes and manifest paths after approved writes",
+        "run package build, type-check, and tests after materialization",
+        "keep render.thumbnail unavailable until rollback and verification contracts pass"
+      ]
     }
   },
   "registrationGates": {
@@ -2642,8 +2811,8 @@
     "missing token fails before contacting renderer-service"
   ],
   "nextTask": {
-    "id": "P25.37",
-    "title": "Plan renderer-service package materialization write contract",
+    "id": "P25.38",
+    "title": "Plan renderer-service package materialization rollback contract",
     "status": "pending"
   }
 }
