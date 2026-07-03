@@ -33,6 +33,7 @@ import {
     createRenderThumbnailRendererServiceIntegrationFixtureHarness,
     createRenderThumbnailRendererServiceNoopServiceHostScaffold,
     createRenderThumbnailRendererServicePackageCreationGuardrails,
+    createRenderThumbnailRendererServicePackageFileTemplates,
     createRenderThumbnailRendererServicePackageManifestScaffold,
     createRenderThumbnailRendererServiceOptInConfiguration,
     createRenderThumbnailRendererServiceUnavailableErrorTaxonomy,
@@ -514,6 +515,14 @@ test("render.thumbnail renderer-service API fixtures define planning requests wi
     assert.equal(fixtures.serviceApi.packageCreationGuardrails.packageCreated, false);
     assert.equal(fixtures.serviceApi.packageCreationGuardrails.workspaceMutation, false);
     assert.equal(fixtures.serviceApi.packageCreationGuardrails.scriptRunnable, false);
+    assert.equal(fixtures.serviceApi.packageFileTemplates.templateVersion, "P25.29");
+    assert.equal(fixtures.serviceApi.packageFileTemplates.dispatch, false);
+    assert.equal(fixtures.serviceApi.packageFileTemplates.networkDispatch, false);
+    assert.equal(fixtures.serviceApi.packageFileTemplates.runtimeRegistration, false);
+    assert.equal(fixtures.serviceApi.packageFileTemplates.localFileWrites, false);
+    assert.equal(fixtures.serviceApi.packageFileTemplates.packageCreated, false);
+    assert.equal(fixtures.serviceApi.packageFileTemplates.workspaceMutation, false);
+    assert.equal(fixtures.serviceApi.packageFileTemplates.fileMaterialization, false);
     assert.deepEqual(fixtures.runtimeRegistration.commandDescriptorAdapters, ["renderer-service"]);
     assert.deepEqual(CommandDescriptors.RENDER_THUMBNAIL.adapters, ["renderer-service"]);
     assert.equal(fixtures.runtimeRegistration.mcpToolRegistered, true);
@@ -779,6 +788,25 @@ test("render.thumbnail renderer-service plan exposes dry-run client request whil
     assert.ok(plan.packageCreationGuardrails.blockedMutations.workspaceFiles.includes("pnpm-lock.yaml"));
     assert.ok(plan.packageCreationGuardrails.deniedInThisStep.includes("create renderer-service directory"));
     assert.deepEqual(plan.service.packageCreationGuardrails, plan.packageCreationGuardrails);
+    assert.equal(plan.packageFileTemplates.templateVersion, "P25.29");
+    assert.equal(plan.packageFileTemplates.dispatch, false);
+    assert.equal(plan.packageFileTemplates.networkDispatch, false);
+    assert.equal(plan.packageFileTemplates.runtimeRegistration, false);
+    assert.equal(plan.packageFileTemplates.localFileWrites, false);
+    assert.equal(plan.packageFileTemplates.hostStartup, false);
+    assert.equal(plan.packageFileTemplates.processSpawn, false);
+    assert.equal(plan.packageFileTemplates.packageCreated, false);
+    assert.equal(plan.packageFileTemplates.workspaceMutation, false);
+    assert.equal(plan.packageFileTemplates.scriptRunnable, false);
+    assert.equal(plan.packageFileTemplates.fileMaterialization, false);
+    assert.equal(plan.packageFileTemplates.consumes.packageCreationGuardrails.guardrailVersion, "P25.28");
+    assert.equal(plan.packageFileTemplates.packageJson.path, "renderer-service/package.json");
+    assert.equal(plan.packageFileTemplates.packageJson.materialized, false);
+    assert.equal(plan.packageFileTemplates.packageJson.package.name, "@penpot/renderer-service");
+    assert.equal(plan.packageFileTemplates.tsconfig.writesFile, false);
+    assert.ok(plan.packageFileTemplates.sourceFiles.some((entry) => entry.path === "renderer-service/src/noop-host.ts" && entry.startsProcess === false));
+    assert.ok(plan.packageFileTemplates.testFiles.some((entry) => entry.path === "renderer-service/test/noop-host.test.mjs" && entry.processSpawn === false));
+    assert.deepEqual(plan.service.packageFileTemplates, plan.packageFileTemplates);
     assert.equal(plan.clientRequest.status, "scaffolded");
     assert.equal(plan.clientRequest.dispatch, false);
     assert.equal(plan.clientRequest.method, "POST");
@@ -823,6 +851,7 @@ test("render.thumbnail renderer-service plan exposes dry-run client request whil
     assert.equal(plan.diagnostics.hostLifecycleTestFixturesVersion, "P25.26");
     assert.equal(plan.diagnostics.packageManifestScaffoldVersion, "P25.27");
     assert.equal(plan.diagnostics.packageCreationGuardrailsVersion, "P25.28");
+    assert.equal(plan.diagnostics.packageFileTemplatesVersion, "P25.29");
 });
 
 test("render.thumbnail renderer-service plan reports not-configured availability without endpoint", () => {
@@ -1451,6 +1480,57 @@ test("render.thumbnail renderer-service package creation guardrails stay metadat
     assert.ok(guardrails.allowedInThisStep.includes("metadata-only guardrail planning"));
     assert.ok(guardrails.deniedInThisStep.includes("mutate lockfiles"));
     assert.ok(guardrails.requiredBeforeRuntimeDispatch.includes("create renderer-service package files in a later explicit implementation task"));
+});
+
+test("render.thumbnail renderer-service package file templates stay metadata-only", () => {
+    const templates = createRenderThumbnailRendererServicePackageFileTemplates({
+        packageManifestScaffold: {
+            status: "planned-disabled",
+            manifestVersion: "P25.27",
+            packageCreated: false,
+        },
+        packageCreationGuardrails: {
+            status: "planned-disabled",
+            guardrailVersion: "P25.28",
+            creationReadiness: {
+                canCreatePackage: false,
+            },
+            workspaceMutation: false,
+        },
+    });
+
+    assert.equal(templates.status, "planned-disabled");
+    assert.equal(templates.templateVersion, "P25.29");
+    assert.equal(templates.adapter, "renderer-service");
+    assert.equal(templates.command, "render.thumbnail");
+    assert.equal(templates.dispatch, false);
+    assert.equal(templates.networkDispatch, false);
+    assert.equal(templates.runtimeRegistration, false);
+    assert.equal(templates.localFileWrites, false);
+    assert.equal(templates.hostStartup, false);
+    assert.equal(templates.processSpawn, false);
+    assert.equal(templates.packageCreated, false);
+    assert.equal(templates.workspaceMutation, false);
+    assert.equal(templates.scriptRunnable, false);
+    assert.equal(templates.fileMaterialization, false);
+    assert.equal(templates.consumes.packageManifestScaffold.manifestVersion, "P25.27");
+    assert.equal(templates.consumes.packageManifestScaffold.packageCreated, false);
+    assert.equal(templates.consumes.packageCreationGuardrails.guardrailVersion, "P25.28");
+    assert.equal(templates.consumes.packageCreationGuardrails.canCreatePackage, false);
+    assert.equal(templates.packageJson.path, "renderer-service/package.json");
+    assert.equal(templates.packageJson.materialized, false);
+    assert.equal(templates.packageJson.writesFile, false);
+    assert.equal(templates.packageJson.package.name, "@penpot/renderer-service");
+    assert.equal(templates.packageJson.package.scripts["start:noop"], "node dist/noop-host.js");
+    assert.equal(templates.tsconfig.path, "renderer-service/tsconfig.json");
+    assert.equal(templates.tsconfig.materialized, false);
+    assert.equal(templates.tsconfig.compilerOptions.strict, true);
+    assert.ok(templates.sourceFiles.some((entry) => entry.path === "renderer-service/src/index.ts" && entry.runtimeRegistration === false));
+    assert.ok(templates.sourceFiles.some((entry) => entry.path === "renderer-service/src/noop-host.ts" && entry.rendersPng === false));
+    assert.ok(templates.testFiles.some((entry) => entry.path === "renderer-service/test/noop-host.test.mjs" && entry.processSpawn === false));
+    assert.ok(templates.templateMatrix.every((entry) => entry.materialized === false && entry.writesFile === false));
+    assert.ok(templates.noOpGuarantees.includes("do not create renderer-service template files"));
+    assert.ok(templates.requiredBeforeRuntimeDispatch.includes("materialize package file templates in a dedicated implementation task"));
 });
 
 test("render.thumbnail renderer-service client request scaffold adds MCP audit headers without dispatch", () => {

@@ -2708,6 +2708,14 @@ test("render thumbnail dry-run returns renderer-service request plan", async () 
         assert.equal(body.data.packageCreationGuardrails.packageCreated, false);
         assert.equal(body.data.packageCreationGuardrails.workspaceMutation, false);
         assert.equal(body.data.packageCreationGuardrails.scriptRunnable, false);
+        assert.equal(body.data.packageFileTemplates.templateVersion, "P25.29");
+        assert.equal(body.data.packageFileTemplates.dispatch, false);
+        assert.equal(body.data.packageFileTemplates.networkDispatch, false);
+        assert.equal(body.data.packageFileTemplates.runtimeRegistration, false);
+        assert.equal(body.data.packageFileTemplates.localFileWrites, false);
+        assert.equal(body.data.packageFileTemplates.packageCreated, false);
+        assert.equal(body.data.packageFileTemplates.workspaceMutation, false);
+        assert.equal(body.data.packageFileTemplates.fileMaterialization, false);
         assert.equal(body.data.service.responseNormalization.successStatus, "ok");
         assert.equal(body.data.service.responseNormalization.localFileWrites, false);
         assert.equal(body.data.service.errorShape.code, "renderer_service_error");
@@ -2823,6 +2831,14 @@ test("render thumbnail execution reports renderer-service unavailable without ca
         assert.equal(body.error.data.packageCreationGuardrails.packageCreated, false);
         assert.equal(body.error.data.packageCreationGuardrails.workspaceMutation, false);
         assert.equal(body.error.data.packageCreationGuardrails.scriptRunnable, false);
+        assert.equal(body.error.data.packageFileTemplates.templateVersion, "P25.29");
+        assert.equal(body.error.data.packageFileTemplates.dispatch, false);
+        assert.equal(body.error.data.packageFileTemplates.networkDispatch, false);
+        assert.equal(body.error.data.packageFileTemplates.runtimeRegistration, false);
+        assert.equal(body.error.data.packageFileTemplates.localFileWrites, false);
+        assert.equal(body.error.data.packageFileTemplates.packageCreated, false);
+        assert.equal(body.error.data.packageFileTemplates.workspaceMutation, false);
+        assert.equal(body.error.data.packageFileTemplates.fileMaterialization, false);
         assert.equal(body.error.data.clientRequest.dispatch, false);
         assert.equal(body.error.data.serviceRequest.operation, "thumbnail.render");
     } finally {

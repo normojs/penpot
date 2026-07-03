@@ -980,3 +980,13 @@ P25.28 adds renderer-service package creation guardrails:
   `workspaceMutation`, `scriptRunnable`, `hostStartup`, `processSpawn`,
   `dispatch`, `networkDispatch`, `runtimeRegistration`, and `localFileWrites`
   all `false`.
+
+P25.29 adds renderer-service package file templates:
+
+- Plans include `packageFileTemplates`, defining metadata-only planned
+  `package.json`, `tsconfig.json`, source entrypoint, no-op host, and no-op
+  host test shapes.
+- The templates remain planning-only with `fileMaterialization`,
+  `packageCreated`, `workspaceMutation`, `scriptRunnable`, `hostStartup`,
+  `processSpawn`, `dispatch`, `networkDispatch`, `runtimeRegistration`, and
+  `localFileWrites` all `false`.

@@ -303,6 +303,10 @@ Current state:
   blocked package/workspace/runtime mutations, allowed planning work, denied
   actions, and runtime prerequisites without creating package files or
   mutating workspace state.
+- Done: renderer-service package file templates define metadata-only planned
+  `package.json`, `tsconfig.json`, source, no-op host, and test shapes without
+  materializing files, emitting build output, creating a package, or mutating
+  workspace state.
 - Done: focused command-runtime tests cover descriptor groups, lookup,
   adapter-selection priority/error cases, and token-safe envelopes.
 - Status: complete. Later command coverage gaps were tracked by the P15.1
@@ -880,6 +884,20 @@ P25.28 is complete:
    `scriptRunnable`, `hostStartup`, `processSpawn`, `dispatch`,
    `networkDispatch`, `runtimeRegistration`, and `localFileWrites` remain
    false.
+
+P25.29 is complete:
+
+1. Shared plans include `packageFileTemplates` metadata for planned
+   `package.json`, `tsconfig.json`, source entrypoint, no-op host, and no-op
+   host test shapes.
+2. MCP and CLI expose these templates in dry-run and unavailable execution
+   payloads without materializing files, creating the package directory,
+   emitting build output, mutating workspace manifests, or making scripts
+   runnable.
+3. `packageFileTemplates.fileMaterialization`, `packageCreated`,
+   `workspaceMutation`, `scriptRunnable`, `hostStartup`, `processSpawn`,
+   `dispatch`, `networkDispatch`, `runtimeRegistration`, and
+   `localFileWrites` remain false.
 
 Keep manual configuration behavior stable while moving command metadata and
 envelopes; transport-specific formatting should stay at the MCP/CLI edges.

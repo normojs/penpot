@@ -450,6 +450,7 @@ export interface RenderThumbnailRendererServicePlan {
         hostLifecycleTestFixtures: RenderThumbnailRendererServiceHostLifecycleTestFixtures;
         packageManifestScaffold: RenderThumbnailRendererServicePackageManifestScaffold;
         packageCreationGuardrails: RenderThumbnailRendererServicePackageCreationGuardrails;
+        packageFileTemplates: RenderThumbnailRendererServicePackageFileTemplates;
         clientRequest: RenderThumbnailRendererServiceClientRequest;
     };
     client: RenderThumbnailRendererServiceClientConfig;
@@ -471,6 +472,7 @@ export interface RenderThumbnailRendererServicePlan {
     hostLifecycleTestFixtures: RenderThumbnailRendererServiceHostLifecycleTestFixtures;
     packageManifestScaffold: RenderThumbnailRendererServicePackageManifestScaffold;
     packageCreationGuardrails: RenderThumbnailRendererServicePackageCreationGuardrails;
+    packageFileTemplates: RenderThumbnailRendererServicePackageFileTemplates;
     clientRequest: RenderThumbnailRendererServiceClientRequest;
     serviceRequest: {
         command: "render.thumbnail";
@@ -552,6 +554,7 @@ export interface RenderThumbnailRendererServicePlan {
         hostLifecycleTestFixturesVersion: "P25.26";
         packageManifestScaffoldVersion: "P25.27";
         packageCreationGuardrailsVersion: "P25.28";
+        packageFileTemplatesVersion: "P25.29";
     };
 }
 
@@ -1496,6 +1499,92 @@ export interface RenderThumbnailRendererServicePackageCreationGuardrails {
     requiredBeforeRuntimeDispatch: string[];
 }
 
+export interface RenderThumbnailRendererServicePackageFileTemplates {
+    status: "planned-disabled";
+    templateVersion: "P25.29";
+    adapter: "renderer-service";
+    command: "render.thumbnail";
+    dispatch: false;
+    networkDispatch: false;
+    runtimeRegistration: false;
+    localFileWrites: false;
+    hostStartup: false;
+    processSpawn: false;
+    packageCreated: false;
+    workspaceMutation: false;
+    scriptRunnable: false;
+    fileMaterialization: false;
+    consumes: {
+        packageManifestScaffold: {
+            requiredStatus: "planned-disabled";
+            currentStatus: string;
+            manifestVersion: string;
+            packageCreated: false;
+        };
+        packageCreationGuardrails: {
+            requiredStatus: "planned-disabled";
+            currentStatus: string;
+            guardrailVersion: string;
+            canCreatePackage: false;
+            workspaceMutation: false;
+        };
+    };
+    packageJson: {
+        path: "renderer-service/package.json";
+        materialized: false;
+        writesFile: false;
+        package: {
+            name: "@penpot/renderer-service";
+            private: true;
+            type: "module";
+            scripts: Record<string, string>;
+            exports: Record<string, {
+                types: string;
+                default: string;
+            }>;
+            dependencies: Record<string, string>;
+            devDependencies: Record<string, string>;
+        };
+    };
+    tsconfig: {
+        path: "renderer-service/tsconfig.json";
+        materialized: false;
+        writesFile: false;
+        compilerOptions: Record<string, string | boolean>;
+        include: string[];
+    };
+    sourceFiles: Array<{
+        path: string;
+        kind: string;
+        materialized: false;
+        writesFile: false;
+        exports?: string[];
+        runtimeRegistration?: false;
+        startsProcess?: false;
+        routes?: string[];
+        rendersPng?: false;
+    }>;
+    testFiles: Array<{
+        path: string;
+        kind: string;
+        materialized: false;
+        writesFile: false;
+        processSpawn: false;
+        covers: string[];
+    }>;
+    templateMatrix: Array<{
+        id: string;
+        path: string;
+        materialized: false;
+        writesFile: false;
+        blocksWorkspaceMutation?: true;
+        blocksBuildOutput?: true;
+        blocksProcessSpawn?: true;
+    }>;
+    noOpGuarantees: string[];
+    requiredBeforeRuntimeDispatch: string[];
+}
+
 export interface CreateRenderThumbnailRendererServiceClientRequestOptions {
     entrypoint?: "mcp" | "cli" | string | null;
     mcpToolName?: string | null;
@@ -1858,6 +1947,12 @@ export function createRenderThumbnailRendererServicePackageCreationGuardrails(
         hostLifecycleTestFixtures?: Partial<RenderThumbnailRendererServiceHostLifecycleTestFixtures> | null;
     }
 ): RenderThumbnailRendererServicePackageCreationGuardrails;
+export function createRenderThumbnailRendererServicePackageFileTemplates(
+    options?: {
+        packageManifestScaffold?: Partial<RenderThumbnailRendererServicePackageManifestScaffold> | null;
+        packageCreationGuardrails?: Partial<RenderThumbnailRendererServicePackageCreationGuardrails> | null;
+    }
+): RenderThumbnailRendererServicePackageFileTemplates;
 export function createRenderThumbnailRendererServiceClientRequest(
     plan: Partial<RenderThumbnailRendererServicePlan>,
     options?: CreateRenderThumbnailRendererServiceClientRequestOptions

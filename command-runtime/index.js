@@ -1023,6 +1023,10 @@ export function createRenderThumbnailRendererServicePlan(options = EMPTY_OBJECT)
         packageManifestScaffold,
         hostLifecycleTestFixtures,
     });
+    const packageFileTemplates = createRenderThumbnailRendererServicePackageFileTemplates({
+        packageManifestScaffold,
+        packageCreationGuardrails,
+    });
 
     return {
         command: CommandDescriptors.RENDER_THUMBNAIL.id,
@@ -1083,6 +1087,7 @@ export function createRenderThumbnailRendererServicePlan(options = EMPTY_OBJECT)
             hostLifecycleTestFixtures,
             packageManifestScaffold,
             packageCreationGuardrails,
+            packageFileTemplates,
             clientRequest,
         },
         client,
@@ -1104,6 +1109,7 @@ export function createRenderThumbnailRendererServicePlan(options = EMPTY_OBJECT)
         hostLifecycleTestFixtures,
         packageManifestScaffold,
         packageCreationGuardrails,
+        packageFileTemplates,
         clientRequest,
         serviceRequest: {
             command: CommandDescriptors.RENDER_THUMBNAIL.id,
@@ -1185,6 +1191,7 @@ export function createRenderThumbnailRendererServicePlan(options = EMPTY_OBJECT)
             hostLifecycleTestFixturesVersion: hostLifecycleTestFixtures.fixtureVersion,
             packageManifestScaffoldVersion: packageManifestScaffold.manifestVersion,
             packageCreationGuardrailsVersion: packageCreationGuardrails.guardrailVersion,
+            packageFileTemplatesVersion: packageFileTemplates.templateVersion,
         },
     };
 }
@@ -1393,6 +1400,160 @@ export function createRenderThumbnailRendererServicePackageCreationGuardrails(op
             "commit workspace manifest and lockfile changes with focused package tests",
             "prove no-op host lifecycle tests can run without leaking processes or ports",
             "keep render.thumbnail unavailable until renderer-service dispatch is explicitly registered",
+        ],
+    };
+}
+
+export function createRenderThumbnailRendererServicePackageFileTemplates(options = EMPTY_OBJECT) {
+    const packageManifestScaffold = options.packageManifestScaffold ?? EMPTY_OBJECT;
+    const packageCreationGuardrails = options.packageCreationGuardrails ?? EMPTY_OBJECT;
+
+    return {
+        status: "planned-disabled",
+        templateVersion: "P25.29",
+        adapter: "renderer-service",
+        command: CommandDescriptors.RENDER_THUMBNAIL.id,
+        dispatch: false,
+        networkDispatch: false,
+        runtimeRegistration: false,
+        localFileWrites: false,
+        hostStartup: false,
+        processSpawn: false,
+        packageCreated: false,
+        workspaceMutation: false,
+        scriptRunnable: false,
+        fileMaterialization: false,
+        consumes: {
+            packageManifestScaffold: {
+                requiredStatus: "planned-disabled",
+                currentStatus: packageManifestScaffold.status ?? "planned-disabled",
+                manifestVersion: packageManifestScaffold.manifestVersion ?? "P25.27",
+                packageCreated: false,
+            },
+            packageCreationGuardrails: {
+                requiredStatus: "planned-disabled",
+                currentStatus: packageCreationGuardrails.status ?? "planned-disabled",
+                guardrailVersion: packageCreationGuardrails.guardrailVersion ?? "P25.28",
+                canCreatePackage: false,
+                workspaceMutation: false,
+            },
+        },
+        packageJson: {
+            path: "renderer-service/package.json",
+            materialized: false,
+            writesFile: false,
+            package: {
+                name: "@penpot/renderer-service",
+                private: true,
+                type: "module",
+                scripts: {
+                    "start:noop": "node dist/noop-host.js",
+                    build: "tsc -p tsconfig.json",
+                    test: "node --test test/*.test.mjs",
+                },
+                exports: {
+                    ".": {
+                        types: "./dist/index.d.ts",
+                        default: "./dist/index.js",
+                    },
+                    "./noop-host": {
+                        types: "./dist/noop-host.d.ts",
+                        default: "./dist/noop-host.js",
+                    },
+                },
+                dependencies: {},
+                devDependencies: {
+                    typescript: "workspace-managed",
+                    "@types/node": "workspace-managed",
+                },
+            },
+        },
+        tsconfig: {
+            path: "renderer-service/tsconfig.json",
+            materialized: false,
+            writesFile: false,
+            compilerOptions: {
+                target: "ES2022",
+                module: "NodeNext",
+                moduleResolution: "NodeNext",
+                declaration: true,
+                outDir: "dist",
+                rootDir: "src",
+                strict: true,
+            },
+            include: ["src/**/*.ts"],
+        },
+        sourceFiles: [
+            {
+                path: "renderer-service/src/index.ts",
+                kind: "module-entrypoint",
+                materialized: false,
+                writesFile: false,
+                exports: ["createNoopRendererServiceHost", "createRendererServiceHealthResponse"],
+                runtimeRegistration: false,
+            },
+            {
+                path: "renderer-service/src/noop-host.ts",
+                kind: "noop-host",
+                materialized: false,
+                writesFile: false,
+                startsProcess: false,
+                routes: ["GET /health", "POST /thumbnail"],
+                rendersPng: false,
+            },
+        ],
+        testFiles: [
+            {
+                path: "renderer-service/test/noop-host.test.mjs",
+                kind: "node-test",
+                materialized: false,
+                writesFile: false,
+                processSpawn: false,
+                covers: ["health response shape", "noop thumbnail.render response shape"],
+            },
+        ],
+        templateMatrix: [
+            {
+                id: "package-json-template",
+                path: "renderer-service/package.json",
+                materialized: false,
+                writesFile: false,
+                blocksWorkspaceMutation: true,
+            },
+            {
+                id: "tsconfig-template",
+                path: "renderer-service/tsconfig.json",
+                materialized: false,
+                writesFile: false,
+                blocksBuildOutput: true,
+            },
+            {
+                id: "noop-host-source-template",
+                path: "renderer-service/src/noop-host.ts",
+                materialized: false,
+                writesFile: false,
+                blocksProcessSpawn: true,
+            },
+            {
+                id: "noop-host-test-template",
+                path: "renderer-service/test/noop-host.test.mjs",
+                materialized: false,
+                writesFile: false,
+                blocksProcessSpawn: true,
+            },
+        ],
+        noOpGuarantees: [
+            "do not create renderer-service template files",
+            "do not emit TypeScript build output",
+            "do not add package scripts to root package.json",
+            "do not mutate pnpm workspace or lockfile state",
+            "do not run package template tests",
+        ],
+        requiredBeforeRuntimeDispatch: [
+            "materialize package file templates in a dedicated implementation task",
+            "commit workspace and lockfile changes with package template tests",
+            "prove no-op host templates build before registering process startup",
+            "keep render.thumbnail execution unavailable until template files become real package files",
         ],
     };
 }

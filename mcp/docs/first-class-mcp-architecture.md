@@ -2358,6 +2358,20 @@ P25.28 render.thumbnail package creation guardrails result:
   `networkDispatch`, `runtimeRegistration`, and `localFileWrites` remain
   `false`.
 
+P25.29 render.thumbnail package file templates result:
+
+- Shared plans include `packageFileTemplates`, defining metadata-only planned
+  `package.json`, `tsconfig.json`, source entrypoint, no-op host, and no-op
+  host test shapes.
+- MCP and CLI expose the templates in dry-run and unavailable execution
+  payloads without materializing files, creating the package directory,
+  emitting build output, mutating workspace manifests, or making scripts
+  runnable.
+- `packageFileTemplates.fileMaterialization`, `packageCreated`,
+  `workspaceMutation`, `scriptRunnable`, `hostStartup`, `processSpawn`,
+  `dispatch`, `networkDispatch`, `runtimeRegistration`, and
+  `localFileWrites` remain `false`.
+
 ### 8.5 Export and Render Tools
 
 May start file-bound and later move to headless:
@@ -2391,10 +2405,11 @@ disabled enablement checklist, P25.23 audits the first implementation slice,
 P25.24 defines the health/no-op contract fixtures, and P25.25 defines the
 no-op service host scaffold. P25.26 defines disabled host lifecycle test
 fixtures, P25.27 defines disabled package manifest scaffold metadata, and
-P25.28 defines disabled package creation guardrails.
+P25.28 defines disabled package creation guardrails. P25.29 defines disabled
+package file templates.
 Runtime behavior remains unavailable
-until opt-in config surfaces, renderer-service implementation, package file
-templates, health preflight, cache probe, executable client, and tagged-frame
+until opt-in config surfaces, renderer-service implementation, workspace
+wiring, health preflight, cache probe, executable client, and tagged-frame
 capabilities are implemented.
 
 ### 8.6 Advanced Tools

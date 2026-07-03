@@ -28,8 +28,9 @@ P25.21 adds the disabled adapter registry manifest, P25.22 adds the final
 disabled enablement checklist, P25.23 audits the first concrete implementation
 slice, P25.24 defines the health/no-op contract fixtures, and P25.25 defines
 the no-op service host scaffold. P25.26 defines host lifecycle test fixtures,
-P25.27 defines package manifest scaffold metadata, and P25.28 defines package
-creation guardrails; runtime execution remains blocked.
+P25.27 defines package manifest scaffold metadata, P25.28 defines package
+creation guardrails, and P25.29 defines package file templates; runtime
+execution remains blocked.
 
 ## Existing Surfaces
 
@@ -166,8 +167,9 @@ metadata-only enablement checklist, P25.23 adds the metadata-only
 implementation slice audit, P25.24 adds the metadata-only health/no-op
 contract fixtures, and P25.25 adds the metadata-only no-op service host
 scaffold. P25.26 adds metadata-only host lifecycle test fixtures, P25.27 adds
-metadata-only package manifest scaffold fields, and P25.28 adds metadata-only
-package creation guardrails. MCP
+metadata-only package manifest scaffold fields, P25.28 adds metadata-only
+package creation guardrails, and P25.29 adds metadata-only package file
+templates. MCP
 `render.thumbnail` and `penpot-cli render thumbnail --dry-run` can print the
 future request shape, configured/not configured service metadata,
 response/error contracts, `clientRequest.dispatch:false`,
@@ -192,6 +194,10 @@ plus `packageCreationGuardrails.packageCreated:false`,
 `packageCreationGuardrails.scriptRunnable:false`,
 `packageCreationGuardrails.hostStartup:false`, and
 `packageCreationGuardrails.processSpawn:false`,
+plus `packageFileTemplates.fileMaterialization:false`,
+`packageFileTemplates.packageCreated:false`,
+`packageFileTemplates.workspaceMutation:false`, and
+`packageFileTemplates.scriptRunnable:false`,
 but execution still returns
 `renderer_service_unavailable` until explicit opt-in, config surfaces, renderer
 service, integration tests, health preflight, file cache probe, tagged-frame
