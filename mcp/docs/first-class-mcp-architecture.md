@@ -2331,6 +2331,19 @@ P25.26 render.thumbnail host lifecycle test fixture result:
   `networkDispatch`, `runtimeRegistration`, and `localFileWrites` remain
   `false`.
 
+P25.27 render.thumbnail package manifest scaffold result:
+
+- Shared plans include `packageManifestScaffold`, defining the future
+  `@penpot/renderer-service` package name, directory, private ESM package
+  shape, planned scripts, exports, dependencies, files, and workspace
+  integration flags.
+- MCP and CLI expose the scaffold in dry-run and unavailable execution
+  payloads without creating package files, editing workspace manifests,
+  mutating lockfiles, making scripts runnable, or registering dispatch.
+- `packageManifestScaffold.packageCreated`, `workspaceMutation`,
+  `scriptRunnable`, `dispatch`, `networkDispatch`, `runtimeRegistration`, and
+  `localFileWrites` remain `false`.
+
 ### 8.5 Export and Render Tools
 
 May start file-bound and later move to headless:
@@ -2363,10 +2376,11 @@ P25.21 adds the disabled adapter registry manifest, P25.22 adds the final
 disabled enablement checklist, P25.23 audits the first implementation slice,
 P25.24 defines the health/no-op contract fixtures, and P25.25 defines the
 no-op service host scaffold. P25.26 defines disabled host lifecycle test
-fixtures.
+fixtures, and P25.27 defines disabled package manifest scaffold metadata.
 Runtime behavior remains unavailable
-until opt-in config surfaces, renderer-service implementation, health preflight,
-cache probe, executable client, and tagged-frame capabilities are implemented.
+until opt-in config surfaces, renderer-service implementation, package creation
+guardrails, health preflight, cache probe, executable client, and tagged-frame
+capabilities are implemented.
 
 ### 8.6 Advanced Tools
 

@@ -961,3 +961,12 @@ P25.26 adds renderer-service host lifecycle test fixtures:
   supervision, logs, and error fixture expectations.
 - The fixtures remain planning-only with `processSpawn`, `hostStartup`,
   `networkDispatch`, `runtimeRegistration`, and `localFileWrites` all `false`.
+
+P25.27 adds renderer-service package manifest scaffold:
+
+- Plans include `packageManifestScaffold`, defining the future
+  `@penpot/renderer-service` package metadata, planned scripts, exports,
+  dependencies, files, and workspace integration flags.
+- The scaffold remains planning-only with `packageCreated`,
+  `workspaceMutation`, `scriptRunnable`, `dispatch`, `networkDispatch`,
+  `runtimeRegistration`, and `localFileWrites` all `false`.

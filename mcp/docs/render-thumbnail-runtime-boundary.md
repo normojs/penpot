@@ -164,7 +164,8 @@ adds the metadata-only adapter registry manifest, P25.22 adds the final
 metadata-only enablement checklist, P25.23 adds the metadata-only
 implementation slice audit, P25.24 adds the metadata-only health/no-op
 contract fixtures, and P25.25 adds the metadata-only no-op service host
-scaffold. P25.26 adds metadata-only host lifecycle test fixtures. MCP
+scaffold. P25.26 adds metadata-only host lifecycle test fixtures, and P25.27
+adds metadata-only package manifest scaffold fields. MCP
 `render.thumbnail` and `penpot-cli render thumbnail --dry-run` can print the
 future request shape, configured/not configured service metadata,
 response/error contracts, `clientRequest.dispatch:false`,
@@ -181,6 +182,9 @@ plus `integrationFixtureHarness.dispatch:false` and `networkDispatch:false`,
 `noopServiceHostScaffold.runtimeRegistration:false` and
 `noopServiceHostScaffold.hostStartup:false`, plus
 `hostLifecycleTestFixtures.processSpawn:false`,
+`packageManifestScaffold.packageCreated:false`,
+`packageManifestScaffold.workspaceMutation:false`, and
+`packageManifestScaffold.scriptRunnable:false`,
 but execution still returns
 `renderer_service_unavailable` until explicit opt-in, config surfaces, renderer
 service, integration tests, health preflight, file cache probe, tagged-frame

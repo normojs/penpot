@@ -448,6 +448,7 @@ export interface RenderThumbnailRendererServicePlan {
         healthNoopContractFixtures: RenderThumbnailRendererServiceHealthNoopContractFixtures;
         noopServiceHostScaffold: RenderThumbnailRendererServiceNoopServiceHostScaffold;
         hostLifecycleTestFixtures: RenderThumbnailRendererServiceHostLifecycleTestFixtures;
+        packageManifestScaffold: RenderThumbnailRendererServicePackageManifestScaffold;
         clientRequest: RenderThumbnailRendererServiceClientRequest;
     };
     client: RenderThumbnailRendererServiceClientConfig;
@@ -467,6 +468,7 @@ export interface RenderThumbnailRendererServicePlan {
     healthNoopContractFixtures: RenderThumbnailRendererServiceHealthNoopContractFixtures;
     noopServiceHostScaffold: RenderThumbnailRendererServiceNoopServiceHostScaffold;
     hostLifecycleTestFixtures: RenderThumbnailRendererServiceHostLifecycleTestFixtures;
+    packageManifestScaffold: RenderThumbnailRendererServicePackageManifestScaffold;
     clientRequest: RenderThumbnailRendererServiceClientRequest;
     serviceRequest: {
         command: "render.thumbnail";
@@ -546,6 +548,7 @@ export interface RenderThumbnailRendererServicePlan {
         healthNoopContractFixturesVersion: "P25.24";
         noopServiceHostScaffoldVersion: "P25.25";
         hostLifecycleTestFixturesVersion: "P25.26";
+        packageManifestScaffoldVersion: "P25.27";
     };
 }
 
@@ -1378,6 +1381,68 @@ export interface RenderThumbnailRendererServiceHostLifecycleTestFixtures {
     requiredBeforeRuntimeDispatch: string[];
 }
 
+export interface RenderThumbnailRendererServicePackageManifestScaffold {
+    status: "planned-disabled";
+    manifestVersion: "P25.27";
+    adapter: "renderer-service";
+    command: "render.thumbnail";
+    dispatch: false;
+    networkDispatch: false;
+    runtimeRegistration: false;
+    localFileWrites: false;
+    packageCreated: false;
+    workspaceMutation: false;
+    scriptRunnable: false;
+    consumes: {
+        noopServiceHostScaffold: {
+            requiredStatus: "planned-disabled";
+            currentStatus: string;
+            scaffoldVersion: string;
+            hostStartup: false;
+        };
+        hostLifecycleTestFixtures: {
+            requiredStatus: "planned-disabled";
+            currentStatus: string;
+            fixtureVersion: string;
+            processSpawn: false;
+        };
+    };
+    package: {
+        name: "@penpot/renderer-service";
+        directory: "renderer-service";
+        private: true;
+        type: "module";
+        packageManager: "pnpm-workspace";
+        packageCreated: false;
+        workspaceRegistered: false;
+    };
+    scripts: Record<string, {
+        command: string;
+        runnable: false;
+        startsProcess?: false;
+        emitsFiles?: false;
+        processSpawn?: false;
+    }>;
+    exports: Record<string, {
+        types: string;
+        default: string;
+    }>;
+    dependencies: {
+        runtime: string[];
+        dev: string[];
+        addNow: false;
+    };
+    workspaceIntegration: {
+        rootPackageJsonMutation: false;
+        pnpmWorkspaceMutation: false;
+        lockfileMutation: false;
+        dockerComposeMutation: false;
+    };
+    plannedFiles: string[];
+    noOpGuarantees: string[];
+    requiredBeforeRuntimeDispatch: string[];
+}
+
 export interface CreateRenderThumbnailRendererServiceClientRequestOptions {
     entrypoint?: "mcp" | "cli" | string | null;
     mcpToolName?: string | null;
@@ -1728,6 +1793,12 @@ export function createRenderThumbnailRendererServiceHostLifecycleTestFixtures(
         healthNoopContractFixtures?: Partial<RenderThumbnailRendererServiceHealthNoopContractFixtures> | null;
     }
 ): RenderThumbnailRendererServiceHostLifecycleTestFixtures;
+export function createRenderThumbnailRendererServicePackageManifestScaffold(
+    options?: {
+        noopServiceHostScaffold?: Partial<RenderThumbnailRendererServiceNoopServiceHostScaffold> | null;
+        hostLifecycleTestFixtures?: Partial<RenderThumbnailRendererServiceHostLifecycleTestFixtures> | null;
+    }
+): RenderThumbnailRendererServicePackageManifestScaffold;
 export function createRenderThumbnailRendererServiceClientRequest(
     plan: Partial<RenderThumbnailRendererServicePlan>,
     options?: CreateRenderThumbnailRendererServiceClientRequestOptions

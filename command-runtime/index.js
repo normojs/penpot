@@ -1015,6 +1015,10 @@ export function createRenderThumbnailRendererServicePlan(options = EMPTY_OBJECT)
         noopServiceHostScaffold,
         healthNoopContractFixtures,
     });
+    const packageManifestScaffold = createRenderThumbnailRendererServicePackageManifestScaffold({
+        noopServiceHostScaffold,
+        hostLifecycleTestFixtures,
+    });
 
     return {
         command: CommandDescriptors.RENDER_THUMBNAIL.id,
@@ -1073,6 +1077,7 @@ export function createRenderThumbnailRendererServicePlan(options = EMPTY_OBJECT)
             healthNoopContractFixtures,
             noopServiceHostScaffold,
             hostLifecycleTestFixtures,
+            packageManifestScaffold,
             clientRequest,
         },
         client,
@@ -1092,6 +1097,7 @@ export function createRenderThumbnailRendererServicePlan(options = EMPTY_OBJECT)
         healthNoopContractFixtures,
         noopServiceHostScaffold,
         hostLifecycleTestFixtures,
+        packageManifestScaffold,
         clientRequest,
         serviceRequest: {
             command: CommandDescriptors.RENDER_THUMBNAIL.id,
@@ -1171,7 +1177,108 @@ export function createRenderThumbnailRendererServicePlan(options = EMPTY_OBJECT)
             healthNoopContractFixturesVersion: healthNoopContractFixtures.fixtureVersion,
             noopServiceHostScaffoldVersion: noopServiceHostScaffold.scaffoldVersion,
             hostLifecycleTestFixturesVersion: hostLifecycleTestFixtures.fixtureVersion,
+            packageManifestScaffoldVersion: packageManifestScaffold.manifestVersion,
         },
+    };
+}
+
+export function createRenderThumbnailRendererServicePackageManifestScaffold(options = EMPTY_OBJECT) {
+    const noopServiceHostScaffold = options.noopServiceHostScaffold ?? EMPTY_OBJECT;
+    const hostLifecycleTestFixtures = options.hostLifecycleTestFixtures ?? EMPTY_OBJECT;
+
+    return {
+        status: "planned-disabled",
+        manifestVersion: "P25.27",
+        adapter: "renderer-service",
+        command: CommandDescriptors.RENDER_THUMBNAIL.id,
+        dispatch: false,
+        networkDispatch: false,
+        runtimeRegistration: false,
+        localFileWrites: false,
+        packageCreated: false,
+        workspaceMutation: false,
+        scriptRunnable: false,
+        consumes: {
+            noopServiceHostScaffold: {
+                requiredStatus: "planned-disabled",
+                currentStatus: noopServiceHostScaffold.status ?? "planned-disabled",
+                scaffoldVersion: noopServiceHostScaffold.scaffoldVersion ?? "P25.25",
+                hostStartup: false,
+            },
+            hostLifecycleTestFixtures: {
+                requiredStatus: "planned-disabled",
+                currentStatus: hostLifecycleTestFixtures.status ?? "planned-disabled",
+                fixtureVersion: hostLifecycleTestFixtures.fixtureVersion ?? "P25.26",
+                processSpawn: false,
+            },
+        },
+        package: {
+            name: "@penpot/renderer-service",
+            directory: "renderer-service",
+            private: true,
+            type: "module",
+            packageManager: "pnpm-workspace",
+            packageCreated: false,
+            workspaceRegistered: false,
+        },
+        scripts: {
+            "start:noop": {
+                command: "node dist/noop-host.js",
+                runnable: false,
+                startsProcess: false,
+            },
+            build: {
+                command: "tsc -p tsconfig.json",
+                runnable: false,
+                emitsFiles: false,
+            },
+            test: {
+                command: "node --test test/*.test.mjs",
+                runnable: false,
+                processSpawn: false,
+            },
+        },
+        exports: {
+            ".": {
+                types: "./dist/index.d.ts",
+                default: "./dist/index.js",
+            },
+            "./noop-host": {
+                types: "./dist/noop-host.d.ts",
+                default: "./dist/noop-host.js",
+            },
+        },
+        dependencies: {
+            runtime: [],
+            dev: ["typescript", "@types/node"],
+            addNow: false,
+        },
+        workspaceIntegration: {
+            rootPackageJsonMutation: false,
+            pnpmWorkspaceMutation: false,
+            lockfileMutation: false,
+            dockerComposeMutation: false,
+        },
+        plannedFiles: [
+            "renderer-service/package.json",
+            "renderer-service/tsconfig.json",
+            "renderer-service/src/index.ts",
+            "renderer-service/src/noop-host.ts",
+            "renderer-service/test/noop-host.test.mjs",
+        ],
+        noOpGuarantees: [
+            "do not create renderer-service package files",
+            "do not edit pnpm workspace manifests",
+            "do not mutate lockfiles",
+            "do not add runnable scripts",
+            "do not start renderer-service processes",
+        ],
+        requiredBeforeRuntimeDispatch: [
+            "create package files in a dedicated implementation task",
+            "add workspace manifest and lockfile updates with package tests",
+            "prove noop host lifecycle tests before enabling process startup",
+            "keep command-runtime dispatch disabled until package scripts are executable and gated",
+        ],
     };
 }
 

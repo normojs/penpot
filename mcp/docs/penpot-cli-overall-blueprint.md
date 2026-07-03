@@ -295,6 +295,10 @@ Current state:
 - Done: renderer-service host lifecycle test fixtures define start, stop,
   readiness, supervision, logs, and error expectations without spawning a
   process.
+- Done: renderer-service package manifest scaffold defines the future
+  `@penpot/renderer-service` package metadata, planned scripts, exports,
+  dependencies, files, and workspace integration flags without creating a
+  package, mutating workspace files, or making scripts runnable.
 - Done: focused command-runtime tests cover descriptor groups, lookup,
   adapter-selection priority/error cases, and token-safe envelopes.
 - Status: complete. Later command coverage gaps were tracked by the P15.1
@@ -846,6 +850,18 @@ P25.26 is complete:
 3. `hostLifecycleTestFixtures.processSpawn`, `hostStartup`,
    `networkDispatch`, `runtimeRegistration`, and `localFileWrites` remain
    false.
+
+P25.27 is complete:
+
+1. Shared plans include `packageManifestScaffold` metadata for the future
+   `@penpot/renderer-service` package manifest, planned scripts, exports,
+   dependencies, files, and workspace integration flags.
+2. MCP and CLI expose this scaffold in dry-run and unavailable execution
+   payloads without creating package files, mutating workspace manifests,
+   updating lockfiles, or making scripts runnable.
+3. `packageManifestScaffold.packageCreated`, `workspaceMutation`,
+   `scriptRunnable`, `dispatch`, `networkDispatch`, `runtimeRegistration`, and
+   `localFileWrites` remain false.
 
 Keep manual configuration behavior stable while moving command metadata and
 envelopes; transport-specific formatting should stay at the MCP/CLI edges.

@@ -32,6 +32,7 @@ import {
     createRenderThumbnailRendererServiceImplementationSliceAudit,
     createRenderThumbnailRendererServiceIntegrationFixtureHarness,
     createRenderThumbnailRendererServiceNoopServiceHostScaffold,
+    createRenderThumbnailRendererServicePackageManifestScaffold,
     createRenderThumbnailRendererServiceOptInConfiguration,
     createRenderThumbnailRendererServiceUnavailableErrorTaxonomy,
     createRenderThumbnailRendererServiceErrorPayload,
@@ -497,6 +498,13 @@ test("render.thumbnail renderer-service API fixtures define planning requests wi
     assert.equal(fixtures.serviceApi.hostLifecycleTestFixtures.localFileWrites, false);
     assert.equal(fixtures.serviceApi.hostLifecycleTestFixtures.hostStartup, false);
     assert.equal(fixtures.serviceApi.hostLifecycleTestFixtures.processSpawn, false);
+    assert.equal(fixtures.serviceApi.packageManifestScaffold.manifestVersion, "P25.27");
+    assert.equal(fixtures.serviceApi.packageManifestScaffold.dispatch, false);
+    assert.equal(fixtures.serviceApi.packageManifestScaffold.networkDispatch, false);
+    assert.equal(fixtures.serviceApi.packageManifestScaffold.runtimeRegistration, false);
+    assert.equal(fixtures.serviceApi.packageManifestScaffold.localFileWrites, false);
+    assert.equal(fixtures.serviceApi.packageManifestScaffold.packageCreated, false);
+    assert.equal(fixtures.serviceApi.packageManifestScaffold.workspaceMutation, false);
     assert.deepEqual(fixtures.runtimeRegistration.commandDescriptorAdapters, ["renderer-service"]);
     assert.deepEqual(CommandDescriptors.RENDER_THUMBNAIL.adapters, ["renderer-service"]);
     assert.equal(fixtures.runtimeRegistration.mcpToolRegistered, true);
@@ -732,6 +740,20 @@ test("render.thumbnail renderer-service plan exposes dry-run client request whil
     assert.ok(plan.hostLifecycleTestFixtures.fixtureMatrix.some((entry) => entry.id === "readiness-plan-uses-health-fixture"));
     assert.equal(plan.hostLifecycleTestFixtures.assertions.unavailablePayloadIncludesScaffold, true);
     assert.deepEqual(plan.service.hostLifecycleTestFixtures, plan.hostLifecycleTestFixtures);
+    assert.equal(plan.packageManifestScaffold.manifestVersion, "P25.27");
+    assert.equal(plan.packageManifestScaffold.dispatch, false);
+    assert.equal(plan.packageManifestScaffold.networkDispatch, false);
+    assert.equal(plan.packageManifestScaffold.runtimeRegistration, false);
+    assert.equal(plan.packageManifestScaffold.localFileWrites, false);
+    assert.equal(plan.packageManifestScaffold.packageCreated, false);
+    assert.equal(plan.packageManifestScaffold.workspaceMutation, false);
+    assert.equal(plan.packageManifestScaffold.scriptRunnable, false);
+    assert.equal(plan.packageManifestScaffold.consumes.hostLifecycleTestFixtures.fixtureVersion, "P25.26");
+    assert.equal(plan.packageManifestScaffold.package.name, "@penpot/renderer-service");
+    assert.equal(plan.packageManifestScaffold.package.workspaceRegistered, false);
+    assert.equal(plan.packageManifestScaffold.workspaceIntegration.lockfileMutation, false);
+    assert.ok(plan.packageManifestScaffold.plannedFiles.includes("renderer-service/package.json"));
+    assert.deepEqual(plan.service.packageManifestScaffold, plan.packageManifestScaffold);
     assert.equal(plan.clientRequest.status, "scaffolded");
     assert.equal(plan.clientRequest.dispatch, false);
     assert.equal(plan.clientRequest.method, "POST");
@@ -774,6 +796,7 @@ test("render.thumbnail renderer-service plan exposes dry-run client request whil
     assert.equal(plan.diagnostics.healthNoopContractFixturesVersion, "P25.24");
     assert.equal(plan.diagnostics.noopServiceHostScaffoldVersion, "P25.25");
     assert.equal(plan.diagnostics.hostLifecycleTestFixturesVersion, "P25.26");
+    assert.equal(plan.diagnostics.packageManifestScaffoldVersion, "P25.27");
 });
 
 test("render.thumbnail renderer-service plan reports not-configured availability without endpoint", () => {
@@ -1308,6 +1331,54 @@ test("render.thumbnail renderer-service host lifecycle test fixtures stay disabl
     assert.equal(fixtures.testEntrypoints.commandRuntime, "createRenderThumbnailRendererServiceHostLifecycleTestFixtures");
     assert.ok(fixtures.noOpGuarantees.includes("do not spawn renderer-service in lifecycle fixture tests"));
     assert.ok(fixtures.requiredBeforeRuntimeDispatch.includes("implement lifecycle tests against a real no-op host in a dedicated task"));
+});
+
+test("render.thumbnail renderer-service package manifest scaffold stays metadata-only", () => {
+    const scaffold = createRenderThumbnailRendererServicePackageManifestScaffold({
+        noopServiceHostScaffold: {
+            status: "planned-disabled",
+            scaffoldVersion: "P25.25",
+            hostStartup: false,
+        },
+        hostLifecycleTestFixtures: {
+            status: "planned-disabled",
+            fixtureVersion: "P25.26",
+            processSpawn: false,
+        },
+    });
+
+    assert.equal(scaffold.status, "planned-disabled");
+    assert.equal(scaffold.manifestVersion, "P25.27");
+    assert.equal(scaffold.adapter, "renderer-service");
+    assert.equal(scaffold.command, "render.thumbnail");
+    assert.equal(scaffold.dispatch, false);
+    assert.equal(scaffold.networkDispatch, false);
+    assert.equal(scaffold.runtimeRegistration, false);
+    assert.equal(scaffold.localFileWrites, false);
+    assert.equal(scaffold.packageCreated, false);
+    assert.equal(scaffold.workspaceMutation, false);
+    assert.equal(scaffold.scriptRunnable, false);
+    assert.equal(scaffold.consumes.noopServiceHostScaffold.scaffoldVersion, "P25.25");
+    assert.equal(scaffold.consumes.noopServiceHostScaffold.hostStartup, false);
+    assert.equal(scaffold.consumes.hostLifecycleTestFixtures.fixtureVersion, "P25.26");
+    assert.equal(scaffold.consumes.hostLifecycleTestFixtures.processSpawn, false);
+    assert.equal(scaffold.package.name, "@penpot/renderer-service");
+    assert.equal(scaffold.package.directory, "renderer-service");
+    assert.equal(scaffold.package.packageCreated, false);
+    assert.equal(scaffold.package.workspaceRegistered, false);
+    assert.equal(scaffold.scripts["start:noop"].runnable, false);
+    assert.equal(scaffold.scripts["start:noop"].startsProcess, false);
+    assert.equal(scaffold.scripts.build.emitsFiles, false);
+    assert.equal(scaffold.dependencies.addNow, false);
+    assert.deepEqual(scaffold.dependencies.runtime, []);
+    assert.ok(scaffold.dependencies.dev.includes("typescript"));
+    assert.equal(scaffold.workspaceIntegration.rootPackageJsonMutation, false);
+    assert.equal(scaffold.workspaceIntegration.pnpmWorkspaceMutation, false);
+    assert.equal(scaffold.workspaceIntegration.lockfileMutation, false);
+    assert.equal(scaffold.workspaceIntegration.dockerComposeMutation, false);
+    assert.ok(scaffold.plannedFiles.includes("renderer-service/src/noop-host.ts"));
+    assert.ok(scaffold.noOpGuarantees.includes("do not create renderer-service package files"));
+    assert.ok(scaffold.requiredBeforeRuntimeDispatch.includes("create package files in a dedicated implementation task"));
 });
 
 test("render.thumbnail renderer-service client request scaffold adds MCP audit headers without dispatch", () => {
