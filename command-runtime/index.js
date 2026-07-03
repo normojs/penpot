@@ -1059,6 +1059,12 @@ export function createRenderThumbnailRendererServicePlan(options = EMPTY_OBJECT)
         packageWorkspaceWiring,
         packageBuildVerification,
     });
+    const packageMaterializationExecutionDryRun = createRenderThumbnailRendererServicePackageMaterializationExecutionDryRun({
+        packageMaterializationApprovalGate,
+        packageCreationFileManifest,
+        packageWorkspaceWiring,
+        packageBuildVerification,
+    });
 
     return {
         command: CommandDescriptors.RENDER_THUMBNAIL.id,
@@ -1126,6 +1132,7 @@ export function createRenderThumbnailRendererServicePlan(options = EMPTY_OBJECT)
             packageCreationDryRunSummary,
             packageCreationFileManifest,
             packageMaterializationApprovalGate,
+            packageMaterializationExecutionDryRun,
             clientRequest,
         },
         client,
@@ -1154,6 +1161,7 @@ export function createRenderThumbnailRendererServicePlan(options = EMPTY_OBJECT)
         packageCreationDryRunSummary,
         packageCreationFileManifest,
         packageMaterializationApprovalGate,
+        packageMaterializationExecutionDryRun,
         clientRequest,
         serviceRequest: {
             command: CommandDescriptors.RENDER_THUMBNAIL.id,
@@ -1242,6 +1250,7 @@ export function createRenderThumbnailRendererServicePlan(options = EMPTY_OBJECT)
             packageCreationDryRunSummaryVersion: packageCreationDryRunSummary.summaryVersion,
             packageCreationFileManifestVersion: packageCreationFileManifest.manifestVersion,
             packageMaterializationApprovalGateVersion: packageMaterializationApprovalGate.gateVersion,
+            packageMaterializationExecutionDryRunVersion: packageMaterializationExecutionDryRun.dryRunVersion,
         },
     };
 }
@@ -2445,6 +2454,155 @@ export function createRenderThumbnailRendererServicePackageMaterializationApprov
             "obtain explicit materialization approval in a later task",
             "materialize package files only after approval",
             "commit workspace and lockfile mutations separately from runtime dispatch",
+            "run package verification after approved materialization",
+            "keep render.thumbnail unavailable until approved package verification passes",
+        ],
+    };
+}
+
+export function createRenderThumbnailRendererServicePackageMaterializationExecutionDryRun(options = EMPTY_OBJECT) {
+    const packageMaterializationApprovalGate = options.packageMaterializationApprovalGate ?? EMPTY_OBJECT;
+    const packageCreationFileManifest = options.packageCreationFileManifest ?? EMPTY_OBJECT;
+    const packageWorkspaceWiring = options.packageWorkspaceWiring ?? EMPTY_OBJECT;
+    const packageBuildVerification = options.packageBuildVerification ?? EMPTY_OBJECT;
+
+    return {
+        status: "planned-disabled",
+        dryRunVersion: "P25.36",
+        adapter: "renderer-service",
+        command: CommandDescriptors.RENDER_THUMBNAIL.id,
+        dryRunOnly: true,
+        executeNow: false,
+        approvalRequired: true,
+        approved: false,
+        dispatch: false,
+        networkDispatch: false,
+        runtimeRegistration: false,
+        localFileWrites: false,
+        hostStartup: false,
+        processSpawn: false,
+        packageCreated: false,
+        workspaceMutation: false,
+        scriptRunnable: false,
+        fileMaterialization: false,
+        lockfileMutation: false,
+        rootPackageJsonMutation: false,
+        pnpmWorkspaceMutation: false,
+        commandExecution: false,
+        buildOutput: false,
+        packageScriptsRunnable: false,
+        materializationApproved: false,
+        filesWritten: false,
+        consumes: {
+            packageMaterializationApprovalGate: {
+                requiredStatus: "planned-disabled",
+                currentStatus: packageMaterializationApprovalGate.status ?? "planned-disabled",
+                gateVersion: packageMaterializationApprovalGate.gateVersion ?? "P25.35",
+                approved: false,
+            },
+            packageCreationFileManifest: {
+                requiredStatus: "planned-disabled",
+                currentStatus: packageCreationFileManifest.status ?? "planned-disabled",
+                manifestVersion: packageCreationFileManifest.manifestVersion ?? "P25.34",
+                filesWritten: false,
+            },
+            packageWorkspaceWiring: {
+                requiredStatus: "planned-disabled",
+                currentStatus: packageWorkspaceWiring.status ?? "planned-disabled",
+                wiringVersion: packageWorkspaceWiring.wiringVersion ?? "P25.30",
+                workspaceMutation: false,
+            },
+            packageBuildVerification: {
+                requiredStatus: "planned-disabled",
+                currentStatus: packageBuildVerification.status ?? "planned-disabled",
+                verificationVersion: packageBuildVerification.verificationVersion ?? "P25.31",
+                commandExecution: false,
+                buildOutput: false,
+            },
+        },
+        dryRunPlan: {
+            title: "renderer-service package materialization execution dry-run",
+            packageDirectory: "renderer-service",
+            executeNow: false,
+            approvalStatus: "blocked",
+            steps: [
+                {
+                    id: "create-package-directory",
+                    action: "create-directory",
+                    target: "renderer-service",
+                    wouldExecute: true,
+                    executed: false,
+                    writesFiles: false,
+                    createsDirectory: true,
+                },
+                {
+                    id: "write-package-files",
+                    action: "write-files",
+                    target: "renderer-service package files",
+                    wouldExecute: true,
+                    executed: false,
+                    writesFiles: true,
+                    files: [
+                        "renderer-service/package.json",
+                        "renderer-service/tsconfig.json",
+                        "renderer-service/src/index.ts",
+                        "renderer-service/src/noop-host.ts",
+                        "renderer-service/test/noop-host.test.mjs",
+                    ],
+                },
+                {
+                    id: "update-workspace-files",
+                    action: "mutate-workspace",
+                    target: "workspace manifests and lockfile",
+                    wouldExecute: true,
+                    executed: false,
+                    writesFiles: true,
+                    files: ["pnpm-workspace.yaml", "package.json", "pnpm-lock.yaml"],
+                },
+                {
+                    id: "run-verification",
+                    action: "run-commands",
+                    target: "@penpot/renderer-service verification",
+                    wouldExecute: true,
+                    executed: false,
+                    writesFiles: false,
+                    commands: [
+                        "pnpm --filter @penpot/renderer-service build",
+                        "pnpm --filter @penpot/renderer-service exec tsc --noEmit",
+                        "pnpm --filter @penpot/renderer-service test",
+                    ],
+                },
+            ],
+        },
+        blockedBecause: [
+            "materialization approval is not granted",
+            "package files are not materialized",
+            "workspace manifests are not approved for mutation",
+            "verification commands must not run before package files exist",
+            "runtime dispatch must stay disabled",
+        ],
+        executionOutputs: {
+            packageDirectoryCreated: false,
+            packageFilesWritten: false,
+            workspaceFilesMutated: false,
+            lockfileMutated: false,
+            commandsRun: false,
+            buildArtifactsGenerated: false,
+            runtimeDispatchRegistered: false,
+        },
+        noOpGuarantees: [
+            "execution dry-run does not create renderer-service directory",
+            "execution dry-run does not write package files",
+            "execution dry-run does not edit workspace manifests",
+            "execution dry-run does not mutate lockfiles",
+            "execution dry-run does not run verification commands",
+            "execution dry-run does not generate build output",
+            "execution dry-run does not register runtime dispatch",
+        ],
+        requiredBeforeRuntimeDispatch: [
+            "complete execution dry-run planning before materialization",
+            "obtain explicit approval before running materialization",
+            "materialize files and workspace updates in a later implementation task",
             "run package verification after approved materialization",
             "keep render.thumbnail unavailable until approved package verification passes",
         ],

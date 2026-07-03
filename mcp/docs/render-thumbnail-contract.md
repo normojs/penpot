@@ -1,6 +1,6 @@
 # Render Thumbnail Contract
 
-Status: P25.4 descriptor contract; P25.35 MCP/CLI renderer-service dry-run
+Status: P25.4 descriptor contract; P25.36 MCP/CLI renderer-service dry-run
 boundaries, metadata-only availability probes, response normalization
 contracts, disabled client request scaffolding, closed execution gate, disabled
 health preflight, executable client harness plan, and dispatch adapter boundary
@@ -15,7 +15,8 @@ execution still blocked. P25.32 adds package materialization checklist
 metadata without filesystem mutation, P25.33 adds package creation dry-run
 summary metadata without file writes, P25.34 adds package creation file
 manifest metadata without materializing files, and P25.35 adds package
-materialization approval gate metadata without granting approval.
+materialization approval gate metadata without granting approval. P25.36 adds
+package materialization execution dry-run metadata without executing writes.
 
 This document defines the `render.thumbnail` contract before executable MCP or
 CLI rendering is enabled. The contract follows Penpot's existing dashboard
@@ -267,6 +268,15 @@ Shared contract shape:
   `commandExecution:false`, `buildOutput:false`,
   `materializationApproved:false`, `runtimeRegistration:false`, and
   `localFileWrites:false`.
+- P25.36 package materialization execution dry-run fields are planning-only.
+  They define future directory creation, package file write, workspace
+  mutation, and verification command steps while keeping
+  `packageMaterializationExecutionDryRun.executeNow:false`,
+  `approved:false`, `filesWritten:false`, `fileMaterialization:false`,
+  `workspaceMutation:false`, `lockfileMutation:false`,
+  `commandExecution:false`, `buildOutput:false`,
+  `materializationApproved:false`, `runtimeRegistration:false`, and
+  `localFileWrites:false`.
 - Exporter service execution is out of scope for this command unless a later
   task explicitly maps thumbnail rendering to exporter-compatible semantics.
 - P25.6 selects a future dedicated thumbnail renderer service as the executable
@@ -281,7 +291,7 @@ See `render-thumbnail-runtime-boundary.md` and
 audit, resource-return rules, cache refresh behavior, auth expectations, and
 future test strategy.
 See `render-thumbnail-renderer-service-api.md` and
-`render-thumbnail-renderer-service-fixtures.json` for the P25.35 future
+`render-thumbnail-renderer-service-fixtures.json` for the P25.36 future
 renderer-service request/response API, MCP/CLI dry-run/client boundary, and
 metadata-only availability probe plus response/error normalization and disabled
 client request, execution gate, health preflight, and execution harness

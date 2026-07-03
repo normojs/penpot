@@ -1,7 +1,7 @@
 {
-  "version": "P25.35",
+  "version": "P25.36",
   "command": "render.thumbnail",
-  "status": "runtime boundary audited; MCP/CLI planning, metadata-only availability probes, response normalization contracts, disabled client request scaffold, closed execution gate, health preflight plan, executable client harness plan, dispatch adapter boundary, opt-in configuration surfaces, unavailable error taxonomy, integration fixture harness, dispatch registration preflight, disabled executable adapter registration scaffold, disabled adapter registry manifest, final disabled enablement checklist, implementation slice audit, health/no-op contract fixtures, no-op service host scaffold, host lifecycle test fixtures, package manifest scaffold, package creation guardrails, package file templates, package workspace wiring, package build verification, package materialization checklist, package creation dry-run summary, package creation file manifest, and package materialization approval gate registered; runtime execution blocked",
+  "status": "runtime boundary audited; MCP/CLI planning, metadata-only availability probes, response normalization contracts, disabled client request scaffold, closed execution gate, health preflight plan, executable client harness plan, dispatch adapter boundary, opt-in configuration surfaces, unavailable error taxonomy, integration fixture harness, dispatch registration preflight, disabled executable adapter registration scaffold, disabled adapter registry manifest, final disabled enablement checklist, implementation slice audit, health/no-op contract fixtures, no-op service host scaffold, host lifecycle test fixtures, package manifest scaffold, package creation guardrails, package file templates, package workspace wiring, package build verification, package materialization checklist, package creation dry-run summary, package creation file manifest, package materialization approval gate, and package materialization execution dry-run registered; runtime execution blocked",
   "selectedBoundary": "thumbnail-renderer-service",
   "runtimeRegistration": {
     "mcpToolRegistered": true,
@@ -373,11 +373,12 @@
     "Package materialization checklist tests cover planned file/workspace batches, readiness checklist, commit boundary, rollback plan, and no file materialization.",
     "Package creation dry-run summary tests cover would-create, would-modify, would-generate, would-run, blocked-until, and no file writes.",
     "package creation file manifest survives dry-run and unavailable execution JSON output",
-    "package materialization approval gate survives dry-run and unavailable execution JSON output"
+    "package materialization approval gate survives dry-run and unavailable execution JSON output",
+    "package materialization execution dry-run survives dry-run and unavailable execution JSON output"
   ],
   "nextTask": {
-    "id": "P25.36",
-    "title": "Plan renderer-service package materialization execution dry-run",
+    "id": "P25.37",
+    "title": "Plan renderer-service package materialization write contract",
     "status": "pending"
   },
   "implementationSliceAudit": {
@@ -2061,6 +2062,151 @@
       "obtain explicit materialization approval in a later task",
       "materialize package files only after approval",
       "commit workspace and lockfile mutations separately from runtime dispatch",
+      "run package verification after approved materialization",
+      "keep render.thumbnail unavailable until approved package verification passes"
+    ]
+  },
+  "packageMaterializationExecutionDryRun": {
+    "status": "planned-disabled",
+    "dryRunVersion": "P25.36",
+    "adapter": "renderer-service",
+    "command": "render.thumbnail",
+    "dryRunOnly": true,
+    "executeNow": false,
+    "approvalRequired": true,
+    "approved": false,
+    "dispatch": false,
+    "networkDispatch": false,
+    "runtimeRegistration": false,
+    "localFileWrites": false,
+    "hostStartup": false,
+    "processSpawn": false,
+    "packageCreated": false,
+    "workspaceMutation": false,
+    "scriptRunnable": false,
+    "fileMaterialization": false,
+    "lockfileMutation": false,
+    "rootPackageJsonMutation": false,
+    "pnpmWorkspaceMutation": false,
+    "commandExecution": false,
+    "buildOutput": false,
+    "packageScriptsRunnable": false,
+    "materializationApproved": false,
+    "filesWritten": false,
+    "consumes": {
+      "packageMaterializationApprovalGate": {
+        "requiredStatus": "planned-disabled",
+        "currentStatus": "planned-disabled",
+        "gateVersion": "P25.35",
+        "approved": false
+      },
+      "packageCreationFileManifest": {
+        "requiredStatus": "planned-disabled",
+        "currentStatus": "planned-disabled",
+        "manifestVersion": "P25.34",
+        "filesWritten": false
+      },
+      "packageWorkspaceWiring": {
+        "requiredStatus": "planned-disabled",
+        "currentStatus": "planned-disabled",
+        "wiringVersion": "P25.30",
+        "workspaceMutation": false
+      },
+      "packageBuildVerification": {
+        "requiredStatus": "planned-disabled",
+        "currentStatus": "planned-disabled",
+        "verificationVersion": "P25.31",
+        "commandExecution": false,
+        "buildOutput": false
+      }
+    },
+    "dryRunPlan": {
+      "title": "renderer-service package materialization execution dry-run",
+      "packageDirectory": "renderer-service",
+      "executeNow": false,
+      "approvalStatus": "blocked",
+      "steps": [
+        {
+          "id": "create-package-directory",
+          "action": "create-directory",
+          "target": "renderer-service",
+          "wouldExecute": true,
+          "executed": false,
+          "writesFiles": false,
+          "createsDirectory": true
+        },
+        {
+          "id": "write-package-files",
+          "action": "write-files",
+          "target": "renderer-service package files",
+          "wouldExecute": true,
+          "executed": false,
+          "writesFiles": true,
+          "files": [
+            "renderer-service/package.json",
+            "renderer-service/tsconfig.json",
+            "renderer-service/src/index.ts",
+            "renderer-service/src/noop-host.ts",
+            "renderer-service/test/noop-host.test.mjs"
+          ]
+        },
+        {
+          "id": "update-workspace-files",
+          "action": "mutate-workspace",
+          "target": "workspace manifests and lockfile",
+          "wouldExecute": true,
+          "executed": false,
+          "writesFiles": true,
+          "files": [
+            "pnpm-workspace.yaml",
+            "package.json",
+            "pnpm-lock.yaml"
+          ]
+        },
+        {
+          "id": "run-verification",
+          "action": "run-commands",
+          "target": "@penpot/renderer-service verification",
+          "wouldExecute": true,
+          "executed": false,
+          "writesFiles": false,
+          "commands": [
+            "pnpm --filter @penpot/renderer-service build",
+            "pnpm --filter @penpot/renderer-service exec tsc --noEmit",
+            "pnpm --filter @penpot/renderer-service test"
+          ]
+        }
+      ]
+    },
+    "blockedBecause": [
+      "materialization approval is not granted",
+      "package files are not materialized",
+      "workspace manifests are not approved for mutation",
+      "verification commands must not run before package files exist",
+      "runtime dispatch must stay disabled"
+    ],
+    "executionOutputs": {
+      "packageDirectoryCreated": false,
+      "packageFilesWritten": false,
+      "workspaceFilesMutated": false,
+      "lockfileMutated": false,
+      "commandsRun": false,
+      "buildArtifactsGenerated": false,
+      "runtimeDispatchRegistered": false
+    },
+    "noOpGuarantees": [
+      "execution dry-run does not create renderer-service directory",
+      "execution dry-run does not write package files",
+      "execution dry-run does not edit workspace manifests",
+      "execution dry-run does not mutate lockfiles",
+      "execution dry-run does not run verification commands",
+      "execution dry-run does not generate build output",
+      "execution dry-run does not register runtime dispatch"
+    ],
+    "requiredBeforeRuntimeDispatch": [
+      "complete execution dry-run planning before materialization",
+      "obtain explicit approval before running materialization",
+      "materialize files and workspace updates in a later implementation task",
       "run package verification after approved materialization",
       "keep render.thumbnail unavailable until approved package verification passes"
     ]

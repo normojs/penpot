@@ -37,6 +37,7 @@ import {
     createRenderThumbnailRendererServicePackageCreationDryRunSummary,
     createRenderThumbnailRendererServicePackageCreationFileManifest,
     createRenderThumbnailRendererServicePackageMaterializationApprovalGate,
+    createRenderThumbnailRendererServicePackageMaterializationExecutionDryRun,
     createRenderThumbnailRendererServicePackageFileTemplates,
     createRenderThumbnailRendererServicePackageManifestScaffold,
     createRenderThumbnailRendererServicePackageMaterializationChecklist,
@@ -573,6 +574,15 @@ test("render.thumbnail renderer-service API fixtures define planning requests wi
     assert.equal(fixtures.serviceApi.packageMaterializationApprovalGate.localFileWrites, false);
     assert.equal(fixtures.serviceApi.packageMaterializationApprovalGate.fileMaterialization, false);
     assert.equal(fixtures.serviceApi.packageMaterializationApprovalGate.materializationApproved, false);
+    assert.equal(fixtures.serviceApi.packageMaterializationExecutionDryRun.dryRunVersion, "P25.36");
+    assert.equal(fixtures.serviceApi.packageMaterializationExecutionDryRun.dryRunOnly, true);
+    assert.equal(fixtures.serviceApi.packageMaterializationExecutionDryRun.executeNow, false);
+    assert.equal(fixtures.serviceApi.packageMaterializationExecutionDryRun.approved, false);
+    assert.equal(fixtures.serviceApi.packageMaterializationExecutionDryRun.dispatch, false);
+    assert.equal(fixtures.serviceApi.packageMaterializationExecutionDryRun.runtimeRegistration, false);
+    assert.equal(fixtures.serviceApi.packageMaterializationExecutionDryRun.localFileWrites, false);
+    assert.equal(fixtures.serviceApi.packageMaterializationExecutionDryRun.fileMaterialization, false);
+    assert.equal(fixtures.serviceApi.packageMaterializationExecutionDryRun.filesWritten, false);
     assert.deepEqual(fixtures.runtimeRegistration.commandDescriptorAdapters, ["renderer-service"]);
     assert.deepEqual(CommandDescriptors.RENDER_THUMBNAIL.adapters, ["renderer-service"]);
     assert.equal(fixtures.runtimeRegistration.mcpToolRegistered, true);
@@ -989,6 +999,30 @@ test("render.thumbnail renderer-service plan exposes dry-run client request whil
     assert.equal(plan.packageMaterializationApprovalGate.approvalDecision.canMaterialize, false);
     assert.ok(plan.packageMaterializationApprovalGate.postApprovalSequence.some((entry) => entry.id === "run-package-verification" && entry.allowedBeforeApproval === false && entry.runsCommands === true));
     assert.deepEqual(plan.service.packageMaterializationApprovalGate, plan.packageMaterializationApprovalGate);
+    assert.equal(plan.packageMaterializationExecutionDryRun.dryRunVersion, "P25.36");
+    assert.equal(plan.packageMaterializationExecutionDryRun.dryRunOnly, true);
+    assert.equal(plan.packageMaterializationExecutionDryRun.executeNow, false);
+    assert.equal(plan.packageMaterializationExecutionDryRun.approvalRequired, true);
+    assert.equal(plan.packageMaterializationExecutionDryRun.approved, false);
+    assert.equal(plan.packageMaterializationExecutionDryRun.dispatch, false);
+    assert.equal(plan.packageMaterializationExecutionDryRun.networkDispatch, false);
+    assert.equal(plan.packageMaterializationExecutionDryRun.runtimeRegistration, false);
+    assert.equal(plan.packageMaterializationExecutionDryRun.localFileWrites, false);
+    assert.equal(plan.packageMaterializationExecutionDryRun.packageCreated, false);
+    assert.equal(plan.packageMaterializationExecutionDryRun.workspaceMutation, false);
+    assert.equal(plan.packageMaterializationExecutionDryRun.fileMaterialization, false);
+    assert.equal(plan.packageMaterializationExecutionDryRun.lockfileMutation, false);
+    assert.equal(plan.packageMaterializationExecutionDryRun.commandExecution, false);
+    assert.equal(plan.packageMaterializationExecutionDryRun.buildOutput, false);
+    assert.equal(plan.packageMaterializationExecutionDryRun.materializationApproved, false);
+    assert.equal(plan.packageMaterializationExecutionDryRun.filesWritten, false);
+    assert.equal(plan.packageMaterializationExecutionDryRun.consumes.packageMaterializationApprovalGate.gateVersion, "P25.35");
+    assert.equal(plan.packageMaterializationExecutionDryRun.dryRunPlan.executeNow, false);
+    assert.ok(plan.packageMaterializationExecutionDryRun.dryRunPlan.steps.some((entry) => entry.id === "write-package-files" && entry.executed === false && entry.writesFiles === true));
+    assert.ok(plan.packageMaterializationExecutionDryRun.dryRunPlan.steps.some((entry) => entry.id === "run-verification" && entry.executed === false && entry.commands.includes("pnpm --filter @penpot/renderer-service test")));
+    assert.equal(plan.packageMaterializationExecutionDryRun.executionOutputs.packageFilesWritten, false);
+    assert.equal(plan.packageMaterializationExecutionDryRun.executionOutputs.commandsRun, false);
+    assert.deepEqual(plan.service.packageMaterializationExecutionDryRun, plan.packageMaterializationExecutionDryRun);
     assert.equal(plan.clientRequest.status, "scaffolded");
     assert.equal(plan.clientRequest.dispatch, false);
     assert.equal(plan.clientRequest.method, "POST");
@@ -1040,6 +1074,7 @@ test("render.thumbnail renderer-service plan exposes dry-run client request whil
     assert.equal(plan.diagnostics.packageCreationDryRunSummaryVersion, "P25.33");
     assert.equal(plan.diagnostics.packageCreationFileManifestVersion, "P25.34");
     assert.equal(plan.diagnostics.packageMaterializationApprovalGateVersion, "P25.35");
+    assert.equal(plan.diagnostics.packageMaterializationExecutionDryRunVersion, "P25.36");
 });
 
 test("render.thumbnail renderer-service plan reports not-configured availability without endpoint", () => {
@@ -2065,6 +2100,73 @@ test("render.thumbnail renderer-service package materialization approval gate st
     assert.ok(gate.noOpGuarantees.includes("approval gate does not grant approval"));
     assert.ok(gate.noOpGuarantees.includes("approval gate does not write package files"));
     assert.ok(gate.requiredBeforeRuntimeDispatch.includes("obtain explicit materialization approval in a later task"));
+});
+
+test("render.thumbnail renderer-service package materialization execution dry-run stays metadata-only", () => {
+    const dryRun = createRenderThumbnailRendererServicePackageMaterializationExecutionDryRun({
+        packageMaterializationApprovalGate: {
+            status: "planned-disabled",
+            gateVersion: "P25.35",
+            approved: false,
+        },
+        packageCreationFileManifest: {
+            status: "planned-disabled",
+            manifestVersion: "P25.34",
+            filesWritten: false,
+        },
+        packageWorkspaceWiring: {
+            status: "planned-disabled",
+            wiringVersion: "P25.30",
+            workspaceMutation: false,
+        },
+        packageBuildVerification: {
+            status: "planned-disabled",
+            verificationVersion: "P25.31",
+            commandExecution: false,
+            buildOutput: false,
+        },
+    });
+
+    assert.equal(dryRun.status, "planned-disabled");
+    assert.equal(dryRun.dryRunVersion, "P25.36");
+    assert.equal(dryRun.dryRunOnly, true);
+    assert.equal(dryRun.executeNow, false);
+    assert.equal(dryRun.approvalRequired, true);
+    assert.equal(dryRun.approved, false);
+    assert.equal(dryRun.adapter, "renderer-service");
+    assert.equal(dryRun.command, "render.thumbnail");
+    assert.equal(dryRun.dispatch, false);
+    assert.equal(dryRun.networkDispatch, false);
+    assert.equal(dryRun.runtimeRegistration, false);
+    assert.equal(dryRun.localFileWrites, false);
+    assert.equal(dryRun.hostStartup, false);
+    assert.equal(dryRun.processSpawn, false);
+    assert.equal(dryRun.packageCreated, false);
+    assert.equal(dryRun.workspaceMutation, false);
+    assert.equal(dryRun.scriptRunnable, false);
+    assert.equal(dryRun.fileMaterialization, false);
+    assert.equal(dryRun.lockfileMutation, false);
+    assert.equal(dryRun.rootPackageJsonMutation, false);
+    assert.equal(dryRun.pnpmWorkspaceMutation, false);
+    assert.equal(dryRun.commandExecution, false);
+    assert.equal(dryRun.buildOutput, false);
+    assert.equal(dryRun.packageScriptsRunnable, false);
+    assert.equal(dryRun.materializationApproved, false);
+    assert.equal(dryRun.filesWritten, false);
+    assert.equal(dryRun.consumes.packageMaterializationApprovalGate.gateVersion, "P25.35");
+    assert.equal(dryRun.consumes.packageMaterializationApprovalGate.approved, false);
+    assert.equal(dryRun.dryRunPlan.packageDirectory, "renderer-service");
+    assert.equal(dryRun.dryRunPlan.executeNow, false);
+    assert.equal(dryRun.dryRunPlan.approvalStatus, "blocked");
+    assert.ok(dryRun.dryRunPlan.steps.some((entry) => entry.id === "create-package-directory" && entry.createsDirectory === true && entry.executed === false));
+    assert.ok(dryRun.dryRunPlan.steps.some((entry) => entry.id === "update-workspace-files" && entry.files.includes("pnpm-lock.yaml") && entry.executed === false));
+    assert.ok(dryRun.blockedBecause.includes("materialization approval is not granted"));
+    assert.equal(dryRun.executionOutputs.packageDirectoryCreated, false);
+    assert.equal(dryRun.executionOutputs.packageFilesWritten, false);
+    assert.equal(dryRun.executionOutputs.workspaceFilesMutated, false);
+    assert.equal(dryRun.executionOutputs.commandsRun, false);
+    assert.ok(dryRun.noOpGuarantees.includes("execution dry-run does not write package files"));
+    assert.ok(dryRun.requiredBeforeRuntimeDispatch.includes("obtain explicit approval before running materialization"));
 });
 
 test("render.thumbnail renderer-service client request scaffold adds MCP audit headers without dispatch", () => {

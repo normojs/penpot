@@ -2464,6 +2464,23 @@ P25.35 render.thumbnail package materialization approval gate result:
   `networkDispatch`, `runtimeRegistration`, and `localFileWrites` remain
   `false`.
 
+P25.36 render.thumbnail package materialization execution dry-run result:
+
+- Shared plans include `packageMaterializationExecutionDryRun`, defining
+  metadata-only future directory creation, package file write, workspace
+  mutation, and verification command steps plus blocked reasons and execution
+  output flags.
+- MCP and CLI expose the dry-run in dry-run and unavailable execution payloads
+  without granting approval, creating package directories, writing files,
+  mutating workspace manifests, mutating lockfiles, running commands, emitting
+  build output, starting processes, or registering runtime dispatch.
+- `packageMaterializationExecutionDryRun.executeNow` remains `false`, while
+  `approved`, `filesWritten`, `fileMaterialization`, `workspaceMutation`,
+  `lockfileMutation`, `commandExecution`, `buildOutput`,
+  `materializationApproved`, `processSpawn`, `packageCreated`, `dispatch`,
+  `networkDispatch`, `runtimeRegistration`, and `localFileWrites` remain
+  `false`.
+
 ### 8.5 Export and Render Tools
 
 May start file-bound and later move to headless:
@@ -2502,7 +2519,8 @@ package file templates, P25.30 defines disabled package workspace wiring, and
 P25.31 defines disabled package build verification. P25.32 defines disabled
 package materialization checklist. P25.33 defines disabled package creation
 dry-run summary. P25.34 defines disabled package creation file manifest.
-P25.35 defines disabled package materialization approval gate.
+P25.35 defines disabled package materialization approval gate. P25.36 defines
+disabled package materialization execution dry-run.
 Runtime behavior remains unavailable
 until opt-in config surfaces, renderer-service implementation, workspace
 wiring, health preflight, cache probe, executable client, and tagged-frame

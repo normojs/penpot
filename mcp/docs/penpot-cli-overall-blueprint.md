@@ -332,6 +332,11 @@ Current state:
   post-approval sequence, and no-op guarantees without granting approval,
   materializing files, mutating workspace state, running commands, or
   registering runtime dispatch.
+- Done: renderer-service package materialization execution dry-run defines
+  metadata-only future directory creation, package file write, workspace
+  mutation, and verification command steps without granting approval,
+  creating directories, writing files, mutating workspace state, running
+  commands, or registering runtime dispatch.
 - Done: focused command-runtime tests cover descriptor groups, lookup,
   adapter-selection priority/error cases, and token-safe envelopes.
 - Status: complete. Later command coverage gaps were tracked by the P15.1
@@ -1009,6 +1014,22 @@ P25.35 is complete:
    mutating workspace manifests, mutating lockfiles, running commands, emitting
    build output, starting processes, or registering runtime dispatch.
 3. `packageMaterializationApprovalGate.approvalRequired` remains true, while
+   `approved`, `filesWritten`, `fileMaterialization`, `workspaceMutation`,
+   `lockfileMutation`, `commandExecution`, `buildOutput`,
+   `materializationApproved`, `processSpawn`, `packageCreated`, `dispatch`,
+   `networkDispatch`, `runtimeRegistration`, and `localFileWrites` remain
+   false.
+
+P25.36 is complete:
+
+1. Shared plans include `packageMaterializationExecutionDryRun` metadata for
+   future directory creation, package file write, workspace mutation, and
+   verification command steps plus blocked reasons and execution output flags.
+2. MCP and CLI expose this dry-run in dry-run and unavailable execution
+   payloads without granting approval, creating package directories, writing
+   files, mutating workspace manifests, mutating lockfiles, running commands,
+   emitting build output, starting processes, or registering runtime dispatch.
+3. `packageMaterializationExecutionDryRun.executeNow` remains false, while
    `approved`, `filesWritten`, `fileMaterialization`, `workspaceMutation`,
    `lockfileMutation`, `commandExecution`, `buildOutput`,
    `materializationApproved`, `processSpawn`, `packageCreated`, `dispatch`,

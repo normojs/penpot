@@ -2764,6 +2764,16 @@ test("render thumbnail dry-run returns renderer-service request plan", async () 
         assert.equal(body.data.packageMaterializationApprovalGate.materializationApproved, false);
         assert.ok(body.data.packageMaterializationApprovalGate.approvalInputs.some((entry) => entry.id === "explicit-user-approval" && entry.satisfied === false));
         assert.equal(body.data.packageMaterializationApprovalGate.approvalDecision.canMaterialize, false);
+        assert.equal(body.data.packageMaterializationExecutionDryRun.dryRunVersion, "P25.36");
+        assert.equal(body.data.packageMaterializationExecutionDryRun.dryRunOnly, true);
+        assert.equal(body.data.packageMaterializationExecutionDryRun.executeNow, false);
+        assert.equal(body.data.packageMaterializationExecutionDryRun.approved, false);
+        assert.equal(body.data.packageMaterializationExecutionDryRun.dispatch, false);
+        assert.equal(body.data.packageMaterializationExecutionDryRun.runtimeRegistration, false);
+        assert.equal(body.data.packageMaterializationExecutionDryRun.localFileWrites, false);
+        assert.equal(body.data.packageMaterializationExecutionDryRun.fileMaterialization, false);
+        assert.equal(body.data.packageMaterializationExecutionDryRun.filesWritten, false);
+        assert.ok(body.data.packageMaterializationExecutionDryRun.dryRunPlan.steps.some((entry) => entry.id === "write-package-files" && entry.executed === false));
         assert.equal(body.data.service.responseNormalization.successStatus, "ok");
         assert.equal(body.data.service.responseNormalization.localFileWrites, false);
         assert.equal(body.data.service.errorShape.code, "renderer_service_error");
@@ -2931,6 +2941,15 @@ test("render thumbnail execution reports renderer-service unavailable without ca
         assert.equal(body.error.data.packageMaterializationApprovalGate.localFileWrites, false);
         assert.equal(body.error.data.packageMaterializationApprovalGate.fileMaterialization, false);
         assert.equal(body.error.data.packageMaterializationApprovalGate.materializationApproved, false);
+        assert.equal(body.error.data.packageMaterializationExecutionDryRun.dryRunVersion, "P25.36");
+        assert.equal(body.error.data.packageMaterializationExecutionDryRun.dryRunOnly, true);
+        assert.equal(body.error.data.packageMaterializationExecutionDryRun.executeNow, false);
+        assert.equal(body.error.data.packageMaterializationExecutionDryRun.approved, false);
+        assert.equal(body.error.data.packageMaterializationExecutionDryRun.dispatch, false);
+        assert.equal(body.error.data.packageMaterializationExecutionDryRun.runtimeRegistration, false);
+        assert.equal(body.error.data.packageMaterializationExecutionDryRun.localFileWrites, false);
+        assert.equal(body.error.data.packageMaterializationExecutionDryRun.fileMaterialization, false);
+        assert.equal(body.error.data.packageMaterializationExecutionDryRun.filesWritten, false);
         assert.equal(body.error.data.clientRequest.dispatch, false);
         assert.equal(body.error.data.serviceRequest.operation, "thumbnail.render");
     } finally {

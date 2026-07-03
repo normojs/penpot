@@ -1,6 +1,6 @@
 # Render Thumbnail Renderer Service API
 
-Status: P25.35 API fixtures, MCP/CLI dry-run/client boundaries, metadata-only
+Status: P25.36 API fixtures, MCP/CLI dry-run/client boundaries, metadata-only
 availability probes, response normalization contracts, disabled client request
 scaffold, closed execution gate, disabled health preflight, and executable
 client harness plus dispatch adapter boundary plans, and opt-in configuration
@@ -15,7 +15,8 @@ registration remains blocked. P25.32 adds package materialization checklist
 metadata without creating package files. P25.33 adds package creation dry-run
 summary metadata without writing files. P25.34 adds package creation file
 manifest metadata without materializing files. P25.35 adds package
-materialization approval gate metadata without granting approval.
+materialization approval gate metadata without granting approval. P25.36 adds
+package materialization execution dry-run metadata without executing writes.
 
 P25.6 selected a dedicated thumbnail renderer service as the future executable
 owner for `render.thumbnail`. This document defines the service-facing request
@@ -187,6 +188,15 @@ guarantees while keeping approval ungranted, dry-run-only behavior, file
 writes, package creation, workspace mutation, lockfile mutation, command
 execution, build output, materialization approval, process startup, dispatch,
 network dispatch, runtime registration, and local file writes disabled.
+
+P25.36 defines the package materialization execution dry-run. Plans now include
+`packageMaterializationExecutionDryRun`, covering future directory creation,
+package file write, workspace mutation, and verification command steps plus
+blocked reasons and execution output flags while keeping execution blocked,
+approval ungranted, file writes, package creation, workspace mutation, lockfile
+mutation, command execution, build output, materialization approval, process
+startup, dispatch, network dispatch, runtime registration, and local file
+writes disabled.
 
 ## Service Boundary
 

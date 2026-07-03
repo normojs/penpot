@@ -1069,3 +1069,16 @@ P25.35 adds renderer-service package materialization approval gate:
   `commandExecution`, `buildOutput`, `materializationApproved`,
   `processSpawn`, `packageCreated`, `dispatch`, `networkDispatch`,
   `runtimeRegistration`, and `localFileWrites` all `false`.
+
+P25.36 adds renderer-service package materialization execution dry-run:
+
+- Plans include `packageMaterializationExecutionDryRun`, defining future
+  directory creation, package file write, workspace mutation, and verification
+  command steps plus blocked reasons and execution output flags.
+- The dry-run remains planning-only with `executeNow:false`,
+  `approvalRequired:true`, `approved:false`, `dryRunOnly:true`,
+  `filesWritten`, `fileMaterialization`, `workspaceMutation`,
+  `lockfileMutation`, `commandExecution`, `buildOutput`,
+  `materializationApproved`, `processSpawn`, `packageCreated`, `dispatch`,
+  `networkDispatch`, `runtimeRegistration`, and `localFileWrites` all
+  `false`.
