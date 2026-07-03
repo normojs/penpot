@@ -311,6 +311,10 @@ Current state:
   `pnpm-workspace.yaml` entry, root scripts, lockfile touchpoints, workspace
   filter, and non-target files without editing manifests, mutating lockfiles,
   creating package files, or making scripts runnable.
+- Done: renderer-service package build verification defines metadata-only
+  filtered build, type-check, and test commands plus expected `dist` artifacts
+  without running package scripts, spawning processes, emitting build output,
+  creating package files, or mutating workspace state.
 - Done: focused command-runtime tests cover descriptor groups, lookup,
   adapter-selection priority/error cases, and token-safe envelopes.
 - Status: complete. Later command coverage gaps were tracked by the P15.1
@@ -914,6 +918,20 @@ P25.30 is complete:
    scripts runnable.
 3. `packageWorkspaceWiring.pnpmWorkspaceMutation`,
    `rootPackageJsonMutation`, `lockfileMutation`, `workspaceMutation`,
+   `packageCreated`, `scriptRunnable`, `fileMaterialization`, `dispatch`,
+   `networkDispatch`, `runtimeRegistration`, and `localFileWrites` remain
+   false.
+
+P25.31 is complete:
+
+1. Shared plans include `packageBuildVerification` metadata for future filtered
+   build, type-check, and test commands plus expected `dist` artifacts.
+2. MCP and CLI expose this verification in dry-run and unavailable execution
+   payloads without running package scripts, spawning processes, emitting build
+   output, creating package files, mutating workspace manifests, or registering
+   runtime dispatch.
+3. `packageBuildVerification.commandExecution`, `buildOutput`,
+   `packageScriptsRunnable`, `processSpawn`, `workspaceMutation`,
    `packageCreated`, `scriptRunnable`, `fileMaterialization`, `dispatch`,
    `networkDispatch`, `runtimeRegistration`, and `localFileWrites` remain
    false.

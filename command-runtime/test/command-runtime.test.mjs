@@ -33,6 +33,7 @@ import {
     createRenderThumbnailRendererServiceIntegrationFixtureHarness,
     createRenderThumbnailRendererServiceNoopServiceHostScaffold,
     createRenderThumbnailRendererServicePackageCreationGuardrails,
+    createRenderThumbnailRendererServicePackageBuildVerification,
     createRenderThumbnailRendererServicePackageFileTemplates,
     createRenderThumbnailRendererServicePackageManifestScaffold,
     createRenderThumbnailRendererServicePackageWorkspaceWiring,
@@ -531,6 +532,14 @@ test("render.thumbnail renderer-service API fixtures define planning requests wi
     assert.equal(fixtures.serviceApi.packageWorkspaceWiring.localFileWrites, false);
     assert.equal(fixtures.serviceApi.packageWorkspaceWiring.workspaceMutation, false);
     assert.equal(fixtures.serviceApi.packageWorkspaceWiring.lockfileMutation, false);
+    assert.equal(fixtures.serviceApi.packageBuildVerification.verificationVersion, "P25.31");
+    assert.equal(fixtures.serviceApi.packageBuildVerification.dispatch, false);
+    assert.equal(fixtures.serviceApi.packageBuildVerification.networkDispatch, false);
+    assert.equal(fixtures.serviceApi.packageBuildVerification.runtimeRegistration, false);
+    assert.equal(fixtures.serviceApi.packageBuildVerification.localFileWrites, false);
+    assert.equal(fixtures.serviceApi.packageBuildVerification.processSpawn, false);
+    assert.equal(fixtures.serviceApi.packageBuildVerification.commandExecution, false);
+    assert.equal(fixtures.serviceApi.packageBuildVerification.buildOutput, false);
     assert.deepEqual(fixtures.runtimeRegistration.commandDescriptorAdapters, ["renderer-service"]);
     assert.deepEqual(CommandDescriptors.RENDER_THUMBNAIL.adapters, ["renderer-service"]);
     assert.equal(fixtures.runtimeRegistration.mcpToolRegistered, true);
@@ -835,6 +844,29 @@ test("render.thumbnail renderer-service plan exposes dry-run client request whil
     assert.equal(plan.packageWorkspaceWiring.lockfilePlan.mutateNow, false);
     assert.equal(plan.packageWorkspaceWiring.workspaceDependencyPlan.workspaceRegistered, false);
     assert.deepEqual(plan.service.packageWorkspaceWiring, plan.packageWorkspaceWiring);
+    assert.equal(plan.packageBuildVerification.verificationVersion, "P25.31");
+    assert.equal(plan.packageBuildVerification.dispatch, false);
+    assert.equal(plan.packageBuildVerification.networkDispatch, false);
+    assert.equal(plan.packageBuildVerification.runtimeRegistration, false);
+    assert.equal(plan.packageBuildVerification.localFileWrites, false);
+    assert.equal(plan.packageBuildVerification.hostStartup, false);
+    assert.equal(plan.packageBuildVerification.processSpawn, false);
+    assert.equal(plan.packageBuildVerification.packageCreated, false);
+    assert.equal(plan.packageBuildVerification.workspaceMutation, false);
+    assert.equal(plan.packageBuildVerification.scriptRunnable, false);
+    assert.equal(plan.packageBuildVerification.fileMaterialization, false);
+    assert.equal(plan.packageBuildVerification.lockfileMutation, false);
+    assert.equal(plan.packageBuildVerification.rootPackageJsonMutation, false);
+    assert.equal(plan.packageBuildVerification.pnpmWorkspaceMutation, false);
+    assert.equal(plan.packageBuildVerification.commandExecution, false);
+    assert.equal(plan.packageBuildVerification.buildOutput, false);
+    assert.equal(plan.packageBuildVerification.packageScriptsRunnable, false);
+    assert.equal(plan.packageBuildVerification.consumes.packageWorkspaceWiring.wiringVersion, "P25.30");
+    assert.ok(plan.packageBuildVerification.verificationCommands.some((entry) => entry.id === "workspace-filter-build" && entry.runnable === false));
+    assert.ok(plan.packageBuildVerification.verificationCommands.some((entry) => entry.id === "workspace-filter-types-check" && entry.emitsFiles === false));
+    assert.ok(plan.packageBuildVerification.expectedArtifacts.some((entry) => entry.path === "renderer-service/dist/index.js" && entry.producedNow === false));
+    assert.equal(plan.packageBuildVerification.verificationReadiness.canRunVerification, false);
+    assert.deepEqual(plan.service.packageBuildVerification, plan.packageBuildVerification);
     assert.equal(plan.clientRequest.status, "scaffolded");
     assert.equal(plan.clientRequest.dispatch, false);
     assert.equal(plan.clientRequest.method, "POST");
@@ -881,6 +913,7 @@ test("render.thumbnail renderer-service plan exposes dry-run client request whil
     assert.equal(plan.diagnostics.packageCreationGuardrailsVersion, "P25.28");
     assert.equal(plan.diagnostics.packageFileTemplatesVersion, "P25.29");
     assert.equal(plan.diagnostics.packageWorkspaceWiringVersion, "P25.30");
+    assert.equal(plan.diagnostics.packageBuildVerificationVersion, "P25.31");
 });
 
 test("render.thumbnail renderer-service plan reports not-configured availability without endpoint", () => {
@@ -1613,6 +1646,54 @@ test("render.thumbnail renderer-service package workspace wiring stays metadata-
     assert.ok(wiring.nonTargets.some((entry) => entry.file === "docker-compose.yaml" && entry.mutateNow === false));
     assert.ok(wiring.noOpGuarantees.includes("do not edit pnpm-workspace.yaml"));
     assert.ok(wiring.requiredBeforeRuntimeDispatch.includes("add pnpm workspace entry and lockfile changes in the same package wiring task"));
+});
+
+test("render.thumbnail renderer-service package build verification stays metadata-only", () => {
+    const verification = createRenderThumbnailRendererServicePackageBuildVerification({
+        packageWorkspaceWiring: {
+            status: "planned-disabled",
+            wiringVersion: "P25.30",
+        },
+        packageFileTemplates: {
+            status: "planned-disabled",
+            templateVersion: "P25.29",
+            fileMaterialization: false,
+        },
+    });
+
+    assert.equal(verification.status, "planned-disabled");
+    assert.equal(verification.verificationVersion, "P25.31");
+    assert.equal(verification.adapter, "renderer-service");
+    assert.equal(verification.command, "render.thumbnail");
+    assert.equal(verification.dispatch, false);
+    assert.equal(verification.networkDispatch, false);
+    assert.equal(verification.runtimeRegistration, false);
+    assert.equal(verification.localFileWrites, false);
+    assert.equal(verification.hostStartup, false);
+    assert.equal(verification.processSpawn, false);
+    assert.equal(verification.packageCreated, false);
+    assert.equal(verification.workspaceMutation, false);
+    assert.equal(verification.scriptRunnable, false);
+    assert.equal(verification.fileMaterialization, false);
+    assert.equal(verification.lockfileMutation, false);
+    assert.equal(verification.rootPackageJsonMutation, false);
+    assert.equal(verification.pnpmWorkspaceMutation, false);
+    assert.equal(verification.commandExecution, false);
+    assert.equal(verification.buildOutput, false);
+    assert.equal(verification.packageScriptsRunnable, false);
+    assert.equal(verification.consumes.packageWorkspaceWiring.wiringVersion, "P25.30");
+    assert.equal(verification.consumes.packageWorkspaceWiring.workspaceRegistered, false);
+    assert.equal(verification.consumes.packageWorkspaceWiring.scriptsRunnable, false);
+    assert.equal(verification.consumes.packageFileTemplates.templateVersion, "P25.29");
+    assert.equal(verification.consumes.packageFileTemplates.fileMaterialization, false);
+    assert.ok(verification.verificationCommands.some((entry) => entry.command === "pnpm --filter @penpot/renderer-service build" && entry.runnable === false));
+    assert.ok(verification.verificationCommands.some((entry) => entry.command.includes("tsc --noEmit") && entry.emitsFiles === false));
+    assert.ok(verification.expectedArtifacts.every((entry) => entry.producedNow === false && entry.requiredAfterBuild === true));
+    assert.equal(verification.verificationReadiness.status, "blocked");
+    assert.equal(verification.verificationReadiness.canRunVerification, false);
+    assert.ok(verification.verificationReadiness.blockers.includes("pnpm-workspace-entry"));
+    assert.ok(verification.noOpGuarantees.includes("do not run renderer-service build commands"));
+    assert.ok(verification.requiredBeforeRuntimeDispatch.includes("prove build, type-check, and test commands pass before making renderer-service scripts runnable"));
 });
 
 test("render.thumbnail renderer-service client request scaffold adds MCP audit headers without dispatch", () => {

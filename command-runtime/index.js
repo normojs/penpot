@@ -1032,6 +1032,10 @@ export function createRenderThumbnailRendererServicePlan(options = EMPTY_OBJECT)
         packageCreationGuardrails,
         packageFileTemplates,
     });
+    const packageBuildVerification = createRenderThumbnailRendererServicePackageBuildVerification({
+        packageWorkspaceWiring,
+        packageFileTemplates,
+    });
 
     return {
         command: CommandDescriptors.RENDER_THUMBNAIL.id,
@@ -1094,6 +1098,7 @@ export function createRenderThumbnailRendererServicePlan(options = EMPTY_OBJECT)
             packageCreationGuardrails,
             packageFileTemplates,
             packageWorkspaceWiring,
+            packageBuildVerification,
             clientRequest,
         },
         client,
@@ -1117,6 +1122,7 @@ export function createRenderThumbnailRendererServicePlan(options = EMPTY_OBJECT)
         packageCreationGuardrails,
         packageFileTemplates,
         packageWorkspaceWiring,
+        packageBuildVerification,
         clientRequest,
         serviceRequest: {
             command: CommandDescriptors.RENDER_THUMBNAIL.id,
@@ -1200,6 +1206,7 @@ export function createRenderThumbnailRendererServicePlan(options = EMPTY_OBJECT)
             packageCreationGuardrailsVersion: packageCreationGuardrails.guardrailVersion,
             packageFileTemplatesVersion: packageFileTemplates.templateVersion,
             packageWorkspaceWiringVersion: packageWorkspaceWiring.wiringVersion,
+            packageBuildVerificationVersion: packageBuildVerification.verificationVersion,
         },
     };
 }
@@ -1670,6 +1677,126 @@ export function createRenderThumbnailRendererServicePackageWorkspaceWiring(optio
             "add pnpm workspace entry and lockfile changes in the same package wiring task",
             "prove workspace filtered build and test commands before making scripts runnable",
             "keep render.thumbnail runtime registration disabled until workspace wiring is committed and verified",
+        ],
+    };
+}
+
+export function createRenderThumbnailRendererServicePackageBuildVerification(options = EMPTY_OBJECT) {
+    const packageWorkspaceWiring = options.packageWorkspaceWiring ?? EMPTY_OBJECT;
+    const packageFileTemplates = options.packageFileTemplates ?? EMPTY_OBJECT;
+
+    return {
+        status: "planned-disabled",
+        verificationVersion: "P25.31",
+        adapter: "renderer-service",
+        command: CommandDescriptors.RENDER_THUMBNAIL.id,
+        dispatch: false,
+        networkDispatch: false,
+        runtimeRegistration: false,
+        localFileWrites: false,
+        hostStartup: false,
+        processSpawn: false,
+        packageCreated: false,
+        workspaceMutation: false,
+        scriptRunnable: false,
+        fileMaterialization: false,
+        lockfileMutation: false,
+        rootPackageJsonMutation: false,
+        pnpmWorkspaceMutation: false,
+        commandExecution: false,
+        buildOutput: false,
+        packageScriptsRunnable: false,
+        consumes: {
+            packageWorkspaceWiring: {
+                requiredStatus: "planned-disabled",
+                currentStatus: packageWorkspaceWiring.status ?? "planned-disabled",
+                wiringVersion: packageWorkspaceWiring.wiringVersion ?? "P25.30",
+                workspaceRegistered: false,
+                scriptsRunnable: false,
+            },
+            packageFileTemplates: {
+                requiredStatus: "planned-disabled",
+                currentStatus: packageFileTemplates.status ?? "planned-disabled",
+                templateVersion: packageFileTemplates.templateVersion ?? "P25.29",
+                fileMaterialization: false,
+            },
+        },
+        verificationCommands: [
+            {
+                id: "workspace-filter-build",
+                command: "pnpm --filter @penpot/renderer-service build",
+                purpose: "compile the future renderer-service package",
+                runnable: false,
+                processSpawn: false,
+                emitsFiles: false,
+                requiresWorkspaceEntry: true,
+                requiresPackageFiles: true,
+            },
+            {
+                id: "workspace-filter-test",
+                command: "pnpm --filter @penpot/renderer-service test",
+                purpose: "run future no-op host and contract tests",
+                runnable: false,
+                processSpawn: false,
+                emitsFiles: false,
+                requiresWorkspaceEntry: true,
+                requiresPackageFiles: true,
+            },
+            {
+                id: "workspace-filter-types-check",
+                command: "pnpm --filter @penpot/renderer-service exec tsc --noEmit",
+                purpose: "type-check the future package without emitting build output",
+                runnable: false,
+                processSpawn: false,
+                emitsFiles: false,
+                requiresWorkspaceEntry: true,
+                requiresPackageFiles: true,
+            },
+        ],
+        expectedArtifacts: [
+            {
+                path: "renderer-service/dist/index.js",
+                producedNow: false,
+                requiredAfterBuild: true,
+            },
+            {
+                path: "renderer-service/dist/index.d.ts",
+                producedNow: false,
+                requiredAfterBuild: true,
+            },
+            {
+                path: "renderer-service/dist/noop-host.js",
+                producedNow: false,
+                requiredAfterBuild: true,
+            },
+            {
+                path: "renderer-service/dist/noop-host.d.ts",
+                producedNow: false,
+                requiredAfterBuild: true,
+            },
+        ],
+        verificationReadiness: {
+            status: "blocked",
+            canRunVerification: false,
+            blockers: [
+                "renderer-service-package-files",
+                "pnpm-workspace-entry",
+                "root-package-scripts-or-filtered-package-scripts",
+                "pnpm-lockfile-update",
+            ],
+        },
+        noOpGuarantees: [
+            "do not run renderer-service build commands",
+            "do not run renderer-service tests",
+            "do not spawn package scripts",
+            "do not emit renderer-service/dist build output",
+            "do not edit pnpm workspace manifests or lockfiles",
+        ],
+        requiredBeforeRuntimeDispatch: [
+            "materialize renderer-service package files before running verification",
+            "commit workspace entry and lockfile updates before filtered build verification",
+            "prove build, type-check, and test commands pass before making renderer-service scripts runnable",
+            "keep render.thumbnail runtime registration disabled until package verification is green",
         ],
     };
 }

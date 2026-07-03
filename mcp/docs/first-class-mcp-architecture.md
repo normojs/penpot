@@ -2387,6 +2387,21 @@ P25.30 render.thumbnail package workspace wiring result:
   `networkDispatch`, `runtimeRegistration`, and `localFileWrites` remain
   `false`.
 
+P25.31 render.thumbnail package build verification result:
+
+- Shared plans include `packageBuildVerification`, defining metadata-only
+  filtered build, type-check, and test commands plus expected future `dist`
+  artifacts.
+- MCP and CLI expose the verification in dry-run and unavailable execution
+  payloads without running package scripts, spawning processes, emitting build
+  output, creating package files, editing workspace manifests, mutating
+  lockfiles, or registering runtime dispatch.
+- `packageBuildVerification.commandExecution`, `buildOutput`,
+  `packageScriptsRunnable`, `processSpawn`, `workspaceMutation`,
+  `packageCreated`, `scriptRunnable`, `fileMaterialization`, `dispatch`,
+  `networkDispatch`, `runtimeRegistration`, and `localFileWrites` remain
+  `false`.
+
 ### 8.5 Export and Render Tools
 
 May start file-bound and later move to headless:
@@ -2421,7 +2436,8 @@ P25.24 defines the health/no-op contract fixtures, and P25.25 defines the
 no-op service host scaffold. P25.26 defines disabled host lifecycle test
 fixtures, P25.27 defines disabled package manifest scaffold metadata, and
 P25.28 defines disabled package creation guardrails. P25.29 defines disabled
-package file templates, and P25.30 defines disabled package workspace wiring.
+package file templates, P25.30 defines disabled package workspace wiring, and
+P25.31 defines disabled package build verification.
 Runtime behavior remains unavailable
 until opt-in config surfaces, renderer-service implementation, workspace
 wiring, health preflight, cache probe, executable client, and tagged-frame

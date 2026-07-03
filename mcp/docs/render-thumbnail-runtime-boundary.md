@@ -30,7 +30,8 @@ slice, P25.24 defines the health/no-op contract fixtures, and P25.25 defines
 the no-op service host scaffold. P25.26 defines host lifecycle test fixtures,
 P25.27 defines package manifest scaffold metadata, P25.28 defines package
 creation guardrails, P25.29 defines package file templates, and P25.30 defines
-package workspace wiring; runtime execution remains blocked.
+package workspace wiring. P25.31 defines package build verification; runtime
+execution remains blocked.
 
 ## Existing Surfaces
 
@@ -169,7 +170,8 @@ contract fixtures, and P25.25 adds the metadata-only no-op service host
 scaffold. P25.26 adds metadata-only host lifecycle test fixtures, P25.27 adds
 metadata-only package manifest scaffold fields, P25.28 adds metadata-only
 package creation guardrails, P25.29 adds metadata-only package file templates,
-and P25.30 adds metadata-only package workspace wiring. MCP
+P25.30 adds metadata-only package workspace wiring, and P25.31 adds
+metadata-only package build verification. MCP
 `render.thumbnail` and `penpot-cli render thumbnail --dry-run` can print the
 future request shape, configured/not configured service metadata,
 response/error contracts, `clientRequest.dispatch:false`,
@@ -205,6 +207,11 @@ plus `packageWorkspaceWiring.pnpmWorkspaceMutation:false`,
 `packageWorkspaceWiring.packageCreated:false`,
 `packageWorkspaceWiring.scriptRunnable:false`, and
 `packageWorkspaceWiring.fileMaterialization:false`,
+plus `packageBuildVerification.commandExecution:false`,
+`packageBuildVerification.buildOutput:false`,
+`packageBuildVerification.packageScriptsRunnable:false`,
+`packageBuildVerification.processSpawn:false`, and
+`packageBuildVerification.runtimeRegistration:false`,
 but execution still returns
 `renderer_service_unavailable` until explicit opt-in, config surfaces, renderer
 service, integration tests, health preflight, file cache probe, tagged-frame

@@ -51,13 +51,16 @@ Workspace wiring:
 - Keep future renderer-service package wiring as command-runtime planning
   metadata until an explicit implementation task materializes it. P25.30 plans
   the eventual `renderer-service` workspace entry, root scripts, lockfile
-  touchpoints, and `@penpot/renderer-service` workspace filter while keeping
+  touchpoints, and `@penpot/renderer-service` workspace filter, and P25.31
+  plans filtered build, type-check, and test verification while keeping
   `pnpmWorkspaceMutation:false`, `rootPackageJsonMutation:false`,
   `lockfileMutation:false`, `workspaceMutation:false`, `packageCreated:false`,
-  `scriptRunnable:false`, `fileMaterialization:false`, `dispatch:false`,
+  `scriptRunnable:false`, `fileMaterialization:false`, `commandExecution:false`,
+  `buildOutput:false`, `processSpawn:false`, `dispatch:false`,
   `networkDispatch:false`, `runtimeRegistration:false`, and
   `localFileWrites:false`; no workspace manifests, lockfiles, root
-  `package.json`, or package files are edited in that planning step.
+  `package.json`, package files, package scripts, or `dist` outputs are edited
+  or produced in those planning steps.
 
 Ownership by module:
 
@@ -1009,5 +1012,14 @@ P25.30 adds renderer-service package workspace wiring:
   workspace dependency filter, and non-target files.
 - The wiring remains planning-only with `pnpmWorkspaceMutation`,
   `rootPackageJsonMutation`, `lockfileMutation`, `workspaceMutation`,
+  `packageCreated`, `scriptRunnable`, `fileMaterialization`, `dispatch`,
+  `networkDispatch`, `runtimeRegistration`, and `localFileWrites` all `false`.
+
+P25.31 adds renderer-service package build verification:
+
+- Plans include `packageBuildVerification`, defining future filtered build,
+  type-check, and test commands plus expected `dist` artifacts.
+- The verification remains planning-only with `commandExecution`,
+  `buildOutput`, `packageScriptsRunnable`, `processSpawn`, `workspaceMutation`,
   `packageCreated`, `scriptRunnable`, `fileMaterialization`, `dispatch`,
   `networkDispatch`, `runtimeRegistration`, and `localFileWrites` all `false`.
