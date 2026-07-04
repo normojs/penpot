@@ -1,6 +1,6 @@
 # Render Thumbnail Contract
 
-Status: P25.4 descriptor contract; P25.50 MCP/CLI renderer-service dry-run
+Status: P25.4 descriptor contract; P25.51 MCP/CLI renderer-service dry-run
 boundaries, metadata-only availability probes, response normalization
 contracts, disabled client request scaffolding, closed execution gate, disabled
 health preflight, executable client harness plan, and dispatch adapter boundary
@@ -52,6 +52,10 @@ P25.50 adds package materialization approval execution handoff policy metadata
 without preparing, validating, storing, or queuing handoffs, creating or
 dispatching execution jobs, selecting execution owners, accepting/validating
 tokens, consuming tokens, or granting approval.
+P25.51 adds package materialization approval post-handoff audit policy metadata
+without preparing, validating, storing, publishing, exporting, or writing audit
+records, capturing handoff or execution job snapshots, selecting audit sinks,
+accepting/validating tokens, consuming tokens, or granting approval.
 
 This document defines the `render.thumbnail` contract before executable MCP or
 CLI rendering is enabled. The contract follows Penpot's existing dashboard
@@ -528,6 +532,27 @@ Shared contract shape:
   `runtimeRegistration:false`, and `localFileWrites:false`. They do not
   prepare, validate, persist, or queue handoffs, create or dispatch execution
   jobs, select or notify execution owners, grant approval, or accept tokens.
+- P25.51 package materialization approval post-handoff audit policy fields are
+  planning-only. They define future audit sinks, required audit inputs,
+  post-handoff audit checks, blocked audit decisions, and no-op guarantees
+  while keeping
+  `packageMaterializationApprovalPostHandoffAuditPolicy.auditRecordPrepared:false`,
+  `packageMaterializationApprovalPostHandoffAuditPolicy.auditRecordValidated:false`,
+  `packageMaterializationApprovalPostHandoffAuditPolicy.auditRecordStored:false`,
+  `packageMaterializationApprovalPostHandoffAuditPolicy.auditRecordWritten:false`,
+  `packageMaterializationApprovalPostHandoffAuditPolicy.handoffSnapshotCaptured:false`,
+  `packageMaterializationApprovalPostHandoffAuditPolicy.executionJobSnapshotCaptured:false`,
+  `packageMaterializationApprovalPostHandoffAuditPolicy.materializationReady:false`,
+  `packageMaterializationApprovalPostHandoffAuditPolicy.materializationApproved:false`,
+  `tokenAccepted:false`, `tokenValidated:false`, `tokenConsumed:false`,
+  `approved:false`, `finalApprovalGranted:false`, `filesWritten:false`,
+  `verificationExecuted:false`, `fileMaterialization:false`,
+  `workspaceMutation:false`, `lockfileMutation:false`,
+  `commandExecution:false`, `buildOutput:false`,
+  `runtimeRegistration:false`, and `localFileWrites:false`. They do not
+  prepare, validate, store, publish, export, or write audit records, capture
+  handoff or execution job snapshots, select audit sinks, grant approval, or
+  accept tokens.
 - Exporter service execution is out of scope for this command unless a later
   task explicitly maps thumbnail rendering to exporter-compatible semantics.
 - P25.6 selects a future dedicated thumbnail renderer service as the executable
@@ -542,7 +567,7 @@ See `render-thumbnail-runtime-boundary.md` and
 audit, resource-return rules, cache refresh behavior, auth expectations, and
 future test strategy.
 See `render-thumbnail-renderer-service-api.md` and
-`render-thumbnail-renderer-service-fixtures.json` for the P25.50 future
+`render-thumbnail-renderer-service-fixtures.json` for the P25.51 future
 renderer-service request/response API, MCP/CLI dry-run/client boundary, and
 metadata-only availability probe plus response/error normalization and disabled
 client request, execution gate, health preflight, and execution harness
@@ -558,7 +583,8 @@ materialization approval revocation policy, package materialization approval
 scope binding policy, and package materialization approval operator
 confirmation policy, package materialization approval emergency stop policy,
 package materialization approval readiness verdict policy, and package
-materialization approval execution handoff policy.
+materialization approval execution handoff policy, and package materialization
+approval post-handoff audit policy.
 
 ## Fixtures
 

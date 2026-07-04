@@ -1342,3 +1342,28 @@ policy:
   prepare, validate, persist, or queue handoffs, create or dispatch execution
   jobs, select or notify execution owners, grant approval, or accept/validate
   tokens.
+
+P25.51 adds renderer-service package materialization approval post-handoff
+audit policy:
+
+- Plans include `packageMaterializationApprovalPostHandoffAuditPolicy`,
+  defining the future audit sink, required audit inputs, post-handoff audit
+  checks, blocked audit decision, and no-op guarantees.
+- The post-handoff audit policy remains planning-only with
+  `auditRecordPrepared:false`, `auditRecordValidated:false`,
+  `auditRecordStored:false`, `auditRecordPublished:false`,
+  `auditRecordExported:false`, `auditRecordWritten:false`,
+  `auditTrailLinked:false`, `handoffSnapshotCaptured:false`,
+  `executionJobSnapshotCaptured:false`, `auditSinkSelected:false`,
+  `auditSinkNotified:false`, `materializationReady:false`,
+  `materializationApproved:false`, `tokenAccepted:false`,
+  `tokenValidated:false`, `tokenConsumed:false`, `approved:false`,
+  `finalApprovalGranted:false`, `executeNow:false`, `verifyNow:false`,
+  `filesWritten:false`, `fileMaterialization:false`,
+  `workspaceMutation:false`, `lockfileMutation:false`,
+  `commandExecution:false`, `buildOutput:false`, `processSpawn:false`,
+  `packageCreated:false`, `dispatch:false`, `networkDispatch:false`,
+  `runtimeRegistration:false`, and `localFileWrites:false`. It does not
+  prepare, validate, store, publish, export, or write audit records, capture
+  handoff or execution job snapshots, select or notify audit sinks, grant
+  approval, or accept/validate tokens.

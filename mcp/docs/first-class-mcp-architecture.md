@@ -2781,6 +2781,31 @@ P25.50 render.thumbnail package materialization approval execution handoff polic
   `packageCreated`, `dispatch`, `networkDispatch`, `runtimeRegistration`, and
   `localFileWrites` remain `false`.
 
+P25.51 render.thumbnail package materialization approval post-handoff audit policy result:
+
+- Shared plans include `packageMaterializationApprovalPostHandoffAuditPolicy`,
+  defining metadata-only audit sinks, required audit inputs, post-handoff audit
+  checks, blocked audit decisions, and no-op guarantees.
+- MCP and CLI expose the post-handoff audit policy plan in dry-run and
+  unavailable execution payloads without preparing audit records, validating
+  audit records, storing audit records, publishing audit records, exporting
+  audit records, writing audit records, capturing handoff or execution job
+  snapshots, selecting audit sinks, accepting or validating tokens, consuming
+  or revoking tokens, granting approval, creating package directories, writing
+  files, mutating workspace manifests, mutating lockfiles, running commands,
+  emitting build output, starting processes, or registering runtime dispatch.
+- `auditRecordPrepared`, `auditRecordValidated`, `auditRecordStored`,
+  `auditRecordPublished`, `auditRecordExported`, `auditRecordWritten`,
+  `auditTrailLinked`, `handoffSnapshotCaptured`,
+  `executionJobSnapshotCaptured`, `auditSinkSelected`, `auditSinkNotified`,
+  `materializationReady`, `materializationApproved`, `tokenAccepted`,
+  `tokenValidated`, `tokenConsumed`, `tokenRevoked`, `approved`,
+  `finalApprovalGranted`, `executeNow`, and `verifyNow` remain `false`, while
+  `filesWritten`, `verificationExecuted`, `fileMaterialization`,
+  `workspaceMutation`, `lockfileMutation`, `commandExecution`, `buildOutput`,
+  `processSpawn`, `packageCreated`, `dispatch`, `networkDispatch`,
+  `runtimeRegistration`, and `localFileWrites` remain `false`.
+
 ### 8.5 Export and Render Tools
 
 May start file-bound and later move to headless:
@@ -2835,6 +2860,8 @@ materialization approval operator confirmation policy. P25.48 defines disabled
 package materialization approval emergency stop policy. P25.49 defines
 disabled package materialization approval readiness verdict policy. P25.50
 defines disabled package materialization approval execution handoff policy.
+P25.51 defines disabled package materialization approval post-handoff audit
+policy.
 Runtime behavior remains unavailable
 until opt-in config surfaces, renderer-service implementation, workspace
 wiring, health preflight, cache probe, executable client, and tagged-frame

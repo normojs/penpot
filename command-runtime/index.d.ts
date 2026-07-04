@@ -472,6 +472,7 @@ export interface RenderThumbnailRendererServicePlan {
         packageMaterializationApprovalEmergencyStopPolicy: RenderThumbnailRendererServicePackageMaterializationApprovalEmergencyStopPolicy;
         packageMaterializationApprovalReadinessVerdictPolicy: RenderThumbnailRendererServicePackageMaterializationApprovalReadinessVerdictPolicy;
         packageMaterializationApprovalExecutionHandoffPolicy: RenderThumbnailRendererServicePackageMaterializationApprovalExecutionHandoffPolicy;
+        packageMaterializationApprovalPostHandoffAuditPolicy: RenderThumbnailRendererServicePackageMaterializationApprovalPostHandoffAuditPolicy;
         clientRequest: RenderThumbnailRendererServiceClientRequest;
     };
     client: RenderThumbnailRendererServiceClientConfig;
@@ -515,6 +516,7 @@ export interface RenderThumbnailRendererServicePlan {
     packageMaterializationApprovalEmergencyStopPolicy: RenderThumbnailRendererServicePackageMaterializationApprovalEmergencyStopPolicy;
     packageMaterializationApprovalReadinessVerdictPolicy: RenderThumbnailRendererServicePackageMaterializationApprovalReadinessVerdictPolicy;
     packageMaterializationApprovalExecutionHandoffPolicy: RenderThumbnailRendererServicePackageMaterializationApprovalExecutionHandoffPolicy;
+    packageMaterializationApprovalPostHandoffAuditPolicy: RenderThumbnailRendererServicePackageMaterializationApprovalPostHandoffAuditPolicy;
     clientRequest: RenderThumbnailRendererServiceClientRequest;
     serviceRequest: {
         command: "render.thumbnail";
@@ -618,6 +620,7 @@ export interface RenderThumbnailRendererServicePlan {
         packageMaterializationApprovalEmergencyStopPolicyVersion: "P25.48";
         packageMaterializationApprovalReadinessVerdictPolicyVersion: "P25.49";
         packageMaterializationApprovalExecutionHandoffPolicyVersion: "P25.50";
+        packageMaterializationApprovalPostHandoffAuditPolicyVersion: "P25.51";
     };
 }
 
@@ -3630,6 +3633,117 @@ export interface RenderThumbnailRendererServicePackageMaterializationApprovalExe
     requiredBeforeRuntimeDispatch: string[];
 }
 
+export interface RenderThumbnailRendererServicePackageMaterializationApprovalPostHandoffAuditPolicy {
+    status: "planned-disabled";
+    postHandoffAuditVersion: "P25.51";
+    adapter: "renderer-service";
+    command: "render.thumbnail";
+    dryRunOnly: true;
+    approvalRequired: true;
+    approved: false;
+    finalApprovalGranted: false;
+    auditRequired: true;
+    auditPlanned: true;
+    auditRecordPrepared: false;
+    auditRecordValidated: false;
+    auditRecordStored: false;
+    auditRecordPublished: false;
+    auditRecordExported: false;
+    auditRecordWritten: false;
+    auditTrailLinked: false;
+    handoffSnapshotCaptured: false;
+    executionJobSnapshotCaptured: false;
+    auditSinkSelected: false;
+    auditSinkNotified: false;
+    materializationReady: false;
+    materializationApproved: false;
+    materializationApprovedNow: false;
+    tokenAccepted: false;
+    tokenStored: false;
+    tokenValidated: false;
+    tokenConsumed: false;
+    tokenRevoked: false;
+    executeNow: false;
+    verifyNow: false;
+    rollbackNow: false;
+    dispatch: false;
+    networkDispatch: false;
+    runtimeRegistration: false;
+    localFileWrites: false;
+    hostStartup: false;
+    processSpawn: false;
+    packageCreated: false;
+    workspaceMutation: false;
+    scriptRunnable: false;
+    fileMaterialization: false;
+    lockfileMutation: false;
+    rootPackageJsonMutation: false;
+    pnpmWorkspaceMutation: false;
+    commandExecution: false;
+    buildOutput: false;
+    packageScriptsRunnable: false;
+    filesWritten: false;
+    rollbackExecuted: false;
+    verificationExecuted: false;
+    consumes: {
+        packageMaterializationApprovalExecutionHandoffPolicy: {
+            requiredStatus: "planned-disabled";
+            currentStatus: string;
+            executionHandoffVersion: string;
+            handoffAccepted: false;
+            executionJobCreated: false;
+        };
+        packageMaterializationApprovalReadinessVerdictPolicy: {
+            requiredStatus: "planned-disabled";
+            currentStatus: string;
+            readinessVerdictVersion: string;
+            readinessVerdictTrusted: false;
+            materializationReady: false;
+        };
+        packageMaterializationFinalApprovalChecklist: {
+            requiredStatus: "planned-disabled";
+            currentStatus: string;
+            checklistVersion: string;
+            finalApprovalGranted: false;
+        };
+    };
+    postHandoffAuditPolicy: {
+        policy: "audit-only-after-execution-handoff-accepted";
+        prepareAuditNow: false;
+        validateAuditNow: false;
+        storeAuditNow: false;
+        publishAuditNow: false;
+        exportAuditNow: false;
+        writeAuditNow: false;
+        requiredInputs: string[];
+        auditSink: "future-materialization-audit-log";
+        auditPayloadLogged: false;
+    };
+    postHandoffAuditChecks: Array<{
+        id: string;
+        required: true;
+        planned: true;
+        executed: false;
+        passed: false;
+    }>;
+    postHandoffAuditDecision: {
+        status: "blocked";
+        canPrepareAudit: false;
+        canValidateAudit: false;
+        canStoreAudit: false;
+        canPublishAudit: false;
+        canExportAudit: false;
+        canWriteAudit: false;
+        canCreateExecutionJob: false;
+        canDispatchExecution: false;
+        canMaterializeFiles: false;
+        canEnableRuntimeDispatch: false;
+        reason: string;
+    };
+    noOpGuarantees: string[];
+    requiredBeforeRuntimeDispatch: string[];
+}
+
 export interface CreateRenderThumbnailRendererServiceClientRequestOptions {
     entrypoint?: "mcp" | "cli" | string | null;
     mcpToolName?: string | null;
@@ -4150,6 +4264,13 @@ export function createRenderThumbnailRendererServicePackageMaterializationApprov
         packageMaterializationFinalApprovalChecklist?: Partial<RenderThumbnailRendererServicePackageMaterializationFinalApprovalChecklist> | null;
     }
 ): RenderThumbnailRendererServicePackageMaterializationApprovalExecutionHandoffPolicy;
+export function createRenderThumbnailRendererServicePackageMaterializationApprovalPostHandoffAuditPolicy(
+    options?: {
+        packageMaterializationApprovalExecutionHandoffPolicy?: Partial<RenderThumbnailRendererServicePackageMaterializationApprovalExecutionHandoffPolicy> | null;
+        packageMaterializationApprovalReadinessVerdictPolicy?: Partial<RenderThumbnailRendererServicePackageMaterializationApprovalReadinessVerdictPolicy> | null;
+        packageMaterializationFinalApprovalChecklist?: Partial<RenderThumbnailRendererServicePackageMaterializationFinalApprovalChecklist> | null;
+    }
+): RenderThumbnailRendererServicePackageMaterializationApprovalPostHandoffAuditPolicy;
 export function createRenderThumbnailRendererServiceClientRequest(
     plan: Partial<RenderThumbnailRendererServicePlan>,
     options?: CreateRenderThumbnailRendererServiceClientRequestOptions

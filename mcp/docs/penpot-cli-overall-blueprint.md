@@ -1364,6 +1364,32 @@ P25.50 is complete:
    `packageCreated`, `dispatch`, `networkDispatch`, `runtimeRegistration`,
    and `localFileWrites` remain false.
 
+P25.51 is complete:
+
+1. Shared plans include
+   `packageMaterializationApprovalPostHandoffAuditPolicy` metadata for future
+   audit sinks, required audit inputs, post-handoff audit checks, blocked audit
+   decisions, and no-op guarantees.
+2. MCP and CLI expose this post-handoff audit policy plan in dry-run and
+   unavailable execution payloads without preparing audit records, validating
+   audit records, storing audit records, publishing audit records, exporting
+   audit records, writing audit records, capturing handoff or execution job
+   snapshots, selecting audit sinks, accepting or validating tokens, consuming
+   or revoking tokens, granting approval, creating package directories, writing
+   files, mutating workspace manifests, mutating lockfiles, running commands,
+   emitting build output, starting processes, or registering runtime dispatch.
+3. `auditRecordPrepared`, `auditRecordValidated`, `auditRecordStored`,
+   `auditRecordPublished`, `auditRecordExported`, `auditRecordWritten`,
+   `auditTrailLinked`, `handoffSnapshotCaptured`,
+   `executionJobSnapshotCaptured`, `auditSinkSelected`, `auditSinkNotified`,
+   `materializationReady`, `materializationApproved`, `tokenAccepted`,
+   `tokenValidated`, `tokenConsumed`, `tokenRevoked`, `approved`,
+   `finalApprovalGranted`, `executeNow`, and `verifyNow` remain false, while
+   `filesWritten`, `verificationExecuted`, `fileMaterialization`,
+   `workspaceMutation`, `lockfileMutation`, `commandExecution`, `buildOutput`,
+   `processSpawn`, `packageCreated`, `dispatch`, `networkDispatch`,
+   `runtimeRegistration`, and `localFileWrites` remain false.
+
 Keep manual configuration behavior stable while moving command metadata and
 envelopes; transport-specific formatting should stay at the MCP/CLI edges.
 

@@ -52,6 +52,7 @@ import {
     createRenderThumbnailRendererServicePackageMaterializationApprovalEmergencyStopPolicy,
     createRenderThumbnailRendererServicePackageMaterializationApprovalReadinessVerdictPolicy,
     createRenderThumbnailRendererServicePackageMaterializationApprovalExecutionHandoffPolicy,
+    createRenderThumbnailRendererServicePackageMaterializationApprovalPostHandoffAuditPolicy,
     createRenderThumbnailRendererServicePackageFileTemplates,
     createRenderThumbnailRendererServicePackageManifestScaffold,
     createRenderThumbnailRendererServicePackageMaterializationChecklist,
@@ -447,6 +448,13 @@ test("render.thumbnail runtime boundary keeps execution unavailable until render
     assert.equal(boundary.packageMaterializationApprovalExecutionHandoffPolicy.fileMaterialization, false);
     assert.equal(boundary.packageMaterializationApprovalExecutionHandoffPolicy.commandExecution, false);
     assert.equal(boundary.packageMaterializationApprovalExecutionHandoffPolicy.filesWritten, false);
+    assert.equal(boundary.packageMaterializationApprovalPostHandoffAuditPolicy.postHandoffAuditVersion, "P25.51");
+    assert.equal(boundary.packageMaterializationApprovalPostHandoffAuditPolicy.auditRecordPrepared, false);
+    assert.equal(boundary.packageMaterializationApprovalPostHandoffAuditPolicy.auditRecordStored, false);
+    assert.equal(boundary.packageMaterializationApprovalPostHandoffAuditPolicy.auditRecordWritten, false);
+    assert.equal(boundary.packageMaterializationApprovalPostHandoffAuditPolicy.fileMaterialization, false);
+    assert.equal(boundary.packageMaterializationApprovalPostHandoffAuditPolicy.commandExecution, false);
+    assert.equal(boundary.packageMaterializationApprovalPostHandoffAuditPolicy.filesWritten, false);
     assert.ok(boundary.testStrategy.some((item) => item.includes("descriptor tests")));
 });
 
@@ -754,6 +762,18 @@ test("render.thumbnail renderer-service API fixtures define planning requests wi
     assert.equal(fixtures.serviceApi.packageMaterializationApprovalExecutionHandoffPolicy.commandExecution, false);
     assert.equal(fixtures.serviceApi.packageMaterializationApprovalExecutionHandoffPolicy.buildOutput, false);
     assert.equal(fixtures.serviceApi.packageMaterializationApprovalExecutionHandoffPolicy.filesWritten, false);
+    assert.equal(fixtures.serviceApi.packageMaterializationApprovalPostHandoffAuditPolicy.postHandoffAuditVersion, "P25.51");
+    assert.equal(fixtures.serviceApi.packageMaterializationApprovalPostHandoffAuditPolicy.auditRecordPrepared, false);
+    assert.equal(fixtures.serviceApi.packageMaterializationApprovalPostHandoffAuditPolicy.auditRecordValidated, false);
+    assert.equal(fixtures.serviceApi.packageMaterializationApprovalPostHandoffAuditPolicy.auditRecordStored, false);
+    assert.equal(fixtures.serviceApi.packageMaterializationApprovalPostHandoffAuditPolicy.auditRecordWritten, false);
+    assert.equal(fixtures.serviceApi.packageMaterializationApprovalPostHandoffAuditPolicy.handoffSnapshotCaptured, false);
+    assert.equal(fixtures.serviceApi.packageMaterializationApprovalPostHandoffAuditPolicy.executionJobSnapshotCaptured, false);
+    assert.equal(fixtures.serviceApi.packageMaterializationApprovalPostHandoffAuditPolicy.materializationReady, false);
+    assert.equal(fixtures.serviceApi.packageMaterializationApprovalPostHandoffAuditPolicy.materializationApproved, false);
+    assert.equal(fixtures.serviceApi.packageMaterializationApprovalPostHandoffAuditPolicy.commandExecution, false);
+    assert.equal(fixtures.serviceApi.packageMaterializationApprovalPostHandoffAuditPolicy.buildOutput, false);
+    assert.equal(fixtures.serviceApi.packageMaterializationApprovalPostHandoffAuditPolicy.filesWritten, false);
     assert.deepEqual(fixtures.runtimeRegistration.commandDescriptorAdapters, ["renderer-service"]);
     assert.deepEqual(CommandDescriptors.RENDER_THUMBNAIL.adapters, ["renderer-service"]);
     assert.equal(fixtures.runtimeRegistration.mcpToolRegistered, true);
@@ -1823,6 +1843,65 @@ test("render.thumbnail renderer-service plan exposes dry-run client request whil
     assert.equal(plan.packageMaterializationApprovalExecutionHandoffPolicy.executionHandoffDecision.canDispatchExecution, false);
     assert.equal(plan.packageMaterializationApprovalExecutionHandoffPolicy.executionHandoffDecision.canMaterializeFiles, false);
     assert.deepEqual(plan.service.packageMaterializationApprovalExecutionHandoffPolicy, plan.packageMaterializationApprovalExecutionHandoffPolicy);
+    assert.equal(plan.packageMaterializationApprovalPostHandoffAuditPolicy.postHandoffAuditVersion, "P25.51");
+    assert.equal(plan.packageMaterializationApprovalPostHandoffAuditPolicy.dryRunOnly, true);
+    assert.equal(plan.packageMaterializationApprovalPostHandoffAuditPolicy.approvalRequired, true);
+    assert.equal(plan.packageMaterializationApprovalPostHandoffAuditPolicy.approved, false);
+    assert.equal(plan.packageMaterializationApprovalPostHandoffAuditPolicy.finalApprovalGranted, false);
+    assert.equal(plan.packageMaterializationApprovalPostHandoffAuditPolicy.auditRequired, true);
+    assert.equal(plan.packageMaterializationApprovalPostHandoffAuditPolicy.auditPlanned, true);
+    assert.equal(plan.packageMaterializationApprovalPostHandoffAuditPolicy.auditRecordPrepared, false);
+    assert.equal(plan.packageMaterializationApprovalPostHandoffAuditPolicy.auditRecordValidated, false);
+    assert.equal(plan.packageMaterializationApprovalPostHandoffAuditPolicy.auditRecordStored, false);
+    assert.equal(plan.packageMaterializationApprovalPostHandoffAuditPolicy.auditRecordPublished, false);
+    assert.equal(plan.packageMaterializationApprovalPostHandoffAuditPolicy.auditRecordExported, false);
+    assert.equal(plan.packageMaterializationApprovalPostHandoffAuditPolicy.auditRecordWritten, false);
+    assert.equal(plan.packageMaterializationApprovalPostHandoffAuditPolicy.auditTrailLinked, false);
+    assert.equal(plan.packageMaterializationApprovalPostHandoffAuditPolicy.handoffSnapshotCaptured, false);
+    assert.equal(plan.packageMaterializationApprovalPostHandoffAuditPolicy.executionJobSnapshotCaptured, false);
+    assert.equal(plan.packageMaterializationApprovalPostHandoffAuditPolicy.auditSinkSelected, false);
+    assert.equal(plan.packageMaterializationApprovalPostHandoffAuditPolicy.auditSinkNotified, false);
+    assert.equal(plan.packageMaterializationApprovalPostHandoffAuditPolicy.materializationReady, false);
+    assert.equal(plan.packageMaterializationApprovalPostHandoffAuditPolicy.materializationApproved, false);
+    assert.equal(plan.packageMaterializationApprovalPostHandoffAuditPolicy.tokenAccepted, false);
+    assert.equal(plan.packageMaterializationApprovalPostHandoffAuditPolicy.tokenStored, false);
+    assert.equal(plan.packageMaterializationApprovalPostHandoffAuditPolicy.tokenValidated, false);
+    assert.equal(plan.packageMaterializationApprovalPostHandoffAuditPolicy.tokenConsumed, false);
+    assert.equal(plan.packageMaterializationApprovalPostHandoffAuditPolicy.tokenRevoked, false);
+    assert.equal(plan.packageMaterializationApprovalPostHandoffAuditPolicy.executeNow, false);
+    assert.equal(plan.packageMaterializationApprovalPostHandoffAuditPolicy.verifyNow, false);
+    assert.equal(plan.packageMaterializationApprovalPostHandoffAuditPolicy.rollbackNow, false);
+    assert.equal(plan.packageMaterializationApprovalPostHandoffAuditPolicy.dispatch, false);
+    assert.equal(plan.packageMaterializationApprovalPostHandoffAuditPolicy.networkDispatch, false);
+    assert.equal(plan.packageMaterializationApprovalPostHandoffAuditPolicy.runtimeRegistration, false);
+    assert.equal(plan.packageMaterializationApprovalPostHandoffAuditPolicy.localFileWrites, false);
+    assert.equal(plan.packageMaterializationApprovalPostHandoffAuditPolicy.hostStartup, false);
+    assert.equal(plan.packageMaterializationApprovalPostHandoffAuditPolicy.processSpawn, false);
+    assert.equal(plan.packageMaterializationApprovalPostHandoffAuditPolicy.packageCreated, false);
+    assert.equal(plan.packageMaterializationApprovalPostHandoffAuditPolicy.workspaceMutation, false);
+    assert.equal(plan.packageMaterializationApprovalPostHandoffAuditPolicy.fileMaterialization, false);
+    assert.equal(plan.packageMaterializationApprovalPostHandoffAuditPolicy.lockfileMutation, false);
+    assert.equal(plan.packageMaterializationApprovalPostHandoffAuditPolicy.commandExecution, false);
+    assert.equal(plan.packageMaterializationApprovalPostHandoffAuditPolicy.buildOutput, false);
+    assert.equal(plan.packageMaterializationApprovalPostHandoffAuditPolicy.filesWritten, false);
+    assert.equal(plan.packageMaterializationApprovalPostHandoffAuditPolicy.consumes.packageMaterializationApprovalExecutionHandoffPolicy.executionHandoffVersion, "P25.50");
+    assert.equal(plan.packageMaterializationApprovalPostHandoffAuditPolicy.consumes.packageMaterializationApprovalExecutionHandoffPolicy.handoffAccepted, false);
+    assert.equal(plan.packageMaterializationApprovalPostHandoffAuditPolicy.consumes.packageMaterializationApprovalExecutionHandoffPolicy.executionJobCreated, false);
+    assert.equal(plan.packageMaterializationApprovalPostHandoffAuditPolicy.consumes.packageMaterializationApprovalReadinessVerdictPolicy.readinessVerdictVersion, "P25.49");
+    assert.equal(plan.packageMaterializationApprovalPostHandoffAuditPolicy.consumes.packageMaterializationFinalApprovalChecklist.checklistVersion, "P25.40");
+    assert.equal(plan.packageMaterializationApprovalPostHandoffAuditPolicy.postHandoffAuditPolicy.prepareAuditNow, false);
+    assert.equal(plan.packageMaterializationApprovalPostHandoffAuditPolicy.postHandoffAuditPolicy.validateAuditNow, false);
+    assert.equal(plan.packageMaterializationApprovalPostHandoffAuditPolicy.postHandoffAuditPolicy.storeAuditNow, false);
+    assert.equal(plan.packageMaterializationApprovalPostHandoffAuditPolicy.postHandoffAuditPolicy.publishAuditNow, false);
+    assert.equal(plan.packageMaterializationApprovalPostHandoffAuditPolicy.postHandoffAuditPolicy.exportAuditNow, false);
+    assert.equal(plan.packageMaterializationApprovalPostHandoffAuditPolicy.postHandoffAuditPolicy.writeAuditNow, false);
+    assert.ok(plan.packageMaterializationApprovalPostHandoffAuditPolicy.postHandoffAuditPolicy.requiredInputs.includes("auditSink"));
+    assert.ok(plan.packageMaterializationApprovalPostHandoffAuditPolicy.postHandoffAuditChecks.some((entry) => entry.id === "audit-record-not-written" && entry.executed === false));
+    assert.equal(plan.packageMaterializationApprovalPostHandoffAuditPolicy.postHandoffAuditDecision.canPrepareAudit, false);
+    assert.equal(plan.packageMaterializationApprovalPostHandoffAuditPolicy.postHandoffAuditDecision.canWriteAudit, false);
+    assert.equal(plan.packageMaterializationApprovalPostHandoffAuditPolicy.postHandoffAuditDecision.canDispatchExecution, false);
+    assert.equal(plan.packageMaterializationApprovalPostHandoffAuditPolicy.postHandoffAuditDecision.canMaterializeFiles, false);
+    assert.deepEqual(plan.service.packageMaterializationApprovalPostHandoffAuditPolicy, plan.packageMaterializationApprovalPostHandoffAuditPolicy);
     assert.equal(plan.clientRequest.status, "scaffolded");
     assert.equal(plan.clientRequest.dispatch, false);
     assert.equal(plan.clientRequest.method, "POST");
@@ -1889,6 +1968,7 @@ test("render.thumbnail renderer-service plan exposes dry-run client request whil
     assert.equal(plan.diagnostics.packageMaterializationApprovalEmergencyStopPolicyVersion, "P25.48");
     assert.equal(plan.diagnostics.packageMaterializationApprovalReadinessVerdictPolicyVersion, "P25.49");
     assert.equal(plan.diagnostics.packageMaterializationApprovalExecutionHandoffPolicyVersion, "P25.50");
+    assert.equal(plan.diagnostics.packageMaterializationApprovalPostHandoffAuditPolicyVersion, "P25.51");
 });
 
 test("render.thumbnail renderer-service plan reports not-configured availability without endpoint", () => {
@@ -4160,6 +4240,107 @@ test("render.thumbnail renderer-service package materialization approval executi
     assert.equal(executionHandoffPolicy.executionHandoffDecision.canEnableRuntimeDispatch, false);
     assert.ok(executionHandoffPolicy.noOpGuarantees.includes("execution handoff policy plan does not prepare execution handoffs"));
     assert.ok(executionHandoffPolicy.requiredBeforeRuntimeDispatch.includes("define execution handoff payload schema"));
+});
+
+test("render.thumbnail renderer-service package materialization approval post-handoff audit policy stays metadata-only", () => {
+    const postHandoffAuditPolicy = createRenderThumbnailRendererServicePackageMaterializationApprovalPostHandoffAuditPolicy({
+        packageMaterializationApprovalExecutionHandoffPolicy: {
+            status: "planned-disabled",
+            executionHandoffVersion: "P25.50",
+            handoffAccepted: false,
+            executionJobCreated: false,
+        },
+        packageMaterializationApprovalReadinessVerdictPolicy: {
+            status: "planned-disabled",
+            readinessVerdictVersion: "P25.49",
+            readinessVerdictTrusted: false,
+            materializationReady: false,
+        },
+        packageMaterializationFinalApprovalChecklist: {
+            status: "planned-disabled",
+            checklistVersion: "P25.40",
+            finalApprovalGranted: false,
+        },
+    });
+
+    assert.equal(postHandoffAuditPolicy.status, "planned-disabled");
+    assert.equal(postHandoffAuditPolicy.postHandoffAuditVersion, "P25.51");
+    assert.equal(postHandoffAuditPolicy.dryRunOnly, true);
+    assert.equal(postHandoffAuditPolicy.approvalRequired, true);
+    assert.equal(postHandoffAuditPolicy.approved, false);
+    assert.equal(postHandoffAuditPolicy.finalApprovalGranted, false);
+    assert.equal(postHandoffAuditPolicy.auditRequired, true);
+    assert.equal(postHandoffAuditPolicy.auditPlanned, true);
+    assert.equal(postHandoffAuditPolicy.auditRecordPrepared, false);
+    assert.equal(postHandoffAuditPolicy.auditRecordValidated, false);
+    assert.equal(postHandoffAuditPolicy.auditRecordStored, false);
+    assert.equal(postHandoffAuditPolicy.auditRecordPublished, false);
+    assert.equal(postHandoffAuditPolicy.auditRecordExported, false);
+    assert.equal(postHandoffAuditPolicy.auditRecordWritten, false);
+    assert.equal(postHandoffAuditPolicy.auditTrailLinked, false);
+    assert.equal(postHandoffAuditPolicy.handoffSnapshotCaptured, false);
+    assert.equal(postHandoffAuditPolicy.executionJobSnapshotCaptured, false);
+    assert.equal(postHandoffAuditPolicy.auditSinkSelected, false);
+    assert.equal(postHandoffAuditPolicy.auditSinkNotified, false);
+    assert.equal(postHandoffAuditPolicy.materializationReady, false);
+    assert.equal(postHandoffAuditPolicy.materializationApproved, false);
+    assert.equal(postHandoffAuditPolicy.materializationApprovedNow, false);
+    assert.equal(postHandoffAuditPolicy.tokenAccepted, false);
+    assert.equal(postHandoffAuditPolicy.tokenStored, false);
+    assert.equal(postHandoffAuditPolicy.tokenValidated, false);
+    assert.equal(postHandoffAuditPolicy.tokenConsumed, false);
+    assert.equal(postHandoffAuditPolicy.tokenRevoked, false);
+    assert.equal(postHandoffAuditPolicy.executeNow, false);
+    assert.equal(postHandoffAuditPolicy.verifyNow, false);
+    assert.equal(postHandoffAuditPolicy.rollbackNow, false);
+    assert.equal(postHandoffAuditPolicy.dispatch, false);
+    assert.equal(postHandoffAuditPolicy.networkDispatch, false);
+    assert.equal(postHandoffAuditPolicy.runtimeRegistration, false);
+    assert.equal(postHandoffAuditPolicy.localFileWrites, false);
+    assert.equal(postHandoffAuditPolicy.hostStartup, false);
+    assert.equal(postHandoffAuditPolicy.processSpawn, false);
+    assert.equal(postHandoffAuditPolicy.packageCreated, false);
+    assert.equal(postHandoffAuditPolicy.workspaceMutation, false);
+    assert.equal(postHandoffAuditPolicy.scriptRunnable, false);
+    assert.equal(postHandoffAuditPolicy.fileMaterialization, false);
+    assert.equal(postHandoffAuditPolicy.lockfileMutation, false);
+    assert.equal(postHandoffAuditPolicy.rootPackageJsonMutation, false);
+    assert.equal(postHandoffAuditPolicy.pnpmWorkspaceMutation, false);
+    assert.equal(postHandoffAuditPolicy.commandExecution, false);
+    assert.equal(postHandoffAuditPolicy.buildOutput, false);
+    assert.equal(postHandoffAuditPolicy.packageScriptsRunnable, false);
+    assert.equal(postHandoffAuditPolicy.filesWritten, false);
+    assert.equal(postHandoffAuditPolicy.rollbackExecuted, false);
+    assert.equal(postHandoffAuditPolicy.verificationExecuted, false);
+    assert.equal(postHandoffAuditPolicy.consumes.packageMaterializationApprovalExecutionHandoffPolicy.executionHandoffVersion, "P25.50");
+    assert.equal(postHandoffAuditPolicy.consumes.packageMaterializationApprovalExecutionHandoffPolicy.handoffAccepted, false);
+    assert.equal(postHandoffAuditPolicy.consumes.packageMaterializationApprovalExecutionHandoffPolicy.executionJobCreated, false);
+    assert.equal(postHandoffAuditPolicy.consumes.packageMaterializationApprovalReadinessVerdictPolicy.readinessVerdictVersion, "P25.49");
+    assert.equal(postHandoffAuditPolicy.consumes.packageMaterializationApprovalReadinessVerdictPolicy.readinessVerdictTrusted, false);
+    assert.equal(postHandoffAuditPolicy.consumes.packageMaterializationFinalApprovalChecklist.checklistVersion, "P25.40");
+    assert.equal(postHandoffAuditPolicy.consumes.packageMaterializationFinalApprovalChecklist.finalApprovalGranted, false);
+    assert.equal(postHandoffAuditPolicy.postHandoffAuditPolicy.policy, "audit-only-after-execution-handoff-accepted");
+    assert.equal(postHandoffAuditPolicy.postHandoffAuditPolicy.prepareAuditNow, false);
+    assert.equal(postHandoffAuditPolicy.postHandoffAuditPolicy.validateAuditNow, false);
+    assert.equal(postHandoffAuditPolicy.postHandoffAuditPolicy.storeAuditNow, false);
+    assert.equal(postHandoffAuditPolicy.postHandoffAuditPolicy.publishAuditNow, false);
+    assert.equal(postHandoffAuditPolicy.postHandoffAuditPolicy.exportAuditNow, false);
+    assert.equal(postHandoffAuditPolicy.postHandoffAuditPolicy.writeAuditNow, false);
+    assert.equal(postHandoffAuditPolicy.postHandoffAuditPolicy.auditPayloadLogged, false);
+    assert.ok(postHandoffAuditPolicy.postHandoffAuditPolicy.requiredInputs.includes("acceptedExecutionHandoff"));
+    assert.ok(postHandoffAuditPolicy.postHandoffAuditChecks.some((entry) => entry.id === "execution-handoff-accepted" && entry.executed === false));
+    assert.equal(postHandoffAuditPolicy.postHandoffAuditDecision.canPrepareAudit, false);
+    assert.equal(postHandoffAuditPolicy.postHandoffAuditDecision.canValidateAudit, false);
+    assert.equal(postHandoffAuditPolicy.postHandoffAuditDecision.canStoreAudit, false);
+    assert.equal(postHandoffAuditPolicy.postHandoffAuditDecision.canPublishAudit, false);
+    assert.equal(postHandoffAuditPolicy.postHandoffAuditDecision.canExportAudit, false);
+    assert.equal(postHandoffAuditPolicy.postHandoffAuditDecision.canWriteAudit, false);
+    assert.equal(postHandoffAuditPolicy.postHandoffAuditDecision.canCreateExecutionJob, false);
+    assert.equal(postHandoffAuditPolicy.postHandoffAuditDecision.canDispatchExecution, false);
+    assert.equal(postHandoffAuditPolicy.postHandoffAuditDecision.canMaterializeFiles, false);
+    assert.equal(postHandoffAuditPolicy.postHandoffAuditDecision.canEnableRuntimeDispatch, false);
+    assert.ok(postHandoffAuditPolicy.noOpGuarantees.includes("post-handoff audit policy plan does not write audit records"));
+    assert.ok(postHandoffAuditPolicy.requiredBeforeRuntimeDispatch.includes("define post-handoff audit record schema"));
 });
 
 test("render.thumbnail renderer-service client request scaffold adds MCP audit headers without dispatch", () => {

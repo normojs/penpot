@@ -74,6 +74,11 @@ P25.50 defines package materialization approval execution handoff policy
 metadata without preparing, validating, storing, or queuing handoffs, creating
 or dispatching execution jobs, selecting execution owners,
 accepting/validating tokens, consuming tokens, or granting approval.
+P25.51 defines package materialization approval post-handoff audit policy
+metadata without preparing, validating, storing, publishing, exporting, or
+writing audit records, capturing handoff or execution job snapshots, selecting
+audit sinks, accepting/validating tokens, consuming tokens, or granting
+approval.
 
 ## Existing Surfaces
 
@@ -232,6 +237,8 @@ package materialization approval operator confirmation policy. P25.48 adds
 metadata-only package materialization approval emergency stop policy. P25.49
 adds metadata-only package materialization approval readiness verdict policy.
 P25.50 adds metadata-only package materialization approval execution handoff
+policy.
+P25.51 adds metadata-only package materialization approval post-handoff audit
 policy.
 MCP
 `render.thumbnail` and `penpot-cli render thumbnail --dry-run` can print the
