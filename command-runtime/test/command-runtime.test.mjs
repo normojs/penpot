@@ -47,6 +47,7 @@ import {
     createRenderThumbnailRendererServicePackageMaterializationApprovalReplayGuard,
     createRenderThumbnailRendererServicePackageMaterializationApprovalExpiryPolicy,
     createRenderThumbnailRendererServicePackageMaterializationApprovalRevocationPolicy,
+    createRenderThumbnailRendererServicePackageMaterializationApprovalScopeBindingPolicy,
     createRenderThumbnailRendererServicePackageFileTemplates,
     createRenderThumbnailRendererServicePackageManifestScaffold,
     createRenderThumbnailRendererServicePackageMaterializationChecklist,
@@ -677,6 +678,18 @@ test("render.thumbnail renderer-service API fixtures define planning requests wi
     assert.equal(fixtures.serviceApi.packageMaterializationApprovalRevocationPolicy.commandExecution, false);
     assert.equal(fixtures.serviceApi.packageMaterializationApprovalRevocationPolicy.buildOutput, false);
     assert.equal(fixtures.serviceApi.packageMaterializationApprovalRevocationPolicy.filesWritten, false);
+    assert.equal(fixtures.serviceApi.packageMaterializationApprovalScopeBindingPolicy.scopeBindingVersion, "P25.46");
+    assert.equal(fixtures.serviceApi.packageMaterializationApprovalScopeBindingPolicy.scopeBindingExecuted, false);
+    assert.equal(fixtures.serviceApi.packageMaterializationApprovalScopeBindingPolicy.approvalScopeHashComputed, false);
+    assert.equal(fixtures.serviceApi.packageMaterializationApprovalScopeBindingPolicy.fileSnapshotRead, false);
+    assert.equal(fixtures.serviceApi.packageMaterializationApprovalScopeBindingPolicy.workspaceHashComputed, false);
+    assert.equal(fixtures.serviceApi.packageMaterializationApprovalScopeBindingPolicy.tokenAccepted, false);
+    assert.equal(fixtures.serviceApi.packageMaterializationApprovalScopeBindingPolicy.tokenValidated, false);
+    assert.equal(fixtures.serviceApi.packageMaterializationApprovalScopeBindingPolicy.approved, false);
+    assert.equal(fixtures.serviceApi.packageMaterializationApprovalScopeBindingPolicy.finalApprovalGranted, false);
+    assert.equal(fixtures.serviceApi.packageMaterializationApprovalScopeBindingPolicy.commandExecution, false);
+    assert.equal(fixtures.serviceApi.packageMaterializationApprovalScopeBindingPolicy.buildOutput, false);
+    assert.equal(fixtures.serviceApi.packageMaterializationApprovalScopeBindingPolicy.filesWritten, false);
     assert.deepEqual(fixtures.runtimeRegistration.commandDescriptorAdapters, ["renderer-service"]);
     assert.deepEqual(CommandDescriptors.RENDER_THUMBNAIL.adapters, ["renderer-service"]);
     assert.equal(fixtures.runtimeRegistration.mcpToolRegistered, true);
@@ -1462,6 +1475,62 @@ test("render.thumbnail renderer-service plan exposes dry-run client request whil
     assert.equal(plan.packageMaterializationApprovalRevocationPolicy.revocationDecision.canRejectRevokedToken, false);
     assert.equal(plan.packageMaterializationApprovalRevocationPolicy.revocationDecision.canGrantFinalApproval, false);
     assert.deepEqual(plan.service.packageMaterializationApprovalRevocationPolicy, plan.packageMaterializationApprovalRevocationPolicy);
+    assert.equal(plan.packageMaterializationApprovalScopeBindingPolicy.scopeBindingVersion, "P25.46");
+    assert.equal(plan.packageMaterializationApprovalScopeBindingPolicy.dryRunOnly, true);
+    assert.equal(plan.packageMaterializationApprovalScopeBindingPolicy.approvalRequired, true);
+    assert.equal(plan.packageMaterializationApprovalScopeBindingPolicy.approved, false);
+    assert.equal(plan.packageMaterializationApprovalScopeBindingPolicy.finalApprovalGranted, false);
+    assert.equal(plan.packageMaterializationApprovalScopeBindingPolicy.scopeBindingRequired, true);
+    assert.equal(plan.packageMaterializationApprovalScopeBindingPolicy.scopeBindingPlanned, true);
+    assert.equal(plan.packageMaterializationApprovalScopeBindingPolicy.scopeBindingExecuted, false);
+    assert.equal(plan.packageMaterializationApprovalScopeBindingPolicy.approvalScopeHashComputed, false);
+    assert.equal(plan.packageMaterializationApprovalScopeBindingPolicy.approvalScopeHashValidated, false);
+    assert.equal(plan.packageMaterializationApprovalScopeBindingPolicy.approvalScopeHashStored, false);
+    assert.equal(plan.packageMaterializationApprovalScopeBindingPolicy.targetScopeBound, false);
+    assert.equal(plan.packageMaterializationApprovalScopeBindingPolicy.commandScopeBound, false);
+    assert.equal(plan.packageMaterializationApprovalScopeBindingPolicy.workspaceScopeBound, false);
+    assert.equal(plan.packageMaterializationApprovalScopeBindingPolicy.packageScopeBound, false);
+    assert.equal(plan.packageMaterializationApprovalScopeBindingPolicy.fileSnapshotRead, false);
+    assert.equal(plan.packageMaterializationApprovalScopeBindingPolicy.workspaceHashComputed, false);
+    assert.equal(plan.packageMaterializationApprovalScopeBindingPolicy.packageManifestHashComputed, false);
+    assert.equal(plan.packageMaterializationApprovalScopeBindingPolicy.tokenScopeMatched, false);
+    assert.equal(plan.packageMaterializationApprovalScopeBindingPolicy.tokenAccepted, false);
+    assert.equal(plan.packageMaterializationApprovalScopeBindingPolicy.tokenStored, false);
+    assert.equal(plan.packageMaterializationApprovalScopeBindingPolicy.tokenValidated, false);
+    assert.equal(plan.packageMaterializationApprovalScopeBindingPolicy.tokenConsumed, false);
+    assert.equal(plan.packageMaterializationApprovalScopeBindingPolicy.tokenRevoked, false);
+    assert.equal(plan.packageMaterializationApprovalScopeBindingPolicy.executeNow, false);
+    assert.equal(plan.packageMaterializationApprovalScopeBindingPolicy.verifyNow, false);
+    assert.equal(plan.packageMaterializationApprovalScopeBindingPolicy.rollbackNow, false);
+    assert.equal(plan.packageMaterializationApprovalScopeBindingPolicy.dispatch, false);
+    assert.equal(plan.packageMaterializationApprovalScopeBindingPolicy.networkDispatch, false);
+    assert.equal(plan.packageMaterializationApprovalScopeBindingPolicy.runtimeRegistration, false);
+    assert.equal(plan.packageMaterializationApprovalScopeBindingPolicy.localFileWrites, false);
+    assert.equal(plan.packageMaterializationApprovalScopeBindingPolicy.packageCreated, false);
+    assert.equal(plan.packageMaterializationApprovalScopeBindingPolicy.workspaceMutation, false);
+    assert.equal(plan.packageMaterializationApprovalScopeBindingPolicy.fileMaterialization, false);
+    assert.equal(plan.packageMaterializationApprovalScopeBindingPolicy.lockfileMutation, false);
+    assert.equal(plan.packageMaterializationApprovalScopeBindingPolicy.commandExecution, false);
+    assert.equal(plan.packageMaterializationApprovalScopeBindingPolicy.buildOutput, false);
+    assert.equal(plan.packageMaterializationApprovalScopeBindingPolicy.materializationApproved, false);
+    assert.equal(plan.packageMaterializationApprovalScopeBindingPolicy.filesWritten, false);
+    assert.equal(plan.packageMaterializationApprovalScopeBindingPolicy.consumes.packageMaterializationApprovalRevocationPolicy.revocationPolicyVersion, "P25.45");
+    assert.equal(plan.packageMaterializationApprovalScopeBindingPolicy.consumes.packageMaterializationApprovalExpiryPolicy.expiryPolicyVersion, "P25.44");
+    assert.equal(plan.packageMaterializationApprovalScopeBindingPolicy.consumes.packageMaterializationFinalApprovalChecklist.checklistVersion, "P25.40");
+    assert.equal(plan.packageMaterializationApprovalScopeBindingPolicy.scopeBindingPolicy.bindNow, false);
+    assert.equal(plan.packageMaterializationApprovalScopeBindingPolicy.scopeBindingPolicy.computeApprovalScopeHashNow, false);
+    assert.equal(plan.packageMaterializationApprovalScopeBindingPolicy.scopeBindingPolicy.validateApprovalScopeHashNow, false);
+    assert.equal(plan.packageMaterializationApprovalScopeBindingPolicy.scopeBindingPolicy.readFileSnapshotNow, false);
+    assert.equal(plan.packageMaterializationApprovalScopeBindingPolicy.scopeBindingPolicy.computeWorkspaceHashNow, false);
+    assert.equal(plan.packageMaterializationApprovalScopeBindingPolicy.scopeBindingPolicy.computePackageManifestHashNow, false);
+    assert.equal(plan.packageMaterializationApprovalScopeBindingPolicy.scopeBindingPolicy.persistScopeBindingNow, false);
+    assert.ok(plan.packageMaterializationApprovalScopeBindingPolicy.scopeBindingPolicy.requiredScopeFields.includes("target"));
+    assert.ok(plan.packageMaterializationApprovalScopeBindingPolicy.scopeBindingChecks.some((entry) => entry.id === "approval-scope-hash-matches-token" && entry.executed === false));
+    assert.equal(plan.packageMaterializationApprovalScopeBindingPolicy.scopeBindingDecision.canBindScope, false);
+    assert.equal(plan.packageMaterializationApprovalScopeBindingPolicy.scopeBindingDecision.canComputeScopeHash, false);
+    assert.equal(plan.packageMaterializationApprovalScopeBindingPolicy.scopeBindingDecision.canValidateTokenScope, false);
+    assert.equal(plan.packageMaterializationApprovalScopeBindingPolicy.scopeBindingDecision.canGrantFinalApproval, false);
+    assert.deepEqual(plan.service.packageMaterializationApprovalScopeBindingPolicy, plan.packageMaterializationApprovalScopeBindingPolicy);
     assert.equal(plan.clientRequest.status, "scaffolded");
     assert.equal(plan.clientRequest.dispatch, false);
     assert.equal(plan.clientRequest.method, "POST");
@@ -1523,6 +1592,7 @@ test("render.thumbnail renderer-service plan exposes dry-run client request whil
     assert.equal(plan.diagnostics.packageMaterializationApprovalReplayGuardVersion, "P25.43");
     assert.equal(plan.diagnostics.packageMaterializationApprovalExpiryPolicyVersion, "P25.44");
     assert.equal(plan.diagnostics.packageMaterializationApprovalRevocationPolicyVersion, "P25.45");
+    assert.equal(plan.diagnostics.packageMaterializationApprovalScopeBindingPolicyVersion, "P25.46");
 });
 
 test("render.thumbnail renderer-service plan reports not-configured availability without endpoint", () => {
@@ -3319,6 +3389,101 @@ test("render.thumbnail renderer-service package materialization approval revocat
     assert.equal(revocationPolicy.revocationDecision.canMaterializeFiles, false);
     assert.ok(revocationPolicy.noOpGuarantees.includes("approval revocation policy plan does not execute revocation checks"));
     assert.ok(revocationPolicy.requiredBeforeRuntimeDispatch.includes("reject revoked tokens before replay guard consumption"));
+});
+
+test("render.thumbnail renderer-service package materialization approval scope binding policy stays metadata-only", () => {
+    const scopeBindingPolicy = createRenderThumbnailRendererServicePackageMaterializationApprovalScopeBindingPolicy({
+        packageMaterializationApprovalRevocationPolicy: {
+            status: "planned-disabled",
+            revocationPolicyVersion: "P25.45",
+            revocationCheckExecuted: false,
+        },
+        packageMaterializationApprovalExpiryPolicy: {
+            status: "planned-disabled",
+            expiryPolicyVersion: "P25.44",
+            expiryCheckExecuted: false,
+        },
+        packageMaterializationFinalApprovalChecklist: {
+            status: "planned-disabled",
+            checklistVersion: "P25.40",
+            finalApprovalGranted: false,
+        },
+    });
+
+    assert.equal(scopeBindingPolicy.status, "planned-disabled");
+    assert.equal(scopeBindingPolicy.scopeBindingVersion, "P25.46");
+    assert.equal(scopeBindingPolicy.dryRunOnly, true);
+    assert.equal(scopeBindingPolicy.approvalRequired, true);
+    assert.equal(scopeBindingPolicy.approved, false);
+    assert.equal(scopeBindingPolicy.finalApprovalGranted, false);
+    assert.equal(scopeBindingPolicy.scopeBindingRequired, true);
+    assert.equal(scopeBindingPolicy.scopeBindingPlanned, true);
+    assert.equal(scopeBindingPolicy.scopeBindingExecuted, false);
+    assert.equal(scopeBindingPolicy.approvalScopeHashComputed, false);
+    assert.equal(scopeBindingPolicy.approvalScopeHashValidated, false);
+    assert.equal(scopeBindingPolicy.approvalScopeHashStored, false);
+    assert.equal(scopeBindingPolicy.targetScopeBound, false);
+    assert.equal(scopeBindingPolicy.commandScopeBound, false);
+    assert.equal(scopeBindingPolicy.workspaceScopeBound, false);
+    assert.equal(scopeBindingPolicy.packageScopeBound, false);
+    assert.equal(scopeBindingPolicy.fileSnapshotRead, false);
+    assert.equal(scopeBindingPolicy.workspaceHashComputed, false);
+    assert.equal(scopeBindingPolicy.packageManifestHashComputed, false);
+    assert.equal(scopeBindingPolicy.tokenScopeMatched, false);
+    assert.equal(scopeBindingPolicy.tokenAccepted, false);
+    assert.equal(scopeBindingPolicy.tokenStored, false);
+    assert.equal(scopeBindingPolicy.tokenValidated, false);
+    assert.equal(scopeBindingPolicy.tokenConsumed, false);
+    assert.equal(scopeBindingPolicy.tokenRevoked, false);
+    assert.equal(scopeBindingPolicy.executeNow, false);
+    assert.equal(scopeBindingPolicy.verifyNow, false);
+    assert.equal(scopeBindingPolicy.rollbackNow, false);
+    assert.equal(scopeBindingPolicy.dispatch, false);
+    assert.equal(scopeBindingPolicy.networkDispatch, false);
+    assert.equal(scopeBindingPolicy.runtimeRegistration, false);
+    assert.equal(scopeBindingPolicy.localFileWrites, false);
+    assert.equal(scopeBindingPolicy.hostStartup, false);
+    assert.equal(scopeBindingPolicy.processSpawn, false);
+    assert.equal(scopeBindingPolicy.packageCreated, false);
+    assert.equal(scopeBindingPolicy.workspaceMutation, false);
+    assert.equal(scopeBindingPolicy.scriptRunnable, false);
+    assert.equal(scopeBindingPolicy.fileMaterialization, false);
+    assert.equal(scopeBindingPolicy.lockfileMutation, false);
+    assert.equal(scopeBindingPolicy.rootPackageJsonMutation, false);
+    assert.equal(scopeBindingPolicy.pnpmWorkspaceMutation, false);
+    assert.equal(scopeBindingPolicy.commandExecution, false);
+    assert.equal(scopeBindingPolicy.buildOutput, false);
+    assert.equal(scopeBindingPolicy.packageScriptsRunnable, false);
+    assert.equal(scopeBindingPolicy.materializationApproved, false);
+    assert.equal(scopeBindingPolicy.filesWritten, false);
+    assert.equal(scopeBindingPolicy.rollbackExecuted, false);
+    assert.equal(scopeBindingPolicy.verificationExecuted, false);
+    assert.equal(scopeBindingPolicy.consumes.packageMaterializationApprovalRevocationPolicy.revocationPolicyVersion, "P25.45");
+    assert.equal(scopeBindingPolicy.consumes.packageMaterializationApprovalRevocationPolicy.revocationCheckExecuted, false);
+    assert.equal(scopeBindingPolicy.consumes.packageMaterializationApprovalExpiryPolicy.expiryPolicyVersion, "P25.44");
+    assert.equal(scopeBindingPolicy.consumes.packageMaterializationApprovalExpiryPolicy.expiryCheckExecuted, false);
+    assert.equal(scopeBindingPolicy.consumes.packageMaterializationFinalApprovalChecklist.checklistVersion, "P25.40");
+    assert.equal(scopeBindingPolicy.scopeBindingPolicy.policy, "bind-explicit-approval-token-to-renderer-package-scope");
+    assert.equal(scopeBindingPolicy.scopeBindingPolicy.bindNow, false);
+    assert.equal(scopeBindingPolicy.scopeBindingPolicy.computeApprovalScopeHashNow, false);
+    assert.equal(scopeBindingPolicy.scopeBindingPolicy.validateApprovalScopeHashNow, false);
+    assert.equal(scopeBindingPolicy.scopeBindingPolicy.readFileSnapshotNow, false);
+    assert.equal(scopeBindingPolicy.scopeBindingPolicy.computeWorkspaceHashNow, false);
+    assert.equal(scopeBindingPolicy.scopeBindingPolicy.computePackageManifestHashNow, false);
+    assert.equal(scopeBindingPolicy.scopeBindingPolicy.persistScopeBindingNow, false);
+    assert.equal(scopeBindingPolicy.scopeBindingPolicy.tokenValueLogged, false);
+    assert.equal(scopeBindingPolicy.scopeBindingPolicy.hashAlgorithm, "sha256-planned");
+    assert.ok(scopeBindingPolicy.scopeBindingPolicy.requiredScopeFields.includes("workspaceWiring"));
+    assert.ok(scopeBindingPolicy.scopeBindingChecks.some((entry) => entry.id === "target-scope-declared" && entry.executed === false));
+    assert.equal(scopeBindingPolicy.scopeBindingDecision.canBindScope, false);
+    assert.equal(scopeBindingPolicy.scopeBindingDecision.canComputeScopeHash, false);
+    assert.equal(scopeBindingPolicy.scopeBindingDecision.canValidateTokenScope, false);
+    assert.equal(scopeBindingPolicy.scopeBindingDecision.canAcceptToken, false);
+    assert.equal(scopeBindingPolicy.scopeBindingDecision.canConsumeToken, false);
+    assert.equal(scopeBindingPolicy.scopeBindingDecision.canGrantFinalApproval, false);
+    assert.equal(scopeBindingPolicy.scopeBindingDecision.canMaterializeFiles, false);
+    assert.ok(scopeBindingPolicy.noOpGuarantees.includes("approval scope binding policy plan does not compute approval scope hashes"));
+    assert.ok(scopeBindingPolicy.requiredBeforeRuntimeDispatch.includes("define canonical approval scope serialization"));
 });
 
 test("render.thumbnail renderer-service client request scaffold adds MCP audit headers without dispatch", () => {

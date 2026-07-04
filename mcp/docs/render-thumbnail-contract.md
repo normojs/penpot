@@ -1,6 +1,6 @@
 # Render Thumbnail Contract
 
-Status: P25.4 descriptor contract; P25.45 MCP/CLI renderer-service dry-run
+Status: P25.4 descriptor contract; P25.46 MCP/CLI renderer-service dry-run
 boundaries, metadata-only availability probes, response normalization
 contracts, disabled client request scaffolding, closed execution gate, disabled
 health preflight, executable client harness plan, and dispatch adapter boundary
@@ -34,7 +34,10 @@ tokens, consuming tokens, or granting approval. P25.45 adds package
 materialization approval revocation policy metadata without executing
 revocation checks, fetching revocation registries, reading or trusting
 revocation state, validating tokens, accepting tokens, consuming tokens, or
-granting approval.
+granting approval. P25.46 adds package materialization approval scope binding
+policy metadata without computing approval scope hashes, reading file
+snapshots, hashing workspace/package files, validating tokens, accepting
+tokens, consuming tokens, or granting approval.
 
 This document defines the `render.thumbnail` contract before executable MCP or
 CLI rendering is enabled. The contract follows Penpot's existing dashboard
@@ -414,6 +417,26 @@ Shared contract shape:
   `commandExecution:false`, `buildOutput:false`,
   `materializationApproved:false`, `runtimeRegistration:false`, and
   `localFileWrites:false`. They do not fetch, read, or trust revocation state.
+- P25.46 package materialization approval scope binding policy fields are
+  planning-only. They define future canonical approval scope serialization,
+  approval scope hash planning, target/command/workspace/package binding,
+  token scope match, blocked scope-binding decision, and no-op guarantees while
+  keeping
+  `packageMaterializationApprovalScopeBindingPolicy.scopeBindingExecuted:false`,
+  `packageMaterializationApprovalScopeBindingPolicy.approvalScopeHashComputed:false`,
+  `packageMaterializationApprovalScopeBindingPolicy.approvalScopeHashValidated:false`,
+  `packageMaterializationApprovalScopeBindingPolicy.fileSnapshotRead:false`,
+  `packageMaterializationApprovalScopeBindingPolicy.workspaceHashComputed:false`,
+  `packageMaterializationApprovalScopeBindingPolicy.packageManifestHashComputed:false`,
+  `packageMaterializationApprovalScopeBindingPolicy.tokenScopeMatched:false`,
+  `tokenAccepted:false`, `tokenValidated:false`, `tokenConsumed:false`,
+  `approved:false`, `finalApprovalGranted:false`, `filesWritten:false`,
+  `verificationExecuted:false`, `fileMaterialization:false`,
+  `workspaceMutation:false`, `lockfileMutation:false`,
+  `commandExecution:false`, `buildOutput:false`,
+  `materializationApproved:false`, `runtimeRegistration:false`, and
+  `localFileWrites:false`. They do not read file snapshots or hash workspace
+  or package files.
 - Exporter service execution is out of scope for this command unless a later
   task explicitly maps thumbnail rendering to exporter-compatible semantics.
 - P25.6 selects a future dedicated thumbnail renderer service as the executable
@@ -428,7 +451,7 @@ See `render-thumbnail-runtime-boundary.md` and
 audit, resource-return rules, cache refresh behavior, auth expectations, and
 future test strategy.
 See `render-thumbnail-renderer-service-api.md` and
-`render-thumbnail-renderer-service-fixtures.json` for the P25.45 future
+`render-thumbnail-renderer-service-fixtures.json` for the P25.46 future
 renderer-service request/response API, MCP/CLI dry-run/client boundary, and
 metadata-only availability probe plus response/error normalization and disabled
 client request, execution gate, health preflight, and execution harness
@@ -439,8 +462,9 @@ adapter registry manifest plus enablement checklist and implementation slice
 audit plus health/no-op contract fixtures, no-op service host scaffold, and
 host lifecycle test fixtures plus package manifest scaffold, package creation
 guardrails, package file templates, package workspace wiring, package build
-verification, package materialization approval expiry policy, and package
-materialization approval revocation policy.
+verification, package materialization approval expiry policy, package
+materialization approval revocation policy, and package materialization
+approval scope binding policy.
 
 ## Fixtures
 

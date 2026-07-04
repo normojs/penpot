@@ -54,7 +54,10 @@ wall-clock time, validating tokens, accepting tokens, consuming tokens, or
 granting approval. P25.45 defines package materialization approval revocation
 policy metadata without executing revocation checks, fetching revocation
 registries, reading or trusting revocation state, validating tokens, accepting
-tokens, consuming tokens, or granting approval.
+tokens, consuming tokens, or granting approval. P25.46 defines package
+materialization approval scope binding policy metadata without computing
+approval scope hashes, reading file snapshots, hashing workspace/package files,
+validating tokens, accepting tokens, consuming tokens, or granting approval.
 
 ## Existing Surfaces
 
@@ -207,7 +210,8 @@ materialization explicit approval token. P25.42 adds metadata-only package
 materialization approval audit trail. P25.43 adds metadata-only package
 materialization approval replay guard. P25.44 adds metadata-only package
 materialization approval expiry policy. P25.45 adds metadata-only package
-materialization approval revocation policy. MCP
+materialization approval revocation policy. P25.46 adds metadata-only package
+materialization approval scope binding policy. MCP
 `render.thumbnail` and `penpot-cli render thumbnail --dry-run` can print the
 future request shape, configured/not configured service metadata,
 response/error contracts, `clientRequest.dispatch:false`,

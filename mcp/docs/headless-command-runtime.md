@@ -1222,3 +1222,27 @@ P25.45 adds renderer-service package materialization approval revocation policy:
   `packageCreated:false`, `dispatch:false`, `networkDispatch:false`,
   `runtimeRegistration:false`, and `localFileWrites:false`. It does not fetch,
   read, or trust revocation state.
+
+P25.46 adds renderer-service package materialization approval scope binding
+policy:
+
+- Plans include `packageMaterializationApprovalScopeBindingPolicy`, defining
+  the future canonical approval scope serialization, approval scope hash,
+  target/command/workspace/package binding, token scope match, blocked
+  scope-binding decision, and no-op guarantees.
+- The scope binding policy remains planning-only with
+  `scopeBindingExecuted:false`, `approvalScopeHashComputed:false`,
+  `approvalScopeHashValidated:false`, `approvalScopeHashStored:false`,
+  `targetScopeBound:false`, `commandScopeBound:false`,
+  `workspaceScopeBound:false`, `packageScopeBound:false`,
+  `fileSnapshotRead:false`, `workspaceHashComputed:false`,
+  `packageManifestHashComputed:false`, `tokenScopeMatched:false`,
+  `tokenAccepted:false`, `tokenValidated:false`, `tokenConsumed:false`,
+  `approved:false`, `finalApprovalGranted:false`, `executeNow:false`,
+  `verifyNow:false`, `filesWritten:false`, `fileMaterialization:false`,
+  `workspaceMutation:false`, `lockfileMutation:false`,
+  `commandExecution:false`, `buildOutput:false`,
+  `materializationApproved:false`, `processSpawn:false`,
+  `packageCreated:false`, `dispatch:false`, `networkDispatch:false`,
+  `runtimeRegistration:false`, and `localFileWrites:false`. It does not read
+  file snapshots or hash workspace/package files.

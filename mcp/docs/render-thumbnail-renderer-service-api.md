@@ -1,6 +1,6 @@
 # Render Thumbnail Renderer Service API
 
-Status: P25.45 API fixtures, MCP/CLI dry-run/client boundaries, metadata-only
+Status: P25.46 API fixtures, MCP/CLI dry-run/client boundaries, metadata-only
 availability probes, response normalization contracts, disabled client request
 scaffold, closed execution gate, disabled health preflight, and executable
 client harness plus dispatch adapter boundary plans, and opt-in configuration
@@ -34,7 +34,10 @@ tokens, consuming tokens, or granting approval. P25.45 adds package
 materialization approval revocation policy metadata without executing
 revocation checks, fetching revocation registries, reading or trusting
 revocation state, validating tokens, accepting tokens, consuming tokens, or
-granting approval.
+granting approval. P25.46 adds package materialization approval scope binding
+policy metadata without computing approval scope hashes, reading file
+snapshots, hashing workspace/package files, validating tokens, accepting
+tokens, consuming tokens, or granting approval.
 
 P25.6 selected a dedicated thumbnail renderer service as the future executable
 owner for `render.thumbnail`. This document defines the service-facing request
@@ -298,6 +301,18 @@ token validation, token acceptance, token consumption, final approval, file
 writes, package creation, workspace mutation, lockfile mutation, command
 execution, build output, materialization approval, process startup, dispatch,
 network dispatch, runtime registration, and local file writes disabled.
+
+P25.46 defines the package materialization approval scope binding policy.
+Plans now include `packageMaterializationApprovalScopeBindingPolicy`, covering
+future canonical approval scope serialization, approval scope hash planning,
+target/command/workspace/package binding, token scope match, blocked
+scope-binding decision, and no-op guarantees while keeping scope binding,
+approval scope hash computation/validation/storage, file snapshot reads,
+workspace/package hashing, token validation, token acceptance, token
+consumption, final approval, file writes, package creation, workspace
+mutation, lockfile mutation, command execution, build output, materialization
+approval, process startup, dispatch, network dispatch, runtime registration,
+and local file writes disabled.
 
 ## Service Boundary
 

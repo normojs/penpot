@@ -1234,6 +1234,32 @@ P25.45 is complete:
    `networkDispatch`, `runtimeRegistration`, and `localFileWrites` remain
    false.
 
+P25.46 is complete:
+
+1. Shared plans include `packageMaterializationApprovalScopeBindingPolicy`
+   metadata for future canonical approval scope serialization, approval scope
+   hash planning, target/command/workspace/package binding, token scope match,
+   blocked scope-binding decision, and no-op guarantees.
+2. MCP and CLI expose this scope binding policy plan in dry-run and unavailable
+   execution payloads without computing approval scope hashes, reading file
+   snapshots, hashing workspace/package files, validating or accepting tokens,
+   consuming or revoking tokens, granting approval, creating package
+   directories, writing files, mutating workspace manifests, mutating lockfiles,
+   running commands, emitting build output, starting processes, or registering
+   runtime dispatch.
+3. `scopeBindingExecuted`, `approvalScopeHashComputed`,
+   `approvalScopeHashValidated`, `approvalScopeHashStored`,
+   `targetScopeBound`, `commandScopeBound`, `workspaceScopeBound`,
+   `packageScopeBound`, `fileSnapshotRead`, `workspaceHashComputed`,
+   `packageManifestHashComputed`, `tokenScopeMatched`, `tokenAccepted`,
+   `tokenValidated`, `tokenConsumed`, `tokenRevoked`, `approved`,
+   `finalApprovalGranted`, `executeNow`, and `verifyNow` remain false, while
+   `filesWritten`, `verificationExecuted`, `fileMaterialization`,
+   `workspaceMutation`, `lockfileMutation`, `commandExecution`, `buildOutput`,
+   `materializationApproved`, `processSpawn`, `packageCreated`, `dispatch`,
+   `networkDispatch`, `runtimeRegistration`, and `localFileWrites` remain
+   false.
+
 Keep manual configuration behavior stable while moving command metadata and
 envelopes; transport-specific formatting should stay at the MCP/CLI edges.
 
