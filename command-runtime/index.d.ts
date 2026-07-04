@@ -462,6 +462,7 @@ export interface RenderThumbnailRendererServicePlan {
         packageMaterializationRollbackContract: RenderThumbnailRendererServicePackageMaterializationRollbackContract;
         packageMaterializationVerificationManifest: RenderThumbnailRendererServicePackageMaterializationVerificationManifest;
         packageMaterializationFinalApprovalChecklist: RenderThumbnailRendererServicePackageMaterializationFinalApprovalChecklist;
+        packageMaterializationExplicitApprovalToken: RenderThumbnailRendererServicePackageMaterializationExplicitApprovalToken;
         clientRequest: RenderThumbnailRendererServiceClientRequest;
     };
     client: RenderThumbnailRendererServiceClientConfig;
@@ -495,6 +496,7 @@ export interface RenderThumbnailRendererServicePlan {
     packageMaterializationRollbackContract: RenderThumbnailRendererServicePackageMaterializationRollbackContract;
     packageMaterializationVerificationManifest: RenderThumbnailRendererServicePackageMaterializationVerificationManifest;
     packageMaterializationFinalApprovalChecklist: RenderThumbnailRendererServicePackageMaterializationFinalApprovalChecklist;
+    packageMaterializationExplicitApprovalToken: RenderThumbnailRendererServicePackageMaterializationExplicitApprovalToken;
     clientRequest: RenderThumbnailRendererServiceClientRequest;
     serviceRequest: {
         command: "render.thumbnail";
@@ -588,6 +590,7 @@ export interface RenderThumbnailRendererServicePlan {
         packageMaterializationRollbackContractVersion: "P25.38";
         packageMaterializationVerificationManifestVersion: "P25.39";
         packageMaterializationFinalApprovalChecklistVersion: "P25.40";
+        packageMaterializationExplicitApprovalTokenVersion: "P25.41";
     };
 }
 
@@ -2565,6 +2568,101 @@ export interface RenderThumbnailRendererServicePackageMaterializationFinalApprov
     requiredBeforeRuntimeDispatch: string[];
 }
 
+export interface RenderThumbnailRendererServicePackageMaterializationExplicitApprovalToken {
+    status: "planned-disabled";
+    tokenVersion: "P25.41";
+    adapter: "renderer-service";
+    command: "render.thumbnail";
+    dryRunOnly: true;
+    approvalRequired: true;
+    approved: false;
+    finalApprovalGranted: false;
+    tokenRequired: true;
+    tokenProvided: false;
+    tokenAccepted: false;
+    tokenStored: false;
+    tokenValidated: false;
+    executeNow: false;
+    verifyNow: false;
+    rollbackNow: false;
+    dispatch: false;
+    networkDispatch: false;
+    runtimeRegistration: false;
+    localFileWrites: false;
+    hostStartup: false;
+    processSpawn: false;
+    packageCreated: false;
+    workspaceMutation: false;
+    scriptRunnable: false;
+    fileMaterialization: false;
+    lockfileMutation: false;
+    rootPackageJsonMutation: false;
+    pnpmWorkspaceMutation: false;
+    commandExecution: false;
+    buildOutput: false;
+    packageScriptsRunnable: false;
+    materializationApproved: false;
+    materializationApprovedNow: false;
+    filesWritten: false;
+    rollbackExecuted: false;
+    verificationExecuted: false;
+    consumes: {
+        packageMaterializationFinalApprovalChecklist: {
+            requiredStatus: "planned-disabled";
+            currentStatus: string;
+            checklistVersion: string;
+            finalApprovalGranted: false;
+        };
+        packageMaterializationApprovalGate: {
+            requiredStatus: "planned-disabled";
+            currentStatus: string;
+            gateVersion: string;
+            approved: false;
+        };
+    };
+    tokenContract: {
+        tokenType: "explicit-user-approval";
+        format: "opaque-one-time-approval-token";
+        acceptedNow: false;
+        storedNow: false;
+        requiredScope: string[];
+        expiryRequired: true;
+        replayAllowed: false;
+        approverType: "human-user";
+        tokenValueLogged: false;
+    };
+    validationPlan: {
+        validateNow: false;
+        requiredChecklistItemsSatisfied: false;
+        requireHumanIntent: true;
+        requireWorkspaceMutationScope: true;
+        requireRuntimeDispatchDisabled: true;
+        requireOneTimeUse: true;
+        requireUnexpiredToken: true;
+    };
+    auditPlan: {
+        writeAuditNow: false;
+        includeUserId: true;
+        includeTaskId: true;
+        includeScopeHash: true;
+        includeTimestamp: true;
+        includeChecklistVersion: true;
+        tokenValueLogged: false;
+    };
+    approvalDecision: {
+        status: "blocked";
+        canAcceptToken: false;
+        canGrantFinalApproval: false;
+        canMaterializeFiles: false;
+        canMutateWorkspace: false;
+        canRunVerification: false;
+        canEnableRuntimeDispatch: false;
+        reason: string;
+    };
+    noOpGuarantees: string[];
+    requiredBeforeRuntimeDispatch: string[];
+}
+
 export interface CreateRenderThumbnailRendererServiceClientRequestOptions {
     entrypoint?: "mcp" | "cli" | string | null;
     mcpToolName?: string | null;
@@ -3016,6 +3114,12 @@ export function createRenderThumbnailRendererServicePackageMaterializationFinalA
         packageMaterializationApprovalGate?: Partial<RenderThumbnailRendererServicePackageMaterializationApprovalGate> | null;
     }
 ): RenderThumbnailRendererServicePackageMaterializationFinalApprovalChecklist;
+export function createRenderThumbnailRendererServicePackageMaterializationExplicitApprovalToken(
+    options?: {
+        packageMaterializationFinalApprovalChecklist?: Partial<RenderThumbnailRendererServicePackageMaterializationFinalApprovalChecklist> | null;
+        packageMaterializationApprovalGate?: Partial<RenderThumbnailRendererServicePackageMaterializationApprovalGate> | null;
+    }
+): RenderThumbnailRendererServicePackageMaterializationExplicitApprovalToken;
 export function createRenderThumbnailRendererServiceClientRequest(
     plan: Partial<RenderThumbnailRendererServicePlan>,
     options?: CreateRenderThumbnailRendererServiceClientRequestOptions

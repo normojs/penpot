@@ -1088,6 +1088,10 @@ export function createRenderThumbnailRendererServicePlan(options = EMPTY_OBJECT)
         packageMaterializationWriteContract,
         packageMaterializationApprovalGate,
     });
+    const packageMaterializationExplicitApprovalToken = createRenderThumbnailRendererServicePackageMaterializationExplicitApprovalToken({
+        packageMaterializationFinalApprovalChecklist,
+        packageMaterializationApprovalGate,
+    });
 
     return {
         command: CommandDescriptors.RENDER_THUMBNAIL.id,
@@ -1160,6 +1164,7 @@ export function createRenderThumbnailRendererServicePlan(options = EMPTY_OBJECT)
             packageMaterializationRollbackContract,
             packageMaterializationVerificationManifest,
             packageMaterializationFinalApprovalChecklist,
+            packageMaterializationExplicitApprovalToken,
             clientRequest,
         },
         client,
@@ -1193,6 +1198,7 @@ export function createRenderThumbnailRendererServicePlan(options = EMPTY_OBJECT)
         packageMaterializationRollbackContract,
         packageMaterializationVerificationManifest,
         packageMaterializationFinalApprovalChecklist,
+        packageMaterializationExplicitApprovalToken,
         clientRequest,
         serviceRequest: {
             command: CommandDescriptors.RENDER_THUMBNAIL.id,
@@ -1286,6 +1292,7 @@ export function createRenderThumbnailRendererServicePlan(options = EMPTY_OBJECT)
             packageMaterializationRollbackContractVersion: packageMaterializationRollbackContract.contractVersion,
             packageMaterializationVerificationManifestVersion: packageMaterializationVerificationManifest.manifestVersion,
             packageMaterializationFinalApprovalChecklistVersion: packageMaterializationFinalApprovalChecklist.checklistVersion,
+            packageMaterializationExplicitApprovalTokenVersion: packageMaterializationExplicitApprovalToken.tokenVersion,
         },
     };
 }
@@ -3319,6 +3326,127 @@ export function createRenderThumbnailRendererServicePackageMaterializationFinalA
             "run verification manifest after approved materialization",
             "keep rollback contract available through verification",
             "keep render.thumbnail unavailable until final approval, materialization, and verification all pass",
+        ],
+    };
+}
+
+export function createRenderThumbnailRendererServicePackageMaterializationExplicitApprovalToken(options = EMPTY_OBJECT) {
+    const packageMaterializationFinalApprovalChecklist = options.packageMaterializationFinalApprovalChecklist ?? EMPTY_OBJECT;
+    const packageMaterializationApprovalGate = options.packageMaterializationApprovalGate ?? EMPTY_OBJECT;
+
+    return {
+        status: "planned-disabled",
+        tokenVersion: "P25.41",
+        adapter: "renderer-service",
+        command: CommandDescriptors.RENDER_THUMBNAIL.id,
+        dryRunOnly: true,
+        approvalRequired: true,
+        approved: false,
+        finalApprovalGranted: false,
+        tokenRequired: true,
+        tokenProvided: false,
+        tokenAccepted: false,
+        tokenStored: false,
+        tokenValidated: false,
+        executeNow: false,
+        verifyNow: false,
+        rollbackNow: false,
+        dispatch: false,
+        networkDispatch: false,
+        runtimeRegistration: false,
+        localFileWrites: false,
+        hostStartup: false,
+        processSpawn: false,
+        packageCreated: false,
+        workspaceMutation: false,
+        scriptRunnable: false,
+        fileMaterialization: false,
+        lockfileMutation: false,
+        rootPackageJsonMutation: false,
+        pnpmWorkspaceMutation: false,
+        commandExecution: false,
+        buildOutput: false,
+        packageScriptsRunnable: false,
+        materializationApproved: false,
+        materializationApprovedNow: false,
+        filesWritten: false,
+        rollbackExecuted: false,
+        verificationExecuted: false,
+        consumes: {
+            packageMaterializationFinalApprovalChecklist: {
+                requiredStatus: "planned-disabled",
+                currentStatus: packageMaterializationFinalApprovalChecklist.status ?? "planned-disabled",
+                checklistVersion: packageMaterializationFinalApprovalChecklist.checklistVersion ?? "P25.40",
+                finalApprovalGranted: false,
+            },
+            packageMaterializationApprovalGate: {
+                requiredStatus: "planned-disabled",
+                currentStatus: packageMaterializationApprovalGate.status ?? "planned-disabled",
+                gateVersion: packageMaterializationApprovalGate.gateVersion ?? "P25.35",
+                approved: false,
+            },
+        },
+        tokenContract: {
+            tokenType: "explicit-user-approval",
+            format: "opaque-one-time-approval-token",
+            acceptedNow: false,
+            storedNow: false,
+            requiredScope: [
+                "renderer-service package directory materialization",
+                "pnpm-workspace.yaml/package.json/pnpm-lock.yaml workspace mutation",
+                "post-materialization verification command execution",
+            ],
+            expiryRequired: true,
+            replayAllowed: false,
+            approverType: "human-user",
+            tokenValueLogged: false,
+        },
+        validationPlan: {
+            validateNow: false,
+            requiredChecklistItemsSatisfied: false,
+            requireHumanIntent: true,
+            requireWorkspaceMutationScope: true,
+            requireRuntimeDispatchDisabled: true,
+            requireOneTimeUse: true,
+            requireUnexpiredToken: true,
+        },
+        auditPlan: {
+            writeAuditNow: false,
+            includeUserId: true,
+            includeTaskId: true,
+            includeScopeHash: true,
+            includeTimestamp: true,
+            includeChecklistVersion: true,
+            tokenValueLogged: false,
+        },
+        approvalDecision: {
+            status: "blocked",
+            canAcceptToken: false,
+            canGrantFinalApproval: false,
+            canMaterializeFiles: false,
+            canMutateWorkspace: false,
+            canRunVerification: false,
+            canEnableRuntimeDispatch: false,
+            reason: "explicit approval token has not been provided or validated",
+        },
+        noOpGuarantees: [
+            "explicit approval token plan does not accept token input",
+            "explicit approval token plan does not store token values",
+            "explicit approval token plan does not validate or consume a token",
+            "explicit approval token plan does not grant materialization approval",
+            "explicit approval token plan does not create renderer-service directory",
+            "explicit approval token plan does not write package or workspace files",
+            "explicit approval token plan does not mutate lockfiles",
+            "explicit approval token plan does not run verification commands",
+            "explicit approval token plan does not generate build output",
+            "explicit approval token plan does not register runtime dispatch",
+        ],
+        requiredBeforeRuntimeDispatch: [
+            "collect explicit approval token through a future approved user flow",
+            "validate token scope, expiry, and one-time use before materialization",
+            "write audit metadata without logging token value",
+            "grant final approval only after checklist and approval gate are satisfied",
+            "keep render.thumbnail unavailable until executable adapter registration is approved",
         ],
     };
 }

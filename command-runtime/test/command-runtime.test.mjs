@@ -42,6 +42,7 @@ import {
     createRenderThumbnailRendererServicePackageMaterializationRollbackContract,
     createRenderThumbnailRendererServicePackageMaterializationVerificationManifest,
     createRenderThumbnailRendererServicePackageMaterializationFinalApprovalChecklist,
+    createRenderThumbnailRendererServicePackageMaterializationExplicitApprovalToken,
     createRenderThumbnailRendererServicePackageFileTemplates,
     createRenderThumbnailRendererServicePackageManifestScaffold,
     createRenderThumbnailRendererServicePackageMaterializationChecklist,
@@ -627,6 +628,14 @@ test("render.thumbnail renderer-service API fixtures define planning requests wi
     assert.equal(fixtures.serviceApi.packageMaterializationFinalApprovalChecklist.commandExecution, false);
     assert.equal(fixtures.serviceApi.packageMaterializationFinalApprovalChecklist.buildOutput, false);
     assert.equal(fixtures.serviceApi.packageMaterializationFinalApprovalChecklist.filesWritten, false);
+    assert.equal(fixtures.serviceApi.packageMaterializationExplicitApprovalToken.tokenVersion, "P25.41");
+    assert.equal(fixtures.serviceApi.packageMaterializationExplicitApprovalToken.tokenProvided, false);
+    assert.equal(fixtures.serviceApi.packageMaterializationExplicitApprovalToken.tokenAccepted, false);
+    assert.equal(fixtures.serviceApi.packageMaterializationExplicitApprovalToken.approved, false);
+    assert.equal(fixtures.serviceApi.packageMaterializationExplicitApprovalToken.finalApprovalGranted, false);
+    assert.equal(fixtures.serviceApi.packageMaterializationExplicitApprovalToken.commandExecution, false);
+    assert.equal(fixtures.serviceApi.packageMaterializationExplicitApprovalToken.buildOutput, false);
+    assert.equal(fixtures.serviceApi.packageMaterializationExplicitApprovalToken.filesWritten, false);
     assert.deepEqual(fixtures.runtimeRegistration.commandDescriptorAdapters, ["renderer-service"]);
     assert.deepEqual(CommandDescriptors.RENDER_THUMBNAIL.adapters, ["renderer-service"]);
     assert.equal(fixtures.runtimeRegistration.mcpToolRegistered, true);
@@ -1189,6 +1198,46 @@ test("render.thumbnail renderer-service plan exposes dry-run client request whil
     assert.equal(plan.packageMaterializationFinalApprovalChecklist.approvalDecision.canEnableRuntimeDispatch, false);
     assert.ok(plan.packageMaterializationFinalApprovalChecklist.postApprovalSequence.some((entry) => entry.id === "run-verification-manifest" && entry.allowedBeforeFinalApproval === false && entry.runsCommands === true));
     assert.deepEqual(plan.service.packageMaterializationFinalApprovalChecklist, plan.packageMaterializationFinalApprovalChecklist);
+    assert.equal(plan.packageMaterializationExplicitApprovalToken.tokenVersion, "P25.41");
+    assert.equal(plan.packageMaterializationExplicitApprovalToken.dryRunOnly, true);
+    assert.equal(plan.packageMaterializationExplicitApprovalToken.approvalRequired, true);
+    assert.equal(plan.packageMaterializationExplicitApprovalToken.approved, false);
+    assert.equal(plan.packageMaterializationExplicitApprovalToken.finalApprovalGranted, false);
+    assert.equal(plan.packageMaterializationExplicitApprovalToken.tokenRequired, true);
+    assert.equal(plan.packageMaterializationExplicitApprovalToken.tokenProvided, false);
+    assert.equal(plan.packageMaterializationExplicitApprovalToken.tokenAccepted, false);
+    assert.equal(plan.packageMaterializationExplicitApprovalToken.tokenStored, false);
+    assert.equal(plan.packageMaterializationExplicitApprovalToken.tokenValidated, false);
+    assert.equal(plan.packageMaterializationExplicitApprovalToken.executeNow, false);
+    assert.equal(plan.packageMaterializationExplicitApprovalToken.verifyNow, false);
+    assert.equal(plan.packageMaterializationExplicitApprovalToken.rollbackNow, false);
+    assert.equal(plan.packageMaterializationExplicitApprovalToken.dispatch, false);
+    assert.equal(plan.packageMaterializationExplicitApprovalToken.networkDispatch, false);
+    assert.equal(plan.packageMaterializationExplicitApprovalToken.runtimeRegistration, false);
+    assert.equal(plan.packageMaterializationExplicitApprovalToken.localFileWrites, false);
+    assert.equal(plan.packageMaterializationExplicitApprovalToken.packageCreated, false);
+    assert.equal(plan.packageMaterializationExplicitApprovalToken.workspaceMutation, false);
+    assert.equal(plan.packageMaterializationExplicitApprovalToken.fileMaterialization, false);
+    assert.equal(plan.packageMaterializationExplicitApprovalToken.lockfileMutation, false);
+    assert.equal(plan.packageMaterializationExplicitApprovalToken.commandExecution, false);
+    assert.equal(plan.packageMaterializationExplicitApprovalToken.buildOutput, false);
+    assert.equal(plan.packageMaterializationExplicitApprovalToken.materializationApproved, false);
+    assert.equal(plan.packageMaterializationExplicitApprovalToken.filesWritten, false);
+    assert.equal(plan.packageMaterializationExplicitApprovalToken.consumes.packageMaterializationFinalApprovalChecklist.checklistVersion, "P25.40");
+    assert.equal(plan.packageMaterializationExplicitApprovalToken.consumes.packageMaterializationApprovalGate.gateVersion, "P25.35");
+    assert.equal(plan.packageMaterializationExplicitApprovalToken.tokenContract.tokenType, "explicit-user-approval");
+    assert.equal(plan.packageMaterializationExplicitApprovalToken.tokenContract.acceptedNow, false);
+    assert.equal(plan.packageMaterializationExplicitApprovalToken.tokenContract.storedNow, false);
+    assert.equal(plan.packageMaterializationExplicitApprovalToken.tokenContract.replayAllowed, false);
+    assert.ok(plan.packageMaterializationExplicitApprovalToken.tokenContract.requiredScope.includes("renderer-service package directory materialization"));
+    assert.equal(plan.packageMaterializationExplicitApprovalToken.validationPlan.validateNow, false);
+    assert.equal(plan.packageMaterializationExplicitApprovalToken.validationPlan.requireRuntimeDispatchDisabled, true);
+    assert.equal(plan.packageMaterializationExplicitApprovalToken.auditPlan.writeAuditNow, false);
+    assert.equal(plan.packageMaterializationExplicitApprovalToken.auditPlan.tokenValueLogged, false);
+    assert.equal(plan.packageMaterializationExplicitApprovalToken.approvalDecision.canAcceptToken, false);
+    assert.equal(plan.packageMaterializationExplicitApprovalToken.approvalDecision.canGrantFinalApproval, false);
+    assert.equal(plan.packageMaterializationExplicitApprovalToken.approvalDecision.canMaterializeFiles, false);
+    assert.deepEqual(plan.service.packageMaterializationExplicitApprovalToken, plan.packageMaterializationExplicitApprovalToken);
     assert.equal(plan.clientRequest.status, "scaffolded");
     assert.equal(plan.clientRequest.dispatch, false);
     assert.equal(plan.clientRequest.method, "POST");
@@ -1245,6 +1294,7 @@ test("render.thumbnail renderer-service plan exposes dry-run client request whil
     assert.equal(plan.diagnostics.packageMaterializationRollbackContractVersion, "P25.38");
     assert.equal(plan.diagnostics.packageMaterializationVerificationManifestVersion, "P25.39");
     assert.equal(plan.diagnostics.packageMaterializationFinalApprovalChecklistVersion, "P25.40");
+    assert.equal(plan.diagnostics.packageMaterializationExplicitApprovalTokenVersion, "P25.41");
 });
 
 test("render.thumbnail renderer-service plan reports not-configured availability without endpoint", () => {
@@ -2624,6 +2674,82 @@ test("render.thumbnail renderer-service package materialization final approval c
     assert.ok(checklist.postApprovalSequence.some((entry) => entry.id === "materialize-package-files" && entry.writesFiles === true && entry.allowedBeforeFinalApproval === false));
     assert.ok(checklist.noOpGuarantees.includes("final approval checklist does not grant approval"));
     assert.ok(checklist.requiredBeforeRuntimeDispatch.includes("grant final materialization approval in a later explicit implementation task"));
+});
+
+test("render.thumbnail renderer-service package materialization explicit approval token stays metadata-only", () => {
+    const token = createRenderThumbnailRendererServicePackageMaterializationExplicitApprovalToken({
+        packageMaterializationFinalApprovalChecklist: {
+            status: "planned-disabled",
+            checklistVersion: "P25.40",
+            finalApprovalGranted: false,
+        },
+        packageMaterializationApprovalGate: {
+            status: "planned-disabled",
+            gateVersion: "P25.35",
+            approved: false,
+        },
+    });
+
+    assert.equal(token.status, "planned-disabled");
+    assert.equal(token.tokenVersion, "P25.41");
+    assert.equal(token.dryRunOnly, true);
+    assert.equal(token.approvalRequired, true);
+    assert.equal(token.approved, false);
+    assert.equal(token.finalApprovalGranted, false);
+    assert.equal(token.tokenRequired, true);
+    assert.equal(token.tokenProvided, false);
+    assert.equal(token.tokenAccepted, false);
+    assert.equal(token.tokenStored, false);
+    assert.equal(token.tokenValidated, false);
+    assert.equal(token.executeNow, false);
+    assert.equal(token.verifyNow, false);
+    assert.equal(token.rollbackNow, false);
+    assert.equal(token.dispatch, false);
+    assert.equal(token.networkDispatch, false);
+    assert.equal(token.runtimeRegistration, false);
+    assert.equal(token.localFileWrites, false);
+    assert.equal(token.hostStartup, false);
+    assert.equal(token.processSpawn, false);
+    assert.equal(token.packageCreated, false);
+    assert.equal(token.workspaceMutation, false);
+    assert.equal(token.scriptRunnable, false);
+    assert.equal(token.fileMaterialization, false);
+    assert.equal(token.lockfileMutation, false);
+    assert.equal(token.rootPackageJsonMutation, false);
+    assert.equal(token.pnpmWorkspaceMutation, false);
+    assert.equal(token.commandExecution, false);
+    assert.equal(token.buildOutput, false);
+    assert.equal(token.packageScriptsRunnable, false);
+    assert.equal(token.materializationApproved, false);
+    assert.equal(token.filesWritten, false);
+    assert.equal(token.rollbackExecuted, false);
+    assert.equal(token.verificationExecuted, false);
+    assert.equal(token.consumes.packageMaterializationFinalApprovalChecklist.checklistVersion, "P25.40");
+    assert.equal(token.consumes.packageMaterializationFinalApprovalChecklist.finalApprovalGranted, false);
+    assert.equal(token.consumes.packageMaterializationApprovalGate.gateVersion, "P25.35");
+    assert.equal(token.consumes.packageMaterializationApprovalGate.approved, false);
+    assert.equal(token.tokenContract.tokenType, "explicit-user-approval");
+    assert.equal(token.tokenContract.format, "opaque-one-time-approval-token");
+    assert.equal(token.tokenContract.acceptedNow, false);
+    assert.equal(token.tokenContract.storedNow, false);
+    assert.equal(token.tokenContract.expiryRequired, true);
+    assert.equal(token.tokenContract.replayAllowed, false);
+    assert.equal(token.tokenContract.tokenValueLogged, false);
+    assert.ok(token.tokenContract.requiredScope.includes("post-materialization verification command execution"));
+    assert.equal(token.validationPlan.validateNow, false);
+    assert.equal(token.validationPlan.requiredChecklistItemsSatisfied, false);
+    assert.equal(token.validationPlan.requireHumanIntent, true);
+    assert.equal(token.validationPlan.requireWorkspaceMutationScope, true);
+    assert.equal(token.validationPlan.requireRuntimeDispatchDisabled, true);
+    assert.equal(token.auditPlan.writeAuditNow, false);
+    assert.equal(token.auditPlan.includeScopeHash, true);
+    assert.equal(token.auditPlan.tokenValueLogged, false);
+    assert.equal(token.approvalDecision.canAcceptToken, false);
+    assert.equal(token.approvalDecision.canGrantFinalApproval, false);
+    assert.equal(token.approvalDecision.canMaterializeFiles, false);
+    assert.equal(token.approvalDecision.canRunVerification, false);
+    assert.ok(token.noOpGuarantees.includes("explicit approval token plan does not accept token input"));
+    assert.ok(token.requiredBeforeRuntimeDispatch.includes("validate token scope, expiry, and one-time use before materialization"));
 });
 
 test("render.thumbnail renderer-service client request scaffold adds MCP audit headers without dispatch", () => {

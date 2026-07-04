@@ -357,6 +357,11 @@ Current state:
   decision state, and post-approval sequence without granting approval, writing
   files, mutating workspace state, running commands, emitting build output, or
   registering runtime dispatch.
+- Done: renderer-service package materialization explicit approval token
+  defines metadata-only one-time token contract, validation plan, audit plan,
+  blocked decision state, and no-op guarantees without accepting or validating
+  a token, granting approval, writing files, mutating workspace state, running
+  commands, emitting build output, or registering runtime dispatch.
 - Done: focused command-runtime tests cover descriptor groups, lookup,
   adapter-selection priority/error cases, and token-safe envelopes.
 - Status: complete. Later command coverage gaps were tracked by the P15.1
@@ -1123,6 +1128,25 @@ P25.40 is complete:
    `materializationApproved`, `processSpawn`, `packageCreated`, `dispatch`,
    `networkDispatch`, `runtimeRegistration`, and `localFileWrites` remain
    false.
+
+P25.41 is complete:
+
+1. Shared plans include `packageMaterializationExplicitApprovalToken`
+   metadata for the future opaque one-time approval token format, approval
+   scope, validation requirements, audit fields, blocked decision state, and
+   no-op guarantees.
+2. MCP and CLI expose this token plan in dry-run and unavailable execution
+   payloads without accepting, storing, validating, or consuming a token, and
+   without granting approval, creating package directories, writing files,
+   mutating workspace manifests, mutating lockfiles, running commands, emitting
+   build output, starting processes, or registering runtime dispatch.
+3. `tokenProvided`, `tokenAccepted`, `tokenStored`, `tokenValidated`,
+   `approved`, `finalApprovalGranted`, `executeNow`, and `verifyNow` remain
+   false, while `filesWritten`, `verificationExecuted`,
+   `fileMaterialization`, `workspaceMutation`, `lockfileMutation`,
+   `commandExecution`, `buildOutput`, `materializationApproved`,
+   `processSpawn`, `packageCreated`, `dispatch`, `networkDispatch`,
+   `runtimeRegistration`, and `localFileWrites` remain false.
 
 Keep manual configuration behavior stable while moving command metadata and
 envelopes; transport-specific formatting should stay at the MCP/CLI edges.

@@ -2830,6 +2830,15 @@ test("render thumbnail dry-run returns renderer-service request plan", async () 
         assert.ok(body.data.packageMaterializationFinalApprovalChecklist.checklist.some((entry) => entry.id === "explicit-user-approval" && entry.satisfied === false));
         assert.ok(body.data.packageMaterializationFinalApprovalChecklist.approvalScope.workspaceFiles.includes("pnpm-lock.yaml"));
         assert.equal(body.data.packageMaterializationFinalApprovalChecklist.approvalDecision.canGrantFinalApproval, false);
+        assert.equal(body.data.packageMaterializationExplicitApprovalToken.tokenVersion, "P25.41");
+        assert.equal(body.data.packageMaterializationExplicitApprovalToken.tokenProvided, false);
+        assert.equal(body.data.packageMaterializationExplicitApprovalToken.tokenAccepted, false);
+        assert.equal(body.data.packageMaterializationExplicitApprovalToken.approved, false);
+        assert.equal(body.data.packageMaterializationExplicitApprovalToken.finalApprovalGranted, false);
+        assert.equal(body.data.packageMaterializationExplicitApprovalToken.commandExecution, false);
+        assert.equal(body.data.packageMaterializationExplicitApprovalToken.buildOutput, false);
+        assert.equal(body.data.packageMaterializationExplicitApprovalToken.filesWritten, false);
+        assert.equal(body.data.packageMaterializationExplicitApprovalToken.approvalDecision.canAcceptToken, false);
         assert.equal(body.data.service.responseNormalization.successStatus, "ok");
         assert.equal(body.data.service.responseNormalization.localFileWrites, false);
         assert.equal(body.data.service.errorShape.code, "renderer_service_error");
@@ -3055,6 +3064,15 @@ test("render thumbnail execution reports renderer-service unavailable without ca
         assert.equal(body.error.data.packageMaterializationFinalApprovalChecklist.filesWritten, false);
         assert.ok(body.error.data.packageMaterializationFinalApprovalChecklist.checklist.some((entry) => entry.id === "explicit-user-approval" && entry.satisfied === false));
         assert.equal(body.error.data.packageMaterializationFinalApprovalChecklist.approvalDecision.canGrantFinalApproval, false);
+        assert.equal(body.error.data.packageMaterializationExplicitApprovalToken.tokenVersion, "P25.41");
+        assert.equal(body.error.data.packageMaterializationExplicitApprovalToken.tokenProvided, false);
+        assert.equal(body.error.data.packageMaterializationExplicitApprovalToken.tokenAccepted, false);
+        assert.equal(body.error.data.packageMaterializationExplicitApprovalToken.approved, false);
+        assert.equal(body.error.data.packageMaterializationExplicitApprovalToken.finalApprovalGranted, false);
+        assert.equal(body.error.data.packageMaterializationExplicitApprovalToken.commandExecution, false);
+        assert.equal(body.error.data.packageMaterializationExplicitApprovalToken.buildOutput, false);
+        assert.equal(body.error.data.packageMaterializationExplicitApprovalToken.filesWritten, false);
+        assert.equal(body.error.data.packageMaterializationExplicitApprovalToken.approvalDecision.canAcceptToken, false);
         assert.equal(body.error.data.clientRequest.dispatch, false);
         assert.equal(body.error.data.serviceRequest.operation, "thumbnail.render");
     } finally {

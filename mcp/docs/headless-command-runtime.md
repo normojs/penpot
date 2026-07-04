@@ -1136,3 +1136,18 @@ P25.40 adds renderer-service package materialization final approval checklist:
   `materializationApproved`, `processSpawn`, `packageCreated`, `dispatch`,
   `networkDispatch`, `runtimeRegistration`, and `localFileWrites` all
   `false`.
+
+P25.41 adds renderer-service package materialization explicit approval token:
+
+- Plans include `packageMaterializationExplicitApprovalToken`, defining the
+  future opaque one-time approval token contract, required scope, validation
+  plan, audit plan, blocked decision state, and no-op guarantees.
+- The token plan remains planning-only with `tokenProvided:false`,
+  `tokenAccepted:false`, `tokenStored:false`, `tokenValidated:false`,
+  `approved:false`, `finalApprovalGranted:false`, `executeNow:false`,
+  `verifyNow:false`, `filesWritten:false`, `fileMaterialization:false`,
+  `workspaceMutation:false`, `lockfileMutation:false`,
+  `commandExecution:false`, `buildOutput:false`, `materializationApproved:false`,
+  `processSpawn:false`, `packageCreated:false`, `dispatch:false`,
+  `networkDispatch:false`, `runtimeRegistration:false`, and
+  `localFileWrites:false`.
