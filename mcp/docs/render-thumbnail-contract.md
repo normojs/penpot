@@ -1,6 +1,6 @@
 # Render Thumbnail Contract
 
-Status: P25.4 descriptor contract; P25.44 MCP/CLI renderer-service dry-run
+Status: P25.4 descriptor contract; P25.45 MCP/CLI renderer-service dry-run
 boundaries, metadata-only availability probes, response normalization
 contracts, disabled client request scaffolding, closed execution gate, disabled
 health preflight, executable client harness plan, and dispatch adapter boundary
@@ -30,7 +30,11 @@ materialization approval replay guard metadata without executing replay checks,
 storing nonce/scope hash state, consuming tokens, or granting approval. P25.44
 adds package materialization approval expiry policy metadata without executing
 expiry checks, reading or trusting wall-clock time, validating tokens, accepting
-tokens, consuming tokens, or granting approval.
+tokens, consuming tokens, or granting approval. P25.45 adds package
+materialization approval revocation policy metadata without executing
+revocation checks, fetching revocation registries, reading or trusting
+revocation state, validating tokens, accepting tokens, consuming tokens, or
+granting approval.
 
 This document defines the `render.thumbnail` contract before executable MCP or
 CLI rendering is enabled. The contract follows Penpot's existing dashboard
@@ -393,6 +397,23 @@ Shared contract shape:
   `lockfileMutation:false`, `commandExecution:false`, `buildOutput:false`,
   `materializationApproved:false`, `runtimeRegistration:false`, and
   `localFileWrites:false`. They do not read or trust wall-clock time.
+- P25.45 package materialization approval revocation policy fields are
+  planning-only. They define future revoked-token denial rules, revocation
+  registry sources, revocation epoch checks, audit linkage, blocked revocation
+  decision, and no-op guarantees while keeping
+  `packageMaterializationApprovalRevocationPolicy.revocationCheckExecuted:false`,
+  `packageMaterializationApprovalRevocationPolicy.revocationRegistryFetched:false`,
+  `packageMaterializationApprovalRevocationPolicy.revocationStatusFetched:false`,
+  `packageMaterializationApprovalRevocationPolicy.revocationStatusTrusted:false`,
+  `packageMaterializationApprovalRevocationPolicy.tokenRevocationChecked:false`,
+  `packageMaterializationApprovalRevocationPolicy.revokedTokenRejected:false`,
+  `tokenAccepted:false`, `tokenValidated:false`, `tokenConsumed:false`,
+  `approved:false`, `finalApprovalGranted:false`, `filesWritten:false`,
+  `verificationExecuted:false`, `fileMaterialization:false`,
+  `workspaceMutation:false`, `lockfileMutation:false`,
+  `commandExecution:false`, `buildOutput:false`,
+  `materializationApproved:false`, `runtimeRegistration:false`, and
+  `localFileWrites:false`. They do not fetch, read, or trust revocation state.
 - Exporter service execution is out of scope for this command unless a later
   task explicitly maps thumbnail rendering to exporter-compatible semantics.
 - P25.6 selects a future dedicated thumbnail renderer service as the executable
@@ -407,7 +428,7 @@ See `render-thumbnail-runtime-boundary.md` and
 audit, resource-return rules, cache refresh behavior, auth expectations, and
 future test strategy.
 See `render-thumbnail-renderer-service-api.md` and
-`render-thumbnail-renderer-service-fixtures.json` for the P25.44 future
+`render-thumbnail-renderer-service-fixtures.json` for the P25.45 future
 renderer-service request/response API, MCP/CLI dry-run/client boundary, and
 metadata-only availability probe plus response/error normalization and disabled
 client request, execution gate, health preflight, and execution harness
@@ -418,7 +439,8 @@ adapter registry manifest plus enablement checklist and implementation slice
 audit plus health/no-op contract fixtures, no-op service host scaffold, and
 host lifecycle test fixtures plus package manifest scaffold, package creation
 guardrails, package file templates, package workspace wiring, package build
-verification, and package materialization approval expiry policy.
+verification, package materialization approval expiry policy, and package
+materialization approval revocation policy.
 
 ## Fixtures
 

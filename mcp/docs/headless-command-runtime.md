@@ -1202,3 +1202,23 @@ P25.44 adds renderer-service package materialization approval expiry policy:
   `packageCreated:false`, `dispatch:false`, `networkDispatch:false`,
   `runtimeRegistration:false`, and `localFileWrites:false`. It does not read
   or trust wall-clock time.
+
+P25.45 adds renderer-service package materialization approval revocation policy:
+
+- Plans include `packageMaterializationApprovalRevocationPolicy`, defining the
+  future revoked-token denial contract, registry source plan, revocation epoch
+  checks, audit linkage, blocked revocation decision, and no-op guarantees.
+- The revocation policy remains planning-only with
+  `revocationCheckExecuted:false`, `revocationRegistryConfigured:false`,
+  `revocationRegistryFetched:false`, `revocationStatusFetched:false`,
+  `revocationStatusTrusted:false`, `tokenRevocationChecked:false`,
+  `tokenRevoked:false`, `revokedTokenRejected:false`,
+  `tokenAccepted:false`, `tokenValidated:false`, `tokenConsumed:false`,
+  `approved:false`, `finalApprovalGranted:false`, `executeNow:false`,
+  `verifyNow:false`, `filesWritten:false`, `fileMaterialization:false`,
+  `workspaceMutation:false`, `lockfileMutation:false`,
+  `commandExecution:false`, `buildOutput:false`,
+  `materializationApproved:false`, `processSpawn:false`,
+  `packageCreated:false`, `dispatch:false`, `networkDispatch:false`,
+  `runtimeRegistration:false`, and `localFileWrites:false`. It does not fetch,
+  read, or trust revocation state.

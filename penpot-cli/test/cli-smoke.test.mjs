@@ -2868,6 +2868,18 @@ test("render thumbnail dry-run returns renderer-service request plan", async () 
         assert.equal(body.data.packageMaterializationApprovalExpiryPolicy.buildOutput, false);
         assert.equal(body.data.packageMaterializationApprovalExpiryPolicy.filesWritten, false);
         assert.equal(body.data.packageMaterializationApprovalExpiryPolicy.expiryDecision.canCheckExpiry, false);
+        assert.equal(body.data.packageMaterializationApprovalRevocationPolicy.revocationPolicyVersion, "P25.45");
+        assert.equal(body.data.packageMaterializationApprovalRevocationPolicy.revocationCheckExecuted, false);
+        assert.equal(body.data.packageMaterializationApprovalRevocationPolicy.revocationRegistryFetched, false);
+        assert.equal(body.data.packageMaterializationApprovalRevocationPolicy.revocationStatusTrusted, false);
+        assert.equal(body.data.packageMaterializationApprovalRevocationPolicy.tokenAccepted, false);
+        assert.equal(body.data.packageMaterializationApprovalRevocationPolicy.tokenValidated, false);
+        assert.equal(body.data.packageMaterializationApprovalRevocationPolicy.approved, false);
+        assert.equal(body.data.packageMaterializationApprovalRevocationPolicy.finalApprovalGranted, false);
+        assert.equal(body.data.packageMaterializationApprovalRevocationPolicy.commandExecution, false);
+        assert.equal(body.data.packageMaterializationApprovalRevocationPolicy.buildOutput, false);
+        assert.equal(body.data.packageMaterializationApprovalRevocationPolicy.filesWritten, false);
+        assert.equal(body.data.packageMaterializationApprovalRevocationPolicy.revocationDecision.canCheckRevocation, false);
         assert.equal(body.data.service.responseNormalization.successStatus, "ok");
         assert.equal(body.data.service.responseNormalization.localFileWrites, false);
         assert.equal(body.data.service.errorShape.code, "renderer_service_error");
@@ -3131,6 +3143,18 @@ test("render thumbnail execution reports renderer-service unavailable without ca
         assert.equal(body.error.data.packageMaterializationApprovalExpiryPolicy.buildOutput, false);
         assert.equal(body.error.data.packageMaterializationApprovalExpiryPolicy.filesWritten, false);
         assert.equal(body.error.data.packageMaterializationApprovalExpiryPolicy.expiryDecision.canCheckExpiry, false);
+        assert.equal(body.error.data.packageMaterializationApprovalRevocationPolicy.revocationPolicyVersion, "P25.45");
+        assert.equal(body.error.data.packageMaterializationApprovalRevocationPolicy.revocationCheckExecuted, false);
+        assert.equal(body.error.data.packageMaterializationApprovalRevocationPolicy.revocationRegistryFetched, false);
+        assert.equal(body.error.data.packageMaterializationApprovalRevocationPolicy.revocationStatusTrusted, false);
+        assert.equal(body.error.data.packageMaterializationApprovalRevocationPolicy.tokenAccepted, false);
+        assert.equal(body.error.data.packageMaterializationApprovalRevocationPolicy.tokenValidated, false);
+        assert.equal(body.error.data.packageMaterializationApprovalRevocationPolicy.approved, false);
+        assert.equal(body.error.data.packageMaterializationApprovalRevocationPolicy.finalApprovalGranted, false);
+        assert.equal(body.error.data.packageMaterializationApprovalRevocationPolicy.commandExecution, false);
+        assert.equal(body.error.data.packageMaterializationApprovalRevocationPolicy.buildOutput, false);
+        assert.equal(body.error.data.packageMaterializationApprovalRevocationPolicy.filesWritten, false);
+        assert.equal(body.error.data.packageMaterializationApprovalRevocationPolicy.revocationDecision.canCheckRevocation, false);
         assert.equal(body.error.data.clientRequest.dispatch, false);
         assert.equal(body.error.data.serviceRequest.operation, "thumbnail.render");
     } finally {

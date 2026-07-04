@@ -2630,6 +2630,30 @@ P25.44 render.thumbnail package materialization approval expiry policy result:
   `networkDispatch`, `runtimeRegistration`, and `localFileWrites` remain
   `false`.
 
+P25.45 render.thumbnail package materialization approval revocation policy result:
+
+- Shared plans include `packageMaterializationApprovalRevocationPolicy`,
+  defining metadata-only revoked-token denial rules, revocation registry
+  sources, revocation epoch checks, audit linkage, blocked revocation decision,
+  and no-op guarantees.
+- MCP and CLI expose the revocation policy plan in dry-run and unavailable
+  execution payloads without executing revocation checks, fetching revocation
+  registries, reading or trusting revocation state, validating or accepting
+  tokens, consuming tokens, granting approval, creating package directories,
+  writing files, mutating workspace manifests, mutating lockfiles, running
+  commands, emitting build output, starting processes, or registering runtime
+  dispatch.
+- `revocationCheckExecuted`, `revocationRegistryFetched`,
+  `revocationStatusFetched`, `revocationStatusTrusted`,
+  `tokenRevocationChecked`, `tokenRevoked`, `revokedTokenRejected`,
+  `tokenAccepted`, `tokenValidated`, `tokenConsumed`, `approved`,
+  `finalApprovalGranted`, `executeNow`, and `verifyNow` remain `false`, while
+  `filesWritten`, `verificationExecuted`, `fileMaterialization`,
+  `workspaceMutation`, `lockfileMutation`, `commandExecution`, `buildOutput`,
+  `materializationApproved`, `processSpawn`, `packageCreated`, `dispatch`,
+  `networkDispatch`, `runtimeRegistration`, and `localFileWrites` remain
+  `false`.
+
 ### 8.5 Export and Render Tools
 
 May start file-bound and later move to headless:
@@ -2677,7 +2701,8 @@ materialization final approval checklist. P25.41 defines disabled package
 materialization explicit approval token. P25.42 defines disabled package
 materialization approval audit trail. P25.43 defines disabled package
 materialization approval replay guard. P25.44 defines disabled package
-materialization approval expiry policy.
+materialization approval expiry policy. P25.45 defines disabled package
+materialization approval revocation policy.
 Runtime behavior remains unavailable
 until opt-in config surfaces, renderer-service implementation, workspace
 wiring, health preflight, cache probe, executable client, and tagged-frame

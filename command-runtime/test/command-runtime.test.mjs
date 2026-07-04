@@ -46,6 +46,7 @@ import {
     createRenderThumbnailRendererServicePackageMaterializationApprovalAuditTrail,
     createRenderThumbnailRendererServicePackageMaterializationApprovalReplayGuard,
     createRenderThumbnailRendererServicePackageMaterializationApprovalExpiryPolicy,
+    createRenderThumbnailRendererServicePackageMaterializationApprovalRevocationPolicy,
     createRenderThumbnailRendererServicePackageFileTemplates,
     createRenderThumbnailRendererServicePackageManifestScaffold,
     createRenderThumbnailRendererServicePackageMaterializationChecklist,
@@ -665,6 +666,17 @@ test("render.thumbnail renderer-service API fixtures define planning requests wi
     assert.equal(fixtures.serviceApi.packageMaterializationApprovalExpiryPolicy.commandExecution, false);
     assert.equal(fixtures.serviceApi.packageMaterializationApprovalExpiryPolicy.buildOutput, false);
     assert.equal(fixtures.serviceApi.packageMaterializationApprovalExpiryPolicy.filesWritten, false);
+    assert.equal(fixtures.serviceApi.packageMaterializationApprovalRevocationPolicy.revocationPolicyVersion, "P25.45");
+    assert.equal(fixtures.serviceApi.packageMaterializationApprovalRevocationPolicy.revocationCheckExecuted, false);
+    assert.equal(fixtures.serviceApi.packageMaterializationApprovalRevocationPolicy.revocationRegistryFetched, false);
+    assert.equal(fixtures.serviceApi.packageMaterializationApprovalRevocationPolicy.revocationStatusTrusted, false);
+    assert.equal(fixtures.serviceApi.packageMaterializationApprovalRevocationPolicy.tokenAccepted, false);
+    assert.equal(fixtures.serviceApi.packageMaterializationApprovalRevocationPolicy.tokenValidated, false);
+    assert.equal(fixtures.serviceApi.packageMaterializationApprovalRevocationPolicy.approved, false);
+    assert.equal(fixtures.serviceApi.packageMaterializationApprovalRevocationPolicy.finalApprovalGranted, false);
+    assert.equal(fixtures.serviceApi.packageMaterializationApprovalRevocationPolicy.commandExecution, false);
+    assert.equal(fixtures.serviceApi.packageMaterializationApprovalRevocationPolicy.buildOutput, false);
+    assert.equal(fixtures.serviceApi.packageMaterializationApprovalRevocationPolicy.filesWritten, false);
     assert.deepEqual(fixtures.runtimeRegistration.commandDescriptorAdapters, ["renderer-service"]);
     assert.deepEqual(CommandDescriptors.RENDER_THUMBNAIL.adapters, ["renderer-service"]);
     assert.equal(fixtures.runtimeRegistration.mcpToolRegistered, true);
@@ -1403,6 +1415,53 @@ test("render.thumbnail renderer-service plan exposes dry-run client request whil
     assert.equal(plan.packageMaterializationApprovalExpiryPolicy.expiryDecision.canAcceptToken, false);
     assert.equal(plan.packageMaterializationApprovalExpiryPolicy.expiryDecision.canGrantFinalApproval, false);
     assert.deepEqual(plan.service.packageMaterializationApprovalExpiryPolicy, plan.packageMaterializationApprovalExpiryPolicy);
+    assert.equal(plan.packageMaterializationApprovalRevocationPolicy.revocationPolicyVersion, "P25.45");
+    assert.equal(plan.packageMaterializationApprovalRevocationPolicy.dryRunOnly, true);
+    assert.equal(plan.packageMaterializationApprovalRevocationPolicy.approvalRequired, true);
+    assert.equal(plan.packageMaterializationApprovalRevocationPolicy.approved, false);
+    assert.equal(plan.packageMaterializationApprovalRevocationPolicy.finalApprovalGranted, false);
+    assert.equal(plan.packageMaterializationApprovalRevocationPolicy.revocationPolicyRequired, true);
+    assert.equal(plan.packageMaterializationApprovalRevocationPolicy.revocationCheckPlanned, true);
+    assert.equal(plan.packageMaterializationApprovalRevocationPolicy.revocationCheckExecuted, false);
+    assert.equal(plan.packageMaterializationApprovalRevocationPolicy.revocationRegistryConfigured, false);
+    assert.equal(plan.packageMaterializationApprovalRevocationPolicy.revocationRegistryFetched, false);
+    assert.equal(plan.packageMaterializationApprovalRevocationPolicy.revocationStatusFetched, false);
+    assert.equal(plan.packageMaterializationApprovalRevocationPolicy.revocationStatusTrusted, false);
+    assert.equal(plan.packageMaterializationApprovalRevocationPolicy.tokenRevocationChecked, false);
+    assert.equal(plan.packageMaterializationApprovalRevocationPolicy.tokenRevoked, false);
+    assert.equal(plan.packageMaterializationApprovalRevocationPolicy.revokedTokenRejected, false);
+    assert.equal(plan.packageMaterializationApprovalRevocationPolicy.tokenAccepted, false);
+    assert.equal(plan.packageMaterializationApprovalRevocationPolicy.tokenStored, false);
+    assert.equal(plan.packageMaterializationApprovalRevocationPolicy.tokenValidated, false);
+    assert.equal(plan.packageMaterializationApprovalRevocationPolicy.tokenConsumed, false);
+    assert.equal(plan.packageMaterializationApprovalRevocationPolicy.executeNow, false);
+    assert.equal(plan.packageMaterializationApprovalRevocationPolicy.verifyNow, false);
+    assert.equal(plan.packageMaterializationApprovalRevocationPolicy.rollbackNow, false);
+    assert.equal(plan.packageMaterializationApprovalRevocationPolicy.dispatch, false);
+    assert.equal(plan.packageMaterializationApprovalRevocationPolicy.networkDispatch, false);
+    assert.equal(plan.packageMaterializationApprovalRevocationPolicy.runtimeRegistration, false);
+    assert.equal(plan.packageMaterializationApprovalRevocationPolicy.localFileWrites, false);
+    assert.equal(plan.packageMaterializationApprovalRevocationPolicy.packageCreated, false);
+    assert.equal(plan.packageMaterializationApprovalRevocationPolicy.workspaceMutation, false);
+    assert.equal(plan.packageMaterializationApprovalRevocationPolicy.fileMaterialization, false);
+    assert.equal(plan.packageMaterializationApprovalRevocationPolicy.lockfileMutation, false);
+    assert.equal(plan.packageMaterializationApprovalRevocationPolicy.commandExecution, false);
+    assert.equal(plan.packageMaterializationApprovalRevocationPolicy.buildOutput, false);
+    assert.equal(plan.packageMaterializationApprovalRevocationPolicy.materializationApproved, false);
+    assert.equal(plan.packageMaterializationApprovalRevocationPolicy.filesWritten, false);
+    assert.equal(plan.packageMaterializationApprovalRevocationPolicy.consumes.packageMaterializationApprovalExpiryPolicy.expiryPolicyVersion, "P25.44");
+    assert.equal(plan.packageMaterializationApprovalRevocationPolicy.consumes.packageMaterializationApprovalReplayGuard.replayGuardVersion, "P25.43");
+    assert.equal(plan.packageMaterializationApprovalRevocationPolicy.consumes.packageMaterializationApprovalAuditTrail.auditTrailVersion, "P25.42");
+    assert.equal(plan.packageMaterializationApprovalRevocationPolicy.revocationPolicy.checkNow, false);
+    assert.equal(plan.packageMaterializationApprovalRevocationPolicy.revocationPolicy.fetchRegistryNow, false);
+    assert.equal(plan.packageMaterializationApprovalRevocationPolicy.revocationPolicy.persistRevocationStateNow, false);
+    assert.equal(plan.packageMaterializationApprovalRevocationPolicy.revocationPolicy.rejectRevokedTokenNow, false);
+    assert.ok(plan.packageMaterializationApprovalRevocationPolicy.revocationPolicy.requiredInputs.includes("tokenId"));
+    assert.ok(plan.packageMaterializationApprovalRevocationPolicy.revocationChecks.some((entry) => entry.id === "token-not-revoked" && entry.executed === false));
+    assert.equal(plan.packageMaterializationApprovalRevocationPolicy.revocationDecision.canCheckRevocation, false);
+    assert.equal(plan.packageMaterializationApprovalRevocationPolicy.revocationDecision.canRejectRevokedToken, false);
+    assert.equal(plan.packageMaterializationApprovalRevocationPolicy.revocationDecision.canGrantFinalApproval, false);
+    assert.deepEqual(plan.service.packageMaterializationApprovalRevocationPolicy, plan.packageMaterializationApprovalRevocationPolicy);
     assert.equal(plan.clientRequest.status, "scaffolded");
     assert.equal(plan.clientRequest.dispatch, false);
     assert.equal(plan.clientRequest.method, "POST");
@@ -1463,6 +1522,7 @@ test("render.thumbnail renderer-service plan exposes dry-run client request whil
     assert.equal(plan.diagnostics.packageMaterializationApprovalAuditTrailVersion, "P25.42");
     assert.equal(plan.diagnostics.packageMaterializationApprovalReplayGuardVersion, "P25.43");
     assert.equal(plan.diagnostics.packageMaterializationApprovalExpiryPolicyVersion, "P25.44");
+    assert.equal(plan.diagnostics.packageMaterializationApprovalRevocationPolicyVersion, "P25.45");
 });
 
 test("render.thumbnail renderer-service plan reports not-configured availability without endpoint", () => {
@@ -3171,6 +3231,94 @@ test("render.thumbnail renderer-service package materialization approval expiry 
     assert.equal(expiryPolicy.expiryDecision.canMaterializeFiles, false);
     assert.ok(expiryPolicy.noOpGuarantees.includes("approval expiry policy plan does not execute expiry checks"));
     assert.ok(expiryPolicy.requiredBeforeRuntimeDispatch.includes("enforce max token age and clock skew policy"));
+});
+
+test("render.thumbnail renderer-service package materialization approval revocation policy stays metadata-only", () => {
+    const revocationPolicy = createRenderThumbnailRendererServicePackageMaterializationApprovalRevocationPolicy({
+        packageMaterializationApprovalExpiryPolicy: {
+            status: "planned-disabled",
+            expiryPolicyVersion: "P25.44",
+            expiryCheckExecuted: false,
+        },
+        packageMaterializationApprovalReplayGuard: {
+            status: "planned-disabled",
+            replayGuardVersion: "P25.43",
+            replayCheckExecuted: false,
+        },
+        packageMaterializationApprovalAuditTrail: {
+            status: "planned-disabled",
+            auditTrailVersion: "P25.42",
+            auditRecordWritten: false,
+        },
+    });
+
+    assert.equal(revocationPolicy.status, "planned-disabled");
+    assert.equal(revocationPolicy.revocationPolicyVersion, "P25.45");
+    assert.equal(revocationPolicy.dryRunOnly, true);
+    assert.equal(revocationPolicy.approvalRequired, true);
+    assert.equal(revocationPolicy.approved, false);
+    assert.equal(revocationPolicy.finalApprovalGranted, false);
+    assert.equal(revocationPolicy.revocationPolicyRequired, true);
+    assert.equal(revocationPolicy.revocationCheckPlanned, true);
+    assert.equal(revocationPolicy.revocationCheckExecuted, false);
+    assert.equal(revocationPolicy.revocationRegistryConfigured, false);
+    assert.equal(revocationPolicy.revocationRegistryFetched, false);
+    assert.equal(revocationPolicy.revocationStatusFetched, false);
+    assert.equal(revocationPolicy.revocationStatusTrusted, false);
+    assert.equal(revocationPolicy.tokenRevocationChecked, false);
+    assert.equal(revocationPolicy.tokenRevoked, false);
+    assert.equal(revocationPolicy.revokedTokenRejected, false);
+    assert.equal(revocationPolicy.tokenAccepted, false);
+    assert.equal(revocationPolicy.tokenStored, false);
+    assert.equal(revocationPolicy.tokenValidated, false);
+    assert.equal(revocationPolicy.tokenConsumed, false);
+    assert.equal(revocationPolicy.executeNow, false);
+    assert.equal(revocationPolicy.verifyNow, false);
+    assert.equal(revocationPolicy.rollbackNow, false);
+    assert.equal(revocationPolicy.dispatch, false);
+    assert.equal(revocationPolicy.networkDispatch, false);
+    assert.equal(revocationPolicy.runtimeRegistration, false);
+    assert.equal(revocationPolicy.localFileWrites, false);
+    assert.equal(revocationPolicy.hostStartup, false);
+    assert.equal(revocationPolicy.processSpawn, false);
+    assert.equal(revocationPolicy.packageCreated, false);
+    assert.equal(revocationPolicy.workspaceMutation, false);
+    assert.equal(revocationPolicy.scriptRunnable, false);
+    assert.equal(revocationPolicy.fileMaterialization, false);
+    assert.equal(revocationPolicy.lockfileMutation, false);
+    assert.equal(revocationPolicy.rootPackageJsonMutation, false);
+    assert.equal(revocationPolicy.pnpmWorkspaceMutation, false);
+    assert.equal(revocationPolicy.commandExecution, false);
+    assert.equal(revocationPolicy.buildOutput, false);
+    assert.equal(revocationPolicy.packageScriptsRunnable, false);
+    assert.equal(revocationPolicy.materializationApproved, false);
+    assert.equal(revocationPolicy.filesWritten, false);
+    assert.equal(revocationPolicy.rollbackExecuted, false);
+    assert.equal(revocationPolicy.verificationExecuted, false);
+    assert.equal(revocationPolicy.consumes.packageMaterializationApprovalExpiryPolicy.expiryPolicyVersion, "P25.44");
+    assert.equal(revocationPolicy.consumes.packageMaterializationApprovalExpiryPolicy.expiryCheckExecuted, false);
+    assert.equal(revocationPolicy.consumes.packageMaterializationApprovalReplayGuard.replayGuardVersion, "P25.43");
+    assert.equal(revocationPolicy.consumes.packageMaterializationApprovalReplayGuard.replayCheckExecuted, false);
+    assert.equal(revocationPolicy.consumes.packageMaterializationApprovalAuditTrail.auditTrailVersion, "P25.42");
+    assert.equal(revocationPolicy.consumes.packageMaterializationApprovalAuditTrail.auditRecordWritten, false);
+    assert.equal(revocationPolicy.revocationPolicy.policy, "deny-revoked-explicit-approval-token");
+    assert.equal(revocationPolicy.revocationPolicy.checkNow, false);
+    assert.equal(revocationPolicy.revocationPolicy.fetchRegistryNow, false);
+    assert.equal(revocationPolicy.revocationPolicy.validateRevocationEpochNow, false);
+    assert.equal(revocationPolicy.revocationPolicy.persistRevocationStateNow, false);
+    assert.equal(revocationPolicy.revocationPolicy.rejectRevokedTokenNow, false);
+    assert.equal(revocationPolicy.revocationPolicy.tokenValueLogged, false);
+    assert.ok(revocationPolicy.revocationPolicy.requiredInputs.includes("approvalScopeHash"));
+    assert.ok(revocationPolicy.revocationPolicy.registrySources.includes("operator-revocation-list"));
+    assert.ok(revocationPolicy.revocationChecks.some((entry) => entry.id === "revocation-registry-available" && entry.executed === false));
+    assert.equal(revocationPolicy.revocationDecision.canCheckRevocation, false);
+    assert.equal(revocationPolicy.revocationDecision.canRejectRevokedToken, false);
+    assert.equal(revocationPolicy.revocationDecision.canAcceptToken, false);
+    assert.equal(revocationPolicy.revocationDecision.canConsumeToken, false);
+    assert.equal(revocationPolicy.revocationDecision.canGrantFinalApproval, false);
+    assert.equal(revocationPolicy.revocationDecision.canMaterializeFiles, false);
+    assert.ok(revocationPolicy.noOpGuarantees.includes("approval revocation policy plan does not execute revocation checks"));
+    assert.ok(revocationPolicy.requiredBeforeRuntimeDispatch.includes("reject revoked tokens before replay guard consumption"));
 });
 
 test("render.thumbnail renderer-service client request scaffold adds MCP audit headers without dispatch", () => {

@@ -1,7 +1,7 @@
 {
-  "version": "P25.44",
+  "version": "P25.45",
   "command": "render.thumbnail",
-  "status": "runtime boundary audited; MCP/CLI planning, metadata-only availability probes, response normalization contracts, disabled client request scaffold, closed execution gate, health preflight plan, executable client harness plan, dispatch adapter boundary, opt-in configuration surfaces, unavailable error taxonomy, integration fixture harness, dispatch registration preflight, disabled executable adapter registration scaffold, disabled adapter registry manifest, final disabled enablement checklist, implementation slice audit, health/no-op contract fixtures, no-op service host scaffold, host lifecycle test fixtures, package manifest scaffold, package creation guardrails, package file templates, package workspace wiring, package build verification, package materialization checklist, package creation dry-run summary, package creation file manifest, package materialization approval gate, package materialization execution dry-run, package materialization write contract, package materialization rollback contract, package materialization verification manifest, package materialization final approval checklist, package materialization explicit approval token, package materialization approval audit trail, package materialization approval replay guard, and package materialization approval expiry policy registered; runtime execution blocked",
+  "status": "runtime boundary audited; MCP/CLI planning, metadata-only availability probes, response normalization contracts, disabled client request scaffold, closed execution gate, health preflight plan, executable client harness plan, dispatch adapter boundary, opt-in configuration surfaces, unavailable error taxonomy, integration fixture harness, dispatch registration preflight, disabled executable adapter registration scaffold, disabled adapter registry manifest, final disabled enablement checklist, implementation slice audit, health/no-op contract fixtures, no-op service host scaffold, host lifecycle test fixtures, package manifest scaffold, package creation guardrails, package file templates, package workspace wiring, package build verification, package materialization checklist, package creation dry-run summary, package creation file manifest, package materialization approval gate, package materialization execution dry-run, package materialization write contract, package materialization rollback contract, package materialization verification manifest, package materialization final approval checklist, package materialization explicit approval token, package materialization approval audit trail, package materialization approval replay guard, package materialization approval expiry policy, and package materialization approval revocation policy registered; runtime execution blocked",
   "selectedBoundary": "thumbnail-renderer-service",
   "runtimeRegistration": {
     "mcpToolRegistered": true,
@@ -382,11 +382,12 @@
     "package materialization explicit approval token survives dry-run and unavailable execution JSON output",
     "package materialization approval audit trail survives dry-run and unavailable execution JSON output",
     "package materialization approval replay guard survives dry-run and unavailable execution JSON output",
-    "package materialization approval expiry policy survives dry-run and unavailable execution JSON output"
+    "package materialization approval expiry policy survives dry-run and unavailable execution JSON output",
+    "package materialization approval revocation policy survives dry-run and unavailable execution JSON output"
   ],
   "nextTask": {
-    "id": "P25.45",
-    "title": "Plan renderer-service package materialization approval revocation policy",
+    "id": "P25.46",
+    "title": "Plan renderer-service package materialization approval scope binding policy",
     "status": "pending"
   },
   "implementationSliceAudit": {
@@ -3474,6 +3475,163 @@
       "enforce max token age and clock skew policy",
       "record expiry decision in approval audit trail without logging token value",
       "consume token only after expiry and replay policies pass",
+      "keep render.thumbnail unavailable until executable adapter registration is approved"
+    ]
+  },
+  "packageMaterializationApprovalRevocationPolicy": {
+    "status": "planned-disabled",
+    "revocationPolicyVersion": "P25.45",
+    "adapter": "renderer-service",
+    "command": "render.thumbnail",
+    "dryRunOnly": true,
+    "approvalRequired": true,
+    "approved": false,
+    "finalApprovalGranted": false,
+    "revocationPolicyRequired": true,
+    "revocationCheckPlanned": true,
+    "revocationCheckExecuted": false,
+    "revocationRegistryConfigured": false,
+    "revocationRegistryFetched": false,
+    "revocationStatusFetched": false,
+    "revocationStatusTrusted": false,
+    "tokenRevocationChecked": false,
+    "tokenRevoked": false,
+    "revokedTokenRejected": false,
+    "tokenAccepted": false,
+    "tokenStored": false,
+    "tokenValidated": false,
+    "tokenConsumed": false,
+    "executeNow": false,
+    "verifyNow": false,
+    "rollbackNow": false,
+    "dispatch": false,
+    "networkDispatch": false,
+    "runtimeRegistration": false,
+    "localFileWrites": false,
+    "hostStartup": false,
+    "processSpawn": false,
+    "packageCreated": false,
+    "workspaceMutation": false,
+    "scriptRunnable": false,
+    "fileMaterialization": false,
+    "lockfileMutation": false,
+    "rootPackageJsonMutation": false,
+    "pnpmWorkspaceMutation": false,
+    "commandExecution": false,
+    "buildOutput": false,
+    "packageScriptsRunnable": false,
+    "materializationApproved": false,
+    "materializationApprovedNow": false,
+    "filesWritten": false,
+    "rollbackExecuted": false,
+    "verificationExecuted": false,
+    "consumes": {
+      "packageMaterializationApprovalExpiryPolicy": {
+        "requiredStatus": "planned-disabled",
+        "currentStatus": "planned-disabled",
+        "expiryPolicyVersion": "P25.44",
+        "expiryCheckExecuted": false
+      },
+      "packageMaterializationApprovalReplayGuard": {
+        "requiredStatus": "planned-disabled",
+        "currentStatus": "planned-disabled",
+        "replayGuardVersion": "P25.43",
+        "replayCheckExecuted": false
+      },
+      "packageMaterializationApprovalAuditTrail": {
+        "requiredStatus": "planned-disabled",
+        "currentStatus": "planned-disabled",
+        "auditTrailVersion": "P25.42",
+        "auditRecordWritten": false
+      }
+    },
+    "revocationPolicy": {
+      "policy": "deny-revoked-explicit-approval-token",
+      "checkNow": false,
+      "fetchRegistryNow": false,
+      "validateRevocationEpochNow": false,
+      "persistRevocationStateNow": false,
+      "rejectRevokedTokenNow": false,
+      "requiredInputs": [
+        "tokenId",
+        "approvalScopeHash",
+        "issuer",
+        "revocationEpoch"
+      ],
+      "registrySources": [
+        "local-approval-ledger",
+        "operator-revocation-list"
+      ],
+      "tokenValueLogged": false
+    },
+    "revocationChecks": [
+      {
+        "id": "token-id-present",
+        "required": true,
+        "planned": true,
+        "executed": false,
+        "passed": false
+      },
+      {
+        "id": "revocation-registry-available",
+        "required": true,
+        "planned": true,
+        "executed": false,
+        "passed": false
+      },
+      {
+        "id": "token-not-revoked",
+        "required": true,
+        "planned": true,
+        "executed": false,
+        "passed": false
+      },
+      {
+        "id": "revocation-epoch-current",
+        "required": true,
+        "planned": true,
+        "executed": false,
+        "passed": false
+      },
+      {
+        "id": "audit-record-linked",
+        "required": true,
+        "planned": true,
+        "executed": false,
+        "passed": false
+      }
+    ],
+    "revocationDecision": {
+      "status": "blocked",
+      "canCheckRevocation": false,
+      "canRejectRevokedToken": false,
+      "canAcceptToken": false,
+      "canConsumeToken": false,
+      "canGrantFinalApproval": false,
+      "canMaterializeFiles": false,
+      "canEnableRuntimeDispatch": false,
+      "reason": "approval revocation policy is metadata-only and no revocation registry has been checked"
+    },
+    "noOpGuarantees": [
+      "approval revocation policy plan does not execute revocation checks",
+      "approval revocation policy plan does not fetch revocation registries",
+      "approval revocation policy plan does not read or trust revocation state",
+      "approval revocation policy plan does not persist revocation state",
+      "approval revocation policy plan does not accept or validate tokens",
+      "approval revocation policy plan does not consume tokens",
+      "approval revocation policy plan does not grant materialization approval",
+      "approval revocation policy plan does not create renderer-service directory",
+      "approval revocation policy plan does not write package or workspace files",
+      "approval revocation policy plan does not mutate lockfiles",
+      "approval revocation policy plan does not run verification commands",
+      "approval revocation policy plan does not generate build output",
+      "approval revocation policy plan does not register runtime dispatch"
+    ],
+    "requiredBeforeRuntimeDispatch": [
+      "define revocation registry source and consistency guarantees",
+      "check token id and approval scope hash against revocation state",
+      "reject revoked tokens before replay guard consumption",
+      "record revocation decision in approval audit trail without logging token value",
       "keep render.thumbnail unavailable until executable adapter registration is approved"
     ]
   }

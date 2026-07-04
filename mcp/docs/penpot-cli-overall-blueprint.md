@@ -1210,6 +1210,30 @@ P25.44 is complete:
    `networkDispatch`, `runtimeRegistration`, and `localFileWrites` remain
    false.
 
+P25.45 is complete:
+
+1. Shared plans include `packageMaterializationApprovalRevocationPolicy`
+   metadata for future revoked-token denial rules, revocation registry sources,
+   revocation epoch checks, audit linkage, blocked revocation decision, and
+   no-op guarantees.
+2. MCP and CLI expose this revocation policy plan in dry-run and unavailable
+   execution payloads without executing revocation checks, fetching revocation
+   registries, reading or trusting revocation state, validating or accepting
+   tokens, consuming tokens, granting approval, creating package directories,
+   writing files, mutating workspace manifests, mutating lockfiles, running
+   commands, emitting build output, starting processes, or registering runtime
+   dispatch.
+3. `revocationCheckExecuted`, `revocationRegistryFetched`,
+   `revocationStatusFetched`, `revocationStatusTrusted`,
+   `tokenRevocationChecked`, `tokenRevoked`, `revokedTokenRejected`,
+   `tokenAccepted`, `tokenValidated`, `tokenConsumed`, `approved`,
+   `finalApprovalGranted`, `executeNow`, and `verifyNow` remain false, while
+   `filesWritten`, `verificationExecuted`, `fileMaterialization`,
+   `workspaceMutation`, `lockfileMutation`, `commandExecution`, `buildOutput`,
+   `materializationApproved`, `processSpawn`, `packageCreated`, `dispatch`,
+   `networkDispatch`, `runtimeRegistration`, and `localFileWrites` remain
+   false.
+
 Keep manual configuration behavior stable while moving command metadata and
 envelopes; transport-specific formatting should stay at the MCP/CLI edges.
 

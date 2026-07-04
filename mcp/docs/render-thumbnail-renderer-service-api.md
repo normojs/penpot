@@ -1,6 +1,6 @@
 # Render Thumbnail Renderer Service API
 
-Status: P25.44 API fixtures, MCP/CLI dry-run/client boundaries, metadata-only
+Status: P25.45 API fixtures, MCP/CLI dry-run/client boundaries, metadata-only
 availability probes, response normalization contracts, disabled client request
 scaffold, closed execution gate, disabled health preflight, and executable
 client harness plus dispatch adapter boundary plans, and opt-in configuration
@@ -30,7 +30,11 @@ materialization approval replay guard metadata without executing replay checks,
 storing nonce/scope hash state, consuming tokens, or granting approval. P25.44
 adds package materialization approval expiry policy metadata without executing
 expiry checks, reading or trusting wall-clock time, validating tokens, accepting
-tokens, consuming tokens, or granting approval.
+tokens, consuming tokens, or granting approval. P25.45 adds package
+materialization approval revocation policy metadata without executing
+revocation checks, fetching revocation registries, reading or trusting
+revocation state, validating tokens, accepting tokens, consuming tokens, or
+granting approval.
 
 P25.6 selected a dedicated thumbnail renderer service as the future executable
 owner for `render.thumbnail`. This document defines the service-facing request
@@ -284,6 +288,16 @@ token revocation, final approval, file writes, package creation, workspace
 mutation, lockfile mutation, command execution, build output, materialization
 approval, process startup, dispatch, network dispatch, runtime registration,
 and local file writes disabled.
+
+P25.45 defines the package materialization approval revocation policy. Plans
+now include `packageMaterializationApprovalRevocationPolicy`, covering future
+revoked-token denial rules, revocation registry sources, revocation epoch
+checks, audit linkage, blocked revocation decision, and no-op guarantees while
+keeping revocation checks, registry fetches, revocation state reads/trust,
+token validation, token acceptance, token consumption, final approval, file
+writes, package creation, workspace mutation, lockfile mutation, command
+execution, build output, materialization approval, process startup, dispatch,
+network dispatch, runtime registration, and local file writes disabled.
 
 ## Service Boundary
 

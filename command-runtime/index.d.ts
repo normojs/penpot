@@ -466,6 +466,7 @@ export interface RenderThumbnailRendererServicePlan {
         packageMaterializationApprovalAuditTrail: RenderThumbnailRendererServicePackageMaterializationApprovalAuditTrail;
         packageMaterializationApprovalReplayGuard: RenderThumbnailRendererServicePackageMaterializationApprovalReplayGuard;
         packageMaterializationApprovalExpiryPolicy: RenderThumbnailRendererServicePackageMaterializationApprovalExpiryPolicy;
+        packageMaterializationApprovalRevocationPolicy: RenderThumbnailRendererServicePackageMaterializationApprovalRevocationPolicy;
         clientRequest: RenderThumbnailRendererServiceClientRequest;
     };
     client: RenderThumbnailRendererServiceClientConfig;
@@ -503,6 +504,7 @@ export interface RenderThumbnailRendererServicePlan {
     packageMaterializationApprovalAuditTrail: RenderThumbnailRendererServicePackageMaterializationApprovalAuditTrail;
     packageMaterializationApprovalReplayGuard: RenderThumbnailRendererServicePackageMaterializationApprovalReplayGuard;
     packageMaterializationApprovalExpiryPolicy: RenderThumbnailRendererServicePackageMaterializationApprovalExpiryPolicy;
+    packageMaterializationApprovalRevocationPolicy: RenderThumbnailRendererServicePackageMaterializationApprovalRevocationPolicy;
     clientRequest: RenderThumbnailRendererServiceClientRequest;
     serviceRequest: {
         command: "render.thumbnail";
@@ -600,6 +602,7 @@ export interface RenderThumbnailRendererServicePlan {
         packageMaterializationApprovalAuditTrailVersion: "P25.42";
         packageMaterializationApprovalReplayGuardVersion: "P25.43";
         packageMaterializationApprovalExpiryPolicyVersion: "P25.44";
+        packageMaterializationApprovalRevocationPolicyVersion: "P25.45";
     };
 }
 
@@ -2973,6 +2976,106 @@ export interface RenderThumbnailRendererServicePackageMaterializationApprovalExp
     requiredBeforeRuntimeDispatch: string[];
 }
 
+export interface RenderThumbnailRendererServicePackageMaterializationApprovalRevocationPolicy {
+    status: "planned-disabled";
+    revocationPolicyVersion: "P25.45";
+    adapter: "renderer-service";
+    command: "render.thumbnail";
+    dryRunOnly: true;
+    approvalRequired: true;
+    approved: false;
+    finalApprovalGranted: false;
+    revocationPolicyRequired: true;
+    revocationCheckPlanned: true;
+    revocationCheckExecuted: false;
+    revocationRegistryConfigured: false;
+    revocationRegistryFetched: false;
+    revocationStatusFetched: false;
+    revocationStatusTrusted: false;
+    tokenRevocationChecked: false;
+    tokenRevoked: false;
+    revokedTokenRejected: false;
+    tokenAccepted: false;
+    tokenStored: false;
+    tokenValidated: false;
+    tokenConsumed: false;
+    executeNow: false;
+    verifyNow: false;
+    rollbackNow: false;
+    dispatch: false;
+    networkDispatch: false;
+    runtimeRegistration: false;
+    localFileWrites: false;
+    hostStartup: false;
+    processSpawn: false;
+    packageCreated: false;
+    workspaceMutation: false;
+    scriptRunnable: false;
+    fileMaterialization: false;
+    lockfileMutation: false;
+    rootPackageJsonMutation: false;
+    pnpmWorkspaceMutation: false;
+    commandExecution: false;
+    buildOutput: false;
+    packageScriptsRunnable: false;
+    materializationApproved: false;
+    materializationApprovedNow: false;
+    filesWritten: false;
+    rollbackExecuted: false;
+    verificationExecuted: false;
+    consumes: {
+        packageMaterializationApprovalExpiryPolicy: {
+            requiredStatus: "planned-disabled";
+            currentStatus: string;
+            expiryPolicyVersion: string;
+            expiryCheckExecuted: false;
+        };
+        packageMaterializationApprovalReplayGuard: {
+            requiredStatus: "planned-disabled";
+            currentStatus: string;
+            replayGuardVersion: string;
+            replayCheckExecuted: false;
+        };
+        packageMaterializationApprovalAuditTrail: {
+            requiredStatus: "planned-disabled";
+            currentStatus: string;
+            auditTrailVersion: string;
+            auditRecordWritten: false;
+        };
+    };
+    revocationPolicy: {
+        policy: "deny-revoked-explicit-approval-token";
+        checkNow: false;
+        fetchRegistryNow: false;
+        validateRevocationEpochNow: false;
+        persistRevocationStateNow: false;
+        rejectRevokedTokenNow: false;
+        requiredInputs: string[];
+        registrySources: string[];
+        tokenValueLogged: false;
+    };
+    revocationChecks: Array<{
+        id: string;
+        required: true;
+        planned: true;
+        executed: false;
+        passed: false;
+    }>;
+    revocationDecision: {
+        status: "blocked";
+        canCheckRevocation: false;
+        canRejectRevokedToken: false;
+        canAcceptToken: false;
+        canConsumeToken: false;
+        canGrantFinalApproval: false;
+        canMaterializeFiles: false;
+        canEnableRuntimeDispatch: false;
+        reason: string;
+    };
+    noOpGuarantees: string[];
+    requiredBeforeRuntimeDispatch: string[];
+}
+
 export interface CreateRenderThumbnailRendererServiceClientRequestOptions {
     entrypoint?: "mcp" | "cli" | string | null;
     mcpToolName?: string | null;
@@ -3451,6 +3554,13 @@ export function createRenderThumbnailRendererServicePackageMaterializationApprov
         packageMaterializationApprovalAuditTrail?: Partial<RenderThumbnailRendererServicePackageMaterializationApprovalAuditTrail> | null;
     }
 ): RenderThumbnailRendererServicePackageMaterializationApprovalExpiryPolicy;
+export function createRenderThumbnailRendererServicePackageMaterializationApprovalRevocationPolicy(
+    options?: {
+        packageMaterializationApprovalExpiryPolicy?: Partial<RenderThumbnailRendererServicePackageMaterializationApprovalExpiryPolicy> | null;
+        packageMaterializationApprovalReplayGuard?: Partial<RenderThumbnailRendererServicePackageMaterializationApprovalReplayGuard> | null;
+        packageMaterializationApprovalAuditTrail?: Partial<RenderThumbnailRendererServicePackageMaterializationApprovalAuditTrail> | null;
+    }
+): RenderThumbnailRendererServicePackageMaterializationApprovalRevocationPolicy;
 export function createRenderThumbnailRendererServiceClientRequest(
     plan: Partial<RenderThumbnailRendererServicePlan>,
     options?: CreateRenderThumbnailRendererServiceClientRequestOptions
