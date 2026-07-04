@@ -2608,6 +2608,28 @@ P25.43 render.thumbnail package materialization approval replay guard result:
   `processSpawn`, `packageCreated`, `dispatch`, `networkDispatch`,
   `runtimeRegistration`, and `localFileWrites` remain `false`.
 
+P25.44 render.thumbnail package materialization approval expiry policy result:
+
+- Shared plans include `packageMaterializationApprovalExpiryPolicy`, defining
+  metadata-only short-lived approval token expiry rules, required
+  `issuedAt`/`notBefore`/`expiresAt` claims, max-age and clock-skew checks,
+  blocked expiry decision, and no-op guarantees.
+- MCP and CLI expose the expiry policy plan in dry-run and unavailable
+  execution payloads without executing expiry checks, reading or trusting
+  wall-clock time, validating or accepting tokens, consuming or revoking
+  tokens, granting approval, creating package directories, writing files,
+  mutating workspace manifests, mutating lockfiles, running commands, emitting
+  build output, starting processes, or registering runtime dispatch.
+- `expiryCheckExecuted`, `tokenExpired`, `tokenNotBeforeChecked`,
+  `tokenExpiresAtChecked`, `clockSkewChecked`, `tokenAccepted`,
+  `tokenValidated`, `tokenConsumed`, `tokenRevoked`, `approved`,
+  `finalApprovalGranted`, `executeNow`, and `verifyNow` remain `false`, while
+  `filesWritten`, `verificationExecuted`, `fileMaterialization`,
+  `workspaceMutation`, `lockfileMutation`, `commandExecution`, `buildOutput`,
+  `materializationApproved`, `processSpawn`, `packageCreated`, `dispatch`,
+  `networkDispatch`, `runtimeRegistration`, and `localFileWrites` remain
+  `false`.
+
 ### 8.5 Export and Render Tools
 
 May start file-bound and later move to headless:
@@ -2654,7 +2676,8 @@ materialization verification manifest. P25.40 defines disabled package
 materialization final approval checklist. P25.41 defines disabled package
 materialization explicit approval token. P25.42 defines disabled package
 materialization approval audit trail. P25.43 defines disabled package
-materialization approval replay guard.
+materialization approval replay guard. P25.44 defines disabled package
+materialization approval expiry policy.
 Runtime behavior remains unavailable
 until opt-in config surfaces, renderer-service implementation, workspace
 wiring, health preflight, cache probe, executable client, and tagged-frame

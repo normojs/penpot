@@ -1,6 +1,6 @@
 # Render Thumbnail Renderer Service API
 
-Status: P25.43 API fixtures, MCP/CLI dry-run/client boundaries, metadata-only
+Status: P25.44 API fixtures, MCP/CLI dry-run/client boundaries, metadata-only
 availability probes, response normalization contracts, disabled client request
 scaffold, closed execution gate, disabled health preflight, and executable
 client harness plus dispatch adapter boundary plans, and opt-in configuration
@@ -27,7 +27,10 @@ storing, validating, consuming, or granting approval from a token. P25.42 adds
 package materialization approval audit trail metadata without writing,
 persisting, validating, or exporting audit records. P25.43 adds package
 materialization approval replay guard metadata without executing replay checks,
-storing nonce/scope hash state, consuming tokens, or granting approval.
+storing nonce/scope hash state, consuming tokens, or granting approval. P25.44
+adds package materialization approval expiry policy metadata without executing
+expiry checks, reading or trusting wall-clock time, validating tokens, accepting
+tokens, consuming tokens, or granting approval.
 
 P25.6 selected a dedicated thumbnail renderer service as the future executable
 owner for `render.thumbnail`. This document defines the service-facing request
@@ -270,6 +273,17 @@ storage, token consumption, token revocation, token acceptance, final approval,
 file writes, package creation, workspace mutation, lockfile mutation, command
 execution, build output, materialization approval, process startup, dispatch,
 network dispatch, runtime registration, and local file writes disabled.
+
+P25.44 defines the package materialization approval expiry policy. Plans now
+include `packageMaterializationApprovalExpiryPolicy`, covering future
+short-lived approval token expiry rules, required
+`issuedAt`/`notBefore`/`expiresAt` claims, max-age and clock-skew checks,
+blocked expiry decision, and no-op guarantees while keeping expiry checks,
+wall-clock reads/trust, token validation, token acceptance, token consumption,
+token revocation, final approval, file writes, package creation, workspace
+mutation, lockfile mutation, command execution, build output, materialization
+approval, process startup, dispatch, network dispatch, runtime registration,
+and local file writes disabled.
 
 ## Service Boundary
 

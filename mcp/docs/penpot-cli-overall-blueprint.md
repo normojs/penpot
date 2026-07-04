@@ -1188,6 +1188,28 @@ P25.43 is complete:
    `processSpawn`, `packageCreated`, `dispatch`, `networkDispatch`,
    `runtimeRegistration`, and `localFileWrites` remain false.
 
+P25.44 is complete:
+
+1. Shared plans include `packageMaterializationApprovalExpiryPolicy` metadata
+   for future short-lived approval token expiry rules, required
+   `issuedAt`/`notBefore`/`expiresAt` claims, max-age and clock-skew checks,
+   blocked expiry decision, and no-op guarantees.
+2. MCP and CLI expose this expiry policy plan in dry-run and unavailable
+   execution payloads without executing expiry checks, reading or trusting
+   wall-clock time, validating or accepting tokens, consuming or revoking
+   tokens, granting approval, creating package directories, writing files,
+   mutating workspace manifests, mutating lockfiles, running commands,
+   emitting build output, starting processes, or registering runtime dispatch.
+3. `expiryCheckExecuted`, `tokenExpired`, `tokenNotBeforeChecked`,
+   `tokenExpiresAtChecked`, `clockSkewChecked`, `tokenAccepted`,
+   `tokenValidated`, `tokenConsumed`, `tokenRevoked`, `approved`,
+   `finalApprovalGranted`, `executeNow`, and `verifyNow` remain false, while
+   `filesWritten`, `verificationExecuted`, `fileMaterialization`,
+   `workspaceMutation`, `lockfileMutation`, `commandExecution`, `buildOutput`,
+   `materializationApproved`, `processSpawn`, `packageCreated`, `dispatch`,
+   `networkDispatch`, `runtimeRegistration`, and `localFileWrites` remain
+   false.
+
 Keep manual configuration behavior stable while moving command metadata and
 envelopes; transport-specific formatting should stay at the MCP/CLI edges.
 

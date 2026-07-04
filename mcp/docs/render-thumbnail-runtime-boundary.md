@@ -48,7 +48,10 @@ approval from a token. P25.42 defines package materialization approval audit
 trail metadata without writing, persisting, validating, or exporting audit
 records. P25.43 defines package materialization approval replay guard metadata
 without executing replay checks, storing nonce/scope hash state, consuming
-tokens, or granting approval.
+tokens, or granting approval. P25.44 defines package materialization approval
+expiry policy metadata without executing expiry checks, reading or trusting
+wall-clock time, validating tokens, accepting tokens, consuming tokens, or
+granting approval.
 
 ## Existing Surfaces
 
@@ -199,7 +202,8 @@ materialization verification manifest. P25.40 adds metadata-only package
 materialization final approval checklist. P25.41 adds metadata-only package
 materialization explicit approval token. P25.42 adds metadata-only package
 materialization approval audit trail. P25.43 adds metadata-only package
-materialization approval replay guard. MCP
+materialization approval replay guard. P25.44 adds metadata-only package
+materialization approval expiry policy. MCP
 `render.thumbnail` and `penpot-cli render thumbnail --dry-run` can print the
 future request shape, configured/not configured service metadata,
 response/error contracts, `clientRequest.dispatch:false`,

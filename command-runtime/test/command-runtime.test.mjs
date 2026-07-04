@@ -45,6 +45,7 @@ import {
     createRenderThumbnailRendererServicePackageMaterializationExplicitApprovalToken,
     createRenderThumbnailRendererServicePackageMaterializationApprovalAuditTrail,
     createRenderThumbnailRendererServicePackageMaterializationApprovalReplayGuard,
+    createRenderThumbnailRendererServicePackageMaterializationApprovalExpiryPolicy,
     createRenderThumbnailRendererServicePackageFileTemplates,
     createRenderThumbnailRendererServicePackageManifestScaffold,
     createRenderThumbnailRendererServicePackageMaterializationChecklist,
@@ -655,6 +656,15 @@ test("render.thumbnail renderer-service API fixtures define planning requests wi
     assert.equal(fixtures.serviceApi.packageMaterializationApprovalReplayGuard.commandExecution, false);
     assert.equal(fixtures.serviceApi.packageMaterializationApprovalReplayGuard.buildOutput, false);
     assert.equal(fixtures.serviceApi.packageMaterializationApprovalReplayGuard.filesWritten, false);
+    assert.equal(fixtures.serviceApi.packageMaterializationApprovalExpiryPolicy.expiryPolicyVersion, "P25.44");
+    assert.equal(fixtures.serviceApi.packageMaterializationApprovalExpiryPolicy.expiryCheckExecuted, false);
+    assert.equal(fixtures.serviceApi.packageMaterializationApprovalExpiryPolicy.tokenAccepted, false);
+    assert.equal(fixtures.serviceApi.packageMaterializationApprovalExpiryPolicy.tokenValidated, false);
+    assert.equal(fixtures.serviceApi.packageMaterializationApprovalExpiryPolicy.approved, false);
+    assert.equal(fixtures.serviceApi.packageMaterializationApprovalExpiryPolicy.finalApprovalGranted, false);
+    assert.equal(fixtures.serviceApi.packageMaterializationApprovalExpiryPolicy.commandExecution, false);
+    assert.equal(fixtures.serviceApi.packageMaterializationApprovalExpiryPolicy.buildOutput, false);
+    assert.equal(fixtures.serviceApi.packageMaterializationApprovalExpiryPolicy.filesWritten, false);
     assert.deepEqual(fixtures.runtimeRegistration.commandDescriptorAdapters, ["renderer-service"]);
     assert.deepEqual(CommandDescriptors.RENDER_THUMBNAIL.adapters, ["renderer-service"]);
     assert.equal(fixtures.runtimeRegistration.mcpToolRegistered, true);
@@ -1347,6 +1357,52 @@ test("render.thumbnail renderer-service plan exposes dry-run client request whil
     assert.equal(plan.packageMaterializationApprovalReplayGuard.replayDecision.canGrantFinalApproval, false);
     assert.equal(plan.packageMaterializationApprovalReplayGuard.replayDecision.canMaterializeFiles, false);
     assert.deepEqual(plan.service.packageMaterializationApprovalReplayGuard, plan.packageMaterializationApprovalReplayGuard);
+    assert.equal(plan.packageMaterializationApprovalExpiryPolicy.expiryPolicyVersion, "P25.44");
+    assert.equal(plan.packageMaterializationApprovalExpiryPolicy.dryRunOnly, true);
+    assert.equal(plan.packageMaterializationApprovalExpiryPolicy.approvalRequired, true);
+    assert.equal(plan.packageMaterializationApprovalExpiryPolicy.approved, false);
+    assert.equal(plan.packageMaterializationApprovalExpiryPolicy.finalApprovalGranted, false);
+    assert.equal(plan.packageMaterializationApprovalExpiryPolicy.expiryPolicyRequired, true);
+    assert.equal(plan.packageMaterializationApprovalExpiryPolicy.expiryCheckPlanned, true);
+    assert.equal(plan.packageMaterializationApprovalExpiryPolicy.expiryCheckExecuted, false);
+    assert.equal(plan.packageMaterializationApprovalExpiryPolicy.tokenExpired, false);
+    assert.equal(plan.packageMaterializationApprovalExpiryPolicy.tokenNotBeforeChecked, false);
+    assert.equal(plan.packageMaterializationApprovalExpiryPolicy.tokenExpiresAtChecked, false);
+    assert.equal(plan.packageMaterializationApprovalExpiryPolicy.clockSkewChecked, false);
+    assert.equal(plan.packageMaterializationApprovalExpiryPolicy.tokenAccepted, false);
+    assert.equal(plan.packageMaterializationApprovalExpiryPolicy.tokenStored, false);
+    assert.equal(plan.packageMaterializationApprovalExpiryPolicy.tokenValidated, false);
+    assert.equal(plan.packageMaterializationApprovalExpiryPolicy.tokenConsumed, false);
+    assert.equal(plan.packageMaterializationApprovalExpiryPolicy.tokenRevoked, false);
+    assert.equal(plan.packageMaterializationApprovalExpiryPolicy.executeNow, false);
+    assert.equal(plan.packageMaterializationApprovalExpiryPolicy.verifyNow, false);
+    assert.equal(plan.packageMaterializationApprovalExpiryPolicy.rollbackNow, false);
+    assert.equal(plan.packageMaterializationApprovalExpiryPolicy.dispatch, false);
+    assert.equal(plan.packageMaterializationApprovalExpiryPolicy.networkDispatch, false);
+    assert.equal(plan.packageMaterializationApprovalExpiryPolicy.runtimeRegistration, false);
+    assert.equal(plan.packageMaterializationApprovalExpiryPolicy.localFileWrites, false);
+    assert.equal(plan.packageMaterializationApprovalExpiryPolicy.packageCreated, false);
+    assert.equal(plan.packageMaterializationApprovalExpiryPolicy.workspaceMutation, false);
+    assert.equal(plan.packageMaterializationApprovalExpiryPolicy.fileMaterialization, false);
+    assert.equal(plan.packageMaterializationApprovalExpiryPolicy.lockfileMutation, false);
+    assert.equal(plan.packageMaterializationApprovalExpiryPolicy.commandExecution, false);
+    assert.equal(plan.packageMaterializationApprovalExpiryPolicy.buildOutput, false);
+    assert.equal(plan.packageMaterializationApprovalExpiryPolicy.materializationApproved, false);
+    assert.equal(plan.packageMaterializationApprovalExpiryPolicy.filesWritten, false);
+    assert.equal(plan.packageMaterializationApprovalExpiryPolicy.consumes.packageMaterializationApprovalReplayGuard.replayGuardVersion, "P25.43");
+    assert.equal(plan.packageMaterializationApprovalExpiryPolicy.consumes.packageMaterializationExplicitApprovalToken.tokenVersion, "P25.41");
+    assert.equal(plan.packageMaterializationApprovalExpiryPolicy.consumes.packageMaterializationApprovalAuditTrail.auditTrailVersion, "P25.42");
+    assert.equal(plan.packageMaterializationApprovalExpiryPolicy.expiryPolicy.checkNow, false);
+    assert.equal(plan.packageMaterializationApprovalExpiryPolicy.expiryPolicy.validateExpiresAtNow, false);
+    assert.equal(plan.packageMaterializationApprovalExpiryPolicy.expiryPolicy.validateClockSkewNow, false);
+    assert.equal(plan.packageMaterializationApprovalExpiryPolicy.expiryPolicy.maxAgeSeconds, 900);
+    assert.equal(plan.packageMaterializationApprovalExpiryPolicy.expiryPolicy.allowedClockSkewSeconds, 60);
+    assert.ok(plan.packageMaterializationApprovalExpiryPolicy.expiryPolicy.requiredClaims.includes("expiresAt"));
+    assert.ok(plan.packageMaterializationApprovalExpiryPolicy.expiryChecks.some((entry) => entry.id === "expires-at-in-future" && entry.executed === false));
+    assert.equal(plan.packageMaterializationApprovalExpiryPolicy.expiryDecision.canCheckExpiry, false);
+    assert.equal(plan.packageMaterializationApprovalExpiryPolicy.expiryDecision.canAcceptToken, false);
+    assert.equal(plan.packageMaterializationApprovalExpiryPolicy.expiryDecision.canGrantFinalApproval, false);
+    assert.deepEqual(plan.service.packageMaterializationApprovalExpiryPolicy, plan.packageMaterializationApprovalExpiryPolicy);
     assert.equal(plan.clientRequest.status, "scaffolded");
     assert.equal(plan.clientRequest.dispatch, false);
     assert.equal(plan.clientRequest.method, "POST");
@@ -1406,6 +1462,7 @@ test("render.thumbnail renderer-service plan exposes dry-run client request whil
     assert.equal(plan.diagnostics.packageMaterializationExplicitApprovalTokenVersion, "P25.41");
     assert.equal(plan.diagnostics.packageMaterializationApprovalAuditTrailVersion, "P25.42");
     assert.equal(plan.diagnostics.packageMaterializationApprovalReplayGuardVersion, "P25.43");
+    assert.equal(plan.diagnostics.packageMaterializationApprovalExpiryPolicyVersion, "P25.44");
 });
 
 test("render.thumbnail renderer-service plan reports not-configured availability without endpoint", () => {
@@ -3029,6 +3086,91 @@ test("render.thumbnail renderer-service package materialization approval replay 
     assert.equal(replayGuard.replayDecision.canMaterializeFiles, false);
     assert.ok(replayGuard.noOpGuarantees.includes("approval replay guard plan does not execute replay checks"));
     assert.ok(replayGuard.requiredBeforeRuntimeDispatch.includes("verify nonce and scope hash have not been consumed"));
+});
+
+test("render.thumbnail renderer-service package materialization approval expiry policy stays metadata-only", () => {
+    const expiryPolicy = createRenderThumbnailRendererServicePackageMaterializationApprovalExpiryPolicy({
+        packageMaterializationApprovalReplayGuard: {
+            status: "planned-disabled",
+            replayGuardVersion: "P25.43",
+            replayCheckExecuted: false,
+        },
+        packageMaterializationExplicitApprovalToken: {
+            status: "planned-disabled",
+            tokenVersion: "P25.41",
+            tokenValidated: false,
+        },
+        packageMaterializationApprovalAuditTrail: {
+            status: "planned-disabled",
+            auditTrailVersion: "P25.42",
+            auditRecordWritten: false,
+        },
+    });
+
+    assert.equal(expiryPolicy.status, "planned-disabled");
+    assert.equal(expiryPolicy.expiryPolicyVersion, "P25.44");
+    assert.equal(expiryPolicy.dryRunOnly, true);
+    assert.equal(expiryPolicy.approvalRequired, true);
+    assert.equal(expiryPolicy.approved, false);
+    assert.equal(expiryPolicy.finalApprovalGranted, false);
+    assert.equal(expiryPolicy.expiryPolicyRequired, true);
+    assert.equal(expiryPolicy.expiryCheckPlanned, true);
+    assert.equal(expiryPolicy.expiryCheckExecuted, false);
+    assert.equal(expiryPolicy.tokenExpired, false);
+    assert.equal(expiryPolicy.tokenNotBeforeChecked, false);
+    assert.equal(expiryPolicy.tokenExpiresAtChecked, false);
+    assert.equal(expiryPolicy.clockSkewChecked, false);
+    assert.equal(expiryPolicy.tokenAccepted, false);
+    assert.equal(expiryPolicy.tokenStored, false);
+    assert.equal(expiryPolicy.tokenValidated, false);
+    assert.equal(expiryPolicy.tokenConsumed, false);
+    assert.equal(expiryPolicy.tokenRevoked, false);
+    assert.equal(expiryPolicy.executeNow, false);
+    assert.equal(expiryPolicy.verifyNow, false);
+    assert.equal(expiryPolicy.rollbackNow, false);
+    assert.equal(expiryPolicy.dispatch, false);
+    assert.equal(expiryPolicy.networkDispatch, false);
+    assert.equal(expiryPolicy.runtimeRegistration, false);
+    assert.equal(expiryPolicy.localFileWrites, false);
+    assert.equal(expiryPolicy.hostStartup, false);
+    assert.equal(expiryPolicy.processSpawn, false);
+    assert.equal(expiryPolicy.packageCreated, false);
+    assert.equal(expiryPolicy.workspaceMutation, false);
+    assert.equal(expiryPolicy.scriptRunnable, false);
+    assert.equal(expiryPolicy.fileMaterialization, false);
+    assert.equal(expiryPolicy.lockfileMutation, false);
+    assert.equal(expiryPolicy.rootPackageJsonMutation, false);
+    assert.equal(expiryPolicy.pnpmWorkspaceMutation, false);
+    assert.equal(expiryPolicy.commandExecution, false);
+    assert.equal(expiryPolicy.buildOutput, false);
+    assert.equal(expiryPolicy.packageScriptsRunnable, false);
+    assert.equal(expiryPolicy.materializationApproved, false);
+    assert.equal(expiryPolicy.filesWritten, false);
+    assert.equal(expiryPolicy.rollbackExecuted, false);
+    assert.equal(expiryPolicy.verificationExecuted, false);
+    assert.equal(expiryPolicy.consumes.packageMaterializationApprovalReplayGuard.replayGuardVersion, "P25.43");
+    assert.equal(expiryPolicy.consumes.packageMaterializationApprovalReplayGuard.replayCheckExecuted, false);
+    assert.equal(expiryPolicy.consumes.packageMaterializationExplicitApprovalToken.tokenVersion, "P25.41");
+    assert.equal(expiryPolicy.consumes.packageMaterializationExplicitApprovalToken.tokenValidated, false);
+    assert.equal(expiryPolicy.consumes.packageMaterializationApprovalAuditTrail.auditTrailVersion, "P25.42");
+    assert.equal(expiryPolicy.expiryPolicy.policy, "short-lived-explicit-approval-token");
+    assert.equal(expiryPolicy.expiryPolicy.checkNow, false);
+    assert.equal(expiryPolicy.expiryPolicy.validateIssuedAtNow, false);
+    assert.equal(expiryPolicy.expiryPolicy.validateNotBeforeNow, false);
+    assert.equal(expiryPolicy.expiryPolicy.validateExpiresAtNow, false);
+    assert.equal(expiryPolicy.expiryPolicy.validateClockSkewNow, false);
+    assert.equal(expiryPolicy.expiryPolicy.maxAgeSeconds, 900);
+    assert.equal(expiryPolicy.expiryPolicy.allowedClockSkewSeconds, 60);
+    assert.equal(expiryPolicy.expiryPolicy.tokenValueLogged, false);
+    assert.ok(expiryPolicy.expiryPolicy.requiredClaims.includes("issuedAt"));
+    assert.ok(expiryPolicy.expiryChecks.some((entry) => entry.id === "clock-skew-within-policy" && entry.executed === false));
+    assert.equal(expiryPolicy.expiryDecision.canCheckExpiry, false);
+    assert.equal(expiryPolicy.expiryDecision.canAcceptToken, false);
+    assert.equal(expiryPolicy.expiryDecision.canConsumeToken, false);
+    assert.equal(expiryPolicy.expiryDecision.canGrantFinalApproval, false);
+    assert.equal(expiryPolicy.expiryDecision.canMaterializeFiles, false);
+    assert.ok(expiryPolicy.noOpGuarantees.includes("approval expiry policy plan does not execute expiry checks"));
+    assert.ok(expiryPolicy.requiredBeforeRuntimeDispatch.includes("enforce max token age and clock skew policy"));
 });
 
 test("render.thumbnail renderer-service client request scaffold adds MCP audit headers without dispatch", () => {

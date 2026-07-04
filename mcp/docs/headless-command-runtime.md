@@ -1183,3 +1183,22 @@ P25.43 adds renderer-service package materialization approval replay guard:
   `materializationApproved:false`, `processSpawn:false`,
   `packageCreated:false`, `dispatch:false`, `networkDispatch:false`,
   `runtimeRegistration:false`, and `localFileWrites:false`.
+
+P25.44 adds renderer-service package materialization approval expiry policy:
+
+- Plans include `packageMaterializationApprovalExpiryPolicy`, defining the
+  future short-lived approval token expiry contract, required
+  `issuedAt`/`notBefore`/`expiresAt` claims, max-age and clock-skew checks,
+  blocked expiry decision, and no-op guarantees.
+- The expiry policy remains planning-only with `expiryCheckExecuted:false`,
+  `tokenExpired:false`, `tokenNotBeforeChecked:false`,
+  `tokenExpiresAtChecked:false`, `clockSkewChecked:false`,
+  `tokenAccepted:false`, `tokenValidated:false`, `tokenConsumed:false`,
+  `tokenRevoked:false`, `approved:false`, `finalApprovalGranted:false`,
+  `executeNow:false`, `verifyNow:false`, `filesWritten:false`,
+  `fileMaterialization:false`, `workspaceMutation:false`,
+  `lockfileMutation:false`, `commandExecution:false`, `buildOutput:false`,
+  `materializationApproved:false`, `processSpawn:false`,
+  `packageCreated:false`, `dispatch:false`, `networkDispatch:false`,
+  `runtimeRegistration:false`, and `localFileWrites:false`. It does not read
+  or trust wall-clock time.

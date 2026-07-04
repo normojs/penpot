@@ -1,6 +1,6 @@
 # Render Thumbnail Contract
 
-Status: P25.4 descriptor contract; P25.43 MCP/CLI renderer-service dry-run
+Status: P25.4 descriptor contract; P25.44 MCP/CLI renderer-service dry-run
 boundaries, metadata-only availability probes, response normalization
 contracts, disabled client request scaffolding, closed execution gate, disabled
 health preflight, executable client harness plan, and dispatch adapter boundary
@@ -27,7 +27,10 @@ storing, validating, consuming, or granting approval from a token. P25.42 adds
 package materialization approval audit trail metadata without writing,
 persisting, validating, or exporting audit records. P25.43 adds package
 materialization approval replay guard metadata without executing replay checks,
-storing nonce/scope hash state, consuming tokens, or granting approval.
+storing nonce/scope hash state, consuming tokens, or granting approval. P25.44
+adds package materialization approval expiry policy metadata without executing
+expiry checks, reading or trusting wall-clock time, validating tokens, accepting
+tokens, consuming tokens, or granting approval.
 
 This document defines the `render.thumbnail` contract before executable MCP or
 CLI rendering is enabled. The contract follows Penpot's existing dashboard
@@ -374,6 +377,22 @@ Shared contract shape:
   `commandExecution:false`, `buildOutput:false`,
   `materializationApproved:false`, `runtimeRegistration:false`, and
   `localFileWrites:false`.
+- P25.44 package materialization approval expiry policy fields are
+  planning-only. They define future short-lived approval token expiry rules,
+  required `issuedAt`/`notBefore`/`expiresAt` claims, max-age and clock-skew
+  checks, blocked expiry decision, and no-op guarantees while keeping
+  `packageMaterializationApprovalExpiryPolicy.expiryCheckExecuted:false`,
+  `packageMaterializationApprovalExpiryPolicy.tokenExpired:false`,
+  `packageMaterializationApprovalExpiryPolicy.tokenNotBeforeChecked:false`,
+  `packageMaterializationApprovalExpiryPolicy.tokenExpiresAtChecked:false`,
+  `packageMaterializationApprovalExpiryPolicy.clockSkewChecked:false`,
+  `tokenAccepted:false`, `tokenValidated:false`, `tokenConsumed:false`,
+  `tokenRevoked:false`, `approved:false`, `finalApprovalGranted:false`,
+  `filesWritten:false`, `verificationExecuted:false`,
+  `fileMaterialization:false`, `workspaceMutation:false`,
+  `lockfileMutation:false`, `commandExecution:false`, `buildOutput:false`,
+  `materializationApproved:false`, `runtimeRegistration:false`, and
+  `localFileWrites:false`. They do not read or trust wall-clock time.
 - Exporter service execution is out of scope for this command unless a later
   task explicitly maps thumbnail rendering to exporter-compatible semantics.
 - P25.6 selects a future dedicated thumbnail renderer service as the executable
@@ -388,7 +407,7 @@ See `render-thumbnail-runtime-boundary.md` and
 audit, resource-return rules, cache refresh behavior, auth expectations, and
 future test strategy.
 See `render-thumbnail-renderer-service-api.md` and
-`render-thumbnail-renderer-service-fixtures.json` for the P25.43 future
+`render-thumbnail-renderer-service-fixtures.json` for the P25.44 future
 renderer-service request/response API, MCP/CLI dry-run/client boundary, and
 metadata-only availability probe plus response/error normalization and disabled
 client request, execution gate, health preflight, and execution harness
@@ -398,8 +417,8 @@ registration preflight plus executable adapter registration scaffold and
 adapter registry manifest plus enablement checklist and implementation slice
 audit plus health/no-op contract fixtures, no-op service host scaffold, and
 host lifecycle test fixtures plus package manifest scaffold, package creation
-guardrails, package file templates, package workspace wiring, and package
-build verification.
+guardrails, package file templates, package workspace wiring, package build
+verification, and package materialization approval expiry policy.
 
 ## Fixtures
 

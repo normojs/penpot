@@ -1,7 +1,7 @@
 {
-  "version": "P25.43",
+  "version": "P25.44",
   "command": "render.thumbnail",
-  "status": "runtime boundary audited; MCP/CLI planning, metadata-only availability probes, response normalization contracts, disabled client request scaffold, closed execution gate, health preflight plan, executable client harness plan, dispatch adapter boundary, opt-in configuration surfaces, unavailable error taxonomy, integration fixture harness, dispatch registration preflight, disabled executable adapter registration scaffold, disabled adapter registry manifest, final disabled enablement checklist, implementation slice audit, health/no-op contract fixtures, no-op service host scaffold, host lifecycle test fixtures, package manifest scaffold, package creation guardrails, package file templates, package workspace wiring, package build verification, package materialization checklist, package creation dry-run summary, package creation file manifest, package materialization approval gate, package materialization execution dry-run, package materialization write contract, package materialization rollback contract, package materialization verification manifest, package materialization final approval checklist, package materialization explicit approval token, package materialization approval audit trail, and package materialization approval replay guard registered; runtime execution blocked",
+  "status": "runtime boundary audited; MCP/CLI planning, metadata-only availability probes, response normalization contracts, disabled client request scaffold, closed execution gate, health preflight plan, executable client harness plan, dispatch adapter boundary, opt-in configuration surfaces, unavailable error taxonomy, integration fixture harness, dispatch registration preflight, disabled executable adapter registration scaffold, disabled adapter registry manifest, final disabled enablement checklist, implementation slice audit, health/no-op contract fixtures, no-op service host scaffold, host lifecycle test fixtures, package manifest scaffold, package creation guardrails, package file templates, package workspace wiring, package build verification, package materialization checklist, package creation dry-run summary, package creation file manifest, package materialization approval gate, package materialization execution dry-run, package materialization write contract, package materialization rollback contract, package materialization verification manifest, package materialization final approval checklist, package materialization explicit approval token, package materialization approval audit trail, package materialization approval replay guard, and package materialization approval expiry policy registered; runtime execution blocked",
   "selectedBoundary": "thumbnail-renderer-service",
   "runtimeRegistration": {
     "mcpToolRegistered": true,
@@ -381,11 +381,12 @@
     "package materialization final approval checklist survives dry-run and unavailable execution JSON output",
     "package materialization explicit approval token survives dry-run and unavailable execution JSON output",
     "package materialization approval audit trail survives dry-run and unavailable execution JSON output",
-    "package materialization approval replay guard survives dry-run and unavailable execution JSON output"
+    "package materialization approval replay guard survives dry-run and unavailable execution JSON output",
+    "package materialization approval expiry policy survives dry-run and unavailable execution JSON output"
   ],
   "nextTask": {
-    "id": "P25.44",
-    "title": "Plan renderer-service package materialization approval expiry policy",
+    "id": "P25.45",
+    "title": "Plan renderer-service package materialization approval revocation policy",
     "status": "pending"
   },
   "implementationSliceAudit": {
@@ -3322,6 +3323,157 @@
       "verify nonce and scope hash have not been consumed",
       "write replay outcome into approval audit trail without logging token value",
       "consume token only after replay guard passes",
+      "keep render.thumbnail unavailable until executable adapter registration is approved"
+    ]
+  },
+  "packageMaterializationApprovalExpiryPolicy": {
+    "status": "planned-disabled",
+    "expiryPolicyVersion": "P25.44",
+    "adapter": "renderer-service",
+    "command": "render.thumbnail",
+    "dryRunOnly": true,
+    "approvalRequired": true,
+    "approved": false,
+    "finalApprovalGranted": false,
+    "expiryPolicyRequired": true,
+    "expiryCheckPlanned": true,
+    "expiryCheckExecuted": false,
+    "tokenExpired": false,
+    "tokenNotBeforeChecked": false,
+    "tokenExpiresAtChecked": false,
+    "clockSkewChecked": false,
+    "tokenAccepted": false,
+    "tokenStored": false,
+    "tokenValidated": false,
+    "tokenConsumed": false,
+    "tokenRevoked": false,
+    "executeNow": false,
+    "verifyNow": false,
+    "rollbackNow": false,
+    "dispatch": false,
+    "networkDispatch": false,
+    "runtimeRegistration": false,
+    "localFileWrites": false,
+    "hostStartup": false,
+    "processSpawn": false,
+    "packageCreated": false,
+    "workspaceMutation": false,
+    "scriptRunnable": false,
+    "fileMaterialization": false,
+    "lockfileMutation": false,
+    "rootPackageJsonMutation": false,
+    "pnpmWorkspaceMutation": false,
+    "commandExecution": false,
+    "buildOutput": false,
+    "packageScriptsRunnable": false,
+    "materializationApproved": false,
+    "materializationApprovedNow": false,
+    "filesWritten": false,
+    "rollbackExecuted": false,
+    "verificationExecuted": false,
+    "consumes": {
+      "packageMaterializationApprovalReplayGuard": {
+        "requiredStatus": "planned-disabled",
+        "currentStatus": "planned-disabled",
+        "replayGuardVersion": "P25.43",
+        "replayCheckExecuted": false
+      },
+      "packageMaterializationExplicitApprovalToken": {
+        "requiredStatus": "planned-disabled",
+        "currentStatus": "planned-disabled",
+        "tokenVersion": "P25.41",
+        "tokenValidated": false
+      },
+      "packageMaterializationApprovalAuditTrail": {
+        "requiredStatus": "planned-disabled",
+        "currentStatus": "planned-disabled",
+        "auditTrailVersion": "P25.42",
+        "auditRecordWritten": false
+      }
+    },
+    "expiryPolicy": {
+      "policy": "short-lived-explicit-approval-token",
+      "checkNow": false,
+      "validateIssuedAtNow": false,
+      "validateNotBeforeNow": false,
+      "validateExpiresAtNow": false,
+      "validateClockSkewNow": false,
+      "maxAgeSeconds": 900,
+      "allowedClockSkewSeconds": 60,
+      "requiredClaims": [
+        "issuedAt",
+        "notBefore",
+        "expiresAt",
+        "approvalScopeHash",
+        "tokenId"
+      ],
+      "tokenValueLogged": false
+    },
+    "expiryChecks": [
+      {
+        "id": "issued-at-present",
+        "required": true,
+        "planned": true,
+        "executed": false,
+        "passed": false
+      },
+      {
+        "id": "not-before-satisfied",
+        "required": true,
+        "planned": true,
+        "executed": false,
+        "passed": false
+      },
+      {
+        "id": "expires-at-in-future",
+        "required": true,
+        "planned": true,
+        "executed": false,
+        "passed": false
+      },
+      {
+        "id": "max-age-not-exceeded",
+        "required": true,
+        "planned": true,
+        "executed": false,
+        "passed": false
+      },
+      {
+        "id": "clock-skew-within-policy",
+        "required": true,
+        "planned": true,
+        "executed": false,
+        "passed": false
+      }
+    ],
+    "expiryDecision": {
+      "status": "blocked",
+      "canCheckExpiry": false,
+      "canAcceptToken": false,
+      "canConsumeToken": false,
+      "canGrantFinalApproval": false,
+      "canMaterializeFiles": false,
+      "canEnableRuntimeDispatch": false,
+      "reason": "approval expiry policy is metadata-only and no token timestamps have been validated"
+    },
+    "noOpGuarantees": [
+      "approval expiry policy plan does not execute expiry checks",
+      "approval expiry policy plan does not read or trust wall-clock time",
+      "approval expiry policy plan does not accept or validate tokens",
+      "approval expiry policy plan does not consume or revoke tokens",
+      "approval expiry policy plan does not grant materialization approval",
+      "approval expiry policy plan does not create renderer-service directory",
+      "approval expiry policy plan does not write package or workspace files",
+      "approval expiry policy plan does not mutate lockfiles",
+      "approval expiry policy plan does not run verification commands",
+      "approval expiry policy plan does not generate build output",
+      "approval expiry policy plan does not register runtime dispatch"
+    ],
+    "requiredBeforeRuntimeDispatch": [
+      "validate token issuedAt/notBefore/expiresAt claims before replay guard",
+      "enforce max token age and clock skew policy",
+      "record expiry decision in approval audit trail without logging token value",
+      "consume token only after expiry and replay policies pass",
       "keep render.thumbnail unavailable until executable adapter registration is approved"
     ]
   }

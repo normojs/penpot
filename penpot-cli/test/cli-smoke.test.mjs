@@ -2858,6 +2858,16 @@ test("render thumbnail dry-run returns renderer-service request plan", async () 
         assert.equal(body.data.packageMaterializationApprovalReplayGuard.buildOutput, false);
         assert.equal(body.data.packageMaterializationApprovalReplayGuard.filesWritten, false);
         assert.equal(body.data.packageMaterializationApprovalReplayGuard.replayDecision.canCheckReplay, false);
+        assert.equal(body.data.packageMaterializationApprovalExpiryPolicy.expiryPolicyVersion, "P25.44");
+        assert.equal(body.data.packageMaterializationApprovalExpiryPolicy.expiryCheckExecuted, false);
+        assert.equal(body.data.packageMaterializationApprovalExpiryPolicy.tokenAccepted, false);
+        assert.equal(body.data.packageMaterializationApprovalExpiryPolicy.tokenValidated, false);
+        assert.equal(body.data.packageMaterializationApprovalExpiryPolicy.approved, false);
+        assert.equal(body.data.packageMaterializationApprovalExpiryPolicy.finalApprovalGranted, false);
+        assert.equal(body.data.packageMaterializationApprovalExpiryPolicy.commandExecution, false);
+        assert.equal(body.data.packageMaterializationApprovalExpiryPolicy.buildOutput, false);
+        assert.equal(body.data.packageMaterializationApprovalExpiryPolicy.filesWritten, false);
+        assert.equal(body.data.packageMaterializationApprovalExpiryPolicy.expiryDecision.canCheckExpiry, false);
         assert.equal(body.data.service.responseNormalization.successStatus, "ok");
         assert.equal(body.data.service.responseNormalization.localFileWrites, false);
         assert.equal(body.data.service.errorShape.code, "renderer_service_error");
@@ -3111,6 +3121,16 @@ test("render thumbnail execution reports renderer-service unavailable without ca
         assert.equal(body.error.data.packageMaterializationApprovalReplayGuard.buildOutput, false);
         assert.equal(body.error.data.packageMaterializationApprovalReplayGuard.filesWritten, false);
         assert.equal(body.error.data.packageMaterializationApprovalReplayGuard.replayDecision.canCheckReplay, false);
+        assert.equal(body.error.data.packageMaterializationApprovalExpiryPolicy.expiryPolicyVersion, "P25.44");
+        assert.equal(body.error.data.packageMaterializationApprovalExpiryPolicy.expiryCheckExecuted, false);
+        assert.equal(body.error.data.packageMaterializationApprovalExpiryPolicy.tokenAccepted, false);
+        assert.equal(body.error.data.packageMaterializationApprovalExpiryPolicy.tokenValidated, false);
+        assert.equal(body.error.data.packageMaterializationApprovalExpiryPolicy.approved, false);
+        assert.equal(body.error.data.packageMaterializationApprovalExpiryPolicy.finalApprovalGranted, false);
+        assert.equal(body.error.data.packageMaterializationApprovalExpiryPolicy.commandExecution, false);
+        assert.equal(body.error.data.packageMaterializationApprovalExpiryPolicy.buildOutput, false);
+        assert.equal(body.error.data.packageMaterializationApprovalExpiryPolicy.filesWritten, false);
+        assert.equal(body.error.data.packageMaterializationApprovalExpiryPolicy.expiryDecision.canCheckExpiry, false);
         assert.equal(body.error.data.clientRequest.dispatch, false);
         assert.equal(body.error.data.serviceRequest.operation, "thumbnail.render");
     } finally {

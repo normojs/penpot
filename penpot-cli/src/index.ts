@@ -6343,6 +6343,7 @@ async function handleRenderThumbnail(args: string[], io: CliIO, env: NodeJS.Proc
             packageMaterializationExplicitApprovalToken: plan.packageMaterializationExplicitApprovalToken,
             packageMaterializationApprovalAuditTrail: plan.packageMaterializationApprovalAuditTrail,
             packageMaterializationApprovalReplayGuard: plan.packageMaterializationApprovalReplayGuard,
+            packageMaterializationApprovalExpiryPolicy: plan.packageMaterializationApprovalExpiryPolicy,
             clientRequest: plan.clientRequest,
             requiredCapabilities: plan.requiredCapabilities,
             serviceRequest: plan.serviceRequest,
