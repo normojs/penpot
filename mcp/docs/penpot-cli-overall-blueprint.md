@@ -347,6 +347,11 @@ Current state:
   rollback verification without granting approval, executing rollback,
   creating or removing directories, restoring files, mutating workspace state,
   running commands, or registering runtime dispatch.
+- Done: renderer-service package materialization verification manifest defines
+  metadata-only package file checks, workspace file checks, generated output
+  checks, verification commands, and runtime-disabled assertions without
+  granting approval, writing files, mutating workspace state, running commands,
+  emitting build output, or registering runtime dispatch.
 - Done: focused command-runtime tests cover descriptor groups, lookup,
   adapter-selection priority/error cases, and token-safe envelopes.
 - Status: complete. Later command coverage gaps were tracked by the P15.1
@@ -1074,6 +1079,23 @@ P25.38 is complete:
    starting processes, or registering runtime dispatch.
 3. `packageMaterializationRollbackContract.executeNow` and `rollbackNow`
    remain false, while `approved`, `filesWritten`, `rollbackExecuted`,
+   `fileMaterialization`, `workspaceMutation`, `lockfileMutation`,
+   `commandExecution`, `buildOutput`, `materializationApproved`,
+   `processSpawn`, `packageCreated`, `dispatch`, `networkDispatch`,
+   `runtimeRegistration`, and `localFileWrites` remain false.
+
+P25.39 is complete:
+
+1. Shared plans include `packageMaterializationVerificationManifest` metadata
+   for future package file checks, workspace file checks, generated output
+   checks, verification commands, and runtime-disabled assertions.
+2. MCP and CLI expose this verification manifest in dry-run and unavailable
+   execution payloads without granting approval, creating package directories,
+   writing files, mutating workspace manifests, mutating lockfiles, running
+   commands, emitting build output, starting processes, or registering runtime
+   dispatch.
+3. `packageMaterializationVerificationManifest.executeNow` and `verifyNow`
+   remain false, while `approved`, `filesWritten`, `verificationExecuted`,
    `fileMaterialization`, `workspaceMutation`, `lockfileMutation`,
    `commandExecution`, `buildOutput`, `materializationApproved`,
    `processSpawn`, `packageCreated`, `dispatch`, `networkDispatch`,

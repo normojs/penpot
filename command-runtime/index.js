@@ -1076,6 +1076,12 @@ export function createRenderThumbnailRendererServicePlan(options = EMPTY_OBJECT)
         packageMaterializationExecutionDryRun,
         packageMaterializationApprovalGate,
     });
+    const packageMaterializationVerificationManifest = createRenderThumbnailRendererServicePackageMaterializationVerificationManifest({
+        packageMaterializationRollbackContract,
+        packageMaterializationWriteContract,
+        packageBuildVerification,
+        packageCreationFileManifest,
+    });
 
     return {
         command: CommandDescriptors.RENDER_THUMBNAIL.id,
@@ -1146,6 +1152,7 @@ export function createRenderThumbnailRendererServicePlan(options = EMPTY_OBJECT)
             packageMaterializationExecutionDryRun,
             packageMaterializationWriteContract,
             packageMaterializationRollbackContract,
+            packageMaterializationVerificationManifest,
             clientRequest,
         },
         client,
@@ -1177,6 +1184,7 @@ export function createRenderThumbnailRendererServicePlan(options = EMPTY_OBJECT)
         packageMaterializationExecutionDryRun,
         packageMaterializationWriteContract,
         packageMaterializationRollbackContract,
+        packageMaterializationVerificationManifest,
         clientRequest,
         serviceRequest: {
             command: CommandDescriptors.RENDER_THUMBNAIL.id,
@@ -1268,6 +1276,7 @@ export function createRenderThumbnailRendererServicePlan(options = EMPTY_OBJECT)
             packageMaterializationExecutionDryRunVersion: packageMaterializationExecutionDryRun.dryRunVersion,
             packageMaterializationWriteContractVersion: packageMaterializationWriteContract.contractVersion,
             packageMaterializationRollbackContractVersion: packageMaterializationRollbackContract.contractVersion,
+            packageMaterializationVerificationManifestVersion: packageMaterializationVerificationManifest.manifestVersion,
         },
     };
 }
@@ -2956,6 +2965,176 @@ export function createRenderThumbnailRendererServicePackageMaterializationRollba
             "verify rollback hashes before enabling renderer-service package scripts",
             "run package verification only after rollback contract is reviewed",
             "keep render.thumbnail unavailable until rollback coverage and materialization verification pass",
+        ],
+    };
+}
+
+export function createRenderThumbnailRendererServicePackageMaterializationVerificationManifest(options = EMPTY_OBJECT) {
+    const packageMaterializationRollbackContract = options.packageMaterializationRollbackContract ?? EMPTY_OBJECT;
+    const packageMaterializationWriteContract = options.packageMaterializationWriteContract ?? EMPTY_OBJECT;
+    const packageBuildVerification = options.packageBuildVerification ?? EMPTY_OBJECT;
+    const packageCreationFileManifest = options.packageCreationFileManifest ?? EMPTY_OBJECT;
+
+    return {
+        status: "planned-disabled",
+        manifestVersion: "P25.39",
+        adapter: "renderer-service",
+        command: CommandDescriptors.RENDER_THUMBNAIL.id,
+        dryRunOnly: true,
+        approvalRequired: true,
+        approved: false,
+        executeNow: false,
+        verifyNow: false,
+        rollbackNow: false,
+        dispatch: false,
+        networkDispatch: false,
+        runtimeRegistration: false,
+        localFileWrites: false,
+        hostStartup: false,
+        processSpawn: false,
+        packageCreated: false,
+        workspaceMutation: false,
+        scriptRunnable: false,
+        fileMaterialization: false,
+        lockfileMutation: false,
+        rootPackageJsonMutation: false,
+        pnpmWorkspaceMutation: false,
+        commandExecution: false,
+        buildOutput: false,
+        packageScriptsRunnable: false,
+        materializationApproved: false,
+        materializationApprovedRequired: true,
+        materializationApprovedNow: false,
+        filesWritten: false,
+        rollbackExecuted: false,
+        verificationExecuted: false,
+        consumes: {
+            packageMaterializationRollbackContract: {
+                requiredStatus: "planned-disabled",
+                currentStatus: packageMaterializationRollbackContract.status ?? "planned-disabled",
+                contractVersion: packageMaterializationRollbackContract.contractVersion ?? "P25.38",
+                rollbackNow: false,
+            },
+            packageMaterializationWriteContract: {
+                requiredStatus: "planned-disabled",
+                currentStatus: packageMaterializationWriteContract.status ?? "planned-disabled",
+                contractVersion: packageMaterializationWriteContract.contractVersion ?? "P25.37",
+                filesWritten: false,
+            },
+            packageBuildVerification: {
+                requiredStatus: "planned-disabled",
+                currentStatus: packageBuildVerification.status ?? "planned-disabled",
+                verificationVersion: packageBuildVerification.verificationVersion ?? "P25.31",
+                commandExecution: false,
+                buildOutput: false,
+            },
+            packageCreationFileManifest: {
+                requiredStatus: "planned-disabled",
+                currentStatus: packageCreationFileManifest.status ?? "planned-disabled",
+                manifestVersion: packageCreationFileManifest.manifestVersion ?? "P25.34",
+                filesWritten: false,
+            },
+        },
+        verificationManifest: {
+            status: "blocked",
+            verifyNow: false,
+            packageDirectory: {
+                path: "renderer-service",
+                expectedAfterMaterialization: "exists",
+                verifyNow: false,
+            },
+            packageFiles: [
+                "renderer-service/package.json",
+                "renderer-service/tsconfig.json",
+                "renderer-service/src/index.ts",
+                "renderer-service/src/noop-host.ts",
+                "renderer-service/test/noop-host.test.mjs",
+            ].map((path) => ({
+                path,
+                expectedAfterMaterialization: "exists",
+                hashAfterWrite: true,
+                verifyNow: false,
+            })),
+            workspaceFiles: [
+                {
+                    path: "pnpm-workspace.yaml",
+                    expectedChange: "workspace entry includes renderer-service",
+                    verifyNow: false,
+                },
+                {
+                    path: "package.json",
+                    expectedChange: "root package scripts remain reviewed before registration",
+                    verifyNow: false,
+                },
+                {
+                    path: "pnpm-lock.yaml",
+                    expectedChange: "lockfile refreshed after approved workspace mutation",
+                    verifyNow: false,
+                },
+            ],
+            generatedOutputs: [
+                "renderer-service/dist/index.js",
+                "renderer-service/dist/index.d.ts",
+                "renderer-service/dist/noop-host.js",
+                "renderer-service/dist/noop-host.d.ts",
+            ].map((path) => ({
+                path,
+                expectedAfterBuild: "exists",
+                verifyNow: false,
+            })),
+        },
+        commandManifest: {
+            status: "planned",
+            commandsRun: false,
+            verifyNow: false,
+            commands: [
+                {
+                    id: "build",
+                    command: "pnpm --filter @penpot/renderer-service build",
+                    runsNow: false,
+                },
+                {
+                    id: "types",
+                    command: "pnpm --filter @penpot/renderer-service exec tsc --noEmit",
+                    runsNow: false,
+                },
+                {
+                    id: "test",
+                    command: "pnpm --filter @penpot/renderer-service test",
+                    runsNow: false,
+                },
+            ],
+        },
+        runtimeDisabledAssertions: {
+            status: "required",
+            verifyNow: false,
+            dispatch: false,
+            runtimeRegistration: false,
+            clientRequestDispatch: false,
+            healthPreflightDispatch: false,
+            rendererServiceUnavailableUntilRegistration: true,
+        },
+        readinessDecision: {
+            status: "blocked",
+            canVerifyMaterialization: false,
+            canEnableRuntimeDispatch: false,
+            reason: "verification manifest is metadata-only and package materialization has not occurred",
+        },
+        noOpGuarantees: [
+            "verification manifest does not create renderer-service directory",
+            "verification manifest does not write package files",
+            "verification manifest does not edit workspace manifests",
+            "verification manifest does not mutate lockfiles",
+            "verification manifest does not run verification commands",
+            "verification manifest does not generate build output",
+            "verification manifest does not register runtime dispatch",
+        ],
+        requiredBeforeRuntimeDispatch: [
+            "materialize files only after explicit approval",
+            "run verification commands only after approved materialization",
+            "confirm package files and workspace files match the manifest",
+            "confirm rollback contract remains valid after verification",
+            "keep render.thumbnail unavailable until verification manifest passes",
         ],
     };
 }

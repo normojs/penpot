@@ -40,6 +40,7 @@ import {
     createRenderThumbnailRendererServicePackageMaterializationExecutionDryRun,
     createRenderThumbnailRendererServicePackageMaterializationWriteContract,
     createRenderThumbnailRendererServicePackageMaterializationRollbackContract,
+    createRenderThumbnailRendererServicePackageMaterializationVerificationManifest,
     createRenderThumbnailRendererServicePackageFileTemplates,
     createRenderThumbnailRendererServicePackageManifestScaffold,
     createRenderThumbnailRendererServicePackageMaterializationChecklist,
@@ -604,6 +605,17 @@ test("render.thumbnail renderer-service API fixtures define planning requests wi
     assert.equal(fixtures.serviceApi.packageMaterializationRollbackContract.localFileWrites, false);
     assert.equal(fixtures.serviceApi.packageMaterializationRollbackContract.fileMaterialization, false);
     assert.equal(fixtures.serviceApi.packageMaterializationRollbackContract.filesWritten, false);
+    assert.equal(fixtures.serviceApi.packageMaterializationVerificationManifest.manifestVersion, "P25.39");
+    assert.equal(fixtures.serviceApi.packageMaterializationVerificationManifest.dryRunOnly, true);
+    assert.equal(fixtures.serviceApi.packageMaterializationVerificationManifest.executeNow, false);
+    assert.equal(fixtures.serviceApi.packageMaterializationVerificationManifest.verifyNow, false);
+    assert.equal(fixtures.serviceApi.packageMaterializationVerificationManifest.approved, false);
+    assert.equal(fixtures.serviceApi.packageMaterializationVerificationManifest.dispatch, false);
+    assert.equal(fixtures.serviceApi.packageMaterializationVerificationManifest.runtimeRegistration, false);
+    assert.equal(fixtures.serviceApi.packageMaterializationVerificationManifest.localFileWrites, false);
+    assert.equal(fixtures.serviceApi.packageMaterializationVerificationManifest.commandExecution, false);
+    assert.equal(fixtures.serviceApi.packageMaterializationVerificationManifest.buildOutput, false);
+    assert.equal(fixtures.serviceApi.packageMaterializationVerificationManifest.filesWritten, false);
     assert.deepEqual(fixtures.runtimeRegistration.commandDescriptorAdapters, ["renderer-service"]);
     assert.deepEqual(CommandDescriptors.RENDER_THUMBNAIL.adapters, ["renderer-service"]);
     assert.equal(fixtures.runtimeRegistration.mcpToolRegistered, true);
@@ -1101,6 +1113,38 @@ test("render.thumbnail renderer-service plan exposes dry-run client request whil
     assert.equal(plan.packageMaterializationRollbackContract.verificationPlan.verifyNow, false);
     assert.equal(plan.packageMaterializationRollbackContract.verificationPlan.commandsRun, false);
     assert.deepEqual(plan.service.packageMaterializationRollbackContract, plan.packageMaterializationRollbackContract);
+    assert.equal(plan.packageMaterializationVerificationManifest.manifestVersion, "P25.39");
+    assert.equal(plan.packageMaterializationVerificationManifest.dryRunOnly, true);
+    assert.equal(plan.packageMaterializationVerificationManifest.executeNow, false);
+    assert.equal(plan.packageMaterializationVerificationManifest.verifyNow, false);
+    assert.equal(plan.packageMaterializationVerificationManifest.rollbackNow, false);
+    assert.equal(plan.packageMaterializationVerificationManifest.approvalRequired, true);
+    assert.equal(plan.packageMaterializationVerificationManifest.approved, false);
+    assert.equal(plan.packageMaterializationVerificationManifest.dispatch, false);
+    assert.equal(plan.packageMaterializationVerificationManifest.networkDispatch, false);
+    assert.equal(plan.packageMaterializationVerificationManifest.runtimeRegistration, false);
+    assert.equal(plan.packageMaterializationVerificationManifest.localFileWrites, false);
+    assert.equal(plan.packageMaterializationVerificationManifest.packageCreated, false);
+    assert.equal(plan.packageMaterializationVerificationManifest.workspaceMutation, false);
+    assert.equal(plan.packageMaterializationVerificationManifest.fileMaterialization, false);
+    assert.equal(plan.packageMaterializationVerificationManifest.lockfileMutation, false);
+    assert.equal(plan.packageMaterializationVerificationManifest.commandExecution, false);
+    assert.equal(plan.packageMaterializationVerificationManifest.buildOutput, false);
+    assert.equal(plan.packageMaterializationVerificationManifest.materializationApproved, false);
+    assert.equal(plan.packageMaterializationVerificationManifest.filesWritten, false);
+    assert.equal(plan.packageMaterializationVerificationManifest.verificationExecuted, false);
+    assert.equal(plan.packageMaterializationVerificationManifest.consumes.packageMaterializationRollbackContract.contractVersion, "P25.38");
+    assert.equal(plan.packageMaterializationVerificationManifest.consumes.packageMaterializationWriteContract.contractVersion, "P25.37");
+    assert.equal(plan.packageMaterializationVerificationManifest.consumes.packageBuildVerification.verificationVersion, "P25.31");
+    assert.equal(plan.packageMaterializationVerificationManifest.verificationManifest.verifyNow, false);
+    assert.ok(plan.packageMaterializationVerificationManifest.verificationManifest.packageFiles.some((entry) => entry.path === "renderer-service/package.json" && entry.verifyNow === false));
+    assert.ok(plan.packageMaterializationVerificationManifest.verificationManifest.workspaceFiles.some((entry) => entry.path === "pnpm-lock.yaml" && entry.verifyNow === false));
+    assert.ok(plan.packageMaterializationVerificationManifest.verificationManifest.generatedOutputs.some((entry) => entry.path === "renderer-service/dist/index.js" && entry.verifyNow === false));
+    assert.ok(plan.packageMaterializationVerificationManifest.commandManifest.commands.some((entry) => entry.command === "pnpm --filter @penpot/renderer-service test" && entry.runsNow === false));
+    assert.equal(plan.packageMaterializationVerificationManifest.commandManifest.commandsRun, false);
+    assert.equal(plan.packageMaterializationVerificationManifest.runtimeDisabledAssertions.runtimeRegistration, false);
+    assert.equal(plan.packageMaterializationVerificationManifest.readinessDecision.canEnableRuntimeDispatch, false);
+    assert.deepEqual(plan.service.packageMaterializationVerificationManifest, plan.packageMaterializationVerificationManifest);
     assert.equal(plan.clientRequest.status, "scaffolded");
     assert.equal(plan.clientRequest.dispatch, false);
     assert.equal(plan.clientRequest.method, "POST");
@@ -1155,6 +1199,7 @@ test("render.thumbnail renderer-service plan exposes dry-run client request whil
     assert.equal(plan.diagnostics.packageMaterializationExecutionDryRunVersion, "P25.36");
     assert.equal(plan.diagnostics.packageMaterializationWriteContractVersion, "P25.37");
     assert.equal(plan.diagnostics.packageMaterializationRollbackContractVersion, "P25.38");
+    assert.equal(plan.diagnostics.packageMaterializationVerificationManifestVersion, "P25.39");
 });
 
 test("render.thumbnail renderer-service plan reports not-configured availability without endpoint", () => {
@@ -2389,6 +2434,80 @@ test("render.thumbnail renderer-service package materialization rollback contrac
     assert.equal(contract.verificationPlan.commandsRun, false);
     assert.ok(contract.noOpGuarantees.includes("rollback contract does not restore workspace manifests"));
     assert.ok(contract.requiredBeforeRuntimeDispatch.includes("capture rollback snapshots before any approved materialization"));
+});
+
+test("render.thumbnail renderer-service package materialization verification manifest stays metadata-only", () => {
+    const manifest = createRenderThumbnailRendererServicePackageMaterializationVerificationManifest({
+        packageMaterializationRollbackContract: {
+            status: "planned-disabled",
+            contractVersion: "P25.38",
+            rollbackNow: false,
+        },
+        packageMaterializationWriteContract: {
+            status: "planned-disabled",
+            contractVersion: "P25.37",
+            filesWritten: false,
+        },
+        packageBuildVerification: {
+            status: "planned-disabled",
+            verificationVersion: "P25.31",
+            commandExecution: false,
+            buildOutput: false,
+        },
+        packageCreationFileManifest: {
+            status: "planned-disabled",
+            manifestVersion: "P25.34",
+            filesWritten: false,
+        },
+    });
+
+    assert.equal(manifest.status, "planned-disabled");
+    assert.equal(manifest.manifestVersion, "P25.39");
+    assert.equal(manifest.dryRunOnly, true);
+    assert.equal(manifest.approvalRequired, true);
+    assert.equal(manifest.approved, false);
+    assert.equal(manifest.executeNow, false);
+    assert.equal(manifest.verifyNow, false);
+    assert.equal(manifest.rollbackNow, false);
+    assert.equal(manifest.adapter, "renderer-service");
+    assert.equal(manifest.command, "render.thumbnail");
+    assert.equal(manifest.dispatch, false);
+    assert.equal(manifest.networkDispatch, false);
+    assert.equal(manifest.runtimeRegistration, false);
+    assert.equal(manifest.localFileWrites, false);
+    assert.equal(manifest.hostStartup, false);
+    assert.equal(manifest.processSpawn, false);
+    assert.equal(manifest.packageCreated, false);
+    assert.equal(manifest.workspaceMutation, false);
+    assert.equal(manifest.scriptRunnable, false);
+    assert.equal(manifest.fileMaterialization, false);
+    assert.equal(manifest.lockfileMutation, false);
+    assert.equal(manifest.rootPackageJsonMutation, false);
+    assert.equal(manifest.pnpmWorkspaceMutation, false);
+    assert.equal(manifest.commandExecution, false);
+    assert.equal(manifest.buildOutput, false);
+    assert.equal(manifest.packageScriptsRunnable, false);
+    assert.equal(manifest.materializationApproved, false);
+    assert.equal(manifest.filesWritten, false);
+    assert.equal(manifest.rollbackExecuted, false);
+    assert.equal(manifest.verificationExecuted, false);
+    assert.equal(manifest.consumes.packageMaterializationRollbackContract.contractVersion, "P25.38");
+    assert.equal(manifest.consumes.packageMaterializationWriteContract.contractVersion, "P25.37");
+    assert.equal(manifest.consumes.packageBuildVerification.verificationVersion, "P25.31");
+    assert.equal(manifest.verificationManifest.status, "blocked");
+    assert.equal(manifest.verificationManifest.verifyNow, false);
+    assert.equal(manifest.verificationManifest.packageDirectory.path, "renderer-service");
+    assert.ok(manifest.verificationManifest.packageFiles.some((entry) => entry.path === "renderer-service/src/noop-host.ts" && entry.verifyNow === false));
+    assert.ok(manifest.verificationManifest.workspaceFiles.some((entry) => entry.path === "pnpm-lock.yaml" && entry.verifyNow === false));
+    assert.ok(manifest.verificationManifest.generatedOutputs.some((entry) => entry.path === "renderer-service/dist/index.js" && entry.verifyNow === false));
+    assert.equal(manifest.commandManifest.commandsRun, false);
+    assert.ok(manifest.commandManifest.commands.some((entry) => entry.id === "test" && entry.runsNow === false));
+    assert.equal(manifest.runtimeDisabledAssertions.dispatch, false);
+    assert.equal(manifest.runtimeDisabledAssertions.rendererServiceUnavailableUntilRegistration, true);
+    assert.equal(manifest.readinessDecision.canVerifyMaterialization, false);
+    assert.equal(manifest.readinessDecision.canEnableRuntimeDispatch, false);
+    assert.ok(manifest.noOpGuarantees.includes("verification manifest does not run verification commands"));
+    assert.ok(manifest.requiredBeforeRuntimeDispatch.includes("run verification commands only after approved materialization"));
 });
 
 test("render.thumbnail renderer-service client request scaffold adds MCP audit headers without dispatch", () => {

@@ -1109,3 +1109,16 @@ P25.38 adds renderer-service package materialization rollback contract:
   `commandExecution`, `buildOutput`, `materializationApproved`,
   `processSpawn`, `packageCreated`, `dispatch`, `networkDispatch`,
   `runtimeRegistration`, and `localFileWrites` all `false`.
+
+P25.39 adds renderer-service package materialization verification manifest:
+
+- Plans include `packageMaterializationVerificationManifest`, defining future
+  post-materialization package file, workspace file, generated output,
+  verification command, and runtime-disabled assertions.
+- The verification manifest remains planning-only with `executeNow:false`,
+  `verifyNow:false`, `approvalRequired:true`, `approved:false`,
+  `dryRunOnly:true`, `filesWritten`, `verificationExecuted`,
+  `fileMaterialization`, `workspaceMutation`, `lockfileMutation`,
+  `commandExecution`, `buildOutput`, `materializationApproved`,
+  `processSpawn`, `packageCreated`, `dispatch`, `networkDispatch`,
+  `runtimeRegistration`, and `localFileWrites` all `false`.

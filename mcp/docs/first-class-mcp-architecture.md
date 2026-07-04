@@ -2514,6 +2514,23 @@ P25.38 render.thumbnail package materialization rollback contract result:
   `processSpawn`, `packageCreated`, `dispatch`, `networkDispatch`,
   `runtimeRegistration`, and `localFileWrites` remain `false`.
 
+P25.39 render.thumbnail package materialization verification manifest result:
+
+- Shared plans include `packageMaterializationVerificationManifest`, defining
+  metadata-only future package file checks, workspace file checks, generated
+  output checks, verification commands, and runtime-disabled assertions.
+- MCP and CLI expose the verification manifest in dry-run and unavailable
+  execution payloads without granting approval, running verification commands,
+  creating package directories, writing files, mutating workspace manifests,
+  mutating lockfiles, emitting build output, starting processes, or
+  registering runtime dispatch.
+- `packageMaterializationVerificationManifest.executeNow` and `verifyNow`
+  remain `false`, while `approved`, `filesWritten`, `verificationExecuted`,
+  `fileMaterialization`, `workspaceMutation`, `lockfileMutation`,
+  `commandExecution`, `buildOutput`, `materializationApproved`,
+  `processSpawn`, `packageCreated`, `dispatch`, `networkDispatch`,
+  `runtimeRegistration`, and `localFileWrites` remain `false`.
+
 ### 8.5 Export and Render Tools
 
 May start file-bound and later move to headless:
@@ -2555,7 +2572,8 @@ dry-run summary. P25.34 defines disabled package creation file manifest.
 P25.35 defines disabled package materialization approval gate. P25.36 defines
 disabled package materialization execution dry-run. P25.37 defines disabled
 package materialization write contract. P25.38 defines disabled package
-materialization rollback contract.
+materialization rollback contract. P25.39 defines disabled package
+materialization verification manifest.
 Runtime behavior remains unavailable
 until opt-in config surfaces, renderer-service implementation, workspace
 wiring, health preflight, cache probe, executable client, and tagged-frame

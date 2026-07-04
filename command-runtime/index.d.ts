@@ -460,6 +460,7 @@ export interface RenderThumbnailRendererServicePlan {
         packageMaterializationExecutionDryRun: RenderThumbnailRendererServicePackageMaterializationExecutionDryRun;
         packageMaterializationWriteContract: RenderThumbnailRendererServicePackageMaterializationWriteContract;
         packageMaterializationRollbackContract: RenderThumbnailRendererServicePackageMaterializationRollbackContract;
+        packageMaterializationVerificationManifest: RenderThumbnailRendererServicePackageMaterializationVerificationManifest;
         clientRequest: RenderThumbnailRendererServiceClientRequest;
     };
     client: RenderThumbnailRendererServiceClientConfig;
@@ -491,6 +492,7 @@ export interface RenderThumbnailRendererServicePlan {
     packageMaterializationExecutionDryRun: RenderThumbnailRendererServicePackageMaterializationExecutionDryRun;
     packageMaterializationWriteContract: RenderThumbnailRendererServicePackageMaterializationWriteContract;
     packageMaterializationRollbackContract: RenderThumbnailRendererServicePackageMaterializationRollbackContract;
+    packageMaterializationVerificationManifest: RenderThumbnailRendererServicePackageMaterializationVerificationManifest;
     clientRequest: RenderThumbnailRendererServiceClientRequest;
     serviceRequest: {
         command: "render.thumbnail";
@@ -582,6 +584,7 @@ export interface RenderThumbnailRendererServicePlan {
         packageMaterializationExecutionDryRunVersion: "P25.36";
         packageMaterializationWriteContractVersion: "P25.37";
         packageMaterializationRollbackContractVersion: "P25.38";
+        packageMaterializationVerificationManifestVersion: "P25.39";
     };
 }
 
@@ -2352,6 +2355,120 @@ export interface RenderThumbnailRendererServicePackageMaterializationRollbackCon
     requiredBeforeRuntimeDispatch: string[];
 }
 
+export interface RenderThumbnailRendererServicePackageMaterializationVerificationManifest {
+    status: "planned-disabled";
+    manifestVersion: "P25.39";
+    adapter: "renderer-service";
+    command: "render.thumbnail";
+    dryRunOnly: true;
+    approvalRequired: true;
+    approved: false;
+    executeNow: false;
+    verifyNow: false;
+    rollbackNow: false;
+    dispatch: false;
+    networkDispatch: false;
+    runtimeRegistration: false;
+    localFileWrites: false;
+    hostStartup: false;
+    processSpawn: false;
+    packageCreated: false;
+    workspaceMutation: false;
+    scriptRunnable: false;
+    fileMaterialization: false;
+    lockfileMutation: false;
+    rootPackageJsonMutation: false;
+    pnpmWorkspaceMutation: false;
+    commandExecution: false;
+    buildOutput: false;
+    packageScriptsRunnable: false;
+    materializationApproved: false;
+    materializationApprovedRequired: true;
+    materializationApprovedNow: false;
+    filesWritten: false;
+    rollbackExecuted: false;
+    verificationExecuted: false;
+    consumes: {
+        packageMaterializationRollbackContract: {
+            requiredStatus: "planned-disabled";
+            currentStatus: string;
+            contractVersion: string;
+            rollbackNow: false;
+        };
+        packageMaterializationWriteContract: {
+            requiredStatus: "planned-disabled";
+            currentStatus: string;
+            contractVersion: string;
+            filesWritten: false;
+        };
+        packageBuildVerification: {
+            requiredStatus: "planned-disabled";
+            currentStatus: string;
+            verificationVersion: string;
+            commandExecution: false;
+            buildOutput: false;
+        };
+        packageCreationFileManifest: {
+            requiredStatus: "planned-disabled";
+            currentStatus: string;
+            manifestVersion: string;
+            filesWritten: false;
+        };
+    };
+    verificationManifest: {
+        status: "blocked";
+        verifyNow: false;
+        packageDirectory: {
+            path: string;
+            expectedAfterMaterialization: "exists";
+            verifyNow: false;
+        };
+        packageFiles: Array<{
+            path: string;
+            expectedAfterMaterialization: "exists";
+            hashAfterWrite: true;
+            verifyNow: false;
+        }>;
+        workspaceFiles: Array<{
+            path: string;
+            expectedChange: string;
+            verifyNow: false;
+        }>;
+        generatedOutputs: Array<{
+            path: string;
+            expectedAfterBuild: "exists";
+            verifyNow: false;
+        }>;
+    };
+    commandManifest: {
+        status: "planned";
+        commandsRun: false;
+        verifyNow: false;
+        commands: Array<{
+            id: string;
+            command: string;
+            runsNow: false;
+        }>;
+    };
+    runtimeDisabledAssertions: {
+        status: "required";
+        verifyNow: false;
+        dispatch: false;
+        runtimeRegistration: false;
+        clientRequestDispatch: false;
+        healthPreflightDispatch: false;
+        rendererServiceUnavailableUntilRegistration: true;
+    };
+    readinessDecision: {
+        status: "blocked";
+        canVerifyMaterialization: false;
+        canEnableRuntimeDispatch: false;
+        reason: string;
+    };
+    noOpGuarantees: string[];
+    requiredBeforeRuntimeDispatch: string[];
+}
+
 export interface CreateRenderThumbnailRendererServiceClientRequestOptions {
     entrypoint?: "mcp" | "cli" | string | null;
     mcpToolName?: string | null;
@@ -2787,6 +2904,14 @@ export function createRenderThumbnailRendererServicePackageMaterializationRollba
         packageMaterializationApprovalGate?: Partial<RenderThumbnailRendererServicePackageMaterializationApprovalGate> | null;
     }
 ): RenderThumbnailRendererServicePackageMaterializationRollbackContract;
+export function createRenderThumbnailRendererServicePackageMaterializationVerificationManifest(
+    options?: {
+        packageMaterializationRollbackContract?: Partial<RenderThumbnailRendererServicePackageMaterializationRollbackContract> | null;
+        packageMaterializationWriteContract?: Partial<RenderThumbnailRendererServicePackageMaterializationWriteContract> | null;
+        packageBuildVerification?: Partial<RenderThumbnailRendererServicePackageBuildVerification> | null;
+        packageCreationFileManifest?: Partial<RenderThumbnailRendererServicePackageCreationFileManifest> | null;
+    }
+): RenderThumbnailRendererServicePackageMaterializationVerificationManifest;
 export function createRenderThumbnailRendererServiceClientRequest(
     plan: Partial<RenderThumbnailRendererServicePlan>,
     options?: CreateRenderThumbnailRendererServiceClientRequestOptions

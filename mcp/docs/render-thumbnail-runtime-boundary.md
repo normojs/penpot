@@ -39,7 +39,8 @@ materialization approval gate metadata without granting approval. P25.36
 defines package materialization execution dry-run metadata without executing
 writes. P25.37 defines package materialization write contract metadata without
 performing writes. P25.38 defines package materialization rollback contract
-metadata without executing rollback.
+metadata without executing rollback. P25.39 defines package materialization
+verification manifest metadata without running verification.
 
 ## Existing Surfaces
 
@@ -185,7 +186,8 @@ summary. P25.34 adds metadata-only package creation file manifest. P25.35 adds
 metadata-only package materialization approval gate. P25.36 adds metadata-only
 package materialization execution dry-run. P25.37 adds metadata-only package
 materialization write contract. P25.38 adds metadata-only package
-materialization rollback contract. MCP
+materialization rollback contract. P25.39 adds metadata-only package
+materialization verification manifest. MCP
 `render.thumbnail` and `penpot-cli render thumbnail --dry-run` can print the
 future request shape, configured/not configured service metadata,
 response/error contracts, `clientRequest.dispatch:false`,
@@ -267,6 +269,14 @@ plus `packageMaterializationRollbackContract.executeNow:false`,
 `packageMaterializationRollbackContract.fileMaterialization:false`,
 `packageMaterializationRollbackContract.workspaceMutation:false`, and
 `packageMaterializationRollbackContract.runtimeRegistration:false`,
+plus `packageMaterializationVerificationManifest.executeNow:false`,
+`packageMaterializationVerificationManifest.verifyNow:false`,
+`packageMaterializationVerificationManifest.approved:false`,
+`packageMaterializationVerificationManifest.filesWritten:false`,
+`packageMaterializationVerificationManifest.verificationExecuted:false`,
+`packageMaterializationVerificationManifest.fileMaterialization:false`,
+`packageMaterializationVerificationManifest.workspaceMutation:false`, and
+`packageMaterializationVerificationManifest.runtimeRegistration:false`,
 but execution still returns
 `renderer_service_unavailable` until explicit opt-in, config surfaces, renderer
 service, integration tests, health preflight, file cache probe, tagged-frame

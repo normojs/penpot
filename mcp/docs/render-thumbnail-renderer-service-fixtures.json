@@ -1,5 +1,5 @@
 {
-  "version": "P25.38",
+  "version": "P25.39",
   "command": "render.thumbnail",
   "status": "renderer-service API fixtures with MCP/CLI dry-run/client boundaries, metadata-only availability probes, response normalization contracts, disabled client request scaffold, explicit execution gate, health preflight plan, executable client harness plan, dispatch adapter boundary, opt-in configuration surfaces, unavailable error taxonomy, integration fixture harness, dispatch registration preflight, disabled executable adapter registration scaffold, disabled adapter registry manifest, final disabled enablement checklist, implementation slice audit, health/no-op contract fixtures, no-op service host scaffold, host lifecycle test fixtures, package manifest scaffold, package creation guardrails, package file templates, and package workspace wiring; runtime execution blocked",
   "adapter": "renderer-service",
@@ -2622,6 +2622,200 @@
         "run package verification only after rollback contract is reviewed",
         "keep render.thumbnail unavailable until rollback coverage and materialization verification pass"
       ]
+    },
+    "packageMaterializationVerificationManifest": {
+      "status": "planned-disabled",
+      "manifestVersion": "P25.39",
+      "adapter": "renderer-service",
+      "command": "render.thumbnail",
+      "dryRunOnly": true,
+      "approvalRequired": true,
+      "approved": false,
+      "executeNow": false,
+      "verifyNow": false,
+      "rollbackNow": false,
+      "dispatch": false,
+      "networkDispatch": false,
+      "runtimeRegistration": false,
+      "localFileWrites": false,
+      "hostStartup": false,
+      "processSpawn": false,
+      "packageCreated": false,
+      "workspaceMutation": false,
+      "scriptRunnable": false,
+      "fileMaterialization": false,
+      "lockfileMutation": false,
+      "rootPackageJsonMutation": false,
+      "pnpmWorkspaceMutation": false,
+      "commandExecution": false,
+      "buildOutput": false,
+      "packageScriptsRunnable": false,
+      "materializationApproved": false,
+      "materializationApprovedRequired": true,
+      "materializationApprovedNow": false,
+      "filesWritten": false,
+      "rollbackExecuted": false,
+      "verificationExecuted": false,
+      "consumes": {
+        "packageMaterializationRollbackContract": {
+          "requiredStatus": "planned-disabled",
+          "currentStatus": "planned-disabled",
+          "contractVersion": "P25.38",
+          "rollbackNow": false
+        },
+        "packageMaterializationWriteContract": {
+          "requiredStatus": "planned-disabled",
+          "currentStatus": "planned-disabled",
+          "contractVersion": "P25.37",
+          "filesWritten": false
+        },
+        "packageBuildVerification": {
+          "requiredStatus": "planned-disabled",
+          "currentStatus": "planned-disabled",
+          "verificationVersion": "P25.31",
+          "commandExecution": false,
+          "buildOutput": false
+        },
+        "packageCreationFileManifest": {
+          "requiredStatus": "planned-disabled",
+          "currentStatus": "planned-disabled",
+          "manifestVersion": "P25.34",
+          "filesWritten": false
+        }
+      },
+      "verificationManifest": {
+        "status": "blocked",
+        "verifyNow": false,
+        "packageDirectory": {
+          "path": "renderer-service",
+          "expectedAfterMaterialization": "exists",
+          "verifyNow": false
+        },
+        "packageFiles": [
+          {
+            "path": "renderer-service/package.json",
+            "expectedAfterMaterialization": "exists",
+            "hashAfterWrite": true,
+            "verifyNow": false
+          },
+          {
+            "path": "renderer-service/tsconfig.json",
+            "expectedAfterMaterialization": "exists",
+            "hashAfterWrite": true,
+            "verifyNow": false
+          },
+          {
+            "path": "renderer-service/src/index.ts",
+            "expectedAfterMaterialization": "exists",
+            "hashAfterWrite": true,
+            "verifyNow": false
+          },
+          {
+            "path": "renderer-service/src/noop-host.ts",
+            "expectedAfterMaterialization": "exists",
+            "hashAfterWrite": true,
+            "verifyNow": false
+          },
+          {
+            "path": "renderer-service/test/noop-host.test.mjs",
+            "expectedAfterMaterialization": "exists",
+            "hashAfterWrite": true,
+            "verifyNow": false
+          }
+        ],
+        "workspaceFiles": [
+          {
+            "path": "pnpm-workspace.yaml",
+            "expectedChange": "workspace entry includes renderer-service",
+            "verifyNow": false
+          },
+          {
+            "path": "package.json",
+            "expectedChange": "root package scripts remain reviewed before registration",
+            "verifyNow": false
+          },
+          {
+            "path": "pnpm-lock.yaml",
+            "expectedChange": "lockfile refreshed after approved workspace mutation",
+            "verifyNow": false
+          }
+        ],
+        "generatedOutputs": [
+          {
+            "path": "renderer-service/dist/index.js",
+            "expectedAfterBuild": "exists",
+            "verifyNow": false
+          },
+          {
+            "path": "renderer-service/dist/index.d.ts",
+            "expectedAfterBuild": "exists",
+            "verifyNow": false
+          },
+          {
+            "path": "renderer-service/dist/noop-host.js",
+            "expectedAfterBuild": "exists",
+            "verifyNow": false
+          },
+          {
+            "path": "renderer-service/dist/noop-host.d.ts",
+            "expectedAfterBuild": "exists",
+            "verifyNow": false
+          }
+        ]
+      },
+      "commandManifest": {
+        "status": "planned",
+        "commandsRun": false,
+        "verifyNow": false,
+        "commands": [
+          {
+            "id": "build",
+            "command": "pnpm --filter @penpot/renderer-service build",
+            "runsNow": false
+          },
+          {
+            "id": "types",
+            "command": "pnpm --filter @penpot/renderer-service exec tsc --noEmit",
+            "runsNow": false
+          },
+          {
+            "id": "test",
+            "command": "pnpm --filter @penpot/renderer-service test",
+            "runsNow": false
+          }
+        ]
+      },
+      "runtimeDisabledAssertions": {
+        "status": "required",
+        "verifyNow": false,
+        "dispatch": false,
+        "runtimeRegistration": false,
+        "clientRequestDispatch": false,
+        "healthPreflightDispatch": false,
+        "rendererServiceUnavailableUntilRegistration": true
+      },
+      "readinessDecision": {
+        "status": "blocked",
+        "canVerifyMaterialization": false,
+        "canEnableRuntimeDispatch": false,
+        "reason": "verification manifest is metadata-only and package materialization has not occurred"
+      },
+      "noOpGuarantees": [
+        "verification manifest does not create renderer-service directory",
+        "verification manifest does not write package files",
+        "verification manifest does not edit workspace manifests",
+        "verification manifest does not mutate lockfiles",
+        "verification manifest does not run verification commands",
+        "verification manifest does not generate build output",
+        "verification manifest does not register runtime dispatch"
+      ],
+      "requiredBeforeRuntimeDispatch": [
+        "materialize files only after explicit approval",
+        "run verification commands only after approved materialization",
+        "confirm package files and workspace files match the manifest",
+        "confirm rollback contract remains valid after verification",
+        "keep render.thumbnail unavailable until verification manifest passes"
+      ]
     }
   },
   "registrationGates": {
@@ -2969,8 +3163,8 @@
     "missing token fails before contacting renderer-service"
   ],
   "nextTask": {
-    "id": "P25.39",
-    "title": "Plan renderer-service package materialization verification manifest",
+    "id": "P25.40",
+    "title": "Plan renderer-service package materialization final approval checklist",
     "status": "pending"
   }
 }
