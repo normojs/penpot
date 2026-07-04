@@ -2755,6 +2755,32 @@ P25.49 render.thumbnail package materialization approval readiness verdict polic
   `networkDispatch`, `runtimeRegistration`, and `localFileWrites` remain
   `false`.
 
+P25.50 render.thumbnail package materialization approval execution handoff policy result:
+
+- Shared plans include `packageMaterializationApprovalExecutionHandoffPolicy`,
+  defining metadata-only post-approval handoff targets, required handoff
+  inputs, handoff checks, blocked execution-job decisions, and no-op
+  guarantees.
+- MCP and CLI expose the execution handoff policy plan in dry-run and
+  unavailable execution payloads without preparing handoffs, validating
+  handoffs, storing handoff records, queuing handoffs, creating execution jobs,
+  queuing execution jobs, dispatching execution jobs, selecting execution
+  owners, accepting or validating tokens, consuming or revoking tokens,
+  granting approval, creating package directories, writing files, mutating
+  workspace manifests, mutating lockfiles, running commands, emitting build
+  output, starting processes, or registering runtime dispatch.
+- `handoffPrepared`, `handoffQueued`, `handoffAccepted`, `handoffStored`,
+  `handoffValidated`, `executionJobCreated`, `executionJobQueued`,
+  `executionJobDispatched`, `executionOwnerSelected`,
+  `executionOwnerNotified`, `materializationReady`,
+  `materializationApproved`, `tokenAccepted`, `tokenValidated`,
+  `tokenConsumed`, `tokenRevoked`, `approved`, `finalApprovalGranted`,
+  `executeNow`, and `verifyNow` remain `false`, while `filesWritten`,
+  `verificationExecuted`, `fileMaterialization`, `workspaceMutation`,
+  `lockfileMutation`, `commandExecution`, `buildOutput`, `processSpawn`,
+  `packageCreated`, `dispatch`, `networkDispatch`, `runtimeRegistration`, and
+  `localFileWrites` remain `false`.
+
 ### 8.5 Export and Render Tools
 
 May start file-bound and later move to headless:
@@ -2807,7 +2833,8 @@ materialization approval revocation policy. P25.46 defines disabled package
 materialization approval scope binding policy. P25.47 defines disabled package
 materialization approval operator confirmation policy. P25.48 defines disabled
 package materialization approval emergency stop policy. P25.49 defines
-disabled package materialization approval readiness verdict policy.
+disabled package materialization approval readiness verdict policy. P25.50
+defines disabled package materialization approval execution handoff policy.
 Runtime behavior remains unavailable
 until opt-in config surfaces, renderer-service implementation, workspace
 wiring, health preflight, cache probe, executable client, and tagged-frame

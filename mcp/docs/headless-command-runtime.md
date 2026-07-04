@@ -1318,3 +1318,27 @@ policy:
   `runtimeRegistration:false`, and `localFileWrites:false`. It does not
   compute, store, or trust readiness verdicts, validate readiness inputs,
   evaluate blockers, grant approval, or accept/validate tokens.
+
+P25.50 adds renderer-service package materialization approval execution handoff
+policy:
+
+- Plans include `packageMaterializationApprovalExecutionHandoffPolicy`,
+  defining the future post-approval handoff target, required handoff inputs,
+  handoff checks, blocked execution-job decision, and no-op guarantees.
+- The execution handoff policy remains planning-only with
+  `handoffPrepared:false`, `handoffQueued:false`, `handoffAccepted:false`,
+  `handoffStored:false`, `handoffValidated:false`,
+  `executionJobCreated:false`, `executionJobQueued:false`,
+  `executionJobDispatched:false`, `executionOwnerSelected:false`,
+  `executionOwnerNotified:false`, `materializationReady:false`,
+  `materializationApproved:false`, `tokenAccepted:false`,
+  `tokenValidated:false`, `tokenConsumed:false`, `approved:false`,
+  `finalApprovalGranted:false`, `executeNow:false`, `verifyNow:false`,
+  `filesWritten:false`, `fileMaterialization:false`,
+  `workspaceMutation:false`, `lockfileMutation:false`,
+  `commandExecution:false`, `buildOutput:false`, `processSpawn:false`,
+  `packageCreated:false`, `dispatch:false`, `networkDispatch:false`,
+  `runtimeRegistration:false`, and `localFileWrites:false`. It does not
+  prepare, validate, persist, or queue handoffs, create or dispatch execution
+  jobs, select or notify execution owners, grant approval, or accept/validate
+  tokens.

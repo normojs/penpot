@@ -70,6 +70,10 @@ P25.49 defines package materialization approval readiness verdict policy
 metadata without computing, storing, or trusting verdicts, validating readiness
 inputs, evaluating blockers, accepting/validating tokens, consuming tokens, or
 granting approval.
+P25.50 defines package materialization approval execution handoff policy
+metadata without preparing, validating, storing, or queuing handoffs, creating
+or dispatching execution jobs, selecting execution owners,
+accepting/validating tokens, consuming tokens, or granting approval.
 
 ## Existing Surfaces
 
@@ -227,6 +231,8 @@ materialization approval scope binding policy. P25.47 adds metadata-only
 package materialization approval operator confirmation policy. P25.48 adds
 metadata-only package materialization approval emergency stop policy. P25.49
 adds metadata-only package materialization approval readiness verdict policy.
+P25.50 adds metadata-only package materialization approval execution handoff
+policy.
 MCP
 `render.thumbnail` and `penpot-cli render thumbnail --dry-run` can print the
 future request shape, configured/not configured service metadata,

@@ -1338,6 +1338,32 @@ P25.49 is complete:
    `networkDispatch`, `runtimeRegistration`, and `localFileWrites` remain
    false.
 
+P25.50 is complete:
+
+1. Shared plans include
+   `packageMaterializationApprovalExecutionHandoffPolicy` metadata for future
+   post-approval handoff targets, required handoff inputs, handoff checks,
+   blocked execution-job decisions, and no-op guarantees.
+2. MCP and CLI expose this execution handoff policy plan in dry-run and
+   unavailable execution payloads without preparing handoffs, validating
+   handoffs, storing handoff records, queuing handoffs, creating or dispatching
+   execution jobs, selecting execution owners, accepting or validating tokens,
+   consuming or revoking tokens, granting approval, creating package
+   directories, writing files, mutating workspace manifests, mutating
+   lockfiles, running commands, emitting build output, starting processes, or
+   registering runtime dispatch.
+3. `handoffPrepared`, `handoffQueued`, `handoffAccepted`, `handoffStored`,
+   `handoffValidated`, `executionJobCreated`, `executionJobQueued`,
+   `executionJobDispatched`, `executionOwnerSelected`,
+   `executionOwnerNotified`, `materializationReady`,
+   `materializationApproved`, `tokenAccepted`, `tokenValidated`,
+   `tokenConsumed`, `tokenRevoked`, `approved`, `finalApprovalGranted`,
+   `executeNow`, and `verifyNow` remain false, while `filesWritten`,
+   `verificationExecuted`, `fileMaterialization`, `workspaceMutation`,
+   `lockfileMutation`, `commandExecution`, `buildOutput`, `processSpawn`,
+   `packageCreated`, `dispatch`, `networkDispatch`, `runtimeRegistration`,
+   and `localFileWrites` remain false.
+
 Keep manual configuration behavior stable while moving command metadata and
 envelopes; transport-specific formatting should stay at the MCP/CLI edges.
 

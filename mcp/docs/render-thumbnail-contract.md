@@ -1,6 +1,6 @@
 # Render Thumbnail Contract
 
-Status: P25.4 descriptor contract; P25.49 MCP/CLI renderer-service dry-run
+Status: P25.4 descriptor contract; P25.50 MCP/CLI renderer-service dry-run
 boundaries, metadata-only availability probes, response normalization
 contracts, disabled client request scaffolding, closed execution gate, disabled
 health preflight, executable client harness plan, and dispatch adapter boundary
@@ -48,6 +48,10 @@ tokens, consuming tokens, or granting approval. P25.49 adds package
 materialization approval readiness verdict policy metadata without computing,
 storing, or trusting verdicts, validating readiness inputs, evaluating
 blockers, accepting/validating tokens, consuming tokens, or granting approval.
+P25.50 adds package materialization approval execution handoff policy metadata
+without preparing, validating, storing, or queuing handoffs, creating or
+dispatching execution jobs, selecting execution owners, accepting/validating
+tokens, consuming tokens, or granting approval.
 
 This document defines the `render.thumbnail` contract before executable MCP or
 CLI rendering is enabled. The contract follows Penpot's existing dashboard
@@ -503,6 +507,27 @@ Shared contract shape:
   `localFileWrites:false`. They do not compute, store, or trust verdicts,
   validate readiness inputs, evaluate blockers, grant approval, or accept
   tokens.
+- P25.50 package materialization approval execution handoff policy fields are
+  planning-only. They define future post-approval handoff targets, required
+  handoff inputs, handoff checks, blocked execution-job decisions, and no-op
+  guarantees while keeping
+  `packageMaterializationApprovalExecutionHandoffPolicy.handoffPrepared:false`,
+  `packageMaterializationApprovalExecutionHandoffPolicy.handoffQueued:false`,
+  `packageMaterializationApprovalExecutionHandoffPolicy.handoffStored:false`,
+  `packageMaterializationApprovalExecutionHandoffPolicy.handoffValidated:false`,
+  `packageMaterializationApprovalExecutionHandoffPolicy.executionJobCreated:false`,
+  `packageMaterializationApprovalExecutionHandoffPolicy.executionJobQueued:false`,
+  `packageMaterializationApprovalExecutionHandoffPolicy.executionJobDispatched:false`,
+  `packageMaterializationApprovalExecutionHandoffPolicy.materializationReady:false`,
+  `packageMaterializationApprovalExecutionHandoffPolicy.materializationApproved:false`,
+  `tokenAccepted:false`, `tokenValidated:false`, `tokenConsumed:false`,
+  `approved:false`, `finalApprovalGranted:false`, `filesWritten:false`,
+  `verificationExecuted:false`, `fileMaterialization:false`,
+  `workspaceMutation:false`, `lockfileMutation:false`,
+  `commandExecution:false`, `buildOutput:false`,
+  `runtimeRegistration:false`, and `localFileWrites:false`. They do not
+  prepare, validate, persist, or queue handoffs, create or dispatch execution
+  jobs, select or notify execution owners, grant approval, or accept tokens.
 - Exporter service execution is out of scope for this command unless a later
   task explicitly maps thumbnail rendering to exporter-compatible semantics.
 - P25.6 selects a future dedicated thumbnail renderer service as the executable
@@ -517,7 +542,7 @@ See `render-thumbnail-runtime-boundary.md` and
 audit, resource-return rules, cache refresh behavior, auth expectations, and
 future test strategy.
 See `render-thumbnail-renderer-service-api.md` and
-`render-thumbnail-renderer-service-fixtures.json` for the P25.49 future
+`render-thumbnail-renderer-service-fixtures.json` for the P25.50 future
 renderer-service request/response API, MCP/CLI dry-run/client boundary, and
 metadata-only availability probe plus response/error normalization and disabled
 client request, execution gate, health preflight, and execution harness
@@ -531,8 +556,9 @@ guardrails, package file templates, package workspace wiring, package build
 verification, package materialization approval expiry policy, package
 materialization approval revocation policy, package materialization approval
 scope binding policy, and package materialization approval operator
-confirmation policy, and package materialization approval emergency stop
-policy, and package materialization approval readiness verdict policy.
+confirmation policy, package materialization approval emergency stop policy,
+package materialization approval readiness verdict policy, and package
+materialization approval execution handoff policy.
 
 ## Fixtures
 

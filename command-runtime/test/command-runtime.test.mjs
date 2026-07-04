@@ -51,6 +51,7 @@ import {
     createRenderThumbnailRendererServicePackageMaterializationApprovalOperatorConfirmationPolicy,
     createRenderThumbnailRendererServicePackageMaterializationApprovalEmergencyStopPolicy,
     createRenderThumbnailRendererServicePackageMaterializationApprovalReadinessVerdictPolicy,
+    createRenderThumbnailRendererServicePackageMaterializationApprovalExecutionHandoffPolicy,
     createRenderThumbnailRendererServicePackageFileTemplates,
     createRenderThumbnailRendererServicePackageManifestScaffold,
     createRenderThumbnailRendererServicePackageMaterializationChecklist,
@@ -439,6 +440,13 @@ test("render.thumbnail runtime boundary keeps execution unavailable until render
     assert.equal(boundary.optInConfiguration.status, "planned-disabled");
     assert.equal(boundary.optInConfiguration.dispatch, false);
     assert.equal(boundary.optInConfiguration.executionEnabledByConfiguration, false);
+    assert.equal(boundary.packageMaterializationApprovalExecutionHandoffPolicy.executionHandoffVersion, "P25.50");
+    assert.equal(boundary.packageMaterializationApprovalExecutionHandoffPolicy.handoffPrepared, false);
+    assert.equal(boundary.packageMaterializationApprovalExecutionHandoffPolicy.executionJobCreated, false);
+    assert.equal(boundary.packageMaterializationApprovalExecutionHandoffPolicy.executionJobDispatched, false);
+    assert.equal(boundary.packageMaterializationApprovalExecutionHandoffPolicy.fileMaterialization, false);
+    assert.equal(boundary.packageMaterializationApprovalExecutionHandoffPolicy.commandExecution, false);
+    assert.equal(boundary.packageMaterializationApprovalExecutionHandoffPolicy.filesWritten, false);
     assert.ok(boundary.testStrategy.some((item) => item.includes("descriptor tests")));
 });
 
@@ -734,6 +742,18 @@ test("render.thumbnail renderer-service API fixtures define planning requests wi
     assert.equal(fixtures.serviceApi.packageMaterializationApprovalReadinessVerdictPolicy.commandExecution, false);
     assert.equal(fixtures.serviceApi.packageMaterializationApprovalReadinessVerdictPolicy.buildOutput, false);
     assert.equal(fixtures.serviceApi.packageMaterializationApprovalReadinessVerdictPolicy.filesWritten, false);
+    assert.equal(fixtures.serviceApi.packageMaterializationApprovalExecutionHandoffPolicy.executionHandoffVersion, "P25.50");
+    assert.equal(fixtures.serviceApi.packageMaterializationApprovalExecutionHandoffPolicy.handoffPrepared, false);
+    assert.equal(fixtures.serviceApi.packageMaterializationApprovalExecutionHandoffPolicy.handoffQueued, false);
+    assert.equal(fixtures.serviceApi.packageMaterializationApprovalExecutionHandoffPolicy.handoffStored, false);
+    assert.equal(fixtures.serviceApi.packageMaterializationApprovalExecutionHandoffPolicy.executionJobCreated, false);
+    assert.equal(fixtures.serviceApi.packageMaterializationApprovalExecutionHandoffPolicy.executionJobQueued, false);
+    assert.equal(fixtures.serviceApi.packageMaterializationApprovalExecutionHandoffPolicy.executionJobDispatched, false);
+    assert.equal(fixtures.serviceApi.packageMaterializationApprovalExecutionHandoffPolicy.materializationReady, false);
+    assert.equal(fixtures.serviceApi.packageMaterializationApprovalExecutionHandoffPolicy.materializationApproved, false);
+    assert.equal(fixtures.serviceApi.packageMaterializationApprovalExecutionHandoffPolicy.commandExecution, false);
+    assert.equal(fixtures.serviceApi.packageMaterializationApprovalExecutionHandoffPolicy.buildOutput, false);
+    assert.equal(fixtures.serviceApi.packageMaterializationApprovalExecutionHandoffPolicy.filesWritten, false);
     assert.deepEqual(fixtures.runtimeRegistration.commandDescriptorAdapters, ["renderer-service"]);
     assert.deepEqual(CommandDescriptors.RENDER_THUMBNAIL.adapters, ["renderer-service"]);
     assert.equal(fixtures.runtimeRegistration.mcpToolRegistered, true);
@@ -1737,6 +1757,72 @@ test("render.thumbnail renderer-service plan exposes dry-run client request whil
     assert.equal(plan.packageMaterializationApprovalReadinessVerdictPolicy.readinessVerdictDecision.canEvaluateBlockers, false);
     assert.equal(plan.packageMaterializationApprovalReadinessVerdictPolicy.readinessVerdictDecision.canGrantFinalApproval, false);
     assert.deepEqual(plan.service.packageMaterializationApprovalReadinessVerdictPolicy, plan.packageMaterializationApprovalReadinessVerdictPolicy);
+    assert.equal(plan.packageMaterializationApprovalExecutionHandoffPolicy.executionHandoffVersion, "P25.50");
+    assert.equal(plan.packageMaterializationApprovalExecutionHandoffPolicy.dryRunOnly, true);
+    assert.equal(plan.packageMaterializationApprovalExecutionHandoffPolicy.approvalRequired, true);
+    assert.equal(plan.packageMaterializationApprovalExecutionHandoffPolicy.approved, false);
+    assert.equal(plan.packageMaterializationApprovalExecutionHandoffPolicy.finalApprovalGranted, false);
+    assert.equal(plan.packageMaterializationApprovalExecutionHandoffPolicy.handoffRequired, true);
+    assert.equal(plan.packageMaterializationApprovalExecutionHandoffPolicy.handoffPlanned, true);
+    assert.equal(plan.packageMaterializationApprovalExecutionHandoffPolicy.handoffPrepared, false);
+    assert.equal(plan.packageMaterializationApprovalExecutionHandoffPolicy.handoffQueued, false);
+    assert.equal(plan.packageMaterializationApprovalExecutionHandoffPolicy.handoffAccepted, false);
+    assert.equal(plan.packageMaterializationApprovalExecutionHandoffPolicy.handoffStored, false);
+    assert.equal(plan.packageMaterializationApprovalExecutionHandoffPolicy.handoffValidated, false);
+    assert.equal(plan.packageMaterializationApprovalExecutionHandoffPolicy.executionJobCreated, false);
+    assert.equal(plan.packageMaterializationApprovalExecutionHandoffPolicy.executionJobQueued, false);
+    assert.equal(plan.packageMaterializationApprovalExecutionHandoffPolicy.executionJobDispatched, false);
+    assert.equal(plan.packageMaterializationApprovalExecutionHandoffPolicy.executionOwnerSelected, false);
+    assert.equal(plan.packageMaterializationApprovalExecutionHandoffPolicy.executionOwnerNotified, false);
+    assert.equal(plan.packageMaterializationApprovalExecutionHandoffPolicy.materializationReady, false);
+    assert.equal(plan.packageMaterializationApprovalExecutionHandoffPolicy.materializationApproved, false);
+    assert.equal(plan.packageMaterializationApprovalExecutionHandoffPolicy.materializationApprovedNow, false);
+    assert.equal(plan.packageMaterializationApprovalExecutionHandoffPolicy.tokenAccepted, false);
+    assert.equal(plan.packageMaterializationApprovalExecutionHandoffPolicy.tokenStored, false);
+    assert.equal(plan.packageMaterializationApprovalExecutionHandoffPolicy.tokenValidated, false);
+    assert.equal(plan.packageMaterializationApprovalExecutionHandoffPolicy.tokenConsumed, false);
+    assert.equal(plan.packageMaterializationApprovalExecutionHandoffPolicy.tokenRevoked, false);
+    assert.equal(plan.packageMaterializationApprovalExecutionHandoffPolicy.executeNow, false);
+    assert.equal(plan.packageMaterializationApprovalExecutionHandoffPolicy.verifyNow, false);
+    assert.equal(plan.packageMaterializationApprovalExecutionHandoffPolicy.rollbackNow, false);
+    assert.equal(plan.packageMaterializationApprovalExecutionHandoffPolicy.dispatch, false);
+    assert.equal(plan.packageMaterializationApprovalExecutionHandoffPolicy.networkDispatch, false);
+    assert.equal(plan.packageMaterializationApprovalExecutionHandoffPolicy.runtimeRegistration, false);
+    assert.equal(plan.packageMaterializationApprovalExecutionHandoffPolicy.localFileWrites, false);
+    assert.equal(plan.packageMaterializationApprovalExecutionHandoffPolicy.hostStartup, false);
+    assert.equal(plan.packageMaterializationApprovalExecutionHandoffPolicy.processSpawn, false);
+    assert.equal(plan.packageMaterializationApprovalExecutionHandoffPolicy.packageCreated, false);
+    assert.equal(plan.packageMaterializationApprovalExecutionHandoffPolicy.workspaceMutation, false);
+    assert.equal(plan.packageMaterializationApprovalExecutionHandoffPolicy.scriptRunnable, false);
+    assert.equal(plan.packageMaterializationApprovalExecutionHandoffPolicy.fileMaterialization, false);
+    assert.equal(plan.packageMaterializationApprovalExecutionHandoffPolicy.lockfileMutation, false);
+    assert.equal(plan.packageMaterializationApprovalExecutionHandoffPolicy.rootPackageJsonMutation, false);
+    assert.equal(plan.packageMaterializationApprovalExecutionHandoffPolicy.pnpmWorkspaceMutation, false);
+    assert.equal(plan.packageMaterializationApprovalExecutionHandoffPolicy.commandExecution, false);
+    assert.equal(plan.packageMaterializationApprovalExecutionHandoffPolicy.buildOutput, false);
+    assert.equal(plan.packageMaterializationApprovalExecutionHandoffPolicy.packageScriptsRunnable, false);
+    assert.equal(plan.packageMaterializationApprovalExecutionHandoffPolicy.filesWritten, false);
+    assert.equal(plan.packageMaterializationApprovalExecutionHandoffPolicy.rollbackExecuted, false);
+    assert.equal(plan.packageMaterializationApprovalExecutionHandoffPolicy.verificationExecuted, false);
+    assert.equal(plan.packageMaterializationApprovalExecutionHandoffPolicy.consumes.packageMaterializationApprovalReadinessVerdictPolicy.readinessVerdictVersion, "P25.49");
+    assert.equal(plan.packageMaterializationApprovalExecutionHandoffPolicy.consumes.packageMaterializationApprovalReadinessVerdictPolicy.readinessVerdictTrusted, false);
+    assert.equal(plan.packageMaterializationApprovalExecutionHandoffPolicy.consumes.packageMaterializationApprovalEmergencyStopPolicy.emergencyStopVersion, "P25.48");
+    assert.equal(plan.packageMaterializationApprovalExecutionHandoffPolicy.consumes.packageMaterializationApprovalEmergencyStopPolicy.emergencyStopChecked, false);
+    assert.equal(plan.packageMaterializationApprovalExecutionHandoffPolicy.consumes.packageMaterializationFinalApprovalChecklist.checklistVersion, "P25.40");
+    assert.equal(plan.packageMaterializationApprovalExecutionHandoffPolicy.consumes.packageMaterializationFinalApprovalChecklist.finalApprovalGranted, false);
+    assert.equal(plan.packageMaterializationApprovalExecutionHandoffPolicy.executionHandoffPolicy.prepareHandoffNow, false);
+    assert.equal(plan.packageMaterializationApprovalExecutionHandoffPolicy.executionHandoffPolicy.validateHandoffNow, false);
+    assert.equal(plan.packageMaterializationApprovalExecutionHandoffPolicy.executionHandoffPolicy.persistHandoffNow, false);
+    assert.equal(plan.packageMaterializationApprovalExecutionHandoffPolicy.executionHandoffPolicy.createExecutionJobNow, false);
+    assert.equal(plan.packageMaterializationApprovalExecutionHandoffPolicy.executionHandoffPolicy.queueExecutionJobNow, false);
+    assert.equal(plan.packageMaterializationApprovalExecutionHandoffPolicy.executionHandoffPolicy.dispatchExecutionNow, false);
+    assert.ok(plan.packageMaterializationApprovalExecutionHandoffPolicy.executionHandoffPolicy.requiredInputs.includes("handoffTarget"));
+    assert.ok(plan.packageMaterializationApprovalExecutionHandoffPolicy.executionHandoffChecks.some((entry) => entry.id === "execution-job-not-created" && entry.executed === false));
+    assert.equal(plan.packageMaterializationApprovalExecutionHandoffPolicy.executionHandoffDecision.canPrepareHandoff, false);
+    assert.equal(plan.packageMaterializationApprovalExecutionHandoffPolicy.executionHandoffDecision.canCreateExecutionJob, false);
+    assert.equal(plan.packageMaterializationApprovalExecutionHandoffPolicy.executionHandoffDecision.canDispatchExecution, false);
+    assert.equal(plan.packageMaterializationApprovalExecutionHandoffPolicy.executionHandoffDecision.canMaterializeFiles, false);
+    assert.deepEqual(plan.service.packageMaterializationApprovalExecutionHandoffPolicy, plan.packageMaterializationApprovalExecutionHandoffPolicy);
     assert.equal(plan.clientRequest.status, "scaffolded");
     assert.equal(plan.clientRequest.dispatch, false);
     assert.equal(plan.clientRequest.method, "POST");
@@ -1802,6 +1888,7 @@ test("render.thumbnail renderer-service plan exposes dry-run client request whil
     assert.equal(plan.diagnostics.packageMaterializationApprovalOperatorConfirmationPolicyVersion, "P25.47");
     assert.equal(plan.diagnostics.packageMaterializationApprovalEmergencyStopPolicyVersion, "P25.48");
     assert.equal(plan.diagnostics.packageMaterializationApprovalReadinessVerdictPolicyVersion, "P25.49");
+    assert.equal(plan.diagnostics.packageMaterializationApprovalExecutionHandoffPolicyVersion, "P25.50");
 });
 
 test("render.thumbnail renderer-service plan reports not-configured availability without endpoint", () => {
@@ -3976,6 +4063,103 @@ test("render.thumbnail renderer-service package materialization approval readine
     assert.equal(readinessVerdictPolicy.readinessVerdictDecision.canMaterializeFiles, false);
     assert.ok(readinessVerdictPolicy.noOpGuarantees.includes("readiness verdict policy plan does not compute readiness verdicts"));
     assert.ok(readinessVerdictPolicy.requiredBeforeRuntimeDispatch.includes("define readiness verdict input schema"));
+});
+
+test("render.thumbnail renderer-service package materialization approval execution handoff policy stays metadata-only", () => {
+    const executionHandoffPolicy = createRenderThumbnailRendererServicePackageMaterializationApprovalExecutionHandoffPolicy({
+        packageMaterializationApprovalReadinessVerdictPolicy: {
+            status: "planned-disabled",
+            readinessVerdictVersion: "P25.49",
+            readinessVerdictTrusted: false,
+            materializationReady: false,
+        },
+        packageMaterializationApprovalEmergencyStopPolicy: {
+            status: "planned-disabled",
+            emergencyStopVersion: "P25.48",
+            emergencyStopChecked: false,
+        },
+        packageMaterializationFinalApprovalChecklist: {
+            status: "planned-disabled",
+            checklistVersion: "P25.40",
+            finalApprovalGranted: false,
+        },
+    });
+
+    assert.equal(executionHandoffPolicy.status, "planned-disabled");
+    assert.equal(executionHandoffPolicy.executionHandoffVersion, "P25.50");
+    assert.equal(executionHandoffPolicy.dryRunOnly, true);
+    assert.equal(executionHandoffPolicy.approvalRequired, true);
+    assert.equal(executionHandoffPolicy.approved, false);
+    assert.equal(executionHandoffPolicy.finalApprovalGranted, false);
+    assert.equal(executionHandoffPolicy.handoffRequired, true);
+    assert.equal(executionHandoffPolicy.handoffPlanned, true);
+    assert.equal(executionHandoffPolicy.handoffPrepared, false);
+    assert.equal(executionHandoffPolicy.handoffQueued, false);
+    assert.equal(executionHandoffPolicy.handoffAccepted, false);
+    assert.equal(executionHandoffPolicy.handoffStored, false);
+    assert.equal(executionHandoffPolicy.handoffValidated, false);
+    assert.equal(executionHandoffPolicy.executionJobCreated, false);
+    assert.equal(executionHandoffPolicy.executionJobQueued, false);
+    assert.equal(executionHandoffPolicy.executionJobDispatched, false);
+    assert.equal(executionHandoffPolicy.executionOwnerSelected, false);
+    assert.equal(executionHandoffPolicy.executionOwnerNotified, false);
+    assert.equal(executionHandoffPolicy.materializationReady, false);
+    assert.equal(executionHandoffPolicy.materializationApproved, false);
+    assert.equal(executionHandoffPolicy.materializationApprovedNow, false);
+    assert.equal(executionHandoffPolicy.tokenAccepted, false);
+    assert.equal(executionHandoffPolicy.tokenStored, false);
+    assert.equal(executionHandoffPolicy.tokenValidated, false);
+    assert.equal(executionHandoffPolicy.tokenConsumed, false);
+    assert.equal(executionHandoffPolicy.tokenRevoked, false);
+    assert.equal(executionHandoffPolicy.executeNow, false);
+    assert.equal(executionHandoffPolicy.verifyNow, false);
+    assert.equal(executionHandoffPolicy.rollbackNow, false);
+    assert.equal(executionHandoffPolicy.dispatch, false);
+    assert.equal(executionHandoffPolicy.networkDispatch, false);
+    assert.equal(executionHandoffPolicy.runtimeRegistration, false);
+    assert.equal(executionHandoffPolicy.localFileWrites, false);
+    assert.equal(executionHandoffPolicy.hostStartup, false);
+    assert.equal(executionHandoffPolicy.processSpawn, false);
+    assert.equal(executionHandoffPolicy.packageCreated, false);
+    assert.equal(executionHandoffPolicy.workspaceMutation, false);
+    assert.equal(executionHandoffPolicy.scriptRunnable, false);
+    assert.equal(executionHandoffPolicy.fileMaterialization, false);
+    assert.equal(executionHandoffPolicy.lockfileMutation, false);
+    assert.equal(executionHandoffPolicy.rootPackageJsonMutation, false);
+    assert.equal(executionHandoffPolicy.pnpmWorkspaceMutation, false);
+    assert.equal(executionHandoffPolicy.commandExecution, false);
+    assert.equal(executionHandoffPolicy.buildOutput, false);
+    assert.equal(executionHandoffPolicy.packageScriptsRunnable, false);
+    assert.equal(executionHandoffPolicy.filesWritten, false);
+    assert.equal(executionHandoffPolicy.rollbackExecuted, false);
+    assert.equal(executionHandoffPolicy.verificationExecuted, false);
+    assert.equal(executionHandoffPolicy.consumes.packageMaterializationApprovalReadinessVerdictPolicy.readinessVerdictVersion, "P25.49");
+    assert.equal(executionHandoffPolicy.consumes.packageMaterializationApprovalReadinessVerdictPolicy.readinessVerdictTrusted, false);
+    assert.equal(executionHandoffPolicy.consumes.packageMaterializationApprovalReadinessVerdictPolicy.materializationReady, false);
+    assert.equal(executionHandoffPolicy.consumes.packageMaterializationApprovalEmergencyStopPolicy.emergencyStopVersion, "P25.48");
+    assert.equal(executionHandoffPolicy.consumes.packageMaterializationApprovalEmergencyStopPolicy.emergencyStopChecked, false);
+    assert.equal(executionHandoffPolicy.consumes.packageMaterializationFinalApprovalChecklist.checklistVersion, "P25.40");
+    assert.equal(executionHandoffPolicy.consumes.packageMaterializationFinalApprovalChecklist.finalApprovalGranted, false);
+    assert.equal(executionHandoffPolicy.executionHandoffPolicy.policy, "handoff-only-after-trusted-readiness-verdict");
+    assert.equal(executionHandoffPolicy.executionHandoffPolicy.prepareHandoffNow, false);
+    assert.equal(executionHandoffPolicy.executionHandoffPolicy.validateHandoffNow, false);
+    assert.equal(executionHandoffPolicy.executionHandoffPolicy.persistHandoffNow, false);
+    assert.equal(executionHandoffPolicy.executionHandoffPolicy.createExecutionJobNow, false);
+    assert.equal(executionHandoffPolicy.executionHandoffPolicy.queueExecutionJobNow, false);
+    assert.equal(executionHandoffPolicy.executionHandoffPolicy.dispatchExecutionNow, false);
+    assert.equal(executionHandoffPolicy.executionHandoffPolicy.handoffPayloadLogged, false);
+    assert.ok(executionHandoffPolicy.executionHandoffPolicy.requiredInputs.includes("trustedReadinessVerdict"));
+    assert.ok(executionHandoffPolicy.executionHandoffChecks.some((entry) => entry.id === "trusted-readiness-verdict-present" && entry.executed === false));
+    assert.equal(executionHandoffPolicy.executionHandoffDecision.canPrepareHandoff, false);
+    assert.equal(executionHandoffPolicy.executionHandoffDecision.canValidateHandoff, false);
+    assert.equal(executionHandoffPolicy.executionHandoffDecision.canPersistHandoff, false);
+    assert.equal(executionHandoffPolicy.executionHandoffDecision.canCreateExecutionJob, false);
+    assert.equal(executionHandoffPolicy.executionHandoffDecision.canQueueExecutionJob, false);
+    assert.equal(executionHandoffPolicy.executionHandoffDecision.canDispatchExecution, false);
+    assert.equal(executionHandoffPolicy.executionHandoffDecision.canMaterializeFiles, false);
+    assert.equal(executionHandoffPolicy.executionHandoffDecision.canEnableRuntimeDispatch, false);
+    assert.ok(executionHandoffPolicy.noOpGuarantees.includes("execution handoff policy plan does not prepare execution handoffs"));
+    assert.ok(executionHandoffPolicy.requiredBeforeRuntimeDispatch.includes("define execution handoff payload schema"));
 });
 
 test("render.thumbnail renderer-service client request scaffold adds MCP audit headers without dispatch", () => {
