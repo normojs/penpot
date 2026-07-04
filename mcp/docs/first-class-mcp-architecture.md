@@ -2588,6 +2588,26 @@ P25.42 render.thumbnail package materialization approval audit trail result:
   `networkDispatch`, `runtimeRegistration`, and `localFileWrites` remain
   `false`.
 
+P25.43 render.thumbnail package materialization approval replay guard result:
+
+- Shared plans include `packageMaterializationApprovalReplayGuard`, defining
+  metadata-only one-time token replay prevention, nonce and scope-hash checks,
+  blocked replay decision, and no-op guarantees.
+- MCP and CLI expose the replay guard plan in dry-run and unavailable
+  execution payloads without executing replay checks, storing nonce/scope hash
+  state, consuming or revoking tokens, accepting tokens, granting approval,
+  creating package directories, writing files, mutating workspace manifests,
+  mutating lockfiles, running commands, emitting build output, starting
+  processes, or registering runtime dispatch.
+- `replayCheckExecuted`, `replayDetected`, `replayRejected`, `nonceStored`,
+  `scopeHashStored`, `tokenAccepted`, `tokenConsumed`, `tokenRevoked`,
+  `approved`, `finalApprovalGranted`, `executeNow`, and `verifyNow` remain
+  `false`, while `filesWritten`, `verificationExecuted`,
+  `fileMaterialization`, `workspaceMutation`, `lockfileMutation`,
+  `commandExecution`, `buildOutput`, `materializationApproved`,
+  `processSpawn`, `packageCreated`, `dispatch`, `networkDispatch`,
+  `runtimeRegistration`, and `localFileWrites` remain `false`.
+
 ### 8.5 Export and Render Tools
 
 May start file-bound and later move to headless:
@@ -2633,7 +2653,8 @@ materialization rollback contract. P25.39 defines disabled package
 materialization verification manifest. P25.40 defines disabled package
 materialization final approval checklist. P25.41 defines disabled package
 materialization explicit approval token. P25.42 defines disabled package
-materialization approval audit trail.
+materialization approval audit trail. P25.43 defines disabled package
+materialization approval replay guard.
 Runtime behavior remains unavailable
 until opt-in config surfaces, renderer-service implementation, workspace
 wiring, health preflight, cache probe, executable client, and tagged-frame

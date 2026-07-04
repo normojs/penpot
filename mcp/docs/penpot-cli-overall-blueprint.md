@@ -1168,6 +1168,26 @@ P25.42 is complete:
    `networkDispatch`, `runtimeRegistration`, and `localFileWrites` remain
    false.
 
+P25.43 is complete:
+
+1. Shared plans include `packageMaterializationApprovalReplayGuard` metadata
+   for future one-time token replay prevention, nonce and scope-hash checks,
+   blocked replay decision, and no-op guarantees.
+2. MCP and CLI expose this replay guard plan in dry-run and unavailable
+   execution payloads without executing replay checks, storing nonce/scope hash
+   state, consuming or revoking tokens, accepting tokens, granting approval,
+   creating package directories, writing files, mutating workspace manifests,
+   mutating lockfiles, running commands, emitting build output, starting
+   processes, or registering runtime dispatch.
+3. `replayCheckExecuted`, `replayDetected`, `replayRejected`, `nonceStored`,
+   `scopeHashStored`, `tokenAccepted`, `tokenConsumed`, `tokenRevoked`,
+   `approved`, `finalApprovalGranted`, `executeNow`, and `verifyNow` remain
+   false, while `filesWritten`, `verificationExecuted`,
+   `fileMaterialization`, `workspaceMutation`, `lockfileMutation`,
+   `commandExecution`, `buildOutput`, `materializationApproved`,
+   `processSpawn`, `packageCreated`, `dispatch`, `networkDispatch`,
+   `runtimeRegistration`, and `localFileWrites` remain false.
+
 Keep manual configuration behavior stable while moving command metadata and
 envelopes; transport-specific formatting should stay at the MCP/CLI edges.
 

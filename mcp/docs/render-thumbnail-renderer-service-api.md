@@ -1,6 +1,6 @@
 # Render Thumbnail Renderer Service API
 
-Status: P25.42 API fixtures, MCP/CLI dry-run/client boundaries, metadata-only
+Status: P25.43 API fixtures, MCP/CLI dry-run/client boundaries, metadata-only
 availability probes, response normalization contracts, disabled client request
 scaffold, closed execution gate, disabled health preflight, and executable
 client harness plus dispatch adapter boundary plans, and opt-in configuration
@@ -25,7 +25,9 @@ final approval checklist metadata without granting approval. P25.41 adds
 package materialization explicit approval token metadata without accepting,
 storing, validating, consuming, or granting approval from a token. P25.42 adds
 package materialization approval audit trail metadata without writing,
-persisting, validating, or exporting audit records.
+persisting, validating, or exporting audit records. P25.43 adds package
+materialization approval replay guard metadata without executing replay checks,
+storing nonce/scope hash state, consuming tokens, or granting approval.
 
 P25.6 selected a dedicated thumbnail renderer service as the future executable
 owner for `render.thumbnail`. This document defines the service-facing request
@@ -259,6 +261,15 @@ approval, file writes, package creation, workspace mutation, lockfile mutation,
 command execution, build output, materialization approval, process startup,
 dispatch, network dispatch, runtime registration, and local file writes
 disabled.
+
+P25.43 defines the package materialization approval replay guard. Plans now
+include `packageMaterializationApprovalReplayGuard`, covering future one-time
+token replay prevention, nonce and scope-hash checks, blocked replay decision,
+and no-op guarantees while keeping replay checks, nonce storage, scope-hash
+storage, token consumption, token revocation, token acceptance, final approval,
+file writes, package creation, workspace mutation, lockfile mutation, command
+execution, build output, materialization approval, process startup, dispatch,
+network dispatch, runtime registration, and local file writes disabled.
 
 ## Service Boundary
 

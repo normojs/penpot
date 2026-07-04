@@ -1167,3 +1167,19 @@ P25.42 adds renderer-service package materialization approval audit trail:
   `processSpawn:false`, `packageCreated:false`, `dispatch:false`,
   `networkDispatch:false`, `runtimeRegistration:false`, and
   `localFileWrites:false`.
+
+P25.43 adds renderer-service package materialization approval replay guard:
+
+- Plans include `packageMaterializationApprovalReplayGuard`, defining the
+  future one-time token replay-prevention contract, nonce and scope-hash
+  checks, blocked replay decision, and no-op guarantees.
+- The replay guard remains planning-only with `replayCheckExecuted:false`,
+  `replayDetected:false`, `replayRejected:false`, `nonceStored:false`,
+  `scopeHashStored:false`, `tokenAccepted:false`, `tokenConsumed:false`,
+  `tokenRevoked:false`, `approved:false`, `finalApprovalGranted:false`,
+  `executeNow:false`, `verifyNow:false`, `filesWritten:false`,
+  `fileMaterialization:false`, `workspaceMutation:false`,
+  `lockfileMutation:false`, `commandExecution:false`, `buildOutput:false`,
+  `materializationApproved:false`, `processSpawn:false`,
+  `packageCreated:false`, `dispatch:false`, `networkDispatch:false`,
+  `runtimeRegistration:false`, and `localFileWrites:false`.

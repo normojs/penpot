@@ -2848,6 +2848,16 @@ test("render thumbnail dry-run returns renderer-service request plan", async () 
         assert.equal(body.data.packageMaterializationApprovalAuditTrail.buildOutput, false);
         assert.equal(body.data.packageMaterializationApprovalAuditTrail.filesWritten, false);
         assert.equal(body.data.packageMaterializationApprovalAuditTrail.approvalDecision.canWriteAuditRecord, false);
+        assert.equal(body.data.packageMaterializationApprovalReplayGuard.replayGuardVersion, "P25.43");
+        assert.equal(body.data.packageMaterializationApprovalReplayGuard.replayCheckExecuted, false);
+        assert.equal(body.data.packageMaterializationApprovalReplayGuard.tokenAccepted, false);
+        assert.equal(body.data.packageMaterializationApprovalReplayGuard.tokenConsumed, false);
+        assert.equal(body.data.packageMaterializationApprovalReplayGuard.approved, false);
+        assert.equal(body.data.packageMaterializationApprovalReplayGuard.finalApprovalGranted, false);
+        assert.equal(body.data.packageMaterializationApprovalReplayGuard.commandExecution, false);
+        assert.equal(body.data.packageMaterializationApprovalReplayGuard.buildOutput, false);
+        assert.equal(body.data.packageMaterializationApprovalReplayGuard.filesWritten, false);
+        assert.equal(body.data.packageMaterializationApprovalReplayGuard.replayDecision.canCheckReplay, false);
         assert.equal(body.data.service.responseNormalization.successStatus, "ok");
         assert.equal(body.data.service.responseNormalization.localFileWrites, false);
         assert.equal(body.data.service.errorShape.code, "renderer_service_error");
@@ -3091,6 +3101,16 @@ test("render thumbnail execution reports renderer-service unavailable without ca
         assert.equal(body.error.data.packageMaterializationApprovalAuditTrail.buildOutput, false);
         assert.equal(body.error.data.packageMaterializationApprovalAuditTrail.filesWritten, false);
         assert.equal(body.error.data.packageMaterializationApprovalAuditTrail.approvalDecision.canWriteAuditRecord, false);
+        assert.equal(body.error.data.packageMaterializationApprovalReplayGuard.replayGuardVersion, "P25.43");
+        assert.equal(body.error.data.packageMaterializationApprovalReplayGuard.replayCheckExecuted, false);
+        assert.equal(body.error.data.packageMaterializationApprovalReplayGuard.tokenAccepted, false);
+        assert.equal(body.error.data.packageMaterializationApprovalReplayGuard.tokenConsumed, false);
+        assert.equal(body.error.data.packageMaterializationApprovalReplayGuard.approved, false);
+        assert.equal(body.error.data.packageMaterializationApprovalReplayGuard.finalApprovalGranted, false);
+        assert.equal(body.error.data.packageMaterializationApprovalReplayGuard.commandExecution, false);
+        assert.equal(body.error.data.packageMaterializationApprovalReplayGuard.buildOutput, false);
+        assert.equal(body.error.data.packageMaterializationApprovalReplayGuard.filesWritten, false);
+        assert.equal(body.error.data.packageMaterializationApprovalReplayGuard.replayDecision.canCheckReplay, false);
         assert.equal(body.error.data.clientRequest.dispatch, false);
         assert.equal(body.error.data.serviceRequest.operation, "thumbnail.render");
     } finally {

@@ -1,6 +1,6 @@
 # Render Thumbnail Contract
 
-Status: P25.4 descriptor contract; P25.42 MCP/CLI renderer-service dry-run
+Status: P25.4 descriptor contract; P25.43 MCP/CLI renderer-service dry-run
 boundaries, metadata-only availability probes, response normalization
 contracts, disabled client request scaffolding, closed execution gate, disabled
 health preflight, executable client harness plan, and dispatch adapter boundary
@@ -25,7 +25,9 @@ final approval checklist metadata without granting approval. P25.41 adds
 package materialization explicit approval token metadata without accepting,
 storing, validating, consuming, or granting approval from a token. P25.42 adds
 package materialization approval audit trail metadata without writing,
-persisting, validating, or exporting audit records.
+persisting, validating, or exporting audit records. P25.43 adds package
+materialization approval replay guard metadata without executing replay checks,
+storing nonce/scope hash state, consuming tokens, or granting approval.
 
 This document defines the `render.thumbnail` contract before executable MCP or
 CLI rendering is enabled. The contract follows Penpot's existing dashboard
@@ -356,6 +358,22 @@ Shared contract shape:
   `lockfileMutation:false`, `commandExecution:false`, `buildOutput:false`,
   `materializationApproved:false`, `runtimeRegistration:false`, and
   `localFileWrites:false`.
+- P25.43 package materialization approval replay guard fields are
+  planning-only. They define future one-time token replay prevention, nonce and
+  scope-hash checks, blocked replay decision, and no-op guarantees while
+  keeping
+  `packageMaterializationApprovalReplayGuard.replayCheckExecuted:false`,
+  `packageMaterializationApprovalReplayGuard.replayDetected:false`,
+  `packageMaterializationApprovalReplayGuard.replayRejected:false`,
+  `packageMaterializationApprovalReplayGuard.nonceStored:false`,
+  `packageMaterializationApprovalReplayGuard.scopeHashStored:false`,
+  `tokenAccepted:false`, `tokenConsumed:false`, `tokenRevoked:false`,
+  `approved:false`, `finalApprovalGranted:false`, `filesWritten:false`,
+  `verificationExecuted:false`, `fileMaterialization:false`,
+  `workspaceMutation:false`, `lockfileMutation:false`,
+  `commandExecution:false`, `buildOutput:false`,
+  `materializationApproved:false`, `runtimeRegistration:false`, and
+  `localFileWrites:false`.
 - Exporter service execution is out of scope for this command unless a later
   task explicitly maps thumbnail rendering to exporter-compatible semantics.
 - P25.6 selects a future dedicated thumbnail renderer service as the executable
@@ -370,7 +388,7 @@ See `render-thumbnail-runtime-boundary.md` and
 audit, resource-return rules, cache refresh behavior, auth expectations, and
 future test strategy.
 See `render-thumbnail-renderer-service-api.md` and
-`render-thumbnail-renderer-service-fixtures.json` for the P25.42 future
+`render-thumbnail-renderer-service-fixtures.json` for the P25.43 future
 renderer-service request/response API, MCP/CLI dry-run/client boundary, and
 metadata-only availability probe plus response/error normalization and disabled
 client request, execution gate, health preflight, and execution harness

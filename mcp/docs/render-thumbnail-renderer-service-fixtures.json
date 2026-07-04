@@ -1,5 +1,5 @@
 {
-  "version": "P25.42",
+  "version": "P25.43",
   "command": "render.thumbnail",
   "status": "renderer-service API fixtures with MCP/CLI dry-run/client boundaries, metadata-only availability probes, response normalization contracts, disabled client request scaffold, explicit execution gate, health preflight plan, executable client harness plan, dispatch adapter boundary, opt-in configuration surfaces, unavailable error taxonomy, integration fixture harness, dispatch registration preflight, disabled executable adapter registration scaffold, disabled adapter registry manifest, final disabled enablement checklist, implementation slice audit, health/no-op contract fixtures, no-op service host scaffold, host lifecycle test fixtures, package manifest scaffold, package creation guardrails, package file templates, and package workspace wiring; runtime execution blocked",
   "adapter": "renderer-service",
@@ -3256,6 +3256,152 @@
         "grant final approval only after audit record write succeeds",
         "keep render.thumbnail unavailable until executable adapter registration is approved"
       ]
+    },
+    "packageMaterializationApprovalReplayGuard": {
+      "status": "planned-disabled",
+      "replayGuardVersion": "P25.43",
+      "adapter": "renderer-service",
+      "command": "render.thumbnail",
+      "dryRunOnly": true,
+      "approvalRequired": true,
+      "approved": false,
+      "finalApprovalGranted": false,
+      "replayGuardRequired": true,
+      "replayCheckPlanned": true,
+      "replayCheckExecuted": false,
+      "replayDetected": false,
+      "replayRejected": false,
+      "tokenAccepted": false,
+      "tokenStored": false,
+      "tokenValidated": false,
+      "tokenConsumed": false,
+      "tokenRevoked": false,
+      "nonceStored": false,
+      "scopeHashStored": false,
+      "executeNow": false,
+      "verifyNow": false,
+      "rollbackNow": false,
+      "dispatch": false,
+      "networkDispatch": false,
+      "runtimeRegistration": false,
+      "localFileWrites": false,
+      "hostStartup": false,
+      "processSpawn": false,
+      "packageCreated": false,
+      "workspaceMutation": false,
+      "scriptRunnable": false,
+      "fileMaterialization": false,
+      "lockfileMutation": false,
+      "rootPackageJsonMutation": false,
+      "pnpmWorkspaceMutation": false,
+      "commandExecution": false,
+      "buildOutput": false,
+      "packageScriptsRunnable": false,
+      "materializationApproved": false,
+      "materializationApprovedNow": false,
+      "filesWritten": false,
+      "rollbackExecuted": false,
+      "verificationExecuted": false,
+      "consumes": {
+        "packageMaterializationApprovalAuditTrail": {
+          "requiredStatus": "planned-disabled",
+          "currentStatus": "planned-disabled",
+          "auditTrailVersion": "P25.42",
+          "auditRecordWritten": false
+        },
+        "packageMaterializationExplicitApprovalToken": {
+          "requiredStatus": "planned-disabled",
+          "currentStatus": "planned-disabled",
+          "tokenVersion": "P25.41",
+          "tokenAccepted": false,
+          "tokenValidated": false
+        },
+        "packageMaterializationFinalApprovalChecklist": {
+          "requiredStatus": "planned-disabled",
+          "currentStatus": "planned-disabled",
+          "checklistVersion": "P25.40",
+          "finalApprovalGranted": false
+        }
+      },
+      "replayGuardContract": {
+        "strategy": "one-time-token-with-scope-hash-and-nonce",
+        "checkNow": false,
+        "storeNonceNow": false,
+        "storeScopeHashNow": false,
+        "consumeTokenNow": false,
+        "rejectReplayNow": false,
+        "tokenValueLogged": false,
+        "requiredInputs": [
+          "tokenId",
+          "tokenNonce",
+          "approvalScopeHash",
+          "taskId",
+          "userId",
+          "expiresAt"
+        ]
+      },
+      "replayChecks": [
+        {
+          "id": "nonce-not-seen",
+          "required": true,
+          "planned": true,
+          "executed": false,
+          "passed": false
+        },
+        {
+          "id": "scope-hash-matches-token",
+          "required": true,
+          "planned": true,
+          "executed": false,
+          "passed": false
+        },
+        {
+          "id": "token-not-consumed",
+          "required": true,
+          "planned": true,
+          "executed": false,
+          "passed": false
+        },
+        {
+          "id": "token-not-expired",
+          "required": true,
+          "planned": true,
+          "executed": false,
+          "passed": false
+        }
+      ],
+      "replayDecision": {
+        "status": "blocked",
+        "canCheckReplay": false,
+        "canRejectReplay": false,
+        "canConsumeToken": false,
+        "canAcceptToken": false,
+        "canGrantFinalApproval": false,
+        "canMaterializeFiles": false,
+        "canEnableRuntimeDispatch": false,
+        "reason": "replay guard is metadata-only and no token has been validated or consumed"
+      },
+      "noOpGuarantees": [
+        "approval replay guard plan does not execute replay checks",
+        "approval replay guard plan does not store nonces",
+        "approval replay guard plan does not store scope hashes",
+        "approval replay guard plan does not consume or revoke tokens",
+        "approval replay guard plan does not accept or validate tokens",
+        "approval replay guard plan does not grant materialization approval",
+        "approval replay guard plan does not create renderer-service directory",
+        "approval replay guard plan does not write package or workspace files",
+        "approval replay guard plan does not mutate lockfiles",
+        "approval replay guard plan does not run verification commands",
+        "approval replay guard plan does not generate build output",
+        "approval replay guard plan does not register runtime dispatch"
+      ],
+      "requiredBeforeRuntimeDispatch": [
+        "validate explicit approval token before replay checks",
+        "verify nonce and scope hash have not been consumed",
+        "write replay outcome into approval audit trail without logging token value",
+        "consume token only after replay guard passes",
+        "keep render.thumbnail unavailable until executable adapter registration is approved"
+      ]
     }
   },
   "registrationGates": {
@@ -3603,8 +3749,8 @@
     "missing token fails before contacting renderer-service"
   ],
   "nextTask": {
-    "id": "P25.43",
-    "title": "Plan renderer-service package materialization approval replay guard",
+    "id": "P25.44",
+    "title": "Plan renderer-service package materialization approval expiry policy",
     "status": "pending"
   }
 }

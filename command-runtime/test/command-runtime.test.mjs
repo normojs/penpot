@@ -44,6 +44,7 @@ import {
     createRenderThumbnailRendererServicePackageMaterializationFinalApprovalChecklist,
     createRenderThumbnailRendererServicePackageMaterializationExplicitApprovalToken,
     createRenderThumbnailRendererServicePackageMaterializationApprovalAuditTrail,
+    createRenderThumbnailRendererServicePackageMaterializationApprovalReplayGuard,
     createRenderThumbnailRendererServicePackageFileTemplates,
     createRenderThumbnailRendererServicePackageManifestScaffold,
     createRenderThumbnailRendererServicePackageMaterializationChecklist,
@@ -645,6 +646,15 @@ test("render.thumbnail renderer-service API fixtures define planning requests wi
     assert.equal(fixtures.serviceApi.packageMaterializationApprovalAuditTrail.commandExecution, false);
     assert.equal(fixtures.serviceApi.packageMaterializationApprovalAuditTrail.buildOutput, false);
     assert.equal(fixtures.serviceApi.packageMaterializationApprovalAuditTrail.filesWritten, false);
+    assert.equal(fixtures.serviceApi.packageMaterializationApprovalReplayGuard.replayGuardVersion, "P25.43");
+    assert.equal(fixtures.serviceApi.packageMaterializationApprovalReplayGuard.replayCheckExecuted, false);
+    assert.equal(fixtures.serviceApi.packageMaterializationApprovalReplayGuard.tokenAccepted, false);
+    assert.equal(fixtures.serviceApi.packageMaterializationApprovalReplayGuard.tokenConsumed, false);
+    assert.equal(fixtures.serviceApi.packageMaterializationApprovalReplayGuard.approved, false);
+    assert.equal(fixtures.serviceApi.packageMaterializationApprovalReplayGuard.finalApprovalGranted, false);
+    assert.equal(fixtures.serviceApi.packageMaterializationApprovalReplayGuard.commandExecution, false);
+    assert.equal(fixtures.serviceApi.packageMaterializationApprovalReplayGuard.buildOutput, false);
+    assert.equal(fixtures.serviceApi.packageMaterializationApprovalReplayGuard.filesWritten, false);
     assert.deepEqual(fixtures.runtimeRegistration.commandDescriptorAdapters, ["renderer-service"]);
     assert.deepEqual(CommandDescriptors.RENDER_THUMBNAIL.adapters, ["renderer-service"]);
     assert.equal(fixtures.runtimeRegistration.mcpToolRegistered, true);
@@ -1290,6 +1300,53 @@ test("render.thumbnail renderer-service plan exposes dry-run client request whil
     assert.equal(plan.packageMaterializationApprovalAuditTrail.approvalDecision.canGrantFinalApproval, false);
     assert.equal(plan.packageMaterializationApprovalAuditTrail.approvalDecision.canMaterializeFiles, false);
     assert.deepEqual(plan.service.packageMaterializationApprovalAuditTrail, plan.packageMaterializationApprovalAuditTrail);
+    assert.equal(plan.packageMaterializationApprovalReplayGuard.replayGuardVersion, "P25.43");
+    assert.equal(plan.packageMaterializationApprovalReplayGuard.dryRunOnly, true);
+    assert.equal(plan.packageMaterializationApprovalReplayGuard.approvalRequired, true);
+    assert.equal(plan.packageMaterializationApprovalReplayGuard.approved, false);
+    assert.equal(plan.packageMaterializationApprovalReplayGuard.finalApprovalGranted, false);
+    assert.equal(plan.packageMaterializationApprovalReplayGuard.replayGuardRequired, true);
+    assert.equal(plan.packageMaterializationApprovalReplayGuard.replayCheckPlanned, true);
+    assert.equal(plan.packageMaterializationApprovalReplayGuard.replayCheckExecuted, false);
+    assert.equal(plan.packageMaterializationApprovalReplayGuard.replayDetected, false);
+    assert.equal(plan.packageMaterializationApprovalReplayGuard.replayRejected, false);
+    assert.equal(plan.packageMaterializationApprovalReplayGuard.tokenAccepted, false);
+    assert.equal(plan.packageMaterializationApprovalReplayGuard.tokenStored, false);
+    assert.equal(plan.packageMaterializationApprovalReplayGuard.tokenValidated, false);
+    assert.equal(plan.packageMaterializationApprovalReplayGuard.tokenConsumed, false);
+    assert.equal(plan.packageMaterializationApprovalReplayGuard.tokenRevoked, false);
+    assert.equal(plan.packageMaterializationApprovalReplayGuard.nonceStored, false);
+    assert.equal(plan.packageMaterializationApprovalReplayGuard.scopeHashStored, false);
+    assert.equal(plan.packageMaterializationApprovalReplayGuard.executeNow, false);
+    assert.equal(plan.packageMaterializationApprovalReplayGuard.verifyNow, false);
+    assert.equal(plan.packageMaterializationApprovalReplayGuard.rollbackNow, false);
+    assert.equal(plan.packageMaterializationApprovalReplayGuard.dispatch, false);
+    assert.equal(plan.packageMaterializationApprovalReplayGuard.networkDispatch, false);
+    assert.equal(plan.packageMaterializationApprovalReplayGuard.runtimeRegistration, false);
+    assert.equal(plan.packageMaterializationApprovalReplayGuard.localFileWrites, false);
+    assert.equal(plan.packageMaterializationApprovalReplayGuard.packageCreated, false);
+    assert.equal(plan.packageMaterializationApprovalReplayGuard.workspaceMutation, false);
+    assert.equal(plan.packageMaterializationApprovalReplayGuard.fileMaterialization, false);
+    assert.equal(plan.packageMaterializationApprovalReplayGuard.lockfileMutation, false);
+    assert.equal(plan.packageMaterializationApprovalReplayGuard.commandExecution, false);
+    assert.equal(plan.packageMaterializationApprovalReplayGuard.buildOutput, false);
+    assert.equal(plan.packageMaterializationApprovalReplayGuard.materializationApproved, false);
+    assert.equal(plan.packageMaterializationApprovalReplayGuard.filesWritten, false);
+    assert.equal(plan.packageMaterializationApprovalReplayGuard.consumes.packageMaterializationApprovalAuditTrail.auditTrailVersion, "P25.42");
+    assert.equal(plan.packageMaterializationApprovalReplayGuard.consumes.packageMaterializationExplicitApprovalToken.tokenVersion, "P25.41");
+    assert.equal(plan.packageMaterializationApprovalReplayGuard.consumes.packageMaterializationFinalApprovalChecklist.checklistVersion, "P25.40");
+    assert.equal(plan.packageMaterializationApprovalReplayGuard.replayGuardContract.checkNow, false);
+    assert.equal(plan.packageMaterializationApprovalReplayGuard.replayGuardContract.storeNonceNow, false);
+    assert.equal(plan.packageMaterializationApprovalReplayGuard.replayGuardContract.consumeTokenNow, false);
+    assert.equal(plan.packageMaterializationApprovalReplayGuard.replayGuardContract.rejectReplayNow, false);
+    assert.equal(plan.packageMaterializationApprovalReplayGuard.replayGuardContract.tokenValueLogged, false);
+    assert.ok(plan.packageMaterializationApprovalReplayGuard.replayGuardContract.requiredInputs.includes("approvalScopeHash"));
+    assert.ok(plan.packageMaterializationApprovalReplayGuard.replayChecks.some((entry) => entry.id === "nonce-not-seen" && entry.executed === false));
+    assert.equal(plan.packageMaterializationApprovalReplayGuard.replayDecision.canCheckReplay, false);
+    assert.equal(plan.packageMaterializationApprovalReplayGuard.replayDecision.canConsumeToken, false);
+    assert.equal(plan.packageMaterializationApprovalReplayGuard.replayDecision.canGrantFinalApproval, false);
+    assert.equal(plan.packageMaterializationApprovalReplayGuard.replayDecision.canMaterializeFiles, false);
+    assert.deepEqual(plan.service.packageMaterializationApprovalReplayGuard, plan.packageMaterializationApprovalReplayGuard);
     assert.equal(plan.clientRequest.status, "scaffolded");
     assert.equal(plan.clientRequest.dispatch, false);
     assert.equal(plan.clientRequest.method, "POST");
@@ -1348,6 +1405,7 @@ test("render.thumbnail renderer-service plan exposes dry-run client request whil
     assert.equal(plan.diagnostics.packageMaterializationFinalApprovalChecklistVersion, "P25.40");
     assert.equal(plan.diagnostics.packageMaterializationExplicitApprovalTokenVersion, "P25.41");
     assert.equal(plan.diagnostics.packageMaterializationApprovalAuditTrailVersion, "P25.42");
+    assert.equal(plan.diagnostics.packageMaterializationApprovalReplayGuardVersion, "P25.43");
 });
 
 test("render.thumbnail renderer-service plan reports not-configured availability without endpoint", () => {
@@ -2886,6 +2944,91 @@ test("render.thumbnail renderer-service package materialization approval audit t
     assert.equal(auditTrail.approvalDecision.canRunVerification, false);
     assert.ok(auditTrail.noOpGuarantees.includes("approval audit trail plan does not write audit records"));
     assert.ok(auditTrail.requiredBeforeRuntimeDispatch.includes("write append-only audit record without logging token value"));
+});
+
+test("render.thumbnail renderer-service package materialization approval replay guard stays metadata-only", () => {
+    const replayGuard = createRenderThumbnailRendererServicePackageMaterializationApprovalReplayGuard({
+        packageMaterializationApprovalAuditTrail: {
+            status: "planned-disabled",
+            auditTrailVersion: "P25.42",
+            auditRecordWritten: false,
+        },
+        packageMaterializationExplicitApprovalToken: {
+            status: "planned-disabled",
+            tokenVersion: "P25.41",
+            tokenAccepted: false,
+            tokenValidated: false,
+        },
+        packageMaterializationFinalApprovalChecklist: {
+            status: "planned-disabled",
+            checklistVersion: "P25.40",
+            finalApprovalGranted: false,
+        },
+    });
+
+    assert.equal(replayGuard.status, "planned-disabled");
+    assert.equal(replayGuard.replayGuardVersion, "P25.43");
+    assert.equal(replayGuard.dryRunOnly, true);
+    assert.equal(replayGuard.approvalRequired, true);
+    assert.equal(replayGuard.approved, false);
+    assert.equal(replayGuard.finalApprovalGranted, false);
+    assert.equal(replayGuard.replayGuardRequired, true);
+    assert.equal(replayGuard.replayCheckPlanned, true);
+    assert.equal(replayGuard.replayCheckExecuted, false);
+    assert.equal(replayGuard.replayDetected, false);
+    assert.equal(replayGuard.replayRejected, false);
+    assert.equal(replayGuard.tokenAccepted, false);
+    assert.equal(replayGuard.tokenStored, false);
+    assert.equal(replayGuard.tokenValidated, false);
+    assert.equal(replayGuard.tokenConsumed, false);
+    assert.equal(replayGuard.tokenRevoked, false);
+    assert.equal(replayGuard.nonceStored, false);
+    assert.equal(replayGuard.scopeHashStored, false);
+    assert.equal(replayGuard.executeNow, false);
+    assert.equal(replayGuard.verifyNow, false);
+    assert.equal(replayGuard.rollbackNow, false);
+    assert.equal(replayGuard.dispatch, false);
+    assert.equal(replayGuard.networkDispatch, false);
+    assert.equal(replayGuard.runtimeRegistration, false);
+    assert.equal(replayGuard.localFileWrites, false);
+    assert.equal(replayGuard.hostStartup, false);
+    assert.equal(replayGuard.processSpawn, false);
+    assert.equal(replayGuard.packageCreated, false);
+    assert.equal(replayGuard.workspaceMutation, false);
+    assert.equal(replayGuard.scriptRunnable, false);
+    assert.equal(replayGuard.fileMaterialization, false);
+    assert.equal(replayGuard.lockfileMutation, false);
+    assert.equal(replayGuard.rootPackageJsonMutation, false);
+    assert.equal(replayGuard.pnpmWorkspaceMutation, false);
+    assert.equal(replayGuard.commandExecution, false);
+    assert.equal(replayGuard.buildOutput, false);
+    assert.equal(replayGuard.packageScriptsRunnable, false);
+    assert.equal(replayGuard.materializationApproved, false);
+    assert.equal(replayGuard.filesWritten, false);
+    assert.equal(replayGuard.rollbackExecuted, false);
+    assert.equal(replayGuard.verificationExecuted, false);
+    assert.equal(replayGuard.consumes.packageMaterializationApprovalAuditTrail.auditTrailVersion, "P25.42");
+    assert.equal(replayGuard.consumes.packageMaterializationApprovalAuditTrail.auditRecordWritten, false);
+    assert.equal(replayGuard.consumes.packageMaterializationExplicitApprovalToken.tokenVersion, "P25.41");
+    assert.equal(replayGuard.consumes.packageMaterializationExplicitApprovalToken.tokenAccepted, false);
+    assert.equal(replayGuard.consumes.packageMaterializationFinalApprovalChecklist.checklistVersion, "P25.40");
+    assert.equal(replayGuard.replayGuardContract.strategy, "one-time-token-with-scope-hash-and-nonce");
+    assert.equal(replayGuard.replayGuardContract.checkNow, false);
+    assert.equal(replayGuard.replayGuardContract.storeNonceNow, false);
+    assert.equal(replayGuard.replayGuardContract.storeScopeHashNow, false);
+    assert.equal(replayGuard.replayGuardContract.consumeTokenNow, false);
+    assert.equal(replayGuard.replayGuardContract.rejectReplayNow, false);
+    assert.equal(replayGuard.replayGuardContract.tokenValueLogged, false);
+    assert.ok(replayGuard.replayGuardContract.requiredInputs.includes("tokenNonce"));
+    assert.ok(replayGuard.replayChecks.some((entry) => entry.id === "token-not-consumed" && entry.executed === false));
+    assert.equal(replayGuard.replayDecision.canCheckReplay, false);
+    assert.equal(replayGuard.replayDecision.canRejectReplay, false);
+    assert.equal(replayGuard.replayDecision.canConsumeToken, false);
+    assert.equal(replayGuard.replayDecision.canAcceptToken, false);
+    assert.equal(replayGuard.replayDecision.canGrantFinalApproval, false);
+    assert.equal(replayGuard.replayDecision.canMaterializeFiles, false);
+    assert.ok(replayGuard.noOpGuarantees.includes("approval replay guard plan does not execute replay checks"));
+    assert.ok(replayGuard.requiredBeforeRuntimeDispatch.includes("verify nonce and scope hash have not been consumed"));
 });
 
 test("render.thumbnail renderer-service client request scaffold adds MCP audit headers without dispatch", () => {
