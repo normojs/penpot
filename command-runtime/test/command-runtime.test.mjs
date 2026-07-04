@@ -50,6 +50,7 @@ import {
     createRenderThumbnailRendererServicePackageMaterializationApprovalScopeBindingPolicy,
     createRenderThumbnailRendererServicePackageMaterializationApprovalOperatorConfirmationPolicy,
     createRenderThumbnailRendererServicePackageMaterializationApprovalEmergencyStopPolicy,
+    createRenderThumbnailRendererServicePackageMaterializationApprovalReadinessVerdictPolicy,
     createRenderThumbnailRendererServicePackageFileTemplates,
     createRenderThumbnailRendererServicePackageManifestScaffold,
     createRenderThumbnailRendererServicePackageMaterializationChecklist,
@@ -719,6 +720,20 @@ test("render.thumbnail renderer-service API fixtures define planning requests wi
     assert.equal(fixtures.serviceApi.packageMaterializationApprovalEmergencyStopPolicy.commandExecution, false);
     assert.equal(fixtures.serviceApi.packageMaterializationApprovalEmergencyStopPolicy.buildOutput, false);
     assert.equal(fixtures.serviceApi.packageMaterializationApprovalEmergencyStopPolicy.filesWritten, false);
+    assert.equal(fixtures.serviceApi.packageMaterializationApprovalReadinessVerdictPolicy.readinessVerdictVersion, "P25.49");
+    assert.equal(fixtures.serviceApi.packageMaterializationApprovalReadinessVerdictPolicy.readinessVerdictComputed, false);
+    assert.equal(fixtures.serviceApi.packageMaterializationApprovalReadinessVerdictPolicy.readinessVerdictStored, false);
+    assert.equal(fixtures.serviceApi.packageMaterializationApprovalReadinessVerdictPolicy.readinessVerdictTrusted, false);
+    assert.equal(fixtures.serviceApi.packageMaterializationApprovalReadinessVerdictPolicy.readinessInputsValidated, false);
+    assert.equal(fixtures.serviceApi.packageMaterializationApprovalReadinessVerdictPolicy.readinessBlockersEvaluated, false);
+    assert.equal(fixtures.serviceApi.packageMaterializationApprovalReadinessVerdictPolicy.materializationReady, false);
+    assert.equal(fixtures.serviceApi.packageMaterializationApprovalReadinessVerdictPolicy.tokenAccepted, false);
+    assert.equal(fixtures.serviceApi.packageMaterializationApprovalReadinessVerdictPolicy.tokenValidated, false);
+    assert.equal(fixtures.serviceApi.packageMaterializationApprovalReadinessVerdictPolicy.approved, false);
+    assert.equal(fixtures.serviceApi.packageMaterializationApprovalReadinessVerdictPolicy.finalApprovalGranted, false);
+    assert.equal(fixtures.serviceApi.packageMaterializationApprovalReadinessVerdictPolicy.commandExecution, false);
+    assert.equal(fixtures.serviceApi.packageMaterializationApprovalReadinessVerdictPolicy.buildOutput, false);
+    assert.equal(fixtures.serviceApi.packageMaterializationApprovalReadinessVerdictPolicy.filesWritten, false);
     assert.deepEqual(fixtures.runtimeRegistration.commandDescriptorAdapters, ["renderer-service"]);
     assert.deepEqual(CommandDescriptors.RENDER_THUMBNAIL.adapters, ["renderer-service"]);
     assert.equal(fixtures.runtimeRegistration.mcpToolRegistered, true);
@@ -1665,6 +1680,63 @@ test("render.thumbnail renderer-service plan exposes dry-run client request whil
     assert.equal(plan.packageMaterializationApprovalEmergencyStopPolicy.emergencyStopDecision.canTrustStopState, false);
     assert.equal(plan.packageMaterializationApprovalEmergencyStopPolicy.emergencyStopDecision.canGrantFinalApproval, false);
     assert.deepEqual(plan.service.packageMaterializationApprovalEmergencyStopPolicy, plan.packageMaterializationApprovalEmergencyStopPolicy);
+    assert.equal(plan.packageMaterializationApprovalReadinessVerdictPolicy.readinessVerdictVersion, "P25.49");
+    assert.equal(plan.packageMaterializationApprovalReadinessVerdictPolicy.dryRunOnly, true);
+    assert.equal(plan.packageMaterializationApprovalReadinessVerdictPolicy.approvalRequired, true);
+    assert.equal(plan.packageMaterializationApprovalReadinessVerdictPolicy.approved, false);
+    assert.equal(plan.packageMaterializationApprovalReadinessVerdictPolicy.finalApprovalGranted, false);
+    assert.equal(plan.packageMaterializationApprovalReadinessVerdictPolicy.readinessVerdictRequired, true);
+    assert.equal(plan.packageMaterializationApprovalReadinessVerdictPolicy.readinessVerdictPlanned, true);
+    assert.equal(plan.packageMaterializationApprovalReadinessVerdictPolicy.readinessVerdictComputed, false);
+    assert.equal(plan.packageMaterializationApprovalReadinessVerdictPolicy.readinessVerdictStored, false);
+    assert.equal(plan.packageMaterializationApprovalReadinessVerdictPolicy.readinessVerdictTrusted, false);
+    assert.equal(plan.packageMaterializationApprovalReadinessVerdictPolicy.readinessVerdictApproved, false);
+    assert.equal(plan.packageMaterializationApprovalReadinessVerdictPolicy.readinessVerdictRejected, false);
+    assert.equal(plan.packageMaterializationApprovalReadinessVerdictPolicy.readinessVerdictAuditLinked, false);
+    assert.equal(plan.packageMaterializationApprovalReadinessVerdictPolicy.readinessInputsCollected, false);
+    assert.equal(plan.packageMaterializationApprovalReadinessVerdictPolicy.readinessInputsValidated, false);
+    assert.equal(plan.packageMaterializationApprovalReadinessVerdictPolicy.readinessBlockersEvaluated, false);
+    assert.equal(plan.packageMaterializationApprovalReadinessVerdictPolicy.readinessBlockersCleared, false);
+    assert.equal(plan.packageMaterializationApprovalReadinessVerdictPolicy.emergencyStopCleared, false);
+    assert.equal(plan.packageMaterializationApprovalReadinessVerdictPolicy.operatorConfirmationSatisfied, false);
+    assert.equal(plan.packageMaterializationApprovalReadinessVerdictPolicy.finalChecklistSatisfied, false);
+    assert.equal(plan.packageMaterializationApprovalReadinessVerdictPolicy.materializationReady, false);
+    assert.equal(plan.packageMaterializationApprovalReadinessVerdictPolicy.tokenAccepted, false);
+    assert.equal(plan.packageMaterializationApprovalReadinessVerdictPolicy.tokenStored, false);
+    assert.equal(plan.packageMaterializationApprovalReadinessVerdictPolicy.tokenValidated, false);
+    assert.equal(plan.packageMaterializationApprovalReadinessVerdictPolicy.tokenConsumed, false);
+    assert.equal(plan.packageMaterializationApprovalReadinessVerdictPolicy.tokenRevoked, false);
+    assert.equal(plan.packageMaterializationApprovalReadinessVerdictPolicy.executeNow, false);
+    assert.equal(plan.packageMaterializationApprovalReadinessVerdictPolicy.verifyNow, false);
+    assert.equal(plan.packageMaterializationApprovalReadinessVerdictPolicy.rollbackNow, false);
+    assert.equal(plan.packageMaterializationApprovalReadinessVerdictPolicy.dispatch, false);
+    assert.equal(plan.packageMaterializationApprovalReadinessVerdictPolicy.networkDispatch, false);
+    assert.equal(plan.packageMaterializationApprovalReadinessVerdictPolicy.runtimeRegistration, false);
+    assert.equal(plan.packageMaterializationApprovalReadinessVerdictPolicy.localFileWrites, false);
+    assert.equal(plan.packageMaterializationApprovalReadinessVerdictPolicy.packageCreated, false);
+    assert.equal(plan.packageMaterializationApprovalReadinessVerdictPolicy.workspaceMutation, false);
+    assert.equal(plan.packageMaterializationApprovalReadinessVerdictPolicy.fileMaterialization, false);
+    assert.equal(plan.packageMaterializationApprovalReadinessVerdictPolicy.lockfileMutation, false);
+    assert.equal(plan.packageMaterializationApprovalReadinessVerdictPolicy.commandExecution, false);
+    assert.equal(plan.packageMaterializationApprovalReadinessVerdictPolicy.buildOutput, false);
+    assert.equal(plan.packageMaterializationApprovalReadinessVerdictPolicy.materializationApproved, false);
+    assert.equal(plan.packageMaterializationApprovalReadinessVerdictPolicy.filesWritten, false);
+    assert.equal(plan.packageMaterializationApprovalReadinessVerdictPolicy.consumes.packageMaterializationApprovalEmergencyStopPolicy.emergencyStopVersion, "P25.48");
+    assert.equal(plan.packageMaterializationApprovalReadinessVerdictPolicy.consumes.packageMaterializationApprovalOperatorConfirmationPolicy.operatorConfirmationVersion, "P25.47");
+    assert.equal(plan.packageMaterializationApprovalReadinessVerdictPolicy.consumes.packageMaterializationFinalApprovalChecklist.checklistVersion, "P25.40");
+    assert.equal(plan.packageMaterializationApprovalReadinessVerdictPolicy.readinessVerdictPolicy.computeVerdictNow, false);
+    assert.equal(plan.packageMaterializationApprovalReadinessVerdictPolicy.readinessVerdictPolicy.validateInputsNow, false);
+    assert.equal(plan.packageMaterializationApprovalReadinessVerdictPolicy.readinessVerdictPolicy.evaluateBlockersNow, false);
+    assert.equal(plan.packageMaterializationApprovalReadinessVerdictPolicy.readinessVerdictPolicy.persistVerdictNow, false);
+    assert.equal(plan.packageMaterializationApprovalReadinessVerdictPolicy.readinessVerdictPolicy.trustVerdictNow, false);
+    assert.equal(plan.packageMaterializationApprovalReadinessVerdictPolicy.readinessVerdictPolicy.grantApprovalNow, false);
+    assert.ok(plan.packageMaterializationApprovalReadinessVerdictPolicy.readinessVerdictPolicy.requiredInputs.includes("emergencyStopState"));
+    assert.ok(plan.packageMaterializationApprovalReadinessVerdictPolicy.readinessVerdictChecks.some((entry) => entry.id === "readiness-verdict-audit-linked" && entry.executed === false));
+    assert.equal(plan.packageMaterializationApprovalReadinessVerdictPolicy.readinessVerdictDecision.canComputeVerdict, false);
+    assert.equal(plan.packageMaterializationApprovalReadinessVerdictPolicy.readinessVerdictDecision.canValidateInputs, false);
+    assert.equal(plan.packageMaterializationApprovalReadinessVerdictPolicy.readinessVerdictDecision.canEvaluateBlockers, false);
+    assert.equal(plan.packageMaterializationApprovalReadinessVerdictPolicy.readinessVerdictDecision.canGrantFinalApproval, false);
+    assert.deepEqual(plan.service.packageMaterializationApprovalReadinessVerdictPolicy, plan.packageMaterializationApprovalReadinessVerdictPolicy);
     assert.equal(plan.clientRequest.status, "scaffolded");
     assert.equal(plan.clientRequest.dispatch, false);
     assert.equal(plan.clientRequest.method, "POST");
@@ -1729,6 +1801,7 @@ test("render.thumbnail renderer-service plan exposes dry-run client request whil
     assert.equal(plan.diagnostics.packageMaterializationApprovalScopeBindingPolicyVersion, "P25.46");
     assert.equal(plan.diagnostics.packageMaterializationApprovalOperatorConfirmationPolicyVersion, "P25.47");
     assert.equal(plan.diagnostics.packageMaterializationApprovalEmergencyStopPolicyVersion, "P25.48");
+    assert.equal(plan.diagnostics.packageMaterializationApprovalReadinessVerdictPolicyVersion, "P25.49");
 });
 
 test("render.thumbnail renderer-service plan reports not-configured availability without endpoint", () => {
@@ -3808,6 +3881,101 @@ test("render.thumbnail renderer-service package materialization approval emergen
     assert.equal(emergencyStopPolicy.emergencyStopDecision.canMaterializeFiles, false);
     assert.ok(emergencyStopPolicy.noOpGuarantees.includes("emergency stop policy plan does not fetch stop registries"));
     assert.ok(emergencyStopPolicy.requiredBeforeRuntimeDispatch.includes("define emergency stop source and scope"));
+});
+
+test("render.thumbnail renderer-service package materialization approval readiness verdict policy stays metadata-only", () => {
+    const readinessVerdictPolicy = createRenderThumbnailRendererServicePackageMaterializationApprovalReadinessVerdictPolicy({
+        packageMaterializationApprovalEmergencyStopPolicy: {
+            status: "planned-disabled",
+            emergencyStopVersion: "P25.48",
+            emergencyStopChecked: false,
+            emergencyStopStateTrusted: false,
+        },
+        packageMaterializationApprovalOperatorConfirmationPolicy: {
+            status: "planned-disabled",
+            operatorConfirmationVersion: "P25.47",
+            operatorConfirmationReceived: false,
+        },
+        packageMaterializationFinalApprovalChecklist: {
+            status: "planned-disabled",
+            checklistVersion: "P25.40",
+            finalApprovalGranted: false,
+        },
+    });
+
+    assert.equal(readinessVerdictPolicy.status, "planned-disabled");
+    assert.equal(readinessVerdictPolicy.readinessVerdictVersion, "P25.49");
+    assert.equal(readinessVerdictPolicy.dryRunOnly, true);
+    assert.equal(readinessVerdictPolicy.approvalRequired, true);
+    assert.equal(readinessVerdictPolicy.approved, false);
+    assert.equal(readinessVerdictPolicy.finalApprovalGranted, false);
+    assert.equal(readinessVerdictPolicy.readinessVerdictRequired, true);
+    assert.equal(readinessVerdictPolicy.readinessVerdictPlanned, true);
+    assert.equal(readinessVerdictPolicy.readinessVerdictComputed, false);
+    assert.equal(readinessVerdictPolicy.readinessVerdictStored, false);
+    assert.equal(readinessVerdictPolicy.readinessVerdictTrusted, false);
+    assert.equal(readinessVerdictPolicy.readinessVerdictApproved, false);
+    assert.equal(readinessVerdictPolicy.readinessVerdictRejected, false);
+    assert.equal(readinessVerdictPolicy.readinessVerdictAuditLinked, false);
+    assert.equal(readinessVerdictPolicy.readinessInputsCollected, false);
+    assert.equal(readinessVerdictPolicy.readinessInputsValidated, false);
+    assert.equal(readinessVerdictPolicy.readinessBlockersEvaluated, false);
+    assert.equal(readinessVerdictPolicy.readinessBlockersCleared, false);
+    assert.equal(readinessVerdictPolicy.emergencyStopCleared, false);
+    assert.equal(readinessVerdictPolicy.operatorConfirmationSatisfied, false);
+    assert.equal(readinessVerdictPolicy.finalChecklistSatisfied, false);
+    assert.equal(readinessVerdictPolicy.materializationReady, false);
+    assert.equal(readinessVerdictPolicy.tokenAccepted, false);
+    assert.equal(readinessVerdictPolicy.tokenStored, false);
+    assert.equal(readinessVerdictPolicy.tokenValidated, false);
+    assert.equal(readinessVerdictPolicy.tokenConsumed, false);
+    assert.equal(readinessVerdictPolicy.tokenRevoked, false);
+    assert.equal(readinessVerdictPolicy.executeNow, false);
+    assert.equal(readinessVerdictPolicy.verifyNow, false);
+    assert.equal(readinessVerdictPolicy.rollbackNow, false);
+    assert.equal(readinessVerdictPolicy.dispatch, false);
+    assert.equal(readinessVerdictPolicy.networkDispatch, false);
+    assert.equal(readinessVerdictPolicy.runtimeRegistration, false);
+    assert.equal(readinessVerdictPolicy.localFileWrites, false);
+    assert.equal(readinessVerdictPolicy.hostStartup, false);
+    assert.equal(readinessVerdictPolicy.processSpawn, false);
+    assert.equal(readinessVerdictPolicy.packageCreated, false);
+    assert.equal(readinessVerdictPolicy.workspaceMutation, false);
+    assert.equal(readinessVerdictPolicy.scriptRunnable, false);
+    assert.equal(readinessVerdictPolicy.fileMaterialization, false);
+    assert.equal(readinessVerdictPolicy.lockfileMutation, false);
+    assert.equal(readinessVerdictPolicy.rootPackageJsonMutation, false);
+    assert.equal(readinessVerdictPolicy.pnpmWorkspaceMutation, false);
+    assert.equal(readinessVerdictPolicy.commandExecution, false);
+    assert.equal(readinessVerdictPolicy.buildOutput, false);
+    assert.equal(readinessVerdictPolicy.packageScriptsRunnable, false);
+    assert.equal(readinessVerdictPolicy.materializationApproved, false);
+    assert.equal(readinessVerdictPolicy.filesWritten, false);
+    assert.equal(readinessVerdictPolicy.rollbackExecuted, false);
+    assert.equal(readinessVerdictPolicy.verificationExecuted, false);
+    assert.equal(readinessVerdictPolicy.consumes.packageMaterializationApprovalEmergencyStopPolicy.emergencyStopVersion, "P25.48");
+    assert.equal(readinessVerdictPolicy.consumes.packageMaterializationApprovalEmergencyStopPolicy.emergencyStopChecked, false);
+    assert.equal(readinessVerdictPolicy.consumes.packageMaterializationApprovalOperatorConfirmationPolicy.operatorConfirmationVersion, "P25.47");
+    assert.equal(readinessVerdictPolicy.consumes.packageMaterializationApprovalOperatorConfirmationPolicy.operatorConfirmationReceived, false);
+    assert.equal(readinessVerdictPolicy.consumes.packageMaterializationFinalApprovalChecklist.checklistVersion, "P25.40");
+    assert.equal(readinessVerdictPolicy.readinessVerdictPolicy.policy, "require-all-materialization-approval-readiness-inputs");
+    assert.equal(readinessVerdictPolicy.readinessVerdictPolicy.computeVerdictNow, false);
+    assert.equal(readinessVerdictPolicy.readinessVerdictPolicy.validateInputsNow, false);
+    assert.equal(readinessVerdictPolicy.readinessVerdictPolicy.evaluateBlockersNow, false);
+    assert.equal(readinessVerdictPolicy.readinessVerdictPolicy.persistVerdictNow, false);
+    assert.equal(readinessVerdictPolicy.readinessVerdictPolicy.trustVerdictNow, false);
+    assert.equal(readinessVerdictPolicy.readinessVerdictPolicy.grantApprovalNow, false);
+    assert.equal(readinessVerdictPolicy.readinessVerdictPolicy.verdictValueLogged, false);
+    assert.ok(readinessVerdictPolicy.readinessVerdictPolicy.requiredInputs.includes("finalApprovalChecklist"));
+    assert.ok(readinessVerdictPolicy.readinessVerdictChecks.some((entry) => entry.id === "emergency-stop-cleared" && entry.executed === false));
+    assert.equal(readinessVerdictPolicy.readinessVerdictDecision.canComputeVerdict, false);
+    assert.equal(readinessVerdictPolicy.readinessVerdictDecision.canValidateInputs, false);
+    assert.equal(readinessVerdictPolicy.readinessVerdictDecision.canEvaluateBlockers, false);
+    assert.equal(readinessVerdictPolicy.readinessVerdictDecision.canTrustVerdict, false);
+    assert.equal(readinessVerdictPolicy.readinessVerdictDecision.canGrantFinalApproval, false);
+    assert.equal(readinessVerdictPolicy.readinessVerdictDecision.canMaterializeFiles, false);
+    assert.ok(readinessVerdictPolicy.noOpGuarantees.includes("readiness verdict policy plan does not compute readiness verdicts"));
+    assert.ok(readinessVerdictPolicy.requiredBeforeRuntimeDispatch.includes("define readiness verdict input schema"));
 });
 
 test("render.thumbnail renderer-service client request scaffold adds MCP audit headers without dispatch", () => {

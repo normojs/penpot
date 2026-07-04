@@ -1312,6 +1312,32 @@ P25.48 is complete:
    `processSpawn`, `packageCreated`, `dispatch`, `networkDispatch`,
    `runtimeRegistration`, and `localFileWrites` remain false.
 
+P25.49 is complete:
+
+1. Shared plans include
+   `packageMaterializationApprovalReadinessVerdictPolicy` metadata for future
+   final readiness inputs, blocker evaluation, trusted verdict, audit linkage,
+   blocked readiness decision, and no-op guarantees.
+2. MCP and CLI expose this readiness verdict policy plan in dry-run and
+   unavailable execution payloads without computing readiness verdicts,
+   validating inputs, evaluating blockers, trusting verdicts, accepting or
+   validating tokens, consuming or revoking tokens, granting approval, creating
+   package directories, writing files, mutating workspace manifests, mutating
+   lockfiles, running commands, emitting build output, starting processes, or
+   registering runtime dispatch.
+3. `readinessVerdictComputed`, `readinessVerdictStored`,
+   `readinessVerdictTrusted`, `readinessVerdictApproved`,
+   `readinessInputsValidated`, `readinessBlockersEvaluated`,
+   `emergencyStopCleared`, `operatorConfirmationSatisfied`,
+   `finalChecklistSatisfied`, `materializationReady`, `tokenAccepted`,
+   `tokenValidated`, `tokenConsumed`, `tokenRevoked`, `approved`,
+   `finalApprovalGranted`, `executeNow`, and `verifyNow` remain false, while
+   `filesWritten`, `verificationExecuted`, `fileMaterialization`,
+   `workspaceMutation`, `lockfileMutation`, `commandExecution`, `buildOutput`,
+   `materializationApproved`, `processSpawn`, `packageCreated`, `dispatch`,
+   `networkDispatch`, `runtimeRegistration`, and `localFileWrites` remain
+   false.
+
 Keep manual configuration behavior stable while moving command metadata and
 envelopes; transport-specific formatting should stay at the MCP/CLI edges.
 

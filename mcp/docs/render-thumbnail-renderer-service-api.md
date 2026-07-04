@@ -1,6 +1,6 @@
 # Render Thumbnail Renderer Service API
 
-Status: P25.48 API fixtures, MCP/CLI dry-run/client boundaries, metadata-only
+Status: P25.49 API fixtures, MCP/CLI dry-run/client boundaries, metadata-only
 availability probes, response normalization contracts, disabled client request
 scaffold, closed execution gate, disabled health preflight, and executable
 client harness plus dispatch adapter boundary plans, and opt-in configuration
@@ -44,7 +44,10 @@ identity, issuing confirmation tokens, accepting/validating tokens, consuming
 tokens, or granting approval. P25.48 adds package materialization approval
 emergency stop policy metadata without configuring or fetching stop registries,
 reading or trusting stop state, accepting stop overrides, accepting/validating
-tokens, consuming tokens, or granting approval.
+tokens, consuming tokens, or granting approval. P25.49 adds package
+materialization approval readiness verdict policy metadata without computing,
+storing, or trusting verdicts, validating readiness inputs, evaluating
+blockers, accepting/validating tokens, consuming tokens, or granting approval.
 
 P25.6 selected a dedicated thumbnail renderer service as the future executable
 owner for `render.thumbnail`. This document defines the service-facing request
@@ -343,6 +346,17 @@ token validation, token acceptance, token consumption, final approval, file
 writes, package creation, workspace mutation, lockfile mutation, command
 execution, build output, materialization approval, process startup, dispatch,
 network dispatch, runtime registration, and local file writes disabled.
+
+P25.49 defines the package materialization approval readiness verdict policy.
+Plans now include `packageMaterializationApprovalReadinessVerdictPolicy`,
+covering future final readiness inputs, blocker evaluation, trusted verdict,
+audit linkage, blocked readiness decision, and no-op guarantees while keeping
+verdict computation/storage/trust, readiness input validation, blocker
+evaluation, token validation, token acceptance, token consumption, final
+approval, file writes, package creation, workspace mutation, lockfile mutation,
+command execution, build output, materialization approval, process startup,
+dispatch, network dispatch, runtime registration, and local file writes
+disabled.
 
 ## Service Boundary
 

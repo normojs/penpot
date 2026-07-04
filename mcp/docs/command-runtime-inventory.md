@@ -138,6 +138,15 @@ keeping `emergencyStopChecked:false`, `emergencyStopFetched:false`,
 `tokenValidated:false`, `approved:false`, `finalApprovalGranted:false`,
 `filesWritten:false`, `commandExecution:false`, and `buildOutput:false`.
 
+P25.49 extends the `render.thumbnail` renderer-service planning payload with
+`packageMaterializationApprovalReadinessVerdictPolicy`. MCP and CLI dry-run and
+unavailable execution payloads expose future readiness verdict metadata while
+keeping `readinessVerdictComputed:false`, `readinessVerdictTrusted:false`,
+`readinessInputsValidated:false`, `readinessBlockersEvaluated:false`,
+`materializationReady:false`, `tokenAccepted:false`, `tokenValidated:false`,
+`approved:false`, `finalApprovalGranted:false`, `filesWritten:false`,
+`commandExecution:false`, and `buildOutput:false`.
+
 ## MCP Tool Names Declared But Not Registered
 
 `ToolNames.ts` already names several planned tools that `PenpotMcpServer` does
@@ -174,7 +183,7 @@ not register yet:
   health/no-op contract fixtures, P25.25 no-op service host scaffold,
   P25.26 host lifecycle test fixtures, P25.27 package manifest scaffold
   metadata, P25.28 package creation guardrails, P25.29 package file
-  templates, P25.30 package workspace wiring, P25.31 package build verification, P25.32 package materialization checklist, P25.33 package creation dry-run summary, P25.34 package creation file manifest, P25.35 package materialization approval gate, P25.36 package materialization execution dry-run, P25.37 package materialization write contract, P25.38 package materialization rollback contract, P25.39 package materialization verification manifest, P25.40 package materialization final approval checklist, P25.41 package materialization explicit approval token, P25.42 package materialization approval audit trail, P25.43 package materialization approval replay guard, P25.44 package materialization approval expiry policy, P25.45 package materialization approval revocation policy, P25.46 package materialization approval scope binding policy, P25.47 package materialization approval operator confirmation policy, and P25.48 package materialization approval emergency stop policy while runtime execution remains
+  templates, P25.30 package workspace wiring, P25.31 package build verification, P25.32 package materialization checklist, P25.33 package creation dry-run summary, P25.34 package creation file manifest, P25.35 package materialization approval gate, P25.36 package materialization execution dry-run, P25.37 package materialization write contract, P25.38 package materialization rollback contract, P25.39 package materialization verification manifest, P25.40 package materialization final approval checklist, P25.41 package materialization explicit approval token, P25.42 package materialization approval audit trail, P25.43 package materialization approval replay guard, P25.44 package materialization approval expiry policy, P25.45 package materialization approval revocation policy, P25.46 package materialization approval scope binding policy, P25.47 package materialization approval operator confirmation policy, P25.48 package materialization approval emergency stop policy, and P25.49 package materialization approval readiness verdict policy while runtime execution remains
   unavailable
 - debug: `debug.get_plugin_state`, `debug.get_agent_logs`
 

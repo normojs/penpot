@@ -1,6 +1,6 @@
 # Render Thumbnail Contract
 
-Status: P25.4 descriptor contract; P25.48 MCP/CLI renderer-service dry-run
+Status: P25.4 descriptor contract; P25.49 MCP/CLI renderer-service dry-run
 boundaries, metadata-only availability probes, response normalization
 contracts, disabled client request scaffolding, closed execution gate, disabled
 health preflight, executable client harness plan, and dispatch adapter boundary
@@ -44,7 +44,10 @@ identity, issuing confirmation tokens, accepting/validating tokens, consuming
 tokens, or granting approval. P25.48 adds package materialization approval
 emergency stop policy metadata without configuring or fetching stop registries,
 reading or trusting stop state, accepting stop overrides, accepting/validating
-tokens, consuming tokens, or granting approval.
+tokens, consuming tokens, or granting approval. P25.49 adds package
+materialization approval readiness verdict policy metadata without computing,
+storing, or trusting verdicts, validating readiness inputs, evaluating
+blockers, accepting/validating tokens, consuming tokens, or granting approval.
 
 This document defines the `render.thumbnail` contract before executable MCP or
 CLI rendering is enabled. The contract follows Penpot's existing dashboard
@@ -481,6 +484,25 @@ Shared contract shape:
   `materializationApproved:false`, `runtimeRegistration:false`, and
   `localFileWrites:false`. They do not configure or fetch stop registries,
   read or trust stop state, accept overrides, grant approval, or accept tokens.
+- P25.49 package materialization approval readiness verdict policy fields are
+  planning-only. They define future final readiness inputs, blocker evaluation,
+  trusted verdict, audit linkage, blocked readiness decision, and no-op
+  guarantees while keeping
+  `packageMaterializationApprovalReadinessVerdictPolicy.readinessVerdictComputed:false`,
+  `packageMaterializationApprovalReadinessVerdictPolicy.readinessVerdictStored:false`,
+  `packageMaterializationApprovalReadinessVerdictPolicy.readinessVerdictTrusted:false`,
+  `packageMaterializationApprovalReadinessVerdictPolicy.readinessInputsValidated:false`,
+  `packageMaterializationApprovalReadinessVerdictPolicy.readinessBlockersEvaluated:false`,
+  `packageMaterializationApprovalReadinessVerdictPolicy.materializationReady:false`,
+  `tokenAccepted:false`, `tokenValidated:false`, `tokenConsumed:false`,
+  `approved:false`, `finalApprovalGranted:false`, `filesWritten:false`,
+  `verificationExecuted:false`, `fileMaterialization:false`,
+  `workspaceMutation:false`, `lockfileMutation:false`,
+  `commandExecution:false`, `buildOutput:false`,
+  `materializationApproved:false`, `runtimeRegistration:false`, and
+  `localFileWrites:false`. They do not compute, store, or trust verdicts,
+  validate readiness inputs, evaluate blockers, grant approval, or accept
+  tokens.
 - Exporter service execution is out of scope for this command unless a later
   task explicitly maps thumbnail rendering to exporter-compatible semantics.
 - P25.6 selects a future dedicated thumbnail renderer service as the executable
@@ -495,7 +517,7 @@ See `render-thumbnail-runtime-boundary.md` and
 audit, resource-return rules, cache refresh behavior, auth expectations, and
 future test strategy.
 See `render-thumbnail-renderer-service-api.md` and
-`render-thumbnail-renderer-service-fixtures.json` for the P25.48 future
+`render-thumbnail-renderer-service-fixtures.json` for the P25.49 future
 renderer-service request/response API, MCP/CLI dry-run/client boundary, and
 metadata-only availability probe plus response/error normalization and disabled
 client request, execution gate, health preflight, and execution harness
@@ -510,7 +532,7 @@ verification, package materialization approval expiry policy, package
 materialization approval revocation policy, package materialization approval
 scope binding policy, and package materialization approval operator
 confirmation policy, and package materialization approval emergency stop
-policy.
+policy, and package materialization approval readiness verdict policy.
 
 ## Fixtures
 

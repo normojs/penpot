@@ -1,7 +1,7 @@
 {
-  "version": "P25.48",
+  "version": "P25.49",
   "command": "render.thumbnail",
-  "status": "runtime boundary audited; MCP/CLI planning, metadata-only availability probes, response normalization contracts, disabled client request scaffold, closed execution gate, health preflight plan, executable client harness plan, dispatch adapter boundary, opt-in configuration surfaces, unavailable error taxonomy, integration fixture harness, dispatch registration preflight, disabled executable adapter registration scaffold, disabled adapter registry manifest, final disabled enablement checklist, implementation slice audit, health/no-op contract fixtures, no-op service host scaffold, host lifecycle test fixtures, package manifest scaffold, package creation guardrails, package file templates, package workspace wiring, package build verification, package materialization checklist, package creation dry-run summary, package creation file manifest, package materialization approval gate, package materialization execution dry-run, package materialization write contract, package materialization rollback contract, package materialization verification manifest, package materialization final approval checklist, package materialization explicit approval token, package materialization approval audit trail, package materialization approval replay guard, package materialization approval expiry policy, package materialization approval revocation policy, package materialization approval scope binding policy, package materialization approval operator confirmation policy, and package materialization approval emergency stop policy registered; runtime execution blocked",
+  "status": "runtime boundary audited; MCP/CLI planning, metadata-only availability probes, response normalization contracts, disabled client request scaffold, closed execution gate, health preflight plan, executable client harness plan, dispatch adapter boundary, opt-in configuration surfaces, unavailable error taxonomy, integration fixture harness, dispatch registration preflight, disabled executable adapter registration scaffold, disabled adapter registry manifest, final disabled enablement checklist, implementation slice audit, health/no-op contract fixtures, no-op service host scaffold, host lifecycle test fixtures, package manifest scaffold, package creation guardrails, package file templates, package workspace wiring, package build verification, package materialization checklist, package creation dry-run summary, package creation file manifest, package materialization approval gate, package materialization execution dry-run, package materialization write contract, package materialization rollback contract, package materialization verification manifest, package materialization final approval checklist, package materialization explicit approval token, package materialization approval audit trail, package materialization approval replay guard, package materialization approval expiry policy, package materialization approval revocation policy, package materialization approval scope binding policy, package materialization approval operator confirmation policy, package materialization approval emergency stop policy, and package materialization approval readiness verdict policy registered; runtime execution blocked",
   "selectedBoundary": "thumbnail-renderer-service",
   "runtimeRegistration": {
     "mcpToolRegistered": true,
@@ -389,8 +389,8 @@
     "package materialization approval emergency stop policy survives dry-run and unavailable execution JSON output"
   ],
   "nextTask": {
-    "id": "P25.49",
-    "title": "Plan renderer-service package materialization approval readiness verdict policy",
+    "id": "P25.50",
+    "title": "Plan renderer-service package materialization approval execution handoff policy",
     "status": "pending"
   },
   "implementationSliceAudit": {
@@ -4124,6 +4124,168 @@
       "fetch and validate trusted emergency stop state before final approval",
       "record emergency stop decision in approval audit trail",
       "deny materialization when emergency stop is active",
+      "keep render.thumbnail unavailable until executable adapter registration is approved"
+    ]
+  },
+  "packageMaterializationApprovalReadinessVerdictPolicy": {
+    "status": "planned-disabled",
+    "readinessVerdictVersion": "P25.49",
+    "adapter": "renderer-service",
+    "command": "render.thumbnail",
+    "dryRunOnly": true,
+    "approvalRequired": true,
+    "approved": false,
+    "finalApprovalGranted": false,
+    "readinessVerdictRequired": true,
+    "readinessVerdictPlanned": true,
+    "readinessVerdictComputed": false,
+    "readinessVerdictStored": false,
+    "readinessVerdictTrusted": false,
+    "readinessVerdictApproved": false,
+    "readinessVerdictRejected": false,
+    "readinessVerdictAuditLinked": false,
+    "readinessInputsCollected": false,
+    "readinessInputsValidated": false,
+    "readinessBlockersEvaluated": false,
+    "readinessBlockersCleared": false,
+    "emergencyStopCleared": false,
+    "operatorConfirmationSatisfied": false,
+    "finalChecklistSatisfied": false,
+    "materializationReady": false,
+    "tokenAccepted": false,
+    "tokenStored": false,
+    "tokenValidated": false,
+    "tokenConsumed": false,
+    "tokenRevoked": false,
+    "executeNow": false,
+    "verifyNow": false,
+    "rollbackNow": false,
+    "dispatch": false,
+    "networkDispatch": false,
+    "runtimeRegistration": false,
+    "localFileWrites": false,
+    "hostStartup": false,
+    "processSpawn": false,
+    "packageCreated": false,
+    "workspaceMutation": false,
+    "scriptRunnable": false,
+    "fileMaterialization": false,
+    "lockfileMutation": false,
+    "rootPackageJsonMutation": false,
+    "pnpmWorkspaceMutation": false,
+    "commandExecution": false,
+    "buildOutput": false,
+    "packageScriptsRunnable": false,
+    "materializationApproved": false,
+    "materializationApprovedNow": false,
+    "filesWritten": false,
+    "rollbackExecuted": false,
+    "verificationExecuted": false,
+    "consumes": {
+      "packageMaterializationApprovalEmergencyStopPolicy": {
+        "requiredStatus": "planned-disabled",
+        "currentStatus": "planned-disabled",
+        "emergencyStopVersion": "P25.48",
+        "emergencyStopChecked": false,
+        "emergencyStopStateTrusted": false
+      },
+      "packageMaterializationApprovalOperatorConfirmationPolicy": {
+        "requiredStatus": "planned-disabled",
+        "currentStatus": "planned-disabled",
+        "operatorConfirmationVersion": "P25.47",
+        "operatorConfirmationReceived": false
+      },
+      "packageMaterializationFinalApprovalChecklist": {
+        "requiredStatus": "planned-disabled",
+        "currentStatus": "planned-disabled",
+        "checklistVersion": "P25.40",
+        "finalApprovalGranted": false
+      }
+    },
+    "readinessVerdictPolicy": {
+      "policy": "require-all-materialization-approval-readiness-inputs",
+      "computeVerdictNow": false,
+      "validateInputsNow": false,
+      "evaluateBlockersNow": false,
+      "persistVerdictNow": false,
+      "trustVerdictNow": false,
+      "grantApprovalNow": false,
+      "requiredInputs": [
+        "finalApprovalChecklist",
+        "operatorConfirmation",
+        "emergencyStopState",
+        "approvalScope"
+      ],
+      "verdictValueLogged": false
+    },
+    "readinessVerdictChecks": [
+      {
+        "id": "final-approval-checklist-satisfied",
+        "required": true,
+        "planned": true,
+        "executed": false,
+        "passed": false
+      },
+      {
+        "id": "operator-confirmation-satisfied",
+        "required": true,
+        "planned": true,
+        "executed": false,
+        "passed": false
+      },
+      {
+        "id": "emergency-stop-cleared",
+        "required": true,
+        "planned": true,
+        "executed": false,
+        "passed": false
+      },
+      {
+        "id": "approval-scope-bound",
+        "required": true,
+        "planned": true,
+        "executed": false,
+        "passed": false
+      },
+      {
+        "id": "readiness-verdict-audit-linked",
+        "required": true,
+        "planned": true,
+        "executed": false,
+        "passed": false
+      }
+    ],
+    "readinessVerdictDecision": {
+      "status": "blocked",
+      "canComputeVerdict": false,
+      "canValidateInputs": false,
+      "canEvaluateBlockers": false,
+      "canTrustVerdict": false,
+      "canGrantFinalApproval": false,
+      "canMaterializeFiles": false,
+      "canEnableRuntimeDispatch": false,
+      "reason": "readiness verdict policy is metadata-only and approval readiness inputs have not been validated"
+    },
+    "noOpGuarantees": [
+      "readiness verdict policy plan does not compute readiness verdicts",
+      "readiness verdict policy plan does not validate readiness inputs",
+      "readiness verdict policy plan does not evaluate blockers",
+      "readiness verdict policy plan does not persist readiness verdicts",
+      "readiness verdict policy plan does not grant materialization approval",
+      "readiness verdict policy plan does not accept or validate tokens",
+      "readiness verdict policy plan does not consume or revoke tokens",
+      "readiness verdict policy plan does not create renderer-service directory",
+      "readiness verdict policy plan does not write package or workspace files",
+      "readiness verdict policy plan does not mutate lockfiles",
+      "readiness verdict policy plan does not run verification commands",
+      "readiness verdict policy plan does not generate build output",
+      "readiness verdict policy plan does not register runtime dispatch"
+    ],
+    "requiredBeforeRuntimeDispatch": [
+      "define readiness verdict input schema",
+      "validate final approval checklist, operator confirmation, emergency stop state, and approval scope",
+      "record readiness verdict in approval audit trail",
+      "grant materialization approval only after readiness verdict is trusted",
       "keep render.thumbnail unavailable until executable adapter registration is approved"
     ]
   }

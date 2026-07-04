@@ -151,6 +151,14 @@ stop overrides, token validation/acceptance/consumption, approval, file writes,
 workspace mutation, command execution, build output, package creation, process
 startup, and runtime registration disabled.
 
+P25.49 extends the `render.thumbnail` renderer-service planning payload with
+metadata-only package materialization approval readiness verdict policy. It
+defines future final readiness inputs, blocker evaluation, trusted verdict, and
+blocked readiness decision metadata while keeping verdict computation/storage,
+input validation, blocker evaluation, token validation/acceptance/consumption,
+approval, file writes, workspace mutation, command execution, build output,
+package creation, process startup, and runtime registration disabled.
+
 ## P17.2 Descriptor Slice
 
 The first descriptor slice should be read-only or metadata-only. It should not
@@ -602,3 +610,8 @@ points CLI users back to MCP `file.open`, `file.get_context`,
   validation/acceptance/consumption, approval, file writes, workspace mutation,
   command execution, build output, package creation, process startup, and
   runtime registration disabled.
+- P25.49 defines package materialization approval readiness verdict policy
+  while keeping verdict computation/storage/trust, readiness input validation,
+  blocker evaluation, token validation/acceptance/consumption, approval, file
+  writes, workspace mutation, command execution, build output, package
+  creation, process startup, and runtime registration disabled.

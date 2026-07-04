@@ -1295,3 +1295,26 @@ policy:
   `runtimeRegistration:false`, and `localFileWrites:false`. It does not
   configure or fetch stop registries, read or trust stop state, accept
   overrides, grant approval, or accept/validate tokens.
+
+P25.49 adds renderer-service package materialization approval readiness verdict
+policy:
+
+- Plans include `packageMaterializationApprovalReadinessVerdictPolicy`,
+  defining the future final readiness input set, blocker evaluation, trusted
+  verdict, audit linkage, blocked readiness decision, and no-op guarantees.
+- The readiness verdict policy remains planning-only with
+  `readinessVerdictComputed:false`, `readinessVerdictStored:false`,
+  `readinessVerdictTrusted:false`, `readinessVerdictApproved:false`,
+  `readinessInputsValidated:false`, `readinessBlockersEvaluated:false`,
+  `emergencyStopCleared:false`, `operatorConfirmationSatisfied:false`,
+  `finalChecklistSatisfied:false`, `materializationReady:false`,
+  `tokenAccepted:false`, `tokenValidated:false`, `tokenConsumed:false`,
+  `approved:false`, `finalApprovalGranted:false`, `executeNow:false`,
+  `verifyNow:false`, `filesWritten:false`, `fileMaterialization:false`,
+  `workspaceMutation:false`, `lockfileMutation:false`,
+  `commandExecution:false`, `buildOutput:false`,
+  `materializationApproved:false`, `processSpawn:false`,
+  `packageCreated:false`, `dispatch:false`, `networkDispatch:false`,
+  `runtimeRegistration:false`, and `localFileWrites:false`. It does not
+  compute, store, or trust readiness verdicts, validate readiness inputs,
+  evaluate blockers, grant approval, or accept/validate tokens.
