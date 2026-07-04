@@ -1,6 +1,6 @@
 # Render Thumbnail Renderer Service API
 
-Status: P25.41 API fixtures, MCP/CLI dry-run/client boundaries, metadata-only
+Status: P25.42 API fixtures, MCP/CLI dry-run/client boundaries, metadata-only
 availability probes, response normalization contracts, disabled client request
 scaffold, closed execution gate, disabled health preflight, and executable
 client harness plus dispatch adapter boundary plans, and opt-in configuration
@@ -23,7 +23,9 @@ executing rollback. P25.39 adds package materialization verification manifest
 metadata without running verification. P25.40 adds package materialization
 final approval checklist metadata without granting approval. P25.41 adds
 package materialization explicit approval token metadata without accepting,
-storing, validating, consuming, or granting approval from a token.
+storing, validating, consuming, or granting approval from a token. P25.42 adds
+package materialization approval audit trail metadata without writing,
+persisting, validating, or exporting audit records.
 
 P25.6 selected a dedicated thumbnail renderer service as the future executable
 owner for `render.thumbnail`. This document defines the service-facing request
@@ -247,6 +249,16 @@ acceptance, token storage, token validation, token consumption, final approval,
 file writes, package creation, workspace mutation, lockfile mutation, command
 execution, build output, materialization approval, process startup, dispatch,
 network dispatch, runtime registration, and local file writes disabled.
+
+P25.42 defines the package materialization approval audit trail. Plans now
+include `packageMaterializationApprovalAuditTrail`, covering the future
+append-only audit record format, required audit events, retention plan,
+blocked decision state, and no-op guarantees while keeping audit record writes,
+audit persistence, audit validation, audit export, token acceptance, final
+approval, file writes, package creation, workspace mutation, lockfile mutation,
+command execution, build output, materialization approval, process startup,
+dispatch, network dispatch, runtime registration, and local file writes
+disabled.
 
 ## Service Boundary
 

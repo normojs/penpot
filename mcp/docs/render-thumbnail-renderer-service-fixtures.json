@@ -1,5 +1,5 @@
 {
-  "version": "P25.41",
+  "version": "P25.42",
   "command": "render.thumbnail",
   "status": "renderer-service API fixtures with MCP/CLI dry-run/client boundaries, metadata-only availability probes, response normalization contracts, disabled client request scaffold, explicit execution gate, health preflight plan, executable client harness plan, dispatch adapter boundary, opt-in configuration surfaces, unavailable error taxonomy, integration fixture harness, dispatch registration preflight, disabled executable adapter registration scaffold, disabled adapter registry manifest, final disabled enablement checklist, implementation slice audit, health/no-op contract fixtures, no-op service host scaffold, host lifecycle test fixtures, package manifest scaffold, package creation guardrails, package file templates, and package workspace wiring; runtime execution blocked",
   "adapter": "renderer-service",
@@ -3102,6 +3102,160 @@
         "grant final approval only after checklist and approval gate are satisfied",
         "keep render.thumbnail unavailable until executable adapter registration is approved"
       ]
+    },
+    "packageMaterializationApprovalAuditTrail": {
+      "status": "planned-disabled",
+      "auditTrailVersion": "P25.42",
+      "adapter": "renderer-service",
+      "command": "render.thumbnail",
+      "dryRunOnly": true,
+      "approvalRequired": true,
+      "approved": false,
+      "finalApprovalGranted": false,
+      "auditTrailRequired": true,
+      "auditRecordPlanned": true,
+      "auditRecordWritten": false,
+      "auditRecordPersisted": false,
+      "auditRecordValidated": false,
+      "auditRecordExported": false,
+      "writeAuditNow": false,
+      "tokenAccepted": false,
+      "tokenStored": false,
+      "tokenValidated": false,
+      "executeNow": false,
+      "verifyNow": false,
+      "rollbackNow": false,
+      "dispatch": false,
+      "networkDispatch": false,
+      "runtimeRegistration": false,
+      "localFileWrites": false,
+      "hostStartup": false,
+      "processSpawn": false,
+      "packageCreated": false,
+      "workspaceMutation": false,
+      "scriptRunnable": false,
+      "fileMaterialization": false,
+      "lockfileMutation": false,
+      "rootPackageJsonMutation": false,
+      "pnpmWorkspaceMutation": false,
+      "commandExecution": false,
+      "buildOutput": false,
+      "packageScriptsRunnable": false,
+      "materializationApproved": false,
+      "materializationApprovedNow": false,
+      "filesWritten": false,
+      "rollbackExecuted": false,
+      "verificationExecuted": false,
+      "consumes": {
+        "packageMaterializationExplicitApprovalToken": {
+          "requiredStatus": "planned-disabled",
+          "currentStatus": "planned-disabled",
+          "tokenVersion": "P25.41",
+          "tokenAccepted": false,
+          "tokenValidated": false
+        },
+        "packageMaterializationFinalApprovalChecklist": {
+          "requiredStatus": "planned-disabled",
+          "currentStatus": "planned-disabled",
+          "checklistVersion": "P25.40",
+          "finalApprovalGranted": false
+        },
+        "packageMaterializationApprovalGate": {
+          "requiredStatus": "planned-disabled",
+          "currentStatus": "planned-disabled",
+          "gateVersion": "P25.35",
+          "approved": false
+        }
+      },
+      "auditTrailContract": {
+        "sink": "future-approval-audit-log",
+        "recordType": "renderer-service-package-materialization-approval",
+        "appendOnly": true,
+        "writeNow": false,
+        "persistNow": false,
+        "exportNow": false,
+        "tokenValueLogged": false,
+        "requiredFields": [
+          "taskId",
+          "userId",
+          "approvalScopeHash",
+          "tokenVersion",
+          "checklistVersion",
+          "gateVersion",
+          "decision",
+          "timestamp"
+        ]
+      },
+      "auditEvents": [
+        {
+          "id": "approval-token-presented",
+          "required": true,
+          "planned": true,
+          "written": false,
+          "tokenValueLogged": false
+        },
+        {
+          "id": "approval-token-validated",
+          "required": true,
+          "planned": true,
+          "written": false,
+          "tokenValueLogged": false
+        },
+        {
+          "id": "final-approval-decision",
+          "required": true,
+          "planned": true,
+          "written": false,
+          "tokenValueLogged": false
+        },
+        {
+          "id": "materialization-scope-confirmed",
+          "required": true,
+          "planned": true,
+          "written": false,
+          "tokenValueLogged": false
+        }
+      ],
+      "retentionPlan": {
+        "retentionRequired": true,
+        "redactTokenValue": true,
+        "includeScopeHash": true,
+        "includeActor": true,
+        "includeTimestamp": true,
+        "enforceNow": false
+      },
+      "approvalDecision": {
+        "status": "blocked",
+        "canWriteAuditRecord": false,
+        "canPersistAuditRecord": false,
+        "canAcceptToken": false,
+        "canGrantFinalApproval": false,
+        "canMaterializeFiles": false,
+        "canMutateWorkspace": false,
+        "canRunVerification": false,
+        "canEnableRuntimeDispatch": false,
+        "reason": "approval audit trail is metadata-only and no explicit approval token has been validated"
+      },
+      "noOpGuarantees": [
+        "approval audit trail plan does not write audit records",
+        "approval audit trail plan does not persist audit records",
+        "approval audit trail plan does not log token values",
+        "approval audit trail plan does not accept or validate tokens",
+        "approval audit trail plan does not grant materialization approval",
+        "approval audit trail plan does not create renderer-service directory",
+        "approval audit trail plan does not write package or workspace files",
+        "approval audit trail plan does not mutate lockfiles",
+        "approval audit trail plan does not run verification commands",
+        "approval audit trail plan does not generate build output",
+        "approval audit trail plan does not register runtime dispatch"
+      ],
+      "requiredBeforeRuntimeDispatch": [
+        "validate explicit approval token before writing audit records",
+        "write append-only audit record without logging token value",
+        "persist audit record with actor, scope hash, versions, decision, and timestamp",
+        "grant final approval only after audit record write succeeds",
+        "keep render.thumbnail unavailable until executable adapter registration is approved"
+      ]
     }
   },
   "registrationGates": {
@@ -3449,8 +3603,8 @@
     "missing token fails before contacting renderer-service"
   ],
   "nextTask": {
-    "id": "P25.42",
-    "title": "Plan renderer-service package materialization approval audit trail",
+    "id": "P25.43",
+    "title": "Plan renderer-service package materialization approval replay guard",
     "status": "pending"
   }
 }

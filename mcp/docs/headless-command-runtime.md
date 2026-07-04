@@ -1151,3 +1151,19 @@ P25.41 adds renderer-service package materialization explicit approval token:
   `processSpawn:false`, `packageCreated:false`, `dispatch:false`,
   `networkDispatch:false`, `runtimeRegistration:false`, and
   `localFileWrites:false`.
+
+P25.42 adds renderer-service package materialization approval audit trail:
+
+- Plans include `packageMaterializationApprovalAuditTrail`, defining the future
+  append-only approval audit record contract, required audit events, retention
+  plan, blocked decision state, and no-op guarantees.
+- The audit trail remains planning-only with `auditRecordWritten:false`,
+  `auditRecordPersisted:false`, `auditRecordValidated:false`,
+  `auditRecordExported:false`, `writeAuditNow:false`, `tokenAccepted:false`,
+  `approved:false`, `finalApprovalGranted:false`, `executeNow:false`,
+  `verifyNow:false`, `filesWritten:false`, `fileMaterialization:false`,
+  `workspaceMutation:false`, `lockfileMutation:false`,
+  `commandExecution:false`, `buildOutput:false`, `materializationApproved:false`,
+  `processSpawn:false`, `packageCreated:false`, `dispatch:false`,
+  `networkDispatch:false`, `runtimeRegistration:false`, and
+  `localFileWrites:false`.

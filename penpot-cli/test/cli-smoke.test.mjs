@@ -2839,6 +2839,15 @@ test("render thumbnail dry-run returns renderer-service request plan", async () 
         assert.equal(body.data.packageMaterializationExplicitApprovalToken.buildOutput, false);
         assert.equal(body.data.packageMaterializationExplicitApprovalToken.filesWritten, false);
         assert.equal(body.data.packageMaterializationExplicitApprovalToken.approvalDecision.canAcceptToken, false);
+        assert.equal(body.data.packageMaterializationApprovalAuditTrail.auditTrailVersion, "P25.42");
+        assert.equal(body.data.packageMaterializationApprovalAuditTrail.auditRecordWritten, false);
+        assert.equal(body.data.packageMaterializationApprovalAuditTrail.writeAuditNow, false);
+        assert.equal(body.data.packageMaterializationApprovalAuditTrail.approved, false);
+        assert.equal(body.data.packageMaterializationApprovalAuditTrail.finalApprovalGranted, false);
+        assert.equal(body.data.packageMaterializationApprovalAuditTrail.commandExecution, false);
+        assert.equal(body.data.packageMaterializationApprovalAuditTrail.buildOutput, false);
+        assert.equal(body.data.packageMaterializationApprovalAuditTrail.filesWritten, false);
+        assert.equal(body.data.packageMaterializationApprovalAuditTrail.approvalDecision.canWriteAuditRecord, false);
         assert.equal(body.data.service.responseNormalization.successStatus, "ok");
         assert.equal(body.data.service.responseNormalization.localFileWrites, false);
         assert.equal(body.data.service.errorShape.code, "renderer_service_error");
@@ -3073,6 +3082,15 @@ test("render thumbnail execution reports renderer-service unavailable without ca
         assert.equal(body.error.data.packageMaterializationExplicitApprovalToken.buildOutput, false);
         assert.equal(body.error.data.packageMaterializationExplicitApprovalToken.filesWritten, false);
         assert.equal(body.error.data.packageMaterializationExplicitApprovalToken.approvalDecision.canAcceptToken, false);
+        assert.equal(body.error.data.packageMaterializationApprovalAuditTrail.auditTrailVersion, "P25.42");
+        assert.equal(body.error.data.packageMaterializationApprovalAuditTrail.auditRecordWritten, false);
+        assert.equal(body.error.data.packageMaterializationApprovalAuditTrail.writeAuditNow, false);
+        assert.equal(body.error.data.packageMaterializationApprovalAuditTrail.approved, false);
+        assert.equal(body.error.data.packageMaterializationApprovalAuditTrail.finalApprovalGranted, false);
+        assert.equal(body.error.data.packageMaterializationApprovalAuditTrail.commandExecution, false);
+        assert.equal(body.error.data.packageMaterializationApprovalAuditTrail.buildOutput, false);
+        assert.equal(body.error.data.packageMaterializationApprovalAuditTrail.filesWritten, false);
+        assert.equal(body.error.data.packageMaterializationApprovalAuditTrail.approvalDecision.canWriteAuditRecord, false);
         assert.equal(body.error.data.clientRequest.dispatch, false);
         assert.equal(body.error.data.serviceRequest.operation, "thumbnail.render");
     } finally {

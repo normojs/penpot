@@ -43,6 +43,7 @@ import {
     createRenderThumbnailRendererServicePackageMaterializationVerificationManifest,
     createRenderThumbnailRendererServicePackageMaterializationFinalApprovalChecklist,
     createRenderThumbnailRendererServicePackageMaterializationExplicitApprovalToken,
+    createRenderThumbnailRendererServicePackageMaterializationApprovalAuditTrail,
     createRenderThumbnailRendererServicePackageFileTemplates,
     createRenderThumbnailRendererServicePackageManifestScaffold,
     createRenderThumbnailRendererServicePackageMaterializationChecklist,
@@ -636,6 +637,14 @@ test("render.thumbnail renderer-service API fixtures define planning requests wi
     assert.equal(fixtures.serviceApi.packageMaterializationExplicitApprovalToken.commandExecution, false);
     assert.equal(fixtures.serviceApi.packageMaterializationExplicitApprovalToken.buildOutput, false);
     assert.equal(fixtures.serviceApi.packageMaterializationExplicitApprovalToken.filesWritten, false);
+    assert.equal(fixtures.serviceApi.packageMaterializationApprovalAuditTrail.auditTrailVersion, "P25.42");
+    assert.equal(fixtures.serviceApi.packageMaterializationApprovalAuditTrail.auditRecordWritten, false);
+    assert.equal(fixtures.serviceApi.packageMaterializationApprovalAuditTrail.writeAuditNow, false);
+    assert.equal(fixtures.serviceApi.packageMaterializationApprovalAuditTrail.approved, false);
+    assert.equal(fixtures.serviceApi.packageMaterializationApprovalAuditTrail.finalApprovalGranted, false);
+    assert.equal(fixtures.serviceApi.packageMaterializationApprovalAuditTrail.commandExecution, false);
+    assert.equal(fixtures.serviceApi.packageMaterializationApprovalAuditTrail.buildOutput, false);
+    assert.equal(fixtures.serviceApi.packageMaterializationApprovalAuditTrail.filesWritten, false);
     assert.deepEqual(fixtures.runtimeRegistration.commandDescriptorAdapters, ["renderer-service"]);
     assert.deepEqual(CommandDescriptors.RENDER_THUMBNAIL.adapters, ["renderer-service"]);
     assert.equal(fixtures.runtimeRegistration.mcpToolRegistered, true);
@@ -1238,6 +1247,49 @@ test("render.thumbnail renderer-service plan exposes dry-run client request whil
     assert.equal(plan.packageMaterializationExplicitApprovalToken.approvalDecision.canGrantFinalApproval, false);
     assert.equal(plan.packageMaterializationExplicitApprovalToken.approvalDecision.canMaterializeFiles, false);
     assert.deepEqual(plan.service.packageMaterializationExplicitApprovalToken, plan.packageMaterializationExplicitApprovalToken);
+    assert.equal(plan.packageMaterializationApprovalAuditTrail.auditTrailVersion, "P25.42");
+    assert.equal(plan.packageMaterializationApprovalAuditTrail.dryRunOnly, true);
+    assert.equal(plan.packageMaterializationApprovalAuditTrail.approvalRequired, true);
+    assert.equal(plan.packageMaterializationApprovalAuditTrail.approved, false);
+    assert.equal(plan.packageMaterializationApprovalAuditTrail.finalApprovalGranted, false);
+    assert.equal(plan.packageMaterializationApprovalAuditTrail.auditTrailRequired, true);
+    assert.equal(plan.packageMaterializationApprovalAuditTrail.auditRecordPlanned, true);
+    assert.equal(plan.packageMaterializationApprovalAuditTrail.auditRecordWritten, false);
+    assert.equal(plan.packageMaterializationApprovalAuditTrail.auditRecordPersisted, false);
+    assert.equal(plan.packageMaterializationApprovalAuditTrail.writeAuditNow, false);
+    assert.equal(plan.packageMaterializationApprovalAuditTrail.tokenAccepted, false);
+    assert.equal(plan.packageMaterializationApprovalAuditTrail.tokenStored, false);
+    assert.equal(plan.packageMaterializationApprovalAuditTrail.tokenValidated, false);
+    assert.equal(plan.packageMaterializationApprovalAuditTrail.executeNow, false);
+    assert.equal(plan.packageMaterializationApprovalAuditTrail.verifyNow, false);
+    assert.equal(plan.packageMaterializationApprovalAuditTrail.rollbackNow, false);
+    assert.equal(plan.packageMaterializationApprovalAuditTrail.dispatch, false);
+    assert.equal(plan.packageMaterializationApprovalAuditTrail.networkDispatch, false);
+    assert.equal(plan.packageMaterializationApprovalAuditTrail.runtimeRegistration, false);
+    assert.equal(plan.packageMaterializationApprovalAuditTrail.localFileWrites, false);
+    assert.equal(plan.packageMaterializationApprovalAuditTrail.packageCreated, false);
+    assert.equal(plan.packageMaterializationApprovalAuditTrail.workspaceMutation, false);
+    assert.equal(plan.packageMaterializationApprovalAuditTrail.fileMaterialization, false);
+    assert.equal(plan.packageMaterializationApprovalAuditTrail.lockfileMutation, false);
+    assert.equal(plan.packageMaterializationApprovalAuditTrail.commandExecution, false);
+    assert.equal(plan.packageMaterializationApprovalAuditTrail.buildOutput, false);
+    assert.equal(plan.packageMaterializationApprovalAuditTrail.materializationApproved, false);
+    assert.equal(plan.packageMaterializationApprovalAuditTrail.filesWritten, false);
+    assert.equal(plan.packageMaterializationApprovalAuditTrail.consumes.packageMaterializationExplicitApprovalToken.tokenVersion, "P25.41");
+    assert.equal(plan.packageMaterializationApprovalAuditTrail.consumes.packageMaterializationFinalApprovalChecklist.checklistVersion, "P25.40");
+    assert.equal(plan.packageMaterializationApprovalAuditTrail.consumes.packageMaterializationApprovalGate.gateVersion, "P25.35");
+    assert.equal(plan.packageMaterializationApprovalAuditTrail.auditTrailContract.writeNow, false);
+    assert.equal(plan.packageMaterializationApprovalAuditTrail.auditTrailContract.persistNow, false);
+    assert.equal(plan.packageMaterializationApprovalAuditTrail.auditTrailContract.tokenValueLogged, false);
+    assert.ok(plan.packageMaterializationApprovalAuditTrail.auditTrailContract.requiredFields.includes("approvalScopeHash"));
+    assert.ok(plan.packageMaterializationApprovalAuditTrail.auditEvents.some((entry) => entry.id === "final-approval-decision" && entry.written === false));
+    assert.equal(plan.packageMaterializationApprovalAuditTrail.retentionPlan.enforceNow, false);
+    assert.equal(plan.packageMaterializationApprovalAuditTrail.retentionPlan.redactTokenValue, true);
+    assert.equal(plan.packageMaterializationApprovalAuditTrail.approvalDecision.canWriteAuditRecord, false);
+    assert.equal(plan.packageMaterializationApprovalAuditTrail.approvalDecision.canPersistAuditRecord, false);
+    assert.equal(plan.packageMaterializationApprovalAuditTrail.approvalDecision.canGrantFinalApproval, false);
+    assert.equal(plan.packageMaterializationApprovalAuditTrail.approvalDecision.canMaterializeFiles, false);
+    assert.deepEqual(plan.service.packageMaterializationApprovalAuditTrail, plan.packageMaterializationApprovalAuditTrail);
     assert.equal(plan.clientRequest.status, "scaffolded");
     assert.equal(plan.clientRequest.dispatch, false);
     assert.equal(plan.clientRequest.method, "POST");
@@ -1295,6 +1347,7 @@ test("render.thumbnail renderer-service plan exposes dry-run client request whil
     assert.equal(plan.diagnostics.packageMaterializationVerificationManifestVersion, "P25.39");
     assert.equal(plan.diagnostics.packageMaterializationFinalApprovalChecklistVersion, "P25.40");
     assert.equal(plan.diagnostics.packageMaterializationExplicitApprovalTokenVersion, "P25.41");
+    assert.equal(plan.diagnostics.packageMaterializationApprovalAuditTrailVersion, "P25.42");
 });
 
 test("render.thumbnail renderer-service plan reports not-configured availability without endpoint", () => {
@@ -2750,6 +2803,89 @@ test("render.thumbnail renderer-service package materialization explicit approva
     assert.equal(token.approvalDecision.canRunVerification, false);
     assert.ok(token.noOpGuarantees.includes("explicit approval token plan does not accept token input"));
     assert.ok(token.requiredBeforeRuntimeDispatch.includes("validate token scope, expiry, and one-time use before materialization"));
+});
+
+test("render.thumbnail renderer-service package materialization approval audit trail stays metadata-only", () => {
+    const auditTrail = createRenderThumbnailRendererServicePackageMaterializationApprovalAuditTrail({
+        packageMaterializationExplicitApprovalToken: {
+            status: "planned-disabled",
+            tokenVersion: "P25.41",
+            tokenAccepted: false,
+            tokenValidated: false,
+        },
+        packageMaterializationFinalApprovalChecklist: {
+            status: "planned-disabled",
+            checklistVersion: "P25.40",
+            finalApprovalGranted: false,
+        },
+        packageMaterializationApprovalGate: {
+            status: "planned-disabled",
+            gateVersion: "P25.35",
+            approved: false,
+        },
+    });
+
+    assert.equal(auditTrail.status, "planned-disabled");
+    assert.equal(auditTrail.auditTrailVersion, "P25.42");
+    assert.equal(auditTrail.dryRunOnly, true);
+    assert.equal(auditTrail.approvalRequired, true);
+    assert.equal(auditTrail.approved, false);
+    assert.equal(auditTrail.finalApprovalGranted, false);
+    assert.equal(auditTrail.auditTrailRequired, true);
+    assert.equal(auditTrail.auditRecordPlanned, true);
+    assert.equal(auditTrail.auditRecordWritten, false);
+    assert.equal(auditTrail.auditRecordPersisted, false);
+    assert.equal(auditTrail.auditRecordValidated, false);
+    assert.equal(auditTrail.auditRecordExported, false);
+    assert.equal(auditTrail.writeAuditNow, false);
+    assert.equal(auditTrail.tokenAccepted, false);
+    assert.equal(auditTrail.tokenStored, false);
+    assert.equal(auditTrail.tokenValidated, false);
+    assert.equal(auditTrail.executeNow, false);
+    assert.equal(auditTrail.verifyNow, false);
+    assert.equal(auditTrail.rollbackNow, false);
+    assert.equal(auditTrail.dispatch, false);
+    assert.equal(auditTrail.networkDispatch, false);
+    assert.equal(auditTrail.runtimeRegistration, false);
+    assert.equal(auditTrail.localFileWrites, false);
+    assert.equal(auditTrail.hostStartup, false);
+    assert.equal(auditTrail.processSpawn, false);
+    assert.equal(auditTrail.packageCreated, false);
+    assert.equal(auditTrail.workspaceMutation, false);
+    assert.equal(auditTrail.scriptRunnable, false);
+    assert.equal(auditTrail.fileMaterialization, false);
+    assert.equal(auditTrail.lockfileMutation, false);
+    assert.equal(auditTrail.rootPackageJsonMutation, false);
+    assert.equal(auditTrail.pnpmWorkspaceMutation, false);
+    assert.equal(auditTrail.commandExecution, false);
+    assert.equal(auditTrail.buildOutput, false);
+    assert.equal(auditTrail.packageScriptsRunnable, false);
+    assert.equal(auditTrail.materializationApproved, false);
+    assert.equal(auditTrail.filesWritten, false);
+    assert.equal(auditTrail.rollbackExecuted, false);
+    assert.equal(auditTrail.verificationExecuted, false);
+    assert.equal(auditTrail.consumes.packageMaterializationExplicitApprovalToken.tokenVersion, "P25.41");
+    assert.equal(auditTrail.consumes.packageMaterializationExplicitApprovalToken.tokenAccepted, false);
+    assert.equal(auditTrail.consumes.packageMaterializationFinalApprovalChecklist.checklistVersion, "P25.40");
+    assert.equal(auditTrail.consumes.packageMaterializationApprovalGate.gateVersion, "P25.35");
+    assert.equal(auditTrail.auditTrailContract.sink, "future-approval-audit-log");
+    assert.equal(auditTrail.auditTrailContract.appendOnly, true);
+    assert.equal(auditTrail.auditTrailContract.writeNow, false);
+    assert.equal(auditTrail.auditTrailContract.persistNow, false);
+    assert.equal(auditTrail.auditTrailContract.exportNow, false);
+    assert.equal(auditTrail.auditTrailContract.tokenValueLogged, false);
+    assert.ok(auditTrail.auditTrailContract.requiredFields.includes("decision"));
+    assert.ok(auditTrail.auditEvents.some((entry) => entry.id === "approval-token-validated" && entry.written === false));
+    assert.equal(auditTrail.retentionPlan.redactTokenValue, true);
+    assert.equal(auditTrail.retentionPlan.enforceNow, false);
+    assert.equal(auditTrail.approvalDecision.canWriteAuditRecord, false);
+    assert.equal(auditTrail.approvalDecision.canPersistAuditRecord, false);
+    assert.equal(auditTrail.approvalDecision.canAcceptToken, false);
+    assert.equal(auditTrail.approvalDecision.canGrantFinalApproval, false);
+    assert.equal(auditTrail.approvalDecision.canMaterializeFiles, false);
+    assert.equal(auditTrail.approvalDecision.canRunVerification, false);
+    assert.ok(auditTrail.noOpGuarantees.includes("approval audit trail plan does not write audit records"));
+    assert.ok(auditTrail.requiredBeforeRuntimeDispatch.includes("write append-only audit record without logging token value"));
 });
 
 test("render.thumbnail renderer-service client request scaffold adds MCP audit headers without dispatch", () => {

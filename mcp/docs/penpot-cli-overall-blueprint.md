@@ -1148,6 +1148,26 @@ P25.41 is complete:
    `processSpawn`, `packageCreated`, `dispatch`, `networkDispatch`,
    `runtimeRegistration`, and `localFileWrites` remain false.
 
+P25.42 is complete:
+
+1. Shared plans include `packageMaterializationApprovalAuditTrail` metadata for
+   the future append-only approval audit record format, required audit events,
+   retention plan, blocked decision state, and no-op guarantees.
+2. MCP and CLI expose this audit trail plan in dry-run and unavailable
+   execution payloads without writing, persisting, validating, or exporting
+   audit records, and without accepting tokens, granting approval, creating
+   package directories, writing files, mutating workspace manifests, mutating
+   lockfiles, running commands, emitting build output, starting processes, or
+   registering runtime dispatch.
+3. `auditRecordWritten`, `auditRecordPersisted`, `auditRecordValidated`,
+   `auditRecordExported`, `writeAuditNow`, `tokenAccepted`, `approved`,
+   `finalApprovalGranted`, `executeNow`, and `verifyNow` remain false, while
+   `filesWritten`, `verificationExecuted`, `fileMaterialization`,
+   `workspaceMutation`, `lockfileMutation`, `commandExecution`, `buildOutput`,
+   `materializationApproved`, `processSpawn`, `packageCreated`, `dispatch`,
+   `networkDispatch`, `runtimeRegistration`, and `localFileWrites` remain
+   false.
+
 Keep manual configuration behavior stable while moving command metadata and
 envelopes; transport-specific formatting should stay at the MCP/CLI edges.
 

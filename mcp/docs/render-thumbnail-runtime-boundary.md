@@ -44,7 +44,9 @@ verification manifest metadata without running verification. P25.40 defines
 package materialization final approval checklist metadata without granting
 approval. P25.41 defines package materialization explicit approval token
 metadata without accepting, storing, validating, consuming, or granting
-approval from a token.
+approval from a token. P25.42 defines package materialization approval audit
+trail metadata without writing, persisting, validating, or exporting audit
+records.
 
 ## Existing Surfaces
 
@@ -193,7 +195,8 @@ materialization write contract. P25.38 adds metadata-only package
 materialization rollback contract. P25.39 adds metadata-only package
 materialization verification manifest. P25.40 adds metadata-only package
 materialization final approval checklist. P25.41 adds metadata-only package
-materialization explicit approval token. MCP
+materialization explicit approval token. P25.42 adds metadata-only package
+materialization approval audit trail. MCP
 `render.thumbnail` and `penpot-cli render thumbnail --dry-run` can print the
 future request shape, configured/not configured service metadata,
 response/error contracts, `clientRequest.dispatch:false`,

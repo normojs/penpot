@@ -942,6 +942,7 @@ export class RenderThumbnailTool extends PenpotRpcTool<RenderThumbnailArgs> {
                     packageMaterializationVerificationManifest: plan.packageMaterializationVerificationManifest,
                     packageMaterializationFinalApprovalChecklist: plan.packageMaterializationFinalApprovalChecklist,
                     packageMaterializationExplicitApprovalToken: plan.packageMaterializationExplicitApprovalToken,
+                    packageMaterializationApprovalAuditTrail: plan.packageMaterializationApprovalAuditTrail,
                     clientRequest: plan.clientRequest,
                     requiredCapabilities: plan.requiredCapabilities,
                     serviceRequest: plan.serviceRequest,
