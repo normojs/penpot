@@ -49,6 +49,7 @@ import {
     createRenderThumbnailRendererServicePackageMaterializationApprovalRevocationPolicy,
     createRenderThumbnailRendererServicePackageMaterializationApprovalScopeBindingPolicy,
     createRenderThumbnailRendererServicePackageMaterializationApprovalOperatorConfirmationPolicy,
+    createRenderThumbnailRendererServicePackageMaterializationApprovalEmergencyStopPolicy,
     createRenderThumbnailRendererServicePackageFileTemplates,
     createRenderThumbnailRendererServicePackageManifestScaffold,
     createRenderThumbnailRendererServicePackageMaterializationChecklist,
@@ -704,6 +705,20 @@ test("render.thumbnail renderer-service API fixtures define planning requests wi
     assert.equal(fixtures.serviceApi.packageMaterializationApprovalOperatorConfirmationPolicy.commandExecution, false);
     assert.equal(fixtures.serviceApi.packageMaterializationApprovalOperatorConfirmationPolicy.buildOutput, false);
     assert.equal(fixtures.serviceApi.packageMaterializationApprovalOperatorConfirmationPolicy.filesWritten, false);
+    assert.equal(fixtures.serviceApi.packageMaterializationApprovalEmergencyStopPolicy.emergencyStopVersion, "P25.48");
+    assert.equal(fixtures.serviceApi.packageMaterializationApprovalEmergencyStopPolicy.emergencyStopChecked, false);
+    assert.equal(fixtures.serviceApi.packageMaterializationApprovalEmergencyStopPolicy.emergencyStopFetched, false);
+    assert.equal(fixtures.serviceApi.packageMaterializationApprovalEmergencyStopPolicy.emergencyStopStateRead, false);
+    assert.equal(fixtures.serviceApi.packageMaterializationApprovalEmergencyStopPolicy.emergencyStopStateTrusted, false);
+    assert.equal(fixtures.serviceApi.packageMaterializationApprovalEmergencyStopPolicy.stopRegistryFetched, false);
+    assert.equal(fixtures.serviceApi.packageMaterializationApprovalEmergencyStopPolicy.stopStatusTrusted, false);
+    assert.equal(fixtures.serviceApi.packageMaterializationApprovalEmergencyStopPolicy.tokenAccepted, false);
+    assert.equal(fixtures.serviceApi.packageMaterializationApprovalEmergencyStopPolicy.tokenValidated, false);
+    assert.equal(fixtures.serviceApi.packageMaterializationApprovalEmergencyStopPolicy.approved, false);
+    assert.equal(fixtures.serviceApi.packageMaterializationApprovalEmergencyStopPolicy.finalApprovalGranted, false);
+    assert.equal(fixtures.serviceApi.packageMaterializationApprovalEmergencyStopPolicy.commandExecution, false);
+    assert.equal(fixtures.serviceApi.packageMaterializationApprovalEmergencyStopPolicy.buildOutput, false);
+    assert.equal(fixtures.serviceApi.packageMaterializationApprovalEmergencyStopPolicy.filesWritten, false);
     assert.deepEqual(fixtures.runtimeRegistration.commandDescriptorAdapters, ["renderer-service"]);
     assert.deepEqual(CommandDescriptors.RENDER_THUMBNAIL.adapters, ["renderer-service"]);
     assert.equal(fixtures.runtimeRegistration.mcpToolRegistered, true);
@@ -1594,6 +1609,62 @@ test("render.thumbnail renderer-service plan exposes dry-run client request whil
     assert.equal(plan.packageMaterializationApprovalOperatorConfirmationPolicy.operatorConfirmationDecision.canAcceptConfirmation, false);
     assert.equal(plan.packageMaterializationApprovalOperatorConfirmationPolicy.operatorConfirmationDecision.canGrantFinalApproval, false);
     assert.deepEqual(plan.service.packageMaterializationApprovalOperatorConfirmationPolicy, plan.packageMaterializationApprovalOperatorConfirmationPolicy);
+    assert.equal(plan.packageMaterializationApprovalEmergencyStopPolicy.emergencyStopVersion, "P25.48");
+    assert.equal(plan.packageMaterializationApprovalEmergencyStopPolicy.dryRunOnly, true);
+    assert.equal(plan.packageMaterializationApprovalEmergencyStopPolicy.approvalRequired, true);
+    assert.equal(plan.packageMaterializationApprovalEmergencyStopPolicy.approved, false);
+    assert.equal(plan.packageMaterializationApprovalEmergencyStopPolicy.finalApprovalGranted, false);
+    assert.equal(plan.packageMaterializationApprovalEmergencyStopPolicy.emergencyStopRequired, true);
+    assert.equal(plan.packageMaterializationApprovalEmergencyStopPolicy.emergencyStopPlanned, true);
+    assert.equal(plan.packageMaterializationApprovalEmergencyStopPolicy.emergencyStopConfigured, false);
+    assert.equal(plan.packageMaterializationApprovalEmergencyStopPolicy.emergencyStopChecked, false);
+    assert.equal(plan.packageMaterializationApprovalEmergencyStopPolicy.emergencyStopFetched, false);
+    assert.equal(plan.packageMaterializationApprovalEmergencyStopPolicy.emergencyStopStateRead, false);
+    assert.equal(plan.packageMaterializationApprovalEmergencyStopPolicy.emergencyStopStateTrusted, false);
+    assert.equal(plan.packageMaterializationApprovalEmergencyStopPolicy.emergencyStopActive, false);
+    assert.equal(plan.packageMaterializationApprovalEmergencyStopPolicy.emergencyStopBypassAllowed, false);
+    assert.equal(plan.packageMaterializationApprovalEmergencyStopPolicy.emergencyStopAuditLinked, false);
+    assert.equal(plan.packageMaterializationApprovalEmergencyStopPolicy.stopRegistryConfigured, false);
+    assert.equal(plan.packageMaterializationApprovalEmergencyStopPolicy.stopRegistryFetched, false);
+    assert.equal(plan.packageMaterializationApprovalEmergencyStopPolicy.stopStatusFetched, false);
+    assert.equal(plan.packageMaterializationApprovalEmergencyStopPolicy.stopStatusTrusted, false);
+    assert.equal(plan.packageMaterializationApprovalEmergencyStopPolicy.stopSignalReceived, false);
+    assert.equal(plan.packageMaterializationApprovalEmergencyStopPolicy.stopOverrideAccepted, false);
+    assert.equal(plan.packageMaterializationApprovalEmergencyStopPolicy.tokenAccepted, false);
+    assert.equal(plan.packageMaterializationApprovalEmergencyStopPolicy.tokenStored, false);
+    assert.equal(plan.packageMaterializationApprovalEmergencyStopPolicy.tokenValidated, false);
+    assert.equal(plan.packageMaterializationApprovalEmergencyStopPolicy.tokenConsumed, false);
+    assert.equal(plan.packageMaterializationApprovalEmergencyStopPolicy.tokenRevoked, false);
+    assert.equal(plan.packageMaterializationApprovalEmergencyStopPolicy.executeNow, false);
+    assert.equal(plan.packageMaterializationApprovalEmergencyStopPolicy.verifyNow, false);
+    assert.equal(plan.packageMaterializationApprovalEmergencyStopPolicy.rollbackNow, false);
+    assert.equal(plan.packageMaterializationApprovalEmergencyStopPolicy.dispatch, false);
+    assert.equal(plan.packageMaterializationApprovalEmergencyStopPolicy.networkDispatch, false);
+    assert.equal(plan.packageMaterializationApprovalEmergencyStopPolicy.runtimeRegistration, false);
+    assert.equal(plan.packageMaterializationApprovalEmergencyStopPolicy.localFileWrites, false);
+    assert.equal(plan.packageMaterializationApprovalEmergencyStopPolicy.packageCreated, false);
+    assert.equal(plan.packageMaterializationApprovalEmergencyStopPolicy.workspaceMutation, false);
+    assert.equal(plan.packageMaterializationApprovalEmergencyStopPolicy.fileMaterialization, false);
+    assert.equal(plan.packageMaterializationApprovalEmergencyStopPolicy.lockfileMutation, false);
+    assert.equal(plan.packageMaterializationApprovalEmergencyStopPolicy.commandExecution, false);
+    assert.equal(plan.packageMaterializationApprovalEmergencyStopPolicy.buildOutput, false);
+    assert.equal(plan.packageMaterializationApprovalEmergencyStopPolicy.materializationApproved, false);
+    assert.equal(plan.packageMaterializationApprovalEmergencyStopPolicy.filesWritten, false);
+    assert.equal(plan.packageMaterializationApprovalEmergencyStopPolicy.consumes.packageMaterializationApprovalOperatorConfirmationPolicy.operatorConfirmationVersion, "P25.47");
+    assert.equal(plan.packageMaterializationApprovalEmergencyStopPolicy.consumes.packageMaterializationApprovalRevocationPolicy.revocationPolicyVersion, "P25.45");
+    assert.equal(plan.packageMaterializationApprovalEmergencyStopPolicy.consumes.packageMaterializationFinalApprovalChecklist.checklistVersion, "P25.40");
+    assert.equal(plan.packageMaterializationApprovalEmergencyStopPolicy.emergencyStopPolicy.checkNow, false);
+    assert.equal(plan.packageMaterializationApprovalEmergencyStopPolicy.emergencyStopPolicy.fetchRegistryNow, false);
+    assert.equal(plan.packageMaterializationApprovalEmergencyStopPolicy.emergencyStopPolicy.readStopStateNow, false);
+    assert.equal(plan.packageMaterializationApprovalEmergencyStopPolicy.emergencyStopPolicy.trustStopStateNow, false);
+    assert.equal(plan.packageMaterializationApprovalEmergencyStopPolicy.emergencyStopPolicy.allowBypassNow, false);
+    assert.ok(plan.packageMaterializationApprovalEmergencyStopPolicy.emergencyStopPolicy.requiredInputs.includes("stopSource"));
+    assert.ok(plan.packageMaterializationApprovalEmergencyStopPolicy.emergencyStopChecks.some((entry) => entry.id === "emergency-stop-state-trusted" && entry.executed === false));
+    assert.equal(plan.packageMaterializationApprovalEmergencyStopPolicy.emergencyStopDecision.canCheckEmergencyStop, false);
+    assert.equal(plan.packageMaterializationApprovalEmergencyStopPolicy.emergencyStopDecision.canFetchStopRegistry, false);
+    assert.equal(plan.packageMaterializationApprovalEmergencyStopPolicy.emergencyStopDecision.canTrustStopState, false);
+    assert.equal(plan.packageMaterializationApprovalEmergencyStopPolicy.emergencyStopDecision.canGrantFinalApproval, false);
+    assert.deepEqual(plan.service.packageMaterializationApprovalEmergencyStopPolicy, plan.packageMaterializationApprovalEmergencyStopPolicy);
     assert.equal(plan.clientRequest.status, "scaffolded");
     assert.equal(plan.clientRequest.dispatch, false);
     assert.equal(plan.clientRequest.method, "POST");
@@ -1657,6 +1728,7 @@ test("render.thumbnail renderer-service plan exposes dry-run client request whil
     assert.equal(plan.diagnostics.packageMaterializationApprovalRevocationPolicyVersion, "P25.45");
     assert.equal(plan.diagnostics.packageMaterializationApprovalScopeBindingPolicyVersion, "P25.46");
     assert.equal(plan.diagnostics.packageMaterializationApprovalOperatorConfirmationPolicyVersion, "P25.47");
+    assert.equal(plan.diagnostics.packageMaterializationApprovalEmergencyStopPolicyVersion, "P25.48");
 });
 
 test("render.thumbnail renderer-service plan reports not-configured availability without endpoint", () => {
@@ -3637,6 +3709,105 @@ test("render.thumbnail renderer-service package materialization approval operato
     assert.equal(operatorConfirmationPolicy.operatorConfirmationDecision.canMaterializeFiles, false);
     assert.ok(operatorConfirmationPolicy.noOpGuarantees.includes("operator confirmation policy plan does not prompt operators"));
     assert.ok(operatorConfirmationPolicy.requiredBeforeRuntimeDispatch.includes("define operator identity source and confirmation phrase"));
+});
+
+test("render.thumbnail renderer-service package materialization approval emergency stop policy stays metadata-only", () => {
+    const emergencyStopPolicy = createRenderThumbnailRendererServicePackageMaterializationApprovalEmergencyStopPolicy({
+        packageMaterializationApprovalOperatorConfirmationPolicy: {
+            status: "planned-disabled",
+            operatorConfirmationVersion: "P25.47",
+            operatorConfirmationReceived: false,
+        },
+        packageMaterializationApprovalRevocationPolicy: {
+            status: "planned-disabled",
+            revocationPolicyVersion: "P25.45",
+            revocationCheckExecuted: false,
+        },
+        packageMaterializationFinalApprovalChecklist: {
+            status: "planned-disabled",
+            checklistVersion: "P25.40",
+            finalApprovalGranted: false,
+        },
+    });
+
+    assert.equal(emergencyStopPolicy.status, "planned-disabled");
+    assert.equal(emergencyStopPolicy.emergencyStopVersion, "P25.48");
+    assert.equal(emergencyStopPolicy.dryRunOnly, true);
+    assert.equal(emergencyStopPolicy.approvalRequired, true);
+    assert.equal(emergencyStopPolicy.approved, false);
+    assert.equal(emergencyStopPolicy.finalApprovalGranted, false);
+    assert.equal(emergencyStopPolicy.emergencyStopRequired, true);
+    assert.equal(emergencyStopPolicy.emergencyStopPlanned, true);
+    assert.equal(emergencyStopPolicy.emergencyStopConfigured, false);
+    assert.equal(emergencyStopPolicy.emergencyStopChecked, false);
+    assert.equal(emergencyStopPolicy.emergencyStopFetched, false);
+    assert.equal(emergencyStopPolicy.emergencyStopStateRead, false);
+    assert.equal(emergencyStopPolicy.emergencyStopStateTrusted, false);
+    assert.equal(emergencyStopPolicy.emergencyStopActive, false);
+    assert.equal(emergencyStopPolicy.emergencyStopBypassAllowed, false);
+    assert.equal(emergencyStopPolicy.emergencyStopAuditLinked, false);
+    assert.equal(emergencyStopPolicy.emergencyStopReasonRecorded, false);
+    assert.equal(emergencyStopPolicy.stopRegistryConfigured, false);
+    assert.equal(emergencyStopPolicy.stopRegistryFetched, false);
+    assert.equal(emergencyStopPolicy.stopStatusFetched, false);
+    assert.equal(emergencyStopPolicy.stopStatusTrusted, false);
+    assert.equal(emergencyStopPolicy.stopSignalReceived, false);
+    assert.equal(emergencyStopPolicy.stopSignalRejected, false);
+    assert.equal(emergencyStopPolicy.stopOverrideAccepted, false);
+    assert.equal(emergencyStopPolicy.tokenAccepted, false);
+    assert.equal(emergencyStopPolicy.tokenStored, false);
+    assert.equal(emergencyStopPolicy.tokenValidated, false);
+    assert.equal(emergencyStopPolicy.tokenConsumed, false);
+    assert.equal(emergencyStopPolicy.tokenRevoked, false);
+    assert.equal(emergencyStopPolicy.executeNow, false);
+    assert.equal(emergencyStopPolicy.verifyNow, false);
+    assert.equal(emergencyStopPolicy.rollbackNow, false);
+    assert.equal(emergencyStopPolicy.dispatch, false);
+    assert.equal(emergencyStopPolicy.networkDispatch, false);
+    assert.equal(emergencyStopPolicy.runtimeRegistration, false);
+    assert.equal(emergencyStopPolicy.localFileWrites, false);
+    assert.equal(emergencyStopPolicy.hostStartup, false);
+    assert.equal(emergencyStopPolicy.processSpawn, false);
+    assert.equal(emergencyStopPolicy.packageCreated, false);
+    assert.equal(emergencyStopPolicy.workspaceMutation, false);
+    assert.equal(emergencyStopPolicy.scriptRunnable, false);
+    assert.equal(emergencyStopPolicy.fileMaterialization, false);
+    assert.equal(emergencyStopPolicy.lockfileMutation, false);
+    assert.equal(emergencyStopPolicy.rootPackageJsonMutation, false);
+    assert.equal(emergencyStopPolicy.pnpmWorkspaceMutation, false);
+    assert.equal(emergencyStopPolicy.commandExecution, false);
+    assert.equal(emergencyStopPolicy.buildOutput, false);
+    assert.equal(emergencyStopPolicy.packageScriptsRunnable, false);
+    assert.equal(emergencyStopPolicy.materializationApproved, false);
+    assert.equal(emergencyStopPolicy.filesWritten, false);
+    assert.equal(emergencyStopPolicy.rollbackExecuted, false);
+    assert.equal(emergencyStopPolicy.verificationExecuted, false);
+    assert.equal(emergencyStopPolicy.consumes.packageMaterializationApprovalOperatorConfirmationPolicy.operatorConfirmationVersion, "P25.47");
+    assert.equal(emergencyStopPolicy.consumes.packageMaterializationApprovalOperatorConfirmationPolicy.operatorConfirmationReceived, false);
+    assert.equal(emergencyStopPolicy.consumes.packageMaterializationApprovalRevocationPolicy.revocationPolicyVersion, "P25.45");
+    assert.equal(emergencyStopPolicy.consumes.packageMaterializationApprovalRevocationPolicy.revocationCheckExecuted, false);
+    assert.equal(emergencyStopPolicy.consumes.packageMaterializationFinalApprovalChecklist.checklistVersion, "P25.40");
+    assert.equal(emergencyStopPolicy.emergencyStopPolicy.policy, "deny-materialization-when-emergency-stop-is-active");
+    assert.equal(emergencyStopPolicy.emergencyStopPolicy.checkNow, false);
+    assert.equal(emergencyStopPolicy.emergencyStopPolicy.fetchRegistryNow, false);
+    assert.equal(emergencyStopPolicy.emergencyStopPolicy.readStopStateNow, false);
+    assert.equal(emergencyStopPolicy.emergencyStopPolicy.trustStopStateNow, false);
+    assert.equal(emergencyStopPolicy.emergencyStopPolicy.allowBypassNow, false);
+    assert.equal(emergencyStopPolicy.emergencyStopPolicy.persistStopDecisionNow, false);
+    assert.equal(emergencyStopPolicy.emergencyStopPolicy.stopValueLogged, false);
+    assert.ok(emergencyStopPolicy.emergencyStopPolicy.requiredInputs.includes("checkedAt"));
+    assert.ok(emergencyStopPolicy.emergencyStopChecks.some((entry) => entry.id === "emergency-stop-not-active" && entry.executed === false));
+    assert.equal(emergencyStopPolicy.emergencyStopDecision.canCheckEmergencyStop, false);
+    assert.equal(emergencyStopPolicy.emergencyStopDecision.canFetchStopRegistry, false);
+    assert.equal(emergencyStopPolicy.emergencyStopDecision.canReadStopState, false);
+    assert.equal(emergencyStopPolicy.emergencyStopDecision.canTrustStopState, false);
+    assert.equal(emergencyStopPolicy.emergencyStopDecision.canBypassEmergencyStop, false);
+    assert.equal(emergencyStopPolicy.emergencyStopDecision.canAcceptToken, false);
+    assert.equal(emergencyStopPolicy.emergencyStopDecision.canConsumeToken, false);
+    assert.equal(emergencyStopPolicy.emergencyStopDecision.canGrantFinalApproval, false);
+    assert.equal(emergencyStopPolicy.emergencyStopDecision.canMaterializeFiles, false);
+    assert.ok(emergencyStopPolicy.noOpGuarantees.includes("emergency stop policy plan does not fetch stop registries"));
+    assert.ok(emergencyStopPolicy.requiredBeforeRuntimeDispatch.includes("define emergency stop source and scope"));
 });
 
 test("render.thumbnail renderer-service client request scaffold adds MCP audit headers without dispatch", () => {

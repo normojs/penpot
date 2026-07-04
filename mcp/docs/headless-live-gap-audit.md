@@ -143,6 +143,14 @@ confirmation token issuance, token validation/acceptance/consumption, approval,
 file writes, workspace mutation, command execution, build output, package
 creation, process startup, and runtime registration disabled.
 
+P25.48 extends the `render.thumbnail` renderer-service planning payload with
+metadata-only package materialization approval emergency stop policy. It defines
+future trusted stop source, stop scope, stop registry, and blocked stop
+decision metadata while keeping stop registry fetches, stop-state reads/trust,
+stop overrides, token validation/acceptance/consumption, approval, file writes,
+workspace mutation, command execution, build output, package creation, process
+startup, and runtime registration disabled.
+
 ## P17.2 Descriptor Slice
 
 The first descriptor slice should be read-only or metadata-only. It should not
@@ -586,6 +594,11 @@ points CLI users back to MCP `file.open`, `file.get_context`,
 - P25.47 defines package materialization approval operator confirmation policy
   while keeping operator prompts, confirmation collection/storage/validation,
   identity verification, confirmation token issuance, token
+  validation/acceptance/consumption, approval, file writes, workspace mutation,
+  command execution, build output, package creation, process startup, and
+  runtime registration disabled.
+- P25.48 defines package materialization approval emergency stop policy while
+  keeping stop registry fetches, stop-state reads/trust, stop overrides, token
   validation/acceptance/consumption, approval, file writes, workspace mutation,
   command execution, build output, package creation, process startup, and
   runtime registration disabled.

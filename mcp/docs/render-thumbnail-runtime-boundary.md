@@ -62,6 +62,10 @@ P25.47 defines package materialization approval operator confirmation policy
 metadata without prompting operators, collecting/storing/validating
 confirmations, verifying identity, issuing confirmation tokens,
 accepting/validating tokens, consuming tokens, or granting approval.
+P25.48 defines package materialization approval emergency stop policy metadata
+without configuring or fetching stop registries, reading or trusting stop
+state, accepting stop overrides, accepting/validating tokens, consuming tokens,
+or granting approval.
 
 ## Existing Surfaces
 
@@ -216,7 +220,8 @@ materialization approval replay guard. P25.44 adds metadata-only package
 materialization approval expiry policy. P25.45 adds metadata-only package
 materialization approval revocation policy. P25.46 adds metadata-only package
 materialization approval scope binding policy. P25.47 adds metadata-only
-package materialization approval operator confirmation policy. MCP
+package materialization approval operator confirmation policy. P25.48 adds
+metadata-only package materialization approval emergency stop policy. MCP
 `render.thumbnail` and `penpot-cli render thumbnail --dry-run` can print the
 future request shape, configured/not configured service metadata,
 response/error contracts, `clientRequest.dispatch:false`,

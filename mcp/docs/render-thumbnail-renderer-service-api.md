@@ -1,6 +1,6 @@
 # Render Thumbnail Renderer Service API
 
-Status: P25.47 API fixtures, MCP/CLI dry-run/client boundaries, metadata-only
+Status: P25.48 API fixtures, MCP/CLI dry-run/client boundaries, metadata-only
 availability probes, response normalization contracts, disabled client request
 scaffold, closed execution gate, disabled health preflight, and executable
 client harness plus dispatch adapter boundary plans, and opt-in configuration
@@ -41,7 +41,10 @@ tokens, consuming tokens, or granting approval. P25.47 adds package
 materialization approval operator confirmation policy metadata without
 prompting operators, collecting/storing/validating confirmations, verifying
 identity, issuing confirmation tokens, accepting/validating tokens, consuming
-tokens, or granting approval.
+tokens, or granting approval. P25.48 adds package materialization approval
+emergency stop policy metadata without configuring or fetching stop registries,
+reading or trusting stop state, accepting stop overrides, accepting/validating
+tokens, consuming tokens, or granting approval.
 
 P25.6 selected a dedicated thumbnail renderer service as the future executable
 owner for `render.thumbnail`. This document defines the service-facing request
@@ -330,6 +333,16 @@ approval, file writes, package creation, workspace mutation, lockfile mutation,
 command execution, build output, materialization approval, process startup,
 dispatch, network dispatch, runtime registration, and local file writes
 disabled.
+
+P25.48 defines the package materialization approval emergency stop policy.
+Plans now include `packageMaterializationApprovalEmergencyStopPolicy`, covering
+future trusted stop source, stop scope inputs, stop registry state, blocked
+emergency-stop decision, and no-op guarantees while keeping emergency-stop
+configuration, stop registry fetches, stop-state reads/trust, stop overrides,
+token validation, token acceptance, token consumption, final approval, file
+writes, package creation, workspace mutation, lockfile mutation, command
+execution, build output, materialization approval, process startup, dispatch,
+network dispatch, runtime registration, and local file writes disabled.
 
 ## Service Boundary
 

@@ -1271,3 +1271,27 @@ confirmation policy:
   `runtimeRegistration:false`, and `localFileWrites:false`. It does not prompt
   operators, collect/store/validate confirmations, verify identity, issue
   confirmation tokens, or accept/validate tokens.
+
+P25.48 adds renderer-service package materialization approval emergency stop
+policy:
+
+- Plans include `packageMaterializationApprovalEmergencyStopPolicy`, defining
+  future trusted stop source, stop scope inputs, stop registry state, blocked
+  emergency-stop decision, and no-op guarantees.
+- The emergency stop policy remains planning-only with
+  `emergencyStopConfigured:false`, `emergencyStopChecked:false`,
+  `emergencyStopFetched:false`, `emergencyStopStateRead:false`,
+  `emergencyStopStateTrusted:false`, `emergencyStopBypassAllowed:false`,
+  `stopRegistryConfigured:false`, `stopRegistryFetched:false`,
+  `stopStatusFetched:false`, `stopStatusTrusted:false`,
+  `stopSignalReceived:false`, `stopOverrideAccepted:false`,
+  `tokenAccepted:false`, `tokenValidated:false`, `tokenConsumed:false`,
+  `approved:false`, `finalApprovalGranted:false`, `executeNow:false`,
+  `verifyNow:false`, `filesWritten:false`, `fileMaterialization:false`,
+  `workspaceMutation:false`, `lockfileMutation:false`,
+  `commandExecution:false`, `buildOutput:false`,
+  `materializationApproved:false`, `processSpawn:false`,
+  `packageCreated:false`, `dispatch:false`, `networkDispatch:false`,
+  `runtimeRegistration:false`, and `localFileWrites:false`. It does not
+  configure or fetch stop registries, read or trust stop state, accept
+  overrides, grant approval, or accept/validate tokens.

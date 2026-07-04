@@ -1,6 +1,6 @@
 # Render Thumbnail Contract
 
-Status: P25.4 descriptor contract; P25.47 MCP/CLI renderer-service dry-run
+Status: P25.4 descriptor contract; P25.48 MCP/CLI renderer-service dry-run
 boundaries, metadata-only availability probes, response normalization
 contracts, disabled client request scaffolding, closed execution gate, disabled
 health preflight, executable client harness plan, and dispatch adapter boundary
@@ -41,7 +41,10 @@ tokens, consuming tokens, or granting approval. P25.47 adds package
 materialization approval operator confirmation policy metadata without
 prompting operators, collecting/storing/validating confirmations, verifying
 identity, issuing confirmation tokens, accepting/validating tokens, consuming
-tokens, or granting approval.
+tokens, or granting approval. P25.48 adds package materialization approval
+emergency stop policy metadata without configuring or fetching stop registries,
+reading or trusting stop state, accepting stop overrides, accepting/validating
+tokens, consuming tokens, or granting approval.
 
 This document defines the `render.thumbnail` contract before executable MCP or
 CLI rendering is enabled. The contract follows Penpot's existing dashboard
@@ -460,6 +463,24 @@ Shared contract shape:
   `materializationApproved:false`, `runtimeRegistration:false`, and
   `localFileWrites:false`. They do not prompt operators, collect or persist
   confirmations, verify identity, issue confirmation tokens, or accept tokens.
+- P25.48 package materialization approval emergency stop policy fields are
+  planning-only. They define future trusted stop source, stop scope inputs,
+  stop registry state, blocked emergency-stop decision, and no-op guarantees
+  while keeping
+  `packageMaterializationApprovalEmergencyStopPolicy.emergencyStopChecked:false`,
+  `packageMaterializationApprovalEmergencyStopPolicy.emergencyStopFetched:false`,
+  `packageMaterializationApprovalEmergencyStopPolicy.emergencyStopStateRead:false`,
+  `packageMaterializationApprovalEmergencyStopPolicy.emergencyStopStateTrusted:false`,
+  `packageMaterializationApprovalEmergencyStopPolicy.stopRegistryFetched:false`,
+  `packageMaterializationApprovalEmergencyStopPolicy.stopStatusTrusted:false`,
+  `tokenAccepted:false`, `tokenValidated:false`, `tokenConsumed:false`,
+  `approved:false`, `finalApprovalGranted:false`, `filesWritten:false`,
+  `verificationExecuted:false`, `fileMaterialization:false`,
+  `workspaceMutation:false`, `lockfileMutation:false`,
+  `commandExecution:false`, `buildOutput:false`,
+  `materializationApproved:false`, `runtimeRegistration:false`, and
+  `localFileWrites:false`. They do not configure or fetch stop registries,
+  read or trust stop state, accept overrides, grant approval, or accept tokens.
 - Exporter service execution is out of scope for this command unless a later
   task explicitly maps thumbnail rendering to exporter-compatible semantics.
 - P25.6 selects a future dedicated thumbnail renderer service as the executable
@@ -474,7 +495,7 @@ See `render-thumbnail-runtime-boundary.md` and
 audit, resource-return rules, cache refresh behavior, auth expectations, and
 future test strategy.
 See `render-thumbnail-renderer-service-api.md` and
-`render-thumbnail-renderer-service-fixtures.json` for the P25.47 future
+`render-thumbnail-renderer-service-fixtures.json` for the P25.48 future
 renderer-service request/response API, MCP/CLI dry-run/client boundary, and
 metadata-only availability probe plus response/error normalization and disabled
 client request, execution gate, health preflight, and execution harness
@@ -488,7 +509,8 @@ guardrails, package file templates, package workspace wiring, package build
 verification, package materialization approval expiry policy, package
 materialization approval revocation policy, package materialization approval
 scope binding policy, and package materialization approval operator
-confirmation policy.
+confirmation policy, and package materialization approval emergency stop
+policy.
 
 ## Fixtures
 

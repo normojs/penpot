@@ -1,7 +1,7 @@
 {
-  "version": "P25.47",
+  "version": "P25.48",
   "command": "render.thumbnail",
-  "status": "renderer-service API fixtures with MCP/CLI dry-run/client boundaries, metadata-only availability probes, response normalization contracts, disabled client request scaffold, explicit execution gate, health preflight plan, executable client harness plan, dispatch adapter boundary, opt-in configuration surfaces, unavailable error taxonomy, integration fixture harness, dispatch registration preflight, disabled executable adapter registration scaffold, disabled adapter registry manifest, final disabled enablement checklist, implementation slice audit, health/no-op contract fixtures, no-op service host scaffold, host lifecycle test fixtures, package manifest scaffold, package creation guardrails, package file templates, and package workspace wiring; runtime execution blocked",
+  "status": "renderer-service API fixtures with MCP/CLI dry-run/client boundaries, metadata-only availability probes, response normalization contracts, disabled client request scaffold, explicit execution gate, health preflight plan, executable client harness plan, dispatch adapter boundary, opt-in configuration surfaces, unavailable error taxonomy, integration fixture harness, dispatch registration preflight, disabled executable adapter registration scaffold, disabled adapter registry manifest, final disabled enablement checklist, implementation slice audit, health/no-op contract fixtures, no-op service host scaffold, host lifecycle test fixtures, package manifest scaffold, package creation guardrails, package file templates, package workspace wiring, package build verification, package materialization checklist, package creation dry-run summary, package creation file manifest, package materialization approval gate, package materialization execution dry-run, package materialization write contract, package materialization rollback contract, package materialization verification manifest, package materialization final approval checklist, package materialization explicit approval token, package materialization approval audit trail, package materialization approval replay guard, package materialization approval expiry policy, package materialization approval revocation policy, package materialization approval scope binding policy, package materialization approval operator confirmation policy, and package materialization approval emergency stop policy; runtime execution blocked",
   "adapter": "renderer-service",
   "runtimeRegistration": {
     "mcpToolRegistered": true,
@@ -4032,6 +4032,173 @@
         "issue confirmation token only after operator identity and scope checks pass",
         "keep render.thumbnail unavailable until executable adapter registration is approved"
       ]
+    },
+    "packageMaterializationApprovalEmergencyStopPolicy": {
+      "status": "planned-disabled",
+      "emergencyStopVersion": "P25.48",
+      "adapter": "renderer-service",
+      "command": "render.thumbnail",
+      "dryRunOnly": true,
+      "approvalRequired": true,
+      "approved": false,
+      "finalApprovalGranted": false,
+      "emergencyStopRequired": true,
+      "emergencyStopPlanned": true,
+      "emergencyStopConfigured": false,
+      "emergencyStopChecked": false,
+      "emergencyStopFetched": false,
+      "emergencyStopStateRead": false,
+      "emergencyStopStateTrusted": false,
+      "emergencyStopActive": false,
+      "emergencyStopBypassAllowed": false,
+      "emergencyStopAuditLinked": false,
+      "emergencyStopReasonRecorded": false,
+      "stopRegistryConfigured": false,
+      "stopRegistryFetched": false,
+      "stopStatusFetched": false,
+      "stopStatusTrusted": false,
+      "stopSignalReceived": false,
+      "stopSignalRejected": false,
+      "stopOverrideAccepted": false,
+      "tokenAccepted": false,
+      "tokenStored": false,
+      "tokenValidated": false,
+      "tokenConsumed": false,
+      "tokenRevoked": false,
+      "executeNow": false,
+      "verifyNow": false,
+      "rollbackNow": false,
+      "dispatch": false,
+      "networkDispatch": false,
+      "runtimeRegistration": false,
+      "localFileWrites": false,
+      "hostStartup": false,
+      "processSpawn": false,
+      "packageCreated": false,
+      "workspaceMutation": false,
+      "scriptRunnable": false,
+      "fileMaterialization": false,
+      "lockfileMutation": false,
+      "rootPackageJsonMutation": false,
+      "pnpmWorkspaceMutation": false,
+      "commandExecution": false,
+      "buildOutput": false,
+      "packageScriptsRunnable": false,
+      "materializationApproved": false,
+      "materializationApprovedNow": false,
+      "filesWritten": false,
+      "rollbackExecuted": false,
+      "verificationExecuted": false,
+      "consumes": {
+        "packageMaterializationApprovalOperatorConfirmationPolicy": {
+          "requiredStatus": "planned-disabled",
+          "currentStatus": "planned-disabled",
+          "operatorConfirmationVersion": "P25.47",
+          "operatorConfirmationReceived": false
+        },
+        "packageMaterializationApprovalRevocationPolicy": {
+          "requiredStatus": "planned-disabled",
+          "currentStatus": "planned-disabled",
+          "revocationPolicyVersion": "P25.45",
+          "revocationCheckExecuted": false
+        },
+        "packageMaterializationFinalApprovalChecklist": {
+          "requiredStatus": "planned-disabled",
+          "currentStatus": "planned-disabled",
+          "checklistVersion": "P25.40",
+          "finalApprovalGranted": false
+        }
+      },
+      "emergencyStopPolicy": {
+        "policy": "deny-materialization-when-emergency-stop-is-active",
+        "checkNow": false,
+        "fetchRegistryNow": false,
+        "readStopStateNow": false,
+        "trustStopStateNow": false,
+        "allowBypassNow": false,
+        "persistStopDecisionNow": false,
+        "requiredInputs": [
+          "stopSource",
+          "scope",
+          "checkedAt",
+          "operatorId"
+        ],
+        "stopSource": "future-emergency-stop-registry",
+        "stopValueLogged": false
+      },
+      "emergencyStopChecks": [
+        {
+          "id": "emergency-stop-source-configured",
+          "required": true,
+          "planned": true,
+          "executed": false,
+          "passed": false
+        },
+        {
+          "id": "emergency-stop-state-fetched",
+          "required": true,
+          "planned": true,
+          "executed": false,
+          "passed": false
+        },
+        {
+          "id": "emergency-stop-state-trusted",
+          "required": true,
+          "planned": true,
+          "executed": false,
+          "passed": false
+        },
+        {
+          "id": "emergency-stop-not-active",
+          "required": true,
+          "planned": true,
+          "executed": false,
+          "passed": false
+        },
+        {
+          "id": "emergency-stop-audit-linked",
+          "required": true,
+          "planned": true,
+          "executed": false,
+          "passed": false
+        }
+      ],
+      "emergencyStopDecision": {
+        "status": "blocked",
+        "canCheckEmergencyStop": false,
+        "canFetchStopRegistry": false,
+        "canReadStopState": false,
+        "canTrustStopState": false,
+        "canBypassEmergencyStop": false,
+        "canAcceptToken": false,
+        "canConsumeToken": false,
+        "canGrantFinalApproval": false,
+        "canMaterializeFiles": false,
+        "canEnableRuntimeDispatch": false,
+        "reason": "emergency stop policy is metadata-only and no trusted emergency stop state has been checked"
+      },
+      "noOpGuarantees": [
+        "emergency stop policy plan does not configure stop registries",
+        "emergency stop policy plan does not fetch stop registries",
+        "emergency stop policy plan does not read or trust emergency stop state",
+        "emergency stop policy plan does not accept stop overrides",
+        "emergency stop policy plan does not accept or validate tokens",
+        "emergency stop policy plan does not consume or revoke tokens",
+        "emergency stop policy plan does not grant materialization approval",
+        "emergency stop policy plan does not create renderer-service directory",
+        "emergency stop policy plan does not write package or workspace files",
+        "emergency stop policy plan does not mutate lockfiles",
+        "emergency stop policy plan does not run verification commands",
+        "emergency stop policy plan does not generate build output",
+        "emergency stop policy plan does not register runtime dispatch"
+      ],
+      "requiredBeforeRuntimeDispatch": [
+        "define emergency stop source and scope",
+        "fetch and validate trusted emergency stop state before final approval",
+        "record emergency stop decision in approval audit trail",
+        "deny materialization when emergency stop is active",
+        "keep render.thumbnail unavailable until executable adapter registration is approved"
+      ]
     }
   },
   "registrationGates": {
@@ -4375,12 +4542,13 @@
     "package build verification survives dry-run and unavailable execution JSON output",
     "package materialization checklist survives dry-run and unavailable execution JSON output",
     "package creation dry-run summary survives dry-run and unavailable execution JSON output",
+    "package materialization approval emergency stop policy survives dry-run and unavailable execution JSON output",
     "--output downloads the returned PNG resource",
     "missing token fails before contacting renderer-service"
   ],
   "nextTask": {
-    "id": "P25.48",
-    "title": "Plan renderer-service package materialization approval emergency stop policy",
+    "id": "P25.49",
+    "title": "Plan renderer-service package materialization approval readiness verdict policy",
     "status": "pending"
   }
 }
