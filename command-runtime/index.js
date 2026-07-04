@@ -1082,6 +1082,12 @@ export function createRenderThumbnailRendererServicePlan(options = EMPTY_OBJECT)
         packageBuildVerification,
         packageCreationFileManifest,
     });
+    const packageMaterializationFinalApprovalChecklist = createRenderThumbnailRendererServicePackageMaterializationFinalApprovalChecklist({
+        packageMaterializationVerificationManifest,
+        packageMaterializationRollbackContract,
+        packageMaterializationWriteContract,
+        packageMaterializationApprovalGate,
+    });
 
     return {
         command: CommandDescriptors.RENDER_THUMBNAIL.id,
@@ -1153,6 +1159,7 @@ export function createRenderThumbnailRendererServicePlan(options = EMPTY_OBJECT)
             packageMaterializationWriteContract,
             packageMaterializationRollbackContract,
             packageMaterializationVerificationManifest,
+            packageMaterializationFinalApprovalChecklist,
             clientRequest,
         },
         client,
@@ -1185,6 +1192,7 @@ export function createRenderThumbnailRendererServicePlan(options = EMPTY_OBJECT)
         packageMaterializationWriteContract,
         packageMaterializationRollbackContract,
         packageMaterializationVerificationManifest,
+        packageMaterializationFinalApprovalChecklist,
         clientRequest,
         serviceRequest: {
             command: CommandDescriptors.RENDER_THUMBNAIL.id,
@@ -1277,6 +1285,7 @@ export function createRenderThumbnailRendererServicePlan(options = EMPTY_OBJECT)
             packageMaterializationWriteContractVersion: packageMaterializationWriteContract.contractVersion,
             packageMaterializationRollbackContractVersion: packageMaterializationRollbackContract.contractVersion,
             packageMaterializationVerificationManifestVersion: packageMaterializationVerificationManifest.manifestVersion,
+            packageMaterializationFinalApprovalChecklistVersion: packageMaterializationFinalApprovalChecklist.checklistVersion,
         },
     };
 }
@@ -3135,6 +3144,181 @@ export function createRenderThumbnailRendererServicePackageMaterializationVerifi
             "confirm package files and workspace files match the manifest",
             "confirm rollback contract remains valid after verification",
             "keep render.thumbnail unavailable until verification manifest passes",
+        ],
+    };
+}
+
+export function createRenderThumbnailRendererServicePackageMaterializationFinalApprovalChecklist(options = EMPTY_OBJECT) {
+    const packageMaterializationVerificationManifest = options.packageMaterializationVerificationManifest ?? EMPTY_OBJECT;
+    const packageMaterializationRollbackContract = options.packageMaterializationRollbackContract ?? EMPTY_OBJECT;
+    const packageMaterializationWriteContract = options.packageMaterializationWriteContract ?? EMPTY_OBJECT;
+    const packageMaterializationApprovalGate = options.packageMaterializationApprovalGate ?? EMPTY_OBJECT;
+
+    return {
+        status: "planned-disabled",
+        checklistVersion: "P25.40",
+        adapter: "renderer-service",
+        command: CommandDescriptors.RENDER_THUMBNAIL.id,
+        dryRunOnly: true,
+        approvalRequired: true,
+        approved: false,
+        finalApprovalGranted: false,
+        executeNow: false,
+        verifyNow: false,
+        rollbackNow: false,
+        dispatch: false,
+        networkDispatch: false,
+        runtimeRegistration: false,
+        localFileWrites: false,
+        hostStartup: false,
+        processSpawn: false,
+        packageCreated: false,
+        workspaceMutation: false,
+        scriptRunnable: false,
+        fileMaterialization: false,
+        lockfileMutation: false,
+        rootPackageJsonMutation: false,
+        pnpmWorkspaceMutation: false,
+        commandExecution: false,
+        buildOutput: false,
+        packageScriptsRunnable: false,
+        materializationApproved: false,
+        materializationApprovedRequired: true,
+        materializationApprovedNow: false,
+        filesWritten: false,
+        rollbackExecuted: false,
+        verificationExecuted: false,
+        consumes: {
+            packageMaterializationVerificationManifest: {
+                requiredStatus: "planned-disabled",
+                currentStatus: packageMaterializationVerificationManifest.status ?? "planned-disabled",
+                manifestVersion: packageMaterializationVerificationManifest.manifestVersion ?? "P25.39",
+                verifyNow: false,
+            },
+            packageMaterializationRollbackContract: {
+                requiredStatus: "planned-disabled",
+                currentStatus: packageMaterializationRollbackContract.status ?? "planned-disabled",
+                contractVersion: packageMaterializationRollbackContract.contractVersion ?? "P25.38",
+                rollbackNow: false,
+            },
+            packageMaterializationWriteContract: {
+                requiredStatus: "planned-disabled",
+                currentStatus: packageMaterializationWriteContract.status ?? "planned-disabled",
+                contractVersion: packageMaterializationWriteContract.contractVersion ?? "P25.37",
+                filesWritten: false,
+            },
+            packageMaterializationApprovalGate: {
+                requiredStatus: "planned-disabled",
+                currentStatus: packageMaterializationApprovalGate.status ?? "planned-disabled",
+                gateVersion: packageMaterializationApprovalGate.gateVersion ?? "P25.35",
+                approved: false,
+            },
+        },
+        checklist: [
+            {
+                id: "explicit-user-approval",
+                label: "Explicit user approval for renderer-service package materialization",
+                required: true,
+                satisfied: false,
+                source: "future implementation task request",
+            },
+            {
+                id: "write-contract-reviewed",
+                label: "packageMaterializationWriteContract reviewed",
+                required: true,
+                satisfied: false,
+                source: "packageMaterializationWriteContract",
+            },
+            {
+                id: "rollback-contract-reviewed",
+                label: "packageMaterializationRollbackContract reviewed",
+                required: true,
+                satisfied: false,
+                source: "packageMaterializationRollbackContract",
+            },
+            {
+                id: "verification-manifest-reviewed",
+                label: "packageMaterializationVerificationManifest reviewed",
+                required: true,
+                satisfied: false,
+                source: "packageMaterializationVerificationManifest",
+            },
+            {
+                id: "runtime-dispatch-remains-disabled",
+                label: "render.thumbnail runtime dispatch remains disabled after materialization",
+                required: true,
+                satisfied: false,
+                source: "executionGate",
+            },
+        ],
+        approvalScope: {
+            packageDirectory: "renderer-service",
+            packageFiles: [
+                "renderer-service/package.json",
+                "renderer-service/tsconfig.json",
+                "renderer-service/src/index.ts",
+                "renderer-service/src/noop-host.ts",
+                "renderer-service/test/noop-host.test.mjs",
+            ],
+            workspaceFiles: ["pnpm-workspace.yaml", "package.json", "pnpm-lock.yaml"],
+            verificationCommands: [
+                "pnpm --filter @penpot/renderer-service build",
+                "pnpm --filter @penpot/renderer-service exec tsc --noEmit",
+                "pnpm --filter @penpot/renderer-service test",
+            ],
+            runtimeDispatchIncluded: false,
+        },
+        approvalDecision: {
+            status: "blocked",
+            canGrantFinalApproval: false,
+            canMaterializeFiles: false,
+            canMutateWorkspace: false,
+            canRunVerification: false,
+            canEnableRuntimeDispatch: false,
+            reason: "final approval checklist is metadata-only and explicit approval has not been granted",
+        },
+        postApprovalSequence: [
+            {
+                id: "capture-rollback-snapshot",
+                allowedBeforeFinalApproval: false,
+                writesFiles: false,
+                runsCommands: false,
+            },
+            {
+                id: "materialize-package-files",
+                allowedBeforeFinalApproval: false,
+                writesFiles: true,
+                runsCommands: false,
+            },
+            {
+                id: "mutate-workspace-files",
+                allowedBeforeFinalApproval: false,
+                writesFiles: true,
+                runsCommands: false,
+            },
+            {
+                id: "run-verification-manifest",
+                allowedBeforeFinalApproval: false,
+                writesFiles: false,
+                runsCommands: true,
+            },
+        ],
+        noOpGuarantees: [
+            "final approval checklist does not grant approval",
+            "final approval checklist does not create renderer-service directory",
+            "final approval checklist does not write package files",
+            "final approval checklist does not edit workspace manifests",
+            "final approval checklist does not mutate lockfiles",
+            "final approval checklist does not run verification commands",
+            "final approval checklist does not generate build output",
+            "final approval checklist does not register runtime dispatch",
+        ],
+        requiredBeforeRuntimeDispatch: [
+            "grant final materialization approval in a later explicit implementation task",
+            "materialize files only after every checklist item is satisfied",
+            "run verification manifest after approved materialization",
+            "keep rollback contract available through verification",
+            "keep render.thumbnail unavailable until final approval, materialization, and verification all pass",
         ],
     };
 }

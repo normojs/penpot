@@ -41,6 +41,7 @@ import {
     createRenderThumbnailRendererServicePackageMaterializationWriteContract,
     createRenderThumbnailRendererServicePackageMaterializationRollbackContract,
     createRenderThumbnailRendererServicePackageMaterializationVerificationManifest,
+    createRenderThumbnailRendererServicePackageMaterializationFinalApprovalChecklist,
     createRenderThumbnailRendererServicePackageFileTemplates,
     createRenderThumbnailRendererServicePackageManifestScaffold,
     createRenderThumbnailRendererServicePackageMaterializationChecklist,
@@ -616,6 +617,16 @@ test("render.thumbnail renderer-service API fixtures define planning requests wi
     assert.equal(fixtures.serviceApi.packageMaterializationVerificationManifest.commandExecution, false);
     assert.equal(fixtures.serviceApi.packageMaterializationVerificationManifest.buildOutput, false);
     assert.equal(fixtures.serviceApi.packageMaterializationVerificationManifest.filesWritten, false);
+    assert.equal(fixtures.serviceApi.packageMaterializationFinalApprovalChecklist.checklistVersion, "P25.40");
+    assert.equal(fixtures.serviceApi.packageMaterializationFinalApprovalChecklist.dryRunOnly, true);
+    assert.equal(fixtures.serviceApi.packageMaterializationFinalApprovalChecklist.executeNow, false);
+    assert.equal(fixtures.serviceApi.packageMaterializationFinalApprovalChecklist.approved, false);
+    assert.equal(fixtures.serviceApi.packageMaterializationFinalApprovalChecklist.finalApprovalGranted, false);
+    assert.equal(fixtures.serviceApi.packageMaterializationFinalApprovalChecklist.dispatch, false);
+    assert.equal(fixtures.serviceApi.packageMaterializationFinalApprovalChecklist.runtimeRegistration, false);
+    assert.equal(fixtures.serviceApi.packageMaterializationFinalApprovalChecklist.commandExecution, false);
+    assert.equal(fixtures.serviceApi.packageMaterializationFinalApprovalChecklist.buildOutput, false);
+    assert.equal(fixtures.serviceApi.packageMaterializationFinalApprovalChecklist.filesWritten, false);
     assert.deepEqual(fixtures.runtimeRegistration.commandDescriptorAdapters, ["renderer-service"]);
     assert.deepEqual(CommandDescriptors.RENDER_THUMBNAIL.adapters, ["renderer-service"]);
     assert.equal(fixtures.runtimeRegistration.mcpToolRegistered, true);
@@ -1145,6 +1156,39 @@ test("render.thumbnail renderer-service plan exposes dry-run client request whil
     assert.equal(plan.packageMaterializationVerificationManifest.runtimeDisabledAssertions.runtimeRegistration, false);
     assert.equal(plan.packageMaterializationVerificationManifest.readinessDecision.canEnableRuntimeDispatch, false);
     assert.deepEqual(plan.service.packageMaterializationVerificationManifest, plan.packageMaterializationVerificationManifest);
+    assert.equal(plan.packageMaterializationFinalApprovalChecklist.checklistVersion, "P25.40");
+    assert.equal(plan.packageMaterializationFinalApprovalChecklist.dryRunOnly, true);
+    assert.equal(plan.packageMaterializationFinalApprovalChecklist.approvalRequired, true);
+    assert.equal(plan.packageMaterializationFinalApprovalChecklist.approved, false);
+    assert.equal(plan.packageMaterializationFinalApprovalChecklist.finalApprovalGranted, false);
+    assert.equal(plan.packageMaterializationFinalApprovalChecklist.executeNow, false);
+    assert.equal(plan.packageMaterializationFinalApprovalChecklist.verifyNow, false);
+    assert.equal(plan.packageMaterializationFinalApprovalChecklist.rollbackNow, false);
+    assert.equal(plan.packageMaterializationFinalApprovalChecklist.dispatch, false);
+    assert.equal(plan.packageMaterializationFinalApprovalChecklist.networkDispatch, false);
+    assert.equal(plan.packageMaterializationFinalApprovalChecklist.runtimeRegistration, false);
+    assert.equal(plan.packageMaterializationFinalApprovalChecklist.localFileWrites, false);
+    assert.equal(plan.packageMaterializationFinalApprovalChecklist.packageCreated, false);
+    assert.equal(plan.packageMaterializationFinalApprovalChecklist.workspaceMutation, false);
+    assert.equal(plan.packageMaterializationFinalApprovalChecklist.fileMaterialization, false);
+    assert.equal(plan.packageMaterializationFinalApprovalChecklist.lockfileMutation, false);
+    assert.equal(plan.packageMaterializationFinalApprovalChecklist.commandExecution, false);
+    assert.equal(plan.packageMaterializationFinalApprovalChecklist.buildOutput, false);
+    assert.equal(plan.packageMaterializationFinalApprovalChecklist.materializationApproved, false);
+    assert.equal(plan.packageMaterializationFinalApprovalChecklist.filesWritten, false);
+    assert.equal(plan.packageMaterializationFinalApprovalChecklist.verificationExecuted, false);
+    assert.equal(plan.packageMaterializationFinalApprovalChecklist.consumes.packageMaterializationVerificationManifest.manifestVersion, "P25.39");
+    assert.equal(plan.packageMaterializationFinalApprovalChecklist.consumes.packageMaterializationRollbackContract.contractVersion, "P25.38");
+    assert.equal(plan.packageMaterializationFinalApprovalChecklist.consumes.packageMaterializationWriteContract.contractVersion, "P25.37");
+    assert.equal(plan.packageMaterializationFinalApprovalChecklist.consumes.packageMaterializationApprovalGate.gateVersion, "P25.35");
+    assert.ok(plan.packageMaterializationFinalApprovalChecklist.checklist.some((entry) => entry.id === "explicit-user-approval" && entry.satisfied === false));
+    assert.ok(plan.packageMaterializationFinalApprovalChecklist.checklist.some((entry) => entry.id === "runtime-dispatch-remains-disabled" && entry.satisfied === false));
+    assert.ok(plan.packageMaterializationFinalApprovalChecklist.approvalScope.workspaceFiles.includes("pnpm-lock.yaml"));
+    assert.ok(plan.packageMaterializationFinalApprovalChecklist.approvalScope.verificationCommands.includes("pnpm --filter @penpot/renderer-service test"));
+    assert.equal(plan.packageMaterializationFinalApprovalChecklist.approvalDecision.canGrantFinalApproval, false);
+    assert.equal(plan.packageMaterializationFinalApprovalChecklist.approvalDecision.canEnableRuntimeDispatch, false);
+    assert.ok(plan.packageMaterializationFinalApprovalChecklist.postApprovalSequence.some((entry) => entry.id === "run-verification-manifest" && entry.allowedBeforeFinalApproval === false && entry.runsCommands === true));
+    assert.deepEqual(plan.service.packageMaterializationFinalApprovalChecklist, plan.packageMaterializationFinalApprovalChecklist);
     assert.equal(plan.clientRequest.status, "scaffolded");
     assert.equal(plan.clientRequest.dispatch, false);
     assert.equal(plan.clientRequest.method, "POST");
@@ -1200,6 +1244,7 @@ test("render.thumbnail renderer-service plan exposes dry-run client request whil
     assert.equal(plan.diagnostics.packageMaterializationWriteContractVersion, "P25.37");
     assert.equal(plan.diagnostics.packageMaterializationRollbackContractVersion, "P25.38");
     assert.equal(plan.diagnostics.packageMaterializationVerificationManifestVersion, "P25.39");
+    assert.equal(plan.diagnostics.packageMaterializationFinalApprovalChecklistVersion, "P25.40");
 });
 
 test("render.thumbnail renderer-service plan reports not-configured availability without endpoint", () => {
@@ -2508,6 +2553,77 @@ test("render.thumbnail renderer-service package materialization verification man
     assert.equal(manifest.readinessDecision.canEnableRuntimeDispatch, false);
     assert.ok(manifest.noOpGuarantees.includes("verification manifest does not run verification commands"));
     assert.ok(manifest.requiredBeforeRuntimeDispatch.includes("run verification commands only after approved materialization"));
+});
+
+test("render.thumbnail renderer-service package materialization final approval checklist stays metadata-only", () => {
+    const checklist = createRenderThumbnailRendererServicePackageMaterializationFinalApprovalChecklist({
+        packageMaterializationVerificationManifest: {
+            status: "planned-disabled",
+            manifestVersion: "P25.39",
+            verifyNow: false,
+        },
+        packageMaterializationRollbackContract: {
+            status: "planned-disabled",
+            contractVersion: "P25.38",
+            rollbackNow: false,
+        },
+        packageMaterializationWriteContract: {
+            status: "planned-disabled",
+            contractVersion: "P25.37",
+            filesWritten: false,
+        },
+        packageMaterializationApprovalGate: {
+            status: "planned-disabled",
+            gateVersion: "P25.35",
+            approved: false,
+        },
+    });
+
+    assert.equal(checklist.status, "planned-disabled");
+    assert.equal(checklist.checklistVersion, "P25.40");
+    assert.equal(checklist.dryRunOnly, true);
+    assert.equal(checklist.approvalRequired, true);
+    assert.equal(checklist.approved, false);
+    assert.equal(checklist.finalApprovalGranted, false);
+    assert.equal(checklist.executeNow, false);
+    assert.equal(checklist.verifyNow, false);
+    assert.equal(checklist.rollbackNow, false);
+    assert.equal(checklist.adapter, "renderer-service");
+    assert.equal(checklist.command, "render.thumbnail");
+    assert.equal(checklist.dispatch, false);
+    assert.equal(checklist.networkDispatch, false);
+    assert.equal(checklist.runtimeRegistration, false);
+    assert.equal(checklist.localFileWrites, false);
+    assert.equal(checklist.hostStartup, false);
+    assert.equal(checklist.processSpawn, false);
+    assert.equal(checklist.packageCreated, false);
+    assert.equal(checklist.workspaceMutation, false);
+    assert.equal(checklist.scriptRunnable, false);
+    assert.equal(checklist.fileMaterialization, false);
+    assert.equal(checklist.lockfileMutation, false);
+    assert.equal(checklist.rootPackageJsonMutation, false);
+    assert.equal(checklist.pnpmWorkspaceMutation, false);
+    assert.equal(checklist.commandExecution, false);
+    assert.equal(checklist.buildOutput, false);
+    assert.equal(checklist.packageScriptsRunnable, false);
+    assert.equal(checklist.materializationApproved, false);
+    assert.equal(checklist.filesWritten, false);
+    assert.equal(checklist.rollbackExecuted, false);
+    assert.equal(checklist.verificationExecuted, false);
+    assert.equal(checklist.consumes.packageMaterializationVerificationManifest.manifestVersion, "P25.39");
+    assert.equal(checklist.consumes.packageMaterializationRollbackContract.contractVersion, "P25.38");
+    assert.equal(checklist.consumes.packageMaterializationWriteContract.contractVersion, "P25.37");
+    assert.equal(checklist.consumes.packageMaterializationApprovalGate.gateVersion, "P25.35");
+    assert.ok(checklist.checklist.some((entry) => entry.id === "explicit-user-approval" && entry.satisfied === false));
+    assert.ok(checklist.checklist.some((entry) => entry.id === "verification-manifest-reviewed" && entry.satisfied === false));
+    assert.ok(checklist.approvalScope.workspaceFiles.includes("pnpm-lock.yaml"));
+    assert.equal(checklist.approvalScope.runtimeDispatchIncluded, false);
+    assert.equal(checklist.approvalDecision.canGrantFinalApproval, false);
+    assert.equal(checklist.approvalDecision.canMaterializeFiles, false);
+    assert.equal(checklist.approvalDecision.canRunVerification, false);
+    assert.ok(checklist.postApprovalSequence.some((entry) => entry.id === "materialize-package-files" && entry.writesFiles === true && entry.allowedBeforeFinalApproval === false));
+    assert.ok(checklist.noOpGuarantees.includes("final approval checklist does not grant approval"));
+    assert.ok(checklist.requiredBeforeRuntimeDispatch.includes("grant final materialization approval in a later explicit implementation task"));
 });
 
 test("render.thumbnail renderer-service client request scaffold adds MCP audit headers without dispatch", () => {

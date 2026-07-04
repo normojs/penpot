@@ -352,6 +352,11 @@ Current state:
   checks, verification commands, and runtime-disabled assertions without
   granting approval, writing files, mutating workspace state, running commands,
   emitting build output, or registering runtime dispatch.
+- Done: renderer-service package materialization final approval checklist
+  defines metadata-only explicit approval items, approval scope, blocked
+  decision state, and post-approval sequence without granting approval, writing
+  files, mutating workspace state, running commands, emitting build output, or
+  registering runtime dispatch.
 - Done: focused command-runtime tests cover descriptor groups, lookup,
   adapter-selection priority/error cases, and token-safe envelopes.
 - Status: complete. Later command coverage gaps were tracked by the P15.1
@@ -1100,6 +1105,24 @@ P25.39 is complete:
    `commandExecution`, `buildOutput`, `materializationApproved`,
    `processSpawn`, `packageCreated`, `dispatch`, `networkDispatch`,
    `runtimeRegistration`, and `localFileWrites` remain false.
+
+P25.40 is complete:
+
+1. Shared plans include `packageMaterializationFinalApprovalChecklist`
+   metadata for explicit approval items, approval scope, blocked decision
+   state, and post-approval sequence.
+2. MCP and CLI expose this final approval checklist in dry-run and unavailable
+   execution payloads without granting approval, creating package directories,
+   writing files, mutating workspace manifests, mutating lockfiles, running
+   commands, emitting build output, starting processes, or registering runtime
+   dispatch.
+3. `packageMaterializationFinalApprovalChecklist.finalApprovalGranted`,
+   `executeNow`, and `verifyNow` remain false, while `approved`,
+   `filesWritten`, `verificationExecuted`, `fileMaterialization`,
+   `workspaceMutation`, `lockfileMutation`, `commandExecution`, `buildOutput`,
+   `materializationApproved`, `processSpawn`, `packageCreated`, `dispatch`,
+   `networkDispatch`, `runtimeRegistration`, and `localFileWrites` remain
+   false.
 
 Keep manual configuration behavior stable while moving command metadata and
 envelopes; transport-specific formatting should stay at the MCP/CLI edges.

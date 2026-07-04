@@ -40,7 +40,9 @@ defines package materialization execution dry-run metadata without executing
 writes. P25.37 defines package materialization write contract metadata without
 performing writes. P25.38 defines package materialization rollback contract
 metadata without executing rollback. P25.39 defines package materialization
-verification manifest metadata without running verification.
+verification manifest metadata without running verification. P25.40 defines
+package materialization final approval checklist metadata without granting
+approval.
 
 ## Existing Surfaces
 
@@ -187,7 +189,8 @@ metadata-only package materialization approval gate. P25.36 adds metadata-only
 package materialization execution dry-run. P25.37 adds metadata-only package
 materialization write contract. P25.38 adds metadata-only package
 materialization rollback contract. P25.39 adds metadata-only package
-materialization verification manifest. MCP
+materialization verification manifest. P25.40 adds metadata-only package
+materialization final approval checklist. MCP
 `render.thumbnail` and `penpot-cli render thumbnail --dry-run` can print the
 future request shape, configured/not configured service metadata,
 response/error contracts, `clientRequest.dispatch:false`,
@@ -277,6 +280,14 @@ plus `packageMaterializationVerificationManifest.executeNow:false`,
 `packageMaterializationVerificationManifest.fileMaterialization:false`,
 `packageMaterializationVerificationManifest.workspaceMutation:false`, and
 `packageMaterializationVerificationManifest.runtimeRegistration:false`,
+plus `packageMaterializationFinalApprovalChecklist.finalApprovalGranted:false`,
+`packageMaterializationFinalApprovalChecklist.executeNow:false`,
+`packageMaterializationFinalApprovalChecklist.verifyNow:false`,
+`packageMaterializationFinalApprovalChecklist.approved:false`,
+`packageMaterializationFinalApprovalChecklist.filesWritten:false`,
+`packageMaterializationFinalApprovalChecklist.fileMaterialization:false`,
+`packageMaterializationFinalApprovalChecklist.workspaceMutation:false`, and
+`packageMaterializationFinalApprovalChecklist.runtimeRegistration:false`,
 but execution still returns
 `renderer_service_unavailable` until explicit opt-in, config surfaces, renderer
 service, integration tests, health preflight, file cache probe, tagged-frame

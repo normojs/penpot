@@ -1122,3 +1122,17 @@ P25.39 adds renderer-service package materialization verification manifest:
   `commandExecution`, `buildOutput`, `materializationApproved`,
   `processSpawn`, `packageCreated`, `dispatch`, `networkDispatch`,
   `runtimeRegistration`, and `localFileWrites` all `false`.
+
+P25.40 adds renderer-service package materialization final approval checklist:
+
+- Plans include `packageMaterializationFinalApprovalChecklist`, defining
+  required explicit approval items, approval scope, blocked decision state, and
+  post-approval sequence before any future materialization.
+- The final approval checklist remains planning-only with
+  `finalApprovalGranted:false`, `executeNow:false`, `verifyNow:false`,
+  `approvalRequired:true`, `approved:false`, `dryRunOnly:true`,
+  `filesWritten`, `verificationExecuted`, `fileMaterialization`,
+  `workspaceMutation`, `lockfileMutation`, `commandExecution`, `buildOutput`,
+  `materializationApproved`, `processSpawn`, `packageCreated`, `dispatch`,
+  `networkDispatch`, `runtimeRegistration`, and `localFileWrites` all
+  `false`.

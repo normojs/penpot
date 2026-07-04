@@ -461,6 +461,7 @@ export interface RenderThumbnailRendererServicePlan {
         packageMaterializationWriteContract: RenderThumbnailRendererServicePackageMaterializationWriteContract;
         packageMaterializationRollbackContract: RenderThumbnailRendererServicePackageMaterializationRollbackContract;
         packageMaterializationVerificationManifest: RenderThumbnailRendererServicePackageMaterializationVerificationManifest;
+        packageMaterializationFinalApprovalChecklist: RenderThumbnailRendererServicePackageMaterializationFinalApprovalChecklist;
         clientRequest: RenderThumbnailRendererServiceClientRequest;
     };
     client: RenderThumbnailRendererServiceClientConfig;
@@ -493,6 +494,7 @@ export interface RenderThumbnailRendererServicePlan {
     packageMaterializationWriteContract: RenderThumbnailRendererServicePackageMaterializationWriteContract;
     packageMaterializationRollbackContract: RenderThumbnailRendererServicePackageMaterializationRollbackContract;
     packageMaterializationVerificationManifest: RenderThumbnailRendererServicePackageMaterializationVerificationManifest;
+    packageMaterializationFinalApprovalChecklist: RenderThumbnailRendererServicePackageMaterializationFinalApprovalChecklist;
     clientRequest: RenderThumbnailRendererServiceClientRequest;
     serviceRequest: {
         command: "render.thumbnail";
@@ -585,6 +587,7 @@ export interface RenderThumbnailRendererServicePlan {
         packageMaterializationWriteContractVersion: "P25.37";
         packageMaterializationRollbackContractVersion: "P25.38";
         packageMaterializationVerificationManifestVersion: "P25.39";
+        packageMaterializationFinalApprovalChecklistVersion: "P25.40";
     };
 }
 
@@ -2469,6 +2472,99 @@ export interface RenderThumbnailRendererServicePackageMaterializationVerificatio
     requiredBeforeRuntimeDispatch: string[];
 }
 
+export interface RenderThumbnailRendererServicePackageMaterializationFinalApprovalChecklist {
+    status: "planned-disabled";
+    checklistVersion: "P25.40";
+    adapter: "renderer-service";
+    command: "render.thumbnail";
+    dryRunOnly: true;
+    approvalRequired: true;
+    approved: false;
+    finalApprovalGranted: false;
+    executeNow: false;
+    verifyNow: false;
+    rollbackNow: false;
+    dispatch: false;
+    networkDispatch: false;
+    runtimeRegistration: false;
+    localFileWrites: false;
+    hostStartup: false;
+    processSpawn: false;
+    packageCreated: false;
+    workspaceMutation: false;
+    scriptRunnable: false;
+    fileMaterialization: false;
+    lockfileMutation: false;
+    rootPackageJsonMutation: false;
+    pnpmWorkspaceMutation: false;
+    commandExecution: false;
+    buildOutput: false;
+    packageScriptsRunnable: false;
+    materializationApproved: false;
+    materializationApprovedRequired: true;
+    materializationApprovedNow: false;
+    filesWritten: false;
+    rollbackExecuted: false;
+    verificationExecuted: false;
+    consumes: {
+        packageMaterializationVerificationManifest: {
+            requiredStatus: "planned-disabled";
+            currentStatus: string;
+            manifestVersion: string;
+            verifyNow: false;
+        };
+        packageMaterializationRollbackContract: {
+            requiredStatus: "planned-disabled";
+            currentStatus: string;
+            contractVersion: string;
+            rollbackNow: false;
+        };
+        packageMaterializationWriteContract: {
+            requiredStatus: "planned-disabled";
+            currentStatus: string;
+            contractVersion: string;
+            filesWritten: false;
+        };
+        packageMaterializationApprovalGate: {
+            requiredStatus: "planned-disabled";
+            currentStatus: string;
+            gateVersion: string;
+            approved: false;
+        };
+    };
+    checklist: Array<{
+        id: string;
+        label: string;
+        required: true;
+        satisfied: false;
+        source: string;
+    }>;
+    approvalScope: {
+        packageDirectory: string;
+        packageFiles: string[];
+        workspaceFiles: string[];
+        verificationCommands: string[];
+        runtimeDispatchIncluded: false;
+    };
+    approvalDecision: {
+        status: "blocked";
+        canGrantFinalApproval: false;
+        canMaterializeFiles: false;
+        canMutateWorkspace: false;
+        canRunVerification: false;
+        canEnableRuntimeDispatch: false;
+        reason: string;
+    };
+    postApprovalSequence: Array<{
+        id: string;
+        allowedBeforeFinalApproval: false;
+        writesFiles: boolean;
+        runsCommands: boolean;
+    }>;
+    noOpGuarantees: string[];
+    requiredBeforeRuntimeDispatch: string[];
+}
+
 export interface CreateRenderThumbnailRendererServiceClientRequestOptions {
     entrypoint?: "mcp" | "cli" | string | null;
     mcpToolName?: string | null;
@@ -2912,6 +3008,14 @@ export function createRenderThumbnailRendererServicePackageMaterializationVerifi
         packageCreationFileManifest?: Partial<RenderThumbnailRendererServicePackageCreationFileManifest> | null;
     }
 ): RenderThumbnailRendererServicePackageMaterializationVerificationManifest;
+export function createRenderThumbnailRendererServicePackageMaterializationFinalApprovalChecklist(
+    options?: {
+        packageMaterializationVerificationManifest?: Partial<RenderThumbnailRendererServicePackageMaterializationVerificationManifest> | null;
+        packageMaterializationRollbackContract?: Partial<RenderThumbnailRendererServicePackageMaterializationRollbackContract> | null;
+        packageMaterializationWriteContract?: Partial<RenderThumbnailRendererServicePackageMaterializationWriteContract> | null;
+        packageMaterializationApprovalGate?: Partial<RenderThumbnailRendererServicePackageMaterializationApprovalGate> | null;
+    }
+): RenderThumbnailRendererServicePackageMaterializationFinalApprovalChecklist;
 export function createRenderThumbnailRendererServiceClientRequest(
     plan: Partial<RenderThumbnailRendererServicePlan>,
     options?: CreateRenderThumbnailRendererServiceClientRequestOptions

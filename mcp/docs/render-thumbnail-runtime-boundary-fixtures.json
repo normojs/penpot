@@ -1,7 +1,7 @@
 {
-  "version": "P25.39",
+  "version": "P25.40",
   "command": "render.thumbnail",
-  "status": "runtime boundary audited; MCP/CLI planning, metadata-only availability probes, response normalization contracts, disabled client request scaffold, closed execution gate, health preflight plan, executable client harness plan, dispatch adapter boundary, opt-in configuration surfaces, unavailable error taxonomy, integration fixture harness, dispatch registration preflight, disabled executable adapter registration scaffold, disabled adapter registry manifest, final disabled enablement checklist, implementation slice audit, health/no-op contract fixtures, no-op service host scaffold, host lifecycle test fixtures, package manifest scaffold, package creation guardrails, package file templates, package workspace wiring, package build verification, package materialization checklist, package creation dry-run summary, package creation file manifest, package materialization approval gate, package materialization execution dry-run, package materialization write contract, package materialization rollback contract, and package materialization verification manifest registered; runtime execution blocked",
+  "status": "runtime boundary audited; MCP/CLI planning, metadata-only availability probes, response normalization contracts, disabled client request scaffold, closed execution gate, health preflight plan, executable client harness plan, dispatch adapter boundary, opt-in configuration surfaces, unavailable error taxonomy, integration fixture harness, dispatch registration preflight, disabled executable adapter registration scaffold, disabled adapter registry manifest, final disabled enablement checklist, implementation slice audit, health/no-op contract fixtures, no-op service host scaffold, host lifecycle test fixtures, package manifest scaffold, package creation guardrails, package file templates, package workspace wiring, package build verification, package materialization checklist, package creation dry-run summary, package creation file manifest, package materialization approval gate, package materialization execution dry-run, package materialization write contract, package materialization rollback contract, package materialization verification manifest, and package materialization final approval checklist registered; runtime execution blocked",
   "selectedBoundary": "thumbnail-renderer-service",
   "runtimeRegistration": {
     "mcpToolRegistered": true,
@@ -377,11 +377,12 @@
     "package materialization execution dry-run survives dry-run and unavailable execution JSON output",
     "package materialization write contract survives dry-run and unavailable execution JSON output",
     "package materialization rollback contract survives dry-run and unavailable execution JSON output",
-    "package materialization verification manifest survives dry-run and unavailable execution JSON output"
+    "package materialization verification manifest survives dry-run and unavailable execution JSON output",
+    "package materialization final approval checklist survives dry-run and unavailable execution JSON output"
   ],
   "nextTask": {
-    "id": "P25.40",
-    "title": "Plan renderer-service package materialization final approval checklist",
+    "id": "P25.41",
+    "title": "Plan renderer-service package materialization explicit approval token",
     "status": "pending"
   },
   "implementationSliceAudit": {
@@ -2733,6 +2734,177 @@
       "confirm package files and workspace files match the manifest",
       "confirm rollback contract remains valid after verification",
       "keep render.thumbnail unavailable until verification manifest passes"
+    ]
+  },
+  "packageMaterializationFinalApprovalChecklist": {
+    "status": "planned-disabled",
+    "checklistVersion": "P25.40",
+    "adapter": "renderer-service",
+    "command": "render.thumbnail",
+    "dryRunOnly": true,
+    "approvalRequired": true,
+    "approved": false,
+    "finalApprovalGranted": false,
+    "executeNow": false,
+    "verifyNow": false,
+    "rollbackNow": false,
+    "dispatch": false,
+    "networkDispatch": false,
+    "runtimeRegistration": false,
+    "localFileWrites": false,
+    "hostStartup": false,
+    "processSpawn": false,
+    "packageCreated": false,
+    "workspaceMutation": false,
+    "scriptRunnable": false,
+    "fileMaterialization": false,
+    "lockfileMutation": false,
+    "rootPackageJsonMutation": false,
+    "pnpmWorkspaceMutation": false,
+    "commandExecution": false,
+    "buildOutput": false,
+    "packageScriptsRunnable": false,
+    "materializationApproved": false,
+    "materializationApprovedRequired": true,
+    "materializationApprovedNow": false,
+    "filesWritten": false,
+    "rollbackExecuted": false,
+    "verificationExecuted": false,
+    "consumes": {
+      "packageMaterializationVerificationManifest": {
+        "requiredStatus": "planned-disabled",
+        "currentStatus": "planned-disabled",
+        "manifestVersion": "P25.39",
+        "verifyNow": false
+      },
+      "packageMaterializationRollbackContract": {
+        "requiredStatus": "planned-disabled",
+        "currentStatus": "planned-disabled",
+        "contractVersion": "P25.38",
+        "rollbackNow": false
+      },
+      "packageMaterializationWriteContract": {
+        "requiredStatus": "planned-disabled",
+        "currentStatus": "planned-disabled",
+        "contractVersion": "P25.37",
+        "filesWritten": false
+      },
+      "packageMaterializationApprovalGate": {
+        "requiredStatus": "planned-disabled",
+        "currentStatus": "planned-disabled",
+        "gateVersion": "P25.35",
+        "approved": false
+      }
+    },
+    "checklist": [
+      {
+        "id": "explicit-user-approval",
+        "label": "Explicit user approval for renderer-service package materialization",
+        "required": true,
+        "satisfied": false,
+        "source": "future implementation task request"
+      },
+      {
+        "id": "write-contract-reviewed",
+        "label": "packageMaterializationWriteContract reviewed",
+        "required": true,
+        "satisfied": false,
+        "source": "packageMaterializationWriteContract"
+      },
+      {
+        "id": "rollback-contract-reviewed",
+        "label": "packageMaterializationRollbackContract reviewed",
+        "required": true,
+        "satisfied": false,
+        "source": "packageMaterializationRollbackContract"
+      },
+      {
+        "id": "verification-manifest-reviewed",
+        "label": "packageMaterializationVerificationManifest reviewed",
+        "required": true,
+        "satisfied": false,
+        "source": "packageMaterializationVerificationManifest"
+      },
+      {
+        "id": "runtime-dispatch-remains-disabled",
+        "label": "render.thumbnail runtime dispatch remains disabled after materialization",
+        "required": true,
+        "satisfied": false,
+        "source": "executionGate"
+      }
+    ],
+    "approvalScope": {
+      "packageDirectory": "renderer-service",
+      "packageFiles": [
+        "renderer-service/package.json",
+        "renderer-service/tsconfig.json",
+        "renderer-service/src/index.ts",
+        "renderer-service/src/noop-host.ts",
+        "renderer-service/test/noop-host.test.mjs"
+      ],
+      "workspaceFiles": [
+        "pnpm-workspace.yaml",
+        "package.json",
+        "pnpm-lock.yaml"
+      ],
+      "verificationCommands": [
+        "pnpm --filter @penpot/renderer-service build",
+        "pnpm --filter @penpot/renderer-service exec tsc --noEmit",
+        "pnpm --filter @penpot/renderer-service test"
+      ],
+      "runtimeDispatchIncluded": false
+    },
+    "approvalDecision": {
+      "status": "blocked",
+      "canGrantFinalApproval": false,
+      "canMaterializeFiles": false,
+      "canMutateWorkspace": false,
+      "canRunVerification": false,
+      "canEnableRuntimeDispatch": false,
+      "reason": "final approval checklist is metadata-only and explicit approval has not been granted"
+    },
+    "postApprovalSequence": [
+      {
+        "id": "capture-rollback-snapshot",
+        "allowedBeforeFinalApproval": false,
+        "writesFiles": false,
+        "runsCommands": false
+      },
+      {
+        "id": "materialize-package-files",
+        "allowedBeforeFinalApproval": false,
+        "writesFiles": true,
+        "runsCommands": false
+      },
+      {
+        "id": "mutate-workspace-files",
+        "allowedBeforeFinalApproval": false,
+        "writesFiles": true,
+        "runsCommands": false
+      },
+      {
+        "id": "run-verification-manifest",
+        "allowedBeforeFinalApproval": false,
+        "writesFiles": false,
+        "runsCommands": true
+      }
+    ],
+    "noOpGuarantees": [
+      "final approval checklist does not grant approval",
+      "final approval checklist does not create renderer-service directory",
+      "final approval checklist does not write package files",
+      "final approval checklist does not edit workspace manifests",
+      "final approval checklist does not mutate lockfiles",
+      "final approval checklist does not run verification commands",
+      "final approval checklist does not generate build output",
+      "final approval checklist does not register runtime dispatch"
+    ],
+    "requiredBeforeRuntimeDispatch": [
+      "grant final materialization approval in a later explicit implementation task",
+      "materialize files only after every checklist item is satisfied",
+      "run verification manifest after approved materialization",
+      "keep rollback contract available through verification",
+      "keep render.thumbnail unavailable until final approval, materialization, and verification all pass"
     ]
   }
 }
