@@ -1260,6 +1260,32 @@ P25.46 is complete:
    `networkDispatch`, `runtimeRegistration`, and `localFileWrites` remain
    false.
 
+P25.47 is complete:
+
+1. Shared plans include
+   `packageMaterializationApprovalOperatorConfirmationPolicy` metadata for
+   future explicit operator confirmation, required operator identity and intent
+   inputs, visible approval scope, confirmation phrase, audit linkage, blocked
+   confirmation decision, and no-op guarantees.
+2. MCP and CLI expose this operator confirmation policy plan in dry-run and
+   unavailable execution payloads without prompting operators, accepting
+   confirmations, storing confirmation records, validating operator identity,
+   issuing confirmation tokens, accepting or validating tokens, consuming or
+   revoking tokens, granting approval, creating package directories, writing
+   files, mutating workspace manifests, mutating lockfiles, running commands,
+   emitting build output, starting processes, or registering runtime dispatch.
+3. `operatorConfirmationPrompted`, `operatorConfirmationReceived`,
+   `operatorConfirmationStored`, `operatorConfirmationValidated`,
+   `operatorIdentityVerified`, `operatorIntentCaptured`,
+   `confirmationAuditLinked`, `confirmationTokenIssued`, `tokenAccepted`,
+   `tokenValidated`, `tokenConsumed`, `tokenRevoked`, `approved`,
+   `finalApprovalGranted`, `executeNow`, and `verifyNow` remain false, while
+   `filesWritten`, `verificationExecuted`, `fileMaterialization`,
+   `workspaceMutation`, `lockfileMutation`, `commandExecution`, `buildOutput`,
+   `materializationApproved`, `processSpawn`, `packageCreated`, `dispatch`,
+   `networkDispatch`, `runtimeRegistration`, and `localFileWrites` remain
+   false.
+
 Keep manual configuration behavior stable while moving command metadata and
 envelopes; transport-specific formatting should stay at the MCP/CLI edges.
 

@@ -2680,6 +2680,31 @@ P25.46 render.thumbnail package materialization approval scope binding policy re
   `networkDispatch`, `runtimeRegistration`, and `localFileWrites` remain
   `false`.
 
+P25.47 render.thumbnail package materialization approval operator confirmation policy result:
+
+- Shared plans include `packageMaterializationApprovalOperatorConfirmationPolicy`,
+  defining metadata-only explicit operator confirmation, required identity and
+  intent inputs, visible approval scope, confirmation phrase, audit linkage,
+  blocked confirmation decision, and no-op guarantees.
+- MCP and CLI expose the operator confirmation policy plan in dry-run and
+  unavailable execution payloads without prompting operators, accepting
+  confirmations, storing confirmation records, validating operator identity,
+  issuing confirmation tokens, accepting or validating tokens, consuming or
+  revoking tokens, granting approval, creating package directories, writing
+  files, mutating workspace manifests, mutating lockfiles, running commands,
+  emitting build output, starting processes, or registering runtime dispatch.
+- `operatorConfirmationPrompted`, `operatorConfirmationReceived`,
+  `operatorConfirmationStored`, `operatorConfirmationValidated`,
+  `operatorIdentityVerified`, `operatorIntentCaptured`,
+  `confirmationAuditLinked`, `confirmationTokenIssued`, `tokenAccepted`,
+  `tokenValidated`, `tokenConsumed`, `tokenRevoked`, `approved`,
+  `finalApprovalGranted`, `executeNow`, and `verifyNow` remain `false`, while
+  `filesWritten`, `verificationExecuted`, `fileMaterialization`,
+  `workspaceMutation`, `lockfileMutation`, `commandExecution`, `buildOutput`,
+  `materializationApproved`, `processSpawn`, `packageCreated`, `dispatch`,
+  `networkDispatch`, `runtimeRegistration`, and `localFileWrites` remain
+  `false`.
+
 ### 8.5 Export and Render Tools
 
 May start file-bound and later move to headless:
@@ -2729,7 +2754,8 @@ materialization approval audit trail. P25.43 defines disabled package
 materialization approval replay guard. P25.44 defines disabled package
 materialization approval expiry policy. P25.45 defines disabled package
 materialization approval revocation policy. P25.46 defines disabled package
-materialization approval scope binding policy.
+materialization approval scope binding policy. P25.47 defines disabled package
+materialization approval operator confirmation policy.
 Runtime behavior remains unavailable
 until opt-in config surfaces, renderer-service implementation, workspace
 wiring, health preflight, cache probe, executable client, and tagged-frame

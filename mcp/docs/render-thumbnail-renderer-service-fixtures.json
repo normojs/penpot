@@ -1,5 +1,5 @@
 {
-  "version": "P25.46",
+  "version": "P25.47",
   "command": "render.thumbnail",
   "status": "renderer-service API fixtures with MCP/CLI dry-run/client boundaries, metadata-only availability probes, response normalization contracts, disabled client request scaffold, explicit execution gate, health preflight plan, executable client harness plan, dispatch adapter boundary, opt-in configuration surfaces, unavailable error taxonomy, integration fixture harness, dispatch registration preflight, disabled executable adapter registration scaffold, disabled adapter registry manifest, final disabled enablement checklist, implementation slice audit, health/no-op contract fixtures, no-op service host scaffold, host lifecycle test fixtures, package manifest scaffold, package creation guardrails, package file templates, and package workspace wiring; runtime execution blocked",
   "adapter": "renderer-service",
@@ -3874,6 +3874,164 @@
         "record scope binding decision in approval audit trail without logging token value",
         "keep render.thumbnail unavailable until executable adapter registration is approved"
       ]
+    },
+    "packageMaterializationApprovalOperatorConfirmationPolicy": {
+      "status": "planned-disabled",
+      "operatorConfirmationVersion": "P25.47",
+      "adapter": "renderer-service",
+      "command": "render.thumbnail",
+      "dryRunOnly": true,
+      "approvalRequired": true,
+      "approved": false,
+      "finalApprovalGranted": false,
+      "operatorConfirmationRequired": true,
+      "operatorConfirmationPlanned": true,
+      "operatorConfirmationPrompted": false,
+      "operatorConfirmationReceived": false,
+      "operatorConfirmationStored": false,
+      "operatorConfirmationValidated": false,
+      "operatorIdentityVerified": false,
+      "operatorIntentCaptured": false,
+      "confirmationAuditLinked": false,
+      "confirmationTokenIssued": false,
+      "tokenAccepted": false,
+      "tokenStored": false,
+      "tokenValidated": false,
+      "tokenConsumed": false,
+      "tokenRevoked": false,
+      "executeNow": false,
+      "verifyNow": false,
+      "rollbackNow": false,
+      "dispatch": false,
+      "networkDispatch": false,
+      "runtimeRegistration": false,
+      "localFileWrites": false,
+      "hostStartup": false,
+      "processSpawn": false,
+      "packageCreated": false,
+      "workspaceMutation": false,
+      "scriptRunnable": false,
+      "fileMaterialization": false,
+      "lockfileMutation": false,
+      "rootPackageJsonMutation": false,
+      "pnpmWorkspaceMutation": false,
+      "commandExecution": false,
+      "buildOutput": false,
+      "packageScriptsRunnable": false,
+      "materializationApproved": false,
+      "materializationApprovedNow": false,
+      "filesWritten": false,
+      "rollbackExecuted": false,
+      "verificationExecuted": false,
+      "consumes": {
+        "packageMaterializationApprovalScopeBindingPolicy": {
+          "requiredStatus": "planned-disabled",
+          "currentStatus": "planned-disabled",
+          "scopeBindingVersion": "P25.46",
+          "scopeBindingExecuted": false
+        },
+        "packageMaterializationApprovalRevocationPolicy": {
+          "requiredStatus": "planned-disabled",
+          "currentStatus": "planned-disabled",
+          "revocationPolicyVersion": "P25.45",
+          "revocationCheckExecuted": false
+        },
+        "packageMaterializationFinalApprovalChecklist": {
+          "requiredStatus": "planned-disabled",
+          "currentStatus": "planned-disabled",
+          "checklistVersion": "P25.40",
+          "finalApprovalGranted": false
+        }
+      },
+      "operatorConfirmationPolicy": {
+        "policy": "require-explicit-operator-confirmation",
+        "promptNow": false,
+        "acceptConfirmationNow": false,
+        "validateOperatorIdentityNow": false,
+        "persistConfirmationNow": false,
+        "issueConfirmationTokenNow": false,
+        "requiredInputs": [
+          "operatorId",
+          "confirmationIntent",
+          "approvalScopeHash",
+          "confirmedAt"
+        ],
+        "confirmationPhrase": "materialize renderer-service package",
+        "tokenValueLogged": false
+      },
+      "operatorConfirmationChecks": [
+        {
+          "id": "operator-identity-present",
+          "required": true,
+          "planned": true,
+          "executed": false,
+          "passed": false
+        },
+        {
+          "id": "confirmation-intent-present",
+          "required": true,
+          "planned": true,
+          "executed": false,
+          "passed": false
+        },
+        {
+          "id": "approval-scope-visible-to-operator",
+          "required": true,
+          "planned": true,
+          "executed": false,
+          "passed": false
+        },
+        {
+          "id": "confirmation-audit-linked",
+          "required": true,
+          "planned": true,
+          "executed": false,
+          "passed": false
+        },
+        {
+          "id": "confirmation-token-not-issued",
+          "required": true,
+          "planned": true,
+          "executed": false,
+          "passed": false
+        }
+      ],
+      "operatorConfirmationDecision": {
+        "status": "blocked",
+        "canPromptOperator": false,
+        "canAcceptConfirmation": false,
+        "canValidateOperatorIdentity": false,
+        "canIssueConfirmationToken": false,
+        "canAcceptToken": false,
+        "canConsumeToken": false,
+        "canGrantFinalApproval": false,
+        "canMaterializeFiles": false,
+        "canEnableRuntimeDispatch": false,
+        "reason": "operator confirmation policy is metadata-only and no operator confirmation has been collected"
+      },
+      "noOpGuarantees": [
+        "operator confirmation policy plan does not prompt operators",
+        "operator confirmation policy plan does not accept confirmations",
+        "operator confirmation policy plan does not validate operator identity",
+        "operator confirmation policy plan does not persist confirmation records",
+        "operator confirmation policy plan does not issue confirmation tokens",
+        "operator confirmation policy plan does not accept or validate tokens",
+        "operator confirmation policy plan does not consume or revoke tokens",
+        "operator confirmation policy plan does not grant materialization approval",
+        "operator confirmation policy plan does not create renderer-service directory",
+        "operator confirmation policy plan does not write package or workspace files",
+        "operator confirmation policy plan does not mutate lockfiles",
+        "operator confirmation policy plan does not run verification commands",
+        "operator confirmation policy plan does not generate build output",
+        "operator confirmation policy plan does not register runtime dispatch"
+      ],
+      "requiredBeforeRuntimeDispatch": [
+        "define operator identity source and confirmation phrase",
+        "display computed approval scope to the operator before confirmation",
+        "persist confirmation audit record without logging token value",
+        "issue confirmation token only after operator identity and scope checks pass",
+        "keep render.thumbnail unavailable until executable adapter registration is approved"
+      ]
     }
   },
   "registrationGates": {
@@ -4221,8 +4379,8 @@
     "missing token fails before contacting renderer-service"
   ],
   "nextTask": {
-    "id": "P25.47",
-    "title": "Plan renderer-service package materialization approval operator confirmation policy",
+    "id": "P25.48",
+    "title": "Plan renderer-service package materialization approval emergency stop policy",
     "status": "pending"
   }
 }

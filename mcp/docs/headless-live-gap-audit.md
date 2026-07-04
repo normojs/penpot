@@ -135,6 +135,14 @@ state for them.
 | `debug.get_plugin_state`, `debug.get_agent_logs` | Names exist in `ToolNames.ts`, not registered. | Unsupported or descriptor-only. | Diagnostics exist through status/log paths, not these tools. | Keep out of P17.2 unless diagnostics naming is explicitly selected. |
 | Legacy `execute_code`, `export_shape`, `import_image` | Registered legacy tools. | Legacy live/plugin or local filesystem behavior. | They are compatibility surfaces, not the typed headless path. | Do not expand; keep gated/legacy behavior. |
 
+P25.47 extends the `render.thumbnail` renderer-service planning payload with
+metadata-only package materialization approval operator confirmation policy.
+It defines future explicit operator confirmation while keeping operator prompts,
+confirmation collection/storage/validation, identity verification,
+confirmation token issuance, token validation/acceptance/consumption, approval,
+file writes, workspace mutation, command execution, build output, package
+creation, process startup, and runtime registration disabled.
+
 ## P17.2 Descriptor Slice
 
 The first descriptor slice should be read-only or metadata-only. It should not
@@ -572,6 +580,12 @@ points CLI users back to MCP `file.open`, `file.get_context`,
 - P25.46 defines package materialization approval scope binding policy while
   keeping scope binding, approval scope hash computation/validation/storage,
   file snapshot reads, workspace/package hashing, token
+  validation/acceptance/consumption, approval, file writes, workspace mutation,
+  command execution, build output, package creation, process startup, and
+  runtime registration disabled.
+- P25.47 defines package materialization approval operator confirmation policy
+  while keeping operator prompts, confirmation collection/storage/validation,
+  identity verification, confirmation token issuance, token
   validation/acceptance/consumption, approval, file writes, workspace mutation,
   command execution, build output, package creation, process startup, and
   runtime registration disabled.

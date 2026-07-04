@@ -48,6 +48,7 @@ import {
     createRenderThumbnailRendererServicePackageMaterializationApprovalExpiryPolicy,
     createRenderThumbnailRendererServicePackageMaterializationApprovalRevocationPolicy,
     createRenderThumbnailRendererServicePackageMaterializationApprovalScopeBindingPolicy,
+    createRenderThumbnailRendererServicePackageMaterializationApprovalOperatorConfirmationPolicy,
     createRenderThumbnailRendererServicePackageFileTemplates,
     createRenderThumbnailRendererServicePackageManifestScaffold,
     createRenderThumbnailRendererServicePackageMaterializationChecklist,
@@ -690,6 +691,19 @@ test("render.thumbnail renderer-service API fixtures define planning requests wi
     assert.equal(fixtures.serviceApi.packageMaterializationApprovalScopeBindingPolicy.commandExecution, false);
     assert.equal(fixtures.serviceApi.packageMaterializationApprovalScopeBindingPolicy.buildOutput, false);
     assert.equal(fixtures.serviceApi.packageMaterializationApprovalScopeBindingPolicy.filesWritten, false);
+    assert.equal(fixtures.serviceApi.packageMaterializationApprovalOperatorConfirmationPolicy.operatorConfirmationVersion, "P25.47");
+    assert.equal(fixtures.serviceApi.packageMaterializationApprovalOperatorConfirmationPolicy.operatorConfirmationPrompted, false);
+    assert.equal(fixtures.serviceApi.packageMaterializationApprovalOperatorConfirmationPolicy.operatorConfirmationReceived, false);
+    assert.equal(fixtures.serviceApi.packageMaterializationApprovalOperatorConfirmationPolicy.operatorConfirmationStored, false);
+    assert.equal(fixtures.serviceApi.packageMaterializationApprovalOperatorConfirmationPolicy.operatorIdentityVerified, false);
+    assert.equal(fixtures.serviceApi.packageMaterializationApprovalOperatorConfirmationPolicy.confirmationTokenIssued, false);
+    assert.equal(fixtures.serviceApi.packageMaterializationApprovalOperatorConfirmationPolicy.tokenAccepted, false);
+    assert.equal(fixtures.serviceApi.packageMaterializationApprovalOperatorConfirmationPolicy.tokenValidated, false);
+    assert.equal(fixtures.serviceApi.packageMaterializationApprovalOperatorConfirmationPolicy.approved, false);
+    assert.equal(fixtures.serviceApi.packageMaterializationApprovalOperatorConfirmationPolicy.finalApprovalGranted, false);
+    assert.equal(fixtures.serviceApi.packageMaterializationApprovalOperatorConfirmationPolicy.commandExecution, false);
+    assert.equal(fixtures.serviceApi.packageMaterializationApprovalOperatorConfirmationPolicy.buildOutput, false);
+    assert.equal(fixtures.serviceApi.packageMaterializationApprovalOperatorConfirmationPolicy.filesWritten, false);
     assert.deepEqual(fixtures.runtimeRegistration.commandDescriptorAdapters, ["renderer-service"]);
     assert.deepEqual(CommandDescriptors.RENDER_THUMBNAIL.adapters, ["renderer-service"]);
     assert.equal(fixtures.runtimeRegistration.mcpToolRegistered, true);
@@ -1531,6 +1545,55 @@ test("render.thumbnail renderer-service plan exposes dry-run client request whil
     assert.equal(plan.packageMaterializationApprovalScopeBindingPolicy.scopeBindingDecision.canValidateTokenScope, false);
     assert.equal(plan.packageMaterializationApprovalScopeBindingPolicy.scopeBindingDecision.canGrantFinalApproval, false);
     assert.deepEqual(plan.service.packageMaterializationApprovalScopeBindingPolicy, plan.packageMaterializationApprovalScopeBindingPolicy);
+    assert.equal(plan.packageMaterializationApprovalOperatorConfirmationPolicy.operatorConfirmationVersion, "P25.47");
+    assert.equal(plan.packageMaterializationApprovalOperatorConfirmationPolicy.dryRunOnly, true);
+    assert.equal(plan.packageMaterializationApprovalOperatorConfirmationPolicy.approvalRequired, true);
+    assert.equal(plan.packageMaterializationApprovalOperatorConfirmationPolicy.approved, false);
+    assert.equal(plan.packageMaterializationApprovalOperatorConfirmationPolicy.finalApprovalGranted, false);
+    assert.equal(plan.packageMaterializationApprovalOperatorConfirmationPolicy.operatorConfirmationRequired, true);
+    assert.equal(plan.packageMaterializationApprovalOperatorConfirmationPolicy.operatorConfirmationPlanned, true);
+    assert.equal(plan.packageMaterializationApprovalOperatorConfirmationPolicy.operatorConfirmationPrompted, false);
+    assert.equal(plan.packageMaterializationApprovalOperatorConfirmationPolicy.operatorConfirmationReceived, false);
+    assert.equal(plan.packageMaterializationApprovalOperatorConfirmationPolicy.operatorConfirmationStored, false);
+    assert.equal(plan.packageMaterializationApprovalOperatorConfirmationPolicy.operatorConfirmationValidated, false);
+    assert.equal(plan.packageMaterializationApprovalOperatorConfirmationPolicy.operatorIdentityVerified, false);
+    assert.equal(plan.packageMaterializationApprovalOperatorConfirmationPolicy.operatorIntentCaptured, false);
+    assert.equal(plan.packageMaterializationApprovalOperatorConfirmationPolicy.confirmationAuditLinked, false);
+    assert.equal(plan.packageMaterializationApprovalOperatorConfirmationPolicy.confirmationTokenIssued, false);
+    assert.equal(plan.packageMaterializationApprovalOperatorConfirmationPolicy.tokenAccepted, false);
+    assert.equal(plan.packageMaterializationApprovalOperatorConfirmationPolicy.tokenStored, false);
+    assert.equal(plan.packageMaterializationApprovalOperatorConfirmationPolicy.tokenValidated, false);
+    assert.equal(plan.packageMaterializationApprovalOperatorConfirmationPolicy.tokenConsumed, false);
+    assert.equal(plan.packageMaterializationApprovalOperatorConfirmationPolicy.tokenRevoked, false);
+    assert.equal(plan.packageMaterializationApprovalOperatorConfirmationPolicy.executeNow, false);
+    assert.equal(plan.packageMaterializationApprovalOperatorConfirmationPolicy.verifyNow, false);
+    assert.equal(plan.packageMaterializationApprovalOperatorConfirmationPolicy.rollbackNow, false);
+    assert.equal(plan.packageMaterializationApprovalOperatorConfirmationPolicy.dispatch, false);
+    assert.equal(plan.packageMaterializationApprovalOperatorConfirmationPolicy.networkDispatch, false);
+    assert.equal(plan.packageMaterializationApprovalOperatorConfirmationPolicy.runtimeRegistration, false);
+    assert.equal(plan.packageMaterializationApprovalOperatorConfirmationPolicy.localFileWrites, false);
+    assert.equal(plan.packageMaterializationApprovalOperatorConfirmationPolicy.packageCreated, false);
+    assert.equal(plan.packageMaterializationApprovalOperatorConfirmationPolicy.workspaceMutation, false);
+    assert.equal(plan.packageMaterializationApprovalOperatorConfirmationPolicy.fileMaterialization, false);
+    assert.equal(plan.packageMaterializationApprovalOperatorConfirmationPolicy.lockfileMutation, false);
+    assert.equal(plan.packageMaterializationApprovalOperatorConfirmationPolicy.commandExecution, false);
+    assert.equal(plan.packageMaterializationApprovalOperatorConfirmationPolicy.buildOutput, false);
+    assert.equal(plan.packageMaterializationApprovalOperatorConfirmationPolicy.materializationApproved, false);
+    assert.equal(plan.packageMaterializationApprovalOperatorConfirmationPolicy.filesWritten, false);
+    assert.equal(plan.packageMaterializationApprovalOperatorConfirmationPolicy.consumes.packageMaterializationApprovalScopeBindingPolicy.scopeBindingVersion, "P25.46");
+    assert.equal(plan.packageMaterializationApprovalOperatorConfirmationPolicy.consumes.packageMaterializationApprovalRevocationPolicy.revocationPolicyVersion, "P25.45");
+    assert.equal(plan.packageMaterializationApprovalOperatorConfirmationPolicy.consumes.packageMaterializationFinalApprovalChecklist.checklistVersion, "P25.40");
+    assert.equal(plan.packageMaterializationApprovalOperatorConfirmationPolicy.operatorConfirmationPolicy.promptNow, false);
+    assert.equal(plan.packageMaterializationApprovalOperatorConfirmationPolicy.operatorConfirmationPolicy.acceptConfirmationNow, false);
+    assert.equal(plan.packageMaterializationApprovalOperatorConfirmationPolicy.operatorConfirmationPolicy.validateOperatorIdentityNow, false);
+    assert.equal(plan.packageMaterializationApprovalOperatorConfirmationPolicy.operatorConfirmationPolicy.persistConfirmationNow, false);
+    assert.equal(plan.packageMaterializationApprovalOperatorConfirmationPolicy.operatorConfirmationPolicy.issueConfirmationTokenNow, false);
+    assert.ok(plan.packageMaterializationApprovalOperatorConfirmationPolicy.operatorConfirmationPolicy.requiredInputs.includes("operatorId"));
+    assert.ok(plan.packageMaterializationApprovalOperatorConfirmationPolicy.operatorConfirmationChecks.some((entry) => entry.id === "confirmation-audit-linked" && entry.executed === false));
+    assert.equal(plan.packageMaterializationApprovalOperatorConfirmationPolicy.operatorConfirmationDecision.canPromptOperator, false);
+    assert.equal(plan.packageMaterializationApprovalOperatorConfirmationPolicy.operatorConfirmationDecision.canAcceptConfirmation, false);
+    assert.equal(plan.packageMaterializationApprovalOperatorConfirmationPolicy.operatorConfirmationDecision.canGrantFinalApproval, false);
+    assert.deepEqual(plan.service.packageMaterializationApprovalOperatorConfirmationPolicy, plan.packageMaterializationApprovalOperatorConfirmationPolicy);
     assert.equal(plan.clientRequest.status, "scaffolded");
     assert.equal(plan.clientRequest.dispatch, false);
     assert.equal(plan.clientRequest.method, "POST");
@@ -1593,6 +1656,7 @@ test("render.thumbnail renderer-service plan exposes dry-run client request whil
     assert.equal(plan.diagnostics.packageMaterializationApprovalExpiryPolicyVersion, "P25.44");
     assert.equal(plan.diagnostics.packageMaterializationApprovalRevocationPolicyVersion, "P25.45");
     assert.equal(plan.diagnostics.packageMaterializationApprovalScopeBindingPolicyVersion, "P25.46");
+    assert.equal(plan.diagnostics.packageMaterializationApprovalOperatorConfirmationPolicyVersion, "P25.47");
 });
 
 test("render.thumbnail renderer-service plan reports not-configured availability without endpoint", () => {
@@ -3484,6 +3548,95 @@ test("render.thumbnail renderer-service package materialization approval scope b
     assert.equal(scopeBindingPolicy.scopeBindingDecision.canMaterializeFiles, false);
     assert.ok(scopeBindingPolicy.noOpGuarantees.includes("approval scope binding policy plan does not compute approval scope hashes"));
     assert.ok(scopeBindingPolicy.requiredBeforeRuntimeDispatch.includes("define canonical approval scope serialization"));
+});
+
+test("render.thumbnail renderer-service package materialization approval operator confirmation policy stays metadata-only", () => {
+    const operatorConfirmationPolicy = createRenderThumbnailRendererServicePackageMaterializationApprovalOperatorConfirmationPolicy({
+        packageMaterializationApprovalScopeBindingPolicy: {
+            status: "planned-disabled",
+            scopeBindingVersion: "P25.46",
+            scopeBindingExecuted: false,
+        },
+        packageMaterializationApprovalRevocationPolicy: {
+            status: "planned-disabled",
+            revocationPolicyVersion: "P25.45",
+            revocationCheckExecuted: false,
+        },
+        packageMaterializationFinalApprovalChecklist: {
+            status: "planned-disabled",
+            checklistVersion: "P25.40",
+            finalApprovalGranted: false,
+        },
+    });
+
+    assert.equal(operatorConfirmationPolicy.status, "planned-disabled");
+    assert.equal(operatorConfirmationPolicy.operatorConfirmationVersion, "P25.47");
+    assert.equal(operatorConfirmationPolicy.dryRunOnly, true);
+    assert.equal(operatorConfirmationPolicy.approvalRequired, true);
+    assert.equal(operatorConfirmationPolicy.approved, false);
+    assert.equal(operatorConfirmationPolicy.finalApprovalGranted, false);
+    assert.equal(operatorConfirmationPolicy.operatorConfirmationRequired, true);
+    assert.equal(operatorConfirmationPolicy.operatorConfirmationPlanned, true);
+    assert.equal(operatorConfirmationPolicy.operatorConfirmationPrompted, false);
+    assert.equal(operatorConfirmationPolicy.operatorConfirmationReceived, false);
+    assert.equal(operatorConfirmationPolicy.operatorConfirmationStored, false);
+    assert.equal(operatorConfirmationPolicy.operatorConfirmationValidated, false);
+    assert.equal(operatorConfirmationPolicy.operatorIdentityVerified, false);
+    assert.equal(operatorConfirmationPolicy.operatorIntentCaptured, false);
+    assert.equal(operatorConfirmationPolicy.confirmationAuditLinked, false);
+    assert.equal(operatorConfirmationPolicy.confirmationTokenIssued, false);
+    assert.equal(operatorConfirmationPolicy.tokenAccepted, false);
+    assert.equal(operatorConfirmationPolicy.tokenStored, false);
+    assert.equal(operatorConfirmationPolicy.tokenValidated, false);
+    assert.equal(operatorConfirmationPolicy.tokenConsumed, false);
+    assert.equal(operatorConfirmationPolicy.tokenRevoked, false);
+    assert.equal(operatorConfirmationPolicy.executeNow, false);
+    assert.equal(operatorConfirmationPolicy.verifyNow, false);
+    assert.equal(operatorConfirmationPolicy.rollbackNow, false);
+    assert.equal(operatorConfirmationPolicy.dispatch, false);
+    assert.equal(operatorConfirmationPolicy.networkDispatch, false);
+    assert.equal(operatorConfirmationPolicy.runtimeRegistration, false);
+    assert.equal(operatorConfirmationPolicy.localFileWrites, false);
+    assert.equal(operatorConfirmationPolicy.hostStartup, false);
+    assert.equal(operatorConfirmationPolicy.processSpawn, false);
+    assert.equal(operatorConfirmationPolicy.packageCreated, false);
+    assert.equal(operatorConfirmationPolicy.workspaceMutation, false);
+    assert.equal(operatorConfirmationPolicy.scriptRunnable, false);
+    assert.equal(operatorConfirmationPolicy.fileMaterialization, false);
+    assert.equal(operatorConfirmationPolicy.lockfileMutation, false);
+    assert.equal(operatorConfirmationPolicy.rootPackageJsonMutation, false);
+    assert.equal(operatorConfirmationPolicy.pnpmWorkspaceMutation, false);
+    assert.equal(operatorConfirmationPolicy.commandExecution, false);
+    assert.equal(operatorConfirmationPolicy.buildOutput, false);
+    assert.equal(operatorConfirmationPolicy.packageScriptsRunnable, false);
+    assert.equal(operatorConfirmationPolicy.materializationApproved, false);
+    assert.equal(operatorConfirmationPolicy.filesWritten, false);
+    assert.equal(operatorConfirmationPolicy.rollbackExecuted, false);
+    assert.equal(operatorConfirmationPolicy.verificationExecuted, false);
+    assert.equal(operatorConfirmationPolicy.consumes.packageMaterializationApprovalScopeBindingPolicy.scopeBindingVersion, "P25.46");
+    assert.equal(operatorConfirmationPolicy.consumes.packageMaterializationApprovalScopeBindingPolicy.scopeBindingExecuted, false);
+    assert.equal(operatorConfirmationPolicy.consumes.packageMaterializationApprovalRevocationPolicy.revocationPolicyVersion, "P25.45");
+    assert.equal(operatorConfirmationPolicy.consumes.packageMaterializationApprovalRevocationPolicy.revocationCheckExecuted, false);
+    assert.equal(operatorConfirmationPolicy.consumes.packageMaterializationFinalApprovalChecklist.checklistVersion, "P25.40");
+    assert.equal(operatorConfirmationPolicy.operatorConfirmationPolicy.policy, "require-explicit-operator-confirmation");
+    assert.equal(operatorConfirmationPolicy.operatorConfirmationPolicy.promptNow, false);
+    assert.equal(operatorConfirmationPolicy.operatorConfirmationPolicy.acceptConfirmationNow, false);
+    assert.equal(operatorConfirmationPolicy.operatorConfirmationPolicy.validateOperatorIdentityNow, false);
+    assert.equal(operatorConfirmationPolicy.operatorConfirmationPolicy.persistConfirmationNow, false);
+    assert.equal(operatorConfirmationPolicy.operatorConfirmationPolicy.issueConfirmationTokenNow, false);
+    assert.equal(operatorConfirmationPolicy.operatorConfirmationPolicy.tokenValueLogged, false);
+    assert.ok(operatorConfirmationPolicy.operatorConfirmationPolicy.requiredInputs.includes("confirmationIntent"));
+    assert.ok(operatorConfirmationPolicy.operatorConfirmationChecks.some((entry) => entry.id === "operator-identity-present" && entry.executed === false));
+    assert.equal(operatorConfirmationPolicy.operatorConfirmationDecision.canPromptOperator, false);
+    assert.equal(operatorConfirmationPolicy.operatorConfirmationDecision.canAcceptConfirmation, false);
+    assert.equal(operatorConfirmationPolicy.operatorConfirmationDecision.canValidateOperatorIdentity, false);
+    assert.equal(operatorConfirmationPolicy.operatorConfirmationDecision.canIssueConfirmationToken, false);
+    assert.equal(operatorConfirmationPolicy.operatorConfirmationDecision.canAcceptToken, false);
+    assert.equal(operatorConfirmationPolicy.operatorConfirmationDecision.canConsumeToken, false);
+    assert.equal(operatorConfirmationPolicy.operatorConfirmationDecision.canGrantFinalApproval, false);
+    assert.equal(operatorConfirmationPolicy.operatorConfirmationDecision.canMaterializeFiles, false);
+    assert.ok(operatorConfirmationPolicy.noOpGuarantees.includes("operator confirmation policy plan does not prompt operators"));
+    assert.ok(operatorConfirmationPolicy.requiredBeforeRuntimeDispatch.includes("define operator identity source and confirmation phrase"));
 });
 
 test("render.thumbnail renderer-service client request scaffold adds MCP audit headers without dispatch", () => {

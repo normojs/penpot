@@ -1,6 +1,6 @@
 # Render Thumbnail Renderer Service API
 
-Status: P25.46 API fixtures, MCP/CLI dry-run/client boundaries, metadata-only
+Status: P25.47 API fixtures, MCP/CLI dry-run/client boundaries, metadata-only
 availability probes, response normalization contracts, disabled client request
 scaffold, closed execution gate, disabled health preflight, and executable
 client harness plus dispatch adapter boundary plans, and opt-in configuration
@@ -37,7 +37,11 @@ revocation state, validating tokens, accepting tokens, consuming tokens, or
 granting approval. P25.46 adds package materialization approval scope binding
 policy metadata without computing approval scope hashes, reading file
 snapshots, hashing workspace/package files, validating tokens, accepting
-tokens, consuming tokens, or granting approval.
+tokens, consuming tokens, or granting approval. P25.47 adds package
+materialization approval operator confirmation policy metadata without
+prompting operators, collecting/storing/validating confirmations, verifying
+identity, issuing confirmation tokens, accepting/validating tokens, consuming
+tokens, or granting approval.
 
 P25.6 selected a dedicated thumbnail renderer service as the future executable
 owner for `render.thumbnail`. This document defines the service-facing request
@@ -313,6 +317,19 @@ consumption, final approval, file writes, package creation, workspace
 mutation, lockfile mutation, command execution, build output, materialization
 approval, process startup, dispatch, network dispatch, runtime registration,
 and local file writes disabled.
+
+P25.47 defines the package materialization approval operator confirmation
+policy. Plans now include
+`packageMaterializationApprovalOperatorConfirmationPolicy`, covering future
+explicit operator identity and intent inputs, visible approval scope,
+confirmation phrase, audit linkage, blocked confirmation decision, and no-op
+guarantees while keeping operator prompts, confirmation
+collection/storage/validation, identity verification, confirmation token
+issuance, token validation, token acceptance, token consumption, final
+approval, file writes, package creation, workspace mutation, lockfile mutation,
+command execution, build output, materialization approval, process startup,
+dispatch, network dispatch, runtime registration, and local file writes
+disabled.
 
 ## Service Boundary
 

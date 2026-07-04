@@ -1246,3 +1246,28 @@ policy:
   `packageCreated:false`, `dispatch:false`, `networkDispatch:false`,
   `runtimeRegistration:false`, and `localFileWrites:false`. It does not read
   file snapshots or hash workspace/package files.
+
+P25.47 adds renderer-service package materialization approval operator
+confirmation policy:
+
+- Plans include `packageMaterializationApprovalOperatorConfirmationPolicy`,
+  defining future explicit operator confirmation, required operator identity
+  and intent inputs, visible approval scope, confirmation phrase, audit linkage,
+  blocked confirmation decision, and no-op guarantees.
+- The operator confirmation policy remains planning-only with
+  `operatorConfirmationPrompted:false`,
+  `operatorConfirmationReceived:false`,
+  `operatorConfirmationStored:false`,
+  `operatorConfirmationValidated:false`,
+  `operatorIdentityVerified:false`, `operatorIntentCaptured:false`,
+  `confirmationAuditLinked:false`, `confirmationTokenIssued:false`,
+  `tokenAccepted:false`, `tokenValidated:false`, `tokenConsumed:false`,
+  `approved:false`, `finalApprovalGranted:false`, `executeNow:false`,
+  `verifyNow:false`, `filesWritten:false`, `fileMaterialization:false`,
+  `workspaceMutation:false`, `lockfileMutation:false`,
+  `commandExecution:false`, `buildOutput:false`,
+  `materializationApproved:false`, `processSpawn:false`,
+  `packageCreated:false`, `dispatch:false`, `networkDispatch:false`,
+  `runtimeRegistration:false`, and `localFileWrites:false`. It does not prompt
+  operators, collect/store/validate confirmations, verify identity, issue
+  confirmation tokens, or accept/validate tokens.

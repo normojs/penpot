@@ -58,6 +58,10 @@ tokens, consuming tokens, or granting approval. P25.46 defines package
 materialization approval scope binding policy metadata without computing
 approval scope hashes, reading file snapshots, hashing workspace/package files,
 validating tokens, accepting tokens, consuming tokens, or granting approval.
+P25.47 defines package materialization approval operator confirmation policy
+metadata without prompting operators, collecting/storing/validating
+confirmations, verifying identity, issuing confirmation tokens,
+accepting/validating tokens, consuming tokens, or granting approval.
 
 ## Existing Surfaces
 
@@ -211,7 +215,8 @@ materialization approval audit trail. P25.43 adds metadata-only package
 materialization approval replay guard. P25.44 adds metadata-only package
 materialization approval expiry policy. P25.45 adds metadata-only package
 materialization approval revocation policy. P25.46 adds metadata-only package
-materialization approval scope binding policy. MCP
+materialization approval scope binding policy. P25.47 adds metadata-only
+package materialization approval operator confirmation policy. MCP
 `render.thumbnail` and `penpot-cli render thumbnail --dry-run` can print the
 future request shape, configured/not configured service metadata,
 response/error contracts, `clientRequest.dispatch:false`,
