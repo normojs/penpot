@@ -134,6 +134,10 @@ revocation appeal resolution enforcement evidence policy metadata without
 selecting evidence policies, identifying evidence sources, collecting evidence,
 reading enforcement or audit records, storing evidence records, or enabling
 dispatch.
+P25.69 defines package materialization approval audit countersignature
+revocation appeal resolution enforcement evidence attestation policy metadata
+without selecting attestation policies, reading evidence or audit records,
+attesting evidence, storing attestation records, or enabling dispatch.
 
 ## Existing Surfaces
 

@@ -979,6 +979,17 @@ Shared contract shape:
   linking/verification/signing/hashing, approval, file writes, workspace
   mutation, command execution, build output, package creation, process startup,
   and runtime registration disabled.
+- P25.69 package materialization approval audit countersignature revocation
+  appeal resolution enforcement evidence attestation policy fields are
+  planning-only. They define future enforcement evidence attestation policies,
+  required attestation inputs, attestation checks, blocked attestation
+  decisions, and no-op guarantees while keeping attestation policy selection,
+  subject/authority identification, attestation preparation/creation/
+  validation/storage/publication, attestation bundle storage, evidence record
+  reads/attestation/verification, audit record reads, attestation
+  linking/verification/signing/hashing, approval, file writes, workspace
+  mutation, command execution, build output, package creation, process startup,
+  and runtime registration disabled.
 - Exporter service execution is out of scope for this command unless a later
   task explicitly maps thumbnail rendering to exporter-compatible semantics.
 - P25.6 selects a future dedicated thumbnail renderer service as the executable
@@ -993,7 +1004,7 @@ See `render-thumbnail-runtime-boundary.md` and
 audit, resource-return rules, cache refresh behavior, auth expectations, and
 future test strategy.
 See `render-thumbnail-renderer-service-api.md` and
-`render-thumbnail-renderer-service-fixtures.json` for the P25.68 future
+`render-thumbnail-renderer-service-fixtures.json` for the P25.69 future
 renderer-service request/response API, MCP/CLI dry-run/client boundary, and
 metadata-only availability probe plus response/error normalization and disabled
 client request, execution gate, health preflight, and execution harness
@@ -1011,7 +1022,8 @@ guardrails, package file templates, package workspace wiring, package build
   notarization/certification/endorsement/countersignature/countersignature
   verification/countersignature revocation/countersignature revocation appeal
   /countersignature revocation appeal resolution/countersignature revocation
-  appeal resolution enforcement/enforcement evidence policies.
+  appeal resolution enforcement/enforcement evidence/enforcement evidence
+  attestation policies.
 
 ## Fixtures
 
