@@ -2310,6 +2310,25 @@ P25.78 render.thumbnail package materialization approval audit countersignature 
   approval, creating package directories, writing files, mutating workspace
   manifests, mutating lockfiles, running commands, emitting build output,
   starting processes, or registering runtime dispatch.
+
+P25.79 render.thumbnail package materialization approval audit countersignature revocation appeal resolution enforcement evidence attestation notarization certification endorsement countersignature verification revocation appeal resolution enforcement evidence policy result:
+
+- Shared plans include
+  `packageMaterializationApprovalAuditCountersignatureRevocationAppealResolutionEnforcementEvidenceAttestationNotarizationCertificationEndorsementCountersignatureVerificationRevocationAppealResolutionEnforcementEvidencePolicy`,
+  defining metadata-only audit countersignature revocation appeal resolution
+  enforcement evidence attestation notarization certification endorsement
+  countersignature verification revocation appeal resolution enforcement
+  evidence policies, required evidence inputs, evidence checks, blocked
+  evidence decisions, and no-op guarantees.
+- MCP and CLI expose the verification revocation appeal resolution enforcement
+  evidence policy plan in dry-run and unavailable execution payloads without
+  selecting evidence policies, identifying evidence subjects or sources,
+  collecting, validating, normalizing, storing, publishing, or bundling
+  evidence, reading enforcement, resolution, appeal, revocation,
+  countersignature, or audit records, granting approval, creating package
+  directories, writing files, mutating workspace manifests, mutating lockfiles,
+  running commands, emitting build output, starting processes, or registering
+  runtime dispatch.
 - `executableAdapterRegistrationScaffold.dispatch`, `networkDispatch`,
   `runtimeRegistration`, and `localFileWrites` remain `false`.
 
@@ -3790,6 +3809,10 @@ certification endorsement countersignature verification revocation appeal
 policy.
 P25.77 defines disabled package materialization approval audit countersignature revocation appeal resolution enforcement evidence attestation notarization certification endorsement countersignature verification revocation appeal resolution policy.
 P25.78 defines disabled package materialization approval audit countersignature revocation appeal resolution enforcement evidence attestation notarization certification endorsement countersignature verification revocation appeal resolution enforcement policy.
+P25.79 defines disabled package materialization approval audit countersignature
+revocation appeal resolution enforcement evidence attestation notarization
+certification endorsement countersignature verification revocation appeal
+resolution enforcement evidence policy.
 Runtime behavior remains unavailable
 until opt-in config surfaces, renderer-service implementation, workspace
 wiring, health preflight, cache probe, executable client, and tagged-frame

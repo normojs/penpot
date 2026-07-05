@@ -183,6 +183,18 @@ decisions, enforcement record storage/publication, countersignature and audit
 record reads, materialization approval, files written, command execution, build
 output, process startup, and runtime registration disabled.
 
+P25.79 extends the `render.thumbnail` renderer-service planning payload with
+`packageMaterializationApprovalAuditCountersignatureRevocationAppealResolutionEnforcementEvidenceAttestationNotarizationCertificationEndorsementCountersignatureVerificationRevocationAppealResolutionEnforcementEvidencePolicy`.
+MCP and CLI dry-run and unavailable execution payloads expose future audit
+countersignature revocation appeal resolution enforcement evidence attestation
+notarization certification endorsement countersignature verification revocation
+appeal resolution enforcement evidence metadata while keeping evidence policy
+selection, subject/source identification, evidence collection, validation,
+normalization, evidence record storage/publication, evidence bundle storage,
+enforcement, resolution, appeal, revocation, countersignature, and audit record
+reads, materialization approval, files written, command execution, build output,
+process startup, and runtime registration disabled.
+
 P25.48 extends the `render.thumbnail` renderer-service planning payload with
 metadata-only package materialization approval emergency stop policy. It defines
 future trusted stop source, stop scope, stop registry, and blocked stop
