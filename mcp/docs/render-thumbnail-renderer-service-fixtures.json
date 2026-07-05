@@ -1,7 +1,7 @@
 {
-  "version": "P25.57",
+  "version": "P25.58",
   "command": "render.thumbnail",
-  "status": "renderer-service API fixtures with MCP/CLI dry-run/client boundaries, metadata-only availability probes, response normalization contracts, disabled client request scaffold, explicit execution gate, health preflight plan, executable client harness plan, dispatch adapter boundary, opt-in configuration surfaces, unavailable error taxonomy, integration fixture harness, dispatch registration preflight, disabled executable adapter registration scaffold, disabled adapter registry manifest, final disabled enablement checklist, implementation slice audit, health/no-op contract fixtures, no-op service host scaffold, host lifecycle test fixtures, package manifest scaffold, package creation guardrails, package file templates, package workspace wiring, package build verification, package materialization checklist, package creation dry-run summary, package creation file manifest, package materialization approval gate, package materialization execution dry-run, package materialization write contract, package materialization rollback contract, package materialization verification manifest, package materialization final approval checklist, package materialization explicit approval token, package materialization approval audit trail, package materialization approval replay guard, package materialization approval expiry policy, package materialization approval revocation policy, package materialization approval scope binding policy, package materialization approval operator confirmation policy, package materialization approval emergency stop policy, package materialization approval readiness verdict policy, package materialization approval execution handoff policy, package materialization approval post-handoff audit policy, package materialization approval audit retention policy, package materialization approval audit access policy, package materialization approval audit integrity policy, package materialization approval audit provenance policy, package materialization approval audit custody policy, and package materialization approval audit evidence policy; runtime execution blocked",
+  "status": "renderer-service API fixtures with MCP/CLI dry-run/client boundaries, metadata-only availability probes, response normalization contracts, disabled client request scaffold, explicit execution gate, health preflight plan, executable client harness plan, dispatch adapter boundary, opt-in configuration surfaces, unavailable error taxonomy, integration fixture harness, dispatch registration preflight, disabled executable adapter registration scaffold, disabled adapter registry manifest, final disabled enablement checklist, implementation slice audit, health/no-op contract fixtures, no-op service host scaffold, host lifecycle test fixtures, package manifest scaffold, package creation guardrails, package file templates, package workspace wiring, package build verification, package materialization checklist, package creation dry-run summary, package creation file manifest, package materialization approval gate, package materialization execution dry-run, package materialization write contract, package materialization rollback contract, package materialization verification manifest, package materialization final approval checklist, package materialization explicit approval token, package materialization approval audit trail, package materialization approval replay guard, package materialization approval expiry policy, package materialization approval revocation policy, package materialization approval scope binding policy, package materialization approval operator confirmation policy, package materialization approval emergency stop policy, package materialization approval readiness verdict policy, package materialization approval execution handoff policy, package materialization approval post-handoff audit policy, package materialization approval audit retention policy, package materialization approval audit access policy, package materialization approval audit integrity policy, package materialization approval audit provenance policy, package materialization approval audit custody policy, package materialization approval audit evidence policy, and package materialization approval audit attestation policy; runtime execution blocked",
   "adapter": "renderer-service",
   "runtimeRegistration": {
     "mcpToolRegistered": true,
@@ -5865,6 +5865,212 @@
         "define evidence signature and hash semantics",
         "keep render.thumbnail unavailable until executable adapter registration is approved"
       ]
+    },
+    "packageMaterializationApprovalAuditAttestationPolicy": {
+      "status": "planned-disabled",
+      "auditAttestationVersion": "P25.58",
+      "adapter": "renderer-service",
+      "command": "render.thumbnail",
+      "dryRunOnly": true,
+      "approvalRequired": true,
+      "approved": false,
+      "finalApprovalGranted": false,
+      "attestationRequired": true,
+      "attestationPlanned": true,
+      "attestationPolicySelected": false,
+      "attestationSubjectIdentified": false,
+      "attestationAuthorityIdentified": false,
+      "attestationPrepared": false,
+      "attestationCreated": false,
+      "attestationValidated": false,
+      "attestationStored": false,
+      "attestationPublished": false,
+      "attestationBundleCreated": false,
+      "attestationBundleStored": false,
+      "evidenceRecordRead": false,
+      "evidenceRecordAttested": false,
+      "evidenceRecordVerified": false,
+      "auditRecordRead": false,
+      "auditRecordQueried": false,
+      "auditRecordAttestationLinked": false,
+      "auditRecordAttestationVerified": false,
+      "attestationSignatureCreated": false,
+      "attestationSignatureVerified": false,
+      "attestationHashComputed": false,
+      "attestationHashStored": false,
+      "materializationReady": false,
+      "materializationApproved": false,
+      "materializationApprovedNow": false,
+      "tokenAccepted": false,
+      "tokenStored": false,
+      "tokenValidated": false,
+      "tokenConsumed": false,
+      "tokenRevoked": false,
+      "executeNow": false,
+      "verifyNow": false,
+      "rollbackNow": false,
+      "dispatch": false,
+      "networkDispatch": false,
+      "runtimeRegistration": false,
+      "localFileWrites": false,
+      "hostStartup": false,
+      "processSpawn": false,
+      "packageCreated": false,
+      "workspaceMutation": false,
+      "scriptRunnable": false,
+      "fileMaterialization": false,
+      "lockfileMutation": false,
+      "rootPackageJsonMutation": false,
+      "pnpmWorkspaceMutation": false,
+      "commandExecution": false,
+      "buildOutput": false,
+      "packageScriptsRunnable": false,
+      "filesWritten": false,
+      "rollbackExecuted": false,
+      "verificationExecuted": false,
+      "consumes": {
+        "packageMaterializationApprovalAuditEvidencePolicy": {
+          "requiredStatus": "planned-disabled",
+          "currentStatus": "planned-disabled",
+          "auditEvidenceVersion": "P25.57",
+          "evidenceRecordCreated": false,
+          "evidenceRecordStored": false
+        },
+        "packageMaterializationApprovalAuditAccessPolicy": {
+          "requiredStatus": "planned-disabled",
+          "currentStatus": "planned-disabled",
+          "auditAccessVersion": "P25.53",
+          "auditRecordRead": false,
+          "accessGranted": false
+        },
+        "packageMaterializationFinalApprovalChecklist": {
+          "requiredStatus": "planned-disabled",
+          "currentStatus": "planned-disabled",
+          "checklistVersion": "P25.40",
+          "finalApprovalGranted": false
+        }
+      },
+      "auditAttestationPolicy": {
+        "policy": "attest-evidence-after-evidence-record-defined",
+        "selectAttestationPolicyNow": false,
+        "identifyAttestationSubjectNow": false,
+        "identifyAttestationAuthorityNow": false,
+        "prepareAttestationNow": false,
+        "createAttestationNow": false,
+        "validateAttestationNow": false,
+        "storeAttestationNow": false,
+        "publishAttestationNow": false,
+        "createAttestationBundleNow": false,
+        "storeAttestationBundleNow": false,
+        "readEvidenceRecordNow": false,
+        "attestEvidenceRecordNow": false,
+        "verifyEvidenceRecordNow": false,
+        "readAuditRecordNow": false,
+        "queryAuditRecordNow": false,
+        "linkAuditRecordAttestationNow": false,
+        "verifyAuditRecordAttestationNow": false,
+        "signAttestationNow": false,
+        "verifyAttestationSignatureNow": false,
+        "computeAttestationHashNow": false,
+        "storeAttestationHashNow": false,
+        "requiredInputs": [
+          "evidenceRecord",
+          "auditAccessGrant",
+          "attestationPolicyId",
+          "trustedAttestationAuthority"
+        ],
+        "attestationPolicyId": "future-materialization-audit-attestation",
+        "attestationScope": "future-policy-defined",
+        "attestationPayloadLogged": false
+      },
+      "auditAttestationChecks": [
+        {
+          "id": "evidence-record-present",
+          "required": true,
+          "planned": true,
+          "executed": false,
+          "passed": false
+        },
+        {
+          "id": "audit-access-granted",
+          "required": true,
+          "planned": true,
+          "executed": false,
+          "passed": false
+        },
+        {
+          "id": "attestation-policy-selected",
+          "required": true,
+          "planned": true,
+          "executed": false,
+          "passed": false
+        },
+        {
+          "id": "attestation-not-created",
+          "required": true,
+          "planned": true,
+          "executed": false,
+          "passed": false
+        },
+        {
+          "id": "attestation-not-stored",
+          "required": true,
+          "planned": true,
+          "executed": false,
+          "passed": false
+        }
+      ],
+      "auditAttestationDecision": {
+        "status": "blocked",
+        "canSelectAttestationPolicy": false,
+        "canIdentifyAttestationSubject": false,
+        "canIdentifyAttestationAuthority": false,
+        "canPrepareAttestation": false,
+        "canCreateAttestation": false,
+        "canValidateAttestation": false,
+        "canStoreAttestation": false,
+        "canPublishAttestation": false,
+        "canCreateAttestationBundle": false,
+        "canStoreAttestationBundle": false,
+        "canReadEvidenceRecord": false,
+        "canAttestEvidenceRecord": false,
+        "canVerifyEvidenceRecord": false,
+        "canReadAuditRecord": false,
+        "canQueryAuditRecord": false,
+        "canLinkAuditRecordAttestation": false,
+        "canVerifyAuditRecordAttestation": false,
+        "canSignAttestation": false,
+        "canVerifyAttestationSignature": false,
+        "canComputeAttestationHash": false,
+        "canStoreAttestationHash": false,
+        "canMaterializeFiles": false,
+        "canEnableRuntimeDispatch": false,
+        "reason": "audit attestation policy is metadata-only and no evidence record or access grant has been established"
+      },
+      "noOpGuarantees": [
+        "audit attestation policy plan does not select attestation policies",
+        "audit attestation policy plan does not identify attestation subjects or authorities",
+        "audit attestation policy plan does not prepare, create, validate, store, or publish attestations",
+        "audit attestation policy plan does not create or store attestation bundles",
+        "audit attestation policy plan does not read, attest, or verify evidence records",
+        "audit attestation policy plan does not read or query audit records",
+        "audit attestation policy plan does not link or verify audit record attestations",
+        "audit attestation policy plan does not sign or verify attestation signatures",
+        "audit attestation policy plan does not compute or store attestation hashes",
+        "audit attestation policy plan does not create renderer-service directory",
+        "audit attestation policy plan does not write package or workspace files",
+        "audit attestation policy plan does not mutate lockfiles",
+        "audit attestation policy plan does not run commands",
+        "audit attestation policy plan does not generate build output",
+        "audit attestation policy plan does not register runtime dispatch"
+      ],
+      "requiredBeforeRuntimeDispatch": [
+        "define audit attestation policy schema",
+        "require evidence record and access grant before attestation",
+        "define trusted attestation authority and bundle semantics",
+        "define attestation signature and hash semantics",
+        "keep render.thumbnail unavailable until executable adapter registration is approved"
+      ]
     }
   },
   "registrationGates": {
@@ -6213,8 +6419,8 @@
     "missing token fails before contacting renderer-service"
   ],
   "nextTask": {
-    "id": "P25.58",
-    "title": "Plan renderer-service package materialization approval audit attestation policy",
+    "id": "P25.59",
+    "title": "Plan renderer-service package materialization approval audit notarization policy",
     "status": "pending"
   }
 }

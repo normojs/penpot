@@ -479,6 +479,7 @@ export interface RenderThumbnailRendererServicePlan {
         packageMaterializationApprovalAuditProvenancePolicy: RenderThumbnailRendererServicePackageMaterializationApprovalAuditProvenancePolicy;
         packageMaterializationApprovalAuditCustodyPolicy: RenderThumbnailRendererServicePackageMaterializationApprovalAuditCustodyPolicy;
         packageMaterializationApprovalAuditEvidencePolicy: RenderThumbnailRendererServicePackageMaterializationApprovalAuditEvidencePolicy;
+        packageMaterializationApprovalAuditAttestationPolicy: RenderThumbnailRendererServicePackageMaterializationApprovalAuditAttestationPolicy;
         clientRequest: RenderThumbnailRendererServiceClientRequest;
     };
     client: RenderThumbnailRendererServiceClientConfig;
@@ -529,6 +530,7 @@ export interface RenderThumbnailRendererServicePlan {
     packageMaterializationApprovalAuditProvenancePolicy: RenderThumbnailRendererServicePackageMaterializationApprovalAuditProvenancePolicy;
     packageMaterializationApprovalAuditCustodyPolicy: RenderThumbnailRendererServicePackageMaterializationApprovalAuditCustodyPolicy;
     packageMaterializationApprovalAuditEvidencePolicy: RenderThumbnailRendererServicePackageMaterializationApprovalAuditEvidencePolicy;
+    packageMaterializationApprovalAuditAttestationPolicy: RenderThumbnailRendererServicePackageMaterializationApprovalAuditAttestationPolicy;
     clientRequest: RenderThumbnailRendererServiceClientRequest;
     serviceRequest: {
         command: "render.thumbnail";
@@ -639,6 +641,7 @@ export interface RenderThumbnailRendererServicePlan {
         packageMaterializationApprovalAuditProvenancePolicyVersion: "P25.55";
         packageMaterializationApprovalAuditCustodyPolicyVersion: "P25.56";
         packageMaterializationApprovalAuditEvidencePolicyVersion: "P25.57";
+        packageMaterializationApprovalAuditAttestationPolicyVersion: "P25.58";
     };
 }
 
@@ -4600,6 +4603,156 @@ export interface RenderThumbnailRendererServicePackageMaterializationApprovalAud
     requiredBeforeRuntimeDispatch: string[];
 }
 
+export interface RenderThumbnailRendererServicePackageMaterializationApprovalAuditAttestationPolicy {
+    status: "planned-disabled";
+    auditAttestationVersion: "P25.58";
+    adapter: "renderer-service";
+    command: "render.thumbnail";
+    dryRunOnly: true;
+    approvalRequired: true;
+    approved: false;
+    finalApprovalGranted: false;
+    attestationRequired: true;
+    attestationPlanned: true;
+    attestationPolicySelected: false;
+    attestationSubjectIdentified: false;
+    attestationAuthorityIdentified: false;
+    attestationPrepared: false;
+    attestationCreated: false;
+    attestationValidated: false;
+    attestationStored: false;
+    attestationPublished: false;
+    attestationBundleCreated: false;
+    attestationBundleStored: false;
+    evidenceRecordRead: false;
+    evidenceRecordAttested: false;
+    evidenceRecordVerified: false;
+    auditRecordRead: false;
+    auditRecordQueried: false;
+    auditRecordAttestationLinked: false;
+    auditRecordAttestationVerified: false;
+    attestationSignatureCreated: false;
+    attestationSignatureVerified: false;
+    attestationHashComputed: false;
+    attestationHashStored: false;
+    materializationReady: false;
+    materializationApproved: false;
+    materializationApprovedNow: false;
+    tokenAccepted: false;
+    tokenStored: false;
+    tokenValidated: false;
+    tokenConsumed: false;
+    tokenRevoked: false;
+    executeNow: false;
+    verifyNow: false;
+    rollbackNow: false;
+    dispatch: false;
+    networkDispatch: false;
+    runtimeRegistration: false;
+    localFileWrites: false;
+    hostStartup: false;
+    processSpawn: false;
+    packageCreated: false;
+    workspaceMutation: false;
+    scriptRunnable: false;
+    fileMaterialization: false;
+    lockfileMutation: false;
+    rootPackageJsonMutation: false;
+    pnpmWorkspaceMutation: false;
+    commandExecution: false;
+    buildOutput: false;
+    packageScriptsRunnable: false;
+    filesWritten: false;
+    rollbackExecuted: false;
+    verificationExecuted: false;
+    consumes: {
+        packageMaterializationApprovalAuditEvidencePolicy: {
+            requiredStatus: "planned-disabled";
+            currentStatus: string;
+            auditEvidenceVersion: string;
+            evidenceRecordCreated: false;
+            evidenceRecordStored: false;
+        };
+        packageMaterializationApprovalAuditAccessPolicy: {
+            requiredStatus: "planned-disabled";
+            currentStatus: string;
+            auditAccessVersion: string;
+            auditRecordRead: false;
+            accessGranted: false;
+        };
+        packageMaterializationFinalApprovalChecklist: {
+            requiredStatus: "planned-disabled";
+            currentStatus: string;
+            checklistVersion: string;
+            finalApprovalGranted: false;
+        };
+    };
+    auditAttestationPolicy: {
+        policy: "attest-evidence-after-evidence-record-defined";
+        selectAttestationPolicyNow: false;
+        identifyAttestationSubjectNow: false;
+        identifyAttestationAuthorityNow: false;
+        prepareAttestationNow: false;
+        createAttestationNow: false;
+        validateAttestationNow: false;
+        storeAttestationNow: false;
+        publishAttestationNow: false;
+        createAttestationBundleNow: false;
+        storeAttestationBundleNow: false;
+        readEvidenceRecordNow: false;
+        attestEvidenceRecordNow: false;
+        verifyEvidenceRecordNow: false;
+        readAuditRecordNow: false;
+        queryAuditRecordNow: false;
+        linkAuditRecordAttestationNow: false;
+        verifyAuditRecordAttestationNow: false;
+        signAttestationNow: false;
+        verifyAttestationSignatureNow: false;
+        computeAttestationHashNow: false;
+        storeAttestationHashNow: false;
+        requiredInputs: string[];
+        attestationPolicyId: "future-materialization-audit-attestation";
+        attestationScope: "future-policy-defined";
+        attestationPayloadLogged: false;
+    };
+    auditAttestationChecks: Array<{
+        id: string;
+        required: true;
+        planned: true;
+        executed: false;
+        passed: false;
+    }>;
+    auditAttestationDecision: {
+        status: "blocked";
+        canSelectAttestationPolicy: false;
+        canIdentifyAttestationSubject: false;
+        canIdentifyAttestationAuthority: false;
+        canPrepareAttestation: false;
+        canCreateAttestation: false;
+        canValidateAttestation: false;
+        canStoreAttestation: false;
+        canPublishAttestation: false;
+        canCreateAttestationBundle: false;
+        canStoreAttestationBundle: false;
+        canReadEvidenceRecord: false;
+        canAttestEvidenceRecord: false;
+        canVerifyEvidenceRecord: false;
+        canReadAuditRecord: false;
+        canQueryAuditRecord: false;
+        canLinkAuditRecordAttestation: false;
+        canVerifyAuditRecordAttestation: false;
+        canSignAttestation: false;
+        canVerifyAttestationSignature: false;
+        canComputeAttestationHash: false;
+        canStoreAttestationHash: false;
+        canMaterializeFiles: false;
+        canEnableRuntimeDispatch: false;
+        reason: string;
+    };
+    noOpGuarantees: string[];
+    requiredBeforeRuntimeDispatch: string[];
+}
+
 export interface CreateRenderThumbnailRendererServiceClientRequestOptions {
     entrypoint?: "mcp" | "cli" | string | null;
     mcpToolName?: string | null;
@@ -5169,6 +5322,13 @@ export function createRenderThumbnailRendererServicePackageMaterializationApprov
         packageMaterializationFinalApprovalChecklist?: Partial<RenderThumbnailRendererServicePackageMaterializationFinalApprovalChecklist> | null;
     }
 ): RenderThumbnailRendererServicePackageMaterializationApprovalAuditEvidencePolicy;
+export function createRenderThumbnailRendererServicePackageMaterializationApprovalAuditAttestationPolicy(
+    options?: {
+        packageMaterializationApprovalAuditEvidencePolicy?: Partial<RenderThumbnailRendererServicePackageMaterializationApprovalAuditEvidencePolicy> | null;
+        packageMaterializationApprovalAuditAccessPolicy?: Partial<RenderThumbnailRendererServicePackageMaterializationApprovalAuditAccessPolicy> | null;
+        packageMaterializationFinalApprovalChecklist?: Partial<RenderThumbnailRendererServicePackageMaterializationFinalApprovalChecklist> | null;
+    }
+): RenderThumbnailRendererServicePackageMaterializationApprovalAuditAttestationPolicy;
 export function createRenderThumbnailRendererServiceClientRequest(
     plan: Partial<RenderThumbnailRendererServicePlan>,
     options?: CreateRenderThumbnailRendererServiceClientRequestOptions

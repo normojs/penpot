@@ -1532,3 +1532,36 @@ policy:
   without selecting evidence policies, collecting evidence, creating evidence
   records or bundles, reading audit records, signing or hashing evidence,
   materializing files, starting processes, or enabling dispatch.
+
+P25.58 adds renderer-service package materialization approval audit attestation
+policy:
+
+- Plans include `packageMaterializationApprovalAuditAttestationPolicy`,
+  defining the future attestation policy, required attestation inputs,
+  attestation checks, blocked attestation decision, and no-op guarantees.
+- The audit attestation policy remains planning-only with
+  `attestationPolicySelected:false`, `attestationSubjectIdentified:false`,
+  `attestationAuthorityIdentified:false`, `attestationPrepared:false`,
+  `attestationCreated:false`, `attestationValidated:false`,
+  `attestationStored:false`, `attestationPublished:false`,
+  `attestationBundleCreated:false`, `attestationBundleStored:false`,
+  `evidenceRecordRead:false`, `evidenceRecordAttested:false`,
+  `evidenceRecordVerified:false`, `auditRecordRead:false`,
+  `auditRecordQueried:false`, `auditRecordAttestationLinked:false`,
+  `auditRecordAttestationVerified:false`,
+  `attestationSignatureCreated:false`,
+  `attestationSignatureVerified:false`, `attestationHashComputed:false`,
+  `attestationHashStored:false`, `materializationApproved:false`,
+  `approved:false`, `finalApprovalGranted:false`, `filesWritten:false`,
+  `fileMaterialization:false`, `workspaceMutation:false`,
+  `lockfileMutation:false`, `commandExecution:false`, `buildOutput:false`,
+  `processSpawn:false`, `packageCreated:false`, `dispatch:false`,
+  `networkDispatch:false`, `runtimeRegistration:false`, and
+  `localFileWrites:false`.
+- MCP and CLI expose this policy in dry-run and unavailable execution JSON
+  without selecting attestation policies, identifying subjects or authorities,
+  preparing, creating, validating, storing, or publishing attestations,
+  creating or storing attestation bundles, reading, attesting, or verifying
+  evidence records, reading or querying audit records, linking, verifying,
+  signing, or hashing attestations, materializing files, starting processes, or
+  enabling dispatch.

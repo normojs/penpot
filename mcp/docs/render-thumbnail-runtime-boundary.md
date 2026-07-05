@@ -258,6 +258,8 @@ P25.56 adds metadata-only package materialization approval audit custody
 policy.
 P25.57 adds metadata-only package materialization approval audit evidence
 policy.
+P25.58 adds metadata-only package materialization approval audit attestation
+policy.
 MCP
 `render.thumbnail` and `penpot-cli render thumbnail --dry-run` can print the
 future request shape, configured/not configured service metadata,
@@ -437,6 +439,25 @@ plus `packageMaterializationApprovalAuditEvidencePolicy.evidencePolicySelected:f
 `packageMaterializationApprovalAuditEvidencePolicy.filesWritten:false`,
 `packageMaterializationApprovalAuditEvidencePolicy.commandExecution:false`, and
 `packageMaterializationApprovalAuditEvidencePolicy.buildOutput:false`,
+plus `packageMaterializationApprovalAuditAttestationPolicy.attestationPolicySelected:false`,
+`packageMaterializationApprovalAuditAttestationPolicy.attestationSubjectIdentified:false`,
+`packageMaterializationApprovalAuditAttestationPolicy.attestationAuthorityIdentified:false`,
+`packageMaterializationApprovalAuditAttestationPolicy.attestationPrepared:false`,
+`packageMaterializationApprovalAuditAttestationPolicy.attestationCreated:false`,
+`packageMaterializationApprovalAuditAttestationPolicy.attestationValidated:false`,
+`packageMaterializationApprovalAuditAttestationPolicy.attestationStored:false`,
+`packageMaterializationApprovalAuditAttestationPolicy.attestationPublished:false`,
+`packageMaterializationApprovalAuditAttestationPolicy.attestationBundleCreated:false`,
+`packageMaterializationApprovalAuditAttestationPolicy.evidenceRecordRead:false`,
+`packageMaterializationApprovalAuditAttestationPolicy.evidenceRecordAttested:false`,
+`packageMaterializationApprovalAuditAttestationPolicy.evidenceRecordVerified:false`,
+`packageMaterializationApprovalAuditAttestationPolicy.auditRecordRead:false`,
+`packageMaterializationApprovalAuditAttestationPolicy.auditRecordQueried:false`,
+`packageMaterializationApprovalAuditAttestationPolicy.attestationHashComputed:false`,
+`packageMaterializationApprovalAuditAttestationPolicy.materializationApproved:false`,
+`packageMaterializationApprovalAuditAttestationPolicy.filesWritten:false`,
+`packageMaterializationApprovalAuditAttestationPolicy.commandExecution:false`, and
+`packageMaterializationApprovalAuditAttestationPolicy.buildOutput:false`,
 but execution still returns
 `renderer_service_unavailable` until explicit opt-in, config surfaces, renderer
 service, integration tests, health preflight, file cache probe, tagged-frame

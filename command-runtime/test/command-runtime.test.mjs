@@ -59,6 +59,7 @@ import {
     createRenderThumbnailRendererServicePackageMaterializationApprovalAuditProvenancePolicy,
     createRenderThumbnailRendererServicePackageMaterializationApprovalAuditCustodyPolicy,
     createRenderThumbnailRendererServicePackageMaterializationApprovalAuditEvidencePolicy,
+    createRenderThumbnailRendererServicePackageMaterializationApprovalAuditAttestationPolicy,
     createRenderThumbnailRendererServicePackageFileTemplates,
     createRenderThumbnailRendererServicePackageManifestScaffold,
     createRenderThumbnailRendererServicePackageMaterializationChecklist,
@@ -694,6 +695,114 @@ function assertAuditEvidencePolicyMetadataOnly(policy) {
     }
 }
 
+function assertAuditAttestationPolicyMetadataOnly(policy) {
+    assert.equal(policy.auditAttestationVersion, "P25.58");
+    assert.equal(policy.attestationRequired, true);
+    assert.equal(policy.attestationPlanned, true);
+
+    for (const key of [
+        "attestationPolicySelected",
+        "attestationSubjectIdentified",
+        "attestationAuthorityIdentified",
+        "attestationPrepared",
+        "attestationCreated",
+        "attestationValidated",
+        "attestationStored",
+        "attestationPublished",
+        "attestationBundleCreated",
+        "attestationBundleStored",
+        "evidenceRecordRead",
+        "evidenceRecordAttested",
+        "evidenceRecordVerified",
+        "auditRecordRead",
+        "auditRecordQueried",
+        "auditRecordAttestationLinked",
+        "auditRecordAttestationVerified",
+        "attestationSignatureCreated",
+        "attestationSignatureVerified",
+        "attestationHashComputed",
+        "attestationHashStored",
+        "materializationApproved",
+        "dispatch",
+        "networkDispatch",
+        "runtimeRegistration",
+        "localFileWrites",
+        "hostStartup",
+        "processSpawn",
+        "packageCreated",
+        "workspaceMutation",
+        "scriptRunnable",
+        "fileMaterialization",
+        "lockfileMutation",
+        "rootPackageJsonMutation",
+        "pnpmWorkspaceMutation",
+        "commandExecution",
+        "buildOutput",
+        "packageScriptsRunnable",
+        "filesWritten",
+    ]) {
+        assert.equal(policy[key], false, key);
+    }
+
+    assert.equal(policy.consumes.packageMaterializationApprovalAuditEvidencePolicy.auditEvidenceVersion, "P25.57");
+    assert.equal(policy.consumes.packageMaterializationApprovalAuditAccessPolicy.auditAccessVersion, "P25.53");
+    assert.equal(policy.consumes.packageMaterializationFinalApprovalChecklist.checklistVersion, "P25.40");
+
+    for (const key of [
+        "selectAttestationPolicyNow",
+        "identifyAttestationSubjectNow",
+        "identifyAttestationAuthorityNow",
+        "prepareAttestationNow",
+        "createAttestationNow",
+        "validateAttestationNow",
+        "storeAttestationNow",
+        "publishAttestationNow",
+        "createAttestationBundleNow",
+        "storeAttestationBundleNow",
+        "readEvidenceRecordNow",
+        "attestEvidenceRecordNow",
+        "verifyEvidenceRecordNow",
+        "readAuditRecordNow",
+        "queryAuditRecordNow",
+        "linkAuditRecordAttestationNow",
+        "verifyAuditRecordAttestationNow",
+        "signAttestationNow",
+        "verifyAttestationSignatureNow",
+        "computeAttestationHashNow",
+        "storeAttestationHashNow",
+    ]) {
+        assert.equal(policy.auditAttestationPolicy[key], false, key);
+    }
+
+    for (const key of [
+        "canSelectAttestationPolicy",
+        "canIdentifyAttestationSubject",
+        "canIdentifyAttestationAuthority",
+        "canPrepareAttestation",
+        "canCreateAttestation",
+        "canValidateAttestation",
+        "canStoreAttestation",
+        "canPublishAttestation",
+        "canCreateAttestationBundle",
+        "canStoreAttestationBundle",
+        "canReadEvidenceRecord",
+        "canAttestEvidenceRecord",
+        "canVerifyEvidenceRecord",
+        "canReadAuditRecord",
+        "canQueryAuditRecord",
+        "canLinkAuditRecordAttestation",
+        "canVerifyAuditRecordAttestation",
+        "canSignAttestation",
+        "canVerifyAttestationSignature",
+        "canComputeAttestationHash",
+        "canStoreAttestationHash",
+        "canMaterializeFiles",
+        "canEnableRuntimeDispatch",
+    ]) {
+        assert.equal(policy.auditAttestationDecision[key], false, key);
+    }
+}
+
 test("descriptor groups expose stable command ids", () => {
     assert.deepEqual(
         LowRiskCommandDescriptors.map((descriptor) => descriptor.id),
@@ -1041,6 +1150,7 @@ test("render.thumbnail runtime boundary keeps execution unavailable until render
     assertAuditProvenancePolicyMetadataOnly(boundary.packageMaterializationApprovalAuditProvenancePolicy);
     assertAuditCustodyPolicyMetadataOnly(boundary.packageMaterializationApprovalAuditCustodyPolicy);
     assertAuditEvidencePolicyMetadataOnly(boundary.packageMaterializationApprovalAuditEvidencePolicy);
+    assertAuditAttestationPolicyMetadataOnly(boundary.packageMaterializationApprovalAuditAttestationPolicy);
     assert.ok(boundary.testStrategy.some((item) => item.includes("descriptor tests")));
 });
 
@@ -1372,6 +1482,8 @@ test("render.thumbnail renderer-service API fixtures define planning requests wi
     assertAuditCustodyPolicyMetadataOnly(renderThumbnailRuntimeBoundaryFixtures.packageMaterializationApprovalAuditCustodyPolicy);
     assertAuditEvidencePolicyMetadataOnly(fixtures.serviceApi.packageMaterializationApprovalAuditEvidencePolicy);
     assertAuditEvidencePolicyMetadataOnly(renderThumbnailRuntimeBoundaryFixtures.packageMaterializationApprovalAuditEvidencePolicy);
+    assertAuditAttestationPolicyMetadataOnly(fixtures.serviceApi.packageMaterializationApprovalAuditAttestationPolicy);
+    assertAuditAttestationPolicyMetadataOnly(renderThumbnailRuntimeBoundaryFixtures.packageMaterializationApprovalAuditAttestationPolicy);
     assert.deepEqual(fixtures.runtimeRegistration.commandDescriptorAdapters, ["renderer-service"]);
     assert.deepEqual(CommandDescriptors.RENDER_THUMBNAIL.adapters, ["renderer-service"]);
     assert.equal(fixtures.runtimeRegistration.mcpToolRegistered, true);
@@ -2512,6 +2624,8 @@ test("render.thumbnail renderer-service plan exposes dry-run client request whil
     assert.deepEqual(plan.service.packageMaterializationApprovalAuditCustodyPolicy, plan.packageMaterializationApprovalAuditCustodyPolicy);
     assertAuditEvidencePolicyMetadataOnly(plan.packageMaterializationApprovalAuditEvidencePolicy);
     assert.deepEqual(plan.service.packageMaterializationApprovalAuditEvidencePolicy, plan.packageMaterializationApprovalAuditEvidencePolicy);
+    assertAuditAttestationPolicyMetadataOnly(plan.packageMaterializationApprovalAuditAttestationPolicy);
+    assert.deepEqual(plan.service.packageMaterializationApprovalAuditAttestationPolicy, plan.packageMaterializationApprovalAuditAttestationPolicy);
     assert.equal(plan.clientRequest.status, "scaffolded");
     assert.equal(plan.clientRequest.dispatch, false);
     assert.equal(plan.clientRequest.method, "POST");
@@ -2585,6 +2699,7 @@ test("render.thumbnail renderer-service plan exposes dry-run client request whil
     assert.equal(plan.diagnostics.packageMaterializationApprovalAuditProvenancePolicyVersion, "P25.55");
     assert.equal(plan.diagnostics.packageMaterializationApprovalAuditCustodyPolicyVersion, "P25.56");
     assert.equal(plan.diagnostics.packageMaterializationApprovalAuditEvidencePolicyVersion, "P25.57");
+    assert.equal(plan.diagnostics.packageMaterializationApprovalAuditAttestationPolicyVersion, "P25.58");
 });
 
 test("render.thumbnail renderer-service plan reports not-configured availability without endpoint", () => {
@@ -5219,6 +5334,57 @@ test("render.thumbnail renderer-service package materialization approval audit e
     );
     assert.ok(auditEvidencePolicy.requiredBeforeRuntimeDispatch.includes("define audit evidence policy schema"));
     assertAuditEvidencePolicyMetadataOnly(auditEvidencePolicy);
+});
+
+test("render.thumbnail renderer-service package materialization approval audit attestation policy stays metadata-only", () => {
+    const auditAttestationPolicy =
+        createRenderThumbnailRendererServicePackageMaterializationApprovalAuditAttestationPolicy({
+            packageMaterializationApprovalAuditEvidencePolicy: {
+                status: "planned-disabled",
+                auditEvidenceVersion: "P25.57",
+                evidenceRecordCreated: false,
+                evidenceRecordStored: false,
+            },
+            packageMaterializationApprovalAuditAccessPolicy: {
+                status: "planned-disabled",
+                auditAccessVersion: "P25.53",
+                auditRecordRead: false,
+                accessGranted: false,
+            },
+            packageMaterializationFinalApprovalChecklist: {
+                status: "planned-disabled",
+                checklistVersion: "P25.40",
+                finalApprovalGranted: false,
+            },
+        });
+
+    assert.equal(auditAttestationPolicy.status, "planned-disabled");
+    assert.equal(auditAttestationPolicy.dryRunOnly, true);
+    assert.equal(auditAttestationPolicy.approvalRequired, true);
+    assert.equal(auditAttestationPolicy.approved, false);
+    assert.equal(auditAttestationPolicy.finalApprovalGranted, false);
+    assert.equal(
+        auditAttestationPolicy.auditAttestationPolicy.policy,
+        "attest-evidence-after-evidence-record-defined"
+    );
+    assert.equal(auditAttestationPolicy.auditAttestationPolicy.attestationPayloadLogged, false);
+    assert.ok(auditAttestationPolicy.auditAttestationPolicy.requiredInputs.includes("trustedAttestationAuthority"));
+    assert.ok(
+        auditAttestationPolicy.auditAttestationChecks.some(
+            (entry) => entry.id === "attestation-not-created" && entry.executed === false
+        )
+    );
+    assert.equal(auditAttestationPolicy.auditAttestationDecision.status, "blocked");
+    assert.equal(auditAttestationPolicy.auditAttestationDecision.canCreateAttestation, false);
+    assert.equal(auditAttestationPolicy.auditAttestationDecision.canStoreAttestation, false);
+    assert.equal(auditAttestationPolicy.auditAttestationDecision.canAttestEvidenceRecord, false);
+    assert.ok(
+        auditAttestationPolicy.noOpGuarantees.includes(
+            "audit attestation policy plan does not prepare, create, validate, store, or publish attestations"
+        )
+    );
+    assert.ok(auditAttestationPolicy.requiredBeforeRuntimeDispatch.includes("define audit attestation policy schema"));
+    assertAuditAttestationPolicyMetadataOnly(auditAttestationPolicy);
 });
 
 test("render.thumbnail renderer-service client request scaffold adds MCP audit headers without dispatch", () => {

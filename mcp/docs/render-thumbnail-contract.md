@@ -1,6 +1,6 @@
 # Render Thumbnail Contract
 
-Status: P25.4 descriptor contract; P25.57 MCP/CLI renderer-service dry-run
+Status: P25.4 descriptor contract; P25.58 MCP/CLI renderer-service dry-run
 boundaries, metadata-only availability probes, response normalization
 contracts, disabled client request scaffolding, closed execution gate, disabled
 health preflight, executable client harness plan, and dispatch adapter boundary
@@ -685,6 +685,32 @@ Shared contract shape:
   evidence policies, identify evidence subjects or sources, collect, validate,
   or normalize evidence, create evidence records or bundles, read or query
   audit records, sign or hash evidence, grant approval, or materialize files.
+- P25.58 package materialization approval audit attestation policy fields are
+  planning-only. They define future attestation policies, required attestation
+  inputs, attestation checks, blocked attestation decisions, and no-op
+  guarantees while keeping
+  `packageMaterializationApprovalAuditAttestationPolicy.attestationPolicySelected:false`,
+  `packageMaterializationApprovalAuditAttestationPolicy.attestationSubjectIdentified:false`,
+  `packageMaterializationApprovalAuditAttestationPolicy.attestationAuthorityIdentified:false`,
+  `packageMaterializationApprovalAuditAttestationPolicy.attestationPrepared:false`,
+  `packageMaterializationApprovalAuditAttestationPolicy.attestationCreated:false`,
+  `packageMaterializationApprovalAuditAttestationPolicy.attestationValidated:false`,
+  `packageMaterializationApprovalAuditAttestationPolicy.attestationStored:false`,
+  `packageMaterializationApprovalAuditAttestationPolicy.attestationPublished:false`,
+  `packageMaterializationApprovalAuditAttestationPolicy.attestationBundleCreated:false`,
+  `packageMaterializationApprovalAuditAttestationPolicy.evidenceRecordRead:false`,
+  `packageMaterializationApprovalAuditAttestationPolicy.evidenceRecordAttested:false`,
+  `packageMaterializationApprovalAuditAttestationPolicy.auditRecordRead:false`,
+  `packageMaterializationApprovalAuditAttestationPolicy.auditRecordQueried:false`,
+  `packageMaterializationApprovalAuditAttestationPolicy.attestationHashComputed:false`,
+  `approved:false`, `finalApprovalGranted:false`, `filesWritten:false`,
+  `fileMaterialization:false`, `workspaceMutation:false`,
+  `commandExecution:false`, `buildOutput:false`,
+  `runtimeRegistration:false`, and `localFileWrites:false`. They do not select
+  attestation policies, identify subjects or authorities, prepare, create,
+  validate, store, or publish attestations, create attestation bundles, read,
+  attest, or verify evidence records, read or query audit records, sign or
+  hash attestations, grant approval, or materialize files.
 - Exporter service execution is out of scope for this command unless a later
   task explicitly maps thumbnail rendering to exporter-compatible semantics.
 - P25.6 selects a future dedicated thumbnail renderer service as the executable
@@ -699,7 +725,7 @@ See `render-thumbnail-runtime-boundary.md` and
 audit, resource-return rules, cache refresh behavior, auth expectations, and
 future test strategy.
 See `render-thumbnail-renderer-service-api.md` and
-`render-thumbnail-renderer-service-fixtures.json` for the P25.57 future
+`render-thumbnail-renderer-service-fixtures.json` for the P25.58 future
 renderer-service request/response API, MCP/CLI dry-run/client boundary, and
 metadata-only availability probe plus response/error normalization and disabled
 client request, execution gate, health preflight, and execution harness
