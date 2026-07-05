@@ -85,6 +85,24 @@ purging, exporting, writing audit records, or granting approval. P25.53 defines
 package materialization approval audit access policy metadata without selecting
 access policies, identifying subjects, computing scopes, granting access,
 reading audit records, exporting audit records, or issuing access tokens.
+P25.54 defines package materialization approval audit integrity policy metadata
+without hashing, signing, linking, verifying, or tamper-checking audit records.
+P25.55 defines package materialization approval audit provenance policy metadata
+without collecting sources, computing graphs, creating provenance records, or
+linking provenance. P25.56 defines package materialization approval audit
+custody policy metadata without preparing transfers, taking/releasing custody,
+creating custody records, or linking custody. P25.57 defines package
+materialization approval audit evidence policy metadata without collecting,
+validating, normalizing, or storing evidence. P25.58 defines package
+materialization approval audit attestation policy metadata without selecting
+attestation policies, creating attestations, storing attestation bundles, or
+attesting evidence records. P25.59 defines package materialization approval
+audit notarization policy metadata without selecting notarization policies,
+creating notarizations, storing notarization records, or notarizing
+attestations. P25.60 defines package materialization approval audit
+certification policy metadata without selecting certification policies,
+creating certifications, storing certification records, or certifying
+notarizations.
 
 ## Existing Surfaces
 
@@ -261,6 +279,8 @@ policy.
 P25.58 adds metadata-only package materialization approval audit attestation
 policy.
 P25.59 adds metadata-only package materialization approval audit notarization
+policy.
+P25.60 adds metadata-only package materialization approval audit certification
 policy.
 MCP
 `render.thumbnail` and `penpot-cli render thumbnail --dry-run` can print the
@@ -479,6 +499,25 @@ plus `packageMaterializationApprovalAuditNotarizationPolicy.notarizationPolicySe
 `packageMaterializationApprovalAuditNotarizationPolicy.filesWritten:false`,
 `packageMaterializationApprovalAuditNotarizationPolicy.commandExecution:false`, and
 `packageMaterializationApprovalAuditNotarizationPolicy.buildOutput:false`,
+plus `packageMaterializationApprovalAuditCertificationPolicy.certificationPolicySelected:false`,
+`packageMaterializationApprovalAuditCertificationPolicy.certificationSubjectIdentified:false`,
+`packageMaterializationApprovalAuditCertificationPolicy.certificationAuthorityIdentified:false`,
+`packageMaterializationApprovalAuditCertificationPolicy.certificationPrepared:false`,
+`packageMaterializationApprovalAuditCertificationPolicy.certificationCreated:false`,
+`packageMaterializationApprovalAuditCertificationPolicy.certificationValidated:false`,
+`packageMaterializationApprovalAuditCertificationPolicy.certificationStored:false`,
+`packageMaterializationApprovalAuditCertificationPolicy.certificationPublished:false`,
+`packageMaterializationApprovalAuditCertificationPolicy.certificationRecordCreated:false`,
+`packageMaterializationApprovalAuditCertificationPolicy.notarizationRead:false`,
+`packageMaterializationApprovalAuditCertificationPolicy.notarizationCertified:false`,
+`packageMaterializationApprovalAuditCertificationPolicy.notarizationVerified:false`,
+`packageMaterializationApprovalAuditCertificationPolicy.auditRecordRead:false`,
+`packageMaterializationApprovalAuditCertificationPolicy.auditRecordQueried:false`,
+`packageMaterializationApprovalAuditCertificationPolicy.certificationHashComputed:false`,
+`packageMaterializationApprovalAuditCertificationPolicy.materializationApproved:false`,
+`packageMaterializationApprovalAuditCertificationPolicy.filesWritten:false`,
+`packageMaterializationApprovalAuditCertificationPolicy.commandExecution:false`, and
+`packageMaterializationApprovalAuditCertificationPolicy.buildOutput:false`,
 but execution still returns
 `renderer_service_unavailable` until explicit opt-in, config surfaces, renderer
 service, integration tests, health preflight, file cache probe, tagged-frame

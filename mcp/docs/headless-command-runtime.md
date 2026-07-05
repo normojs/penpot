@@ -1600,3 +1600,38 @@ notarization policy:
   or verifying attestations, reading or querying audit records, linking,
   verifying, signing, or hashing notarizations, materializing files, starting
   processes, or enabling dispatch.
+
+P25.60 adds renderer-service package materialization approval audit
+certification policy:
+
+- Plans include `packageMaterializationApprovalAuditCertificationPolicy`,
+  defining the future certification policy, required certification inputs,
+  certification checks, blocked certification decision, and no-op guarantees.
+- The audit certification policy remains planning-only with
+  `certificationPolicySelected:false`,
+  `certificationSubjectIdentified:false`,
+  `certificationAuthorityIdentified:false`, `certificationPrepared:false`,
+  `certificationCreated:false`, `certificationValidated:false`,
+  `certificationStored:false`, `certificationPublished:false`,
+  `certificationRecordCreated:false`, `certificationRecordStored:false`,
+  `certificationRecordPublished:false`, `notarizationRead:false`,
+  `notarizationCertified:false`, `notarizationVerified:false`,
+  `auditRecordRead:false`, `auditRecordQueried:false`,
+  `auditRecordCertificationLinked:false`,
+  `auditRecordCertificationVerified:false`,
+  `certificationSignatureCreated:false`,
+  `certificationSignatureVerified:false`, `certificationHashComputed:false`,
+  `certificationHashStored:false`, `materializationApproved:false`,
+  `approved:false`, `finalApprovalGranted:false`, `filesWritten:false`,
+  `fileMaterialization:false`, `workspaceMutation:false`,
+  `lockfileMutation:false`, `commandExecution:false`, `buildOutput:false`,
+  `processSpawn:false`, `packageCreated:false`, `dispatch:false`,
+  `networkDispatch:false`, `runtimeRegistration:false`, and
+  `localFileWrites:false`.
+- MCP and CLI expose this policy in dry-run and unavailable execution JSON
+  without selecting certification policies, identifying subjects or authorities,
+  preparing, creating, validating, storing, or publishing certifications,
+  creating, storing, or publishing certification records, reading, certifying,
+  or verifying notarizations, reading or querying audit records, linking,
+  verifying, signing, or hashing certifications, materializing files, starting
+  processes, or enabling dispatch.

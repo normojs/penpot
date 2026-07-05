@@ -1,6 +1,6 @@
 # Render Thumbnail Contract
 
-Status: P25.4 descriptor contract; P25.59 MCP/CLI renderer-service dry-run
+Status: P25.4 descriptor contract; P25.60 MCP/CLI renderer-service dry-run
 boundaries, metadata-only availability probes, response normalization
 contracts, disabled client request scaffolding, closed execution gate, disabled
 health preflight, executable client harness plan, and dispatch adapter boundary
@@ -737,6 +737,32 @@ Shared contract shape:
   validate, store, or publish notarizations, create notarization records, read,
   notarize, or verify attestations, read or query audit records, sign or hash
   notarizations, grant approval, or materialize files.
+- P25.60 package materialization approval audit certification policy fields are
+  planning-only. They define future certification policies, required
+  certification inputs, certification checks, blocked certification decisions,
+  and no-op guarantees while keeping
+  `packageMaterializationApprovalAuditCertificationPolicy.certificationPolicySelected:false`,
+  `packageMaterializationApprovalAuditCertificationPolicy.certificationSubjectIdentified:false`,
+  `packageMaterializationApprovalAuditCertificationPolicy.certificationAuthorityIdentified:false`,
+  `packageMaterializationApprovalAuditCertificationPolicy.certificationPrepared:false`,
+  `packageMaterializationApprovalAuditCertificationPolicy.certificationCreated:false`,
+  `packageMaterializationApprovalAuditCertificationPolicy.certificationValidated:false`,
+  `packageMaterializationApprovalAuditCertificationPolicy.certificationStored:false`,
+  `packageMaterializationApprovalAuditCertificationPolicy.certificationPublished:false`,
+  `packageMaterializationApprovalAuditCertificationPolicy.certificationRecordCreated:false`,
+  `packageMaterializationApprovalAuditCertificationPolicy.notarizationRead:false`,
+  `packageMaterializationApprovalAuditCertificationPolicy.notarizationCertified:false`,
+  `packageMaterializationApprovalAuditCertificationPolicy.auditRecordRead:false`,
+  `packageMaterializationApprovalAuditCertificationPolicy.auditRecordQueried:false`,
+  `packageMaterializationApprovalAuditCertificationPolicy.certificationHashComputed:false`,
+  `approved:false`, `finalApprovalGranted:false`, `filesWritten:false`,
+  `fileMaterialization:false`, `workspaceMutation:false`,
+  `commandExecution:false`, `buildOutput:false`,
+  `runtimeRegistration:false`, and `localFileWrites:false`. They do not select
+  certification policies, identify subjects or authorities, prepare, create,
+  validate, store, or publish certifications, create certification records,
+  read, certify, or verify notarizations, read or query audit records, sign or
+  hash certifications, grant approval, or materialize files.
 - Exporter service execution is out of scope for this command unless a later
   task explicitly maps thumbnail rendering to exporter-compatible semantics.
 - P25.6 selects a future dedicated thumbnail renderer service as the executable
@@ -751,7 +777,7 @@ See `render-thumbnail-runtime-boundary.md` and
 audit, resource-return rules, cache refresh behavior, auth expectations, and
 future test strategy.
 See `render-thumbnail-renderer-service-api.md` and
-`render-thumbnail-renderer-service-fixtures.json` for the P25.59 future
+`render-thumbnail-renderer-service-fixtures.json` for the P25.60 future
 renderer-service request/response API, MCP/CLI dry-run/client boundary, and
 metadata-only availability probe plus response/error normalization and disabled
 client request, execution gate, health preflight, and execution harness
@@ -762,13 +788,11 @@ adapter registry manifest plus enablement checklist and implementation slice
 audit plus health/no-op contract fixtures, no-op service host scaffold, and
 host lifecycle test fixtures plus package manifest scaffold, package creation
 guardrails, package file templates, package workspace wiring, package build
-verification, package materialization approval expiry policy, package
-materialization approval revocation policy, package materialization approval
-scope binding policy, and package materialization approval operator
-confirmation policy, package materialization approval emergency stop policy,
-package materialization approval readiness verdict policy, and package
-materialization approval execution handoff policy, and package materialization
-approval post-handoff audit policy.
+  verification, package materialization approval expiry/revocation/scope
+  binding/operator confirmation/emergency stop/readiness verdict/execution
+  handoff/post-handoff audit policies, and package materialization approval
+  audit retention/access/integrity/provenance/custody/evidence/attestation/
+  notarization/certification policies.
 
 ## Fixtures
 

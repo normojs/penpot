@@ -3030,6 +3030,38 @@ P25.59 render.thumbnail package materialization approval audit notarization poli
   `networkDispatch`, `runtimeRegistration`, and `localFileWrites` remain
   `false`.
 
+P25.60 render.thumbnail package materialization approval audit certification policy result:
+
+- Shared plans include `packageMaterializationApprovalAuditCertificationPolicy`,
+  defining metadata-only audit certification policies, required certification
+  inputs, certification checks, blocked certification decisions, and no-op
+  guarantees.
+- MCP and CLI expose the audit certification policy plan in dry-run and
+  unavailable execution payloads without selecting certification policies,
+  identifying subjects or authorities, preparing/creating/validating/storing/
+  publishing certifications, creating/storing/publishing certification records,
+  reading/certifying/verifying notarizations, reading or querying audit records,
+  linking/verifying/signing/hashing certifications, granting approval, creating
+  package directories, writing files, mutating workspace manifests, mutating
+  lockfiles, running commands, emitting build output, starting processes, or
+  registering runtime dispatch.
+- `certificationPolicySelected`, `certificationSubjectIdentified`,
+  `certificationAuthorityIdentified`, `certificationPrepared`,
+  `certificationCreated`, `certificationValidated`, `certificationStored`,
+  `certificationPublished`, `certificationRecordCreated`,
+  `certificationRecordStored`, `certificationRecordPublished`,
+  `notarizationRead`, `notarizationCertified`, `notarizationVerified`,
+  `auditRecordRead`, `auditRecordQueried`,
+  `auditRecordCertificationLinked`, `auditRecordCertificationVerified`,
+  `certificationSignatureCreated`, `certificationSignatureVerified`,
+  `certificationHashComputed`, `certificationHashStored`,
+  `materializationApproved`, `approved`, and `finalApprovalGranted` remain
+  `false`, while `filesWritten`, `fileMaterialization`,
+  `workspaceMutation`, `lockfileMutation`, `commandExecution`,
+  `buildOutput`, `processSpawn`, `packageCreated`, `dispatch`,
+  `networkDispatch`, `runtimeRegistration`, and `localFileWrites` remain
+  `false`.
+
 ### 8.5 Export and Render Tools
 
 May start file-bound and later move to headless:
@@ -3093,7 +3125,8 @@ approval audit provenance policy. P25.56 defines disabled package
 materialization approval audit custody policy. P25.57 defines disabled package
 materialization approval audit evidence policy. P25.58 defines disabled package
 materialization approval audit attestation policy. P25.59 defines disabled package
-materialization approval audit notarization policy.
+materialization approval audit notarization policy. P25.60 defines disabled package
+materialization approval audit certification policy.
 Runtime behavior remains unavailable
 until opt-in config surfaces, renderer-service implementation, workspace
 wiring, health preflight, cache probe, executable client, and tagged-frame

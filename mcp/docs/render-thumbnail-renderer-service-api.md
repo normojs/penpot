@@ -1,6 +1,6 @@
 # Render Thumbnail Renderer Service API
 
-Status: P25.59 API fixtures, MCP/CLI dry-run/client boundaries, metadata-only
+Status: P25.60 API fixtures, MCP/CLI dry-run/client boundaries, metadata-only
 availability probes, response normalization contracts, disabled client request
 scaffold, closed execution gate, disabled health preflight, and executable
 client harness plus dispatch adapter boundary plans, and opt-in configuration
@@ -426,40 +426,28 @@ P25.56 defines the package materialization approval audit custody policy.
 P25.57 defines the package materialization approval audit evidence policy.
 P25.58 defines the package materialization approval audit attestation policy.
 P25.59 defines the package materialization approval audit notarization policy.
+P25.60 defines the package materialization approval audit certification policy.
 Plans now include `packageMaterializationApprovalPostHandoffAuditPolicy`,
 `packageMaterializationApprovalAuditRetentionPolicy`,
 `packageMaterializationApprovalAuditAccessPolicy`,
-`packageMaterializationApprovalAuditIntegrityPolicy`, and
-`packageMaterializationApprovalAuditProvenancePolicy`, and
-`packageMaterializationApprovalAuditCustodyPolicy`, and
-`packageMaterializationApprovalAuditEvidencePolicy`, and
-`packageMaterializationApprovalAuditAttestationPolicy`, and
-`packageMaterializationApprovalAuditNotarizationPolicy`, covering future audit
-sinks, audit retention policies, audit access policies, audit integrity
-policies, audit provenance policies, audit custody policies, audit evidence
-policies, audit attestation policies, audit notarization policies, required audit/retention/access/integrity/provenance/custody/evidence/attestation/notarization inputs, checks, blocked
-decisions, and no-op guarantees while keeping audit
-record preparation, validation, storage, publication, export, write, retention
-policy selection, retention window computation, trusted clocks, retention
-record/index storage, archive preparation/storage, purge scheduling/execution,
-access policy selection, subject identification, scope computation/validation,
-access decision storage, access grant/deny, audit record reads/queries/exports,
-access token issue/validation, integrity policy selection, hash
-computation/storage/verification, signature creation/verification, integrity
-chain linking/verification, tamper checks, integrity record storage,
-provenance policy selection, subject identification, source collection/
-validation, graph computation/storage, chain linking/verification, provenance
-record creation/storage/publication, audit record reads/queries, provenance
-linking/verification/signing/hashing, custody policy selection, subject/holder
-identification, transfer preparation/execution, custody take/release/transfer,
-custody chain linking/verification, custody record creation/storage/
-publication, custody linking/verification/signing/hashing, evidence policy
-selection, subject/source identification, evidence collection/validation/
-normalization, evidence record creation/storage/publication, evidence bundle
-creation/storage, evidence linking/verification/signing/hashing, file
-writes, package creation, workspace mutation, lockfile mutation, command
-execution, build output, materialization approval, process startup, dispatch,
-network dispatch, runtime registration, and local file writes disabled.
+`packageMaterializationApprovalAuditIntegrityPolicy`,
+`packageMaterializationApprovalAuditProvenancePolicy`,
+`packageMaterializationApprovalAuditCustodyPolicy`,
+`packageMaterializationApprovalAuditEvidencePolicy`,
+`packageMaterializationApprovalAuditAttestationPolicy`,
+`packageMaterializationApprovalAuditNotarizationPolicy`, and
+`packageMaterializationApprovalAuditCertificationPolicy`.
+These cover future audit sinks, retention, access, integrity, provenance,
+custody, evidence, attestation, notarization, and certification metadata,
+including required inputs, checks, blocked decisions, and no-op guarantees. The
+P25.60 certification slice keeps certification policy selection,
+subject/authority identification, certification preparation/creation/
+validation/storage/publication, certification record creation/storage/
+publication, notarization read/certify/verify, audit record read/query,
+certification linking/verification/signing/hashing, file writes, package
+creation, workspace mutation, lockfile mutation, command execution, build
+output, materialization approval, process startup, dispatch, network dispatch,
+runtime registration, and local file writes disabled.
 
 ## Service Boundary
 

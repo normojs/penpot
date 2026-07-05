@@ -86,6 +86,7 @@
 - Add renderer-service package materialization approval audit evidence policy planning for future `render.thumbnail` execution.
 - Add renderer-service package materialization approval audit attestation policy planning for future `render.thumbnail` execution.
 - Add renderer-service package materialization approval audit notarization policy planning for future `render.thumbnail` execution.
+- Add renderer-service package materialization approval audit certification policy planning for future `render.thumbnail` execution.
 - Document CI-friendly check commands for MCP/CLI release verification, separating TypeScript, Clojure, ClojureScript, packaging, smoke-flow, and missing-tool evidence.
 - Reconcile the MCP/CLI roadmap after release verification, documenting remaining product gaps and moving active planning to the next implementation wave.
 - Define the next MCP/CLI implementation wave around CLI configuration convergence, URL derivation parity, local orchestration hardening, and portable CLI packaging.
