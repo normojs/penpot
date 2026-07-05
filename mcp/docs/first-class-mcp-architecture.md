@@ -2912,6 +2912,34 @@ P25.55 render.thumbnail package materialization approval audit provenance policy
   `packageCreated`, `dispatch`, `networkDispatch`, `runtimeRegistration`, and
   `localFileWrites` remain `false`.
 
+P25.56 render.thumbnail package materialization approval audit custody policy result:
+
+- Shared plans include `packageMaterializationApprovalAuditCustodyPolicy`,
+  defining metadata-only audit custody policies, required custody inputs,
+  custody checks, blocked custody decisions, and no-op guarantees.
+- MCP and CLI expose the audit custody policy plan in dry-run and unavailable
+  execution payloads without selecting custody policies, identifying subjects
+  or holders, preparing or executing custody transfers, taking/releasing/
+  transferring custody, linking or verifying custody chains, creating/storing/
+  publishing custody records, reading or querying audit records,
+  linking/verifying/signing/hashing custody, granting approval, creating
+  package directories, writing files, mutating workspace manifests, mutating
+  lockfiles, running commands, emitting build output, starting processes, or
+  registering runtime dispatch.
+- `custodyPolicySelected`, `custodySubjectIdentified`,
+  `custodyHolderIdentified`, `custodyTransferPrepared`,
+  `custodyTransferExecuted`, `custodyTransferred`, `custodyTaken`,
+  `custodyReleased`, `custodyChainLinked`, `custodyChainVerified`,
+  `custodyRecordCreated`, `custodyRecordStored`, `custodyRecordPublished`,
+  `auditRecordRead`, `auditRecordQueried`, `auditRecordCustodyLinked`,
+  `auditRecordCustodyVerified`, `custodySignatureCreated`,
+  `custodySignatureVerified`, `custodyHashComputed`, `custodyHashStored`,
+  `materializationApproved`, `approved`, and `finalApprovalGranted` remain
+  `false`, while `filesWritten`, `fileMaterialization`, `workspaceMutation`,
+  `lockfileMutation`, `commandExecution`, `buildOutput`, `processSpawn`,
+  `packageCreated`, `dispatch`, `networkDispatch`, `runtimeRegistration`, and
+  `localFileWrites` remain `false`.
+
 ### 8.5 Export and Render Tools
 
 May start file-bound and later move to headless:
@@ -2971,7 +2999,8 @@ policy. P25.52 defines disabled package materialization approval audit
 retention policy. P25.53 defines disabled package materialization approval
 audit access policy. P25.54 defines disabled package materialization approval
 audit integrity policy. P25.55 defines disabled package materialization
-approval audit provenance policy.
+approval audit provenance policy. P25.56 defines disabled package
+materialization approval audit custody policy.
 Runtime behavior remains unavailable
 until opt-in config surfaces, renderer-service implementation, workspace
 wiring, health preflight, cache probe, executable client, and tagged-frame

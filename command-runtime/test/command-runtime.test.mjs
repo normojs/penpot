@@ -57,6 +57,7 @@ import {
     createRenderThumbnailRendererServicePackageMaterializationApprovalAuditAccessPolicy,
     createRenderThumbnailRendererServicePackageMaterializationApprovalAuditIntegrityPolicy,
     createRenderThumbnailRendererServicePackageMaterializationApprovalAuditProvenancePolicy,
+    createRenderThumbnailRendererServicePackageMaterializationApprovalAuditCustodyPolicy,
     createRenderThumbnailRendererServicePackageFileTemplates,
     createRenderThumbnailRendererServicePackageManifestScaffold,
     createRenderThumbnailRendererServicePackageMaterializationChecklist,
@@ -484,6 +485,112 @@ function assertAuditProvenancePolicyMetadataOnly(policy) {
     }
 }
 
+function assertAuditCustodyPolicyMetadataOnly(policy) {
+    assert.equal(policy.auditCustodyVersion, "P25.56");
+    assert.equal(policy.custodyRequired, true);
+    assert.equal(policy.custodyPlanned, true);
+
+    for (const key of [
+        "custodyPolicySelected",
+        "custodySubjectIdentified",
+        "custodyHolderIdentified",
+        "custodyTransferPrepared",
+        "custodyTransferExecuted",
+        "custodyTransferred",
+        "custodyTaken",
+        "custodyReleased",
+        "custodyChainLinked",
+        "custodyChainVerified",
+        "custodyRecordCreated",
+        "custodyRecordStored",
+        "custodyRecordPublished",
+        "auditRecordRead",
+        "auditRecordQueried",
+        "auditRecordCustodyLinked",
+        "auditRecordCustodyVerified",
+        "custodySignatureCreated",
+        "custodySignatureVerified",
+        "custodyHashComputed",
+        "custodyHashStored",
+        "materializationApproved",
+        "dispatch",
+        "networkDispatch",
+        "runtimeRegistration",
+        "localFileWrites",
+        "hostStartup",
+        "processSpawn",
+        "packageCreated",
+        "workspaceMutation",
+        "scriptRunnable",
+        "fileMaterialization",
+        "lockfileMutation",
+        "rootPackageJsonMutation",
+        "pnpmWorkspaceMutation",
+        "commandExecution",
+        "buildOutput",
+        "packageScriptsRunnable",
+        "filesWritten",
+    ]) {
+        assert.equal(policy[key], false, key);
+    }
+
+    assert.equal(policy.consumes.packageMaterializationApprovalAuditProvenancePolicy.auditProvenanceVersion, "P25.55");
+    assert.equal(policy.consumes.packageMaterializationApprovalAuditAccessPolicy.auditAccessVersion, "P25.53");
+    assert.equal(policy.consumes.packageMaterializationFinalApprovalChecklist.checklistVersion, "P25.40");
+
+    for (const key of [
+        "selectCustodyPolicyNow",
+        "identifyCustodySubjectNow",
+        "identifyCustodyHolderNow",
+        "prepareCustodyTransferNow",
+        "executeCustodyTransferNow",
+        "takeCustodyNow",
+        "releaseCustodyNow",
+        "linkCustodyChainNow",
+        "verifyCustodyChainNow",
+        "createCustodyRecordNow",
+        "storeCustodyRecordNow",
+        "publishCustodyRecordNow",
+        "readAuditRecordNow",
+        "queryAuditRecordNow",
+        "linkAuditRecordCustodyNow",
+        "verifyAuditRecordCustodyNow",
+        "signCustodyNow",
+        "verifyCustodySignatureNow",
+        "computeCustodyHashNow",
+        "storeCustodyHashNow",
+    ]) {
+        assert.equal(policy.auditCustodyPolicy[key], false, key);
+    }
+
+    for (const key of [
+        "canSelectCustodyPolicy",
+        "canIdentifyCustodySubject",
+        "canIdentifyCustodyHolder",
+        "canPrepareCustodyTransfer",
+        "canExecuteCustodyTransfer",
+        "canTakeCustody",
+        "canReleaseCustody",
+        "canLinkCustodyChain",
+        "canVerifyCustodyChain",
+        "canCreateCustodyRecord",
+        "canStoreCustodyRecord",
+        "canPublishCustodyRecord",
+        "canReadAuditRecord",
+        "canQueryAuditRecord",
+        "canLinkAuditRecordCustody",
+        "canVerifyAuditRecordCustody",
+        "canSignCustody",
+        "canVerifyCustodySignature",
+        "canComputeCustodyHash",
+        "canStoreCustodyHash",
+        "canMaterializeFiles",
+        "canEnableRuntimeDispatch",
+    ]) {
+        assert.equal(policy.auditCustodyDecision[key], false, key);
+    }
+}
+
 test("descriptor groups expose stable command ids", () => {
     assert.deepEqual(
         LowRiskCommandDescriptors.map((descriptor) => descriptor.id),
@@ -829,6 +936,7 @@ test("render.thumbnail runtime boundary keeps execution unavailable until render
     assertAuditAccessPolicyMetadataOnly(boundary.packageMaterializationApprovalAuditAccessPolicy);
     assertAuditIntegrityPolicyMetadataOnly(boundary.packageMaterializationApprovalAuditIntegrityPolicy);
     assertAuditProvenancePolicyMetadataOnly(boundary.packageMaterializationApprovalAuditProvenancePolicy);
+    assertAuditCustodyPolicyMetadataOnly(boundary.packageMaterializationApprovalAuditCustodyPolicy);
     assert.ok(boundary.testStrategy.some((item) => item.includes("descriptor tests")));
 });
 
@@ -1156,6 +1264,8 @@ test("render.thumbnail renderer-service API fixtures define planning requests wi
     assertAuditIntegrityPolicyMetadataOnly(renderThumbnailRuntimeBoundaryFixtures.packageMaterializationApprovalAuditIntegrityPolicy);
     assertAuditProvenancePolicyMetadataOnly(fixtures.serviceApi.packageMaterializationApprovalAuditProvenancePolicy);
     assertAuditProvenancePolicyMetadataOnly(renderThumbnailRuntimeBoundaryFixtures.packageMaterializationApprovalAuditProvenancePolicy);
+    assertAuditCustodyPolicyMetadataOnly(fixtures.serviceApi.packageMaterializationApprovalAuditCustodyPolicy);
+    assertAuditCustodyPolicyMetadataOnly(renderThumbnailRuntimeBoundaryFixtures.packageMaterializationApprovalAuditCustodyPolicy);
     assert.deepEqual(fixtures.runtimeRegistration.commandDescriptorAdapters, ["renderer-service"]);
     assert.deepEqual(CommandDescriptors.RENDER_THUMBNAIL.adapters, ["renderer-service"]);
     assert.equal(fixtures.runtimeRegistration.mcpToolRegistered, true);
@@ -2292,6 +2402,8 @@ test("render.thumbnail renderer-service plan exposes dry-run client request whil
     assert.deepEqual(plan.service.packageMaterializationApprovalAuditIntegrityPolicy, plan.packageMaterializationApprovalAuditIntegrityPolicy);
     assertAuditProvenancePolicyMetadataOnly(plan.packageMaterializationApprovalAuditProvenancePolicy);
     assert.deepEqual(plan.service.packageMaterializationApprovalAuditProvenancePolicy, plan.packageMaterializationApprovalAuditProvenancePolicy);
+    assertAuditCustodyPolicyMetadataOnly(plan.packageMaterializationApprovalAuditCustodyPolicy);
+    assert.deepEqual(plan.service.packageMaterializationApprovalAuditCustodyPolicy, plan.packageMaterializationApprovalAuditCustodyPolicy);
     assert.equal(plan.clientRequest.status, "scaffolded");
     assert.equal(plan.clientRequest.dispatch, false);
     assert.equal(plan.clientRequest.method, "POST");
@@ -2363,6 +2475,7 @@ test("render.thumbnail renderer-service plan exposes dry-run client request whil
     assert.equal(plan.diagnostics.packageMaterializationApprovalAuditAccessPolicyVersion, "P25.53");
     assert.equal(plan.diagnostics.packageMaterializationApprovalAuditIntegrityPolicyVersion, "P25.54");
     assert.equal(plan.diagnostics.packageMaterializationApprovalAuditProvenancePolicyVersion, "P25.55");
+    assert.equal(plan.diagnostics.packageMaterializationApprovalAuditCustodyPolicyVersion, "P25.56");
 });
 
 test("render.thumbnail renderer-service plan reports not-configured availability without endpoint", () => {
@@ -4903,6 +5016,53 @@ test("render.thumbnail renderer-service package materialization approval audit p
     );
     assert.ok(auditProvenancePolicy.requiredBeforeRuntimeDispatch.includes("define audit provenance policy schema"));
     assertAuditProvenancePolicyMetadataOnly(auditProvenancePolicy);
+});
+
+test("render.thumbnail renderer-service package materialization approval audit custody policy stays metadata-only", () => {
+    const auditCustodyPolicy = createRenderThumbnailRendererServicePackageMaterializationApprovalAuditCustodyPolicy({
+        packageMaterializationApprovalAuditProvenancePolicy: {
+            status: "planned-disabled",
+            auditProvenanceVersion: "P25.55",
+            provenanceRecordCreated: false,
+            provenanceRecordStored: false,
+        },
+        packageMaterializationApprovalAuditAccessPolicy: {
+            status: "planned-disabled",
+            auditAccessVersion: "P25.53",
+            auditRecordRead: false,
+            accessGranted: false,
+        },
+        packageMaterializationFinalApprovalChecklist: {
+            status: "planned-disabled",
+            checklistVersion: "P25.40",
+            finalApprovalGranted: false,
+        },
+    });
+
+    assert.equal(auditCustodyPolicy.status, "planned-disabled");
+    assert.equal(auditCustodyPolicy.dryRunOnly, true);
+    assert.equal(auditCustodyPolicy.approvalRequired, true);
+    assert.equal(auditCustodyPolicy.approved, false);
+    assert.equal(auditCustodyPolicy.finalApprovalGranted, false);
+    assert.equal(auditCustodyPolicy.auditCustodyPolicy.policy, "track-custody-after-provenance-record-defined");
+    assert.equal(auditCustodyPolicy.auditCustodyPolicy.custodyPayloadLogged, false);
+    assert.ok(auditCustodyPolicy.auditCustodyPolicy.requiredInputs.includes("authorizedCustodian"));
+    assert.ok(
+        auditCustodyPolicy.auditCustodyChecks.some(
+            (entry) => entry.id === "custody-record-not-created" && entry.executed === false
+        )
+    );
+    assert.equal(auditCustodyPolicy.auditCustodyDecision.status, "blocked");
+    assert.equal(auditCustodyPolicy.auditCustodyDecision.canTakeCustody, false);
+    assert.equal(auditCustodyPolicy.auditCustodyDecision.canExecuteCustodyTransfer, false);
+    assert.equal(auditCustodyPolicy.auditCustodyDecision.canCreateCustodyRecord, false);
+    assert.ok(
+        auditCustodyPolicy.noOpGuarantees.includes(
+            "audit custody policy plan does not take, release, or transfer custody"
+        )
+    );
+    assert.ok(auditCustodyPolicy.requiredBeforeRuntimeDispatch.includes("define audit custody policy schema"));
+    assertAuditCustodyPolicyMetadataOnly(auditCustodyPolicy);
 });
 
 test("render.thumbnail renderer-service client request scaffold adds MCP audit headers without dispatch", () => {

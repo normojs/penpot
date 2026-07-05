@@ -1,6 +1,6 @@
 # Render Thumbnail Renderer Service API
 
-Status: P25.55 API fixtures, MCP/CLI dry-run/client boundaries, metadata-only
+Status: P25.56 API fixtures, MCP/CLI dry-run/client boundaries, metadata-only
 availability probes, response normalization contracts, disabled client request
 scaffold, closed execution gate, disabled health preflight, and executable
 client harness plus dispatch adapter boundary plans, and opt-in configuration
@@ -73,6 +73,12 @@ validating provenance sources, computing or storing provenance graphs, linking
 or verifying provenance chains, creating/storing/publishing provenance records,
 reading or querying audit records, signing or hashing provenance, or writing
 files.
+P25.56 adds package materialization approval audit custody policy metadata
+without selecting custody policies, identifying custody subjects or holders,
+preparing or executing custody transfers, taking/releasing/transferring
+custody, linking or verifying custody chains, creating/storing/publishing
+custody records, reading or querying audit records, signing or hashing custody,
+or writing files.
 
 P25.6 selected a dedicated thumbnail renderer service as the future executable
 owner for `render.thumbnail`. This document defines the service-facing request
@@ -400,14 +406,16 @@ P25.52 defines the package materialization approval audit retention policy.
 P25.53 defines the package materialization approval audit access policy.
 P25.54 defines the package materialization approval audit integrity policy.
 P25.55 defines the package materialization approval audit provenance policy.
+P25.56 defines the package materialization approval audit custody policy.
 Plans now include `packageMaterializationApprovalPostHandoffAuditPolicy`,
 `packageMaterializationApprovalAuditRetentionPolicy`,
 `packageMaterializationApprovalAuditAccessPolicy`,
 `packageMaterializationApprovalAuditIntegrityPolicy`, and
-`packageMaterializationApprovalAuditProvenancePolicy`, covering future audit
+`packageMaterializationApprovalAuditProvenancePolicy`, and
+`packageMaterializationApprovalAuditCustodyPolicy`, covering future audit
 sinks, audit retention policies, audit access policies, audit integrity
-policies, audit provenance policies, required
-audit/retention/access/integrity/provenance inputs, checks, blocked
+policies, audit provenance policies, audit custody policies, required
+audit/retention/access/integrity/provenance/custody inputs, checks, blocked
 decisions, and no-op guarantees while keeping audit
 record preparation, validation, storage, publication, export, write, retention
 policy selection, retention window computation, trusted clocks, retention
@@ -420,7 +428,10 @@ chain linking/verification, tamper checks, integrity record storage,
 provenance policy selection, subject identification, source collection/
 validation, graph computation/storage, chain linking/verification, provenance
 record creation/storage/publication, audit record reads/queries, provenance
-linking/verification/signing/hashing, file
+linking/verification/signing/hashing, custody policy selection, subject/holder
+identification, transfer preparation/execution, custody take/release/transfer,
+custody chain linking/verification, custody record creation/storage/
+publication, custody linking/verification/signing/hashing, file
 writes, package creation, workspace mutation, lockfile mutation, command
 execution, build output, materialization approval, process startup, dispatch,
 network dispatch, runtime registration, and local file writes disabled.

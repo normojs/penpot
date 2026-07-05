@@ -1475,3 +1475,32 @@ policy:
   without selecting provenance policies, collecting sources, computing graphs,
   creating provenance records, reading audit records, signing or hashing
   provenance, materializing files, starting processes, or enabling dispatch.
+
+P25.56 adds renderer-service package materialization approval audit custody
+policy:
+
+- Plans include `packageMaterializationApprovalAuditCustodyPolicy`, defining
+  the future custody policy, required custody inputs, custody checks, blocked
+  custody decision, and no-op guarantees.
+- The audit custody policy remains planning-only with
+  `custodyPolicySelected:false`, `custodySubjectIdentified:false`,
+  `custodyHolderIdentified:false`, `custodyTransferPrepared:false`,
+  `custodyTransferExecuted:false`, `custodyTransferred:false`,
+  `custodyTaken:false`, `custodyReleased:false`,
+  `custodyChainLinked:false`, `custodyChainVerified:false`,
+  `custodyRecordCreated:false`, `custodyRecordStored:false`,
+  `custodyRecordPublished:false`, `auditRecordRead:false`,
+  `auditRecordQueried:false`, `auditRecordCustodyLinked:false`,
+  `auditRecordCustodyVerified:false`, `custodySignatureCreated:false`,
+  `custodySignatureVerified:false`, `custodyHashComputed:false`,
+  `custodyHashStored:false`, `materializationApproved:false`,
+  `approved:false`, `finalApprovalGranted:false`, `filesWritten:false`,
+  `fileMaterialization:false`, `workspaceMutation:false`,
+  `lockfileMutation:false`, `commandExecution:false`, `buildOutput:false`,
+  `processSpawn:false`, `packageCreated:false`, `dispatch:false`,
+  `networkDispatch:false`, `runtimeRegistration:false`, and
+  `localFileWrites:false`.
+- MCP and CLI expose this policy in dry-run and unavailable execution JSON
+  without selecting custody policies, preparing transfers, taking or releasing
+  custody, creating custody records, reading audit records, signing or hashing
+  custody, materializing files, starting processes, or enabling dispatch.

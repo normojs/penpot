@@ -1496,6 +1496,34 @@ P25.55 is complete:
    `packageCreated`, `dispatch`, `networkDispatch`, `runtimeRegistration`, and
    `localFileWrites` remain false.
 
+P25.56 is complete:
+
+1. Shared plans include `packageMaterializationApprovalAuditCustodyPolicy`
+   metadata for future audit custody policies, required custody inputs, custody
+   checks, blocked custody decisions, and no-op guarantees.
+2. MCP and CLI expose this audit custody policy plan in dry-run and unavailable
+   execution payloads without selecting custody policies, identifying subjects
+   or holders, preparing or executing custody transfers, taking/releasing/
+   transferring custody, linking or verifying custody chains, creating/storing/
+   publishing custody records, reading or querying audit records,
+   linking/verifying/signing/hashing custody, granting approval, creating
+   package directories, writing files, mutating workspace manifests, mutating
+   lockfiles, running commands, emitting build output, starting processes, or
+   registering runtime dispatch.
+3. `custodyPolicySelected`, `custodySubjectIdentified`,
+   `custodyHolderIdentified`, `custodyTransferPrepared`,
+   `custodyTransferExecuted`, `custodyTransferred`, `custodyTaken`,
+   `custodyReleased`, `custodyChainLinked`, `custodyChainVerified`,
+   `custodyRecordCreated`, `custodyRecordStored`, `custodyRecordPublished`,
+   `auditRecordRead`, `auditRecordQueried`, `auditRecordCustodyLinked`,
+   `auditRecordCustodyVerified`, `custodySignatureCreated`,
+   `custodySignatureVerified`, `custodyHashComputed`, `custodyHashStored`,
+   `materializationApproved`, `approved`, and `finalApprovalGranted` remain
+   false, while `filesWritten`, `fileMaterialization`, `workspaceMutation`,
+   `lockfileMutation`, `commandExecution`, `buildOutput`, `processSpawn`,
+   `packageCreated`, `dispatch`, `networkDispatch`, `runtimeRegistration`, and
+   `localFileWrites` remain false.
+
 Keep manual configuration behavior stable while moving command metadata and
 envelopes; transport-specific formatting should stay at the MCP/CLI edges.
 
