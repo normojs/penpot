@@ -1524,6 +1524,33 @@ P25.56 is complete:
    `packageCreated`, `dispatch`, `networkDispatch`, `runtimeRegistration`, and
    `localFileWrites` remain false.
 
+P25.57 is complete:
+
+1. Shared plans include `packageMaterializationApprovalAuditEvidencePolicy`
+   metadata for future audit evidence policies, required evidence inputs,
+   evidence checks, blocked evidence decisions, and no-op guarantees.
+2. MCP and CLI expose this audit evidence policy plan in dry-run and
+   unavailable execution payloads without selecting evidence policies,
+   identifying subjects or sources, collecting/validating/normalizing evidence,
+   creating/storing/publishing evidence records, creating/storing evidence
+   bundles, reading or querying audit records, linking/verifying/signing/
+   hashing evidence, granting approval, creating package directories, writing
+   files, mutating workspace manifests, mutating lockfiles, running commands,
+   emitting build output, starting processes, or registering runtime dispatch.
+3. `evidencePolicySelected`, `evidenceSubjectIdentified`,
+   `evidenceSourceIdentified`, `evidenceCollected`, `evidenceValidated`,
+   `evidenceNormalized`, `evidenceRecordCreated`, `evidenceRecordStored`,
+   `evidenceRecordPublished`, `evidenceBundleCreated`,
+   `evidenceBundleStored`, `auditRecordRead`, `auditRecordQueried`,
+   `auditRecordEvidenceLinked`, `auditRecordEvidenceVerified`,
+   `evidenceSignatureCreated`, `evidenceSignatureVerified`,
+   `evidenceHashComputed`, `evidenceHashStored`, `materializationApproved`,
+   `approved`, and `finalApprovalGranted` remain false, while `filesWritten`,
+   `fileMaterialization`, `workspaceMutation`, `lockfileMutation`,
+   `commandExecution`, `buildOutput`, `processSpawn`, `packageCreated`,
+   `dispatch`, `networkDispatch`, `runtimeRegistration`, and
+   `localFileWrites` remain false.
+
 Keep manual configuration behavior stable while moving command metadata and
 envelopes; transport-specific formatting should stay at the MCP/CLI edges.
 

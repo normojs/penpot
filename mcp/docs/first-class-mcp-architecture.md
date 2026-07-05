@@ -2940,6 +2940,33 @@ P25.56 render.thumbnail package materialization approval audit custody policy re
   `packageCreated`, `dispatch`, `networkDispatch`, `runtimeRegistration`, and
   `localFileWrites` remain `false`.
 
+P25.57 render.thumbnail package materialization approval audit evidence policy result:
+
+- Shared plans include `packageMaterializationApprovalAuditEvidencePolicy`,
+  defining metadata-only audit evidence policies, required evidence inputs,
+  evidence checks, blocked evidence decisions, and no-op guarantees.
+- MCP and CLI expose the audit evidence policy plan in dry-run and unavailable
+  execution payloads without selecting evidence policies, identifying subjects
+  or sources, collecting/validating/normalizing evidence, creating/storing/
+  publishing evidence records, creating/storing evidence bundles, reading or
+  querying audit records, linking/verifying/signing/hashing evidence, granting
+  approval, creating package directories, writing files, mutating workspace
+  manifests, mutating lockfiles, running commands, emitting build output,
+  starting processes, or registering runtime dispatch.
+- `evidencePolicySelected`, `evidenceSubjectIdentified`,
+  `evidenceSourceIdentified`, `evidenceCollected`, `evidenceValidated`,
+  `evidenceNormalized`, `evidenceRecordCreated`, `evidenceRecordStored`,
+  `evidenceRecordPublished`, `evidenceBundleCreated`,
+  `evidenceBundleStored`, `auditRecordRead`, `auditRecordQueried`,
+  `auditRecordEvidenceLinked`, `auditRecordEvidenceVerified`,
+  `evidenceSignatureCreated`, `evidenceSignatureVerified`,
+  `evidenceHashComputed`, `evidenceHashStored`, `materializationApproved`,
+  `approved`, and `finalApprovalGranted` remain `false`, while
+  `filesWritten`, `fileMaterialization`, `workspaceMutation`,
+  `lockfileMutation`, `commandExecution`, `buildOutput`, `processSpawn`,
+  `packageCreated`, `dispatch`, `networkDispatch`, `runtimeRegistration`, and
+  `localFileWrites` remain `false`.
+
 ### 8.5 Export and Render Tools
 
 May start file-bound and later move to headless:
@@ -3000,7 +3027,8 @@ retention policy. P25.53 defines disabled package materialization approval
 audit access policy. P25.54 defines disabled package materialization approval
 audit integrity policy. P25.55 defines disabled package materialization
 approval audit provenance policy. P25.56 defines disabled package
-materialization approval audit custody policy.
+materialization approval audit custody policy. P25.57 defines disabled package
+materialization approval audit evidence policy.
 Runtime behavior remains unavailable
 until opt-in config surfaces, renderer-service implementation, workspace
 wiring, health preflight, cache probe, executable client, and tagged-frame

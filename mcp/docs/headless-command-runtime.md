@@ -1504,3 +1504,31 @@ policy:
   without selecting custody policies, preparing transfers, taking or releasing
   custody, creating custody records, reading audit records, signing or hashing
   custody, materializing files, starting processes, or enabling dispatch.
+
+P25.57 adds renderer-service package materialization approval audit evidence
+policy:
+
+- Plans include `packageMaterializationApprovalAuditEvidencePolicy`, defining
+  the future evidence policy, required evidence inputs, evidence checks,
+  blocked evidence decision, and no-op guarantees.
+- The audit evidence policy remains planning-only with
+  `evidencePolicySelected:false`, `evidenceSubjectIdentified:false`,
+  `evidenceSourceIdentified:false`, `evidenceCollected:false`,
+  `evidenceValidated:false`, `evidenceNormalized:false`,
+  `evidenceRecordCreated:false`, `evidenceRecordStored:false`,
+  `evidenceRecordPublished:false`, `evidenceBundleCreated:false`,
+  `evidenceBundleStored:false`, `auditRecordRead:false`,
+  `auditRecordQueried:false`, `auditRecordEvidenceLinked:false`,
+  `auditRecordEvidenceVerified:false`, `evidenceSignatureCreated:false`,
+  `evidenceSignatureVerified:false`, `evidenceHashComputed:false`,
+  `evidenceHashStored:false`, `materializationApproved:false`,
+  `approved:false`, `finalApprovalGranted:false`, `filesWritten:false`,
+  `fileMaterialization:false`, `workspaceMutation:false`,
+  `lockfileMutation:false`, `commandExecution:false`, `buildOutput:false`,
+  `processSpawn:false`, `packageCreated:false`, `dispatch:false`,
+  `networkDispatch:false`, `runtimeRegistration:false`, and
+  `localFileWrites:false`.
+- MCP and CLI expose this policy in dry-run and unavailable execution JSON
+  without selecting evidence policies, collecting evidence, creating evidence
+  records or bundles, reading audit records, signing or hashing evidence,
+  materializing files, starting processes, or enabling dispatch.

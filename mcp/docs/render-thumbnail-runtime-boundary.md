@@ -256,6 +256,8 @@ P25.55 adds metadata-only package materialization approval audit provenance
 policy.
 P25.56 adds metadata-only package materialization approval audit custody
 policy.
+P25.57 adds metadata-only package materialization approval audit evidence
+policy.
 MCP
 `render.thumbnail` and `penpot-cli render thumbnail --dry-run` can print the
 future request shape, configured/not configured service metadata,
@@ -422,6 +424,19 @@ plus `packageMaterializationApprovalAuditCustodyPolicy.custodyPolicySelected:fal
 `packageMaterializationApprovalAuditCustodyPolicy.filesWritten:false`,
 `packageMaterializationApprovalAuditCustodyPolicy.commandExecution:false`, and
 `packageMaterializationApprovalAuditCustodyPolicy.buildOutput:false`,
+plus `packageMaterializationApprovalAuditEvidencePolicy.evidencePolicySelected:false`,
+`packageMaterializationApprovalAuditEvidencePolicy.evidenceCollected:false`,
+`packageMaterializationApprovalAuditEvidencePolicy.evidenceValidated:false`,
+`packageMaterializationApprovalAuditEvidencePolicy.evidenceNormalized:false`,
+`packageMaterializationApprovalAuditEvidencePolicy.evidenceRecordCreated:false`,
+`packageMaterializationApprovalAuditEvidencePolicy.evidenceBundleCreated:false`,
+`packageMaterializationApprovalAuditEvidencePolicy.auditRecordRead:false`,
+`packageMaterializationApprovalAuditEvidencePolicy.auditRecordQueried:false`,
+`packageMaterializationApprovalAuditEvidencePolicy.evidenceHashComputed:false`,
+`packageMaterializationApprovalAuditEvidencePolicy.materializationApproved:false`,
+`packageMaterializationApprovalAuditEvidencePolicy.filesWritten:false`,
+`packageMaterializationApprovalAuditEvidencePolicy.commandExecution:false`, and
+`packageMaterializationApprovalAuditEvidencePolicy.buildOutput:false`,
 but execution still returns
 `renderer_service_unavailable` until explicit opt-in, config surfaces, renderer
 service, integration tests, health preflight, file cache probe, tagged-frame
