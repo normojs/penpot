@@ -1025,6 +1025,19 @@ Shared contract shape:
   endorsement linking/verification/signing/hashing, approval, file writes,
   workspace mutation, command execution, build output, package creation,
   process startup, and runtime registration disabled.
+- P25.73 package materialization approval audit countersignature revocation
+  appeal resolution enforcement evidence attestation notarization certification
+  endorsement countersignature policy fields are planning-only. They define
+  future enforcement evidence attestation notarization certification
+  endorsement countersignature policies, required countersignature inputs,
+  countersignature checks, blocked countersignature decisions, and no-op
+  guarantees while keeping countersignature policy selection, subject/authority
+  identification, countersignature preparation/creation/validation/storage/
+  publication, countersignature record storage/publication, endorsement reads/
+  countersignature/verification, audit record reads, countersignature linking/
+  verification/signing/hashing, approval, file writes, workspace mutation,
+  command execution, build output, package creation, process startup, and
+  runtime registration disabled.
 - Exporter service execution is out of scope for this command unless a later
   task explicitly maps thumbnail rendering to exporter-compatible semantics.
 - P25.6 selects a future dedicated thumbnail renderer service as the executable
@@ -1039,7 +1052,7 @@ See `render-thumbnail-runtime-boundary.md` and
 audit, resource-return rules, cache refresh behavior, auth expectations, and
 future test strategy.
 See `render-thumbnail-renderer-service-api.md` and
-`render-thumbnail-renderer-service-fixtures.json` for the P25.72 future
+`render-thumbnail-renderer-service-fixtures.json` for the P25.73 future
 renderer-service request/response API, MCP/CLI dry-run/client boundary, and
 metadata-only availability probe plus response/error normalization and disabled
 client request, execution gate, health preflight, and execution harness
@@ -1059,7 +1072,10 @@ guardrails, package file templates, package workspace wiring, package build
   /countersignature revocation appeal resolution/countersignature revocation
   appeal resolution enforcement/enforcement evidence/enforcement evidence
   attestation/enforcement evidence attestation notarization/enforcement
-  evidence attestation notarization certification policies.
+  evidence attestation notarization certification/enforcement evidence
+  attestation notarization certification endorsement/enforcement evidence
+  attestation notarization certification endorsement countersignature
+  policies.
 
 ## Fixtures
 

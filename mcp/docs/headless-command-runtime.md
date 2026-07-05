@@ -2043,3 +2043,22 @@ notarization certification endorsement policy:
   endorsement signing/hash, file writes, package creation, workspace mutation,
   command execution, build output, process startup, and runtime dispatch
   disabled.
+
+P25.73 adds renderer-service package materialization approval audit
+countersignature revocation appeal resolution enforcement evidence attestation
+notarization certification endorsement countersignature policy:
+
+- Plans include
+  `packageMaterializationApprovalAuditCountersignatureRevocationAppealResolutionEnforcementEvidenceAttestationNotarizationCertificationEndorsementCountersignaturePolicy`,
+  defining future enforcement evidence attestation notarization certification
+  endorsement countersignature metadata, required countersignature inputs,
+  countersignature checks, blocked countersignature decisions, and no-op
+  guarantees.
+- MCP and CLI expose this countersignature policy in dry-run and unavailable
+  execution JSON while keeping countersignature policy selection,
+  subject/authority identification, countersignature prepare/create/validate/
+  store/publish, countersignature record creation/storage/publication,
+  endorsement reads/countersignature/verification, audit-record
+  countersignature linking/verification, countersignature signing/hash, file
+  writes, package creation, workspace mutation, command execution, build
+  output, process startup, and runtime dispatch disabled.

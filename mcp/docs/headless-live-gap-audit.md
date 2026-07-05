@@ -430,6 +430,20 @@ publication, endorsement linking/verification/signing/hashing, approval, file
 writes, workspace mutation, command execution, build output, package creation,
 process startup, and runtime registration disabled.
 
+P25.73 extends the `render.thumbnail` renderer-service planning payload with
+metadata-only package materialization approval audit countersignature revocation
+appeal resolution enforcement evidence attestation notarization certification
+endorsement countersignature policy. It defines future countersignature
+revocation appeal resolution enforcement evidence attestation notarization
+certification endorsement countersignature policies, required countersignature
+inputs, countersignature checks, and blocked countersignature decision metadata
+while keeping countersignature policy selection, subject/authority
+identification, endorsement and audit record reads, endorsement
+countersignature/verification, countersignature creation/storage/publication,
+countersignature linking/verification/signing/hashing, approval, file writes,
+workspace mutation, command execution, build output, package creation, process
+startup, and runtime registration disabled.
+
 ## P17.2 Descriptor Slice
 
 The first descriptor slice should be read-only or metadata-only. It should not
