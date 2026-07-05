@@ -1,6 +1,6 @@
 # Render Thumbnail Contract
 
-Status: P25.4 descriptor contract; P25.63 MCP/CLI renderer-service dry-run
+Status: P25.4 descriptor contract; P25.64 MCP/CLI renderer-service dry-run
 boundaries, metadata-only availability probes, response normalization
 contracts, disabled client request scaffolding, closed execution gate, disabled
 health preflight, executable client harness plan, and dispatch adapter boundary
@@ -842,6 +842,31 @@ Shared contract shape:
   countersignatures or audit records, parse payloads, verify signatures, compute
   hashes, link chains, store verification results, grant approval, or
   materialize files.
+- P25.64 package materialization approval audit countersignature revocation
+  policy fields are planning-only. They define future countersignature
+  revocation policies, required revocation inputs, revocation checks, blocked
+  revocation decisions, and no-op guarantees while keeping
+  `packageMaterializationApprovalAuditCountersignatureRevocationPolicy.countersignatureRevocationPolicySelected:false`,
+  `packageMaterializationApprovalAuditCountersignatureRevocationPolicy.countersignatureRevocationSubjectIdentified:false`,
+  `packageMaterializationApprovalAuditCountersignatureRevocationPolicy.countersignatureRevocationAuthorityIdentified:false`,
+  `packageMaterializationApprovalAuditCountersignatureRevocationPolicy.countersignatureRevocationReasonCaptured:false`,
+  `packageMaterializationApprovalAuditCountersignatureRevocationPolicy.countersignatureRevocationRequestPrepared:false`,
+  `packageMaterializationApprovalAuditCountersignatureRevocationPolicy.countersignatureRevocationExecuted:false`,
+  `packageMaterializationApprovalAuditCountersignatureRevocationPolicy.countersignatureRevoked:false`,
+  `packageMaterializationApprovalAuditCountersignatureRevocationPolicy.countersignatureRevocationRecordCreated:false`,
+  `packageMaterializationApprovalAuditCountersignatureRevocationPolicy.countersignatureRead:false`,
+  `packageMaterializationApprovalAuditCountersignatureRevocationPolicy.countersignatureVerificationRead:false`,
+  `packageMaterializationApprovalAuditCountersignatureRevocationPolicy.auditRecordRead:false`,
+  `packageMaterializationApprovalAuditCountersignatureRevocationPolicy.auditRecordQueried:false`,
+  `packageMaterializationApprovalAuditCountersignatureRevocationPolicy.countersignatureRevocationHashComputed:false`,
+  `approved:false`, `finalApprovalGranted:false`, `filesWritten:false`,
+  `fileMaterialization:false`, `workspaceMutation:false`,
+  `commandExecution:false`, `buildOutput:false`,
+  `runtimeRegistration:false`, and `localFileWrites:false`. They do not select
+  revocation policies, identify subjects or authorities, capture revocation
+  reasons, read countersignatures or audit records, revoke countersignatures,
+  create revocation records, sign or hash revocations, grant approval, or
+  materialize files.
 - Exporter service execution is out of scope for this command unless a later
   task explicitly maps thumbnail rendering to exporter-compatible semantics.
 - P25.6 selects a future dedicated thumbnail renderer service as the executable
@@ -856,7 +881,7 @@ See `render-thumbnail-runtime-boundary.md` and
 audit, resource-return rules, cache refresh behavior, auth expectations, and
 future test strategy.
 See `render-thumbnail-renderer-service-api.md` and
-`render-thumbnail-renderer-service-fixtures.json` for the P25.63 future
+`render-thumbnail-renderer-service-fixtures.json` for the P25.64 future
 renderer-service request/response API, MCP/CLI dry-run/client boundary, and
 metadata-only availability probe plus response/error normalization and disabled
 client request, execution gate, health preflight, and execution harness
@@ -872,7 +897,7 @@ guardrails, package file templates, package workspace wiring, package build
   handoff/post-handoff audit policies, and package materialization approval
   audit retention/access/integrity/provenance/custody/evidence/attestation/
   notarization/certification/endorsement/countersignature/countersignature
-  verification policies.
+  verification/countersignature revocation policies.
 
 ## Fixtures
 

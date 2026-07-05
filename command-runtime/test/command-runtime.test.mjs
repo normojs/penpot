@@ -65,6 +65,7 @@ import {
     createRenderThumbnailRendererServicePackageMaterializationApprovalAuditEndorsementPolicy,
     createRenderThumbnailRendererServicePackageMaterializationApprovalAuditCountersignaturePolicy,
     createRenderThumbnailRendererServicePackageMaterializationApprovalAuditCountersignatureVerificationPolicy,
+    createRenderThumbnailRendererServicePackageMaterializationApprovalAuditCountersignatureRevocationPolicy,
     createRenderThumbnailRendererServicePackageFileTemplates,
     createRenderThumbnailRendererServicePackageManifestScaffold,
     createRenderThumbnailRendererServicePackageMaterializationChecklist,
@@ -1372,6 +1373,135 @@ function assertAuditCountersignatureVerificationPolicyMetadataOnly(policy) {
     }
 }
 
+function assertAuditCountersignatureRevocationPolicyMetadataOnly(policy) {
+    assert.equal(policy.auditCountersignatureRevocationVersion, "P25.64");
+    assert.equal(policy.countersignatureRevocationRequired, true);
+    assert.equal(policy.countersignatureRevocationPlanned, true);
+
+    for (const key of [
+        "countersignatureRevocationPolicySelected",
+        "countersignatureRevocationSubjectIdentified",
+        "countersignatureRevocationAuthorityIdentified",
+        "countersignatureRevocationReasonCaptured",
+        "countersignatureRevocationScopeComputed",
+        "countersignatureRevocationRequestPrepared",
+        "countersignatureRevocationRequestValidated",
+        "countersignatureRevocationRequestStored",
+        "countersignatureRevocationExecuted",
+        "countersignatureRevoked",
+        "countersignatureRevocationPublished",
+        "countersignatureRevocationRecordCreated",
+        "countersignatureRevocationRecordStored",
+        "countersignatureRevocationRecordPublished",
+        "countersignatureRead",
+        "countersignatureRecordRead",
+        "countersignatureVerificationRead",
+        "countersignatureVerificationRevoked",
+        "countersignatureVerificationVerified",
+        "auditRecordRead",
+        "auditRecordQueried",
+        "auditRecordCountersignatureRevocationLinked",
+        "auditRecordCountersignatureRevocationVerified",
+        "countersignatureRevocationSignatureCreated",
+        "countersignatureRevocationSignatureVerified",
+        "countersignatureRevocationHashComputed",
+        "countersignatureRevocationHashStored",
+        "materializationApproved",
+        "dispatch",
+        "networkDispatch",
+        "runtimeRegistration",
+        "localFileWrites",
+        "hostStartup",
+        "processSpawn",
+        "packageCreated",
+        "workspaceMutation",
+        "scriptRunnable",
+        "fileMaterialization",
+        "lockfileMutation",
+        "rootPackageJsonMutation",
+        "pnpmWorkspaceMutation",
+        "commandExecution",
+        "buildOutput",
+        "packageScriptsRunnable",
+        "filesWritten",
+    ]) {
+        assert.equal(policy[key], false, key);
+    }
+
+    assert.equal(
+        policy.consumes.packageMaterializationApprovalAuditCountersignatureVerificationPolicy.auditCountersignatureVerificationVersion,
+        "P25.63"
+    );
+    assert.equal(policy.consumes.packageMaterializationApprovalAuditAccessPolicy.auditAccessVersion, "P25.53");
+    assert.equal(policy.consumes.packageMaterializationFinalApprovalChecklist.checklistVersion, "P25.40");
+
+    for (const key of [
+        "selectCountersignatureRevocationPolicyNow",
+        "identifyCountersignatureRevocationSubjectNow",
+        "identifyCountersignatureRevocationAuthorityNow",
+        "captureCountersignatureRevocationReasonNow",
+        "computeCountersignatureRevocationScopeNow",
+        "prepareCountersignatureRevocationRequestNow",
+        "validateCountersignatureRevocationRequestNow",
+        "storeCountersignatureRevocationRequestNow",
+        "executeCountersignatureRevocationNow",
+        "revokeCountersignatureNow",
+        "publishCountersignatureRevocationNow",
+        "createCountersignatureRevocationRecordNow",
+        "storeCountersignatureRevocationRecordNow",
+        "publishCountersignatureRevocationRecordNow",
+        "readCountersignatureNow",
+        "readCountersignatureRecordNow",
+        "readCountersignatureVerificationNow",
+        "revokeCountersignatureVerificationNow",
+        "verifyCountersignatureVerificationNow",
+        "readAuditRecordNow",
+        "queryAuditRecordNow",
+        "linkAuditRecordCountersignatureRevocationNow",
+        "verifyAuditRecordCountersignatureRevocationNow",
+        "signCountersignatureRevocationNow",
+        "verifyCountersignatureRevocationSignatureNow",
+        "computeCountersignatureRevocationHashNow",
+        "storeCountersignatureRevocationHashNow",
+    ]) {
+        assert.equal(policy.auditCountersignatureRevocationPolicy[key], false, key);
+    }
+
+    for (const key of [
+        "canSelectCountersignatureRevocationPolicy",
+        "canIdentifyCountersignatureRevocationSubject",
+        "canIdentifyCountersignatureRevocationAuthority",
+        "canCaptureCountersignatureRevocationReason",
+        "canComputeCountersignatureRevocationScope",
+        "canPrepareCountersignatureRevocationRequest",
+        "canValidateCountersignatureRevocationRequest",
+        "canStoreCountersignatureRevocationRequest",
+        "canExecuteCountersignatureRevocation",
+        "canRevokeCountersignature",
+        "canPublishCountersignatureRevocation",
+        "canCreateCountersignatureRevocationRecord",
+        "canStoreCountersignatureRevocationRecord",
+        "canPublishCountersignatureRevocationRecord",
+        "canReadCountersignature",
+        "canReadCountersignatureRecord",
+        "canReadCountersignatureVerification",
+        "canRevokeCountersignatureVerification",
+        "canVerifyCountersignatureVerification",
+        "canReadAuditRecord",
+        "canQueryAuditRecord",
+        "canLinkAuditRecordCountersignatureRevocation",
+        "canVerifyAuditRecordCountersignatureRevocation",
+        "canSignCountersignatureRevocation",
+        "canVerifyCountersignatureRevocationSignature",
+        "canComputeCountersignatureRevocationHash",
+        "canStoreCountersignatureRevocationHash",
+        "canMaterializeFiles",
+        "canEnableRuntimeDispatch",
+    ]) {
+        assert.equal(policy.auditCountersignatureRevocationDecision[key], false, key);
+    }
+}
+
 test("descriptor groups expose stable command ids", () => {
     assert.deepEqual(
         LowRiskCommandDescriptors.map((descriptor) => descriptor.id),
@@ -2066,6 +2196,8 @@ test("render.thumbnail renderer-service API fixtures define planning requests wi
     assertAuditCountersignaturePolicyMetadataOnly(renderThumbnailRuntimeBoundaryFixtures.packageMaterializationApprovalAuditCountersignaturePolicy);
     assertAuditCountersignatureVerificationPolicyMetadataOnly(fixtures.serviceApi.packageMaterializationApprovalAuditCountersignatureVerificationPolicy);
     assertAuditCountersignatureVerificationPolicyMetadataOnly(renderThumbnailRuntimeBoundaryFixtures.packageMaterializationApprovalAuditCountersignatureVerificationPolicy);
+    assertAuditCountersignatureRevocationPolicyMetadataOnly(fixtures.serviceApi.packageMaterializationApprovalAuditCountersignatureRevocationPolicy);
+    assertAuditCountersignatureRevocationPolicyMetadataOnly(renderThumbnailRuntimeBoundaryFixtures.packageMaterializationApprovalAuditCountersignatureRevocationPolicy);
     assert.deepEqual(fixtures.runtimeRegistration.commandDescriptorAdapters, ["renderer-service"]);
     assert.deepEqual(CommandDescriptors.RENDER_THUMBNAIL.adapters, ["renderer-service"]);
     assert.equal(fixtures.runtimeRegistration.mcpToolRegistered, true);
@@ -3218,6 +3350,8 @@ test("render.thumbnail renderer-service plan exposes dry-run client request whil
     assert.deepEqual(plan.service.packageMaterializationApprovalAuditCountersignaturePolicy, plan.packageMaterializationApprovalAuditCountersignaturePolicy);
     assertAuditCountersignatureVerificationPolicyMetadataOnly(plan.packageMaterializationApprovalAuditCountersignatureVerificationPolicy);
     assert.deepEqual(plan.service.packageMaterializationApprovalAuditCountersignatureVerificationPolicy, plan.packageMaterializationApprovalAuditCountersignatureVerificationPolicy);
+    assertAuditCountersignatureRevocationPolicyMetadataOnly(plan.packageMaterializationApprovalAuditCountersignatureRevocationPolicy);
+    assert.deepEqual(plan.service.packageMaterializationApprovalAuditCountersignatureRevocationPolicy, plan.packageMaterializationApprovalAuditCountersignatureRevocationPolicy);
     assert.equal(plan.clientRequest.status, "scaffolded");
     assert.equal(plan.clientRequest.dispatch, false);
     assert.equal(plan.clientRequest.method, "POST");
@@ -3297,6 +3431,7 @@ test("render.thumbnail renderer-service plan exposes dry-run client request whil
     assert.equal(plan.diagnostics.packageMaterializationApprovalAuditEndorsementPolicyVersion, "P25.61");
     assert.equal(plan.diagnostics.packageMaterializationApprovalAuditCountersignaturePolicyVersion, "P25.62");
     assert.equal(plan.diagnostics.packageMaterializationApprovalAuditCountersignatureVerificationPolicyVersion, "P25.63");
+    assert.equal(plan.diagnostics.packageMaterializationApprovalAuditCountersignatureRevocationPolicyVersion, "P25.64");
 });
 
 test("render.thumbnail renderer-service plan reports not-configured availability without endpoint", () => {
@@ -6256,6 +6391,68 @@ test("render.thumbnail renderer-service package materialization approval audit c
         )
     );
     assertAuditCountersignatureVerificationPolicyMetadataOnly(auditCountersignatureVerificationPolicy);
+});
+
+test("render.thumbnail renderer-service package materialization approval audit countersignature revocation policy stays metadata-only", () => {
+    const auditCountersignatureRevocationPolicy =
+        createRenderThumbnailRendererServicePackageMaterializationApprovalAuditCountersignatureRevocationPolicy({
+            packageMaterializationApprovalAuditCountersignatureVerificationPolicy: {
+                status: "planned-disabled",
+                auditCountersignatureVerificationVersion: "P25.63",
+                countersignatureVerificationExecuted: false,
+                countersignatureVerificationStored: false,
+            },
+            packageMaterializationApprovalAuditAccessPolicy: {
+                status: "planned-disabled",
+                auditAccessVersion: "P25.53",
+                auditRecordRead: false,
+                accessGranted: false,
+            },
+            packageMaterializationFinalApprovalChecklist: {
+                status: "planned-disabled",
+                checklistVersion: "P25.40",
+                finalApprovalGranted: false,
+            },
+        });
+
+    assert.equal(auditCountersignatureRevocationPolicy.status, "planned-disabled");
+    assert.equal(auditCountersignatureRevocationPolicy.dryRunOnly, true);
+    assert.equal(auditCountersignatureRevocationPolicy.approvalRequired, true);
+    assert.equal(auditCountersignatureRevocationPolicy.approved, false);
+    assert.equal(auditCountersignatureRevocationPolicy.finalApprovalGranted, false);
+    assert.equal(
+        auditCountersignatureRevocationPolicy.auditCountersignatureRevocationPolicy.policy,
+        "revoke-countersignature-after-verification-policy-defined"
+    );
+    assert.equal(
+        auditCountersignatureRevocationPolicy.auditCountersignatureRevocationPolicy.countersignatureRevocationPayloadLogged,
+        false
+    );
+    assert.ok(
+        auditCountersignatureRevocationPolicy.auditCountersignatureRevocationPolicy.requiredInputs.includes(
+            "trustedCountersignatureRevocationAuthority"
+        )
+    );
+    assert.ok(
+        auditCountersignatureRevocationPolicy.auditCountersignatureRevocationChecks.some(
+            (entry) => entry.id === "countersignature-not-revoked" && entry.executed === false
+        )
+    );
+    assert.equal(auditCountersignatureRevocationPolicy.auditCountersignatureRevocationDecision.status, "blocked");
+    assert.equal(auditCountersignatureRevocationPolicy.auditCountersignatureRevocationDecision.canReadCountersignature, false);
+    assert.equal(auditCountersignatureRevocationPolicy.auditCountersignatureRevocationDecision.canRevokeCountersignature, false);
+    assert.equal(auditCountersignatureRevocationPolicy.auditCountersignatureRevocationDecision.canStoreCountersignatureRevocationRecord, false);
+    assert.ok(
+        auditCountersignatureRevocationPolicy.noOpGuarantees.includes(
+            "audit countersignature revocation policy plan does not revoke countersignatures"
+        )
+    );
+    assert.ok(
+        auditCountersignatureRevocationPolicy.requiredBeforeRuntimeDispatch.includes(
+            "define audit countersignature revocation policy schema"
+        )
+    );
+    assertAuditCountersignatureRevocationPolicyMetadataOnly(auditCountersignatureRevocationPolicy);
 });
 
 test("render.thumbnail renderer-service client request scaffold adds MCP audit headers without dispatch", () => {

@@ -1753,3 +1753,48 @@ countersignature verification policy:
   signatures, computing hashes, linking verification chains, storing
   verification results, materializing files, starting processes, or enabling
   dispatch.
+
+P25.64 adds renderer-service package materialization approval audit
+countersignature revocation policy:
+
+- Plans include
+  `packageMaterializationApprovalAuditCountersignatureRevocationPolicy`,
+  defining the future countersignature revocation policy, required revocation
+  inputs, revocation checks, blocked revocation decision, and no-op guarantees.
+- The audit countersignature revocation policy remains planning-only with
+  `countersignatureRevocationPolicySelected:false`,
+  `countersignatureRevocationSubjectIdentified:false`,
+  `countersignatureRevocationAuthorityIdentified:false`,
+  `countersignatureRevocationReasonCaptured:false`,
+  `countersignatureRevocationScopeComputed:false`,
+  `countersignatureRevocationRequestPrepared:false`,
+  `countersignatureRevocationRequestValidated:false`,
+  `countersignatureRevocationRequestStored:false`,
+  `countersignatureRevocationExecuted:false`,
+  `countersignatureRevoked:false`,
+  `countersignatureRevocationRecordCreated:false`,
+  `countersignatureRevocationRecordStored:false`,
+  `countersignatureRead:false`, `countersignatureRecordRead:false`,
+  `countersignatureVerificationRead:false`,
+  `countersignatureVerificationRevoked:false`,
+  `countersignatureVerificationVerified:false`, `auditRecordRead:false`,
+  `auditRecordQueried:false`,
+  `auditRecordCountersignatureRevocationLinked:false`,
+  `auditRecordCountersignatureRevocationVerified:false`,
+  `countersignatureRevocationSignatureCreated:false`,
+  `countersignatureRevocationSignatureVerified:false`,
+  `countersignatureRevocationHashComputed:false`,
+  `countersignatureRevocationHashStored:false`,
+  `materializationApproved:false`, `approved:false`,
+  `finalApprovalGranted:false`, `filesWritten:false`,
+  `fileMaterialization:false`, `workspaceMutation:false`,
+  `lockfileMutation:false`, `commandExecution:false`, `buildOutput:false`,
+  `processSpawn:false`, `packageCreated:false`, `dispatch:false`,
+  `networkDispatch:false`, `runtimeRegistration:false`, and
+  `localFileWrites:false`.
+- MCP and CLI expose this policy in dry-run and unavailable execution JSON
+  without selecting revocation policies, identifying subjects or authorities,
+  capturing revocation reasons, reading countersignatures or audit records,
+  revoking countersignatures, creating revocation records, signing or hashing
+  revocation records, materializing files, starting processes, or enabling
+  dispatch.

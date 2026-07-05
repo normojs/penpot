@@ -3172,6 +3172,52 @@ verification policy result:
   `packageCreated`, `dispatch`, `networkDispatch`, `runtimeRegistration`, and
   `localFileWrites` remain `false`.
 
+P25.64 render.thumbnail package materialization approval audit countersignature
+revocation policy result:
+
+- Shared plans include
+  `packageMaterializationApprovalAuditCountersignatureRevocationPolicy`,
+  defining metadata-only audit countersignature revocation policies, required
+  revocation inputs, revocation checks, blocked revocation decisions, and no-op
+  guarantees.
+- MCP and CLI expose the audit countersignature revocation policy plan in
+  dry-run and unavailable execution payloads without selecting revocation
+  policies, identifying subjects or authorities, capturing revocation reasons,
+  computing scopes, preparing, validating, storing, executing, or publishing
+  revocation requests, revoking countersignatures, creating/storing/publishing
+  revocation records, reading countersignatures or verification records,
+  reading or querying audit records, linking/verifying/signing/hashing
+  revocation records, granting approval, creating package directories, writing
+  files, mutating workspace manifests, mutating lockfiles, running commands,
+  emitting build output, starting processes, or registering runtime dispatch.
+- `countersignatureRevocationPolicySelected`,
+  `countersignatureRevocationSubjectIdentified`,
+  `countersignatureRevocationAuthorityIdentified`,
+  `countersignatureRevocationReasonCaptured`,
+  `countersignatureRevocationScopeComputed`,
+  `countersignatureRevocationRequestPrepared`,
+  `countersignatureRevocationRequestValidated`,
+  `countersignatureRevocationRequestStored`,
+  `countersignatureRevocationExecuted`, `countersignatureRevoked`,
+  `countersignatureRevocationPublished`,
+  `countersignatureRevocationRecordCreated`,
+  `countersignatureRevocationRecordStored`,
+  `countersignatureRevocationRecordPublished`, `countersignatureRead`,
+  `countersignatureRecordRead`, `countersignatureVerificationRead`,
+  `countersignatureVerificationRevoked`,
+  `countersignatureVerificationVerified`, `auditRecordRead`,
+  `auditRecordQueried`, `auditRecordCountersignatureRevocationLinked`,
+  `auditRecordCountersignatureRevocationVerified`,
+  `countersignatureRevocationSignatureCreated`,
+  `countersignatureRevocationSignatureVerified`,
+  `countersignatureRevocationHashComputed`,
+  `countersignatureRevocationHashStored`, `materializationApproved`,
+  `approved`, and `finalApprovalGranted` remain `false`, while
+  `filesWritten`, `fileMaterialization`, `workspaceMutation`,
+  `lockfileMutation`, `commandExecution`, `buildOutput`, `processSpawn`,
+  `packageCreated`, `dispatch`, `networkDispatch`, `runtimeRegistration`, and
+  `localFileWrites` remain `false`.
+
 ### 8.5 Export and Render Tools
 
 May start file-bound and later move to headless:
@@ -3240,7 +3286,8 @@ materialization approval audit certification policy. P25.61 defines disabled
 package materialization approval audit endorsement policy. P25.62 defines
 disabled package materialization approval audit countersignature policy. P25.63
 defines disabled package materialization approval audit countersignature
-verification policy.
+verification policy. P25.64 defines disabled package materialization approval
+audit countersignature revocation policy.
 Runtime behavior remains unavailable
 until opt-in config surfaces, renderer-service implementation, workspace
 wiring, health preflight, cache probe, executable client, and tagged-frame

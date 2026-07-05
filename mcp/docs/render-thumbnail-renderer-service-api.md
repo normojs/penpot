@@ -1,6 +1,6 @@
 # Render Thumbnail Renderer Service API
 
-Status: P25.63 API fixtures, MCP/CLI dry-run/client boundaries, metadata-only
+Status: P25.64 API fixtures, MCP/CLI dry-run/client boundaries, metadata-only
 availability probes, response normalization contracts, disabled client request
 scaffold, closed execution gate, disabled health preflight, and executable
 client harness plus dispatch adapter boundary plans, and opt-in configuration
@@ -107,6 +107,12 @@ or authorities, reading countersignatures or countersignature records, parsing
 payloads, verifying signatures, computing or matching hashes, linking chains,
 storing verification results, reading or querying audit records, signing or
 hashing verification results, or writing files.
+P25.64 adds package materialization approval audit countersignature revocation
+policy metadata without selecting revocation policies, identifying subjects or
+authorities, capturing revocation reasons, preparing or executing revocation
+requests, revoking countersignatures, creating/storing/publishing revocation
+records, reading countersignatures or audit records, signing or hashing
+revocations, or writing files.
 
 P25.6 selected a dedicated thumbnail renderer service as the future executable
 owner for `render.thumbnail`. This document defines the service-facing request
@@ -444,6 +450,8 @@ P25.62 defines the package materialization approval audit countersignature
 policy.
 P25.63 defines the package materialization approval audit countersignature
 verification policy.
+P25.64 defines the package materialization approval audit countersignature
+revocation policy.
 Plans now include `packageMaterializationApprovalPostHandoffAuditPolicy`,
 `packageMaterializationApprovalAuditRetentionPolicy`,
 `packageMaterializationApprovalAuditAccessPolicy`,
@@ -456,17 +464,19 @@ Plans now include `packageMaterializationApprovalPostHandoffAuditPolicy`,
 `packageMaterializationApprovalAuditCertificationPolicy`,
 `packageMaterializationApprovalAuditEndorsementPolicy`,
 `packageMaterializationApprovalAuditCountersignaturePolicy`, and
-`packageMaterializationApprovalAuditCountersignatureVerificationPolicy`.
+`packageMaterializationApprovalAuditCountersignatureVerificationPolicy`, and
+`packageMaterializationApprovalAuditCountersignatureRevocationPolicy`.
 These cover future audit sinks, retention, access, integrity, provenance,
 custody, evidence, attestation, notarization, certification, endorsement, and
-countersignature/countersignature verification metadata, including required
-inputs, checks, blocked decisions, and no-op guarantees. The P25.63 verification
-slice keeps verification policy selection, subject/authority identification,
-countersignature and audit record reads, payload parsing, signature
-verification, hash computation, chain linking, verification result storage,
-file writes, package creation, workspace mutation, lockfile mutation, command
-execution, build output, materialization approval, process startup, dispatch,
-network dispatch, runtime registration, and local file writes disabled.
+countersignature/countersignature verification/countersignature revocation
+metadata, including required inputs, checks, blocked decisions, and no-op
+guarantees. The P25.64 revocation slice keeps revocation policy selection,
+subject/authority identification, revocation reason capture, countersignature
+and audit record reads, countersignature revocation, revocation record storage,
+signature verification, hash computation, file writes, package creation,
+workspace mutation, lockfile mutation, command execution, build output,
+materialization approval, process startup, dispatch, network dispatch, runtime
+registration, and local file writes disabled.
 
 ## Service Boundary
 

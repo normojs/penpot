@@ -500,6 +500,53 @@ function assertAuditCountersignatureVerificationPolicyMetadataOnly(policy: any) 
     assert.equal(policy.auditCountersignatureVerificationDecision.canComputeCountersignatureVerificationHash, false);
 }
 
+function assertAuditCountersignatureRevocationPolicyMetadataOnly(policy: any) {
+    assert.equal(policy.auditCountersignatureRevocationVersion, "P25.64");
+    for (const key of [
+        "countersignatureRevocationPolicySelected",
+        "countersignatureRevocationSubjectIdentified",
+        "countersignatureRevocationAuthorityIdentified",
+        "countersignatureRevocationReasonCaptured",
+        "countersignatureRevocationScopeComputed",
+        "countersignatureRevocationRequestPrepared",
+        "countersignatureRevocationRequestValidated",
+        "countersignatureRevocationRequestStored",
+        "countersignatureRevocationExecuted",
+        "countersignatureRevoked",
+        "countersignatureRevocationPublished",
+        "countersignatureRevocationRecordCreated",
+        "countersignatureRevocationRecordStored",
+        "countersignatureRevocationRecordPublished",
+        "countersignatureRead",
+        "countersignatureRecordRead",
+        "countersignatureVerificationRead",
+        "countersignatureVerificationRevoked",
+        "countersignatureVerificationVerified",
+        "auditRecordRead",
+        "auditRecordQueried",
+        "auditRecordCountersignatureRevocationLinked",
+        "auditRecordCountersignatureRevocationVerified",
+        "countersignatureRevocationSignatureCreated",
+        "countersignatureRevocationSignatureVerified",
+        "countersignatureRevocationHashComputed",
+        "countersignatureRevocationHashStored",
+        "materializationApproved",
+        "dispatch",
+        "runtimeRegistration",
+        "localFileWrites",
+        "commandExecution",
+        "buildOutput",
+        "filesWritten",
+    ]) {
+        assert.equal(policy[key], false, key);
+    }
+    assert.equal(policy.auditCountersignatureRevocationDecision.canReadCountersignature, false);
+    assert.equal(policy.auditCountersignatureRevocationDecision.canRevokeCountersignature, false);
+    assert.equal(policy.auditCountersignatureRevocationDecision.canStoreCountersignatureRevocationRecord, false);
+    assert.equal(policy.auditCountersignatureRevocationDecision.canReadAuditRecord, false);
+    assert.equal(policy.auditCountersignatureRevocationDecision.canComputeCountersignatureRevocationHash, false);
+}
+
 type SseCall = {
     methodName: string;
     params: Record<string, unknown>;
@@ -1216,6 +1263,9 @@ test("RenderThumbnailTool dry-run returns renderer-service request metadata with
         assertAuditCountersignatureVerificationPolicyMetadataOnly(
             body.data.packageMaterializationApprovalAuditCountersignatureVerificationPolicy
         );
+        assertAuditCountersignatureRevocationPolicyMetadataOnly(
+            body.data.packageMaterializationApprovalAuditCountersignatureRevocationPolicy
+        );
         assert.deepEqual(body.data.service.client, body.data.client);
         assert.equal(body.data.service.responseNormalization.successStatus, "ok");
         assert.equal(body.data.service.responseNormalization.localFileWrites, false);
@@ -1610,6 +1660,9 @@ test("RenderThumbnailTool execution reports renderer service unavailable without
         );
         assertAuditCountersignatureVerificationPolicyMetadataOnly(
             body.error.data.packageMaterializationApprovalAuditCountersignatureVerificationPolicy
+        );
+        assertAuditCountersignatureRevocationPolicyMetadataOnly(
+            body.error.data.packageMaterializationApprovalAuditCountersignatureRevocationPolicy
         );
         assert.equal(body.error.data.clientRequest.dispatch, false);
         assert.equal(body.error.data.serviceRequest.operation, "thumbnail.render");
