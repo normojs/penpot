@@ -250,6 +250,8 @@ P25.52 adds metadata-only package materialization approval audit retention
 policy.
 P25.53 adds metadata-only package materialization approval audit access
 policy.
+P25.54 adds metadata-only package materialization approval audit integrity
+policy.
 MCP
 `render.thumbnail` and `penpot-cli render thumbnail --dry-run` can print the
 future request shape, configured/not configured service metadata,
@@ -377,6 +379,19 @@ plus `packageMaterializationApprovalAuditAccessPolicy.accessPolicySelected:false
 `packageMaterializationApprovalAuditAccessPolicy.filesWritten:false`,
 `packageMaterializationApprovalAuditAccessPolicy.commandExecution:false`, and
 `packageMaterializationApprovalAuditAccessPolicy.buildOutput:false`,
+plus `packageMaterializationApprovalAuditIntegrityPolicy.integrityPolicySelected:false`,
+`packageMaterializationApprovalAuditIntegrityPolicy.integrityHashComputed:false`,
+`packageMaterializationApprovalAuditIntegrityPolicy.integrityHashVerified:false`,
+`packageMaterializationApprovalAuditIntegrityPolicy.integritySignatureCreated:false`,
+`packageMaterializationApprovalAuditIntegrityPolicy.integrityChainVerified:false`,
+`packageMaterializationApprovalAuditIntegrityPolicy.auditRecordRead:false`,
+`packageMaterializationApprovalAuditIntegrityPolicy.auditRecordHashed:false`,
+`packageMaterializationApprovalAuditIntegrityPolicy.auditRecordVerified:false`,
+`packageMaterializationApprovalAuditIntegrityPolicy.auditRecordTamperChecked:false`,
+`packageMaterializationApprovalAuditIntegrityPolicy.materializationApproved:false`,
+`packageMaterializationApprovalAuditIntegrityPolicy.filesWritten:false`,
+`packageMaterializationApprovalAuditIntegrityPolicy.commandExecution:false`, and
+`packageMaterializationApprovalAuditIntegrityPolicy.buildOutput:false`,
 but execution still returns
 `renderer_service_unavailable` until explicit opt-in, config surfaces, renderer
 service, integration tests, health preflight, file cache probe, tagged-frame

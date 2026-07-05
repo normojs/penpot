@@ -1,6 +1,6 @@
 # Render Thumbnail Contract
 
-Status: P25.4 descriptor contract; P25.53 MCP/CLI renderer-service dry-run
+Status: P25.4 descriptor contract; P25.54 MCP/CLI renderer-service dry-run
 boundaries, metadata-only availability probes, response normalization
 contracts, disabled client request scaffolding, closed execution gate, disabled
 health preflight, executable client harness plan, and dispatch adapter boundary
@@ -601,6 +601,26 @@ Shared contract shape:
   access policies, identify subjects, compute or validate scopes, grant
   access, read or query audit records, export audit records, issue access
   tokens, grant approval, or materialize files.
+- P25.54 package materialization approval audit integrity policy fields are
+  planning-only. They define future integrity policies, required integrity
+  inputs, integrity checks, blocked integrity decisions, and no-op guarantees
+  while keeping
+  `packageMaterializationApprovalAuditIntegrityPolicy.integrityPolicySelected:false`,
+  `packageMaterializationApprovalAuditIntegrityPolicy.integrityHashComputed:false`,
+  `packageMaterializationApprovalAuditIntegrityPolicy.integrityHashVerified:false`,
+  `packageMaterializationApprovalAuditIntegrityPolicy.integritySignatureCreated:false`,
+  `packageMaterializationApprovalAuditIntegrityPolicy.integrityChainVerified:false`,
+  `packageMaterializationApprovalAuditIntegrityPolicy.auditRecordRead:false`,
+  `packageMaterializationApprovalAuditIntegrityPolicy.auditRecordHashed:false`,
+  `packageMaterializationApprovalAuditIntegrityPolicy.auditRecordVerified:false`,
+  `packageMaterializationApprovalAuditIntegrityPolicy.auditRecordTamperChecked:false`,
+  `approved:false`, `finalApprovalGranted:false`, `filesWritten:false`,
+  `fileMaterialization:false`, `workspaceMutation:false`,
+  `commandExecution:false`, `buildOutput:false`,
+  `runtimeRegistration:false`, and `localFileWrites:false`. They do not select
+  integrity policies, compute scopes, hash or verify audit records, create or
+  verify signatures, link or verify integrity chains, check tamper state, grant
+  approval, or materialize files.
 - Exporter service execution is out of scope for this command unless a later
   task explicitly maps thumbnail rendering to exporter-compatible semantics.
 - P25.6 selects a future dedicated thumbnail renderer service as the executable
@@ -615,7 +635,7 @@ See `render-thumbnail-runtime-boundary.md` and
 audit, resource-return rules, cache refresh behavior, auth expectations, and
 future test strategy.
 See `render-thumbnail-renderer-service-api.md` and
-`render-thumbnail-renderer-service-fixtures.json` for the P25.53 future
+`render-thumbnail-renderer-service-fixtures.json` for the P25.54 future
 renderer-service request/response API, MCP/CLI dry-run/client boundary, and
 metadata-only availability probe plus response/error normalization and disabled
 client request, execution gate, health preflight, and execution harness

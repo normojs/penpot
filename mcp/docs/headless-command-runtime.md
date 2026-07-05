@@ -1420,3 +1420,30 @@ policy:
   decisions, grant or deny access, read or query audit records, export,
   download, redact, sign, or share audit records, issue access tokens,
   materialize files, start processes, or register runtime dispatch.
+
+P25.54 adds renderer-service package materialization approval audit integrity
+policy:
+
+- Plans include `packageMaterializationApprovalAuditIntegrityPolicy`, defining
+  the future integrity policy, required integrity inputs, integrity checks,
+  blocked integrity decision, and no-op guarantees.
+- The audit integrity policy remains planning-only with
+  `integrityPolicySelected:false`, `integritySubjectIdentified:false`,
+  `integrityScopeComputed:false`, `integrityHashComputed:false`,
+  `integrityHashStored:false`, `integrityHashVerified:false`,
+  `integritySignatureCreated:false`, `integritySignatureVerified:false`,
+  `integrityChainLinked:false`, `integrityChainVerified:false`,
+  `auditRecordRead:false`, `auditRecordHashed:false`,
+  `auditRecordVerified:false`, `auditRecordSigned:false`,
+  `auditRecordSealed:false`, `auditRecordTamperChecked:false`,
+  `auditRecordIntegrityStored:false`, `materializationApproved:false`,
+  `approved:false`, `finalApprovalGranted:false`, `filesWritten:false`,
+  `fileMaterialization:false`, `workspaceMutation:false`,
+  `lockfileMutation:false`, `commandExecution:false`, `buildOutput:false`,
+  `processSpawn:false`, `packageCreated:false`, `dispatch:false`,
+  `networkDispatch:false`, `runtimeRegistration:false`, and
+  `localFileWrites:false`. It does not select integrity policies, identify
+  subjects, compute scopes, compute/store/verify hashes, create or verify
+  signatures, link or verify integrity chains, read/hash/verify/sign/seal
+  audit records, check tamper state, store integrity records, materialize
+  files, start processes, or register runtime dispatch.

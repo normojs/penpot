@@ -80,6 +80,7 @@
 - Document the live bind smoke flow for release verification, covering file open handoff, context binding, plugin-live execution, context release, stale recovery, and multi-tab owner behavior.
 - Add renderer-service package materialization approval audit retention policy planning for future `render.thumbnail` execution.
 - Add renderer-service package materialization approval audit access policy planning for future `render.thumbnail` execution.
+- Add renderer-service package materialization approval audit integrity policy planning for future `render.thumbnail` execution.
 - Document CI-friendly check commands for MCP/CLI release verification, separating TypeScript, Clojure, ClojureScript, packaging, smoke-flow, and missing-tool evidence.
 - Reconcile the MCP/CLI roadmap after release verification, documenting remaining product gaps and moving active planning to the next implementation wave.
 - Define the next MCP/CLI implementation wave around CLI configuration convergence, URL derivation parity, local orchestration hardening, and portable CLI packaging.

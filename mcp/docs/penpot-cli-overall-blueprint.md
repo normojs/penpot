@@ -1441,6 +1441,33 @@ P25.53 is complete:
    `dispatch`, `networkDispatch`, `runtimeRegistration`, and
    `localFileWrites` remain false.
 
+P25.54 is complete:
+
+1. Shared plans include `packageMaterializationApprovalAuditIntegrityPolicy`
+   metadata for future audit integrity policies, required integrity inputs,
+   integrity checks, blocked integrity decisions, and no-op guarantees.
+2. MCP and CLI expose this audit integrity policy plan in dry-run and
+   unavailable execution payloads without selecting integrity policies,
+   identifying subjects, computing scopes, computing/storing/verifying hashes,
+   creating or verifying signatures, linking or verifying integrity chains,
+   reading, hashing, verifying, signing, sealing, or tamper-checking audit
+   records, storing integrity records, granting approval, creating package
+   directories, writing files, mutating workspace manifests, mutating lockfiles,
+   running commands, emitting build output, starting processes, or registering
+   runtime dispatch.
+3. `integrityPolicySelected`, `integritySubjectIdentified`,
+   `integrityScopeComputed`, `integrityHashComputed`, `integrityHashStored`,
+   `integrityHashVerified`, `integritySignatureCreated`,
+   `integritySignatureVerified`, `integrityChainLinked`,
+   `integrityChainVerified`, `auditRecordRead`, `auditRecordHashed`,
+   `auditRecordVerified`, `auditRecordSigned`, `auditRecordSealed`,
+   `auditRecordTamperChecked`, `auditRecordIntegrityStored`,
+   `materializationApproved`, `approved`, and `finalApprovalGranted` remain
+   false, while `filesWritten`, `fileMaterialization`, `workspaceMutation`,
+   `lockfileMutation`, `commandExecution`, `buildOutput`, `processSpawn`,
+   `packageCreated`, `dispatch`, `networkDispatch`, `runtimeRegistration`, and
+   `localFileWrites` remain false.
+
 Keep manual configuration behavior stable while moving command metadata and
 envelopes; transport-specific formatting should stay at the MCP/CLI edges.
 

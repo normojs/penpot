@@ -91,6 +91,43 @@ function assertAuditAccessPolicyMetadataOnly(policy: any) {
     assert.equal(policy.auditAccessDecision.canDownloadAuditRecord, false);
 }
 
+function assertAuditIntegrityPolicyMetadataOnly(policy: any) {
+    assert.equal(policy.auditIntegrityVersion, "P25.54");
+    for (const key of [
+        "integrityPolicySelected",
+        "integritySubjectIdentified",
+        "integrityScopeComputed",
+        "integrityHashComputed",
+        "integrityHashStored",
+        "integrityHashVerified",
+        "integritySignatureCreated",
+        "integritySignatureVerified",
+        "integrityChainLinked",
+        "integrityChainVerified",
+        "auditRecordRead",
+        "auditRecordHashed",
+        "auditRecordVerified",
+        "auditRecordSigned",
+        "auditRecordSealed",
+        "auditRecordTamperChecked",
+        "auditRecordIntegrityStored",
+        "materializationApproved",
+        "dispatch",
+        "runtimeRegistration",
+        "localFileWrites",
+        "commandExecution",
+        "buildOutput",
+        "filesWritten",
+    ]) {
+        assert.equal(policy[key], false, key);
+    }
+    assert.equal(policy.auditIntegrityDecision.canComputeIntegrityHash, false);
+    assert.equal(policy.auditIntegrityDecision.canVerifyIntegrityHash, false);
+    assert.equal(policy.auditIntegrityDecision.canReadAuditRecord, false);
+    assert.equal(policy.auditIntegrityDecision.canHashAuditRecord, false);
+    assert.equal(policy.auditIntegrityDecision.canVerifyAuditRecord, false);
+}
+
 type SseCall = {
     methodName: string;
     params: Record<string, unknown>;
@@ -795,6 +832,7 @@ test("RenderThumbnailTool dry-run returns renderer-service request metadata with
         assert.equal(body.data.packageMaterializationApprovalPostHandoffAuditPolicy.postHandoffAuditDecision.canDispatchExecution, false);
         assertAuditRetentionPolicyMetadataOnly(body.data.packageMaterializationApprovalAuditRetentionPolicy);
         assertAuditAccessPolicyMetadataOnly(body.data.packageMaterializationApprovalAuditAccessPolicy);
+        assertAuditIntegrityPolicyMetadataOnly(body.data.packageMaterializationApprovalAuditIntegrityPolicy);
         assert.deepEqual(body.data.service.client, body.data.client);
         assert.equal(body.data.service.responseNormalization.successStatus, "ok");
         assert.equal(body.data.service.responseNormalization.localFileWrites, false);
@@ -1176,6 +1214,7 @@ test("RenderThumbnailTool execution reports renderer service unavailable without
         assert.equal(body.error.data.packageMaterializationApprovalPostHandoffAuditPolicy.postHandoffAuditDecision.canDispatchExecution, false);
         assertAuditRetentionPolicyMetadataOnly(body.error.data.packageMaterializationApprovalAuditRetentionPolicy);
         assertAuditAccessPolicyMetadataOnly(body.error.data.packageMaterializationApprovalAuditAccessPolicy);
+        assertAuditIntegrityPolicyMetadataOnly(body.error.data.packageMaterializationApprovalAuditIntegrityPolicy);
         assert.equal(body.error.data.clientRequest.dispatch, false);
         assert.equal(body.error.data.serviceRequest.operation, "thumbnail.render");
         assert.deepEqual(body.error.data.requiredCapabilities, ["thumbnail-renderer-service-implementation", "file-thumbnail-cache-probe"]);

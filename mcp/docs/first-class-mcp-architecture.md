@@ -2856,6 +2856,33 @@ P25.53 render.thumbnail package materialization approval audit access policy res
   `packageCreated`, `dispatch`, `networkDispatch`, `runtimeRegistration`, and
   `localFileWrites` remain `false`.
 
+P25.54 render.thumbnail package materialization approval audit integrity policy result:
+
+- Shared plans include `packageMaterializationApprovalAuditIntegrityPolicy`,
+  defining metadata-only audit integrity policies, required integrity inputs,
+  integrity checks, blocked integrity decisions, and no-op guarantees.
+- MCP and CLI expose the audit integrity policy plan in dry-run and
+  unavailable execution payloads without selecting integrity policies,
+  identifying subjects, computing scopes, computing/storing/verifying hashes,
+  creating or verifying signatures, linking or verifying integrity chains,
+  reading, hashing, verifying, signing, sealing, or tamper-checking audit
+  records, storing integrity records, granting approval, creating package
+  directories, writing files, mutating workspace manifests, mutating lockfiles,
+  running commands, emitting build output, starting processes, or registering
+  runtime dispatch.
+- `integrityPolicySelected`, `integritySubjectIdentified`,
+  `integrityScopeComputed`, `integrityHashComputed`, `integrityHashStored`,
+  `integrityHashVerified`, `integritySignatureCreated`,
+  `integritySignatureVerified`, `integrityChainLinked`,
+  `integrityChainVerified`, `auditRecordRead`, `auditRecordHashed`,
+  `auditRecordVerified`, `auditRecordSigned`, `auditRecordSealed`,
+  `auditRecordTamperChecked`, `auditRecordIntegrityStored`,
+  `materializationApproved`, `approved`, and `finalApprovalGranted` remain
+  `false`, while `filesWritten`, `fileMaterialization`, `workspaceMutation`,
+  `lockfileMutation`, `commandExecution`, `buildOutput`, `processSpawn`,
+  `packageCreated`, `dispatch`, `networkDispatch`, `runtimeRegistration`, and
+  `localFileWrites` remain `false`.
+
 ### 8.5 Export and Render Tools
 
 May start file-bound and later move to headless:
@@ -2913,7 +2940,8 @@ defines disabled package materialization approval execution handoff policy.
 P25.51 defines disabled package materialization approval post-handoff audit
 policy. P25.52 defines disabled package materialization approval audit
 retention policy. P25.53 defines disabled package materialization approval
-audit access policy.
+audit access policy. P25.54 defines disabled package materialization approval
+audit integrity policy.
 Runtime behavior remains unavailable
 until opt-in config surfaces, renderer-service implementation, workspace
 wiring, health preflight, cache probe, executable client, and tagged-frame

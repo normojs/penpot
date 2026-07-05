@@ -55,6 +55,7 @@ import {
     createRenderThumbnailRendererServicePackageMaterializationApprovalPostHandoffAuditPolicy,
     createRenderThumbnailRendererServicePackageMaterializationApprovalAuditRetentionPolicy,
     createRenderThumbnailRendererServicePackageMaterializationApprovalAuditAccessPolicy,
+    createRenderThumbnailRendererServicePackageMaterializationApprovalAuditIntegrityPolicy,
     createRenderThumbnailRendererServicePackageFileTemplates,
     createRenderThumbnailRendererServicePackageManifestScaffold,
     createRenderThumbnailRendererServicePackageMaterializationChecklist,
@@ -284,6 +285,99 @@ function assertAuditAccessPolicyMetadataOnly(policy) {
         "canEnableRuntimeDispatch",
     ]) {
         assert.equal(policy.auditAccessDecision[key], false, key);
+    }
+}
+
+function assertAuditIntegrityPolicyMetadataOnly(policy) {
+    assert.equal(policy.auditIntegrityVersion, "P25.54");
+    assert.equal(policy.integrityRequired, true);
+    assert.equal(policy.integrityPlanned, true);
+
+    for (const key of [
+        "integrityPolicySelected",
+        "integritySubjectIdentified",
+        "integrityScopeComputed",
+        "integrityHashComputed",
+        "integrityHashStored",
+        "integrityHashVerified",
+        "integritySignatureCreated",
+        "integritySignatureVerified",
+        "integrityChainLinked",
+        "integrityChainVerified",
+        "auditRecordRead",
+        "auditRecordHashed",
+        "auditRecordVerified",
+        "auditRecordSigned",
+        "auditRecordSealed",
+        "auditRecordTamperChecked",
+        "auditRecordTamperDetected",
+        "auditRecordIntegrityStored",
+        "materializationApproved",
+        "dispatch",
+        "networkDispatch",
+        "runtimeRegistration",
+        "localFileWrites",
+        "hostStartup",
+        "processSpawn",
+        "packageCreated",
+        "workspaceMutation",
+        "scriptRunnable",
+        "fileMaterialization",
+        "lockfileMutation",
+        "rootPackageJsonMutation",
+        "pnpmWorkspaceMutation",
+        "commandExecution",
+        "buildOutput",
+        "packageScriptsRunnable",
+        "filesWritten",
+    ]) {
+        assert.equal(policy[key], false, key);
+    }
+
+    assert.equal(policy.consumes.packageMaterializationApprovalAuditAccessPolicy.auditAccessVersion, "P25.53");
+    assert.equal(policy.consumes.packageMaterializationApprovalAuditRetentionPolicy.auditRetentionVersion, "P25.52");
+    assert.equal(policy.consumes.packageMaterializationFinalApprovalChecklist.checklistVersion, "P25.40");
+
+    for (const key of [
+        "selectIntegrityPolicyNow",
+        "identifyIntegritySubjectNow",
+        "computeIntegrityScopeNow",
+        "computeIntegrityHashNow",
+        "storeIntegrityHashNow",
+        "verifyIntegrityHashNow",
+        "createIntegritySignatureNow",
+        "verifyIntegritySignatureNow",
+        "linkIntegrityChainNow",
+        "verifyIntegrityChainNow",
+        "readAuditRecordNow",
+        "hashAuditRecordNow",
+        "verifyAuditRecordNow",
+        "signAuditRecordNow",
+        "sealAuditRecordNow",
+        "checkTamperNow",
+        "storeIntegrityRecordNow",
+    ]) {
+        assert.equal(policy.auditIntegrityPolicy[key], false, key);
+    }
+
+    for (const key of [
+        "canSelectIntegrityPolicy",
+        "canComputeIntegrityHash",
+        "canStoreIntegrityHash",
+        "canVerifyIntegrityHash",
+        "canCreateIntegritySignature",
+        "canVerifyIntegritySignature",
+        "canReadAuditRecord",
+        "canHashAuditRecord",
+        "canVerifyAuditRecord",
+        "canSignAuditRecord",
+        "canSealAuditRecord",
+        "canCheckTamper",
+        "canStoreIntegrityRecord",
+        "canMaterializeFiles",
+        "canEnableRuntimeDispatch",
+    ]) {
+        assert.equal(policy.auditIntegrityDecision[key], false, key);
     }
 }
 
@@ -630,6 +724,7 @@ test("render.thumbnail runtime boundary keeps execution unavailable until render
     assert.equal(boundary.packageMaterializationApprovalPostHandoffAuditPolicy.filesWritten, false);
     assertAuditRetentionPolicyMetadataOnly(boundary.packageMaterializationApprovalAuditRetentionPolicy);
     assertAuditAccessPolicyMetadataOnly(boundary.packageMaterializationApprovalAuditAccessPolicy);
+    assertAuditIntegrityPolicyMetadataOnly(boundary.packageMaterializationApprovalAuditIntegrityPolicy);
     assert.ok(boundary.testStrategy.some((item) => item.includes("descriptor tests")));
 });
 
@@ -953,6 +1048,8 @@ test("render.thumbnail renderer-service API fixtures define planning requests wi
     assertAuditRetentionPolicyMetadataOnly(renderThumbnailRuntimeBoundaryFixtures.packageMaterializationApprovalAuditRetentionPolicy);
     assertAuditAccessPolicyMetadataOnly(fixtures.serviceApi.packageMaterializationApprovalAuditAccessPolicy);
     assertAuditAccessPolicyMetadataOnly(renderThumbnailRuntimeBoundaryFixtures.packageMaterializationApprovalAuditAccessPolicy);
+    assertAuditIntegrityPolicyMetadataOnly(fixtures.serviceApi.packageMaterializationApprovalAuditIntegrityPolicy);
+    assertAuditIntegrityPolicyMetadataOnly(renderThumbnailRuntimeBoundaryFixtures.packageMaterializationApprovalAuditIntegrityPolicy);
     assert.deepEqual(fixtures.runtimeRegistration.commandDescriptorAdapters, ["renderer-service"]);
     assert.deepEqual(CommandDescriptors.RENDER_THUMBNAIL.adapters, ["renderer-service"]);
     assert.equal(fixtures.runtimeRegistration.mcpToolRegistered, true);
@@ -2085,6 +2182,8 @@ test("render.thumbnail renderer-service plan exposes dry-run client request whil
     assert.deepEqual(plan.service.packageMaterializationApprovalAuditRetentionPolicy, plan.packageMaterializationApprovalAuditRetentionPolicy);
     assertAuditAccessPolicyMetadataOnly(plan.packageMaterializationApprovalAuditAccessPolicy);
     assert.deepEqual(plan.service.packageMaterializationApprovalAuditAccessPolicy, plan.packageMaterializationApprovalAuditAccessPolicy);
+    assertAuditIntegrityPolicyMetadataOnly(plan.packageMaterializationApprovalAuditIntegrityPolicy);
+    assert.deepEqual(plan.service.packageMaterializationApprovalAuditIntegrityPolicy, plan.packageMaterializationApprovalAuditIntegrityPolicy);
     assert.equal(plan.clientRequest.status, "scaffolded");
     assert.equal(plan.clientRequest.dispatch, false);
     assert.equal(plan.clientRequest.method, "POST");
@@ -2154,6 +2253,7 @@ test("render.thumbnail renderer-service plan exposes dry-run client request whil
     assert.equal(plan.diagnostics.packageMaterializationApprovalPostHandoffAuditPolicyVersion, "P25.51");
     assert.equal(plan.diagnostics.packageMaterializationApprovalAuditRetentionPolicyVersion, "P25.52");
     assert.equal(plan.diagnostics.packageMaterializationApprovalAuditAccessPolicyVersion, "P25.53");
+    assert.equal(plan.diagnostics.packageMaterializationApprovalAuditIntegrityPolicyVersion, "P25.54");
 });
 
 test("render.thumbnail renderer-service plan reports not-configured availability without endpoint", () => {
@@ -4605,6 +4705,45 @@ test("render.thumbnail renderer-service package materialization approval audit a
     assert.ok(auditAccessPolicy.noOpGuarantees.includes("audit access policy plan does not read or query audit records"));
     assert.ok(auditAccessPolicy.requiredBeforeRuntimeDispatch.includes("define audit access policy schema"));
     assertAuditAccessPolicyMetadataOnly(auditAccessPolicy);
+});
+
+test("render.thumbnail renderer-service package materialization approval audit integrity policy stays metadata-only", () => {
+    const auditIntegrityPolicy = createRenderThumbnailRendererServicePackageMaterializationApprovalAuditIntegrityPolicy({
+        packageMaterializationApprovalAuditAccessPolicy: {
+            status: "planned-disabled",
+            auditAccessVersion: "P25.53",
+            auditRecordRead: false,
+            accessGranted: false,
+        },
+        packageMaterializationApprovalAuditRetentionPolicy: {
+            status: "planned-disabled",
+            auditRetentionVersion: "P25.52",
+            retentionRecordStored: false,
+            auditRecordWritten: false,
+        },
+        packageMaterializationFinalApprovalChecklist: {
+            status: "planned-disabled",
+            checklistVersion: "P25.40",
+            finalApprovalGranted: false,
+        },
+    });
+
+    assert.equal(auditIntegrityPolicy.status, "planned-disabled");
+    assert.equal(auditIntegrityPolicy.dryRunOnly, true);
+    assert.equal(auditIntegrityPolicy.approvalRequired, true);
+    assert.equal(auditIntegrityPolicy.approved, false);
+    assert.equal(auditIntegrityPolicy.finalApprovalGranted, false);
+    assert.equal(auditIntegrityPolicy.auditIntegrityPolicy.policy, "verify-retained-audit-record-integrity-before-access");
+    assert.equal(auditIntegrityPolicy.auditIntegrityPolicy.integrityPayloadLogged, false);
+    assert.ok(auditIntegrityPolicy.auditIntegrityPolicy.requiredInputs.includes("trustedDigestAlgorithm"));
+    assert.ok(auditIntegrityPolicy.auditIntegrityChecks.some((entry) => entry.id === "integrity-hash-not-computed" && entry.executed === false));
+    assert.equal(auditIntegrityPolicy.auditIntegrityDecision.status, "blocked");
+    assert.equal(auditIntegrityPolicy.auditIntegrityDecision.canLinkIntegrityChain, false);
+    assert.equal(auditIntegrityPolicy.auditIntegrityDecision.canVerifyIntegrityChain, false);
+    assert.equal(auditIntegrityPolicy.auditIntegrityDecision.canCheckTamper, false);
+    assert.ok(auditIntegrityPolicy.noOpGuarantees.includes("audit integrity policy plan does not hash or verify audit records"));
+    assert.ok(auditIntegrityPolicy.requiredBeforeRuntimeDispatch.includes("define audit integrity policy schema"));
+    assertAuditIntegrityPolicyMetadataOnly(auditIntegrityPolicy);
 });
 
 test("render.thumbnail renderer-service client request scaffold adds MCP audit headers without dispatch", () => {

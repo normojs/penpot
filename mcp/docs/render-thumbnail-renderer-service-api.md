@@ -1,6 +1,6 @@
 # Render Thumbnail Renderer Service API
 
-Status: P25.53 API fixtures, MCP/CLI dry-run/client boundaries, metadata-only
+Status: P25.54 API fixtures, MCP/CLI dry-run/client boundaries, metadata-only
 availability probes, response normalization contracts, disabled client request
 scaffold, closed execution gate, disabled health preflight, and executable
 client harness plus dispatch adapter boundary plans, and opt-in configuration
@@ -63,6 +63,10 @@ exporting, writing audit records, or granting approval. P25.53 adds package
 materialization approval audit access policy metadata without selecting access
 policies, identifying subjects, computing scopes, granting access, reading audit
 records, exporting audit records, or issuing access tokens.
+P25.54 adds package materialization approval audit integrity policy metadata
+without selecting integrity policies, computing hashes, verifying hashes,
+creating signatures, verifying signatures, linking integrity chains, reading
+audit records, checking tamper state, or storing integrity records.
 
 P25.6 selected a dedicated thumbnail renderer service as the future executable
 owner for `render.thumbnail`. This document defines the service-facing request
@@ -388,20 +392,25 @@ registration, and local file writes disabled.
 P25.51 defines the package materialization approval post-handoff audit policy.
 P25.52 defines the package materialization approval audit retention policy.
 P25.53 defines the package materialization approval audit access policy.
+P25.54 defines the package materialization approval audit integrity policy.
 Plans now include `packageMaterializationApprovalPostHandoffAuditPolicy`,
-`packageMaterializationApprovalAuditRetentionPolicy`, and
-`packageMaterializationApprovalAuditAccessPolicy`, covering future audit sinks,
-audit retention policies, audit access policies, required audit/retention/access
-inputs, checks, blocked decisions, and no-op guarantees while keeping audit
+`packageMaterializationApprovalAuditRetentionPolicy`,
+`packageMaterializationApprovalAuditAccessPolicy`, and
+`packageMaterializationApprovalAuditIntegrityPolicy`, covering future audit
+sinks, audit retention policies, audit access policies, audit integrity
+policies, required audit/retention/access/integrity inputs, checks, blocked
+decisions, and no-op guarantees while keeping audit
 record preparation, validation, storage, publication, export, write, retention
 policy selection, retention window computation, trusted clocks, retention
 record/index storage, archive preparation/storage, purge scheduling/execution,
 access policy selection, subject identification, scope computation/validation,
 access decision storage, access grant/deny, audit record reads/queries/exports,
-access token issue/validation, file writes, package creation, workspace
-mutation, lockfile mutation, command execution, build output, materialization
-approval, process startup, dispatch, network dispatch, runtime registration,
-and local file writes disabled.
+access token issue/validation, integrity policy selection, hash
+computation/storage/verification, signature creation/verification, integrity
+chain linking/verification, tamper checks, integrity record storage, file
+writes, package creation, workspace mutation, lockfile mutation, command
+execution, build output, materialization approval, process startup, dispatch,
+network dispatch, runtime registration, and local file writes disabled.
 
 ## Service Boundary
 
