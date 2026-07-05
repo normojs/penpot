@@ -1038,6 +1038,16 @@ Shared contract shape:
   verification/signing/hashing, approval, file writes, workspace mutation,
   command execution, build output, package creation, process startup, and
   runtime registration disabled.
+- P25.74 package materialization approval audit countersignature revocation
+  appeal resolution enforcement evidence attestation notarization certification
+  endorsement countersignature verification policy fields are planning-only.
+  They define future endorsement countersignature verification policies,
+  required verification inputs, verification checks, blocked verification
+  decisions, and no-op guarantees while keeping countersignature reads, record
+  reads, payload parsing, signature verification, hash matching, chain linking/
+  verification, audit record reads, verification result storage/publication,
+  approval, file writes, workspace mutation, command execution, build output,
+  package creation, process startup, and runtime registration disabled.
 - Exporter service execution is out of scope for this command unless a later
   task explicitly maps thumbnail rendering to exporter-compatible semantics.
 - P25.6 selects a future dedicated thumbnail renderer service as the executable

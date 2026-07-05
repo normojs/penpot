@@ -2132,6 +2132,32 @@ P25.73 is complete:
    `packageCreated`, `dispatch`, `networkDispatch`, `runtimeRegistration`, and
    `localFileWrites` remain false.
 
+P25.74 is complete:
+
+1. Shared plans include
+   `packageMaterializationApprovalAuditCountersignatureRevocationAppealResolutionEnforcementEvidenceAttestationNotarizationCertificationEndorsementCountersignatureVerificationPolicy`
+   metadata for future audit countersignature revocation appeal resolution
+   enforcement evidence attestation notarization certification endorsement
+   countersignature verification policies, required verification inputs,
+   verification checks, blocked verification decisions, and no-op guarantees.
+2. MCP and CLI expose this verification policy plan in dry-run and unavailable
+   execution payloads without reading countersignatures or records, parsing
+   payloads, verifying signatures, computing or matching hashes, linking or
+   verifying chains, reading audit records, storing verification results,
+   granting approval, creating package directories, writing files, mutating
+   workspace manifests, mutating lockfiles, running commands, emitting build
+   output, starting processes, or registering runtime dispatch.
+3. `countersignatureRead`, `countersignaturePayloadParsed`,
+   `countersignatureSignatureVerified`, `countersignatureHashMatched`,
+   `countersignatureChainVerified`,
+   `countersignatureRevocationAppealResolutionEnforcementEvidenceAttestationNotarizationCertificationEndorsementCountersignatureVerificationExecuted`,
+   `auditRecordRead`, `materializationApproved`, `approved`, and
+   `finalApprovalGranted` remain false, while `filesWritten`,
+   `fileMaterialization`, `workspaceMutation`, `lockfileMutation`,
+   `commandExecution`, `buildOutput`, `processSpawn`,
+   `packageCreated`, `dispatch`, `networkDispatch`,
+   `runtimeRegistration`, and `localFileWrites` remain false.
+
 Keep manual configuration behavior stable while moving command metadata and
 envelopes; transport-specific formatting should stay at the MCP/CLI edges.
 

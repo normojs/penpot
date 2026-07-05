@@ -159,6 +159,11 @@ certification endorsement countersignature policy metadata without selecting
 countersignature policies, reading endorsements or audit records,
 countersigning endorsements, storing countersignature records, or enabling
 dispatch.
+P25.74 defines package materialization approval audit countersignature
+revocation appeal resolution enforcement evidence attestation notarization
+certification endorsement countersignature verification policy metadata without
+reading countersignatures or audit records, parsing payloads, verifying
+signatures, matching hashes, storing verification results, or enabling dispatch.
 
 ## Existing Surfaces
 

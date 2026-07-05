@@ -444,6 +444,16 @@ countersignature linking/verification/signing/hashing, approval, file writes,
 workspace mutation, command execution, build output, package creation, process
 startup, and runtime registration disabled.
 
+P25.74 extends the `render.thumbnail` renderer-service planning payload with
+`packageMaterializationApprovalAuditCountersignatureRevocationAppealResolutionEnforcementEvidenceAttestationNotarizationCertificationEndorsementCountersignatureVerificationPolicy`. MCP and CLI dry-run and unavailable execution payloads expose
+future audit countersignature revocation appeal resolution enforcement evidence
+attestation notarization certification endorsement countersignature verification
+metadata while keeping countersignature reads, record reads, payload parsing,
+signature verification, hash matching, chain linking/verification, audit record
+reads, verification result storage/publication, materialization approval, files
+written, command execution, build output, process startup, and runtime registration
+disabled.
+
 ## P17.2 Descriptor Slice
 
 The first descriptor slice should be read-only or metadata-only. It should not

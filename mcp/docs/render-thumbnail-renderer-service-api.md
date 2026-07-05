@@ -500,6 +500,8 @@ and
 `packageMaterializationApprovalAuditCountersignatureRevocationAppealResolutionEnforcementEvidenceAttestationNotarizationCertificationEndorsementPolicy`.
 and
 `packageMaterializationApprovalAuditCountersignatureRevocationAppealResolutionEnforcementEvidenceAttestationNotarizationCertificationEndorsementCountersignaturePolicy`.
+and
+`packageMaterializationApprovalAuditCountersignatureRevocationAppealResolutionEnforcementEvidenceAttestationNotarizationCertificationEndorsementCountersignatureVerificationPolicy`.
 These cover future audit sinks, retention, access, integrity, provenance,
 custody, evidence, attestation, notarization, certification, endorsement, and
 countersignature/countersignature verification/countersignature revocation/
@@ -509,7 +511,7 @@ enforcement evidence/enforcement evidence attestation/enforcement evidence
 attestation notarization/enforcement evidence attestation notarization
 certification/enforcement evidence attestation notarization certification
 endorsement/enforcement evidence attestation notarization certification
-endorsement countersignature metadata, including required inputs, checks,
+endorsement countersignature and endorsement countersignature verification metadata, including required inputs, checks,
 blocked decisions, and no-op guarantees. The
 P25.65 revocation appeal slice keeps appeal policy
 selection, subject/authority identification, appeal reason capture,
@@ -591,6 +593,16 @@ verification, signature verification, hash computation, file writes, package
 creation, workspace mutation, lockfile mutation, command execution, build
 output, materialization approval, process startup, dispatch, network dispatch,
 runtime registration, and local file writes disabled.
+
+The P25.74 revocation appeal resolution enforcement evidence attestation
+notarization certification endorsement countersignature verification slice keeps
+verification policy selection, subject/authority identification, countersignature
+and countersignature record reads, payload parsing, signature verification, hash
+matching, chain linking/verification, audit record reads, verification result
+storage/publication, file writes, package creation, workspace mutation, lockfile
+mutation, command execution, build output, materialization approval, process
+startup, dispatch, network dispatch, runtime registration, and local file writes
+disabled.
 
 ## Service Boundary
 
