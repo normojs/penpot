@@ -552,6 +552,18 @@ verification revocation, revocation record publication, countersignature and
 audit record reads, materialization approval, files written, command execution,
 build output, process startup, and runtime dispatch disabled.
 
+P25.76 extends the `render.thumbnail` renderer-service planning payload with
+`packageMaterializationApprovalAuditCountersignatureRevocationAppealResolutionEnforcementEvidenceAttestationNotarizationCertificationEndorsementCountersignatureVerificationRevocationAppealPolicy`.
+MCP and CLI dry-run and unavailable execution payloads expose future audit
+countersignature revocation appeal resolution enforcement evidence attestation
+notarization certification endorsement countersignature verification revocation
+appeal metadata while keeping appeal policy selection, subject/authority
+identification, appeal reason capture, scope computation, appeal request
+storage/execution, appeal grant/deny decisions, appeal record publication,
+countersignature and audit record reads, materialization approval, files
+written, command execution, build output, process startup, and runtime dispatch
+disabled.
+
 P25.69 extends the `render.thumbnail` renderer-service planning payload with
 `packageMaterializationApprovalAuditCountersignatureRevocationAppealResolutionEnforcementEvidenceAttestationPolicy`.
 MCP and CLI dry-run and unavailable execution payloads expose future audit
@@ -693,10 +705,14 @@ not register yet:
   certification endorsement countersignature policy, P25.74 package
   materialization approval audit countersignature revocation appeal resolution
   enforcement evidence attestation notarization certification endorsement
-  countersignature verification policy, and P25.75 package materialization
+  countersignature verification policy, P25.75 package materialization
   approval audit countersignature revocation appeal resolution enforcement
   evidence attestation notarization certification endorsement countersignature
-  verification revocation policy while runtime execution remains unavailable
+  verification revocation policy, and P25.76 package materialization approval
+  audit countersignature revocation appeal resolution enforcement evidence
+  attestation notarization certification endorsement countersignature
+  verification revocation appeal policy while runtime execution remains
+  unavailable
 - debug: `debug.get_plugin_state`, `debug.get_agent_logs`
 
 Do not migrate these as executable descriptors until their implementation is

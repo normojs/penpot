@@ -1059,6 +1059,17 @@ Shared contract shape:
   countersignature and audit record reads, approval, file writes, workspace
   mutation, command execution, build output, package creation, process startup,
   and runtime registration disabled.
+- P25.76 package materialization approval audit countersignature revocation
+  appeal resolution enforcement evidence attestation notarization certification
+  endorsement countersignature verification revocation appeal policy fields are
+  planning-only. They define future verification revocation appeal policies,
+  required appeal inputs, appeal checks, blocked appeal decisions, and no-op
+  guarantees while keeping appeal policy selection, subject/authority
+  identification, appeal reason capture, scope computation, request
+  storage/execution, appeal grant/deny decisions, appeal record
+  storage/publication, countersignature and audit record reads, approval, file
+  writes, workspace mutation, command execution, build output, package creation,
+  process startup, and runtime registration disabled.
 - Exporter service execution is out of scope for this command unless a later
   task explicitly maps thumbnail rendering to exporter-compatible semantics.
 - P25.6 selects a future dedicated thumbnail renderer service as the executable

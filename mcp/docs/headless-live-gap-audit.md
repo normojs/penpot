@@ -465,6 +465,18 @@ verification revocation, revocation record storage/publication, countersignature
 reads, audit record reads, materialization approval, files written, command
 execution, build output, process startup, and runtime registration disabled.
 
+P25.76 extends the `render.thumbnail` renderer-service planning payload with
+`packageMaterializationApprovalAuditCountersignatureRevocationAppealResolutionEnforcementEvidenceAttestationNotarizationCertificationEndorsementCountersignatureVerificationRevocationAppealPolicy`.
+MCP and CLI dry-run and unavailable execution payloads expose future audit
+countersignature revocation appeal resolution enforcement evidence attestation
+notarization certification endorsement countersignature verification revocation
+appeal metadata while keeping appeal policy selection, subject/authority
+identification, appeal reason capture, scope computation, request
+storage/execution, appeal grant/deny decisions, appeal record
+storage/publication, countersignature reads, audit record reads,
+materialization approval, files written, command execution, build output,
+process startup, and runtime registration disabled.
+
 ## P17.2 Descriptor Slice
 
 The first descriptor slice should be read-only or metadata-only. It should not

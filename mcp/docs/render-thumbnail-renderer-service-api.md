@@ -615,6 +615,17 @@ workspace mutation, lockfile mutation, command execution, build output,
 materialization approval, process startup, dispatch, network dispatch, runtime
 registration, and local file writes disabled.
 
+The P25.76 revocation appeal resolution enforcement evidence attestation
+notarization certification endorsement countersignature verification revocation
+appeal slice keeps appeal policy selection, subject/authority identification,
+appeal reason capture, scope computation, appeal request preparation/storage/
+execution/publication, appeal grant/deny decisions, appeal record
+creation/storage/publication, countersignature and audit record reads, appeal
+linking/verification/signing/hashing, file writes, package creation, workspace
+mutation, lockfile mutation, command execution, build output, materialization
+approval, process startup, dispatch, network dispatch, runtime registration,
+and local file writes disabled.
+
 ## Service Boundary
 
 The future service operation is `thumbnail.render` behind a

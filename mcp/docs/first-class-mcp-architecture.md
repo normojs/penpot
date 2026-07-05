@@ -3128,6 +3128,26 @@ result:
   granting approval, creating package directories, writing files, mutating
   workspace manifests, mutating lockfiles, running commands, emitting build
   output, starting processes, or registering runtime dispatch.
+
+P25.76 render.thumbnail package materialization approval audit countersignature
+revocation appeal resolution enforcement evidence attestation notarization
+certification endorsement countersignature verification revocation appeal policy
+result:
+
+- Shared plans include
+  `packageMaterializationApprovalAuditCountersignatureRevocationAppealResolutionEnforcementEvidenceAttestationNotarizationCertificationEndorsementCountersignatureVerificationRevocationAppealPolicy`,
+  defining metadata-only audit countersignature revocation appeal resolution
+  enforcement evidence attestation notarization certification endorsement
+  countersignature verification revocation appeal policies, required appeal
+  inputs, appeal checks, blocked appeal decisions, and no-op guarantees.
+- MCP and CLI expose the verification revocation appeal policy plan in dry-run
+  and unavailable execution payloads without selecting appeal policies,
+  identifying subjects or authorities, capturing appeal reasons, computing
+  scopes, storing or executing appeal requests, granting or denying appeals,
+  creating appeal records, reading countersignatures or audit records, granting
+  approval, creating package directories, writing files, mutating workspace
+  manifests, mutating lockfiles, running commands, emitting build output,
+  starting processes, or registering runtime dispatch.
 - `countersignatureRevocationAppealResolutionEnforcementEvidenceAttestationNotarizationCertificationEndorsementCountersignatureVerificationRevocationPolicySelected`,
   `countersignatureRevocationAppealResolutionEnforcementEvidenceAttestationNotarizationCertificationEndorsementCountersignatureVerificationRevocationExecuted`,
   `countersignatureRevocationAppealResolutionEnforcementEvidenceAttestationNotarizationCertificationEndorsementCountersignatureVerificationRevoked`,
@@ -3723,6 +3743,10 @@ certification endorsement countersignature verification policy.
 P25.75 defines disabled package materialization approval audit countersignature
 revocation appeal resolution enforcement evidence attestation notarization
 certification endorsement countersignature verification revocation policy.
+P25.76 defines disabled package materialization approval audit countersignature
+revocation appeal resolution enforcement evidence attestation notarization
+certification endorsement countersignature verification revocation appeal
+policy.
 Runtime behavior remains unavailable
 until opt-in config surfaces, renderer-service implementation, workspace
 wiring, health preflight, cache probe, executable client, and tagged-frame
