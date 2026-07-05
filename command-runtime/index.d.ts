@@ -483,6 +483,7 @@ export interface RenderThumbnailRendererServicePlan {
         packageMaterializationApprovalAuditNotarizationPolicy: RenderThumbnailRendererServicePackageMaterializationApprovalAuditNotarizationPolicy;
         packageMaterializationApprovalAuditCertificationPolicy: RenderThumbnailRendererServicePackageMaterializationApprovalAuditCertificationPolicy;
         packageMaterializationApprovalAuditEndorsementPolicy: RenderThumbnailRendererServicePackageMaterializationApprovalAuditEndorsementPolicy;
+        packageMaterializationApprovalAuditCountersignaturePolicy: RenderThumbnailRendererServicePackageMaterializationApprovalAuditCountersignaturePolicy;
         clientRequest: RenderThumbnailRendererServiceClientRequest;
     };
     client: RenderThumbnailRendererServiceClientConfig;
@@ -537,6 +538,7 @@ export interface RenderThumbnailRendererServicePlan {
     packageMaterializationApprovalAuditNotarizationPolicy: RenderThumbnailRendererServicePackageMaterializationApprovalAuditNotarizationPolicy;
     packageMaterializationApprovalAuditCertificationPolicy: RenderThumbnailRendererServicePackageMaterializationApprovalAuditCertificationPolicy;
     packageMaterializationApprovalAuditEndorsementPolicy: RenderThumbnailRendererServicePackageMaterializationApprovalAuditEndorsementPolicy;
+    packageMaterializationApprovalAuditCountersignaturePolicy: RenderThumbnailRendererServicePackageMaterializationApprovalAuditCountersignaturePolicy;
     clientRequest: RenderThumbnailRendererServiceClientRequest;
     serviceRequest: {
         command: "render.thumbnail";
@@ -651,6 +653,7 @@ export interface RenderThumbnailRendererServicePlan {
         packageMaterializationApprovalAuditNotarizationPolicyVersion: "P25.59";
         packageMaterializationApprovalAuditCertificationPolicyVersion: "P25.60";
         packageMaterializationApprovalAuditEndorsementPolicyVersion: "P25.61";
+        packageMaterializationApprovalAuditCountersignaturePolicyVersion: "P25.62";
     };
 }
 
@@ -5221,6 +5224,159 @@ export interface RenderThumbnailRendererServicePackageMaterializationApprovalAud
     requiredBeforeRuntimeDispatch: string[];
 }
 
+export interface RenderThumbnailRendererServicePackageMaterializationApprovalAuditCountersignaturePolicy {
+    status: "planned-disabled";
+    auditCountersignatureVersion: "P25.62";
+    adapter: "renderer-service";
+    command: "render.thumbnail";
+    dryRunOnly: true;
+    approvalRequired: true;
+    approved: false;
+    finalApprovalGranted: false;
+    countersignatureRequired: true;
+    countersignaturePlanned: true;
+    countersignaturePolicySelected: false;
+    countersignatureSubjectIdentified: false;
+    countersignatureAuthorityIdentified: false;
+    countersignaturePrepared: false;
+    countersignatureCreated: false;
+    countersignatureValidated: false;
+    countersignatureStored: false;
+    countersignaturePublished: false;
+    countersignatureRecordCreated: false;
+    countersignatureRecordStored: false;
+    countersignatureRecordPublished: false;
+    endorsementRead: false;
+    endorsementCountersigned: false;
+    endorsementVerified: false;
+    auditRecordRead: false;
+    auditRecordQueried: false;
+    auditRecordCountersignatureLinked: false;
+    auditRecordCountersignatureVerified: false;
+    countersignatureSignatureCreated: false;
+    countersignatureSignatureVerified: false;
+    countersignatureHashComputed: false;
+    countersignatureHashStored: false;
+    materializationReady: false;
+    materializationApproved: false;
+    materializationApprovedNow: false;
+    tokenAccepted: false;
+    tokenStored: false;
+    tokenValidated: false;
+    tokenConsumed: false;
+    tokenRevoked: false;
+    executeNow: false;
+    verifyNow: false;
+    rollbackNow: false;
+    dispatch: false;
+    networkDispatch: false;
+    runtimeRegistration: false;
+    localFileWrites: false;
+    hostStartup: false;
+    processSpawn: false;
+    packageCreated: false;
+    workspaceMutation: false;
+    scriptRunnable: false;
+    fileMaterialization: false;
+    lockfileMutation: false;
+    rootPackageJsonMutation: false;
+    pnpmWorkspaceMutation: false;
+    commandExecution: false;
+    buildOutput: false;
+    packageScriptsRunnable: false;
+    filesWritten: false;
+    rollbackExecuted: false;
+    verificationExecuted: false;
+    consumes: {
+        packageMaterializationApprovalAuditEndorsementPolicy: {
+            requiredStatus: "planned-disabled";
+            currentStatus: string;
+            auditEndorsementVersion: string;
+            endorsementCreated: false;
+            endorsementRecordStored: false;
+        };
+        packageMaterializationApprovalAuditAccessPolicy: {
+            requiredStatus: "planned-disabled";
+            currentStatus: string;
+            auditAccessVersion: string;
+            auditRecordRead: false;
+            accessGranted: false;
+        };
+        packageMaterializationFinalApprovalChecklist: {
+            requiredStatus: "planned-disabled";
+            currentStatus: string;
+            checklistVersion: string;
+            finalApprovalGranted: false;
+        };
+    };
+    auditCountersignaturePolicy: {
+        policy: "countersign-endorsement-after-endorsement-record-defined";
+        selectCountersignaturePolicyNow: false;
+        identifyCountersignatureSubjectNow: false;
+        identifyCountersignatureAuthorityNow: false;
+        prepareCountersignatureNow: false;
+        createCountersignatureNow: false;
+        validateCountersignatureNow: false;
+        storeCountersignatureNow: false;
+        publishCountersignatureNow: false;
+        createCountersignatureRecordNow: false;
+        storeCountersignatureRecordNow: false;
+        publishCountersignatureRecordNow: false;
+        readEndorsementNow: false;
+        countersignEndorsementNow: false;
+        verifyEndorsementNow: false;
+        readAuditRecordNow: false;
+        queryAuditRecordNow: false;
+        linkAuditRecordCountersignatureNow: false;
+        verifyAuditRecordCountersignatureNow: false;
+        signCountersignatureNow: false;
+        verifyCountersignatureSignatureNow: false;
+        computeCountersignatureHashNow: false;
+        storeCountersignatureHashNow: false;
+        requiredInputs: string[];
+        countersignaturePolicyId: "future-materialization-audit-countersignature";
+        countersignatureScope: "future-policy-defined";
+        countersignaturePayloadLogged: false;
+    };
+    auditCountersignatureChecks: Array<{
+        id: string;
+        required: true;
+        planned: true;
+        executed: false;
+        passed: false;
+    }>;
+    auditCountersignatureDecision: {
+        status: "blocked";
+        canSelectCountersignaturePolicy: false;
+        canIdentifyCountersignatureSubject: false;
+        canIdentifyCountersignatureAuthority: false;
+        canPrepareCountersignature: false;
+        canCreateCountersignature: false;
+        canValidateCountersignature: false;
+        canStoreCountersignature: false;
+        canPublishCountersignature: false;
+        canCreateCountersignatureRecord: false;
+        canStoreCountersignatureRecord: false;
+        canPublishCountersignatureRecord: false;
+        canReadEndorsement: false;
+        canCountersignEndorsement: false;
+        canVerifyEndorsement: false;
+        canReadAuditRecord: false;
+        canQueryAuditRecord: false;
+        canLinkAuditRecordCountersignature: false;
+        canVerifyAuditRecordCountersignature: false;
+        canSignCountersignature: false;
+        canVerifyCountersignatureSignature: false;
+        canComputeCountersignatureHash: false;
+        canStoreCountersignatureHash: false;
+        canMaterializeFiles: false;
+        canEnableRuntimeDispatch: false;
+        reason: string;
+    };
+    noOpGuarantees: string[];
+    requiredBeforeRuntimeDispatch: string[];
+}
+
 export interface CreateRenderThumbnailRendererServiceClientRequestOptions {
     entrypoint?: "mcp" | "cli" | string | null;
     mcpToolName?: string | null;
@@ -5818,6 +5974,13 @@ export function createRenderThumbnailRendererServicePackageMaterializationApprov
         packageMaterializationFinalApprovalChecklist?: Partial<RenderThumbnailRendererServicePackageMaterializationFinalApprovalChecklist> | null;
     }
 ): RenderThumbnailRendererServicePackageMaterializationApprovalAuditEndorsementPolicy;
+export function createRenderThumbnailRendererServicePackageMaterializationApprovalAuditCountersignaturePolicy(
+    options?: {
+        packageMaterializationApprovalAuditEndorsementPolicy?: Partial<RenderThumbnailRendererServicePackageMaterializationApprovalAuditEndorsementPolicy> | null;
+        packageMaterializationApprovalAuditAccessPolicy?: Partial<RenderThumbnailRendererServicePackageMaterializationApprovalAuditAccessPolicy> | null;
+        packageMaterializationFinalApprovalChecklist?: Partial<RenderThumbnailRendererServicePackageMaterializationFinalApprovalChecklist> | null;
+    }
+): RenderThumbnailRendererServicePackageMaterializationApprovalAuditCountersignaturePolicy;
 export function createRenderThumbnailRendererServiceClientRequest(
     plan: Partial<RenderThumbnailRendererServicePlan>,
     options?: CreateRenderThumbnailRendererServiceClientRequestOptions

@@ -462,6 +462,48 @@ function assertAuditEndorsementPolicyMetadataOnly(policy) {
     assert.equal(policy.auditEndorsementDecision.canComputeEndorsementHash, false);
 }
 
+function assertAuditCountersignaturePolicyMetadataOnly(policy) {
+    assert.equal(policy.auditCountersignatureVersion, "P25.62");
+    for (const key of [
+        "countersignaturePolicySelected",
+        "countersignatureSubjectIdentified",
+        "countersignatureAuthorityIdentified",
+        "countersignaturePrepared",
+        "countersignatureCreated",
+        "countersignatureValidated",
+        "countersignatureStored",
+        "countersignaturePublished",
+        "countersignatureRecordCreated",
+        "countersignatureRecordStored",
+        "countersignatureRecordPublished",
+        "endorsementRead",
+        "endorsementCountersigned",
+        "endorsementVerified",
+        "auditRecordRead",
+        "auditRecordQueried",
+        "auditRecordCountersignatureLinked",
+        "auditRecordCountersignatureVerified",
+        "countersignatureSignatureCreated",
+        "countersignatureSignatureVerified",
+        "countersignatureHashComputed",
+        "countersignatureHashStored",
+        "materializationApproved",
+        "dispatch",
+        "runtimeRegistration",
+        "localFileWrites",
+        "commandExecution",
+        "buildOutput",
+        "filesWritten",
+    ]) {
+        assert.equal(policy[key], false, key);
+    }
+    assert.equal(policy.auditCountersignatureDecision.canCreateCountersignature, false);
+    assert.equal(policy.auditCountersignatureDecision.canStoreCountersignatureRecord, false);
+    assert.equal(policy.auditCountersignatureDecision.canCountersignEndorsement, false);
+    assert.equal(policy.auditCountersignatureDecision.canReadAuditRecord, false);
+    assert.equal(policy.auditCountersignatureDecision.canComputeCountersignatureHash, false);
+}
+
 function pickMcpConfigFields(data) {
     return {
         mode: data.mode,
@@ -3377,6 +3419,7 @@ test("render thumbnail dry-run returns renderer-service request plan", async () 
         assertAuditNotarizationPolicyMetadataOnly(body.data.packageMaterializationApprovalAuditNotarizationPolicy);
         assertAuditCertificationPolicyMetadataOnly(body.data.packageMaterializationApprovalAuditCertificationPolicy);
         assertAuditEndorsementPolicyMetadataOnly(body.data.packageMaterializationApprovalAuditEndorsementPolicy);
+        assertAuditCountersignaturePolicyMetadataOnly(body.data.packageMaterializationApprovalAuditCountersignaturePolicy);
         assert.equal(body.data.service.responseNormalization.successStatus, "ok");
         assert.equal(body.data.service.responseNormalization.localFileWrites, false);
         assert.equal(body.data.service.errorShape.code, "renderer_service_error");
@@ -3756,6 +3799,9 @@ test("render thumbnail execution reports renderer-service unavailable without ca
         assertAuditNotarizationPolicyMetadataOnly(body.error.data.packageMaterializationApprovalAuditNotarizationPolicy);
         assertAuditCertificationPolicyMetadataOnly(body.error.data.packageMaterializationApprovalAuditCertificationPolicy);
         assertAuditEndorsementPolicyMetadataOnly(body.error.data.packageMaterializationApprovalAuditEndorsementPolicy);
+        assertAuditCountersignaturePolicyMetadataOnly(
+            body.error.data.packageMaterializationApprovalAuditCountersignaturePolicy
+        );
         assert.equal(body.error.data.clientRequest.dispatch, false);
         assert.equal(body.error.data.serviceRequest.operation, "thumbnail.render");
     } finally {

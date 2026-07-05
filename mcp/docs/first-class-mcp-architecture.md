@@ -3094,6 +3094,41 @@ P25.61 render.thumbnail package materialization approval audit endorsement polic
   `networkDispatch`, `runtimeRegistration`, and `localFileWrites` remain
   `false`.
 
+P25.62 render.thumbnail package materialization approval audit countersignature
+policy result:
+
+- Shared plans include
+  `packageMaterializationApprovalAuditCountersignaturePolicy`, defining
+  metadata-only audit countersignature policies, required countersignature
+  inputs, countersignature checks, blocked countersignature decisions, and no-op
+  guarantees.
+- MCP and CLI expose the audit countersignature policy plan in dry-run and
+  unavailable execution payloads without selecting countersignature policies,
+  identifying subjects or authorities, preparing/creating/validating/storing/
+  publishing countersignatures, creating/storing/publishing countersignature
+  records, reading/countersigning/verifying endorsements, reading or querying
+  audit records, linking/verifying/signing/hashing countersignatures, granting
+  approval, creating package directories, writing files, mutating workspace
+  manifests, mutating lockfiles, running commands, emitting build output,
+  starting processes, or registering runtime dispatch.
+- `countersignaturePolicySelected`, `countersignatureSubjectIdentified`,
+  `countersignatureAuthorityIdentified`, `countersignaturePrepared`,
+  `countersignatureCreated`, `countersignatureValidated`,
+  `countersignatureStored`, `countersignaturePublished`,
+  `countersignatureRecordCreated`, `countersignatureRecordStored`,
+  `countersignatureRecordPublished`, `endorsementRead`,
+  `endorsementCountersigned`, `endorsementVerified`, `auditRecordRead`,
+  `auditRecordQueried`, `auditRecordCountersignatureLinked`,
+  `auditRecordCountersignatureVerified`,
+  `countersignatureSignatureCreated`,
+  `countersignatureSignatureVerified`, `countersignatureHashComputed`,
+  `countersignatureHashStored`, `materializationApproved`, `approved`, and
+  `finalApprovalGranted` remain `false`, while `filesWritten`,
+  `fileMaterialization`, `workspaceMutation`, `lockfileMutation`,
+  `commandExecution`, `buildOutput`, `processSpawn`, `packageCreated`,
+  `dispatch`, `networkDispatch`, `runtimeRegistration`, and
+  `localFileWrites` remain `false`.
+
 ### 8.5 Export and Render Tools
 
 May start file-bound and later move to headless:
@@ -3159,7 +3194,8 @@ materialization approval audit evidence policy. P25.58 defines disabled package
 materialization approval audit attestation policy. P25.59 defines disabled package
 materialization approval audit notarization policy. P25.60 defines disabled package
 materialization approval audit certification policy. P25.61 defines disabled
-package materialization approval audit endorsement policy.
+package materialization approval audit endorsement policy. P25.62 defines
+disabled package materialization approval audit countersignature policy.
 Runtime behavior remains unavailable
 until opt-in config surfaces, renderer-service implementation, workspace
 wiring, health preflight, cache probe, executable client, and tagged-frame

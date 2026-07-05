@@ -412,6 +412,48 @@ function assertAuditEndorsementPolicyMetadataOnly(policy: any) {
     assert.equal(policy.auditEndorsementDecision.canComputeEndorsementHash, false);
 }
 
+function assertAuditCountersignaturePolicyMetadataOnly(policy: any) {
+    assert.equal(policy.auditCountersignatureVersion, "P25.62");
+    for (const key of [
+        "countersignaturePolicySelected",
+        "countersignatureSubjectIdentified",
+        "countersignatureAuthorityIdentified",
+        "countersignaturePrepared",
+        "countersignatureCreated",
+        "countersignatureValidated",
+        "countersignatureStored",
+        "countersignaturePublished",
+        "countersignatureRecordCreated",
+        "countersignatureRecordStored",
+        "countersignatureRecordPublished",
+        "endorsementRead",
+        "endorsementCountersigned",
+        "endorsementVerified",
+        "auditRecordRead",
+        "auditRecordQueried",
+        "auditRecordCountersignatureLinked",
+        "auditRecordCountersignatureVerified",
+        "countersignatureSignatureCreated",
+        "countersignatureSignatureVerified",
+        "countersignatureHashComputed",
+        "countersignatureHashStored",
+        "materializationApproved",
+        "dispatch",
+        "runtimeRegistration",
+        "localFileWrites",
+        "commandExecution",
+        "buildOutput",
+        "filesWritten",
+    ]) {
+        assert.equal(policy[key], false, key);
+    }
+    assert.equal(policy.auditCountersignatureDecision.canCreateCountersignature, false);
+    assert.equal(policy.auditCountersignatureDecision.canStoreCountersignatureRecord, false);
+    assert.equal(policy.auditCountersignatureDecision.canCountersignEndorsement, false);
+    assert.equal(policy.auditCountersignatureDecision.canReadAuditRecord, false);
+    assert.equal(policy.auditCountersignatureDecision.canComputeCountersignatureHash, false);
+}
+
 type SseCall = {
     methodName: string;
     params: Record<string, unknown>;
@@ -1124,6 +1166,7 @@ test("RenderThumbnailTool dry-run returns renderer-service request metadata with
         assertAuditNotarizationPolicyMetadataOnly(body.data.packageMaterializationApprovalAuditNotarizationPolicy);
         assertAuditCertificationPolicyMetadataOnly(body.data.packageMaterializationApprovalAuditCertificationPolicy);
         assertAuditEndorsementPolicyMetadataOnly(body.data.packageMaterializationApprovalAuditEndorsementPolicy);
+        assertAuditCountersignaturePolicyMetadataOnly(body.data.packageMaterializationApprovalAuditCountersignaturePolicy);
         assert.deepEqual(body.data.service.client, body.data.client);
         assert.equal(body.data.service.responseNormalization.successStatus, "ok");
         assert.equal(body.data.service.responseNormalization.localFileWrites, false);
@@ -1513,6 +1556,9 @@ test("RenderThumbnailTool execution reports renderer service unavailable without
         assertAuditNotarizationPolicyMetadataOnly(body.error.data.packageMaterializationApprovalAuditNotarizationPolicy);
         assertAuditCertificationPolicyMetadataOnly(body.error.data.packageMaterializationApprovalAuditCertificationPolicy);
         assertAuditEndorsementPolicyMetadataOnly(body.error.data.packageMaterializationApprovalAuditEndorsementPolicy);
+        assertAuditCountersignaturePolicyMetadataOnly(
+            body.error.data.packageMaterializationApprovalAuditCountersignaturePolicy
+        );
         assert.equal(body.error.data.clientRequest.dispatch, false);
         assert.equal(body.error.data.serviceRequest.operation, "thumbnail.render");
         assert.deepEqual(body.error.data.requiredCapabilities, ["thumbnail-renderer-service-implementation", "file-thumbnail-cache-probe"]);

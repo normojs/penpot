@@ -1,6 +1,6 @@
 # Render Thumbnail Renderer Service API
 
-Status: P25.61 API fixtures, MCP/CLI dry-run/client boundaries, metadata-only
+Status: P25.62 API fixtures, MCP/CLI dry-run/client boundaries, metadata-only
 availability probes, response normalization contracts, disabled client request
 scaffold, closed execution gate, disabled health preflight, and executable
 client harness plus dispatch adapter boundary plans, and opt-in configuration
@@ -95,6 +95,12 @@ preparing/creating/validating/storing/publishing notarizations,
 creating/storing/publishing notarization records, reading/notarizing/verifying
 attestations, reading or querying audit records, signing or hashing
 notarizations, or writing files.
+P25.62 adds package materialization approval audit countersignature policy
+metadata without selecting countersignature policies, identifying subjects or
+authorities, preparing/creating/validating/storing/publishing countersignatures,
+creating/storing/publishing countersignature records, reading/countersigning/
+verifying endorsements, reading or querying audit records, signing or hashing
+countersignatures, or writing files.
 
 P25.6 selected a dedicated thumbnail renderer service as the future executable
 owner for `render.thumbnail`. This document defines the service-facing request
@@ -428,6 +434,8 @@ P25.58 defines the package materialization approval audit attestation policy.
 P25.59 defines the package materialization approval audit notarization policy.
 P25.60 defines the package materialization approval audit certification policy.
 P25.61 defines the package materialization approval audit endorsement policy.
+P25.62 defines the package materialization approval audit countersignature
+policy.
 Plans now include `packageMaterializationApprovalPostHandoffAuditPolicy`,
 `packageMaterializationApprovalAuditRetentionPolicy`,
 `packageMaterializationApprovalAuditAccessPolicy`,
@@ -436,20 +444,21 @@ Plans now include `packageMaterializationApprovalPostHandoffAuditPolicy`,
 `packageMaterializationApprovalAuditCustodyPolicy`,
 `packageMaterializationApprovalAuditEvidencePolicy`,
 `packageMaterializationApprovalAuditAttestationPolicy`,
-`packageMaterializationApprovalAuditNotarizationPolicy`, and
-`packageMaterializationApprovalAuditCertificationPolicy`, and
-`packageMaterializationApprovalAuditEndorsementPolicy`.
+`packageMaterializationApprovalAuditNotarizationPolicy`,
+`packageMaterializationApprovalAuditCertificationPolicy`,
+`packageMaterializationApprovalAuditEndorsementPolicy`, and
+`packageMaterializationApprovalAuditCountersignaturePolicy`.
 These cover future audit sinks, retention, access, integrity, provenance,
-custody, evidence, attestation, notarization, certification, and endorsement metadata,
-including required inputs, checks, blocked decisions, and no-op guarantees. The
-P25.61 endorsement slice keeps endorsement policy selection, subject/authority
-identification, endorsement preparation/creation/validation/storage/
-publication, endorsement record creation/storage/publication, certification
-read/endorse/verify, audit record read/query, endorsement linking/
-verification/signing/hashing, file writes, package creation, workspace mutation,
-lockfile mutation, command execution, build output, materialization approval,
-process startup, dispatch, network dispatch, runtime registration, and local
-file writes disabled.
+custody, evidence, attestation, notarization, certification, endorsement, and
+countersignature metadata, including required inputs, checks, blocked decisions,
+and no-op guarantees. The P25.62 countersignature slice keeps countersignature
+policy selection, subject/authority identification, countersignature
+preparation/creation/validation/storage/publication, countersignature record
+creation/storage/publication, endorsement read/countersign/verify, audit record
+read/query, countersignature linking/verification/signing/hashing, file writes,
+package creation, workspace mutation, lockfile mutation, command execution,
+build output, materialization approval, process startup, dispatch, network
+dispatch, runtime registration, and local file writes disabled.
 
 ## Service Boundary
 

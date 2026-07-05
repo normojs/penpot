@@ -1669,3 +1669,42 @@ policy:
   certifications, reading or querying audit records, linking, verifying,
   signing, or hashing endorsements, materializing files, starting processes, or
   enabling dispatch.
+
+P25.62 adds renderer-service package materialization approval audit
+countersignature policy:
+
+- Plans include `packageMaterializationApprovalAuditCountersignaturePolicy`,
+  defining the future countersignature policy, required countersignature inputs,
+  countersignature checks, blocked countersignature decision, and no-op
+  guarantees.
+- The audit countersignature policy remains planning-only with
+  `countersignaturePolicySelected:false`,
+  `countersignatureSubjectIdentified:false`,
+  `countersignatureAuthorityIdentified:false`,
+  `countersignaturePrepared:false`, `countersignatureCreated:false`,
+  `countersignatureValidated:false`, `countersignatureStored:false`,
+  `countersignaturePublished:false`,
+  `countersignatureRecordCreated:false`,
+  `countersignatureRecordStored:false`,
+  `countersignatureRecordPublished:false`, `endorsementRead:false`,
+  `endorsementCountersigned:false`, `endorsementVerified:false`,
+  `auditRecordRead:false`, `auditRecordQueried:false`,
+  `auditRecordCountersignatureLinked:false`,
+  `auditRecordCountersignatureVerified:false`,
+  `countersignatureSignatureCreated:false`,
+  `countersignatureSignatureVerified:false`,
+  `countersignatureHashComputed:false`,
+  `countersignatureHashStored:false`, `materializationApproved:false`,
+  `approved:false`, `finalApprovalGranted:false`, `filesWritten:false`,
+  `fileMaterialization:false`, `workspaceMutation:false`,
+  `lockfileMutation:false`, `commandExecution:false`, `buildOutput:false`,
+  `processSpawn:false`, `packageCreated:false`, `dispatch:false`,
+  `networkDispatch:false`, `runtimeRegistration:false`, and
+  `localFileWrites:false`.
+- MCP and CLI expose this policy in dry-run and unavailable execution JSON
+  without selecting countersignature policies, identifying subjects or
+  authorities, preparing, creating, validating, storing, or publishing
+  countersignatures, creating, storing, or publishing countersignature records,
+  reading, countersigning, or verifying endorsements, reading or querying audit
+  records, linking, verifying, signing, or hashing countersignatures,
+  materializing files, starting processes, or enabling dispatch.

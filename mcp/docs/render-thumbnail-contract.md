@@ -1,6 +1,6 @@
 # Render Thumbnail Contract
 
-Status: P25.4 descriptor contract; P25.61 MCP/CLI renderer-service dry-run
+Status: P25.4 descriptor contract; P25.62 MCP/CLI renderer-service dry-run
 boundaries, metadata-only availability probes, response normalization
 contracts, disabled client request scaffolding, closed execution gate, disabled
 health preflight, executable client harness plan, and dispatch adapter boundary
@@ -789,6 +789,32 @@ Shared contract shape:
   validate, store, or publish endorsements, create endorsement records, read,
   endorse, or verify certifications, read or query audit records, sign or hash
   endorsements, grant approval, or materialize files.
+- P25.62 package materialization approval audit countersignature policy fields
+  are planning-only. They define future countersignature policies, required
+  countersignature inputs, countersignature checks, blocked countersignature
+  decisions, and no-op guarantees while keeping
+  `packageMaterializationApprovalAuditCountersignaturePolicy.countersignaturePolicySelected:false`,
+  `packageMaterializationApprovalAuditCountersignaturePolicy.countersignatureSubjectIdentified:false`,
+  `packageMaterializationApprovalAuditCountersignaturePolicy.countersignatureAuthorityIdentified:false`,
+  `packageMaterializationApprovalAuditCountersignaturePolicy.countersignaturePrepared:false`,
+  `packageMaterializationApprovalAuditCountersignaturePolicy.countersignatureCreated:false`,
+  `packageMaterializationApprovalAuditCountersignaturePolicy.countersignatureValidated:false`,
+  `packageMaterializationApprovalAuditCountersignaturePolicy.countersignatureStored:false`,
+  `packageMaterializationApprovalAuditCountersignaturePolicy.countersignaturePublished:false`,
+  `packageMaterializationApprovalAuditCountersignaturePolicy.countersignatureRecordCreated:false`,
+  `packageMaterializationApprovalAuditCountersignaturePolicy.endorsementRead:false`,
+  `packageMaterializationApprovalAuditCountersignaturePolicy.endorsementCountersigned:false`,
+  `packageMaterializationApprovalAuditCountersignaturePolicy.auditRecordRead:false`,
+  `packageMaterializationApprovalAuditCountersignaturePolicy.auditRecordQueried:false`,
+  `packageMaterializationApprovalAuditCountersignaturePolicy.countersignatureHashComputed:false`,
+  `approved:false`, `finalApprovalGranted:false`, `filesWritten:false`,
+  `fileMaterialization:false`, `workspaceMutation:false`,
+  `commandExecution:false`, `buildOutput:false`,
+  `runtimeRegistration:false`, and `localFileWrites:false`. They do not select
+  countersignature policies, identify subjects or authorities, prepare, create,
+  validate, store, or publish countersignatures, create countersignature records,
+  read, countersign, or verify endorsements, read or query audit records, sign or
+  hash countersignatures, grant approval, or materialize files.
 - Exporter service execution is out of scope for this command unless a later
   task explicitly maps thumbnail rendering to exporter-compatible semantics.
 - P25.6 selects a future dedicated thumbnail renderer service as the executable
@@ -803,7 +829,7 @@ See `render-thumbnail-runtime-boundary.md` and
 audit, resource-return rules, cache refresh behavior, auth expectations, and
 future test strategy.
 See `render-thumbnail-renderer-service-api.md` and
-`render-thumbnail-renderer-service-fixtures.json` for the P25.61 future
+`render-thumbnail-renderer-service-fixtures.json` for the P25.62 future
 renderer-service request/response API, MCP/CLI dry-run/client boundary, and
 metadata-only availability probe plus response/error normalization and disabled
 client request, execution gate, health preflight, and execution harness
@@ -818,7 +844,7 @@ guardrails, package file templates, package workspace wiring, package build
   binding/operator confirmation/emergency stop/readiness verdict/execution
   handoff/post-handoff audit policies, and package materialization approval
   audit retention/access/integrity/provenance/custody/evidence/attestation/
-  notarization/certification/endorsement policies.
+  notarization/certification/endorsement/countersignature policies.
 
 ## Fixtures
 

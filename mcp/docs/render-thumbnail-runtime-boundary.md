@@ -105,6 +105,10 @@ creating certifications, storing certification records, or certifying
 notarizations. P25.61 defines package materialization approval audit
 endorsement policy metadata without selecting endorsement policies, creating
 endorsements, storing endorsement records, or endorsing certifications.
+P25.62 defines package materialization approval audit countersignature policy
+metadata without selecting countersignature policies, creating
+countersignatures, storing countersignature records, or countersigning
+endorsements.
 
 ## Existing Surfaces
 
@@ -286,6 +290,8 @@ P25.60 adds metadata-only package materialization approval audit certification
 policy.
 P25.61 adds metadata-only package materialization approval audit endorsement
 policy.
+P25.62 adds metadata-only package materialization approval audit
+countersignature policy.
 MCP
 `render.thumbnail` and `penpot-cli render thumbnail --dry-run` can print the
 future request shape, configured/not configured service metadata,

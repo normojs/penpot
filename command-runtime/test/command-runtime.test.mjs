@@ -63,6 +63,7 @@ import {
     createRenderThumbnailRendererServicePackageMaterializationApprovalAuditNotarizationPolicy,
     createRenderThumbnailRendererServicePackageMaterializationApprovalAuditCertificationPolicy,
     createRenderThumbnailRendererServicePackageMaterializationApprovalAuditEndorsementPolicy,
+    createRenderThumbnailRendererServicePackageMaterializationApprovalAuditCountersignaturePolicy,
     createRenderThumbnailRendererServicePackageFileTemplates,
     createRenderThumbnailRendererServicePackageManifestScaffold,
     createRenderThumbnailRendererServicePackageMaterializationChecklist,
@@ -1139,6 +1140,117 @@ function assertAuditEndorsementPolicyMetadataOnly(policy) {
     }
 }
 
+function assertAuditCountersignaturePolicyMetadataOnly(policy) {
+    assert.equal(policy.auditCountersignatureVersion, "P25.62");
+    assert.equal(policy.countersignatureRequired, true);
+    assert.equal(policy.countersignaturePlanned, true);
+
+    for (const key of [
+        "countersignaturePolicySelected",
+        "countersignatureSubjectIdentified",
+        "countersignatureAuthorityIdentified",
+        "countersignaturePrepared",
+        "countersignatureCreated",
+        "countersignatureValidated",
+        "countersignatureStored",
+        "countersignaturePublished",
+        "countersignatureRecordCreated",
+        "countersignatureRecordStored",
+        "countersignatureRecordPublished",
+        "endorsementRead",
+        "endorsementCountersigned",
+        "endorsementVerified",
+        "auditRecordRead",
+        "auditRecordQueried",
+        "auditRecordCountersignatureLinked",
+        "auditRecordCountersignatureVerified",
+        "countersignatureSignatureCreated",
+        "countersignatureSignatureVerified",
+        "countersignatureHashComputed",
+        "countersignatureHashStored",
+        "materializationApproved",
+        "dispatch",
+        "networkDispatch",
+        "runtimeRegistration",
+        "localFileWrites",
+        "hostStartup",
+        "processSpawn",
+        "packageCreated",
+        "workspaceMutation",
+        "scriptRunnable",
+        "fileMaterialization",
+        "lockfileMutation",
+        "rootPackageJsonMutation",
+        "pnpmWorkspaceMutation",
+        "commandExecution",
+        "buildOutput",
+        "packageScriptsRunnable",
+        "filesWritten",
+    ]) {
+        assert.equal(policy[key], false, key);
+    }
+
+    assert.equal(policy.consumes.packageMaterializationApprovalAuditEndorsementPolicy.auditEndorsementVersion, "P25.61");
+    assert.equal(policy.consumes.packageMaterializationApprovalAuditAccessPolicy.auditAccessVersion, "P25.53");
+    assert.equal(policy.consumes.packageMaterializationFinalApprovalChecklist.checklistVersion, "P25.40");
+
+    for (const key of [
+        "selectCountersignaturePolicyNow",
+        "identifyCountersignatureSubjectNow",
+        "identifyCountersignatureAuthorityNow",
+        "prepareCountersignatureNow",
+        "createCountersignatureNow",
+        "validateCountersignatureNow",
+        "storeCountersignatureNow",
+        "publishCountersignatureNow",
+        "createCountersignatureRecordNow",
+        "storeCountersignatureRecordNow",
+        "publishCountersignatureRecordNow",
+        "readEndorsementNow",
+        "countersignEndorsementNow",
+        "verifyEndorsementNow",
+        "readAuditRecordNow",
+        "queryAuditRecordNow",
+        "linkAuditRecordCountersignatureNow",
+        "verifyAuditRecordCountersignatureNow",
+        "signCountersignatureNow",
+        "verifyCountersignatureSignatureNow",
+        "computeCountersignatureHashNow",
+        "storeCountersignatureHashNow",
+    ]) {
+        assert.equal(policy.auditCountersignaturePolicy[key], false, key);
+    }
+
+    for (const key of [
+        "canSelectCountersignaturePolicy",
+        "canIdentifyCountersignatureSubject",
+        "canIdentifyCountersignatureAuthority",
+        "canPrepareCountersignature",
+        "canCreateCountersignature",
+        "canValidateCountersignature",
+        "canStoreCountersignature",
+        "canPublishCountersignature",
+        "canCreateCountersignatureRecord",
+        "canStoreCountersignatureRecord",
+        "canPublishCountersignatureRecord",
+        "canReadEndorsement",
+        "canCountersignEndorsement",
+        "canVerifyEndorsement",
+        "canReadAuditRecord",
+        "canQueryAuditRecord",
+        "canLinkAuditRecordCountersignature",
+        "canVerifyAuditRecordCountersignature",
+        "canSignCountersignature",
+        "canVerifyCountersignatureSignature",
+        "canComputeCountersignatureHash",
+        "canStoreCountersignatureHash",
+        "canMaterializeFiles",
+        "canEnableRuntimeDispatch",
+    ]) {
+        assert.equal(policy.auditCountersignatureDecision[key], false, key);
+    }
+}
+
 test("descriptor groups expose stable command ids", () => {
     assert.deepEqual(
         LowRiskCommandDescriptors.map((descriptor) => descriptor.id),
@@ -1829,6 +1941,8 @@ test("render.thumbnail renderer-service API fixtures define planning requests wi
     assertAuditCertificationPolicyMetadataOnly(renderThumbnailRuntimeBoundaryFixtures.packageMaterializationApprovalAuditCertificationPolicy);
     assertAuditEndorsementPolicyMetadataOnly(fixtures.serviceApi.packageMaterializationApprovalAuditEndorsementPolicy);
     assertAuditEndorsementPolicyMetadataOnly(renderThumbnailRuntimeBoundaryFixtures.packageMaterializationApprovalAuditEndorsementPolicy);
+    assertAuditCountersignaturePolicyMetadataOnly(fixtures.serviceApi.packageMaterializationApprovalAuditCountersignaturePolicy);
+    assertAuditCountersignaturePolicyMetadataOnly(renderThumbnailRuntimeBoundaryFixtures.packageMaterializationApprovalAuditCountersignaturePolicy);
     assert.deepEqual(fixtures.runtimeRegistration.commandDescriptorAdapters, ["renderer-service"]);
     assert.deepEqual(CommandDescriptors.RENDER_THUMBNAIL.adapters, ["renderer-service"]);
     assert.equal(fixtures.runtimeRegistration.mcpToolRegistered, true);
@@ -2977,6 +3091,8 @@ test("render.thumbnail renderer-service plan exposes dry-run client request whil
     assert.deepEqual(plan.service.packageMaterializationApprovalAuditCertificationPolicy, plan.packageMaterializationApprovalAuditCertificationPolicy);
     assertAuditEndorsementPolicyMetadataOnly(plan.packageMaterializationApprovalAuditEndorsementPolicy);
     assert.deepEqual(plan.service.packageMaterializationApprovalAuditEndorsementPolicy, plan.packageMaterializationApprovalAuditEndorsementPolicy);
+    assertAuditCountersignaturePolicyMetadataOnly(plan.packageMaterializationApprovalAuditCountersignaturePolicy);
+    assert.deepEqual(plan.service.packageMaterializationApprovalAuditCountersignaturePolicy, plan.packageMaterializationApprovalAuditCountersignaturePolicy);
     assert.equal(plan.clientRequest.status, "scaffolded");
     assert.equal(plan.clientRequest.dispatch, false);
     assert.equal(plan.clientRequest.method, "POST");
@@ -3054,6 +3170,7 @@ test("render.thumbnail renderer-service plan exposes dry-run client request whil
     assert.equal(plan.diagnostics.packageMaterializationApprovalAuditNotarizationPolicyVersion, "P25.59");
     assert.equal(plan.diagnostics.packageMaterializationApprovalAuditCertificationPolicyVersion, "P25.60");
     assert.equal(plan.diagnostics.packageMaterializationApprovalAuditEndorsementPolicyVersion, "P25.61");
+    assert.equal(plan.diagnostics.packageMaterializationApprovalAuditCountersignaturePolicyVersion, "P25.62");
 });
 
 test("render.thumbnail renderer-service plan reports not-configured availability without endpoint", () => {
@@ -5892,6 +6009,65 @@ test("render.thumbnail renderer-service package materialization approval audit e
     );
     assert.ok(auditEndorsementPolicy.requiredBeforeRuntimeDispatch.includes("define audit endorsement policy schema"));
     assertAuditEndorsementPolicyMetadataOnly(auditEndorsementPolicy);
+});
+
+test("render.thumbnail renderer-service package materialization approval audit countersignature policy stays metadata-only", () => {
+    const auditCountersignaturePolicy =
+        createRenderThumbnailRendererServicePackageMaterializationApprovalAuditCountersignaturePolicy({
+            packageMaterializationApprovalAuditEndorsementPolicy: {
+                status: "planned-disabled",
+                auditEndorsementVersion: "P25.61",
+                endorsementCreated: false,
+                endorsementRecordStored: false,
+            },
+            packageMaterializationApprovalAuditAccessPolicy: {
+                status: "planned-disabled",
+                auditAccessVersion: "P25.53",
+                auditRecordRead: false,
+                accessGranted: false,
+            },
+            packageMaterializationFinalApprovalChecklist: {
+                status: "planned-disabled",
+                checklistVersion: "P25.40",
+                finalApprovalGranted: false,
+            },
+        });
+
+    assert.equal(auditCountersignaturePolicy.status, "planned-disabled");
+    assert.equal(auditCountersignaturePolicy.dryRunOnly, true);
+    assert.equal(auditCountersignaturePolicy.approvalRequired, true);
+    assert.equal(auditCountersignaturePolicy.approved, false);
+    assert.equal(auditCountersignaturePolicy.finalApprovalGranted, false);
+    assert.equal(
+        auditCountersignaturePolicy.auditCountersignaturePolicy.policy,
+        "countersign-endorsement-after-endorsement-record-defined"
+    );
+    assert.equal(auditCountersignaturePolicy.auditCountersignaturePolicy.countersignaturePayloadLogged, false);
+    assert.ok(
+        auditCountersignaturePolicy.auditCountersignaturePolicy.requiredInputs.includes(
+            "trustedCountersignatureAuthority"
+        )
+    );
+    assert.ok(
+        auditCountersignaturePolicy.auditCountersignatureChecks.some(
+            (entry) => entry.id === "countersignature-not-created" && entry.executed === false
+        )
+    );
+    assert.equal(auditCountersignaturePolicy.auditCountersignatureDecision.status, "blocked");
+    assert.equal(auditCountersignaturePolicy.auditCountersignatureDecision.canCreateCountersignature, false);
+    assert.equal(auditCountersignaturePolicy.auditCountersignatureDecision.canStoreCountersignatureRecord, false);
+    assert.equal(auditCountersignaturePolicy.auditCountersignatureDecision.canCountersignEndorsement, false);
+    assert.ok(
+        auditCountersignaturePolicy.noOpGuarantees.includes(
+            "audit countersignature policy plan does not prepare, create, validate, store, or publish countersignatures"
+        )
+    );
+    assert.ok(
+        auditCountersignaturePolicy.requiredBeforeRuntimeDispatch.includes(
+            "define audit countersignature policy schema"
+        )
+    );
+    assertAuditCountersignaturePolicyMetadataOnly(auditCountersignaturePolicy);
 });
 
 test("render.thumbnail renderer-service client request scaffold adds MCP audit headers without dispatch", () => {
