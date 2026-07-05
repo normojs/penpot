@@ -250,6 +250,18 @@ creation, workspace mutation, lockfile mutation, command execution, build
 output, materialization approval, process startup, dispatch, network dispatch,
 runtime registration, and local file writes disabled.
 
+The P25.81 revocation appeal resolution enforcement evidence attestation
+notarization certification endorsement countersignature verification revocation
+appeal resolution enforcement evidence attestation notarization slice keeps
+notarization policy selection, subject/authority identification, notarization
+preparation, creation, validation, storage, publication, notarization record
+creation/storage/publication, attestation reads/notarization/verification,
+evidence, enforcement, resolution, appeal, revocation, countersignature, and
+audit record reads, notarization linking/verification/signing/hashing, file
+writes, package creation, workspace mutation, lockfile mutation, command
+execution, build output, materialization approval, process startup, dispatch,
+network dispatch, runtime registration, and local file writes disabled.
+
 P25.24 defines the health/no-op contract fixtures selected by that audit. Plans
 now include `healthNoopContractFixtures`, covering `/health` OK/unavailable
 responses and a no-op `thumbnail.render` response while keeping dispatch,
@@ -553,6 +565,8 @@ and
 `packageMaterializationApprovalAuditCountersignatureRevocationAppealResolutionEnforcementEvidenceAttestationNotarizationCertificationEndorsementCountersignatureVerificationRevocationAppealResolutionEnforcementEvidencePolicy`.
 P25.80 adds
 `packageMaterializationApprovalAuditCountersignatureRevocationAppealResolutionEnforcementEvidenceAttestationNotarizationCertificationEndorsementCountersignatureVerificationRevocationAppealResolutionEnforcementEvidenceAttestationPolicy`.
+P25.81 adds
+`packageMaterializationApprovalAuditCountersignatureRevocationAppealResolutionEnforcementEvidenceAttestationNotarizationCertificationEndorsementCountersignatureVerificationRevocationAppealResolutionEnforcementEvidenceAttestationNotarizationPolicy`.
 These cover future audit sinks, retention, access, integrity, provenance,
 custody, evidence, attestation, notarization, certification, endorsement, and
 countersignature/countersignature verification/countersignature revocation/
@@ -568,7 +582,8 @@ countersignature verification revocation appeal/endorsement countersignature
 verification revocation appeal resolution/endorsement countersignature
 verification revocation appeal resolution enforcement/endorsement
 countersignature verification revocation appeal resolution enforcement
-evidence metadata, including required inputs, checks,
+evidence/endorsement countersignature verification revocation appeal resolution
+enforcement evidence attestation notarization metadata, including required inputs, checks,
 blocked decisions, and no-op guarantees. The
 P25.65 revocation appeal slice keeps appeal policy
 selection, subject/authority identification, appeal reason capture,

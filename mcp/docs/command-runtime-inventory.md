@@ -647,6 +647,20 @@ audit record reads, countersignature linking/verification/signing/hashing,
 materialization approval, files written, command execution, build output,
 process startup, and runtime dispatch disabled.
 
+P25.81 extends the `render.thumbnail` renderer-service planning payload with
+`packageMaterializationApprovalAuditCountersignatureRevocationAppealResolutionEnforcementEvidenceAttestationNotarizationCertificationEndorsementCountersignatureVerificationRevocationAppealResolutionEnforcementEvidenceAttestationNotarizationPolicy`.
+MCP and CLI dry-run and unavailable execution payloads expose future audit
+countersignature revocation appeal resolution enforcement evidence attestation
+notarization certification endorsement countersignature verification revocation
+appeal resolution enforcement evidence attestation notarization metadata while
+keeping notarization policy selection, subject/authority identification,
+notarization prepare/create/validate/store/publish, notarization record
+storage/publication, attestation reads/notarization/verification, evidence,
+enforcement, resolution, appeal, revocation, countersignature, and audit record
+reads, notarization linking/verification/signing/hashing, materialization
+approval, files written, command execution, build output, process startup, and
+runtime dispatch disabled.
+
 ## MCP Tool Names Declared But Not Registered
 
 `ToolNames.ts` already names several planned tools that `PenpotMcpServer` does

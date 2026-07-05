@@ -203,6 +203,15 @@ attestation policies, identifying attestation subjects or authorities, creating
 or storing attestations or attestation bundles, reading, attesting, or verifying
 evidence records, reading evidence bundles, reading enforcement, resolution,
 appeal, revocation, countersignature, or audit records, or enabling dispatch.
+P25.81 defines package materialization approval audit countersignature
+revocation appeal resolution enforcement evidence attestation notarization
+certification endorsement countersignature verification revocation appeal
+resolution enforcement evidence attestation notarization policy metadata
+without selecting notarization policies, identifying notarization subjects or
+authorities, creating or storing notarizations or notarization records,
+reading, notarizing, or verifying attestations, reading evidence, enforcement,
+resolution, appeal, revocation, countersignature, or audit records, or enabling
+dispatch.
 
 ## Existing Surfaces
 

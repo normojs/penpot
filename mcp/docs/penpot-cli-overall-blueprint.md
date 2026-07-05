@@ -960,6 +960,34 @@ P25.80 is complete:
    `dispatch`, `networkDispatch`, `runtimeRegistration`, and
    `localFileWrites` remain false.
 
+P25.81 is complete:
+
+1. Shared plans include
+   `packageMaterializationApprovalAuditCountersignatureRevocationAppealResolutionEnforcementEvidenceAttestationNotarizationCertificationEndorsementCountersignatureVerificationRevocationAppealResolutionEnforcementEvidenceAttestationNotarizationPolicy`
+   metadata for future audit countersignature revocation appeal resolution
+   enforcement evidence attestation notarization certification endorsement
+   countersignature verification revocation appeal resolution enforcement
+   evidence attestation notarization policies, required notarization inputs,
+   notarization checks, blocked notarization decisions, and no-op guarantees.
+2. MCP and CLI expose this verification revocation appeal resolution
+   enforcement evidence attestation notarization policy plan in dry-run and
+   unavailable execution payloads without selecting notarization policies,
+   identifying notarization subjects or authorities, preparing, creating,
+   validating, storing, publishing, or recording notarizations, reading,
+   notarizing, or verifying attestations, reading evidence, enforcement,
+   resolution, appeal, revocation, countersignature, or audit records, granting
+   approval, creating package directories, writing files, mutating workspace
+   manifests, mutating lockfiles, running commands, emitting build output,
+   starting processes, or registering runtime dispatch.
+3. `countersignatureRevocationAppealResolutionEnforcementEvidenceAttestationNotarizationCertificationEndorsementCountersignatureVerificationRevocationAppealResolutionEnforcementEvidenceAttestationNotarizationPolicySelected`,
+   `countersignatureRevocationAppealResolutionEnforcementEvidenceAttestationNotarizationCertificationEndorsementCountersignatureVerificationRevocationAppealResolutionEnforcementEvidenceAttestationRead`,
+   `auditRecordRead`, `materializationApproved`, `approved`, and
+   `finalApprovalGranted` remain false, while `filesWritten`,
+   `fileMaterialization`, `workspaceMutation`, `lockfileMutation`,
+   `commandExecution`, `buildOutput`, `processSpawn`, `packageCreated`,
+   `dispatch`, `networkDispatch`, `runtimeRegistration`, and
+   `localFileWrites` remain false.
+
 P25.20 is complete:
 
 1. Shared plans include `executableAdapterRegistrationScaffold` metadata for
