@@ -1708,3 +1708,48 @@ countersignature policy:
   reading, countersigning, or verifying endorsements, reading or querying audit
   records, linking, verifying, signing, or hashing countersignatures,
   materializing files, starting processes, or enabling dispatch.
+
+P25.63 adds renderer-service package materialization approval audit
+countersignature verification policy:
+
+- Plans include
+  `packageMaterializationApprovalAuditCountersignatureVerificationPolicy`,
+  defining the future countersignature verification policy, required
+  verification inputs, verification checks, blocked verification decision, and
+  no-op guarantees.
+- The audit countersignature verification policy remains planning-only with
+  `countersignatureVerificationPolicySelected:false`,
+  `countersignatureVerificationSubjectIdentified:false`,
+  `countersignatureVerificationAuthorityIdentified:false`,
+  `countersignatureRead:false`, `countersignatureRecordRead:false`,
+  `countersignaturePayloadParsed:false`,
+  `countersignatureSignatureRead:false`,
+  `countersignatureSignatureVerified:false`,
+  `countersignatureHashComputed:false`,
+  `countersignatureHashMatched:false`,
+  `countersignatureChainLinked:false`,
+  `countersignatureChainVerified:false`,
+  `countersignatureVerificationPrepared:false`,
+  `countersignatureVerificationExecuted:false`,
+  `countersignatureVerificationStored:false`,
+  `countersignatureVerificationPublished:false`, `auditRecordRead:false`,
+  `auditRecordQueried:false`,
+  `auditRecordCountersignatureVerificationLinked:false`,
+  `auditRecordCountersignatureVerificationVerified:false`,
+  `countersignatureVerificationSignatureCreated:false`,
+  `countersignatureVerificationSignatureVerified:false`,
+  `countersignatureVerificationHashComputed:false`,
+  `countersignatureVerificationHashStored:false`,
+  `materializationApproved:false`, `approved:false`,
+  `finalApprovalGranted:false`, `filesWritten:false`,
+  `fileMaterialization:false`, `workspaceMutation:false`,
+  `lockfileMutation:false`, `commandExecution:false`, `buildOutput:false`,
+  `processSpawn:false`, `packageCreated:false`, `dispatch:false`,
+  `networkDispatch:false`, `runtimeRegistration:false`, and
+  `localFileWrites:false`.
+- MCP and CLI expose this policy in dry-run and unavailable execution JSON
+  without selecting verification policies, identifying subjects or authorities,
+  reading countersignatures or audit records, parsing payloads, verifying
+  signatures, computing hashes, linking verification chains, storing
+  verification results, materializing files, starting processes, or enabling
+  dispatch.

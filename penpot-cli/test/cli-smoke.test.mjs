@@ -504,6 +504,52 @@ function assertAuditCountersignaturePolicyMetadataOnly(policy) {
     assert.equal(policy.auditCountersignatureDecision.canComputeCountersignatureHash, false);
 }
 
+function assertAuditCountersignatureVerificationPolicyMetadataOnly(policy) {
+    assert.equal(policy.auditCountersignatureVerificationVersion, "P25.63");
+    for (const key of [
+        "countersignatureVerificationPolicySelected",
+        "countersignatureVerificationSubjectIdentified",
+        "countersignatureVerificationAuthorityIdentified",
+        "countersignatureRead",
+        "countersignatureRecordRead",
+        "countersignaturePayloadParsed",
+        "countersignatureSignatureRead",
+        "countersignatureSignatureVerified",
+        "countersignatureHashComputed",
+        "countersignatureHashMatched",
+        "countersignatureChainLinked",
+        "countersignatureChainVerified",
+        "countersignatureVerificationPrepared",
+        "countersignatureVerificationExecuted",
+        "countersignatureVerificationPassed",
+        "countersignatureVerificationFailed",
+        "countersignatureVerificationStored",
+        "countersignatureVerificationPublished",
+        "auditRecordRead",
+        "auditRecordQueried",
+        "auditRecordCountersignatureVerificationLinked",
+        "auditRecordCountersignatureVerificationVerified",
+        "countersignatureVerificationSignatureCreated",
+        "countersignatureVerificationSignatureVerified",
+        "countersignatureVerificationHashComputed",
+        "countersignatureVerificationHashStored",
+        "materializationApproved",
+        "dispatch",
+        "runtimeRegistration",
+        "localFileWrites",
+        "commandExecution",
+        "buildOutput",
+        "filesWritten",
+    ]) {
+        assert.equal(policy[key], false, key);
+    }
+    assert.equal(policy.auditCountersignatureVerificationDecision.canReadCountersignature, false);
+    assert.equal(policy.auditCountersignatureVerificationDecision.canVerifyCountersignatureSignature, false);
+    assert.equal(policy.auditCountersignatureVerificationDecision.canStoreCountersignatureVerification, false);
+    assert.equal(policy.auditCountersignatureVerificationDecision.canReadAuditRecord, false);
+    assert.equal(policy.auditCountersignatureVerificationDecision.canComputeCountersignatureVerificationHash, false);
+}
+
 function pickMcpConfigFields(data) {
     return {
         mode: data.mode,
@@ -3420,6 +3466,9 @@ test("render thumbnail dry-run returns renderer-service request plan", async () 
         assertAuditCertificationPolicyMetadataOnly(body.data.packageMaterializationApprovalAuditCertificationPolicy);
         assertAuditEndorsementPolicyMetadataOnly(body.data.packageMaterializationApprovalAuditEndorsementPolicy);
         assertAuditCountersignaturePolicyMetadataOnly(body.data.packageMaterializationApprovalAuditCountersignaturePolicy);
+        assertAuditCountersignatureVerificationPolicyMetadataOnly(
+            body.data.packageMaterializationApprovalAuditCountersignatureVerificationPolicy
+        );
         assert.equal(body.data.service.responseNormalization.successStatus, "ok");
         assert.equal(body.data.service.responseNormalization.localFileWrites, false);
         assert.equal(body.data.service.errorShape.code, "renderer_service_error");
@@ -3801,6 +3850,9 @@ test("render thumbnail execution reports renderer-service unavailable without ca
         assertAuditEndorsementPolicyMetadataOnly(body.error.data.packageMaterializationApprovalAuditEndorsementPolicy);
         assertAuditCountersignaturePolicyMetadataOnly(
             body.error.data.packageMaterializationApprovalAuditCountersignaturePolicy
+        );
+        assertAuditCountersignatureVerificationPolicyMetadataOnly(
+            body.error.data.packageMaterializationApprovalAuditCountersignatureVerificationPolicy
         );
         assert.equal(body.error.data.clientRequest.dispatch, false);
         assert.equal(body.error.data.serviceRequest.operation, "thumbnail.render");

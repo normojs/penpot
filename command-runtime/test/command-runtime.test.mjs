@@ -64,6 +64,7 @@ import {
     createRenderThumbnailRendererServicePackageMaterializationApprovalAuditCertificationPolicy,
     createRenderThumbnailRendererServicePackageMaterializationApprovalAuditEndorsementPolicy,
     createRenderThumbnailRendererServicePackageMaterializationApprovalAuditCountersignaturePolicy,
+    createRenderThumbnailRendererServicePackageMaterializationApprovalAuditCountersignatureVerificationPolicy,
     createRenderThumbnailRendererServicePackageFileTemplates,
     createRenderThumbnailRendererServicePackageManifestScaffold,
     createRenderThumbnailRendererServicePackageMaterializationChecklist,
@@ -1251,6 +1252,126 @@ function assertAuditCountersignaturePolicyMetadataOnly(policy) {
     }
 }
 
+function assertAuditCountersignatureVerificationPolicyMetadataOnly(policy) {
+    assert.equal(policy.auditCountersignatureVerificationVersion, "P25.63");
+    assert.equal(policy.countersignatureVerificationRequired, true);
+    assert.equal(policy.countersignatureVerificationPlanned, true);
+
+    for (const key of [
+        "countersignatureVerificationPolicySelected",
+        "countersignatureVerificationSubjectIdentified",
+        "countersignatureVerificationAuthorityIdentified",
+        "countersignatureRead",
+        "countersignatureRecordRead",
+        "countersignaturePayloadParsed",
+        "countersignatureSignatureRead",
+        "countersignatureSignatureVerified",
+        "countersignatureHashComputed",
+        "countersignatureHashMatched",
+        "countersignatureChainLinked",
+        "countersignatureChainVerified",
+        "countersignatureVerificationPrepared",
+        "countersignatureVerificationExecuted",
+        "countersignatureVerificationPassed",
+        "countersignatureVerificationFailed",
+        "countersignatureVerificationStored",
+        "countersignatureVerificationPublished",
+        "auditRecordRead",
+        "auditRecordQueried",
+        "auditRecordCountersignatureVerificationLinked",
+        "auditRecordCountersignatureVerificationVerified",
+        "countersignatureVerificationSignatureCreated",
+        "countersignatureVerificationSignatureVerified",
+        "countersignatureVerificationHashComputed",
+        "countersignatureVerificationHashStored",
+        "materializationApproved",
+        "dispatch",
+        "networkDispatch",
+        "runtimeRegistration",
+        "localFileWrites",
+        "hostStartup",
+        "processSpawn",
+        "packageCreated",
+        "workspaceMutation",
+        "scriptRunnable",
+        "fileMaterialization",
+        "lockfileMutation",
+        "rootPackageJsonMutation",
+        "pnpmWorkspaceMutation",
+        "commandExecution",
+        "buildOutput",
+        "packageScriptsRunnable",
+        "filesWritten",
+    ]) {
+        assert.equal(policy[key], false, key);
+    }
+
+    assert.equal(policy.consumes.packageMaterializationApprovalAuditCountersignaturePolicy.auditCountersignatureVersion, "P25.62");
+    assert.equal(policy.consumes.packageMaterializationApprovalAuditAccessPolicy.auditAccessVersion, "P25.53");
+    assert.equal(policy.consumes.packageMaterializationFinalApprovalChecklist.checklistVersion, "P25.40");
+
+    for (const key of [
+        "selectCountersignatureVerificationPolicyNow",
+        "identifyCountersignatureVerificationSubjectNow",
+        "identifyCountersignatureVerificationAuthorityNow",
+        "readCountersignatureNow",
+        "readCountersignatureRecordNow",
+        "parseCountersignaturePayloadNow",
+        "readCountersignatureSignatureNow",
+        "verifyCountersignatureSignatureNow",
+        "computeCountersignatureHashNow",
+        "matchCountersignatureHashNow",
+        "linkCountersignatureChainNow",
+        "verifyCountersignatureChainNow",
+        "prepareCountersignatureVerificationNow",
+        "executeCountersignatureVerificationNow",
+        "storeCountersignatureVerificationNow",
+        "publishCountersignatureVerificationNow",
+        "readAuditRecordNow",
+        "queryAuditRecordNow",
+        "linkAuditRecordCountersignatureVerificationNow",
+        "verifyAuditRecordCountersignatureVerificationNow",
+        "signCountersignatureVerificationNow",
+        "verifyCountersignatureVerificationSignatureNow",
+        "computeCountersignatureVerificationHashNow",
+        "storeCountersignatureVerificationHashNow",
+    ]) {
+        assert.equal(policy.auditCountersignatureVerificationPolicy[key], false, key);
+    }
+
+    for (const key of [
+        "canSelectCountersignatureVerificationPolicy",
+        "canIdentifyCountersignatureVerificationSubject",
+        "canIdentifyCountersignatureVerificationAuthority",
+        "canReadCountersignature",
+        "canReadCountersignatureRecord",
+        "canParseCountersignaturePayload",
+        "canReadCountersignatureSignature",
+        "canVerifyCountersignatureSignature",
+        "canComputeCountersignatureHash",
+        "canMatchCountersignatureHash",
+        "canLinkCountersignatureChain",
+        "canVerifyCountersignatureChain",
+        "canPrepareCountersignatureVerification",
+        "canExecuteCountersignatureVerification",
+        "canPassCountersignatureVerification",
+        "canStoreCountersignatureVerification",
+        "canPublishCountersignatureVerification",
+        "canReadAuditRecord",
+        "canQueryAuditRecord",
+        "canLinkAuditRecordCountersignatureVerification",
+        "canVerifyAuditRecordCountersignatureVerification",
+        "canSignCountersignatureVerification",
+        "canVerifyCountersignatureVerificationSignature",
+        "canComputeCountersignatureVerificationHash",
+        "canStoreCountersignatureVerificationHash",
+        "canMaterializeFiles",
+        "canEnableRuntimeDispatch",
+    ]) {
+        assert.equal(policy.auditCountersignatureVerificationDecision[key], false, key);
+    }
+}
+
 test("descriptor groups expose stable command ids", () => {
     assert.deepEqual(
         LowRiskCommandDescriptors.map((descriptor) => descriptor.id),
@@ -1943,6 +2064,8 @@ test("render.thumbnail renderer-service API fixtures define planning requests wi
     assertAuditEndorsementPolicyMetadataOnly(renderThumbnailRuntimeBoundaryFixtures.packageMaterializationApprovalAuditEndorsementPolicy);
     assertAuditCountersignaturePolicyMetadataOnly(fixtures.serviceApi.packageMaterializationApprovalAuditCountersignaturePolicy);
     assertAuditCountersignaturePolicyMetadataOnly(renderThumbnailRuntimeBoundaryFixtures.packageMaterializationApprovalAuditCountersignaturePolicy);
+    assertAuditCountersignatureVerificationPolicyMetadataOnly(fixtures.serviceApi.packageMaterializationApprovalAuditCountersignatureVerificationPolicy);
+    assertAuditCountersignatureVerificationPolicyMetadataOnly(renderThumbnailRuntimeBoundaryFixtures.packageMaterializationApprovalAuditCountersignatureVerificationPolicy);
     assert.deepEqual(fixtures.runtimeRegistration.commandDescriptorAdapters, ["renderer-service"]);
     assert.deepEqual(CommandDescriptors.RENDER_THUMBNAIL.adapters, ["renderer-service"]);
     assert.equal(fixtures.runtimeRegistration.mcpToolRegistered, true);
@@ -3093,6 +3216,8 @@ test("render.thumbnail renderer-service plan exposes dry-run client request whil
     assert.deepEqual(plan.service.packageMaterializationApprovalAuditEndorsementPolicy, plan.packageMaterializationApprovalAuditEndorsementPolicy);
     assertAuditCountersignaturePolicyMetadataOnly(plan.packageMaterializationApprovalAuditCountersignaturePolicy);
     assert.deepEqual(plan.service.packageMaterializationApprovalAuditCountersignaturePolicy, plan.packageMaterializationApprovalAuditCountersignaturePolicy);
+    assertAuditCountersignatureVerificationPolicyMetadataOnly(plan.packageMaterializationApprovalAuditCountersignatureVerificationPolicy);
+    assert.deepEqual(plan.service.packageMaterializationApprovalAuditCountersignatureVerificationPolicy, plan.packageMaterializationApprovalAuditCountersignatureVerificationPolicy);
     assert.equal(plan.clientRequest.status, "scaffolded");
     assert.equal(plan.clientRequest.dispatch, false);
     assert.equal(plan.clientRequest.method, "POST");
@@ -3171,6 +3296,7 @@ test("render.thumbnail renderer-service plan exposes dry-run client request whil
     assert.equal(plan.diagnostics.packageMaterializationApprovalAuditCertificationPolicyVersion, "P25.60");
     assert.equal(plan.diagnostics.packageMaterializationApprovalAuditEndorsementPolicyVersion, "P25.61");
     assert.equal(plan.diagnostics.packageMaterializationApprovalAuditCountersignaturePolicyVersion, "P25.62");
+    assert.equal(plan.diagnostics.packageMaterializationApprovalAuditCountersignatureVerificationPolicyVersion, "P25.63");
 });
 
 test("render.thumbnail renderer-service plan reports not-configured availability without endpoint", () => {
@@ -6068,6 +6194,68 @@ test("render.thumbnail renderer-service package materialization approval audit c
         )
     );
     assertAuditCountersignaturePolicyMetadataOnly(auditCountersignaturePolicy);
+});
+
+test("render.thumbnail renderer-service package materialization approval audit countersignature verification policy stays metadata-only", () => {
+    const auditCountersignatureVerificationPolicy =
+        createRenderThumbnailRendererServicePackageMaterializationApprovalAuditCountersignatureVerificationPolicy({
+            packageMaterializationApprovalAuditCountersignaturePolicy: {
+                status: "planned-disabled",
+                auditCountersignatureVersion: "P25.62",
+                countersignatureCreated: false,
+                countersignatureRecordStored: false,
+            },
+            packageMaterializationApprovalAuditAccessPolicy: {
+                status: "planned-disabled",
+                auditAccessVersion: "P25.53",
+                auditRecordRead: false,
+                accessGranted: false,
+            },
+            packageMaterializationFinalApprovalChecklist: {
+                status: "planned-disabled",
+                checklistVersion: "P25.40",
+                finalApprovalGranted: false,
+            },
+        });
+
+    assert.equal(auditCountersignatureVerificationPolicy.status, "planned-disabled");
+    assert.equal(auditCountersignatureVerificationPolicy.dryRunOnly, true);
+    assert.equal(auditCountersignatureVerificationPolicy.approvalRequired, true);
+    assert.equal(auditCountersignatureVerificationPolicy.approved, false);
+    assert.equal(auditCountersignatureVerificationPolicy.finalApprovalGranted, false);
+    assert.equal(
+        auditCountersignatureVerificationPolicy.auditCountersignatureVerificationPolicy.policy,
+        "verify-countersignature-after-countersignature-record-defined"
+    );
+    assert.equal(
+        auditCountersignatureVerificationPolicy.auditCountersignatureVerificationPolicy.countersignatureVerificationPayloadLogged,
+        false
+    );
+    assert.ok(
+        auditCountersignatureVerificationPolicy.auditCountersignatureVerificationPolicy.requiredInputs.includes(
+            "trustedCountersignatureVerificationAuthority"
+        )
+    );
+    assert.ok(
+        auditCountersignatureVerificationPolicy.auditCountersignatureVerificationChecks.some(
+            (entry) => entry.id === "countersignature-signature-not-verified" && entry.executed === false
+        )
+    );
+    assert.equal(auditCountersignatureVerificationPolicy.auditCountersignatureVerificationDecision.status, "blocked");
+    assert.equal(auditCountersignatureVerificationPolicy.auditCountersignatureVerificationDecision.canReadCountersignature, false);
+    assert.equal(auditCountersignatureVerificationPolicy.auditCountersignatureVerificationDecision.canVerifyCountersignatureSignature, false);
+    assert.equal(auditCountersignatureVerificationPolicy.auditCountersignatureVerificationDecision.canStoreCountersignatureVerification, false);
+    assert.ok(
+        auditCountersignatureVerificationPolicy.noOpGuarantees.includes(
+            "audit countersignature verification policy plan does not read or verify countersignature signatures"
+        )
+    );
+    assert.ok(
+        auditCountersignatureVerificationPolicy.requiredBeforeRuntimeDispatch.includes(
+            "define audit countersignature verification policy schema"
+        )
+    );
+    assertAuditCountersignatureVerificationPolicyMetadataOnly(auditCountersignatureVerificationPolicy);
 });
 
 test("render.thumbnail renderer-service client request scaffold adds MCP audit headers without dispatch", () => {

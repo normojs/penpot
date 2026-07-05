@@ -1,6 +1,6 @@
 # Render Thumbnail Contract
 
-Status: P25.4 descriptor contract; P25.62 MCP/CLI renderer-service dry-run
+Status: P25.4 descriptor contract; P25.63 MCP/CLI renderer-service dry-run
 boundaries, metadata-only availability probes, response normalization
 contracts, disabled client request scaffolding, closed execution gate, disabled
 health preflight, executable client harness plan, and dispatch adapter boundary
@@ -815,6 +815,33 @@ Shared contract shape:
   validate, store, or publish countersignatures, create countersignature records,
   read, countersign, or verify endorsements, read or query audit records, sign or
   hash countersignatures, grant approval, or materialize files.
+- P25.63 package materialization approval audit countersignature verification
+  policy fields are planning-only. They define future countersignature
+  verification policies, required verification inputs, verification checks,
+  blocked verification decisions, and no-op guarantees while keeping
+  `packageMaterializationApprovalAuditCountersignatureVerificationPolicy.countersignatureVerificationPolicySelected:false`,
+  `packageMaterializationApprovalAuditCountersignatureVerificationPolicy.countersignatureVerificationSubjectIdentified:false`,
+  `packageMaterializationApprovalAuditCountersignatureVerificationPolicy.countersignatureVerificationAuthorityIdentified:false`,
+  `packageMaterializationApprovalAuditCountersignatureVerificationPolicy.countersignatureRead:false`,
+  `packageMaterializationApprovalAuditCountersignatureVerificationPolicy.countersignatureRecordRead:false`,
+  `packageMaterializationApprovalAuditCountersignatureVerificationPolicy.countersignaturePayloadParsed:false`,
+  `packageMaterializationApprovalAuditCountersignatureVerificationPolicy.countersignatureSignatureVerified:false`,
+  `packageMaterializationApprovalAuditCountersignatureVerificationPolicy.countersignatureHashComputed:false`,
+  `packageMaterializationApprovalAuditCountersignatureVerificationPolicy.countersignatureHashMatched:false`,
+  `packageMaterializationApprovalAuditCountersignatureVerificationPolicy.countersignatureChainVerified:false`,
+  `packageMaterializationApprovalAuditCountersignatureVerificationPolicy.countersignatureVerificationExecuted:false`,
+  `packageMaterializationApprovalAuditCountersignatureVerificationPolicy.countersignatureVerificationStored:false`,
+  `packageMaterializationApprovalAuditCountersignatureVerificationPolicy.auditRecordRead:false`,
+  `packageMaterializationApprovalAuditCountersignatureVerificationPolicy.auditRecordQueried:false`,
+  `packageMaterializationApprovalAuditCountersignatureVerificationPolicy.countersignatureVerificationHashComputed:false`,
+  `approved:false`, `finalApprovalGranted:false`, `filesWritten:false`,
+  `fileMaterialization:false`, `workspaceMutation:false`,
+  `commandExecution:false`, `buildOutput:false`,
+  `runtimeRegistration:false`, and `localFileWrites:false`. They do not select
+  verification policies, identify subjects or authorities, read
+  countersignatures or audit records, parse payloads, verify signatures, compute
+  hashes, link chains, store verification results, grant approval, or
+  materialize files.
 - Exporter service execution is out of scope for this command unless a later
   task explicitly maps thumbnail rendering to exporter-compatible semantics.
 - P25.6 selects a future dedicated thumbnail renderer service as the executable
@@ -829,7 +856,7 @@ See `render-thumbnail-runtime-boundary.md` and
 audit, resource-return rules, cache refresh behavior, auth expectations, and
 future test strategy.
 See `render-thumbnail-renderer-service-api.md` and
-`render-thumbnail-renderer-service-fixtures.json` for the P25.62 future
+`render-thumbnail-renderer-service-fixtures.json` for the P25.63 future
 renderer-service request/response API, MCP/CLI dry-run/client boundary, and
 metadata-only availability probe plus response/error normalization and disabled
 client request, execution gate, health preflight, and execution harness
@@ -844,7 +871,8 @@ guardrails, package file templates, package workspace wiring, package build
   binding/operator confirmation/emergency stop/readiness verdict/execution
   handoff/post-handoff audit policies, and package materialization approval
   audit retention/access/integrity/provenance/custody/evidence/attestation/
-  notarization/certification/endorsement/countersignature policies.
+  notarization/certification/endorsement/countersignature/countersignature
+  verification policies.
 
 ## Fixtures
 

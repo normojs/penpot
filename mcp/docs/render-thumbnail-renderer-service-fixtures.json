@@ -1,7 +1,7 @@
 {
-  "version": "P25.62",
+  "version": "P25.63",
   "command": "render.thumbnail",
-  "status": "renderer-service API fixtures with MCP/CLI dry-run/client boundaries, metadata-only availability probes, response normalization contracts, disabled client request scaffold, explicit execution gate, health preflight plan, executable client harness plan, dispatch adapter boundary, opt-in configuration surfaces, unavailable error taxonomy, integration fixture harness, dispatch registration preflight, disabled executable adapter registration scaffold, disabled adapter registry manifest, final disabled enablement checklist, implementation slice audit, health/no-op contract fixtures, no-op service host scaffold, host lifecycle test fixtures, package manifest scaffold, package creation guardrails, package file templates, package workspace wiring, package build verification, package materialization checklist, package creation dry-run summary, package creation file manifest, package materialization approval gate, package materialization execution dry-run, package materialization write contract, package materialization rollback contract, package materialization verification manifest, package materialization final approval checklist, package materialization explicit approval token, package materialization approval audit trail, package materialization approval replay guard, package materialization approval expiry policy, package materialization approval revocation policy, package materialization approval scope binding policy, package materialization approval operator confirmation policy, package materialization approval emergency stop policy, package materialization approval readiness verdict policy, package materialization approval execution handoff policy, package materialization approval post-handoff audit policy, package materialization approval audit retention policy, package materialization approval audit access policy, package materialization approval audit integrity policy, package materialization approval audit provenance policy, package materialization approval audit custody policy, package materialization approval audit evidence policy, package materialization approval audit attestation policy, package materialization approval audit notarization policy, package materialization approval audit certification policy, package materialization approval audit endorsement policy, and package materialization approval audit countersignature policy; runtime execution blocked",
+  "status": "renderer-service API fixtures with MCP/CLI dry-run/client boundaries, metadata-only availability probes, response normalization contracts, disabled client request scaffold, explicit execution gate, health preflight plan, executable client harness plan, dispatch adapter boundary, opt-in configuration surfaces, unavailable error taxonomy, integration fixture harness, dispatch registration preflight, disabled executable adapter registration scaffold, disabled adapter registry manifest, final disabled enablement checklist, implementation slice audit, health/no-op contract fixtures, no-op service host scaffold, host lifecycle test fixtures, package manifest scaffold, package creation guardrails, package file templates, package workspace wiring, package build verification, package materialization checklist, package creation dry-run summary, package creation file manifest, package materialization approval gate, package materialization execution dry-run, package materialization write contract, package materialization rollback contract, package materialization verification manifest, package materialization final approval checklist, package materialization explicit approval token, package materialization approval audit trail, package materialization approval replay guard, package materialization approval expiry policy, package materialization approval revocation policy, package materialization approval scope binding policy, package materialization approval operator confirmation policy, package materialization approval emergency stop policy, package materialization approval readiness verdict policy, package materialization approval execution handoff policy, package materialization approval post-handoff audit policy, package materialization approval audit retention policy, package materialization approval audit access policy, package materialization approval audit integrity policy, package materialization approval audit provenance policy, package materialization approval audit custody policy, package materialization approval audit evidence policy, package materialization approval audit attestation policy, package materialization approval audit notarization policy, package materialization approval audit certification policy, package materialization approval audit endorsement policy, package materialization approval audit countersignature policy, and package materialization approval audit countersignature verification policy; runtime execution blocked",
   "adapter": "renderer-service",
   "runtimeRegistration": {
     "mcpToolRegistered": true,
@@ -6907,6 +6907,227 @@
         "define countersignature signature and hash semantics",
         "keep render.thumbnail unavailable until executable adapter registration is approved"
       ]
+    },
+    "packageMaterializationApprovalAuditCountersignatureVerificationPolicy": {
+      "status": "planned-disabled",
+      "auditCountersignatureVerificationVersion": "P25.63",
+      "adapter": "renderer-service",
+      "command": "render.thumbnail",
+      "dryRunOnly": true,
+      "approvalRequired": true,
+      "approved": false,
+      "finalApprovalGranted": false,
+      "countersignatureVerificationRequired": true,
+      "countersignatureVerificationPlanned": true,
+      "countersignatureVerificationPolicySelected": false,
+      "countersignatureVerificationSubjectIdentified": false,
+      "countersignatureVerificationAuthorityIdentified": false,
+      "countersignatureRead": false,
+      "countersignatureRecordRead": false,
+      "countersignaturePayloadParsed": false,
+      "countersignatureSignatureRead": false,
+      "countersignatureSignatureVerified": false,
+      "countersignatureHashComputed": false,
+      "countersignatureHashMatched": false,
+      "countersignatureChainLinked": false,
+      "countersignatureChainVerified": false,
+      "countersignatureVerificationPrepared": false,
+      "countersignatureVerificationExecuted": false,
+      "countersignatureVerificationPassed": false,
+      "countersignatureVerificationFailed": false,
+      "countersignatureVerificationStored": false,
+      "countersignatureVerificationPublished": false,
+      "auditRecordRead": false,
+      "auditRecordQueried": false,
+      "auditRecordCountersignatureVerificationLinked": false,
+      "auditRecordCountersignatureVerificationVerified": false,
+      "countersignatureVerificationSignatureCreated": false,
+      "countersignatureVerificationSignatureVerified": false,
+      "countersignatureVerificationHashComputed": false,
+      "countersignatureVerificationHashStored": false,
+      "materializationReady": false,
+      "materializationApproved": false,
+      "materializationApprovedNow": false,
+      "tokenAccepted": false,
+      "tokenStored": false,
+      "tokenValidated": false,
+      "tokenConsumed": false,
+      "tokenRevoked": false,
+      "executeNow": false,
+      "verifyNow": false,
+      "rollbackNow": false,
+      "dispatch": false,
+      "networkDispatch": false,
+      "runtimeRegistration": false,
+      "localFileWrites": false,
+      "hostStartup": false,
+      "processSpawn": false,
+      "packageCreated": false,
+      "workspaceMutation": false,
+      "scriptRunnable": false,
+      "fileMaterialization": false,
+      "lockfileMutation": false,
+      "rootPackageJsonMutation": false,
+      "pnpmWorkspaceMutation": false,
+      "commandExecution": false,
+      "buildOutput": false,
+      "packageScriptsRunnable": false,
+      "filesWritten": false,
+      "rollbackExecuted": false,
+      "verificationExecuted": false,
+      "consumes": {
+        "packageMaterializationApprovalAuditCountersignaturePolicy": {
+          "requiredStatus": "planned-disabled",
+          "currentStatus": "planned-disabled",
+          "auditCountersignatureVersion": "P25.62",
+          "countersignatureCreated": false,
+          "countersignatureRecordStored": false
+        },
+        "packageMaterializationApprovalAuditAccessPolicy": {
+          "requiredStatus": "planned-disabled",
+          "currentStatus": "planned-disabled",
+          "auditAccessVersion": "P25.53",
+          "auditRecordRead": false,
+          "accessGranted": false
+        },
+        "packageMaterializationFinalApprovalChecklist": {
+          "requiredStatus": "planned-disabled",
+          "currentStatus": "planned-disabled",
+          "checklistVersion": "P25.40",
+          "finalApprovalGranted": false
+        }
+      },
+      "auditCountersignatureVerificationPolicy": {
+        "policy": "verify-countersignature-after-countersignature-record-defined",
+        "selectCountersignatureVerificationPolicyNow": false,
+        "identifyCountersignatureVerificationSubjectNow": false,
+        "identifyCountersignatureVerificationAuthorityNow": false,
+        "readCountersignatureNow": false,
+        "readCountersignatureRecordNow": false,
+        "parseCountersignaturePayloadNow": false,
+        "readCountersignatureSignatureNow": false,
+        "verifyCountersignatureSignatureNow": false,
+        "computeCountersignatureHashNow": false,
+        "matchCountersignatureHashNow": false,
+        "linkCountersignatureChainNow": false,
+        "verifyCountersignatureChainNow": false,
+        "prepareCountersignatureVerificationNow": false,
+        "executeCountersignatureVerificationNow": false,
+        "storeCountersignatureVerificationNow": false,
+        "publishCountersignatureVerificationNow": false,
+        "readAuditRecordNow": false,
+        "queryAuditRecordNow": false,
+        "linkAuditRecordCountersignatureVerificationNow": false,
+        "verifyAuditRecordCountersignatureVerificationNow": false,
+        "signCountersignatureVerificationNow": false,
+        "verifyCountersignatureVerificationSignatureNow": false,
+        "computeCountersignatureVerificationHashNow": false,
+        "storeCountersignatureVerificationHashNow": false,
+        "requiredInputs": [
+          "countersignatureRecord",
+          "auditAccessGrant",
+          "countersignatureVerificationPolicyId",
+          "trustedCountersignatureVerificationAuthority"
+        ],
+        "countersignatureVerificationPolicyId": "future-materialization-audit-countersignature-verification",
+        "countersignatureVerificationScope": "future-policy-defined",
+        "countersignatureVerificationPayloadLogged": false
+      },
+      "auditCountersignatureVerificationChecks": [
+        {
+          "id": "countersignature-record-present",
+          "required": true,
+          "planned": true,
+          "executed": false,
+          "passed": false
+        },
+        {
+          "id": "audit-access-granted",
+          "required": true,
+          "planned": true,
+          "executed": false,
+          "passed": false
+        },
+        {
+          "id": "countersignature-verification-policy-selected",
+          "required": true,
+          "planned": true,
+          "executed": false,
+          "passed": false
+        },
+        {
+          "id": "countersignature-signature-not-verified",
+          "required": true,
+          "planned": true,
+          "executed": false,
+          "passed": false
+        },
+        {
+          "id": "countersignature-verification-not-stored",
+          "required": true,
+          "planned": true,
+          "executed": false,
+          "passed": false
+        }
+      ],
+      "auditCountersignatureVerificationDecision": {
+        "status": "blocked",
+        "canSelectCountersignatureVerificationPolicy": false,
+        "canIdentifyCountersignatureVerificationSubject": false,
+        "canIdentifyCountersignatureVerificationAuthority": false,
+        "canReadCountersignature": false,
+        "canReadCountersignatureRecord": false,
+        "canParseCountersignaturePayload": false,
+        "canReadCountersignatureSignature": false,
+        "canVerifyCountersignatureSignature": false,
+        "canComputeCountersignatureHash": false,
+        "canMatchCountersignatureHash": false,
+        "canLinkCountersignatureChain": false,
+        "canVerifyCountersignatureChain": false,
+        "canPrepareCountersignatureVerification": false,
+        "canExecuteCountersignatureVerification": false,
+        "canPassCountersignatureVerification": false,
+        "canStoreCountersignatureVerification": false,
+        "canPublishCountersignatureVerification": false,
+        "canReadAuditRecord": false,
+        "canQueryAuditRecord": false,
+        "canLinkAuditRecordCountersignatureVerification": false,
+        "canVerifyAuditRecordCountersignatureVerification": false,
+        "canSignCountersignatureVerification": false,
+        "canVerifyCountersignatureVerificationSignature": false,
+        "canComputeCountersignatureVerificationHash": false,
+        "canStoreCountersignatureVerificationHash": false,
+        "canMaterializeFiles": false,
+        "canEnableRuntimeDispatch": false,
+        "reason": "audit countersignature verification policy is metadata-only and no countersignature record or access grant has been established"
+      },
+      "noOpGuarantees": [
+        "audit countersignature verification policy plan does not select countersignature verification policies",
+        "audit countersignature verification policy plan does not identify countersignature verification subjects or authorities",
+        "audit countersignature verification policy plan does not read countersignatures or countersignature records",
+        "audit countersignature verification policy plan does not parse countersignature payloads",
+        "audit countersignature verification policy plan does not read or verify countersignature signatures",
+        "audit countersignature verification policy plan does not compute or match countersignature hashes",
+        "audit countersignature verification policy plan does not link or verify countersignature chains",
+        "audit countersignature verification policy plan does not prepare, execute, store, or publish countersignature verification results",
+        "audit countersignature verification policy plan does not read or query audit records",
+        "audit countersignature verification policy plan does not link or verify audit record countersignature verifications",
+        "audit countersignature verification policy plan does not sign or verify countersignature verification signatures",
+        "audit countersignature verification policy plan does not compute or store countersignature verification hashes",
+        "audit countersignature verification policy plan does not create renderer-service directory",
+        "audit countersignature verification policy plan does not write package or workspace files",
+        "audit countersignature verification policy plan does not mutate lockfiles",
+        "audit countersignature verification policy plan does not run commands",
+        "audit countersignature verification policy plan does not generate build output",
+        "audit countersignature verification policy plan does not register runtime dispatch"
+      ],
+      "requiredBeforeRuntimeDispatch": [
+        "define audit countersignature verification policy schema",
+        "require countersignature record and access grant before verification",
+        "define trusted countersignature verification authority and result semantics",
+        "define countersignature verification signature and hash semantics",
+        "keep render.thumbnail unavailable until executable adapter registration is approved"
+      ]
     }
   },
   "registrationGates": {
@@ -7207,7 +7428,8 @@
     "dry-run and unavailable execution expose final disabled enablement checklist metadata without enabling execution",
     "rejects unsupported adapters while render.thumbnail runtime execution is unavailable",
     "reports structured errors for missing frame target before runtime dispatch",
-    "package materialization approval audit endorsement policy survives dry-run and unavailable execution JSON output"
+    "package materialization approval audit endorsement policy survives dry-run and unavailable execution JSON output",
+    "package materialization approval audit countersignature verification policy survives dry-run and unavailable execution JSON output"
   ],
   "futureMcpTests": [
     "returns resource metadata without MCP server file writes after renderer-service execution exists",
@@ -7225,7 +7447,8 @@
     "forwards caller auth and MCP audit context to renderer-service",
     "reports structured errors for missing resourceUri",
     "package materialization approval audit endorsement policy survives dry-run and unavailable execution JSON output",
-    "package materialization approval audit countersignature policy survives dry-run and unavailable execution JSON output"
+    "package materialization approval audit countersignature policy survives dry-run and unavailable execution JSON output",
+    "package materialization approval audit countersignature verification policy survives dry-run and unavailable execution JSON output"
   ],
   "futureCliTests": [
     "dry-run prints the renderer-service request without rendering",
@@ -7257,11 +7480,12 @@
     "--output downloads the returned PNG resource",
     "missing token fails before contacting renderer-service",
     "package materialization approval audit endorsement policy survives dry-run and unavailable execution JSON output",
-    "package materialization approval audit countersignature policy survives dry-run and unavailable execution JSON output"
+    "package materialization approval audit countersignature policy survives dry-run and unavailable execution JSON output",
+    "package materialization approval audit countersignature verification policy survives dry-run and unavailable execution JSON output"
   ],
   "nextTask": {
-    "id": "P25.63",
-    "title": "Plan renderer-service package materialization approval audit countersignature verification policy",
+    "id": "P25.64",
+    "title": "Plan renderer-service package materialization approval audit countersignature revocation policy",
     "status": "pending"
   }
 }
