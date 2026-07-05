@@ -157,6 +157,19 @@ confirmation token issuance, token validation/acceptance/consumption, approval,
 file writes, workspace mutation, command execution, build output, package
 creation, process startup, and runtime registration disabled.
 
+P25.77 extends the `render.thumbnail` renderer-service planning payload with
+`packageMaterializationApprovalAuditCountersignatureRevocationAppealResolutionEnforcementEvidenceAttestationNotarizationCertificationEndorsementCountersignatureVerificationRevocationAppealResolutionPolicy`.
+MCP and CLI dry-run and unavailable execution payloads expose future audit
+countersignature revocation appeal resolution enforcement evidence attestation
+notarization certification endorsement countersignature verification revocation
+appeal resolution metadata while keeping resolution policy selection,
+subject/authority identification, appeal reads, appeal record reads, resolution
+reason capture, scope computation, outcome selection, resolution preparation/
+storage/execution/publication, appeal resolution decisions, resolution record
+storage/publication, countersignature and audit record reads, materialization
+approval, files written, command execution, build output, process startup, and
+runtime registration disabled.
+
 P25.48 extends the `render.thumbnail` renderer-service planning payload with
 metadata-only package materialization approval emergency stop policy. It defines
 future trusted stop source, stop scope, stop registry, and blocked stop

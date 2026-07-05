@@ -2008,6 +2008,23 @@ notarization policy:
   command execution, build output, process startup, and runtime dispatch
   disabled.
 
+P25.77 adds renderer-service package materialization approval audit countersignature revocation appeal resolution enforcement evidence attestation notarization certification endorsement countersignature verification revocation appeal resolution policy:
+
+- Plans include
+  `packageMaterializationApprovalAuditCountersignatureRevocationAppealResolutionEnforcementEvidenceAttestationNotarizationCertificationEndorsementCountersignatureVerificationRevocationAppealResolutionPolicy`,
+  defining future endorsement countersignature verification revocation appeal
+  resolution metadata, required resolution inputs, resolution checks, blocked
+  resolution decisions, and no-op guarantees.
+- MCP and CLI expose this verification revocation appeal resolution policy in
+  dry-run and unavailable execution JSON while keeping resolution policy
+  selection, subject/authority identification, appeal reads, appeal record
+  reads, resolution reason capture, scope computation, outcome selection,
+  resolution preparation/storage/execution/publication, appeal accepted/rejected
+  decisions, resolution record creation/storage/publication, countersignature
+  reads, audit-record reads, file writes, package creation, workspace mutation,
+  command execution, build output, process startup, and runtime dispatch
+  disabled.
+
 P25.71 adds renderer-service package materialization approval audit
 countersignature revocation appeal resolution enforcement evidence attestation
 notarization certification policy:

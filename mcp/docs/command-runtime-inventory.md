@@ -541,6 +541,19 @@ reads, verification result storage/publication, materialization approval, files
 written, command execution, build output, process startup, and runtime dispatch
 disabled.
 
+P25.77 extends the `render.thumbnail` renderer-service planning payload with
+`packageMaterializationApprovalAuditCountersignatureRevocationAppealResolutionEnforcementEvidenceAttestationNotarizationCertificationEndorsementCountersignatureVerificationRevocationAppealResolutionPolicy`.
+MCP and CLI dry-run and unavailable execution payloads expose future audit
+countersignature revocation appeal resolution enforcement evidence attestation
+notarization certification endorsement countersignature verification revocation
+appeal resolution metadata while keeping resolution policy selection,
+subject/authority identification, appeal reads, appeal record reads, resolution
+reason capture, scope computation, outcome selection, resolution preparation/
+storage/execution/publication, appeal resolution decisions, resolution record
+storage/publication, countersignature and audit record reads, materialization
+approval, files written, command execution, build output, process startup, and
+runtime dispatch disabled.
+
 P25.75 extends the `render.thumbnail` renderer-service planning payload with
 `packageMaterializationApprovalAuditCountersignatureRevocationAppealResolutionEnforcementEvidenceAttestationNotarizationCertificationEndorsementCountersignatureVerificationRevocationPolicy`.
 MCP and CLI dry-run and unavailable execution payloads expose future audit
@@ -711,8 +724,11 @@ not register yet:
   verification revocation policy, and P25.76 package materialization approval
   audit countersignature revocation appeal resolution enforcement evidence
   attestation notarization certification endorsement countersignature
-  verification revocation appeal policy while runtime execution remains
-  unavailable
+  verification revocation appeal policy, and P25.77 package materialization approval
+  audit countersignature revocation appeal resolution enforcement evidence
+  attestation notarization certification endorsement countersignature
+  verification revocation appeal resolution policy while runtime execution
+  remains unavailable
 - debug: `debug.get_plugin_state`, `debug.get_agent_logs`
 
 Do not migrate these as executable descriptors until their implementation is

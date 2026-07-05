@@ -203,6 +203,18 @@ P25.23 audits the first concrete implementation slice. Plans now include
 contract fixture slice and keeps dispatch, network dispatch, runtime
 registration, and local file writes disabled.
 
+The P25.77 revocation appeal resolution enforcement evidence attestation
+notarization certification endorsement countersignature verification revocation
+appeal resolution slice keeps resolution policy selection, subject/authority
+identification, appeal reads, appeal record reads, resolution reason capture,
+scope computation, outcome selection, resolution preparation/storage/execution/
+publication, appeal accepted/rejected decisions, resolution record creation/
+storage/publication, countersignature and audit record reads, resolution
+linking/verification/signing/hashing, file writes, package creation, workspace
+mutation, lockfile mutation, command execution, build output, materialization
+approval, process startup, dispatch, network dispatch, runtime registration,
+and local file writes disabled.
+
 P25.24 defines the health/no-op contract fixtures selected by that audit. Plans
 now include `healthNoopContractFixtures`, covering `/health` OK/unavailable
 responses and a no-op `thumbnail.render` response while keeping dispatch,

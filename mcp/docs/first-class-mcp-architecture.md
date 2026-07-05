@@ -2269,6 +2269,25 @@ P25.20 render.thumbnail executable adapter registration scaffold result:
   no-op registration surface for MCP and CLI.
 - The scaffold consumes the P25.19 preflight, dispatch adapter boundary, and
   client request metadata without registering runtime dispatch.
+
+P25.77 render.thumbnail package materialization approval audit countersignature revocation appeal resolution enforcement evidence attestation notarization certification endorsement countersignature verification revocation appeal resolution policy result:
+
+- Shared plans include
+  `packageMaterializationApprovalAuditCountersignatureRevocationAppealResolutionEnforcementEvidenceAttestationNotarizationCertificationEndorsementCountersignatureVerificationRevocationAppealResolutionPolicy`,
+  defining metadata-only audit countersignature revocation appeal resolution
+  enforcement evidence attestation notarization certification endorsement
+  countersignature verification revocation appeal resolution policies, required
+  resolution inputs, resolution checks, blocked resolution decisions, and no-op
+  guarantees.
+- MCP and CLI expose the verification revocation appeal resolution policy plan
+  in dry-run and unavailable execution payloads without selecting resolution
+  policies, identifying subjects or authorities, reading appeals or appeal
+  records, capturing resolution reasons, computing scopes, selecting outcomes,
+  storing or executing resolutions, accepting or rejecting appeal resolutions,
+  creating resolution records, reading countersignatures or audit records,
+  granting approval, creating package directories, writing files, mutating
+  workspace manifests, mutating lockfiles, running commands, emitting build
+  output, starting processes, or registering runtime dispatch.
 - `executableAdapterRegistrationScaffold.dispatch`, `networkDispatch`,
   `runtimeRegistration`, and `localFileWrites` remain `false`.
 
@@ -3747,6 +3766,7 @@ P25.76 defines disabled package materialization approval audit countersignature
 revocation appeal resolution enforcement evidence attestation notarization
 certification endorsement countersignature verification revocation appeal
 policy.
+P25.77 defines disabled package materialization approval audit countersignature revocation appeal resolution enforcement evidence attestation notarization certification endorsement countersignature verification revocation appeal resolution policy.
 Runtime behavior remains unavailable
 until opt-in config surfaces, renderer-service implementation, workspace
 wiring, health preflight, cache probe, executable client, and tagged-frame
