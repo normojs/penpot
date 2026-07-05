@@ -1013,6 +1013,18 @@ Shared contract shape:
   verification/signing/hashing, approval, file writes, workspace mutation,
   command execution, build output, package creation, process startup, and
   runtime registration disabled.
+- P25.72 package materialization approval audit countersignature revocation
+  appeal resolution enforcement evidence attestation notarization certification
+  endorsement policy fields are planning-only. They define future enforcement
+  evidence attestation notarization certification endorsement policies,
+  required endorsement inputs, endorsement checks, blocked endorsement
+  decisions, and no-op guarantees while keeping endorsement policy selection,
+  subject/authority identification, endorsement preparation/creation/
+  validation/storage/publication, endorsement record storage/publication,
+  certification reads/endorsement/verification, audit record reads,
+  endorsement linking/verification/signing/hashing, approval, file writes,
+  workspace mutation, command execution, build output, package creation,
+  process startup, and runtime registration disabled.
 - Exporter service execution is out of scope for this command unless a later
   task explicitly maps thumbnail rendering to exporter-compatible semantics.
 - P25.6 selects a future dedicated thumbnail renderer service as the executable
@@ -1027,7 +1039,7 @@ See `render-thumbnail-runtime-boundary.md` and
 audit, resource-return rules, cache refresh behavior, auth expectations, and
 future test strategy.
 See `render-thumbnail-renderer-service-api.md` and
-`render-thumbnail-renderer-service-fixtures.json` for the P25.71 future
+`render-thumbnail-renderer-service-fixtures.json` for the P25.72 future
 renderer-service request/response API, MCP/CLI dry-run/client boundary, and
 metadata-only availability probe plus response/error normalization and disabled
 client request, execution gate, health preflight, and execution harness

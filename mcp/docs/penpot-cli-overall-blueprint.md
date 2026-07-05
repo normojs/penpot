@@ -2071,6 +2071,36 @@ P25.71 is complete:
    `packageCreated`, `dispatch`, `networkDispatch`, `runtimeRegistration`, and
    `localFileWrites` remain false.
 
+P25.72 is complete:
+
+1. Shared plans include
+   `packageMaterializationApprovalAuditCountersignatureRevocationAppealResolutionEnforcementEvidenceAttestationNotarizationCertificationEndorsementPolicy`
+   metadata for future audit countersignature revocation appeal resolution
+   enforcement evidence attestation notarization certification endorsement
+   policies, required endorsement inputs, endorsement checks, blocked
+   endorsement decisions, and no-op guarantees.
+2. MCP and CLI expose this audit countersignature revocation appeal resolution
+   enforcement evidence attestation notarization certification endorsement
+   policy plan in dry-run and unavailable execution payloads without selecting
+   endorsement policies, identifying subjects or authorities, preparing,
+   creating, validating, storing, publishing, or recording endorsements,
+   reading, endorsing, or verifying certifications, reading audit records,
+   linking/verifying/signing/hashing endorsements, granting approval, creating
+   package directories, writing files, mutating workspace manifests, mutating
+   lockfiles, running commands, emitting build output, starting processes, or
+   registering runtime dispatch.
+3. `countersignatureRevocationAppealResolutionEnforcementEvidenceAttestationNotarizationCertificationEndorsementPolicySelected`,
+   `countersignatureRevocationAppealResolutionEnforcementEvidenceAttestationNotarizationCertificationEndorsementCreated`,
+   `countersignatureRevocationAppealResolutionEnforcementEvidenceAttestationNotarizationCertificationRead`,
+   `countersignatureRevocationAppealResolutionEnforcementEvidenceAttestationNotarizationCertificationEndorsed`,
+   `auditRecordRead`,
+   `countersignatureRevocationAppealResolutionEnforcementEvidenceAttestationNotarizationCertificationEndorsementHashComputed`,
+   `materializationApproved`, `approved`, and `finalApprovalGranted` remain
+   false, while `filesWritten`, `fileMaterialization`, `workspaceMutation`,
+   `lockfileMutation`, `commandExecution`, `buildOutput`, `processSpawn`,
+   `packageCreated`, `dispatch`, `networkDispatch`, `runtimeRegistration`, and
+   `localFileWrites` remain false.
+
 Keep manual configuration behavior stable while moving command metadata and
 envelopes; transport-specific formatting should stay at the MCP/CLI edges.
 
