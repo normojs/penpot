@@ -138,6 +138,11 @@ P25.69 defines package materialization approval audit countersignature
 revocation appeal resolution enforcement evidence attestation policy metadata
 without selecting attestation policies, reading evidence or audit records,
 attesting evidence, storing attestation records, or enabling dispatch.
+P25.70 defines package materialization approval audit countersignature
+revocation appeal resolution enforcement evidence attestation notarization
+policy metadata without selecting notarization policies, reading attestations
+or audit records, notarizing attestations, storing notarization records, or
+enabling dispatch.
 
 ## Existing Surfaces
 
