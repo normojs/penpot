@@ -286,6 +286,48 @@ function assertAuditAttestationPolicyMetadataOnly(policy: any) {
     assert.equal(policy.auditAttestationDecision.canComputeAttestationHash, false);
 }
 
+function assertAuditNotarizationPolicyMetadataOnly(policy: any) {
+    assert.equal(policy.auditNotarizationVersion, "P25.59");
+    for (const key of [
+        "notarizationPolicySelected",
+        "notarizationSubjectIdentified",
+        "notarizationAuthorityIdentified",
+        "notarizationPrepared",
+        "notarizationCreated",
+        "notarizationValidated",
+        "notarizationStored",
+        "notarizationPublished",
+        "notarizationRecordCreated",
+        "notarizationRecordStored",
+        "notarizationRecordPublished",
+        "attestationRead",
+        "attestationNotarized",
+        "attestationVerified",
+        "auditRecordRead",
+        "auditRecordQueried",
+        "auditRecordNotarizationLinked",
+        "auditRecordNotarizationVerified",
+        "notarizationSignatureCreated",
+        "notarizationSignatureVerified",
+        "notarizationHashComputed",
+        "notarizationHashStored",
+        "materializationApproved",
+        "dispatch",
+        "runtimeRegistration",
+        "localFileWrites",
+        "commandExecution",
+        "buildOutput",
+        "filesWritten",
+    ]) {
+        assert.equal(policy[key], false, key);
+    }
+    assert.equal(policy.auditNotarizationDecision.canCreateNotarization, false);
+    assert.equal(policy.auditNotarizationDecision.canStoreNotarizationRecord, false);
+    assert.equal(policy.auditNotarizationDecision.canNotarizeAttestation, false);
+    assert.equal(policy.auditNotarizationDecision.canReadAuditRecord, false);
+    assert.equal(policy.auditNotarizationDecision.canComputeNotarizationHash, false);
+}
+
 type SseCall = {
     methodName: string;
     params: Record<string, unknown>;
@@ -995,6 +1037,7 @@ test("RenderThumbnailTool dry-run returns renderer-service request metadata with
         assertAuditCustodyPolicyMetadataOnly(body.data.packageMaterializationApprovalAuditCustodyPolicy);
         assertAuditEvidencePolicyMetadataOnly(body.data.packageMaterializationApprovalAuditEvidencePolicy);
         assertAuditAttestationPolicyMetadataOnly(body.data.packageMaterializationApprovalAuditAttestationPolicy);
+        assertAuditNotarizationPolicyMetadataOnly(body.data.packageMaterializationApprovalAuditNotarizationPolicy);
         assert.deepEqual(body.data.service.client, body.data.client);
         assert.equal(body.data.service.responseNormalization.successStatus, "ok");
         assert.equal(body.data.service.responseNormalization.localFileWrites, false);
@@ -1381,6 +1424,7 @@ test("RenderThumbnailTool execution reports renderer service unavailable without
         assertAuditCustodyPolicyMetadataOnly(body.error.data.packageMaterializationApprovalAuditCustodyPolicy);
         assertAuditEvidencePolicyMetadataOnly(body.error.data.packageMaterializationApprovalAuditEvidencePolicy);
         assertAuditAttestationPolicyMetadataOnly(body.error.data.packageMaterializationApprovalAuditAttestationPolicy);
+        assertAuditNotarizationPolicyMetadataOnly(body.error.data.packageMaterializationApprovalAuditNotarizationPolicy);
         assert.equal(body.error.data.clientRequest.dispatch, false);
         assert.equal(body.error.data.serviceRequest.operation, "thumbnail.render");
         assert.deepEqual(body.error.data.requiredCapabilities, ["thumbnail-renderer-service-implementation", "file-thumbnail-cache-probe"]);

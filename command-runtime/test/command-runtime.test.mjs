@@ -60,6 +60,7 @@ import {
     createRenderThumbnailRendererServicePackageMaterializationApprovalAuditCustodyPolicy,
     createRenderThumbnailRendererServicePackageMaterializationApprovalAuditEvidencePolicy,
     createRenderThumbnailRendererServicePackageMaterializationApprovalAuditAttestationPolicy,
+    createRenderThumbnailRendererServicePackageMaterializationApprovalAuditNotarizationPolicy,
     createRenderThumbnailRendererServicePackageFileTemplates,
     createRenderThumbnailRendererServicePackageManifestScaffold,
     createRenderThumbnailRendererServicePackageMaterializationChecklist,
@@ -803,6 +804,117 @@ function assertAuditAttestationPolicyMetadataOnly(policy) {
     }
 }
 
+function assertAuditNotarizationPolicyMetadataOnly(policy) {
+    assert.equal(policy.auditNotarizationVersion, "P25.59");
+    assert.equal(policy.notarizationRequired, true);
+    assert.equal(policy.notarizationPlanned, true);
+
+    for (const key of [
+        "notarizationPolicySelected",
+        "notarizationSubjectIdentified",
+        "notarizationAuthorityIdentified",
+        "notarizationPrepared",
+        "notarizationCreated",
+        "notarizationValidated",
+        "notarizationStored",
+        "notarizationPublished",
+        "notarizationRecordCreated",
+        "notarizationRecordStored",
+        "notarizationRecordPublished",
+        "attestationRead",
+        "attestationNotarized",
+        "attestationVerified",
+        "auditRecordRead",
+        "auditRecordQueried",
+        "auditRecordNotarizationLinked",
+        "auditRecordNotarizationVerified",
+        "notarizationSignatureCreated",
+        "notarizationSignatureVerified",
+        "notarizationHashComputed",
+        "notarizationHashStored",
+        "materializationApproved",
+        "dispatch",
+        "networkDispatch",
+        "runtimeRegistration",
+        "localFileWrites",
+        "hostStartup",
+        "processSpawn",
+        "packageCreated",
+        "workspaceMutation",
+        "scriptRunnable",
+        "fileMaterialization",
+        "lockfileMutation",
+        "rootPackageJsonMutation",
+        "pnpmWorkspaceMutation",
+        "commandExecution",
+        "buildOutput",
+        "packageScriptsRunnable",
+        "filesWritten",
+    ]) {
+        assert.equal(policy[key], false, key);
+    }
+
+    assert.equal(policy.consumes.packageMaterializationApprovalAuditAttestationPolicy.auditAttestationVersion, "P25.58");
+    assert.equal(policy.consumes.packageMaterializationApprovalAuditAccessPolicy.auditAccessVersion, "P25.53");
+    assert.equal(policy.consumes.packageMaterializationFinalApprovalChecklist.checklistVersion, "P25.40");
+
+    for (const key of [
+        "selectNotarizationPolicyNow",
+        "identifyNotarizationSubjectNow",
+        "identifyNotarizationAuthorityNow",
+        "prepareNotarizationNow",
+        "createNotarizationNow",
+        "validateNotarizationNow",
+        "storeNotarizationNow",
+        "publishNotarizationNow",
+        "createNotarizationRecordNow",
+        "storeNotarizationRecordNow",
+        "publishNotarizationRecordNow",
+        "readAttestationNow",
+        "notarizeAttestationNow",
+        "verifyAttestationNow",
+        "readAuditRecordNow",
+        "queryAuditRecordNow",
+        "linkAuditRecordNotarizationNow",
+        "verifyAuditRecordNotarizationNow",
+        "signNotarizationNow",
+        "verifyNotarizationSignatureNow",
+        "computeNotarizationHashNow",
+        "storeNotarizationHashNow",
+    ]) {
+        assert.equal(policy.auditNotarizationPolicy[key], false, key);
+    }
+
+    for (const key of [
+        "canSelectNotarizationPolicy",
+        "canIdentifyNotarizationSubject",
+        "canIdentifyNotarizationAuthority",
+        "canPrepareNotarization",
+        "canCreateNotarization",
+        "canValidateNotarization",
+        "canStoreNotarization",
+        "canPublishNotarization",
+        "canCreateNotarizationRecord",
+        "canStoreNotarizationRecord",
+        "canPublishNotarizationRecord",
+        "canReadAttestation",
+        "canNotarizeAttestation",
+        "canVerifyAttestation",
+        "canReadAuditRecord",
+        "canQueryAuditRecord",
+        "canLinkAuditRecordNotarization",
+        "canVerifyAuditRecordNotarization",
+        "canSignNotarization",
+        "canVerifyNotarizationSignature",
+        "canComputeNotarizationHash",
+        "canStoreNotarizationHash",
+        "canMaterializeFiles",
+        "canEnableRuntimeDispatch",
+    ]) {
+        assert.equal(policy.auditNotarizationDecision[key], false, key);
+    }
+}
+
 test("descriptor groups expose stable command ids", () => {
     assert.deepEqual(
         LowRiskCommandDescriptors.map((descriptor) => descriptor.id),
@@ -1151,6 +1263,7 @@ test("render.thumbnail runtime boundary keeps execution unavailable until render
     assertAuditCustodyPolicyMetadataOnly(boundary.packageMaterializationApprovalAuditCustodyPolicy);
     assertAuditEvidencePolicyMetadataOnly(boundary.packageMaterializationApprovalAuditEvidencePolicy);
     assertAuditAttestationPolicyMetadataOnly(boundary.packageMaterializationApprovalAuditAttestationPolicy);
+    assertAuditNotarizationPolicyMetadataOnly(boundary.packageMaterializationApprovalAuditNotarizationPolicy);
     assert.ok(boundary.testStrategy.some((item) => item.includes("descriptor tests")));
 });
 
@@ -1484,6 +1597,8 @@ test("render.thumbnail renderer-service API fixtures define planning requests wi
     assertAuditEvidencePolicyMetadataOnly(renderThumbnailRuntimeBoundaryFixtures.packageMaterializationApprovalAuditEvidencePolicy);
     assertAuditAttestationPolicyMetadataOnly(fixtures.serviceApi.packageMaterializationApprovalAuditAttestationPolicy);
     assertAuditAttestationPolicyMetadataOnly(renderThumbnailRuntimeBoundaryFixtures.packageMaterializationApprovalAuditAttestationPolicy);
+    assertAuditNotarizationPolicyMetadataOnly(fixtures.serviceApi.packageMaterializationApprovalAuditNotarizationPolicy);
+    assertAuditNotarizationPolicyMetadataOnly(renderThumbnailRuntimeBoundaryFixtures.packageMaterializationApprovalAuditNotarizationPolicy);
     assert.deepEqual(fixtures.runtimeRegistration.commandDescriptorAdapters, ["renderer-service"]);
     assert.deepEqual(CommandDescriptors.RENDER_THUMBNAIL.adapters, ["renderer-service"]);
     assert.equal(fixtures.runtimeRegistration.mcpToolRegistered, true);
@@ -2626,6 +2741,8 @@ test("render.thumbnail renderer-service plan exposes dry-run client request whil
     assert.deepEqual(plan.service.packageMaterializationApprovalAuditEvidencePolicy, plan.packageMaterializationApprovalAuditEvidencePolicy);
     assertAuditAttestationPolicyMetadataOnly(plan.packageMaterializationApprovalAuditAttestationPolicy);
     assert.deepEqual(plan.service.packageMaterializationApprovalAuditAttestationPolicy, plan.packageMaterializationApprovalAuditAttestationPolicy);
+    assertAuditNotarizationPolicyMetadataOnly(plan.packageMaterializationApprovalAuditNotarizationPolicy);
+    assert.deepEqual(plan.service.packageMaterializationApprovalAuditNotarizationPolicy, plan.packageMaterializationApprovalAuditNotarizationPolicy);
     assert.equal(plan.clientRequest.status, "scaffolded");
     assert.equal(plan.clientRequest.dispatch, false);
     assert.equal(plan.clientRequest.method, "POST");
@@ -2700,6 +2817,7 @@ test("render.thumbnail renderer-service plan exposes dry-run client request whil
     assert.equal(plan.diagnostics.packageMaterializationApprovalAuditCustodyPolicyVersion, "P25.56");
     assert.equal(plan.diagnostics.packageMaterializationApprovalAuditEvidencePolicyVersion, "P25.57");
     assert.equal(plan.diagnostics.packageMaterializationApprovalAuditAttestationPolicyVersion, "P25.58");
+    assert.equal(plan.diagnostics.packageMaterializationApprovalAuditNotarizationPolicyVersion, "P25.59");
 });
 
 test("render.thumbnail renderer-service plan reports not-configured availability without endpoint", () => {
@@ -5385,6 +5503,57 @@ test("render.thumbnail renderer-service package materialization approval audit a
     );
     assert.ok(auditAttestationPolicy.requiredBeforeRuntimeDispatch.includes("define audit attestation policy schema"));
     assertAuditAttestationPolicyMetadataOnly(auditAttestationPolicy);
+});
+
+test("render.thumbnail renderer-service package materialization approval audit notarization policy stays metadata-only", () => {
+    const auditNotarizationPolicy =
+        createRenderThumbnailRendererServicePackageMaterializationApprovalAuditNotarizationPolicy({
+            packageMaterializationApprovalAuditAttestationPolicy: {
+                status: "planned-disabled",
+                auditAttestationVersion: "P25.58",
+                attestationCreated: false,
+                attestationStored: false,
+            },
+            packageMaterializationApprovalAuditAccessPolicy: {
+                status: "planned-disabled",
+                auditAccessVersion: "P25.53",
+                auditRecordRead: false,
+                accessGranted: false,
+            },
+            packageMaterializationFinalApprovalChecklist: {
+                status: "planned-disabled",
+                checklistVersion: "P25.40",
+                finalApprovalGranted: false,
+            },
+        });
+
+    assert.equal(auditNotarizationPolicy.status, "planned-disabled");
+    assert.equal(auditNotarizationPolicy.dryRunOnly, true);
+    assert.equal(auditNotarizationPolicy.approvalRequired, true);
+    assert.equal(auditNotarizationPolicy.approved, false);
+    assert.equal(auditNotarizationPolicy.finalApprovalGranted, false);
+    assert.equal(
+        auditNotarizationPolicy.auditNotarizationPolicy.policy,
+        "notarize-attestation-after-attestation-record-defined"
+    );
+    assert.equal(auditNotarizationPolicy.auditNotarizationPolicy.notarizationPayloadLogged, false);
+    assert.ok(auditNotarizationPolicy.auditNotarizationPolicy.requiredInputs.includes("trustedNotarizationAuthority"));
+    assert.ok(
+        auditNotarizationPolicy.auditNotarizationChecks.some(
+            (entry) => entry.id === "notarization-not-created" && entry.executed === false
+        )
+    );
+    assert.equal(auditNotarizationPolicy.auditNotarizationDecision.status, "blocked");
+    assert.equal(auditNotarizationPolicy.auditNotarizationDecision.canCreateNotarization, false);
+    assert.equal(auditNotarizationPolicy.auditNotarizationDecision.canStoreNotarizationRecord, false);
+    assert.equal(auditNotarizationPolicy.auditNotarizationDecision.canNotarizeAttestation, false);
+    assert.ok(
+        auditNotarizationPolicy.noOpGuarantees.includes(
+            "audit notarization policy plan does not prepare, create, validate, store, or publish notarizations"
+        )
+    );
+    assert.ok(auditNotarizationPolicy.requiredBeforeRuntimeDispatch.includes("define audit notarization policy schema"));
+    assertAuditNotarizationPolicyMetadataOnly(auditNotarizationPolicy);
 });
 
 test("render.thumbnail renderer-service client request scaffold adds MCP audit headers without dispatch", () => {

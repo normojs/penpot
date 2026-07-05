@@ -1565,3 +1565,38 @@ policy:
   evidence records, reading or querying audit records, linking, verifying,
   signing, or hashing attestations, materializing files, starting processes, or
   enabling dispatch.
+
+P25.59 adds renderer-service package materialization approval audit
+notarization policy:
+
+- Plans include `packageMaterializationApprovalAuditNotarizationPolicy`,
+  defining the future notarization policy, required notarization inputs,
+  notarization checks, blocked notarization decision, and no-op guarantees.
+- The audit notarization policy remains planning-only with
+  `notarizationPolicySelected:false`,
+  `notarizationSubjectIdentified:false`,
+  `notarizationAuthorityIdentified:false`, `notarizationPrepared:false`,
+  `notarizationCreated:false`, `notarizationValidated:false`,
+  `notarizationStored:false`, `notarizationPublished:false`,
+  `notarizationRecordCreated:false`, `notarizationRecordStored:false`,
+  `notarizationRecordPublished:false`, `attestationRead:false`,
+  `attestationNotarized:false`, `attestationVerified:false`,
+  `auditRecordRead:false`, `auditRecordQueried:false`,
+  `auditRecordNotarizationLinked:false`,
+  `auditRecordNotarizationVerified:false`,
+  `notarizationSignatureCreated:false`,
+  `notarizationSignatureVerified:false`, `notarizationHashComputed:false`,
+  `notarizationHashStored:false`, `materializationApproved:false`,
+  `approved:false`, `finalApprovalGranted:false`, `filesWritten:false`,
+  `fileMaterialization:false`, `workspaceMutation:false`,
+  `lockfileMutation:false`, `commandExecution:false`, `buildOutput:false`,
+  `processSpawn:false`, `packageCreated:false`, `dispatch:false`,
+  `networkDispatch:false`, `runtimeRegistration:false`, and
+  `localFileWrites:false`.
+- MCP and CLI expose this policy in dry-run and unavailable execution JSON
+  without selecting notarization policies, identifying subjects or authorities,
+  preparing, creating, validating, storing, or publishing notarizations,
+  creating, storing, or publishing notarization records, reading, notarizing,
+  or verifying attestations, reading or querying audit records, linking,
+  verifying, signing, or hashing notarizations, materializing files, starting
+  processes, or enabling dispatch.

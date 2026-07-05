@@ -260,6 +260,8 @@ P25.57 adds metadata-only package materialization approval audit evidence
 policy.
 P25.58 adds metadata-only package materialization approval audit attestation
 policy.
+P25.59 adds metadata-only package materialization approval audit notarization
+policy.
 MCP
 `render.thumbnail` and `penpot-cli render thumbnail --dry-run` can print the
 future request shape, configured/not configured service metadata,
@@ -458,6 +460,25 @@ plus `packageMaterializationApprovalAuditAttestationPolicy.attestationPolicySele
 `packageMaterializationApprovalAuditAttestationPolicy.filesWritten:false`,
 `packageMaterializationApprovalAuditAttestationPolicy.commandExecution:false`, and
 `packageMaterializationApprovalAuditAttestationPolicy.buildOutput:false`,
+plus `packageMaterializationApprovalAuditNotarizationPolicy.notarizationPolicySelected:false`,
+`packageMaterializationApprovalAuditNotarizationPolicy.notarizationSubjectIdentified:false`,
+`packageMaterializationApprovalAuditNotarizationPolicy.notarizationAuthorityIdentified:false`,
+`packageMaterializationApprovalAuditNotarizationPolicy.notarizationPrepared:false`,
+`packageMaterializationApprovalAuditNotarizationPolicy.notarizationCreated:false`,
+`packageMaterializationApprovalAuditNotarizationPolicy.notarizationValidated:false`,
+`packageMaterializationApprovalAuditNotarizationPolicy.notarizationStored:false`,
+`packageMaterializationApprovalAuditNotarizationPolicy.notarizationPublished:false`,
+`packageMaterializationApprovalAuditNotarizationPolicy.notarizationRecordCreated:false`,
+`packageMaterializationApprovalAuditNotarizationPolicy.attestationRead:false`,
+`packageMaterializationApprovalAuditNotarizationPolicy.attestationNotarized:false`,
+`packageMaterializationApprovalAuditNotarizationPolicy.attestationVerified:false`,
+`packageMaterializationApprovalAuditNotarizationPolicy.auditRecordRead:false`,
+`packageMaterializationApprovalAuditNotarizationPolicy.auditRecordQueried:false`,
+`packageMaterializationApprovalAuditNotarizationPolicy.notarizationHashComputed:false`,
+`packageMaterializationApprovalAuditNotarizationPolicy.materializationApproved:false`,
+`packageMaterializationApprovalAuditNotarizationPolicy.filesWritten:false`,
+`packageMaterializationApprovalAuditNotarizationPolicy.commandExecution:false`, and
+`packageMaterializationApprovalAuditNotarizationPolicy.buildOutput:false`,
 but execution still returns
 `renderer_service_unavailable` until explicit opt-in, config surfaces, renderer
 service, integration tests, health preflight, file cache probe, tagged-frame

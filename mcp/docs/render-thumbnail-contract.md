@@ -1,6 +1,6 @@
 # Render Thumbnail Contract
 
-Status: P25.4 descriptor contract; P25.58 MCP/CLI renderer-service dry-run
+Status: P25.4 descriptor contract; P25.59 MCP/CLI renderer-service dry-run
 boundaries, metadata-only availability probes, response normalization
 contracts, disabled client request scaffolding, closed execution gate, disabled
 health preflight, executable client harness plan, and dispatch adapter boundary
@@ -711,6 +711,32 @@ Shared contract shape:
   validate, store, or publish attestations, create attestation bundles, read,
   attest, or verify evidence records, read or query audit records, sign or
   hash attestations, grant approval, or materialize files.
+- P25.59 package materialization approval audit notarization policy fields are
+  planning-only. They define future notarization policies, required
+  notarization inputs, notarization checks, blocked notarization decisions, and
+  no-op guarantees while keeping
+  `packageMaterializationApprovalAuditNotarizationPolicy.notarizationPolicySelected:false`,
+  `packageMaterializationApprovalAuditNotarizationPolicy.notarizationSubjectIdentified:false`,
+  `packageMaterializationApprovalAuditNotarizationPolicy.notarizationAuthorityIdentified:false`,
+  `packageMaterializationApprovalAuditNotarizationPolicy.notarizationPrepared:false`,
+  `packageMaterializationApprovalAuditNotarizationPolicy.notarizationCreated:false`,
+  `packageMaterializationApprovalAuditNotarizationPolicy.notarizationValidated:false`,
+  `packageMaterializationApprovalAuditNotarizationPolicy.notarizationStored:false`,
+  `packageMaterializationApprovalAuditNotarizationPolicy.notarizationPublished:false`,
+  `packageMaterializationApprovalAuditNotarizationPolicy.notarizationRecordCreated:false`,
+  `packageMaterializationApprovalAuditNotarizationPolicy.attestationRead:false`,
+  `packageMaterializationApprovalAuditNotarizationPolicy.attestationNotarized:false`,
+  `packageMaterializationApprovalAuditNotarizationPolicy.auditRecordRead:false`,
+  `packageMaterializationApprovalAuditNotarizationPolicy.auditRecordQueried:false`,
+  `packageMaterializationApprovalAuditNotarizationPolicy.notarizationHashComputed:false`,
+  `approved:false`, `finalApprovalGranted:false`, `filesWritten:false`,
+  `fileMaterialization:false`, `workspaceMutation:false`,
+  `commandExecution:false`, `buildOutput:false`,
+  `runtimeRegistration:false`, and `localFileWrites:false`. They do not select
+  notarization policies, identify subjects or authorities, prepare, create,
+  validate, store, or publish notarizations, create notarization records, read,
+  notarize, or verify attestations, read or query audit records, sign or hash
+  notarizations, grant approval, or materialize files.
 - Exporter service execution is out of scope for this command unless a later
   task explicitly maps thumbnail rendering to exporter-compatible semantics.
 - P25.6 selects a future dedicated thumbnail renderer service as the executable
@@ -725,7 +751,7 @@ See `render-thumbnail-runtime-boundary.md` and
 audit, resource-return rules, cache refresh behavior, auth expectations, and
 future test strategy.
 See `render-thumbnail-renderer-service-api.md` and
-`render-thumbnail-renderer-service-fixtures.json` for the P25.58 future
+`render-thumbnail-renderer-service-fixtures.json` for the P25.59 future
 renderer-service request/response API, MCP/CLI dry-run/client boundary, and
 metadata-only availability probe plus response/error normalization and disabled
 client request, execution gate, health preflight, and execution harness

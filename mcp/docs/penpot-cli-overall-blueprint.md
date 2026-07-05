@@ -1582,6 +1582,37 @@ P25.58 is complete:
    `dispatch`, `networkDispatch`, `runtimeRegistration`, and
    `localFileWrites` remain false.
 
+P25.59 is complete:
+
+1. Shared plans include `packageMaterializationApprovalAuditNotarizationPolicy`
+   metadata for future audit notarization policies, required notarization
+   inputs, notarization checks, blocked notarization decisions, and no-op
+   guarantees.
+2. MCP and CLI expose this audit notarization policy plan in dry-run and
+   unavailable execution payloads without selecting notarization policies,
+   identifying subjects or authorities, preparing/creating/validating/storing/
+   publishing notarizations, creating/storing/publishing notarization records,
+   reading/notarizing/verifying attestations, reading or querying audit records,
+   linking/verifying/signing/hashing notarizations, granting approval, creating
+   package directories, writing files, mutating workspace manifests, mutating
+   lockfiles, running commands, emitting build output, starting processes, or
+   registering runtime dispatch.
+3. `notarizationPolicySelected`, `notarizationSubjectIdentified`,
+   `notarizationAuthorityIdentified`, `notarizationPrepared`,
+   `notarizationCreated`, `notarizationValidated`, `notarizationStored`,
+   `notarizationPublished`, `notarizationRecordCreated`,
+   `notarizationRecordStored`, `notarizationRecordPublished`,
+   `attestationRead`, `attestationNotarized`, `attestationVerified`,
+   `auditRecordRead`, `auditRecordQueried`,
+   `auditRecordNotarizationLinked`, `auditRecordNotarizationVerified`,
+   `notarizationSignatureCreated`, `notarizationSignatureVerified`,
+   `notarizationHashComputed`, `notarizationHashStored`,
+   `materializationApproved`, `approved`, and `finalApprovalGranted` remain
+   false, while `filesWritten`, `fileMaterialization`, `workspaceMutation`,
+   `lockfileMutation`, `commandExecution`, `buildOutput`, `processSpawn`,
+   `packageCreated`, `dispatch`, `networkDispatch`, `runtimeRegistration`, and
+   `localFileWrites` remain false.
+
 Keep manual configuration behavior stable while moving command metadata and
 envelopes; transport-specific formatting should stay at the MCP/CLI edges.
 
