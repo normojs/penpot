@@ -1798,3 +1798,49 @@ countersignature revocation policy:
   revoking countersignatures, creating revocation records, signing or hashing
   revocation records, materializing files, starting processes, or enabling
   dispatch.
+
+P25.65 adds renderer-service package materialization approval audit
+countersignature revocation appeal policy:
+
+- Plans include
+  `packageMaterializationApprovalAuditCountersignatureRevocationAppealPolicy`,
+  defining the future countersignature revocation appeal policy, required appeal
+  inputs, appeal checks, blocked appeal decision, and no-op guarantees.
+- The audit countersignature revocation appeal policy remains planning-only with
+  `countersignatureRevocationAppealPolicySelected:false`,
+  `countersignatureRevocationAppealSubjectIdentified:false`,
+  `countersignatureRevocationAppealAuthorityIdentified:false`,
+  `countersignatureRevocationAppealReasonCaptured:false`,
+  `countersignatureRevocationAppealScopeComputed:false`,
+  `countersignatureRevocationAppealRequestPrepared:false`,
+  `countersignatureRevocationAppealRequestValidated:false`,
+  `countersignatureRevocationAppealRequestStored:false`,
+  `countersignatureRevocationAppealExecuted:false`,
+  `countersignatureRevocationAppealed:false`,
+  `countersignatureRevocationAppealGranted:false`,
+  `countersignatureRevocationAppealDenied:false`,
+  `countersignatureRevocationAppealRecordCreated:false`,
+  `countersignatureRevocationAppealRecordStored:false`,
+  `countersignatureRevocationRead:false`,
+  `countersignatureRevocationRecordRead:false`,
+  `countersignatureRead:false`, `auditRecordRead:false`,
+  `auditRecordQueried:false`,
+  `auditRecordCountersignatureRevocationAppealLinked:false`,
+  `auditRecordCountersignatureRevocationAppealVerified:false`,
+  `countersignatureRevocationAppealSignatureCreated:false`,
+  `countersignatureRevocationAppealSignatureVerified:false`,
+  `countersignatureRevocationAppealHashComputed:false`,
+  `countersignatureRevocationAppealHashStored:false`,
+  `materializationApproved:false`, `approved:false`,
+  `finalApprovalGranted:false`, `filesWritten:false`,
+  `fileMaterialization:false`, `workspaceMutation:false`,
+  `lockfileMutation:false`, `commandExecution:false`, `buildOutput:false`,
+  `processSpawn:false`, `packageCreated:false`, `dispatch:false`,
+  `networkDispatch:false`, `runtimeRegistration:false`, and
+  `localFileWrites:false`.
+- MCP and CLI expose this policy in dry-run and unavailable execution JSON
+  without selecting appeal policies, identifying appeal subjects or authorities,
+  capturing appeal reasons, reading countersignature revocations,
+  countersignatures, or audit records, appealing revocations, granting or denying
+  appeals, creating appeal records, signing or hashing appeal records,
+  materializing files, starting processes, or enabling dispatch.

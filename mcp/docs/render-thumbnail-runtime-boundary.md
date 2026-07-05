@@ -117,6 +117,10 @@ P25.64 defines package materialization approval audit countersignature
 revocation policy metadata without selecting revocation policies, reading audit
 records, revoking countersignatures, storing revocation records, or enabling
 dispatch.
+P25.65 defines package materialization approval audit countersignature
+revocation appeal policy metadata without selecting appeal policies, reading
+revocations or audit records, appealing revocations, storing appeal records, or
+enabling dispatch.
 
 ## Existing Surfaces
 

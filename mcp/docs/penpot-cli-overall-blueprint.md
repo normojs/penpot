@@ -1794,6 +1794,56 @@ P25.64 is complete:
    `dispatch`, `networkDispatch`, `runtimeRegistration`, and
    `localFileWrites` remain false.
 
+P25.65 is complete:
+
+1. Shared plans include
+   `packageMaterializationApprovalAuditCountersignatureRevocationAppealPolicy`
+   metadata for future audit countersignature revocation appeal policies,
+   required appeal inputs, appeal checks, blocked appeal decisions, and no-op
+   guarantees.
+2. MCP and CLI expose this audit countersignature revocation appeal policy plan
+   in dry-run and unavailable execution payloads without selecting appeal
+   policies, identifying subjects or authorities, capturing appeal reasons,
+   computing scopes, preparing, validating, storing, executing, or publishing
+   appeal requests, appealing countersignature revocations, granting or denying
+   appeals, creating/storing/publishing appeal records, reading countersignature
+   revocations, countersignatures, or audit records, linking/verifying/signing/
+   hashing appeal records, granting approval, creating package directories,
+   writing files, mutating workspace manifests, mutating lockfiles, running
+   commands, emitting build output, starting processes, or registering runtime
+   dispatch.
+3. `countersignatureRevocationAppealPolicySelected`,
+   `countersignatureRevocationAppealSubjectIdentified`,
+   `countersignatureRevocationAppealAuthorityIdentified`,
+   `countersignatureRevocationAppealReasonCaptured`,
+   `countersignatureRevocationAppealScopeComputed`,
+   `countersignatureRevocationAppealRequestPrepared`,
+   `countersignatureRevocationAppealRequestValidated`,
+   `countersignatureRevocationAppealRequestStored`,
+   `countersignatureRevocationAppealExecuted`,
+   `countersignatureRevocationAppealed`,
+   `countersignatureRevocationAppealGranted`,
+   `countersignatureRevocationAppealDenied`,
+   `countersignatureRevocationAppealPublished`,
+   `countersignatureRevocationAppealRecordCreated`,
+   `countersignatureRevocationAppealRecordStored`,
+   `countersignatureRevocationAppealRecordPublished`,
+   `countersignatureRevocationRead`,
+   `countersignatureRevocationRecordRead`, `countersignatureRead`,
+   `countersignatureRevocationVerified`, `auditRecordRead`,
+   `auditRecordQueried`,
+   `auditRecordCountersignatureRevocationAppealLinked`,
+   `auditRecordCountersignatureRevocationAppealVerified`,
+   `countersignatureRevocationAppealSignatureCreated`,
+   `countersignatureRevocationAppealSignatureVerified`,
+   `countersignatureRevocationAppealHashComputed`,
+   `countersignatureRevocationAppealHashStored`, `materializationApproved`,
+   `approved`, and `finalApprovalGranted` remain false, while `filesWritten`,
+   `fileMaterialization`, `workspaceMutation`, `lockfileMutation`,
+   `commandExecution`, `buildOutput`, `processSpawn`, `packageCreated`,
+   `dispatch`, `networkDispatch`, `runtimeRegistration`, and
+   `localFileWrites` remain false.
+
 Keep manual configuration behavior stable while moving command metadata and
 envelopes; transport-specific formatting should stay at the MCP/CLI edges.
 

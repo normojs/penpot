@@ -3218,6 +3218,57 @@ revocation policy result:
   `packageCreated`, `dispatch`, `networkDispatch`, `runtimeRegistration`, and
   `localFileWrites` remain `false`.
 
+P25.65 render.thumbnail package materialization approval audit countersignature
+revocation appeal policy result:
+
+- Shared plans include
+  `packageMaterializationApprovalAuditCountersignatureRevocationAppealPolicy`,
+  defining metadata-only audit countersignature revocation appeal policies,
+  required appeal inputs, appeal checks, blocked appeal decisions, and no-op
+  guarantees.
+- MCP and CLI expose the audit countersignature revocation appeal policy plan in
+  dry-run and unavailable execution payloads without selecting appeal policies,
+  identifying subjects or authorities, capturing appeal reasons, computing
+  scopes, preparing, validating, storing, executing, or publishing appeal
+  requests, appealing countersignature revocations, granting or denying appeals,
+  creating/storing/publishing appeal records, reading countersignature
+  revocations, countersignatures, or audit records, linking/verifying/signing/
+  hashing appeal records, granting approval, creating package directories,
+  writing files, mutating workspace manifests, mutating lockfiles, running
+  commands, emitting build output, starting processes, or registering runtime
+  dispatch.
+- `countersignatureRevocationAppealPolicySelected`,
+  `countersignatureRevocationAppealSubjectIdentified`,
+  `countersignatureRevocationAppealAuthorityIdentified`,
+  `countersignatureRevocationAppealReasonCaptured`,
+  `countersignatureRevocationAppealScopeComputed`,
+  `countersignatureRevocationAppealRequestPrepared`,
+  `countersignatureRevocationAppealRequestValidated`,
+  `countersignatureRevocationAppealRequestStored`,
+  `countersignatureRevocationAppealExecuted`,
+  `countersignatureRevocationAppealed`,
+  `countersignatureRevocationAppealGranted`,
+  `countersignatureRevocationAppealDenied`,
+  `countersignatureRevocationAppealPublished`,
+  `countersignatureRevocationAppealRecordCreated`,
+  `countersignatureRevocationAppealRecordStored`,
+  `countersignatureRevocationAppealRecordPublished`,
+  `countersignatureRevocationRead`,
+  `countersignatureRevocationRecordRead`, `countersignatureRead`,
+  `countersignatureRevocationVerified`, `auditRecordRead`,
+  `auditRecordQueried`,
+  `auditRecordCountersignatureRevocationAppealLinked`,
+  `auditRecordCountersignatureRevocationAppealVerified`,
+  `countersignatureRevocationAppealSignatureCreated`,
+  `countersignatureRevocationAppealSignatureVerified`,
+  `countersignatureRevocationAppealHashComputed`,
+  `countersignatureRevocationAppealHashStored`, `materializationApproved`,
+  `approved`, and `finalApprovalGranted` remain `false`, while
+  `filesWritten`, `fileMaterialization`, `workspaceMutation`,
+  `lockfileMutation`, `commandExecution`, `buildOutput`, `processSpawn`,
+  `packageCreated`, `dispatch`, `networkDispatch`, `runtimeRegistration`, and
+  `localFileWrites` remain `false`.
+
 ### 8.5 Export and Render Tools
 
 May start file-bound and later move to headless:
@@ -3287,7 +3338,8 @@ package materialization approval audit endorsement policy. P25.62 defines
 disabled package materialization approval audit countersignature policy. P25.63
 defines disabled package materialization approval audit countersignature
 verification policy. P25.64 defines disabled package materialization approval
-audit countersignature revocation policy.
+audit countersignature revocation policy. P25.65 defines disabled package
+materialization approval audit countersignature revocation appeal policy.
 Runtime behavior remains unavailable
 until opt-in config surfaces, renderer-service implementation, workspace
 wiring, health preflight, cache probe, executable client, and tagged-frame

@@ -452,6 +452,8 @@ P25.63 defines the package materialization approval audit countersignature
 verification policy.
 P25.64 defines the package materialization approval audit countersignature
 revocation policy.
+P25.65 defines the package materialization approval audit countersignature
+revocation appeal policy.
 Plans now include `packageMaterializationApprovalPostHandoffAuditPolicy`,
 `packageMaterializationApprovalAuditRetentionPolicy`,
 `packageMaterializationApprovalAuditAccessPolicy`,
@@ -463,20 +465,22 @@ Plans now include `packageMaterializationApprovalPostHandoffAuditPolicy`,
 `packageMaterializationApprovalAuditNotarizationPolicy`,
 `packageMaterializationApprovalAuditCertificationPolicy`,
 `packageMaterializationApprovalAuditEndorsementPolicy`,
-`packageMaterializationApprovalAuditCountersignaturePolicy`, and
+`packageMaterializationApprovalAuditCountersignaturePolicy`,
 `packageMaterializationApprovalAuditCountersignatureVerificationPolicy`, and
-`packageMaterializationApprovalAuditCountersignatureRevocationPolicy`.
+`packageMaterializationApprovalAuditCountersignatureRevocationPolicy`, and
+`packageMaterializationApprovalAuditCountersignatureRevocationAppealPolicy`.
 These cover future audit sinks, retention, access, integrity, provenance,
 custody, evidence, attestation, notarization, certification, endorsement, and
-countersignature/countersignature verification/countersignature revocation
-metadata, including required inputs, checks, blocked decisions, and no-op
-guarantees. The P25.64 revocation slice keeps revocation policy selection,
-subject/authority identification, revocation reason capture, countersignature
-and audit record reads, countersignature revocation, revocation record storage,
-signature verification, hash computation, file writes, package creation,
-workspace mutation, lockfile mutation, command execution, build output,
-materialization approval, process startup, dispatch, network dispatch, runtime
-registration, and local file writes disabled.
+countersignature/countersignature verification/countersignature revocation/
+countersignature revocation appeal metadata, including required inputs, checks,
+blocked decisions, and no-op guarantees. The P25.65 revocation appeal slice
+keeps appeal policy selection, subject/authority identification, appeal reason
+capture, countersignature revocation reads, countersignature and audit record
+reads, countersignature revocation appeals, appeal grant/denial, appeal record
+storage, signature verification, hash computation, file writes, package
+creation, workspace mutation, lockfile mutation, command execution, build
+output, materialization approval, process startup, dispatch, network dispatch,
+runtime registration, and local file writes disabled.
 
 ## Service Boundary
 

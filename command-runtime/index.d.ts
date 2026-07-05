@@ -486,6 +486,7 @@ export interface RenderThumbnailRendererServicePlan {
         packageMaterializationApprovalAuditCountersignaturePolicy: RenderThumbnailRendererServicePackageMaterializationApprovalAuditCountersignaturePolicy;
         packageMaterializationApprovalAuditCountersignatureVerificationPolicy: RenderThumbnailRendererServicePackageMaterializationApprovalAuditCountersignatureVerificationPolicy;
         packageMaterializationApprovalAuditCountersignatureRevocationPolicy: RenderThumbnailRendererServicePackageMaterializationApprovalAuditCountersignatureRevocationPolicy;
+        packageMaterializationApprovalAuditCountersignatureRevocationAppealPolicy: RenderThumbnailRendererServicePackageMaterializationApprovalAuditCountersignatureRevocationAppealPolicy;
         clientRequest: RenderThumbnailRendererServiceClientRequest;
     };
     client: RenderThumbnailRendererServiceClientConfig;
@@ -543,6 +544,7 @@ export interface RenderThumbnailRendererServicePlan {
     packageMaterializationApprovalAuditCountersignaturePolicy: RenderThumbnailRendererServicePackageMaterializationApprovalAuditCountersignaturePolicy;
     packageMaterializationApprovalAuditCountersignatureVerificationPolicy: RenderThumbnailRendererServicePackageMaterializationApprovalAuditCountersignatureVerificationPolicy;
     packageMaterializationApprovalAuditCountersignatureRevocationPolicy: RenderThumbnailRendererServicePackageMaterializationApprovalAuditCountersignatureRevocationPolicy;
+    packageMaterializationApprovalAuditCountersignatureRevocationAppealPolicy: RenderThumbnailRendererServicePackageMaterializationApprovalAuditCountersignatureRevocationAppealPolicy;
     clientRequest: RenderThumbnailRendererServiceClientRequest;
     serviceRequest: {
         command: "render.thumbnail";
@@ -660,6 +662,7 @@ export interface RenderThumbnailRendererServicePlan {
         packageMaterializationApprovalAuditCountersignaturePolicyVersion: "P25.62";
         packageMaterializationApprovalAuditCountersignatureVerificationPolicyVersion: "P25.63";
         packageMaterializationApprovalAuditCountersignatureRevocationPolicyVersion: "P25.64";
+        packageMaterializationApprovalAuditCountersignatureRevocationAppealPolicyVersion: "P25.65";
     };
 }
 
@@ -5713,6 +5716,177 @@ export interface RenderThumbnailRendererServicePackageMaterializationApprovalAud
     requiredBeforeRuntimeDispatch: string[];
 }
 
+export interface RenderThumbnailRendererServicePackageMaterializationApprovalAuditCountersignatureRevocationAppealPolicy {
+    status: "planned-disabled";
+    auditCountersignatureRevocationAppealVersion: "P25.65";
+    adapter: "renderer-service";
+    command: "render.thumbnail";
+    dryRunOnly: true;
+    approvalRequired: true;
+    approved: false;
+    finalApprovalGranted: false;
+    countersignatureRevocationAppealRequired: true;
+    countersignatureRevocationAppealPlanned: true;
+    countersignatureRevocationAppealPolicySelected: false;
+    countersignatureRevocationAppealSubjectIdentified: false;
+    countersignatureRevocationAppealAuthorityIdentified: false;
+    countersignatureRevocationAppealReasonCaptured: false;
+    countersignatureRevocationAppealScopeComputed: false;
+    countersignatureRevocationAppealRequestPrepared: false;
+    countersignatureRevocationAppealRequestValidated: false;
+    countersignatureRevocationAppealRequestStored: false;
+    countersignatureRevocationAppealExecuted: false;
+    countersignatureRevocationAppealed: false;
+    countersignatureRevocationAppealGranted: false;
+    countersignatureRevocationAppealDenied: false;
+    countersignatureRevocationAppealPublished: false;
+    countersignatureRevocationAppealRecordCreated: false;
+    countersignatureRevocationAppealRecordStored: false;
+    countersignatureRevocationAppealRecordPublished: false;
+    countersignatureRevocationRead: false;
+    countersignatureRevocationRecordRead: false;
+    countersignatureRead: false;
+    countersignatureRevocationVerified: false;
+    auditRecordRead: false;
+    auditRecordQueried: false;
+    auditRecordCountersignatureRevocationAppealLinked: false;
+    auditRecordCountersignatureRevocationAppealVerified: false;
+    countersignatureRevocationAppealSignatureCreated: false;
+    countersignatureRevocationAppealSignatureVerified: false;
+    countersignatureRevocationAppealHashComputed: false;
+    countersignatureRevocationAppealHashStored: false;
+    materializationReady: false;
+    materializationApproved: false;
+    materializationApprovedNow: false;
+    tokenAccepted: false;
+    tokenStored: false;
+    tokenValidated: false;
+    tokenConsumed: false;
+    tokenRevoked: false;
+    executeNow: false;
+    verifyNow: false;
+    rollbackNow: false;
+    dispatch: false;
+    networkDispatch: false;
+    runtimeRegistration: false;
+    localFileWrites: false;
+    hostStartup: false;
+    processSpawn: false;
+    packageCreated: false;
+    workspaceMutation: false;
+    scriptRunnable: false;
+    fileMaterialization: false;
+    lockfileMutation: false;
+    rootPackageJsonMutation: false;
+    pnpmWorkspaceMutation: false;
+    commandExecution: false;
+    buildOutput: false;
+    packageScriptsRunnable: false;
+    filesWritten: false;
+    rollbackExecuted: false;
+    verificationExecuted: false;
+    consumes: {
+        packageMaterializationApprovalAuditCountersignatureRevocationPolicy: {
+            requiredStatus: "planned-disabled";
+            currentStatus: string;
+            auditCountersignatureRevocationVersion: string;
+            countersignatureRevoked: false;
+            countersignatureRevocationRecordStored: false;
+        };
+        packageMaterializationApprovalAuditAccessPolicy: {
+            requiredStatus: "planned-disabled";
+            currentStatus: string;
+            auditAccessVersion: string;
+            auditRecordRead: false;
+            accessGranted: false;
+        };
+        packageMaterializationFinalApprovalChecklist: {
+            requiredStatus: "planned-disabled";
+            currentStatus: string;
+            checklistVersion: string;
+            finalApprovalGranted: false;
+        };
+    };
+    auditCountersignatureRevocationAppealPolicy: {
+        policy: "appeal-countersignature-revocation-after-revocation-policy-defined";
+        selectCountersignatureRevocationAppealPolicyNow: false;
+        identifyCountersignatureRevocationAppealSubjectNow: false;
+        identifyCountersignatureRevocationAppealAuthorityNow: false;
+        captureCountersignatureRevocationAppealReasonNow: false;
+        computeCountersignatureRevocationAppealScopeNow: false;
+        prepareCountersignatureRevocationAppealRequestNow: false;
+        validateCountersignatureRevocationAppealRequestNow: false;
+        storeCountersignatureRevocationAppealRequestNow: false;
+        executeCountersignatureRevocationAppealNow: false;
+        appealCountersignatureRevocationNow: false;
+        grantCountersignatureRevocationAppealNow: false;
+        denyCountersignatureRevocationAppealNow: false;
+        publishCountersignatureRevocationAppealNow: false;
+        createCountersignatureRevocationAppealRecordNow: false;
+        storeCountersignatureRevocationAppealRecordNow: false;
+        publishCountersignatureRevocationAppealRecordNow: false;
+        readCountersignatureRevocationNow: false;
+        readCountersignatureRevocationRecordNow: false;
+        readCountersignatureNow: false;
+        verifyCountersignatureRevocationNow: false;
+        readAuditRecordNow: false;
+        queryAuditRecordNow: false;
+        linkAuditRecordCountersignatureRevocationAppealNow: false;
+        verifyAuditRecordCountersignatureRevocationAppealNow: false;
+        signCountersignatureRevocationAppealNow: false;
+        verifyCountersignatureRevocationAppealSignatureNow: false;
+        computeCountersignatureRevocationAppealHashNow: false;
+        storeCountersignatureRevocationAppealHashNow: false;
+        requiredInputs: string[];
+        countersignatureRevocationAppealPolicyId: "future-materialization-audit-countersignature-revocation-appeal";
+        countersignatureRevocationAppealScope: "future-policy-defined";
+        countersignatureRevocationAppealPayloadLogged: false;
+    };
+    auditCountersignatureRevocationAppealChecks: Array<{
+        id: string;
+        required: true;
+        planned: true;
+        executed: false;
+        passed: false;
+    }>;
+    auditCountersignatureRevocationAppealDecision: {
+        status: "blocked";
+        canSelectCountersignatureRevocationAppealPolicy: false;
+        canIdentifyCountersignatureRevocationAppealSubject: false;
+        canIdentifyCountersignatureRevocationAppealAuthority: false;
+        canCaptureCountersignatureRevocationAppealReason: false;
+        canComputeCountersignatureRevocationAppealScope: false;
+        canPrepareCountersignatureRevocationAppealRequest: false;
+        canValidateCountersignatureRevocationAppealRequest: false;
+        canStoreCountersignatureRevocationAppealRequest: false;
+        canExecuteCountersignatureRevocationAppeal: false;
+        canAppealCountersignatureRevocation: false;
+        canGrantCountersignatureRevocationAppeal: false;
+        canDenyCountersignatureRevocationAppeal: false;
+        canPublishCountersignatureRevocationAppeal: false;
+        canCreateCountersignatureRevocationAppealRecord: false;
+        canStoreCountersignatureRevocationAppealRecord: false;
+        canPublishCountersignatureRevocationAppealRecord: false;
+        canReadCountersignatureRevocation: false;
+        canReadCountersignatureRevocationRecord: false;
+        canReadCountersignature: false;
+        canVerifyCountersignatureRevocation: false;
+        canReadAuditRecord: false;
+        canQueryAuditRecord: false;
+        canLinkAuditRecordCountersignatureRevocationAppeal: false;
+        canVerifyAuditRecordCountersignatureRevocationAppeal: false;
+        canSignCountersignatureRevocationAppeal: false;
+        canVerifyCountersignatureRevocationAppealSignature: false;
+        canComputeCountersignatureRevocationAppealHash: false;
+        canStoreCountersignatureRevocationAppealHash: false;
+        canMaterializeFiles: false;
+        canEnableRuntimeDispatch: false;
+        reason: string;
+    };
+    noOpGuarantees: string[];
+    requiredBeforeRuntimeDispatch: string[];
+}
+
 export interface CreateRenderThumbnailRendererServiceClientRequestOptions {
     entrypoint?: "mcp" | "cli" | string | null;
     mcpToolName?: string | null;
@@ -6331,6 +6505,13 @@ export function createRenderThumbnailRendererServicePackageMaterializationApprov
         packageMaterializationFinalApprovalChecklist?: Partial<RenderThumbnailRendererServicePackageMaterializationFinalApprovalChecklist> | null;
     }
 ): RenderThumbnailRendererServicePackageMaterializationApprovalAuditCountersignatureRevocationPolicy;
+export function createRenderThumbnailRendererServicePackageMaterializationApprovalAuditCountersignatureRevocationAppealPolicy(
+    options?: {
+        packageMaterializationApprovalAuditCountersignatureRevocationPolicy?: Partial<RenderThumbnailRendererServicePackageMaterializationApprovalAuditCountersignatureRevocationPolicy> | null;
+        packageMaterializationApprovalAuditAccessPolicy?: Partial<RenderThumbnailRendererServicePackageMaterializationApprovalAuditAccessPolicy> | null;
+        packageMaterializationFinalApprovalChecklist?: Partial<RenderThumbnailRendererServicePackageMaterializationFinalApprovalChecklist> | null;
+    }
+): RenderThumbnailRendererServicePackageMaterializationApprovalAuditCountersignatureRevocationAppealPolicy;
 export function createRenderThumbnailRendererServiceClientRequest(
     plan: Partial<RenderThumbnailRendererServicePlan>,
     options?: CreateRenderThumbnailRendererServiceClientRequestOptions
