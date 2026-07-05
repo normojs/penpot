@@ -1011,6 +1011,17 @@ Shared contract shape:
   storage/publication, countersignature and audit record reads, approval, file
   writes, workspace mutation, command execution, build output, package creation,
   process startup, and runtime registration disabled.
+- P25.78 package materialization approval audit countersignature revocation appeal resolution enforcement evidence attestation notarization certification endorsement countersignature verification revocation appeal resolution enforcement policy fields are
+  planning-only. They define future verification revocation appeal resolution
+  enforcement policies, required enforcement inputs, enforcement checks,
+  blocked enforcement decisions, and no-op guarantees while keeping enforcement
+  policy selection, subject/authority identification, resolution reads,
+  resolution record reads, enforcement reason capture, scope computation,
+  action selection, enforcement storage/execution, resolution enforcement
+  decisions, enforcement record storage/publication, countersignature and audit
+  record reads, approval, file writes, workspace mutation, command execution,
+  build output, package creation, process startup, and runtime registration
+  disabled.
 - P25.71 package materialization approval audit countersignature revocation
   appeal resolution enforcement evidence attestation notarization certification
   policy fields are planning-only. They define future enforcement evidence

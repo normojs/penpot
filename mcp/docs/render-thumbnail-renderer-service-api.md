@@ -215,6 +215,18 @@ mutation, lockfile mutation, command execution, build output, materialization
 approval, process startup, dispatch, network dispatch, runtime registration,
 and local file writes disabled.
 
+The P25.78 revocation appeal resolution enforcement evidence attestation
+notarization certification endorsement countersignature verification revocation
+appeal resolution enforcement slice keeps enforcement policy selection,
+subject/authority identification, resolution reads, resolution record reads,
+enforcement reason capture, scope computation, action selection, enforcement
+preparation/storage/execution/publication, resolution enforcement decisions,
+enforcement record creation/storage/publication, countersignature and audit
+record reads, enforcement linking/verification/signing/hashing, file writes,
+package creation, workspace mutation, lockfile mutation, command execution,
+build output, materialization approval, process startup, dispatch, network
+dispatch, runtime registration, and local file writes disabled.
+
 P25.24 defines the health/no-op contract fixtures selected by that audit. Plans
 now include `healthNoopContractFixtures`, covering `/health` OK/unavailable
 responses and a no-op `thumbnail.render` response while keeping dispatch,

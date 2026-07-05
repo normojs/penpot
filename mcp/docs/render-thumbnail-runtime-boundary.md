@@ -182,6 +182,12 @@ certification endorsement countersignature verification revocation appeal
 resolution policy metadata without selecting resolution policies, reading
 appeals or audit records, resolving appeals, storing resolution records, or
 enabling dispatch.
+P25.78 defines package materialization approval audit countersignature
+revocation appeal resolution enforcement evidence attestation notarization
+certification endorsement countersignature verification revocation appeal
+resolution enforcement policy metadata without selecting enforcement policies,
+reading resolutions or audit records, enforcing resolutions, storing
+enforcement records, or enabling dispatch.
 
 ## Existing Surfaces
 
