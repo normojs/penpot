@@ -56,6 +56,7 @@ import {
     createRenderThumbnailRendererServicePackageMaterializationApprovalAuditRetentionPolicy,
     createRenderThumbnailRendererServicePackageMaterializationApprovalAuditAccessPolicy,
     createRenderThumbnailRendererServicePackageMaterializationApprovalAuditIntegrityPolicy,
+    createRenderThumbnailRendererServicePackageMaterializationApprovalAuditProvenancePolicy,
     createRenderThumbnailRendererServicePackageFileTemplates,
     createRenderThumbnailRendererServicePackageManifestScaffold,
     createRenderThumbnailRendererServicePackageMaterializationChecklist,
@@ -378,6 +379,108 @@ function assertAuditIntegrityPolicyMetadataOnly(policy) {
         "canEnableRuntimeDispatch",
     ]) {
         assert.equal(policy.auditIntegrityDecision[key], false, key);
+    }
+}
+
+function assertAuditProvenancePolicyMetadataOnly(policy) {
+    assert.equal(policy.auditProvenanceVersion, "P25.55");
+    assert.equal(policy.provenanceRequired, true);
+    assert.equal(policy.provenancePlanned, true);
+
+    for (const key of [
+        "provenancePolicySelected",
+        "provenanceSubjectIdentified",
+        "provenanceSourceCollected",
+        "provenanceSourceValidated",
+        "provenanceGraphComputed",
+        "provenanceGraphStored",
+        "provenanceChainLinked",
+        "provenanceChainVerified",
+        "provenanceRecordCreated",
+        "provenanceRecordStored",
+        "provenanceRecordPublished",
+        "auditRecordRead",
+        "auditRecordQueried",
+        "auditRecordProvenanceLinked",
+        "auditRecordProvenanceVerified",
+        "provenanceSignatureCreated",
+        "provenanceSignatureVerified",
+        "provenanceHashComputed",
+        "provenanceHashStored",
+        "materializationApproved",
+        "dispatch",
+        "networkDispatch",
+        "runtimeRegistration",
+        "localFileWrites",
+        "hostStartup",
+        "processSpawn",
+        "packageCreated",
+        "workspaceMutation",
+        "scriptRunnable",
+        "fileMaterialization",
+        "lockfileMutation",
+        "rootPackageJsonMutation",
+        "pnpmWorkspaceMutation",
+        "commandExecution",
+        "buildOutput",
+        "packageScriptsRunnable",
+        "filesWritten",
+    ]) {
+        assert.equal(policy[key], false, key);
+    }
+
+    assert.equal(policy.consumes.packageMaterializationApprovalAuditIntegrityPolicy.auditIntegrityVersion, "P25.54");
+    assert.equal(policy.consumes.packageMaterializationApprovalAuditAccessPolicy.auditAccessVersion, "P25.53");
+    assert.equal(policy.consumes.packageMaterializationFinalApprovalChecklist.checklistVersion, "P25.40");
+
+    for (const key of [
+        "selectProvenancePolicyNow",
+        "identifyProvenanceSubjectNow",
+        "collectProvenanceSourceNow",
+        "validateProvenanceSourceNow",
+        "computeProvenanceGraphNow",
+        "storeProvenanceGraphNow",
+        "linkProvenanceChainNow",
+        "verifyProvenanceChainNow",
+        "createProvenanceRecordNow",
+        "storeProvenanceRecordNow",
+        "publishProvenanceRecordNow",
+        "readAuditRecordNow",
+        "queryAuditRecordNow",
+        "linkAuditRecordProvenanceNow",
+        "verifyAuditRecordProvenanceNow",
+        "signProvenanceNow",
+        "verifyProvenanceSignatureNow",
+        "computeProvenanceHashNow",
+        "storeProvenanceHashNow",
+    ]) {
+        assert.equal(policy.auditProvenancePolicy[key], false, key);
+    }
+
+    for (const key of [
+        "canSelectProvenancePolicy",
+        "canIdentifyProvenanceSubject",
+        "canCollectProvenanceSource",
+        "canValidateProvenanceSource",
+        "canComputeProvenanceGraph",
+        "canStoreProvenanceGraph",
+        "canLinkProvenanceChain",
+        "canVerifyProvenanceChain",
+        "canCreateProvenanceRecord",
+        "canStoreProvenanceRecord",
+        "canPublishProvenanceRecord",
+        "canReadAuditRecord",
+        "canQueryAuditRecord",
+        "canLinkAuditRecordProvenance",
+        "canVerifyAuditRecordProvenance",
+        "canSignProvenance",
+        "canVerifyProvenanceSignature",
+        "canComputeProvenanceHash",
+        "canStoreProvenanceHash",
+        "canMaterializeFiles",
+        "canEnableRuntimeDispatch",
+    ]) {
+        assert.equal(policy.auditProvenanceDecision[key], false, key);
     }
 }
 
@@ -725,6 +828,7 @@ test("render.thumbnail runtime boundary keeps execution unavailable until render
     assertAuditRetentionPolicyMetadataOnly(boundary.packageMaterializationApprovalAuditRetentionPolicy);
     assertAuditAccessPolicyMetadataOnly(boundary.packageMaterializationApprovalAuditAccessPolicy);
     assertAuditIntegrityPolicyMetadataOnly(boundary.packageMaterializationApprovalAuditIntegrityPolicy);
+    assertAuditProvenancePolicyMetadataOnly(boundary.packageMaterializationApprovalAuditProvenancePolicy);
     assert.ok(boundary.testStrategy.some((item) => item.includes("descriptor tests")));
 });
 
@@ -1050,6 +1154,8 @@ test("render.thumbnail renderer-service API fixtures define planning requests wi
     assertAuditAccessPolicyMetadataOnly(renderThumbnailRuntimeBoundaryFixtures.packageMaterializationApprovalAuditAccessPolicy);
     assertAuditIntegrityPolicyMetadataOnly(fixtures.serviceApi.packageMaterializationApprovalAuditIntegrityPolicy);
     assertAuditIntegrityPolicyMetadataOnly(renderThumbnailRuntimeBoundaryFixtures.packageMaterializationApprovalAuditIntegrityPolicy);
+    assertAuditProvenancePolicyMetadataOnly(fixtures.serviceApi.packageMaterializationApprovalAuditProvenancePolicy);
+    assertAuditProvenancePolicyMetadataOnly(renderThumbnailRuntimeBoundaryFixtures.packageMaterializationApprovalAuditProvenancePolicy);
     assert.deepEqual(fixtures.runtimeRegistration.commandDescriptorAdapters, ["renderer-service"]);
     assert.deepEqual(CommandDescriptors.RENDER_THUMBNAIL.adapters, ["renderer-service"]);
     assert.equal(fixtures.runtimeRegistration.mcpToolRegistered, true);
@@ -2184,6 +2290,8 @@ test("render.thumbnail renderer-service plan exposes dry-run client request whil
     assert.deepEqual(plan.service.packageMaterializationApprovalAuditAccessPolicy, plan.packageMaterializationApprovalAuditAccessPolicy);
     assertAuditIntegrityPolicyMetadataOnly(plan.packageMaterializationApprovalAuditIntegrityPolicy);
     assert.deepEqual(plan.service.packageMaterializationApprovalAuditIntegrityPolicy, plan.packageMaterializationApprovalAuditIntegrityPolicy);
+    assertAuditProvenancePolicyMetadataOnly(plan.packageMaterializationApprovalAuditProvenancePolicy);
+    assert.deepEqual(plan.service.packageMaterializationApprovalAuditProvenancePolicy, plan.packageMaterializationApprovalAuditProvenancePolicy);
     assert.equal(plan.clientRequest.status, "scaffolded");
     assert.equal(plan.clientRequest.dispatch, false);
     assert.equal(plan.clientRequest.method, "POST");
@@ -2254,6 +2362,7 @@ test("render.thumbnail renderer-service plan exposes dry-run client request whil
     assert.equal(plan.diagnostics.packageMaterializationApprovalAuditRetentionPolicyVersion, "P25.52");
     assert.equal(plan.diagnostics.packageMaterializationApprovalAuditAccessPolicyVersion, "P25.53");
     assert.equal(plan.diagnostics.packageMaterializationApprovalAuditIntegrityPolicyVersion, "P25.54");
+    assert.equal(plan.diagnostics.packageMaterializationApprovalAuditProvenancePolicyVersion, "P25.55");
 });
 
 test("render.thumbnail renderer-service plan reports not-configured availability without endpoint", () => {
@@ -4744,6 +4853,56 @@ test("render.thumbnail renderer-service package materialization approval audit i
     assert.ok(auditIntegrityPolicy.noOpGuarantees.includes("audit integrity policy plan does not hash or verify audit records"));
     assert.ok(auditIntegrityPolicy.requiredBeforeRuntimeDispatch.includes("define audit integrity policy schema"));
     assertAuditIntegrityPolicyMetadataOnly(auditIntegrityPolicy);
+});
+
+test("render.thumbnail renderer-service package materialization approval audit provenance policy stays metadata-only", () => {
+    const auditProvenancePolicy = createRenderThumbnailRendererServicePackageMaterializationApprovalAuditProvenancePolicy({
+        packageMaterializationApprovalAuditIntegrityPolicy: {
+            status: "planned-disabled",
+            auditIntegrityVersion: "P25.54",
+            auditRecordVerified: false,
+            integrityHashVerified: false,
+        },
+        packageMaterializationApprovalAuditAccessPolicy: {
+            status: "planned-disabled",
+            auditAccessVersion: "P25.53",
+            auditRecordRead: false,
+            accessGranted: false,
+        },
+        packageMaterializationFinalApprovalChecklist: {
+            status: "planned-disabled",
+            checklistVersion: "P25.40",
+            finalApprovalGranted: false,
+        },
+    });
+
+    assert.equal(auditProvenancePolicy.status, "planned-disabled");
+    assert.equal(auditProvenancePolicy.dryRunOnly, true);
+    assert.equal(auditProvenancePolicy.approvalRequired, true);
+    assert.equal(auditProvenancePolicy.approved, false);
+    assert.equal(auditProvenancePolicy.finalApprovalGranted, false);
+    assert.equal(
+        auditProvenancePolicy.auditProvenancePolicy.policy,
+        "track-provenance-after-integrity-verified-audit-record"
+    );
+    assert.equal(auditProvenancePolicy.auditProvenancePolicy.provenancePayloadLogged, false);
+    assert.ok(auditProvenancePolicy.auditProvenancePolicy.requiredInputs.includes("trustedProvenanceSource"));
+    assert.ok(
+        auditProvenancePolicy.auditProvenanceChecks.some(
+            (entry) => entry.id === "provenance-record-not-created" && entry.executed === false
+        )
+    );
+    assert.equal(auditProvenancePolicy.auditProvenanceDecision.status, "blocked");
+    assert.equal(auditProvenancePolicy.auditProvenanceDecision.canCollectProvenanceSource, false);
+    assert.equal(auditProvenancePolicy.auditProvenanceDecision.canComputeProvenanceGraph, false);
+    assert.equal(auditProvenancePolicy.auditProvenanceDecision.canCreateProvenanceRecord, false);
+    assert.ok(
+        auditProvenancePolicy.noOpGuarantees.includes(
+            "audit provenance policy plan does not create, store, or publish provenance records"
+        )
+    );
+    assert.ok(auditProvenancePolicy.requiredBeforeRuntimeDispatch.includes("define audit provenance policy schema"));
+    assertAuditProvenancePolicyMetadataOnly(auditProvenancePolicy);
 });
 
 test("render.thumbnail renderer-service client request scaffold adds MCP audit headers without dispatch", () => {

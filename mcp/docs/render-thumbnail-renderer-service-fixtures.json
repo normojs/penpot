@@ -1,7 +1,7 @@
 {
-  "version": "P25.54",
+  "version": "P25.55",
   "command": "render.thumbnail",
-  "status": "renderer-service API fixtures with MCP/CLI dry-run/client boundaries, metadata-only availability probes, response normalization contracts, disabled client request scaffold, explicit execution gate, health preflight plan, executable client harness plan, dispatch adapter boundary, opt-in configuration surfaces, unavailable error taxonomy, integration fixture harness, dispatch registration preflight, disabled executable adapter registration scaffold, disabled adapter registry manifest, final disabled enablement checklist, implementation slice audit, health/no-op contract fixtures, no-op service host scaffold, host lifecycle test fixtures, package manifest scaffold, package creation guardrails, package file templates, package workspace wiring, package build verification, package materialization checklist, package creation dry-run summary, package creation file manifest, package materialization approval gate, package materialization execution dry-run, package materialization write contract, package materialization rollback contract, package materialization verification manifest, package materialization final approval checklist, package materialization explicit approval token, package materialization approval audit trail, package materialization approval replay guard, package materialization approval expiry policy, package materialization approval revocation policy, package materialization approval scope binding policy, package materialization approval operator confirmation policy, package materialization approval emergency stop policy, package materialization approval readiness verdict policy, package materialization approval execution handoff policy, package materialization approval post-handoff audit policy, package materialization approval audit retention policy, package materialization approval audit access policy, and package materialization approval audit integrity policy; runtime execution blocked",
+  "status": "renderer-service API fixtures with MCP/CLI dry-run/client boundaries, metadata-only availability probes, response normalization contracts, disabled client request scaffold, explicit execution gate, health preflight plan, executable client harness plan, dispatch adapter boundary, opt-in configuration surfaces, unavailable error taxonomy, integration fixture harness, dispatch registration preflight, disabled executable adapter registration scaffold, disabled adapter registry manifest, final disabled enablement checklist, implementation slice audit, health/no-op contract fixtures, no-op service host scaffold, host lifecycle test fixtures, package manifest scaffold, package creation guardrails, package file templates, package workspace wiring, package build verification, package materialization checklist, package creation dry-run summary, package creation file manifest, package materialization approval gate, package materialization execution dry-run, package materialization write contract, package materialization rollback contract, package materialization verification manifest, package materialization final approval checklist, package materialization explicit approval token, package materialization approval audit trail, package materialization approval replay guard, package materialization approval expiry policy, package materialization approval revocation policy, package materialization approval scope binding policy, package materialization approval operator confirmation policy, package materialization approval emergency stop policy, package materialization approval readiness verdict policy, package materialization approval execution handoff policy, package materialization approval post-handoff audit policy, package materialization approval audit retention policy, package materialization approval audit access policy, package materialization approval audit integrity policy, and package materialization approval audit provenance policy; runtime execution blocked",
   "adapter": "renderer-service",
   "runtimeRegistration": {
     "mcpToolRegistered": true,
@@ -5259,6 +5259,207 @@
         "define integrity chain and tamper evidence semantics",
         "keep render.thumbnail unavailable until executable adapter registration is approved"
       ]
+    },
+    "packageMaterializationApprovalAuditProvenancePolicy": {
+      "status": "planned-disabled",
+      "auditProvenanceVersion": "P25.55",
+      "adapter": "renderer-service",
+      "command": "render.thumbnail",
+      "dryRunOnly": true,
+      "approvalRequired": true,
+      "approved": false,
+      "finalApprovalGranted": false,
+      "provenanceRequired": true,
+      "provenancePlanned": true,
+      "provenancePolicySelected": false,
+      "provenanceSubjectIdentified": false,
+      "provenanceSourceCollected": false,
+      "provenanceSourceValidated": false,
+      "provenanceGraphComputed": false,
+      "provenanceGraphStored": false,
+      "provenanceChainLinked": false,
+      "provenanceChainVerified": false,
+      "provenanceRecordCreated": false,
+      "provenanceRecordStored": false,
+      "provenanceRecordPublished": false,
+      "auditRecordRead": false,
+      "auditRecordQueried": false,
+      "auditRecordProvenanceLinked": false,
+      "auditRecordProvenanceVerified": false,
+      "provenanceSignatureCreated": false,
+      "provenanceSignatureVerified": false,
+      "provenanceHashComputed": false,
+      "provenanceHashStored": false,
+      "materializationReady": false,
+      "materializationApproved": false,
+      "materializationApprovedNow": false,
+      "tokenAccepted": false,
+      "tokenStored": false,
+      "tokenValidated": false,
+      "tokenConsumed": false,
+      "tokenRevoked": false,
+      "executeNow": false,
+      "verifyNow": false,
+      "rollbackNow": false,
+      "dispatch": false,
+      "networkDispatch": false,
+      "runtimeRegistration": false,
+      "localFileWrites": false,
+      "hostStartup": false,
+      "processSpawn": false,
+      "packageCreated": false,
+      "workspaceMutation": false,
+      "scriptRunnable": false,
+      "fileMaterialization": false,
+      "lockfileMutation": false,
+      "rootPackageJsonMutation": false,
+      "pnpmWorkspaceMutation": false,
+      "commandExecution": false,
+      "buildOutput": false,
+      "packageScriptsRunnable": false,
+      "filesWritten": false,
+      "rollbackExecuted": false,
+      "verificationExecuted": false,
+      "consumes": {
+        "packageMaterializationApprovalAuditIntegrityPolicy": {
+          "requiredStatus": "planned-disabled",
+          "currentStatus": "planned-disabled",
+          "auditIntegrityVersion": "P25.54",
+          "auditRecordVerified": false,
+          "integrityHashVerified": false
+        },
+        "packageMaterializationApprovalAuditAccessPolicy": {
+          "requiredStatus": "planned-disabled",
+          "currentStatus": "planned-disabled",
+          "auditAccessVersion": "P25.53",
+          "auditRecordRead": false,
+          "accessGranted": false
+        },
+        "packageMaterializationFinalApprovalChecklist": {
+          "requiredStatus": "planned-disabled",
+          "currentStatus": "planned-disabled",
+          "checklistVersion": "P25.40",
+          "finalApprovalGranted": false
+        }
+      },
+      "auditProvenancePolicy": {
+        "policy": "track-provenance-after-integrity-verified-audit-record",
+        "selectProvenancePolicyNow": false,
+        "identifyProvenanceSubjectNow": false,
+        "collectProvenanceSourceNow": false,
+        "validateProvenanceSourceNow": false,
+        "computeProvenanceGraphNow": false,
+        "storeProvenanceGraphNow": false,
+        "linkProvenanceChainNow": false,
+        "verifyProvenanceChainNow": false,
+        "createProvenanceRecordNow": false,
+        "storeProvenanceRecordNow": false,
+        "publishProvenanceRecordNow": false,
+        "readAuditRecordNow": false,
+        "queryAuditRecordNow": false,
+        "linkAuditRecordProvenanceNow": false,
+        "verifyAuditRecordProvenanceNow": false,
+        "signProvenanceNow": false,
+        "verifyProvenanceSignatureNow": false,
+        "computeProvenanceHashNow": false,
+        "storeProvenanceHashNow": false,
+        "requiredInputs": [
+          "verifiedAuditRecord",
+          "auditAccessGrant",
+          "provenancePolicyId",
+          "trustedProvenanceSource"
+        ],
+        "provenancePolicyId": "future-materialization-audit-provenance",
+        "provenanceScope": "future-policy-defined",
+        "provenancePayloadLogged": false
+      },
+      "auditProvenanceChecks": [
+        {
+          "id": "verified-audit-record-present",
+          "required": true,
+          "planned": true,
+          "executed": false,
+          "passed": false
+        },
+        {
+          "id": "audit-access-granted",
+          "required": true,
+          "planned": true,
+          "executed": false,
+          "passed": false
+        },
+        {
+          "id": "provenance-policy-selected",
+          "required": true,
+          "planned": true,
+          "executed": false,
+          "passed": false
+        },
+        {
+          "id": "provenance-source-not-collected",
+          "required": true,
+          "planned": true,
+          "executed": false,
+          "passed": false
+        },
+        {
+          "id": "provenance-record-not-created",
+          "required": true,
+          "planned": true,
+          "executed": false,
+          "passed": false
+        }
+      ],
+      "auditProvenanceDecision": {
+        "status": "blocked",
+        "canSelectProvenancePolicy": false,
+        "canIdentifyProvenanceSubject": false,
+        "canCollectProvenanceSource": false,
+        "canValidateProvenanceSource": false,
+        "canComputeProvenanceGraph": false,
+        "canStoreProvenanceGraph": false,
+        "canLinkProvenanceChain": false,
+        "canVerifyProvenanceChain": false,
+        "canCreateProvenanceRecord": false,
+        "canStoreProvenanceRecord": false,
+        "canPublishProvenanceRecord": false,
+        "canReadAuditRecord": false,
+        "canQueryAuditRecord": false,
+        "canLinkAuditRecordProvenance": false,
+        "canVerifyAuditRecordProvenance": false,
+        "canSignProvenance": false,
+        "canVerifyProvenanceSignature": false,
+        "canComputeProvenanceHash": false,
+        "canStoreProvenanceHash": false,
+        "canMaterializeFiles": false,
+        "canEnableRuntimeDispatch": false,
+        "reason": "audit provenance policy is metadata-only and no verified audit record or access grant has been established"
+      },
+      "noOpGuarantees": [
+        "audit provenance policy plan does not select provenance policies",
+        "audit provenance policy plan does not identify provenance subjects",
+        "audit provenance policy plan does not collect or validate provenance sources",
+        "audit provenance policy plan does not compute or store provenance graphs",
+        "audit provenance policy plan does not link or verify provenance chains",
+        "audit provenance policy plan does not create, store, or publish provenance records",
+        "audit provenance policy plan does not read or query audit records",
+        "audit provenance policy plan does not link or verify audit record provenance",
+        "audit provenance policy plan does not sign or verify provenance signatures",
+        "audit provenance policy plan does not compute or store provenance hashes",
+        "audit provenance policy plan does not create renderer-service directory",
+        "audit provenance policy plan does not write package or workspace files",
+        "audit provenance policy plan does not mutate lockfiles",
+        "audit provenance policy plan does not run commands",
+        "audit provenance policy plan does not generate build output",
+        "audit provenance policy plan does not register runtime dispatch"
+      ],
+      "requiredBeforeRuntimeDispatch": [
+        "define audit provenance policy schema",
+        "require verified audit record and access grant before provenance tracking",
+        "define trusted provenance source and graph semantics",
+        "define provenance chain, signature, and hash semantics",
+        "keep render.thumbnail unavailable until executable adapter registration is approved"
+      ]
     }
   },
   "registrationGates": {
@@ -5607,8 +5808,8 @@
     "missing token fails before contacting renderer-service"
   ],
   "nextTask": {
-    "id": "P25.55",
-    "title": "Plan renderer-service package materialization approval audit provenance policy",
+    "id": "P25.56",
+    "title": "Plan renderer-service package materialization approval audit custody policy",
     "status": "pending"
   }
 }

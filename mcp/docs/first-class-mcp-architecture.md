@@ -2883,6 +2883,35 @@ P25.54 render.thumbnail package materialization approval audit integrity policy 
   `packageCreated`, `dispatch`, `networkDispatch`, `runtimeRegistration`, and
   `localFileWrites` remain `false`.
 
+P25.55 render.thumbnail package materialization approval audit provenance policy result:
+
+- Shared plans include `packageMaterializationApprovalAuditProvenancePolicy`,
+  defining metadata-only audit provenance policies, required provenance inputs,
+  provenance checks, blocked provenance decisions, and no-op guarantees.
+- MCP and CLI expose the audit provenance policy plan in dry-run and
+  unavailable execution payloads without selecting provenance policies,
+  identifying subjects, collecting or validating provenance sources,
+  computing or storing provenance graphs, linking or verifying provenance
+  chains, creating/storing/publishing provenance records, reading or querying
+  audit records, linking/verifying/signing/hashing provenance, granting
+  approval, creating package directories, writing files, mutating workspace
+  manifests, mutating lockfiles, running commands, emitting build output,
+  starting processes, or registering runtime dispatch.
+- `provenancePolicySelected`, `provenanceSubjectIdentified`,
+  `provenanceSourceCollected`, `provenanceSourceValidated`,
+  `provenanceGraphComputed`, `provenanceGraphStored`,
+  `provenanceChainLinked`, `provenanceChainVerified`,
+  `provenanceRecordCreated`, `provenanceRecordStored`,
+  `provenanceRecordPublished`, `auditRecordRead`, `auditRecordQueried`,
+  `auditRecordProvenanceLinked`, `auditRecordProvenanceVerified`,
+  `provenanceSignatureCreated`, `provenanceSignatureVerified`,
+  `provenanceHashComputed`, `provenanceHashStored`,
+  `materializationApproved`, `approved`, and `finalApprovalGranted` remain
+  `false`, while `filesWritten`, `fileMaterialization`, `workspaceMutation`,
+  `lockfileMutation`, `commandExecution`, `buildOutput`, `processSpawn`,
+  `packageCreated`, `dispatch`, `networkDispatch`, `runtimeRegistration`, and
+  `localFileWrites` remain `false`.
+
 ### 8.5 Export and Render Tools
 
 May start file-bound and later move to headless:
@@ -2941,7 +2970,8 @@ P25.51 defines disabled package materialization approval post-handoff audit
 policy. P25.52 defines disabled package materialization approval audit
 retention policy. P25.53 defines disabled package materialization approval
 audit access policy. P25.54 defines disabled package materialization approval
-audit integrity policy.
+audit integrity policy. P25.55 defines disabled package materialization
+approval audit provenance policy.
 Runtime behavior remains unavailable
 until opt-in config surfaces, renderer-service implementation, workspace
 wiring, health preflight, cache probe, executable client, and tagged-frame

@@ -1447,3 +1447,31 @@ policy:
   signatures, link or verify integrity chains, read/hash/verify/sign/seal
   audit records, check tamper state, store integrity records, materialize
   files, start processes, or register runtime dispatch.
+
+P25.55 adds renderer-service package materialization approval audit provenance
+policy:
+
+- Plans include `packageMaterializationApprovalAuditProvenancePolicy`, defining
+  the future provenance policy, required provenance inputs, provenance checks,
+  blocked provenance decision, and no-op guarantees.
+- The audit provenance policy remains planning-only with
+  `provenancePolicySelected:false`, `provenanceSubjectIdentified:false`,
+  `provenanceSourceCollected:false`, `provenanceSourceValidated:false`,
+  `provenanceGraphComputed:false`, `provenanceGraphStored:false`,
+  `provenanceChainLinked:false`, `provenanceChainVerified:false`,
+  `provenanceRecordCreated:false`, `provenanceRecordStored:false`,
+  `provenanceRecordPublished:false`, `auditRecordRead:false`,
+  `auditRecordQueried:false`, `auditRecordProvenanceLinked:false`,
+  `auditRecordProvenanceVerified:false`, `provenanceSignatureCreated:false`,
+  `provenanceSignatureVerified:false`, `provenanceHashComputed:false`,
+  `provenanceHashStored:false`, `materializationApproved:false`,
+  `approved:false`, `finalApprovalGranted:false`, `filesWritten:false`,
+  `fileMaterialization:false`, `workspaceMutation:false`,
+  `lockfileMutation:false`, `commandExecution:false`, `buildOutput:false`,
+  `processSpawn:false`, `packageCreated:false`, `dispatch:false`,
+  `networkDispatch:false`, `runtimeRegistration:false`, and
+  `localFileWrites:false`.
+- MCP and CLI expose this policy in dry-run and unavailable execution JSON
+  without selecting provenance policies, collecting sources, computing graphs,
+  creating provenance records, reading audit records, signing or hashing
+  provenance, materializing files, starting processes, or enabling dispatch.
