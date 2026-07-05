@@ -1,7 +1,7 @@
 {
-  "version": "P25.51",
+  "version": "P25.52",
   "command": "render.thumbnail",
-  "status": "runtime boundary audited; MCP/CLI planning, metadata-only availability probes, response normalization contracts, disabled client request scaffold, closed execution gate, health preflight plan, executable client harness plan, dispatch adapter boundary, opt-in configuration surfaces, unavailable error taxonomy, integration fixture harness, dispatch registration preflight, disabled executable adapter registration scaffold, disabled adapter registry manifest, final disabled enablement checklist, implementation slice audit, health/no-op contract fixtures, no-op service host scaffold, host lifecycle test fixtures, package manifest scaffold, package creation guardrails, package file templates, package workspace wiring, package build verification, package materialization checklist, package creation dry-run summary, package creation file manifest, package materialization approval gate, package materialization execution dry-run, package materialization write contract, package materialization rollback contract, package materialization verification manifest, package materialization final approval checklist, package materialization explicit approval token, package materialization approval audit trail, package materialization approval replay guard, package materialization approval expiry policy, package materialization approval revocation policy, package materialization approval scope binding policy, package materialization approval operator confirmation policy, package materialization approval emergency stop policy, package materialization approval readiness verdict policy, package materialization approval execution handoff policy, and package materialization approval post-handoff audit policy registered; runtime execution blocked",
+  "status": "runtime boundary audited; MCP/CLI planning, metadata-only availability probes, response normalization contracts, disabled client request scaffold, closed execution gate, health preflight plan, executable client harness plan, dispatch adapter boundary, opt-in configuration surfaces, unavailable error taxonomy, integration fixture harness, dispatch registration preflight, disabled executable adapter registration scaffold, disabled adapter registry manifest, final disabled enablement checklist, implementation slice audit, health/no-op contract fixtures, no-op service host scaffold, host lifecycle test fixtures, package manifest scaffold, package creation guardrails, package file templates, package workspace wiring, package build verification, package materialization checklist, package creation dry-run summary, package creation file manifest, package materialization approval gate, package materialization execution dry-run, package materialization write contract, package materialization rollback contract, package materialization verification manifest, package materialization final approval checklist, package materialization explicit approval token, package materialization approval audit trail, package materialization approval replay guard, package materialization approval expiry policy, package materialization approval revocation policy, package materialization approval scope binding policy, package materialization approval operator confirmation policy, package materialization approval emergency stop policy, package materialization approval readiness verdict policy, package materialization approval execution handoff policy, package materialization approval post-handoff audit policy, and package materialization approval audit retention policy registered; runtime execution blocked",
   "selectedBoundary": "thumbnail-renderer-service",
   "runtimeRegistration": {
     "mcpToolRegistered": true,
@@ -389,8 +389,8 @@
     "package materialization approval emergency stop policy survives dry-run and unavailable execution JSON output"
   ],
   "nextTask": {
-    "id": "P25.52",
-    "title": "Plan renderer-service package materialization approval audit retention policy",
+    "id": "P25.53",
+    "title": "Plan renderer-service package materialization approval audit access policy",
     "status": "pending"
   },
   "implementationSliceAudit": {
@@ -4615,6 +4615,185 @@
       "require accepted execution handoff before audit",
       "persist audit record only after handoff acceptance is trusted",
       "link audit trail before materialization",
+      "keep render.thumbnail unavailable until executable adapter registration is approved"
+    ]
+  },
+  "packageMaterializationApprovalAuditRetentionPolicy": {
+    "status": "planned-disabled",
+    "auditRetentionVersion": "P25.52",
+    "adapter": "renderer-service",
+    "command": "render.thumbnail",
+    "dryRunOnly": true,
+    "approvalRequired": true,
+    "approved": false,
+    "finalApprovalGranted": false,
+    "retentionRequired": true,
+    "retentionPlanned": true,
+    "retentionPolicySelected": false,
+    "retentionWindowComputed": false,
+    "retentionClockTrusted": false,
+    "retentionRecordStored": false,
+    "retentionIndexUpdated": false,
+    "archivePrepared": false,
+    "archiveStored": false,
+    "purgeScheduled": false,
+    "purgeExecuted": false,
+    "exportPrepared": false,
+    "exportWritten": false,
+    "auditRecordWritten": false,
+    "auditRecordStored": false,
+    "auditRecordExported": false,
+    "materializationReady": false,
+    "materializationApproved": false,
+    "materializationApprovedNow": false,
+    "tokenAccepted": false,
+    "tokenStored": false,
+    "tokenValidated": false,
+    "tokenConsumed": false,
+    "tokenRevoked": false,
+    "executeNow": false,
+    "verifyNow": false,
+    "rollbackNow": false,
+    "dispatch": false,
+    "networkDispatch": false,
+    "runtimeRegistration": false,
+    "localFileWrites": false,
+    "hostStartup": false,
+    "processSpawn": false,
+    "packageCreated": false,
+    "workspaceMutation": false,
+    "scriptRunnable": false,
+    "fileMaterialization": false,
+    "lockfileMutation": false,
+    "rootPackageJsonMutation": false,
+    "pnpmWorkspaceMutation": false,
+    "commandExecution": false,
+    "buildOutput": false,
+    "packageScriptsRunnable": false,
+    "filesWritten": false,
+    "rollbackExecuted": false,
+    "verificationExecuted": false,
+    "consumes": {
+      "packageMaterializationApprovalPostHandoffAuditPolicy": {
+        "requiredStatus": "planned-disabled",
+        "currentStatus": "planned-disabled",
+        "postHandoffAuditVersion": "P25.51",
+        "auditRecordWritten": false,
+        "auditRecordStored": false
+      },
+      "packageMaterializationApprovalExecutionHandoffPolicy": {
+        "requiredStatus": "planned-disabled",
+        "currentStatus": "planned-disabled",
+        "executionHandoffVersion": "P25.50",
+        "handoffAccepted": false,
+        "executionJobCreated": false
+      },
+      "packageMaterializationFinalApprovalChecklist": {
+        "requiredStatus": "planned-disabled",
+        "currentStatus": "planned-disabled",
+        "checklistVersion": "P25.40",
+        "finalApprovalGranted": false
+      }
+    },
+    "auditRetentionPolicy": {
+      "policy": "retain-after-post-handoff-audit-record-written",
+      "selectRetentionNow": false,
+      "computeRetentionWindowNow": false,
+      "trustRetentionClockNow": false,
+      "storeRetentionRecordNow": false,
+      "updateRetentionIndexNow": false,
+      "prepareArchiveNow": false,
+      "storeArchiveNow": false,
+      "schedulePurgeNow": false,
+      "executePurgeNow": false,
+      "prepareExportNow": false,
+      "writeExportNow": false,
+      "requiredInputs": [
+        "writtenPostHandoffAuditRecord",
+        "approvedPlanId",
+        "retentionPolicyId",
+        "retentionClock"
+      ],
+      "retentionPolicyId": "future-materialization-audit-retention",
+      "retentionWindow": "future-policy-defined",
+      "retentionPayloadLogged": false
+    },
+    "auditRetentionChecks": [
+      {
+        "id": "post-handoff-audit-record-written",
+        "required": true,
+        "planned": true,
+        "executed": false,
+        "passed": false
+      },
+      {
+        "id": "retention-policy-selected",
+        "required": true,
+        "planned": true,
+        "executed": false,
+        "passed": false
+      },
+      {
+        "id": "retention-clock-trusted",
+        "required": true,
+        "planned": true,
+        "executed": false,
+        "passed": false
+      },
+      {
+        "id": "retention-record-not-stored",
+        "required": true,
+        "planned": true,
+        "executed": false,
+        "passed": false
+      },
+      {
+        "id": "purge-not-scheduled",
+        "required": true,
+        "planned": true,
+        "executed": false,
+        "passed": false
+      }
+    ],
+    "auditRetentionDecision": {
+      "status": "blocked",
+      "canSelectRetentionPolicy": false,
+      "canComputeRetentionWindow": false,
+      "canTrustRetentionClock": false,
+      "canStoreRetentionRecord": false,
+      "canUpdateRetentionIndex": false,
+      "canPrepareArchive": false,
+      "canStoreArchive": false,
+      "canSchedulePurge": false,
+      "canExecutePurge": false,
+      "canPrepareExport": false,
+      "canWriteExport": false,
+      "canMaterializeFiles": false,
+      "canEnableRuntimeDispatch": false,
+      "reason": "audit retention policy is metadata-only and no post-handoff audit record has been written"
+    },
+    "noOpGuarantees": [
+      "audit retention policy plan does not select retention policies",
+      "audit retention policy plan does not compute retention windows",
+      "audit retention policy plan does not trust retention clocks",
+      "audit retention policy plan does not store retention records",
+      "audit retention policy plan does not update retention indexes",
+      "audit retention policy plan does not prepare or store archives",
+      "audit retention policy plan does not schedule or execute purges",
+      "audit retention policy plan does not prepare or write exports",
+      "audit retention policy plan does not write audit records",
+      "audit retention policy plan does not create renderer-service directory",
+      "audit retention policy plan does not write package or workspace files",
+      "audit retention policy plan does not mutate lockfiles",
+      "audit retention policy plan does not run verification commands",
+      "audit retention policy plan does not generate build output",
+      "audit retention policy plan does not register runtime dispatch"
+    ],
+    "requiredBeforeRuntimeDispatch": [
+      "define audit retention policy schema",
+      "require written post-handoff audit record before retention",
+      "define trusted retention clock source",
+      "define archive and purge safety semantics",
       "keep render.thumbnail unavailable until executable adapter registration is approved"
     ]
   }

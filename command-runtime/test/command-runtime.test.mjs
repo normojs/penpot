@@ -53,6 +53,7 @@ import {
     createRenderThumbnailRendererServicePackageMaterializationApprovalReadinessVerdictPolicy,
     createRenderThumbnailRendererServicePackageMaterializationApprovalExecutionHandoffPolicy,
     createRenderThumbnailRendererServicePackageMaterializationApprovalPostHandoffAuditPolicy,
+    createRenderThumbnailRendererServicePackageMaterializationApprovalAuditRetentionPolicy,
     createRenderThumbnailRendererServicePackageFileTemplates,
     createRenderThumbnailRendererServicePackageManifestScaffold,
     createRenderThumbnailRendererServicePackageMaterializationChecklist,
@@ -113,6 +114,82 @@ const renderThumbnailRuntimeBoundaryFixtures = JSON.parse(
 const renderThumbnailRendererServiceFixtures = JSON.parse(
     readFileSync(new URL("../../mcp/docs/render-thumbnail-renderer-service-fixtures.json", import.meta.url), "utf8")
 );
+
+function assertAuditRetentionPolicyMetadataOnly(policy) {
+    assert.equal(policy.auditRetentionVersion, "P25.52");
+    assert.equal(policy.retentionRequired, true);
+    assert.equal(policy.retentionPlanned, true);
+
+    for (const key of [
+        "retentionPolicySelected",
+        "retentionWindowComputed",
+        "retentionClockTrusted",
+        "retentionRecordStored",
+        "retentionIndexUpdated",
+        "archivePrepared",
+        "archiveStored",
+        "purgeScheduled",
+        "purgeExecuted",
+        "exportPrepared",
+        "exportWritten",
+        "auditRecordWritten",
+        "auditRecordStored",
+        "auditRecordExported",
+        "materializationApproved",
+        "dispatch",
+        "networkDispatch",
+        "runtimeRegistration",
+        "localFileWrites",
+        "hostStartup",
+        "processSpawn",
+        "packageCreated",
+        "workspaceMutation",
+        "scriptRunnable",
+        "fileMaterialization",
+        "lockfileMutation",
+        "rootPackageJsonMutation",
+        "pnpmWorkspaceMutation",
+        "commandExecution",
+        "buildOutput",
+        "packageScriptsRunnable",
+        "filesWritten",
+    ]) {
+        assert.equal(policy[key], false, key);
+    }
+
+    assert.equal(policy.consumes.packageMaterializationApprovalPostHandoffAuditPolicy.postHandoffAuditVersion, "P25.51");
+    assert.equal(policy.consumes.packageMaterializationApprovalExecutionHandoffPolicy.executionHandoffVersion, "P25.50");
+    assert.equal(policy.consumes.packageMaterializationFinalApprovalChecklist.checklistVersion, "P25.40");
+
+    for (const key of [
+        "selectRetentionNow",
+        "computeRetentionWindowNow",
+        "trustRetentionClockNow",
+        "storeRetentionRecordNow",
+        "updateRetentionIndexNow",
+        "prepareArchiveNow",
+        "storeArchiveNow",
+        "schedulePurgeNow",
+        "executePurgeNow",
+        "prepareExportNow",
+        "writeExportNow",
+    ]) {
+        assert.equal(policy.auditRetentionPolicy[key], false, key);
+    }
+
+    for (const key of [
+        "canSelectRetentionPolicy",
+        "canComputeRetentionWindow",
+        "canStoreRetentionRecord",
+        "canSchedulePurge",
+        "canExecutePurge",
+        "canWriteExport",
+        "canMaterializeFiles",
+        "canEnableRuntimeDispatch",
+    ]) {
+        assert.equal(policy.auditRetentionDecision[key], false, key);
+    }
+}
 
 test("descriptor groups expose stable command ids", () => {
     assert.deepEqual(
@@ -455,6 +532,7 @@ test("render.thumbnail runtime boundary keeps execution unavailable until render
     assert.equal(boundary.packageMaterializationApprovalPostHandoffAuditPolicy.fileMaterialization, false);
     assert.equal(boundary.packageMaterializationApprovalPostHandoffAuditPolicy.commandExecution, false);
     assert.equal(boundary.packageMaterializationApprovalPostHandoffAuditPolicy.filesWritten, false);
+    assertAuditRetentionPolicyMetadataOnly(boundary.packageMaterializationApprovalAuditRetentionPolicy);
     assert.ok(boundary.testStrategy.some((item) => item.includes("descriptor tests")));
 });
 
@@ -774,6 +852,8 @@ test("render.thumbnail renderer-service API fixtures define planning requests wi
     assert.equal(fixtures.serviceApi.packageMaterializationApprovalPostHandoffAuditPolicy.commandExecution, false);
     assert.equal(fixtures.serviceApi.packageMaterializationApprovalPostHandoffAuditPolicy.buildOutput, false);
     assert.equal(fixtures.serviceApi.packageMaterializationApprovalPostHandoffAuditPolicy.filesWritten, false);
+    assertAuditRetentionPolicyMetadataOnly(fixtures.serviceApi.packageMaterializationApprovalAuditRetentionPolicy);
+    assertAuditRetentionPolicyMetadataOnly(renderThumbnailRuntimeBoundaryFixtures.packageMaterializationApprovalAuditRetentionPolicy);
     assert.deepEqual(fixtures.runtimeRegistration.commandDescriptorAdapters, ["renderer-service"]);
     assert.deepEqual(CommandDescriptors.RENDER_THUMBNAIL.adapters, ["renderer-service"]);
     assert.equal(fixtures.runtimeRegistration.mcpToolRegistered, true);
@@ -1902,6 +1982,8 @@ test("render.thumbnail renderer-service plan exposes dry-run client request whil
     assert.equal(plan.packageMaterializationApprovalPostHandoffAuditPolicy.postHandoffAuditDecision.canDispatchExecution, false);
     assert.equal(plan.packageMaterializationApprovalPostHandoffAuditPolicy.postHandoffAuditDecision.canMaterializeFiles, false);
     assert.deepEqual(plan.service.packageMaterializationApprovalPostHandoffAuditPolicy, plan.packageMaterializationApprovalPostHandoffAuditPolicy);
+    assertAuditRetentionPolicyMetadataOnly(plan.packageMaterializationApprovalAuditRetentionPolicy);
+    assert.deepEqual(plan.service.packageMaterializationApprovalAuditRetentionPolicy, plan.packageMaterializationApprovalAuditRetentionPolicy);
     assert.equal(plan.clientRequest.status, "scaffolded");
     assert.equal(plan.clientRequest.dispatch, false);
     assert.equal(plan.clientRequest.method, "POST");
@@ -1969,6 +2051,7 @@ test("render.thumbnail renderer-service plan exposes dry-run client request whil
     assert.equal(plan.diagnostics.packageMaterializationApprovalReadinessVerdictPolicyVersion, "P25.49");
     assert.equal(plan.diagnostics.packageMaterializationApprovalExecutionHandoffPolicyVersion, "P25.50");
     assert.equal(plan.diagnostics.packageMaterializationApprovalPostHandoffAuditPolicyVersion, "P25.51");
+    assert.equal(plan.diagnostics.packageMaterializationApprovalAuditRetentionPolicyVersion, "P25.52");
 });
 
 test("render.thumbnail renderer-service plan reports not-configured availability without endpoint", () => {
@@ -4341,6 +4424,46 @@ test("render.thumbnail renderer-service package materialization approval post-ha
     assert.equal(postHandoffAuditPolicy.postHandoffAuditDecision.canEnableRuntimeDispatch, false);
     assert.ok(postHandoffAuditPolicy.noOpGuarantees.includes("post-handoff audit policy plan does not write audit records"));
     assert.ok(postHandoffAuditPolicy.requiredBeforeRuntimeDispatch.includes("define post-handoff audit record schema"));
+});
+
+test("render.thumbnail renderer-service package materialization approval audit retention policy stays metadata-only", () => {
+    const auditRetentionPolicy = createRenderThumbnailRendererServicePackageMaterializationApprovalAuditRetentionPolicy({
+        packageMaterializationApprovalPostHandoffAuditPolicy: {
+            status: "planned-disabled",
+            postHandoffAuditVersion: "P25.51",
+            auditRecordWritten: false,
+            auditRecordStored: false,
+        },
+        packageMaterializationApprovalExecutionHandoffPolicy: {
+            status: "planned-disabled",
+            executionHandoffVersion: "P25.50",
+            handoffAccepted: false,
+            executionJobCreated: false,
+        },
+        packageMaterializationFinalApprovalChecklist: {
+            status: "planned-disabled",
+            checklistVersion: "P25.40",
+            finalApprovalGranted: false,
+        },
+    });
+
+    assert.equal(auditRetentionPolicy.status, "planned-disabled");
+    assert.equal(auditRetentionPolicy.dryRunOnly, true);
+    assert.equal(auditRetentionPolicy.approvalRequired, true);
+    assert.equal(auditRetentionPolicy.approved, false);
+    assert.equal(auditRetentionPolicy.finalApprovalGranted, false);
+    assert.equal(auditRetentionPolicy.auditRetentionPolicy.policy, "retain-after-post-handoff-audit-record-written");
+    assert.equal(auditRetentionPolicy.auditRetentionPolicy.retentionPayloadLogged, false);
+    assert.ok(auditRetentionPolicy.auditRetentionPolicy.requiredInputs.includes("retentionClock"));
+    assert.ok(auditRetentionPolicy.auditRetentionChecks.some((entry) => entry.id === "retention-record-not-stored" && entry.executed === false));
+    assert.equal(auditRetentionPolicy.auditRetentionDecision.status, "blocked");
+    assert.equal(auditRetentionPolicy.auditRetentionDecision.canUpdateRetentionIndex, false);
+    assert.equal(auditRetentionPolicy.auditRetentionDecision.canPrepareArchive, false);
+    assert.equal(auditRetentionPolicy.auditRetentionDecision.canStoreArchive, false);
+    assert.equal(auditRetentionPolicy.auditRetentionDecision.canPrepareExport, false);
+    assert.ok(auditRetentionPolicy.noOpGuarantees.includes("audit retention policy plan does not store retention records"));
+    assert.ok(auditRetentionPolicy.requiredBeforeRuntimeDispatch.includes("define audit retention policy schema"));
+    assertAuditRetentionPolicyMetadataOnly(auditRetentionPolicy);
 });
 
 test("render.thumbnail renderer-service client request scaffold adds MCP audit headers without dispatch", () => {

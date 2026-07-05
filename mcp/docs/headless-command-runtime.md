@@ -1367,3 +1367,28 @@ audit policy:
   prepare, validate, store, publish, export, or write audit records, capture
   handoff or execution job snapshots, select or notify audit sinks, grant
   approval, or accept/validate tokens.
+
+P25.52 adds renderer-service package materialization approval audit retention
+policy:
+
+- Plans include `packageMaterializationApprovalAuditRetentionPolicy`, defining
+  the future retention policy, required retention inputs, retention checks,
+  blocked retention decision, and no-op guarantees.
+- The audit retention policy remains planning-only with
+  `retentionPolicySelected:false`, `retentionWindowComputed:false`,
+  `retentionClockTrusted:false`, `retentionRecordStored:false`,
+  `retentionIndexUpdated:false`, `archivePrepared:false`,
+  `archiveStored:false`, `purgeScheduled:false`, `purgeExecuted:false`,
+  `exportPrepared:false`, `exportWritten:false`,
+  `auditRecordWritten:false`, `auditRecordStored:false`,
+  `auditRecordExported:false`, `materializationApproved:false`,
+  `approved:false`, `finalApprovalGranted:false`, `filesWritten:false`,
+  `fileMaterialization:false`, `workspaceMutation:false`,
+  `lockfileMutation:false`, `commandExecution:false`, `buildOutput:false`,
+  `processSpawn:false`, `packageCreated:false`, `dispatch:false`,
+  `networkDispatch:false`, `runtimeRegistration:false`, and
+  `localFileWrites:false`. It does not select retention policies, compute
+  retention windows, trust retention clocks, store retention records, update
+  retention indexes, prepare or store archives, schedule or execute purges,
+  prepare or write exports, write audit records, grant approval, materialize
+  files, start processes, or register runtime dispatch.

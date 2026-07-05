@@ -1,6 +1,6 @@
 # Render Thumbnail Renderer Service API
 
-Status: P25.51 API fixtures, MCP/CLI dry-run/client boundaries, metadata-only
+Status: P25.52 API fixtures, MCP/CLI dry-run/client boundaries, metadata-only
 availability probes, response normalization contracts, disabled client request
 scaffold, closed execution gate, disabled health preflight, and executable
 client harness plus dispatch adapter boundary plans, and opt-in configuration
@@ -56,6 +56,10 @@ P25.51 adds package materialization approval post-handoff audit policy metadata
 without preparing, validating, storing, publishing, exporting, or writing audit
 records, capturing handoff or execution job snapshots, selecting audit sinks,
 accepting/validating tokens, consuming tokens, or granting approval.
+P25.52 adds package materialization approval audit retention policy metadata
+without selecting retention policies, computing retention windows, trusting
+clocks, storing retention records, updating indexes, archiving, purging,
+exporting, writing audit records, or granting approval.
 
 P25.6 selected a dedicated thumbnail renderer service as the future executable
 owner for `render.thumbnail`. This document defines the service-facing request
@@ -379,12 +383,16 @@ materialization approval, process startup, dispatch, network dispatch, runtime
 registration, and local file writes disabled.
 
 P25.51 defines the package materialization approval post-handoff audit policy.
-Plans now include `packageMaterializationApprovalPostHandoffAuditPolicy`,
-covering future audit sinks, required audit inputs, post-handoff audit checks,
-blocked audit decisions, and no-op guarantees while keeping audit record
-preparation, validation, storage, publication, export, write, handoff snapshot
-capture, execution job snapshot capture, audit sink selection, audit sink
-notification, token validation, token acceptance, token consumption, final
+P25.52 defines the package materialization approval audit retention policy.
+Plans now include `packageMaterializationApprovalPostHandoffAuditPolicy` and
+`packageMaterializationApprovalAuditRetentionPolicy`, covering future audit
+sinks, audit retention policies, required audit/retention inputs, checks,
+blocked decisions, and no-op guarantees while keeping audit record preparation,
+validation, storage, publication, export, write, retention policy selection,
+retention window computation, trusted clocks, retention record/index storage,
+archive preparation/storage, purge scheduling/execution, export writes, handoff
+snapshot capture, execution job snapshot capture, audit sink selection, audit
+sink notification, token validation, token acceptance, token consumption, final
 approval, file writes, package creation, workspace mutation, lockfile mutation,
 command execution, build output, materialization approval, process startup,
 dispatch, network dispatch, runtime registration, and local file writes

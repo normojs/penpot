@@ -69,6 +69,38 @@ function parseJson(stdout) {
     return JSON.parse(stdout);
 }
 
+function assertAuditRetentionPolicyMetadataOnly(policy) {
+    assert.equal(policy.auditRetentionVersion, "P25.52");
+    for (const key of [
+        "retentionPolicySelected",
+        "retentionWindowComputed",
+        "retentionClockTrusted",
+        "retentionRecordStored",
+        "retentionIndexUpdated",
+        "archivePrepared",
+        "archiveStored",
+        "purgeScheduled",
+        "purgeExecuted",
+        "exportPrepared",
+        "exportWritten",
+        "auditRecordWritten",
+        "auditRecordStored",
+        "materializationApproved",
+        "dispatch",
+        "runtimeRegistration",
+        "localFileWrites",
+        "commandExecution",
+        "buildOutput",
+        "filesWritten",
+    ]) {
+        assert.equal(policy[key], false, key);
+    }
+    assert.equal(policy.auditRetentionDecision.canStoreRetentionRecord, false);
+    assert.equal(policy.auditRetentionDecision.canSchedulePurge, false);
+    assert.equal(policy.auditRetentionDecision.canExecutePurge, false);
+    assert.equal(policy.auditRetentionDecision.canWriteExport, false);
+}
+
 function pickMcpConfigFields(data) {
     return {
         mode: data.mode,
@@ -2974,6 +3006,7 @@ test("render thumbnail dry-run returns renderer-service request plan", async () 
         assert.equal(body.data.packageMaterializationApprovalPostHandoffAuditPolicy.postHandoffAuditDecision.canPrepareAudit, false);
         assert.equal(body.data.packageMaterializationApprovalPostHandoffAuditPolicy.postHandoffAuditDecision.canWriteAudit, false);
         assert.equal(body.data.packageMaterializationApprovalPostHandoffAuditPolicy.postHandoffAuditDecision.canDispatchExecution, false);
+        assertAuditRetentionPolicyMetadataOnly(body.data.packageMaterializationApprovalAuditRetentionPolicy);
         assert.equal(body.data.service.responseNormalization.successStatus, "ok");
         assert.equal(body.data.service.responseNormalization.localFileWrites, false);
         assert.equal(body.data.service.errorShape.code, "renderer_service_error");
@@ -3343,6 +3376,7 @@ test("render thumbnail execution reports renderer-service unavailable without ca
         assert.equal(body.error.data.packageMaterializationApprovalPostHandoffAuditPolicy.postHandoffAuditDecision.canPrepareAudit, false);
         assert.equal(body.error.data.packageMaterializationApprovalPostHandoffAuditPolicy.postHandoffAuditDecision.canWriteAudit, false);
         assert.equal(body.error.data.packageMaterializationApprovalPostHandoffAuditPolicy.postHandoffAuditDecision.canDispatchExecution, false);
+        assertAuditRetentionPolicyMetadataOnly(body.error.data.packageMaterializationApprovalAuditRetentionPolicy);
         assert.equal(body.error.data.clientRequest.dispatch, false);
         assert.equal(body.error.data.serviceRequest.operation, "thumbnail.render");
     } finally {

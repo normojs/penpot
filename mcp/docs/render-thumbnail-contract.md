@@ -1,6 +1,6 @@
 # Render Thumbnail Contract
 
-Status: P25.4 descriptor contract; P25.51 MCP/CLI renderer-service dry-run
+Status: P25.4 descriptor contract; P25.52 MCP/CLI renderer-service dry-run
 boundaries, metadata-only availability probes, response normalization
 contracts, disabled client request scaffolding, closed execution gate, disabled
 health preflight, executable client harness plan, and dispatch adapter boundary
@@ -56,6 +56,10 @@ P25.51 adds package materialization approval post-handoff audit policy metadata
 without preparing, validating, storing, publishing, exporting, or writing audit
 records, capturing handoff or execution job snapshots, selecting audit sinks,
 accepting/validating tokens, consuming tokens, or granting approval.
+P25.52 adds package materialization approval audit retention policy metadata
+without selecting retention policies, computing retention windows, trusting
+clocks, storing retention records, updating indexes, archiving, purging,
+exporting, writing audit records, or granting approval.
 
 This document defines the `render.thumbnail` contract before executable MCP or
 CLI rendering is enabled. The contract follows Penpot's existing dashboard
@@ -553,6 +557,27 @@ Shared contract shape:
   prepare, validate, store, publish, export, or write audit records, capture
   handoff or execution job snapshots, select audit sinks, grant approval, or
   accept tokens.
+- P25.52 package materialization approval audit retention policy fields are
+  planning-only. They define future retention policies, required retention
+  inputs, retention checks, blocked retention decisions, and no-op guarantees
+  while keeping
+  `packageMaterializationApprovalAuditRetentionPolicy.retentionPolicySelected:false`,
+  `packageMaterializationApprovalAuditRetentionPolicy.retentionWindowComputed:false`,
+  `packageMaterializationApprovalAuditRetentionPolicy.retentionClockTrusted:false`,
+  `packageMaterializationApprovalAuditRetentionPolicy.retentionRecordStored:false`,
+  `packageMaterializationApprovalAuditRetentionPolicy.retentionIndexUpdated:false`,
+  `packageMaterializationApprovalAuditRetentionPolicy.archiveStored:false`,
+  `packageMaterializationApprovalAuditRetentionPolicy.purgeScheduled:false`,
+  `packageMaterializationApprovalAuditRetentionPolicy.purgeExecuted:false`,
+  `packageMaterializationApprovalAuditRetentionPolicy.exportWritten:false`,
+  `packageMaterializationApprovalAuditRetentionPolicy.auditRecordWritten:false`,
+  `approved:false`, `finalApprovalGranted:false`, `filesWritten:false`,
+  `fileMaterialization:false`, `workspaceMutation:false`,
+  `commandExecution:false`, `buildOutput:false`,
+  `runtimeRegistration:false`, and `localFileWrites:false`. They do not select
+  retention policies, compute retention windows, trust clocks, store retention
+  records, update indexes, archive, purge, export, write audit records, grant
+  approval, or materialize files.
 - Exporter service execution is out of scope for this command unless a later
   task explicitly maps thumbnail rendering to exporter-compatible semantics.
 - P25.6 selects a future dedicated thumbnail renderer service as the executable
@@ -567,7 +592,7 @@ See `render-thumbnail-runtime-boundary.md` and
 audit, resource-return rules, cache refresh behavior, auth expectations, and
 future test strategy.
 See `render-thumbnail-renderer-service-api.md` and
-`render-thumbnail-renderer-service-fixtures.json` for the P25.51 future
+`render-thumbnail-renderer-service-fixtures.json` for the P25.52 future
 renderer-service request/response API, MCP/CLI dry-run/client boundary, and
 metadata-only availability probe plus response/error normalization and disabled
 client request, execution gate, health preflight, and execution harness
