@@ -969,6 +969,16 @@ Shared contract shape:
   execute, or publish enforcement, enforce resolutions, accept or reject
   enforcement, create enforcement records, sign or hash enforcement, grant
   approval, or materialize files.
+- P25.68 package materialization approval audit countersignature revocation
+  appeal resolution enforcement evidence policy fields are planning-only. They
+  define future enforcement evidence policies, required evidence inputs,
+  evidence checks, blocked evidence decisions, and no-op guarantees while
+  keeping evidence policy selection, evidence subject/source identification,
+  evidence collection/validation/normalization, evidence record storage,
+  evidence bundle storage, enforcement/audit record reads, evidence
+  linking/verification/signing/hashing, approval, file writes, workspace
+  mutation, command execution, build output, package creation, process startup,
+  and runtime registration disabled.
 - Exporter service execution is out of scope for this command unless a later
   task explicitly maps thumbnail rendering to exporter-compatible semantics.
 - P25.6 selects a future dedicated thumbnail renderer service as the executable
@@ -983,7 +993,7 @@ See `render-thumbnail-runtime-boundary.md` and
 audit, resource-return rules, cache refresh behavior, auth expectations, and
 future test strategy.
 See `render-thumbnail-renderer-service-api.md` and
-`render-thumbnail-renderer-service-fixtures.json` for the P25.67 future
+`render-thumbnail-renderer-service-fixtures.json` for the P25.68 future
 renderer-service request/response API, MCP/CLI dry-run/client boundary, and
 metadata-only availability probe plus response/error normalization and disabled
 client request, execution gate, health preflight, and execution harness
@@ -1001,7 +1011,7 @@ guardrails, package file templates, package workspace wiring, package build
   notarization/certification/endorsement/countersignature/countersignature
   verification/countersignature revocation/countersignature revocation appeal
   /countersignature revocation appeal resolution/countersignature revocation
-  appeal resolution enforcement policies.
+  appeal resolution enforcement/enforcement evidence policies.
 
 ## Fixtures
 

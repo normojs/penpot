@@ -1957,3 +1957,18 @@ countersignature revocation appeal resolution enforcement policy:
   revocations, countersignatures, or audit records, signing or hashing
   enforcement records, materializing files, starting processes, or enabling
   dispatch.
+
+P25.68 adds renderer-service package materialization approval audit
+countersignature revocation appeal resolution enforcement evidence policy:
+
+- Plans include
+  `packageMaterializationApprovalAuditCountersignatureRevocationAppealResolutionEnforcementEvidencePolicy`,
+  defining future enforcement evidence policy metadata, required evidence
+  inputs, evidence checks, blocked evidence decisions, and no-op guarantees.
+- MCP and CLI expose this evidence policy in dry-run and unavailable execution
+  JSON while keeping evidence policy selection, subject/source identification,
+  evidence collection, validation, normalization, record creation/storage/
+  publication, bundle creation/storage, enforcement/audit record reads,
+  audit-record evidence linking/verification, evidence signing/hash, file
+  writes, package creation, workspace mutation, command execution, build output,
+  process startup, and runtime dispatch disabled.

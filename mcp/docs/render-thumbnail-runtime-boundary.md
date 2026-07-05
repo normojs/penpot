@@ -129,6 +129,11 @@ P25.67 defines package materialization approval audit countersignature
 revocation appeal resolution enforcement policy metadata without selecting
 enforcement policies, reading resolution or audit records, enforcing
 resolutions, storing enforcement records, or enabling dispatch.
+P25.68 defines package materialization approval audit countersignature
+revocation appeal resolution enforcement evidence policy metadata without
+selecting evidence policies, identifying evidence sources, collecting evidence,
+reading enforcement or audit records, storing evidence records, or enabling
+dispatch.
 
 ## Existing Surfaces
 

@@ -1954,6 +1954,35 @@ P25.67 is complete:
    `packageCreated`, `dispatch`, `networkDispatch`, `runtimeRegistration`, and
    `localFileWrites` remain false.
 
+P25.68 is complete:
+
+1. Shared plans include
+   `packageMaterializationApprovalAuditCountersignatureRevocationAppealResolutionEnforcementEvidencePolicy`
+   metadata for future audit countersignature revocation appeal resolution
+   enforcement evidence policies, required evidence inputs, evidence checks,
+   blocked evidence decisions, and no-op guarantees.
+2. MCP and CLI expose this audit countersignature revocation appeal resolution
+   enforcement evidence policy plan in dry-run and unavailable execution
+   payloads without selecting evidence policies, identifying evidence subjects
+   or sources, collecting, validating, normalizing, storing, publishing, or
+   bundling evidence, reading enforcement or audit records, linking/verifying
+   audit evidence, signing or hashing evidence, granting approval, creating
+   package directories, writing files, mutating workspace manifests, mutating
+   lockfiles, running commands, emitting build output, starting processes, or
+   registering runtime dispatch.
+3. `countersignatureRevocationAppealResolutionEnforcementEvidencePolicySelected`,
+   `countersignatureRevocationAppealResolutionEnforcementEvidenceSubjectIdentified`,
+   `countersignatureRevocationAppealResolutionEnforcementEvidenceSourceIdentified`,
+   `countersignatureRevocationAppealResolutionEnforcementEvidenceCollected`,
+   `countersignatureRevocationAppealResolutionEnforcementEvidenceRecordStored`,
+   `auditRecordRead`,
+   `countersignatureRevocationAppealResolutionEnforcementEvidenceHashComputed`,
+   `materializationApproved`, `approved`, and `finalApprovalGranted` remain
+   false, while `filesWritten`, `fileMaterialization`, `workspaceMutation`,
+   `lockfileMutation`, `commandExecution`, `buildOutput`, `processSpawn`,
+   `packageCreated`, `dispatch`, `networkDispatch`, `runtimeRegistration`, and
+   `localFileWrites` remain false.
+
 Keep manual configuration behavior stable while moving command metadata and
 envelopes; transport-specific formatting should stay at the MCP/CLI edges.
 

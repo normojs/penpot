@@ -140,6 +140,7 @@ P25.64 defines the package materialization approval audit countersignature revoc
 P25.65 defines the package materialization approval audit countersignature revocation appeal policy. | Dashboard thumbnail contract with `renderer-service` planning adapter; runtime execution still unavailable. | Dry-run and unavailable execution payloads expose countersignature revocation appeal policy metadata without reading revocations or audit records, appealing revocations, storing appeal records, writing files, starting processes, or registering dispatch. | Keep runtime execution disabled until opt-in config surfaces, renderer-service implementation, workspace wiring, health preflight, cache probe, tagged-frame source data, resource normalization, auth, integration tests, and runtime registration exist. |
 P25.66 defines the package materialization approval audit countersignature revocation appeal resolution policy. | Dashboard thumbnail contract with `renderer-service` planning adapter; runtime execution still unavailable. | Dry-run and unavailable execution payloads expose countersignature revocation appeal resolution policy metadata without reading appeals or audit records, resolving appeals, storing resolution records, writing files, starting processes, or registering dispatch. | Keep runtime execution disabled until opt-in config surfaces, renderer-service implementation, workspace wiring, health preflight, cache probe, tagged-frame source data, resource normalization, auth, integration tests, and runtime registration exist. |
 P25.67 defines the package materialization approval audit countersignature revocation appeal resolution enforcement policy. | Dashboard thumbnail contract with `renderer-service` planning adapter; runtime execution still unavailable. | Dry-run and unavailable execution payloads expose countersignature revocation appeal resolution enforcement policy metadata without reading resolutions or audit records, enforcing resolutions, storing enforcement records, writing files, starting processes, or registering dispatch. | Keep runtime execution disabled until opt-in config surfaces, renderer-service implementation, workspace wiring, health preflight, cache probe, tagged-frame source data, resource normalization, auth, integration tests, and runtime registration exist. |
+P25.68 defines the package materialization approval audit countersignature revocation appeal resolution enforcement evidence policy. | Dashboard thumbnail contract with `renderer-service` planning adapter; runtime execution still unavailable. | Dry-run and unavailable execution payloads expose countersignature revocation appeal resolution enforcement evidence policy metadata without collecting evidence, reading enforcement or audit records, storing evidence records, writing files, starting processes, or registering dispatch. | Keep runtime execution disabled until opt-in config surfaces, renderer-service implementation, workspace wiring, health preflight, cache probe, tagged-frame source data, resource normalization, auth, integration tests, and runtime registration exist. |
 | `component.create`, `component.instantiate`, `tokens.list`, `tokens.apply` | Names exist in `ToolNames.ts`, not registered. | Unsupported or descriptor-only. | No runtime task or backend helper found. | Leave for a future components/tokens wave. |
 | `debug.get_plugin_state`, `debug.get_agent_logs` | Names exist in `ToolNames.ts`, not registered. | Unsupported or descriptor-only. | Diagnostics exist through status/log paths, not these tools. | Keep out of P17.2 unless diagnostics naming is explicitly selected. |
 | Legacy `execute_code`, `export_shape`, `import_image` | Registered legacy tools. | Legacy live/plugin or local filesystem behavior. | They are compatibility surfaces, not the typed headless path. | Do not expand; keep gated/legacy behavior. |
@@ -362,6 +363,18 @@ enforcement, enforcement acceptance/rejection, enforcement record creation/
 storage/publication, enforcement linking/verification/signing/hashing,
 approval, file writes, workspace mutation, command execution, build output,
 package creation, process startup, and runtime registration disabled.
+
+P25.68 extends the `render.thumbnail` renderer-service planning payload with
+metadata-only package materialization approval audit countersignature revocation
+appeal resolution enforcement evidence policy. It defines future
+countersignature revocation appeal resolution enforcement evidence policies,
+required evidence inputs, evidence checks, and blocked evidence decision
+metadata while keeping evidence policy selection, subject/source
+identification, enforcement and audit record reads, evidence collection/
+validation/normalization, evidence record/bundle storage, evidence
+linking/verification/signing/hashing, approval, file writes, workspace
+mutation, command execution, build output, package creation, process startup,
+and runtime registration disabled.
 
 ## P17.2 Descriptor Slice
 

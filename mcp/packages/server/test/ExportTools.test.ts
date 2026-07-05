@@ -769,6 +769,96 @@ function assertAuditCountersignatureRevocationAppealResolutionEnforcementPolicyM
     );
 }
 
+function assertAuditCountersignatureRevocationAppealResolutionEnforcementEvidencePolicyMetadataOnly(policy: any) {
+    assert.equal(policy.auditCountersignatureRevocationAppealResolutionEnforcementEvidenceVersion, "P25.68");
+    assert.equal(policy.countersignatureRevocationAppealResolutionEnforcementEvidenceRequired, true);
+    assert.equal(policy.countersignatureRevocationAppealResolutionEnforcementEvidencePlanned, true);
+    assert.equal(policy.dryRunOnly, true);
+    assert.equal(policy.approvalRequired, true);
+    for (const key of [
+        "countersignatureRevocationAppealResolutionEnforcementEvidencePolicySelected",
+        "countersignatureRevocationAppealResolutionEnforcementEvidenceSubjectIdentified",
+        "countersignatureRevocationAppealResolutionEnforcementEvidenceSourceIdentified",
+        "countersignatureRevocationAppealResolutionEnforcementEvidenceCollected",
+        "countersignatureRevocationAppealResolutionEnforcementEvidenceValidated",
+        "countersignatureRevocationAppealResolutionEnforcementEvidenceNormalized",
+        "countersignatureRevocationAppealResolutionEnforcementEvidenceRecordCreated",
+        "countersignatureRevocationAppealResolutionEnforcementEvidenceRecordStored",
+        "countersignatureRevocationAppealResolutionEnforcementEvidenceRecordPublished",
+        "countersignatureRevocationAppealResolutionEnforcementEvidenceBundleCreated",
+        "countersignatureRevocationAppealResolutionEnforcementEvidenceBundleStored",
+        "countersignatureRevocationAppealResolutionEnforcementRead",
+        "countersignatureRevocationAppealResolutionEnforcementRecordRead",
+        "countersignatureRevocationAppealResolutionRead",
+        "countersignatureRevocationAppealResolutionRecordRead",
+        "countersignatureRevocationAppealRead",
+        "countersignatureRevocationAppealRecordRead",
+        "countersignatureRevocationRead",
+        "countersignatureRevocationRecordRead",
+        "countersignatureRead",
+        "countersignatureRevocationVerified",
+        "auditRecordRead",
+        "auditRecordQueried",
+        "auditRecordCountersignatureRevocationAppealResolutionEnforcementEvidenceLinked",
+        "auditRecordCountersignatureRevocationAppealResolutionEnforcementEvidenceVerified",
+        "countersignatureRevocationAppealResolutionEnforcementEvidenceSignatureCreated",
+        "countersignatureRevocationAppealResolutionEnforcementEvidenceSignatureVerified",
+        "countersignatureRevocationAppealResolutionEnforcementEvidenceHashComputed",
+        "countersignatureRevocationAppealResolutionEnforcementEvidenceHashStored",
+        "materializationReady",
+        "materializationApproved",
+        "materializationApprovedNow",
+        "approved",
+        "finalApprovalGranted",
+        "tokenAccepted",
+        "tokenStored",
+        "tokenValidated",
+        "tokenConsumed",
+        "tokenRevoked",
+        "executeNow",
+        "verifyNow",
+        "rollbackNow",
+        "dispatch",
+        "networkDispatch",
+        "runtimeRegistration",
+        "localFileWrites",
+        "hostStartup",
+        "processSpawn",
+        "packageCreated",
+        "workspaceMutation",
+        "scriptRunnable",
+        "fileMaterialization",
+        "lockfileMutation",
+        "rootPackageJsonMutation",
+        "pnpmWorkspaceMutation",
+        "commandExecution",
+        "buildOutput",
+        "packageScriptsRunnable",
+        "filesWritten",
+        "rollbackExecuted",
+        "verificationExecuted",
+    ]) {
+        assert.equal(policy[key], false, key);
+    }
+    assert.equal(
+        policy.auditCountersignatureRevocationAppealResolutionEnforcementEvidenceDecision.canReadCountersignatureRevocationAppealResolutionEnforcement,
+        false
+    );
+    assert.equal(
+        policy.auditCountersignatureRevocationAppealResolutionEnforcementEvidenceDecision.canCollectCountersignatureRevocationAppealResolutionEnforcementEvidence,
+        false
+    );
+    assert.equal(
+        policy.auditCountersignatureRevocationAppealResolutionEnforcementEvidenceDecision.canStoreCountersignatureRevocationAppealResolutionEnforcementEvidenceRecord,
+        false
+    );
+    assert.equal(policy.auditCountersignatureRevocationAppealResolutionEnforcementEvidenceDecision.canReadAuditRecord, false);
+    assert.equal(
+        policy.auditCountersignatureRevocationAppealResolutionEnforcementEvidenceDecision.canComputeCountersignatureRevocationAppealResolutionEnforcementEvidenceHash,
+        false
+    );
+}
+
 type SseCall = {
     methodName: string;
     params: Record<string, unknown>;
@@ -1497,6 +1587,9 @@ test("RenderThumbnailTool dry-run returns renderer-service request metadata with
         assertAuditCountersignatureRevocationAppealResolutionEnforcementPolicyMetadataOnly(
             body.data.packageMaterializationApprovalAuditCountersignatureRevocationAppealResolutionEnforcementPolicy
         );
+        assertAuditCountersignatureRevocationAppealResolutionEnforcementEvidencePolicyMetadataOnly(
+            body.data.packageMaterializationApprovalAuditCountersignatureRevocationAppealResolutionEnforcementEvidencePolicy
+        );
         assert.deepEqual(body.data.service.client, body.data.client);
         assert.equal(body.data.service.responseNormalization.successStatus, "ok");
         assert.equal(body.data.service.responseNormalization.localFileWrites, false);
@@ -1903,6 +1996,9 @@ test("RenderThumbnailTool execution reports renderer service unavailable without
         );
         assertAuditCountersignatureRevocationAppealResolutionEnforcementPolicyMetadataOnly(
             body.error.data.packageMaterializationApprovalAuditCountersignatureRevocationAppealResolutionEnforcementPolicy
+        );
+        assertAuditCountersignatureRevocationAppealResolutionEnforcementEvidencePolicyMetadataOnly(
+            body.error.data.packageMaterializationApprovalAuditCountersignatureRevocationAppealResolutionEnforcementEvidencePolicy
         );
         assert.equal(body.error.data.clientRequest.dispatch, false);
         assert.equal(body.error.data.serviceRequest.operation, "thumbnail.render");
