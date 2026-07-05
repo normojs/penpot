@@ -2836,6 +2836,63 @@ revocation appeal resolution policy result:
   `packageCreated`, `dispatch`, `networkDispatch`, `runtimeRegistration`, and
   `localFileWrites` remain `false`.
 
+P25.67 render.thumbnail package materialization approval audit countersignature
+revocation appeal resolution enforcement policy result:
+
+- Shared plans include
+  `packageMaterializationApprovalAuditCountersignatureRevocationAppealResolutionEnforcementPolicy`,
+  defining metadata-only audit countersignature revocation appeal resolution
+  enforcement policies, required enforcement inputs, enforcement checks, blocked
+  enforcement decisions, and no-op guarantees.
+- MCP and CLI expose the audit countersignature revocation appeal resolution
+  enforcement policy plan in dry-run and unavailable execution payloads without
+  selecting enforcement policies, identifying subjects or authorities, reading
+  resolution records, capturing enforcement reasons, computing scopes,
+  selecting actions, preparing, validating, storing, executing, or publishing
+  enforcement, enforcing countersignature revocation appeal resolutions,
+  accepting or rejecting enforcement outcomes, creating/storing/publishing
+  enforcement records, reading appeals, revocations, countersignatures, or audit
+  records, linking/verifying/signing/hashing enforcement records, granting
+  approval, creating package directories, writing files, mutating workspace
+  manifests, mutating lockfiles, running commands, emitting build output,
+  starting processes, or registering runtime dispatch.
+- `countersignatureRevocationAppealResolutionEnforcementPolicySelected`,
+  `countersignatureRevocationAppealResolutionEnforcementSubjectIdentified`,
+  `countersignatureRevocationAppealResolutionEnforcementAuthorityIdentified`,
+  `countersignatureRevocationAppealResolutionRead`,
+  `countersignatureRevocationAppealResolutionRecordRead`,
+  `countersignatureRevocationAppealResolutionEnforcementReasonCaptured`,
+  `countersignatureRevocationAppealResolutionEnforcementScopeComputed`,
+  `countersignatureRevocationAppealResolutionEnforcementActionSelected`,
+  `countersignatureRevocationAppealResolutionEnforcementPrepared`,
+  `countersignatureRevocationAppealResolutionEnforcementValidated`,
+  `countersignatureRevocationAppealResolutionEnforcementStored`,
+  `countersignatureRevocationAppealResolutionEnforcementExecuted`,
+  `countersignatureRevocationAppealResolutionEnforced`,
+  `countersignatureRevocationAppealResolutionEnforcementAccepted`,
+  `countersignatureRevocationAppealResolutionEnforcementRejected`,
+  `countersignatureRevocationAppealResolutionEnforcementPublished`,
+  `countersignatureRevocationAppealResolutionEnforcementRecordCreated`,
+  `countersignatureRevocationAppealResolutionEnforcementRecordStored`,
+  `countersignatureRevocationAppealResolutionEnforcementRecordPublished`,
+  `countersignatureRevocationAppealRead`,
+  `countersignatureRevocationAppealRecordRead`,
+  `countersignatureRevocationRead`,
+  `countersignatureRevocationRecordRead`, `countersignatureRead`,
+  `countersignatureRevocationVerified`, `auditRecordRead`,
+  `auditRecordQueried`,
+  `auditRecordCountersignatureRevocationAppealResolutionEnforcementLinked`,
+  `auditRecordCountersignatureRevocationAppealResolutionEnforcementVerified`,
+  `countersignatureRevocationAppealResolutionEnforcementSignatureCreated`,
+  `countersignatureRevocationAppealResolutionEnforcementSignatureVerified`,
+  `countersignatureRevocationAppealResolutionEnforcementHashComputed`,
+  `countersignatureRevocationAppealResolutionEnforcementHashStored`,
+  `materializationApproved`, `approved`, and `finalApprovalGranted` remain
+  `false`, while `filesWritten`, `fileMaterialization`, `workspaceMutation`,
+  `lockfileMutation`, `commandExecution`, `buildOutput`, `processSpawn`,
+  `packageCreated`, `dispatch`, `networkDispatch`, `runtimeRegistration`, and
+  `localFileWrites` remain `false`.
+
 P25.51 render.thumbnail package materialization approval post-handoff audit policy result:
 
 - Shared plans include `packageMaterializationApprovalPostHandoffAuditPolicy`,
@@ -3397,6 +3454,8 @@ audit countersignature revocation policy. P25.65 defines disabled package
 materialization approval audit countersignature revocation appeal policy.
 P25.66 defines disabled package materialization approval audit countersignature
 revocation appeal resolution policy.
+P25.67 defines disabled package materialization approval audit countersignature
+revocation appeal resolution enforcement policy.
 Runtime behavior remains unavailable
 until opt-in config surfaces, renderer-service implementation, workspace
 wiring, health preflight, cache probe, executable client, and tagged-frame

@@ -125,6 +125,10 @@ P25.66 defines package materialization approval audit countersignature
 revocation appeal resolution policy metadata without selecting resolution
 policies, reading appeal or audit records, resolving appeals, storing
 resolution records, or enabling dispatch.
+P25.67 defines package materialization approval audit countersignature
+revocation appeal resolution enforcement policy metadata without selecting
+enforcement policies, reading resolution or audit records, enforcing
+resolutions, storing enforcement records, or enabling dispatch.
 
 ## Existing Surfaces
 

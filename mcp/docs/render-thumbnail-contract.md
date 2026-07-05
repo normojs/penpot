@@ -930,6 +930,45 @@ Shared contract shape:
   or publish resolutions, resolve appeals, accept or reject resolutions, create,
   store, or publish resolution records, sign or hash resolutions, grant
   approval, or materialize files.
+- P25.67 package materialization approval audit countersignature revocation
+  appeal resolution enforcement policy fields are planning-only. They define
+  future countersignature revocation appeal resolution enforcement policies,
+  required enforcement inputs, enforcement checks, blocked enforcement
+  decisions, and no-op guarantees while keeping
+  `packageMaterializationApprovalAuditCountersignatureRevocationAppealResolutionEnforcementPolicy.countersignatureRevocationAppealResolutionEnforcementPolicySelected:false`,
+  `packageMaterializationApprovalAuditCountersignatureRevocationAppealResolutionEnforcementPolicy.countersignatureRevocationAppealResolutionEnforcementSubjectIdentified:false`,
+  `packageMaterializationApprovalAuditCountersignatureRevocationAppealResolutionEnforcementPolicy.countersignatureRevocationAppealResolutionEnforcementAuthorityIdentified:false`,
+  `packageMaterializationApprovalAuditCountersignatureRevocationAppealResolutionEnforcementPolicy.countersignatureRevocationAppealResolutionRead:false`,
+  `packageMaterializationApprovalAuditCountersignatureRevocationAppealResolutionEnforcementPolicy.countersignatureRevocationAppealResolutionRecordRead:false`,
+  `packageMaterializationApprovalAuditCountersignatureRevocationAppealResolutionEnforcementPolicy.countersignatureRevocationAppealResolutionEnforcementReasonCaptured:false`,
+  `packageMaterializationApprovalAuditCountersignatureRevocationAppealResolutionEnforcementPolicy.countersignatureRevocationAppealResolutionEnforcementScopeComputed:false`,
+  `packageMaterializationApprovalAuditCountersignatureRevocationAppealResolutionEnforcementPolicy.countersignatureRevocationAppealResolutionEnforcementActionSelected:false`,
+  `packageMaterializationApprovalAuditCountersignatureRevocationAppealResolutionEnforcementPolicy.countersignatureRevocationAppealResolutionEnforcementPrepared:false`,
+  `packageMaterializationApprovalAuditCountersignatureRevocationAppealResolutionEnforcementPolicy.countersignatureRevocationAppealResolutionEnforcementValidated:false`,
+  `packageMaterializationApprovalAuditCountersignatureRevocationAppealResolutionEnforcementPolicy.countersignatureRevocationAppealResolutionEnforcementStored:false`,
+  `packageMaterializationApprovalAuditCountersignatureRevocationAppealResolutionEnforcementPolicy.countersignatureRevocationAppealResolutionEnforcementExecuted:false`,
+  `packageMaterializationApprovalAuditCountersignatureRevocationAppealResolutionEnforcementPolicy.countersignatureRevocationAppealResolutionEnforced:false`,
+  `packageMaterializationApprovalAuditCountersignatureRevocationAppealResolutionEnforcementPolicy.countersignatureRevocationAppealResolutionEnforcementAccepted:false`,
+  `packageMaterializationApprovalAuditCountersignatureRevocationAppealResolutionEnforcementPolicy.countersignatureRevocationAppealResolutionEnforcementRejected:false`,
+  `packageMaterializationApprovalAuditCountersignatureRevocationAppealResolutionEnforcementPolicy.countersignatureRevocationAppealResolutionEnforcementPublished:false`,
+  `packageMaterializationApprovalAuditCountersignatureRevocationAppealResolutionEnforcementPolicy.countersignatureRevocationAppealResolutionEnforcementRecordCreated:false`,
+  `packageMaterializationApprovalAuditCountersignatureRevocationAppealResolutionEnforcementPolicy.countersignatureRevocationAppealResolutionEnforcementRecordStored:false`,
+  `packageMaterializationApprovalAuditCountersignatureRevocationAppealResolutionEnforcementPolicy.countersignatureRevocationAppealResolutionEnforcementRecordPublished:false`,
+  `packageMaterializationApprovalAuditCountersignatureRevocationAppealResolutionEnforcementPolicy.countersignatureRevocationAppealRead:false`,
+  `packageMaterializationApprovalAuditCountersignatureRevocationAppealResolutionEnforcementPolicy.auditRecordRead:false`,
+  `packageMaterializationApprovalAuditCountersignatureRevocationAppealResolutionEnforcementPolicy.auditRecordQueried:false`,
+  `packageMaterializationApprovalAuditCountersignatureRevocationAppealResolutionEnforcementPolicy.countersignatureRevocationAppealResolutionEnforcementSignatureCreated:false`,
+  `packageMaterializationApprovalAuditCountersignatureRevocationAppealResolutionEnforcementPolicy.countersignatureRevocationAppealResolutionEnforcementSignatureVerified:false`,
+  `packageMaterializationApprovalAuditCountersignatureRevocationAppealResolutionEnforcementPolicy.countersignatureRevocationAppealResolutionEnforcementHashComputed:false`,
+  `approved:false`, `finalApprovalGranted:false`, `filesWritten:false`,
+  `fileMaterialization:false`, `workspaceMutation:false`,
+  `commandExecution:false`, `buildOutput:false`, `runtimeRegistration:false`,
+  and `localFileWrites:false`. They do not select enforcement policies,
+  identify subjects or authorities, read resolution or audit records, capture
+  enforcement reasons, compute scopes, select actions, prepare, validate, store,
+  execute, or publish enforcement, enforce resolutions, accept or reject
+  enforcement, create enforcement records, sign or hash enforcement, grant
+  approval, or materialize files.
 - Exporter service execution is out of scope for this command unless a later
   task explicitly maps thumbnail rendering to exporter-compatible semantics.
 - P25.6 selects a future dedicated thumbnail renderer service as the executable
@@ -944,7 +983,7 @@ See `render-thumbnail-runtime-boundary.md` and
 audit, resource-return rules, cache refresh behavior, auth expectations, and
 future test strategy.
 See `render-thumbnail-renderer-service-api.md` and
-`render-thumbnail-renderer-service-fixtures.json` for the P25.66 future
+`render-thumbnail-renderer-service-fixtures.json` for the P25.67 future
 renderer-service request/response API, MCP/CLI dry-run/client boundary, and
 metadata-only availability probe plus response/error normalization and disabled
 client request, execution gate, health preflight, and execution harness
@@ -961,7 +1000,8 @@ guardrails, package file templates, package workspace wiring, package build
   audit retention/access/integrity/provenance/custody/evidence/attestation/
   notarization/certification/endorsement/countersignature/countersignature
   verification/countersignature revocation/countersignature revocation appeal
-  /countersignature revocation appeal resolution policies.
+  /countersignature revocation appeal resolution/countersignature revocation
+  appeal resolution enforcement policies.
 
 ## Fixtures
 

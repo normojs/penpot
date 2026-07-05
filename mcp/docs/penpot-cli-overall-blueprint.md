@@ -1898,6 +1898,62 @@ P25.66 is complete:
    `packageCreated`, `dispatch`, `networkDispatch`, `runtimeRegistration`, and
    `localFileWrites` remain false.
 
+P25.67 is complete:
+
+1. Shared plans include
+   `packageMaterializationApprovalAuditCountersignatureRevocationAppealResolutionEnforcementPolicy`
+   metadata for future audit countersignature revocation appeal resolution
+   enforcement policies, required enforcement inputs, enforcement checks,
+   blocked enforcement decisions, and no-op guarantees.
+2. MCP and CLI expose this audit countersignature revocation appeal resolution
+   enforcement policy plan in dry-run and unavailable execution payloads without
+   selecting enforcement policies, identifying subjects or authorities, reading
+   resolutions or resolution records, capturing enforcement reasons, computing
+   scopes, selecting actions, preparing, validating, storing, executing, or
+   publishing enforcement, enforcing countersignature revocation appeal
+   resolutions, accepting or rejecting enforcement outcomes, creating/storing/
+   publishing enforcement records, reading appeals, revocations,
+   countersignatures, or audit records, linking/verifying/signing/hashing
+   enforcement records, granting approval, creating package directories, writing
+   files, mutating workspace manifests, mutating lockfiles, running commands,
+   emitting build output, starting processes, or registering runtime dispatch.
+3. `countersignatureRevocationAppealResolutionEnforcementPolicySelected`,
+   `countersignatureRevocationAppealResolutionEnforcementSubjectIdentified`,
+   `countersignatureRevocationAppealResolutionEnforcementAuthorityIdentified`,
+   `countersignatureRevocationAppealResolutionRead`,
+   `countersignatureRevocationAppealResolutionRecordRead`,
+   `countersignatureRevocationAppealResolutionEnforcementReasonCaptured`,
+   `countersignatureRevocationAppealResolutionEnforcementScopeComputed`,
+   `countersignatureRevocationAppealResolutionEnforcementActionSelected`,
+   `countersignatureRevocationAppealResolutionEnforcementPrepared`,
+   `countersignatureRevocationAppealResolutionEnforcementValidated`,
+   `countersignatureRevocationAppealResolutionEnforcementStored`,
+   `countersignatureRevocationAppealResolutionEnforcementExecuted`,
+   `countersignatureRevocationAppealResolutionEnforced`,
+   `countersignatureRevocationAppealResolutionEnforcementAccepted`,
+   `countersignatureRevocationAppealResolutionEnforcementRejected`,
+   `countersignatureRevocationAppealResolutionEnforcementPublished`,
+   `countersignatureRevocationAppealResolutionEnforcementRecordCreated`,
+   `countersignatureRevocationAppealResolutionEnforcementRecordStored`,
+   `countersignatureRevocationAppealResolutionEnforcementRecordPublished`,
+   `countersignatureRevocationAppealRead`,
+   `countersignatureRevocationAppealRecordRead`,
+   `countersignatureRevocationRead`,
+   `countersignatureRevocationRecordRead`, `countersignatureRead`,
+   `countersignatureRevocationVerified`, `auditRecordRead`,
+   `auditRecordQueried`,
+   `auditRecordCountersignatureRevocationAppealResolutionEnforcementLinked`,
+   `auditRecordCountersignatureRevocationAppealResolutionEnforcementVerified`,
+   `countersignatureRevocationAppealResolutionEnforcementSignatureCreated`,
+   `countersignatureRevocationAppealResolutionEnforcementSignatureVerified`,
+   `countersignatureRevocationAppealResolutionEnforcementHashComputed`,
+   `countersignatureRevocationAppealResolutionEnforcementHashStored`,
+   `materializationApproved`, `approved`, and `finalApprovalGranted` remain
+   false, while `filesWritten`, `fileMaterialization`, `workspaceMutation`,
+   `lockfileMutation`, `commandExecution`, `buildOutput`, `processSpawn`,
+   `packageCreated`, `dispatch`, `networkDispatch`, `runtimeRegistration`, and
+   `localFileWrites` remain false.
+
 Keep manual configuration behavior stable while moving command metadata and
 envelopes; transport-specific formatting should stay at the MCP/CLI edges.
 

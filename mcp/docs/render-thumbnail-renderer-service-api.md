@@ -456,6 +456,8 @@ P25.65 defines the package materialization approval audit countersignature
 revocation appeal policy.
 P25.66 defines the package materialization approval audit countersignature
 revocation appeal resolution policy.
+P25.67 defines the package materialization approval audit countersignature
+revocation appeal resolution enforcement policy.
 Plans now include `packageMaterializationApprovalPostHandoffAuditPolicy`,
 `packageMaterializationApprovalAuditRetentionPolicy`,
 `packageMaterializationApprovalAuditAccessPolicy`,
@@ -471,14 +473,16 @@ Plans now include `packageMaterializationApprovalPostHandoffAuditPolicy`,
 `packageMaterializationApprovalAuditCountersignatureVerificationPolicy`, and
 `packageMaterializationApprovalAuditCountersignatureRevocationPolicy`,
 `packageMaterializationApprovalAuditCountersignatureRevocationAppealPolicy`,
+`packageMaterializationApprovalAuditCountersignatureRevocationAppealResolutionPolicy`,
 and
-`packageMaterializationApprovalAuditCountersignatureRevocationAppealResolutionPolicy`.
+`packageMaterializationApprovalAuditCountersignatureRevocationAppealResolutionEnforcementPolicy`.
 These cover future audit sinks, retention, access, integrity, provenance,
 custody, evidence, attestation, notarization, certification, endorsement, and
 countersignature/countersignature verification/countersignature revocation/
 countersignature revocation appeal/countersignature revocation appeal
-resolution metadata, including required inputs, checks, blocked decisions, and
-no-op guarantees. The P25.65 revocation appeal slice keeps appeal policy
+resolution/countersignature revocation appeal resolution enforcement metadata,
+including required inputs, checks, blocked decisions, and no-op guarantees. The
+P25.65 revocation appeal slice keeps appeal policy
 selection, subject/authority identification, appeal reason capture,
 countersignature revocation reads, countersignature and audit record reads,
 countersignature revocation appeals, appeal grant/denial, appeal record
@@ -494,6 +498,15 @@ linking, signature verification, hash computation, file writes, package
 creation, workspace mutation, lockfile mutation, command execution, build
 output, materialization approval, process startup, dispatch, network dispatch,
 runtime registration, and local file writes disabled.
+The P25.67 revocation appeal resolution enforcement slice keeps enforcement
+policy selection, subject/authority identification, resolution and resolution
+record reads, enforcement reason/scope/action capture, enforcement preparation/
+validation/storage/execution/publication, resolution enforcement acceptance/
+rejection, enforcement record storage, audit record linking, signature
+verification, hash computation, file writes, package creation, workspace
+mutation, lockfile mutation, command execution, build output, materialization
+approval, process startup, dispatch, network dispatch, runtime registration,
+and local file writes disabled.
 
 ## Service Boundary
 
