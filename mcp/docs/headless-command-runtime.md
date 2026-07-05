@@ -1392,3 +1392,31 @@ policy:
   retention indexes, prepare or store archives, schedule or execute purges,
   prepare or write exports, write audit records, grant approval, materialize
   files, start processes, or register runtime dispatch.
+
+P25.53 adds renderer-service package materialization approval audit access
+policy:
+
+- Plans include `packageMaterializationApprovalAuditAccessPolicy`, defining
+  the future audit access policy, required access inputs, access checks,
+  blocked access decision, and no-op guarantees.
+- The audit access policy remains planning-only with
+  `accessPolicySelected:false`, `accessSubjectIdentified:false`,
+  `accessScopeComputed:false`, `accessScopeValidated:false`,
+  `accessDecisionComputed:false`, `accessDecisionStored:false`,
+  `accessGranted:false`, `accessDenied:false`, `auditRecordRead:false`,
+  `auditRecordQueried:false`, `auditRecordExported:false`,
+  `auditRecordDownloaded:false`, `auditRecordRedacted:false`,
+  `auditRecordSigned:false`, `auditRecordShared:false`,
+  `accessTokenIssued:false`, `accessTokenAccepted:false`,
+  `accessTokenValidated:false`, `accessTokenConsumed:false`,
+  `materializationApproved:false`, `approved:false`,
+  `finalApprovalGranted:false`, `filesWritten:false`,
+  `fileMaterialization:false`, `workspaceMutation:false`,
+  `lockfileMutation:false`, `commandExecution:false`, `buildOutput:false`,
+  `processSpawn:false`, `packageCreated:false`, `dispatch:false`,
+  `networkDispatch:false`, `runtimeRegistration:false`, and
+  `localFileWrites:false`. It does not select access policies, identify
+  access subjects, compute or validate scopes, compute or store access
+  decisions, grant or deny access, read or query audit records, export,
+  download, redact, sign, or share audit records, issue access tokens,
+  materialize files, start processes, or register runtime dispatch.

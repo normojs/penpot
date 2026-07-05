@@ -2830,6 +2830,32 @@ P25.52 render.thumbnail package materialization approval audit retention policy 
   `packageCreated`, `dispatch`, `networkDispatch`, `runtimeRegistration`, and
   `localFileWrites` remain `false`.
 
+P25.53 render.thumbnail package materialization approval audit access policy result:
+
+- Shared plans include `packageMaterializationApprovalAuditAccessPolicy`,
+  defining metadata-only audit access policies, required access inputs, access
+  checks, blocked access decisions, and no-op guarantees.
+- MCP and CLI expose the audit access policy plan in dry-run and unavailable
+  execution payloads without selecting access policies, identifying subjects,
+  computing or validating scopes, computing or storing access decisions,
+  granting or denying access, reading or querying audit records, exporting,
+  downloading, redacting, signing, or sharing audit records, issuing access
+  tokens, granting approval, creating package directories, writing files,
+  mutating workspace manifests, mutating lockfiles, running commands, emitting
+  build output, starting processes, or registering runtime dispatch.
+- `accessPolicySelected`, `accessSubjectIdentified`,
+  `accessScopeComputed`, `accessScopeValidated`, `accessDecisionComputed`,
+  `accessDecisionStored`, `accessGranted`, `accessDenied`,
+  `auditRecordRead`, `auditRecordQueried`, `auditRecordExported`,
+  `auditRecordDownloaded`, `auditRecordRedacted`, `auditRecordSigned`,
+  `auditRecordShared`, `accessTokenIssued`, `accessTokenAccepted`,
+  `accessTokenValidated`, `accessTokenConsumed`, `materializationApproved`,
+  `approved`, and `finalApprovalGranted` remain `false`, while
+  `filesWritten`, `fileMaterialization`, `workspaceMutation`,
+  `lockfileMutation`, `commandExecution`, `buildOutput`, `processSpawn`,
+  `packageCreated`, `dispatch`, `networkDispatch`, `runtimeRegistration`, and
+  `localFileWrites` remain `false`.
+
 ### 8.5 Export and Render Tools
 
 May start file-bound and later move to headless:
@@ -2886,7 +2912,8 @@ disabled package materialization approval readiness verdict policy. P25.50
 defines disabled package materialization approval execution handoff policy.
 P25.51 defines disabled package materialization approval post-handoff audit
 policy. P25.52 defines disabled package materialization approval audit
-retention policy.
+retention policy. P25.53 defines disabled package materialization approval
+audit access policy.
 Runtime behavior remains unavailable
 until opt-in config surfaces, renderer-service implementation, workspace
 wiring, health preflight, cache probe, executable client, and tagged-frame

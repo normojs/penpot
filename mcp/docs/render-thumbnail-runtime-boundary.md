@@ -81,7 +81,10 @@ audit sinks, accepting/validating tokens, consuming tokens, or granting
 approval. P25.52 defines package materialization approval audit retention
 policy metadata without selecting retention policies, computing retention
 windows, trusting clocks, storing retention records, updating indexes, archiving,
-purging, exporting, writing audit records, or granting approval.
+purging, exporting, writing audit records, or granting approval. P25.53 defines
+package materialization approval audit access policy metadata without selecting
+access policies, identifying subjects, computing scopes, granting access,
+reading audit records, exporting audit records, or issuing access tokens.
 
 ## Existing Surfaces
 
@@ -245,6 +248,8 @@ P25.51 adds metadata-only package materialization approval post-handoff audit
 policy.
 P25.52 adds metadata-only package materialization approval audit retention
 policy.
+P25.53 adds metadata-only package materialization approval audit access
+policy.
 MCP
 `render.thumbnail` and `penpot-cli render thumbnail --dry-run` can print the
 future request shape, configured/not configured service metadata,
@@ -357,6 +362,21 @@ plus `packageMaterializationApprovalAuditRetentionPolicy.retentionPolicySelected
 `packageMaterializationApprovalAuditRetentionPolicy.filesWritten:false`,
 `packageMaterializationApprovalAuditRetentionPolicy.commandExecution:false`, and
 `packageMaterializationApprovalAuditRetentionPolicy.buildOutput:false`,
+plus `packageMaterializationApprovalAuditAccessPolicy.accessPolicySelected:false`,
+`packageMaterializationApprovalAuditAccessPolicy.accessSubjectIdentified:false`,
+`packageMaterializationApprovalAuditAccessPolicy.accessScopeComputed:false`,
+`packageMaterializationApprovalAuditAccessPolicy.accessScopeValidated:false`,
+`packageMaterializationApprovalAuditAccessPolicy.accessDecisionStored:false`,
+`packageMaterializationApprovalAuditAccessPolicy.accessGranted:false`,
+`packageMaterializationApprovalAuditAccessPolicy.accessDenied:false`,
+`packageMaterializationApprovalAuditAccessPolicy.auditRecordRead:false`,
+`packageMaterializationApprovalAuditAccessPolicy.auditRecordQueried:false`,
+`packageMaterializationApprovalAuditAccessPolicy.auditRecordExported:false`,
+`packageMaterializationApprovalAuditAccessPolicy.accessTokenIssued:false`,
+`packageMaterializationApprovalAuditAccessPolicy.materializationApproved:false`,
+`packageMaterializationApprovalAuditAccessPolicy.filesWritten:false`,
+`packageMaterializationApprovalAuditAccessPolicy.commandExecution:false`, and
+`packageMaterializationApprovalAuditAccessPolicy.buildOutput:false`,
 but execution still returns
 `renderer_service_unavailable` until explicit opt-in, config surfaces, renderer
 service, integration tests, health preflight, file cache probe, tagged-frame

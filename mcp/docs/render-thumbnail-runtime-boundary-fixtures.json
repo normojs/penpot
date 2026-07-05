@@ -1,7 +1,7 @@
 {
-  "version": "P25.52",
+  "version": "P25.53",
   "command": "render.thumbnail",
-  "status": "runtime boundary audited; MCP/CLI planning, metadata-only availability probes, response normalization contracts, disabled client request scaffold, closed execution gate, health preflight plan, executable client harness plan, dispatch adapter boundary, opt-in configuration surfaces, unavailable error taxonomy, integration fixture harness, dispatch registration preflight, disabled executable adapter registration scaffold, disabled adapter registry manifest, final disabled enablement checklist, implementation slice audit, health/no-op contract fixtures, no-op service host scaffold, host lifecycle test fixtures, package manifest scaffold, package creation guardrails, package file templates, package workspace wiring, package build verification, package materialization checklist, package creation dry-run summary, package creation file manifest, package materialization approval gate, package materialization execution dry-run, package materialization write contract, package materialization rollback contract, package materialization verification manifest, package materialization final approval checklist, package materialization explicit approval token, package materialization approval audit trail, package materialization approval replay guard, package materialization approval expiry policy, package materialization approval revocation policy, package materialization approval scope binding policy, package materialization approval operator confirmation policy, package materialization approval emergency stop policy, package materialization approval readiness verdict policy, package materialization approval execution handoff policy, package materialization approval post-handoff audit policy, and package materialization approval audit retention policy registered; runtime execution blocked",
+  "status": "runtime boundary audited; MCP/CLI planning, metadata-only availability probes, response normalization contracts, disabled client request scaffold, closed execution gate, health preflight plan, executable client harness plan, dispatch adapter boundary, opt-in configuration surfaces, unavailable error taxonomy, integration fixture harness, dispatch registration preflight, disabled executable adapter registration scaffold, disabled adapter registry manifest, final disabled enablement checklist, implementation slice audit, health/no-op contract fixtures, no-op service host scaffold, host lifecycle test fixtures, package manifest scaffold, package creation guardrails, package file templates, package workspace wiring, package build verification, package materialization checklist, package creation dry-run summary, package creation file manifest, package materialization approval gate, package materialization execution dry-run, package materialization write contract, package materialization rollback contract, package materialization verification manifest, package materialization final approval checklist, package materialization explicit approval token, package materialization approval audit trail, package materialization approval replay guard, package materialization approval expiry policy, package materialization approval revocation policy, package materialization approval scope binding policy, package materialization approval operator confirmation policy, package materialization approval emergency stop policy, package materialization approval readiness verdict policy, package materialization approval execution handoff policy, package materialization approval post-handoff audit policy, package materialization approval audit retention policy, and package materialization approval audit access policy registered; runtime execution blocked",
   "selectedBoundary": "thumbnail-renderer-service",
   "runtimeRegistration": {
     "mcpToolRegistered": true,
@@ -389,8 +389,8 @@
     "package materialization approval emergency stop policy survives dry-run and unavailable execution JSON output"
   ],
   "nextTask": {
-    "id": "P25.53",
-    "title": "Plan renderer-service package materialization approval audit access policy",
+    "id": "P25.54",
+    "title": "Plan renderer-service package materialization approval audit integrity policy",
     "status": "pending"
   },
   "implementationSliceAudit": {
@@ -4794,6 +4794,201 @@
       "require written post-handoff audit record before retention",
       "define trusted retention clock source",
       "define archive and purge safety semantics",
+      "keep render.thumbnail unavailable until executable adapter registration is approved"
+    ]
+  },
+  "packageMaterializationApprovalAuditAccessPolicy": {
+    "status": "planned-disabled",
+    "auditAccessVersion": "P25.53",
+    "adapter": "renderer-service",
+    "command": "render.thumbnail",
+    "dryRunOnly": true,
+    "approvalRequired": true,
+    "approved": false,
+    "finalApprovalGranted": false,
+    "accessRequired": true,
+    "accessPlanned": true,
+    "accessPolicySelected": false,
+    "accessSubjectIdentified": false,
+    "accessScopeComputed": false,
+    "accessScopeValidated": false,
+    "accessDecisionComputed": false,
+    "accessDecisionStored": false,
+    "accessGranted": false,
+    "accessDenied": false,
+    "auditRecordRead": false,
+    "auditRecordQueried": false,
+    "auditRecordExported": false,
+    "auditRecordDownloaded": false,
+    "auditRecordRedacted": false,
+    "auditRecordSigned": false,
+    "auditRecordShared": false,
+    "accessTokenIssued": false,
+    "accessTokenAccepted": false,
+    "accessTokenStored": false,
+    "accessTokenValidated": false,
+    "accessTokenConsumed": false,
+    "accessTokenRevoked": false,
+    "materializationReady": false,
+    "materializationApproved": false,
+    "materializationApprovedNow": false,
+    "tokenAccepted": false,
+    "tokenStored": false,
+    "tokenValidated": false,
+    "tokenConsumed": false,
+    "tokenRevoked": false,
+    "executeNow": false,
+    "verifyNow": false,
+    "rollbackNow": false,
+    "dispatch": false,
+    "networkDispatch": false,
+    "runtimeRegistration": false,
+    "localFileWrites": false,
+    "hostStartup": false,
+    "processSpawn": false,
+    "packageCreated": false,
+    "workspaceMutation": false,
+    "scriptRunnable": false,
+    "fileMaterialization": false,
+    "lockfileMutation": false,
+    "rootPackageJsonMutation": false,
+    "pnpmWorkspaceMutation": false,
+    "commandExecution": false,
+    "buildOutput": false,
+    "packageScriptsRunnable": false,
+    "filesWritten": false,
+    "rollbackExecuted": false,
+    "verificationExecuted": false,
+    "consumes": {
+      "packageMaterializationApprovalAuditRetentionPolicy": {
+        "requiredStatus": "planned-disabled",
+        "currentStatus": "planned-disabled",
+        "auditRetentionVersion": "P25.52",
+        "retentionRecordStored": false,
+        "auditRecordWritten": false
+      },
+      "packageMaterializationApprovalPostHandoffAuditPolicy": {
+        "requiredStatus": "planned-disabled",
+        "currentStatus": "planned-disabled",
+        "postHandoffAuditVersion": "P25.51",
+        "auditRecordWritten": false,
+        "auditRecordStored": false
+      },
+      "packageMaterializationFinalApprovalChecklist": {
+        "requiredStatus": "planned-disabled",
+        "currentStatus": "planned-disabled",
+        "checklistVersion": "P25.40",
+        "finalApprovalGranted": false
+      }
+    },
+    "auditAccessPolicy": {
+      "policy": "access-after-retained-audit-record-and-authorized-subject",
+      "selectAccessPolicyNow": false,
+      "identifyAccessSubjectNow": false,
+      "computeAccessScopeNow": false,
+      "validateAccessScopeNow": false,
+      "computeAccessDecisionNow": false,
+      "storeAccessDecisionNow": false,
+      "grantAccessNow": false,
+      "denyAccessNow": false,
+      "readAuditRecordNow": false,
+      "queryAuditRecordNow": false,
+      "exportAuditRecordNow": false,
+      "downloadAuditRecordNow": false,
+      "redactAuditRecordNow": false,
+      "signAuditRecordNow": false,
+      "shareAuditRecordNow": false,
+      "issueAccessTokenNow": false,
+      "requiredInputs": [
+        "retainedAuditRecord",
+        "authorizedSubject",
+        "auditAccessScope",
+        "accessPolicyId"
+      ],
+      "accessPolicyId": "future-materialization-audit-access",
+      "accessScope": "future-policy-defined",
+      "accessPayloadLogged": false
+    },
+    "auditAccessChecks": [
+      {
+        "id": "retained-audit-record-present",
+        "required": true,
+        "planned": true,
+        "executed": false,
+        "passed": false
+      },
+      {
+        "id": "access-policy-selected",
+        "required": true,
+        "planned": true,
+        "executed": false,
+        "passed": false
+      },
+      {
+        "id": "access-subject-identified",
+        "required": true,
+        "planned": true,
+        "executed": false,
+        "passed": false
+      },
+      {
+        "id": "access-scope-validated",
+        "required": true,
+        "planned": true,
+        "executed": false,
+        "passed": false
+      },
+      {
+        "id": "audit-record-not-read",
+        "required": true,
+        "planned": true,
+        "executed": false,
+        "passed": false
+      }
+    ],
+    "auditAccessDecision": {
+      "status": "blocked",
+      "canSelectAccessPolicy": false,
+      "canIdentifyAccessSubject": false,
+      "canComputeAccessScope": false,
+      "canValidateAccessScope": false,
+      "canComputeAccessDecision": false,
+      "canStoreAccessDecision": false,
+      "canGrantAccess": false,
+      "canDenyAccess": false,
+      "canReadAuditRecord": false,
+      "canQueryAuditRecord": false,
+      "canExportAuditRecord": false,
+      "canDownloadAuditRecord": false,
+      "canRedactAuditRecord": false,
+      "canSignAuditRecord": false,
+      "canShareAuditRecord": false,
+      "canIssueAccessToken": false,
+      "canMaterializeFiles": false,
+      "canEnableRuntimeDispatch": false,
+      "reason": "audit access policy is metadata-only and no retained audit record or authorized subject has been established"
+    },
+    "noOpGuarantees": [
+      "audit access policy plan does not select access policies",
+      "audit access policy plan does not identify access subjects",
+      "audit access policy plan does not compute or validate access scopes",
+      "audit access policy plan does not compute or store access decisions",
+      "audit access policy plan does not grant or deny access",
+      "audit access policy plan does not read or query audit records",
+      "audit access policy plan does not export, download, redact, sign, or share audit records",
+      "audit access policy plan does not issue access tokens",
+      "audit access policy plan does not create renderer-service directory",
+      "audit access policy plan does not write package or workspace files",
+      "audit access policy plan does not mutate lockfiles",
+      "audit access policy plan does not run verification commands",
+      "audit access policy plan does not generate build output",
+      "audit access policy plan does not register runtime dispatch"
+    ],
+    "requiredBeforeRuntimeDispatch": [
+      "define audit access policy schema",
+      "require retained audit record before audit access",
+      "define authorized subject and access scope semantics",
+      "define audit record redaction and export safety semantics",
       "keep render.thumbnail unavailable until executable adapter registration is approved"
     ]
   }

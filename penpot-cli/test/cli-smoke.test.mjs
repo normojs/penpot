@@ -101,6 +101,46 @@ function assertAuditRetentionPolicyMetadataOnly(policy) {
     assert.equal(policy.auditRetentionDecision.canWriteExport, false);
 }
 
+function assertAuditAccessPolicyMetadataOnly(policy) {
+    assert.equal(policy.auditAccessVersion, "P25.53");
+    for (const key of [
+        "accessPolicySelected",
+        "accessSubjectIdentified",
+        "accessScopeComputed",
+        "accessScopeValidated",
+        "accessDecisionComputed",
+        "accessDecisionStored",
+        "accessGranted",
+        "accessDenied",
+        "auditRecordRead",
+        "auditRecordQueried",
+        "auditRecordExported",
+        "auditRecordDownloaded",
+        "auditRecordRedacted",
+        "auditRecordSigned",
+        "auditRecordShared",
+        "accessTokenIssued",
+        "accessTokenAccepted",
+        "accessTokenStored",
+        "accessTokenValidated",
+        "accessTokenConsumed",
+        "accessTokenRevoked",
+        "materializationApproved",
+        "dispatch",
+        "runtimeRegistration",
+        "localFileWrites",
+        "commandExecution",
+        "buildOutput",
+        "filesWritten",
+    ]) {
+        assert.equal(policy[key], false, key);
+    }
+    assert.equal(policy.auditAccessDecision.canGrantAccess, false);
+    assert.equal(policy.auditAccessDecision.canReadAuditRecord, false);
+    assert.equal(policy.auditAccessDecision.canExportAuditRecord, false);
+    assert.equal(policy.auditAccessDecision.canDownloadAuditRecord, false);
+}
+
 function pickMcpConfigFields(data) {
     return {
         mode: data.mode,
@@ -3007,6 +3047,7 @@ test("render thumbnail dry-run returns renderer-service request plan", async () 
         assert.equal(body.data.packageMaterializationApprovalPostHandoffAuditPolicy.postHandoffAuditDecision.canWriteAudit, false);
         assert.equal(body.data.packageMaterializationApprovalPostHandoffAuditPolicy.postHandoffAuditDecision.canDispatchExecution, false);
         assertAuditRetentionPolicyMetadataOnly(body.data.packageMaterializationApprovalAuditRetentionPolicy);
+        assertAuditAccessPolicyMetadataOnly(body.data.packageMaterializationApprovalAuditAccessPolicy);
         assert.equal(body.data.service.responseNormalization.successStatus, "ok");
         assert.equal(body.data.service.responseNormalization.localFileWrites, false);
         assert.equal(body.data.service.errorShape.code, "renderer_service_error");
@@ -3377,6 +3418,7 @@ test("render thumbnail execution reports renderer-service unavailable without ca
         assert.equal(body.error.data.packageMaterializationApprovalPostHandoffAuditPolicy.postHandoffAuditDecision.canWriteAudit, false);
         assert.equal(body.error.data.packageMaterializationApprovalPostHandoffAuditPolicy.postHandoffAuditDecision.canDispatchExecution, false);
         assertAuditRetentionPolicyMetadataOnly(body.error.data.packageMaterializationApprovalAuditRetentionPolicy);
+        assertAuditAccessPolicyMetadataOnly(body.error.data.packageMaterializationApprovalAuditAccessPolicy);
         assert.equal(body.error.data.clientRequest.dispatch, false);
         assert.equal(body.error.data.serviceRequest.operation, "thumbnail.render");
     } finally {

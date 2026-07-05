@@ -474,6 +474,7 @@ export interface RenderThumbnailRendererServicePlan {
         packageMaterializationApprovalExecutionHandoffPolicy: RenderThumbnailRendererServicePackageMaterializationApprovalExecutionHandoffPolicy;
         packageMaterializationApprovalPostHandoffAuditPolicy: RenderThumbnailRendererServicePackageMaterializationApprovalPostHandoffAuditPolicy;
         packageMaterializationApprovalAuditRetentionPolicy: RenderThumbnailRendererServicePackageMaterializationApprovalAuditRetentionPolicy;
+        packageMaterializationApprovalAuditAccessPolicy: RenderThumbnailRendererServicePackageMaterializationApprovalAuditAccessPolicy;
         clientRequest: RenderThumbnailRendererServiceClientRequest;
     };
     client: RenderThumbnailRendererServiceClientConfig;
@@ -519,6 +520,7 @@ export interface RenderThumbnailRendererServicePlan {
     packageMaterializationApprovalExecutionHandoffPolicy: RenderThumbnailRendererServicePackageMaterializationApprovalExecutionHandoffPolicy;
     packageMaterializationApprovalPostHandoffAuditPolicy: RenderThumbnailRendererServicePackageMaterializationApprovalPostHandoffAuditPolicy;
     packageMaterializationApprovalAuditRetentionPolicy: RenderThumbnailRendererServicePackageMaterializationApprovalAuditRetentionPolicy;
+    packageMaterializationApprovalAuditAccessPolicy: RenderThumbnailRendererServicePackageMaterializationApprovalAuditAccessPolicy;
     clientRequest: RenderThumbnailRendererServiceClientRequest;
     serviceRequest: {
         command: "render.thumbnail";
@@ -624,6 +626,7 @@ export interface RenderThumbnailRendererServicePlan {
         packageMaterializationApprovalExecutionHandoffPolicyVersion: "P25.50";
         packageMaterializationApprovalPostHandoffAuditPolicyVersion: "P25.51";
         packageMaterializationApprovalAuditRetentionPolicyVersion: "P25.52";
+        packageMaterializationApprovalAuditAccessPolicyVersion: "P25.53";
     };
 }
 
@@ -3870,6 +3873,146 @@ export interface RenderThumbnailRendererServicePackageMaterializationApprovalAud
     requiredBeforeRuntimeDispatch: string[];
 }
 
+export interface RenderThumbnailRendererServicePackageMaterializationApprovalAuditAccessPolicy {
+    status: "planned-disabled";
+    auditAccessVersion: "P25.53";
+    adapter: "renderer-service";
+    command: "render.thumbnail";
+    dryRunOnly: true;
+    approvalRequired: true;
+    approved: false;
+    finalApprovalGranted: false;
+    accessRequired: true;
+    accessPlanned: true;
+    accessPolicySelected: false;
+    accessSubjectIdentified: false;
+    accessScopeComputed: false;
+    accessScopeValidated: false;
+    accessDecisionComputed: false;
+    accessDecisionStored: false;
+    accessGranted: false;
+    accessDenied: false;
+    auditRecordRead: false;
+    auditRecordQueried: false;
+    auditRecordExported: false;
+    auditRecordDownloaded: false;
+    auditRecordRedacted: false;
+    auditRecordSigned: false;
+    auditRecordShared: false;
+    accessTokenIssued: false;
+    accessTokenAccepted: false;
+    accessTokenStored: false;
+    accessTokenValidated: false;
+    accessTokenConsumed: false;
+    accessTokenRevoked: false;
+    materializationReady: false;
+    materializationApproved: false;
+    materializationApprovedNow: false;
+    tokenAccepted: false;
+    tokenStored: false;
+    tokenValidated: false;
+    tokenConsumed: false;
+    tokenRevoked: false;
+    executeNow: false;
+    verifyNow: false;
+    rollbackNow: false;
+    dispatch: false;
+    networkDispatch: false;
+    runtimeRegistration: false;
+    localFileWrites: false;
+    hostStartup: false;
+    processSpawn: false;
+    packageCreated: false;
+    workspaceMutation: false;
+    scriptRunnable: false;
+    fileMaterialization: false;
+    lockfileMutation: false;
+    rootPackageJsonMutation: false;
+    pnpmWorkspaceMutation: false;
+    commandExecution: false;
+    buildOutput: false;
+    packageScriptsRunnable: false;
+    filesWritten: false;
+    rollbackExecuted: false;
+    verificationExecuted: false;
+    consumes: {
+        packageMaterializationApprovalAuditRetentionPolicy: {
+            requiredStatus: "planned-disabled";
+            currentStatus: string;
+            auditRetentionVersion: string;
+            retentionRecordStored: false;
+            auditRecordWritten: false;
+        };
+        packageMaterializationApprovalPostHandoffAuditPolicy: {
+            requiredStatus: "planned-disabled";
+            currentStatus: string;
+            postHandoffAuditVersion: string;
+            auditRecordWritten: false;
+            auditRecordStored: false;
+        };
+        packageMaterializationFinalApprovalChecklist: {
+            requiredStatus: "planned-disabled";
+            currentStatus: string;
+            checklistVersion: string;
+            finalApprovalGranted: false;
+        };
+    };
+    auditAccessPolicy: {
+        policy: "access-after-retained-audit-record-and-authorized-subject";
+        selectAccessPolicyNow: false;
+        identifyAccessSubjectNow: false;
+        computeAccessScopeNow: false;
+        validateAccessScopeNow: false;
+        computeAccessDecisionNow: false;
+        storeAccessDecisionNow: false;
+        grantAccessNow: false;
+        denyAccessNow: false;
+        readAuditRecordNow: false;
+        queryAuditRecordNow: false;
+        exportAuditRecordNow: false;
+        downloadAuditRecordNow: false;
+        redactAuditRecordNow: false;
+        signAuditRecordNow: false;
+        shareAuditRecordNow: false;
+        issueAccessTokenNow: false;
+        requiredInputs: string[];
+        accessPolicyId: "future-materialization-audit-access";
+        accessScope: "future-policy-defined";
+        accessPayloadLogged: false;
+    };
+    auditAccessChecks: Array<{
+        id: string;
+        required: true;
+        planned: true;
+        executed: false;
+        passed: false;
+    }>;
+    auditAccessDecision: {
+        status: "blocked";
+        canSelectAccessPolicy: false;
+        canIdentifyAccessSubject: false;
+        canComputeAccessScope: false;
+        canValidateAccessScope: false;
+        canComputeAccessDecision: false;
+        canStoreAccessDecision: false;
+        canGrantAccess: false;
+        canDenyAccess: false;
+        canReadAuditRecord: false;
+        canQueryAuditRecord: false;
+        canExportAuditRecord: false;
+        canDownloadAuditRecord: false;
+        canRedactAuditRecord: false;
+        canSignAuditRecord: false;
+        canShareAuditRecord: false;
+        canIssueAccessToken: false;
+        canMaterializeFiles: false;
+        canEnableRuntimeDispatch: false;
+        reason: string;
+    };
+    noOpGuarantees: string[];
+    requiredBeforeRuntimeDispatch: string[];
+}
+
 export interface CreateRenderThumbnailRendererServiceClientRequestOptions {
     entrypoint?: "mcp" | "cli" | string | null;
     mcpToolName?: string | null;
@@ -4404,6 +4547,13 @@ export function createRenderThumbnailRendererServicePackageMaterializationApprov
         packageMaterializationFinalApprovalChecklist?: Partial<RenderThumbnailRendererServicePackageMaterializationFinalApprovalChecklist> | null;
     }
 ): RenderThumbnailRendererServicePackageMaterializationApprovalAuditRetentionPolicy;
+export function createRenderThumbnailRendererServicePackageMaterializationApprovalAuditAccessPolicy(
+    options?: {
+        packageMaterializationApprovalAuditRetentionPolicy?: Partial<RenderThumbnailRendererServicePackageMaterializationApprovalAuditRetentionPolicy> | null;
+        packageMaterializationApprovalPostHandoffAuditPolicy?: Partial<RenderThumbnailRendererServicePackageMaterializationApprovalPostHandoffAuditPolicy> | null;
+        packageMaterializationFinalApprovalChecklist?: Partial<RenderThumbnailRendererServicePackageMaterializationFinalApprovalChecklist> | null;
+    }
+): RenderThumbnailRendererServicePackageMaterializationApprovalAuditAccessPolicy;
 export function createRenderThumbnailRendererServiceClientRequest(
     plan: Partial<RenderThumbnailRendererServicePlan>,
     options?: CreateRenderThumbnailRendererServiceClientRequestOptions
