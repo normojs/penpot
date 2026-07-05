@@ -1048,6 +1048,17 @@ Shared contract shape:
   verification, audit record reads, verification result storage/publication,
   approval, file writes, workspace mutation, command execution, build output,
   package creation, process startup, and runtime registration disabled.
+- P25.75 package materialization approval audit countersignature revocation
+  appeal resolution enforcement evidence attestation notarization certification
+  endorsement countersignature verification revocation policy fields are
+  planning-only. They define future verification revocation policies, required
+  revocation inputs, revocation checks, blocked revocation decisions, and no-op
+  guarantees while keeping revocation policy selection, subject/authority
+  identification, reason capture, scope computation, request storage/execution,
+  verification record revocation, revocation record storage/publication,
+  countersignature and audit record reads, approval, file writes, workspace
+  mutation, command execution, build output, package creation, process startup,
+  and runtime registration disabled.
 - Exporter service execution is out of scope for this command unless a later
   task explicitly maps thumbnail rendering to exporter-compatible semantics.
 - P25.6 selects a future dedicated thumbnail renderer service as the executable

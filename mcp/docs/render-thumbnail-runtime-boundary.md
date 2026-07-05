@@ -164,6 +164,12 @@ revocation appeal resolution enforcement evidence attestation notarization
 certification endorsement countersignature verification policy metadata without
 reading countersignatures or audit records, parsing payloads, verifying
 signatures, matching hashes, storing verification results, or enabling dispatch.
+P25.75 defines package materialization approval audit countersignature
+revocation appeal resolution enforcement evidence attestation notarization
+certification endorsement countersignature verification revocation policy
+metadata without selecting revocation policies, revoking verification records,
+creating revocation records, reading countersignatures or audit records, or
+enabling dispatch.
 
 ## Existing Surfaces
 

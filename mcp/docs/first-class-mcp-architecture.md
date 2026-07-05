@@ -3108,6 +3108,36 @@ certification endorsement countersignature verification policy result:
   `packageCreated`, `dispatch`, `networkDispatch`,
   `runtimeRegistration`, and `localFileWrites` remain `false`.
 
+P25.75 render.thumbnail package materialization approval audit countersignature
+revocation appeal resolution enforcement evidence attestation notarization
+certification endorsement countersignature verification revocation policy
+result:
+
+- Shared plans include
+  `packageMaterializationApprovalAuditCountersignatureRevocationAppealResolutionEnforcementEvidenceAttestationNotarizationCertificationEndorsementCountersignatureVerificationRevocationPolicy`,
+  defining metadata-only audit countersignature revocation appeal resolution
+  enforcement evidence attestation notarization certification endorsement
+  countersignature verification revocation policies, required revocation
+  inputs, revocation checks, blocked revocation decisions, and no-op
+  guarantees.
+- MCP and CLI expose the verification revocation policy plan in dry-run and
+  unavailable execution payloads without selecting revocation policies,
+  identifying subjects or authorities, capturing reasons, computing scopes,
+  storing or executing revocation requests, revoking verification records,
+  creating revocation records, reading countersignatures or audit records,
+  granting approval, creating package directories, writing files, mutating
+  workspace manifests, mutating lockfiles, running commands, emitting build
+  output, starting processes, or registering runtime dispatch.
+- `countersignatureRevocationAppealResolutionEnforcementEvidenceAttestationNotarizationCertificationEndorsementCountersignatureVerificationRevocationPolicySelected`,
+  `countersignatureRevocationAppealResolutionEnforcementEvidenceAttestationNotarizationCertificationEndorsementCountersignatureVerificationRevocationExecuted`,
+  `countersignatureRevocationAppealResolutionEnforcementEvidenceAttestationNotarizationCertificationEndorsementCountersignatureVerificationRevoked`,
+  `countersignatureRead`, `auditRecordRead`, `materializationApproved`,
+  `approved`, and `finalApprovalGranted` remain `false`, while
+  `filesWritten`, `fileMaterialization`, `workspaceMutation`,
+  `lockfileMutation`, `commandExecution`, `buildOutput`, `processSpawn`,
+  `packageCreated`, `dispatch`, `networkDispatch`, `runtimeRegistration`, and
+  `localFileWrites` remain `false`.
+
 P25.51 render.thumbnail package materialization approval post-handoff audit policy result:
 
 - Shared plans include `packageMaterializationApprovalPostHandoffAuditPolicy`,
@@ -3690,6 +3720,9 @@ certification endorsement countersignature policy.
 P25.74 defines disabled package materialization approval audit countersignature
 revocation appeal resolution enforcement evidence attestation notarization
 certification endorsement countersignature verification policy.
+P25.75 defines disabled package materialization approval audit countersignature
+revocation appeal resolution enforcement evidence attestation notarization
+certification endorsement countersignature verification revocation policy.
 Runtime behavior remains unavailable
 until opt-in config surfaces, renderer-service implementation, workspace
 wiring, health preflight, cache probe, executable client, and tagged-frame
