@@ -1844,3 +1844,58 @@ countersignature revocation appeal policy:
   countersignatures, or audit records, appealing revocations, granting or denying
   appeals, creating appeal records, signing or hashing appeal records,
   materializing files, starting processes, or enabling dispatch.
+
+P25.66 adds renderer-service package materialization approval audit
+countersignature revocation appeal resolution policy:
+
+- Plans include
+  `packageMaterializationApprovalAuditCountersignatureRevocationAppealResolutionPolicy`,
+  defining the future countersignature revocation appeal resolution policy,
+  required resolution inputs, resolution checks, blocked resolution decision,
+  and no-op guarantees.
+- The audit countersignature revocation appeal resolution policy remains
+  planning-only with
+  `countersignatureRevocationAppealResolutionPolicySelected:false`,
+  `countersignatureRevocationAppealResolutionSubjectIdentified:false`,
+  `countersignatureRevocationAppealResolutionAuthorityIdentified:false`,
+  `countersignatureRevocationAppealRead:false`,
+  `countersignatureRevocationAppealRecordRead:false`,
+  `countersignatureRevocationAppealResolutionReasonCaptured:false`,
+  `countersignatureRevocationAppealResolutionScopeComputed:false`,
+  `countersignatureRevocationAppealResolutionOutcomeSelected:false`,
+  `countersignatureRevocationAppealResolutionPrepared:false`,
+  `countersignatureRevocationAppealResolutionValidated:false`,
+  `countersignatureRevocationAppealResolutionStored:false`,
+  `countersignatureRevocationAppealResolutionExecuted:false`,
+  `countersignatureRevocationAppealResolved:false`,
+  `countersignatureRevocationAppealResolutionAccepted:false`,
+  `countersignatureRevocationAppealResolutionRejected:false`,
+  `countersignatureRevocationAppealResolutionPublished:false`,
+  `countersignatureRevocationAppealResolutionRecordCreated:false`,
+  `countersignatureRevocationAppealResolutionRecordStored:false`,
+  `countersignatureRevocationAppealResolutionRecordPublished:false`,
+  `countersignatureRevocationRead:false`,
+  `countersignatureRevocationRecordRead:false`,
+  `countersignatureRead:false`, `auditRecordRead:false`,
+  `auditRecordQueried:false`,
+  `auditRecordCountersignatureRevocationAppealResolutionLinked:false`,
+  `auditRecordCountersignatureRevocationAppealResolutionVerified:false`,
+  `countersignatureRevocationAppealResolutionSignatureCreated:false`,
+  `countersignatureRevocationAppealResolutionSignatureVerified:false`,
+  `countersignatureRevocationAppealResolutionHashComputed:false`,
+  `countersignatureRevocationAppealResolutionHashStored:false`,
+  `materializationApproved:false`, `approved:false`,
+  `finalApprovalGranted:false`, `filesWritten:false`,
+  `fileMaterialization:false`, `workspaceMutation:false`,
+  `lockfileMutation:false`, `commandExecution:false`, `buildOutput:false`,
+  `processSpawn:false`, `packageCreated:false`, `dispatch:false`,
+  `networkDispatch:false`, `runtimeRegistration:false`, and
+  `localFileWrites:false`.
+- MCP and CLI expose this policy in dry-run and unavailable execution JSON
+  without selecting resolution policies, identifying resolution subjects or
+  authorities, reading appeal records, capturing resolution reasons, computing
+  scopes, selecting outcomes, preparing, validating, storing, executing, or
+  publishing resolutions, resolving appeals, accepting or rejecting resolution
+  outcomes, creating resolution records, reading countersignature revocations,
+  countersignatures, or audit records, signing or hashing resolution records,
+  materializing files, starting processes, or enabling dispatch.

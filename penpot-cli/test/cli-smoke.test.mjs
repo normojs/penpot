@@ -645,6 +645,86 @@ function assertAuditCountersignatureRevocationAppealPolicyMetadataOnly(policy) {
     assert.equal(policy.auditCountersignatureRevocationAppealDecision.canComputeCountersignatureRevocationAppealHash, false);
 }
 
+function assertAuditCountersignatureRevocationAppealResolutionPolicyMetadataOnly(policy) {
+    assert.equal(policy.auditCountersignatureRevocationAppealResolutionVersion, "P25.66");
+    assert.equal(policy.countersignatureRevocationAppealResolutionRequired, true);
+    assert.equal(policy.countersignatureRevocationAppealResolutionPlanned, true);
+    assert.equal(policy.dryRunOnly, true);
+    assert.equal(policy.approvalRequired, true);
+    for (const key of [
+        "countersignatureRevocationAppealResolutionPolicySelected",
+        "countersignatureRevocationAppealResolutionSubjectIdentified",
+        "countersignatureRevocationAppealResolutionAuthorityIdentified",
+        "countersignatureRevocationAppealRead",
+        "countersignatureRevocationAppealRecordRead",
+        "countersignatureRevocationAppealResolutionReasonCaptured",
+        "countersignatureRevocationAppealResolutionScopeComputed",
+        "countersignatureRevocationAppealResolutionOutcomeSelected",
+        "countersignatureRevocationAppealResolutionPrepared",
+        "countersignatureRevocationAppealResolutionValidated",
+        "countersignatureRevocationAppealResolutionStored",
+        "countersignatureRevocationAppealResolutionExecuted",
+        "countersignatureRevocationAppealResolved",
+        "countersignatureRevocationAppealResolutionAccepted",
+        "countersignatureRevocationAppealResolutionRejected",
+        "countersignatureRevocationAppealResolutionPublished",
+        "countersignatureRevocationAppealResolutionRecordCreated",
+        "countersignatureRevocationAppealResolutionRecordStored",
+        "countersignatureRevocationAppealResolutionRecordPublished",
+        "countersignatureRevocationRead",
+        "countersignatureRevocationRecordRead",
+        "countersignatureRead",
+        "countersignatureRevocationVerified",
+        "auditRecordRead",
+        "auditRecordQueried",
+        "auditRecordCountersignatureRevocationAppealResolutionLinked",
+        "auditRecordCountersignatureRevocationAppealResolutionVerified",
+        "countersignatureRevocationAppealResolutionSignatureCreated",
+        "countersignatureRevocationAppealResolutionSignatureVerified",
+        "countersignatureRevocationAppealResolutionHashComputed",
+        "countersignatureRevocationAppealResolutionHashStored",
+        "materializationReady",
+        "materializationApproved",
+        "materializationApprovedNow",
+        "approved",
+        "finalApprovalGranted",
+        "tokenAccepted",
+        "tokenStored",
+        "tokenValidated",
+        "tokenConsumed",
+        "tokenRevoked",
+        "executeNow",
+        "verifyNow",
+        "rollbackNow",
+        "dispatch",
+        "networkDispatch",
+        "runtimeRegistration",
+        "localFileWrites",
+        "hostStartup",
+        "processSpawn",
+        "packageCreated",
+        "workspaceMutation",
+        "scriptRunnable",
+        "fileMaterialization",
+        "lockfileMutation",
+        "rootPackageJsonMutation",
+        "pnpmWorkspaceMutation",
+        "commandExecution",
+        "buildOutput",
+        "packageScriptsRunnable",
+        "filesWritten",
+        "rollbackExecuted",
+        "verificationExecuted",
+    ]) {
+        assert.equal(policy[key], false, key);
+    }
+    assert.equal(policy.auditCountersignatureRevocationAppealResolutionDecision.canReadCountersignatureRevocationAppeal, false);
+    assert.equal(policy.auditCountersignatureRevocationAppealResolutionDecision.canResolveCountersignatureRevocationAppeal, false);
+    assert.equal(policy.auditCountersignatureRevocationAppealResolutionDecision.canStoreCountersignatureRevocationAppealResolutionRecord, false);
+    assert.equal(policy.auditCountersignatureRevocationAppealResolutionDecision.canReadAuditRecord, false);
+    assert.equal(policy.auditCountersignatureRevocationAppealResolutionDecision.canComputeCountersignatureRevocationAppealResolutionHash, false);
+}
+
 function pickMcpConfigFields(data) {
     return {
         mode: data.mode,
@@ -3570,6 +3650,9 @@ test("render thumbnail dry-run returns renderer-service request plan", async () 
         assertAuditCountersignatureRevocationAppealPolicyMetadataOnly(
             body.data.packageMaterializationApprovalAuditCountersignatureRevocationAppealPolicy
         );
+        assertAuditCountersignatureRevocationAppealResolutionPolicyMetadataOnly(
+            body.data.packageMaterializationApprovalAuditCountersignatureRevocationAppealResolutionPolicy
+        );
         assert.equal(body.data.service.responseNormalization.successStatus, "ok");
         assert.equal(body.data.service.responseNormalization.localFileWrites, false);
         assert.equal(body.data.service.errorShape.code, "renderer_service_error");
@@ -3960,6 +4043,9 @@ test("render thumbnail execution reports renderer-service unavailable without ca
         );
         assertAuditCountersignatureRevocationAppealPolicyMetadataOnly(
             body.error.data.packageMaterializationApprovalAuditCountersignatureRevocationAppealPolicy
+        );
+        assertAuditCountersignatureRevocationAppealResolutionPolicyMetadataOnly(
+            body.error.data.packageMaterializationApprovalAuditCountersignatureRevocationAppealResolutionPolicy
         );
         assert.equal(body.error.data.clientRequest.dispatch, false);
         assert.equal(body.error.data.serviceRequest.operation, "thumbnail.render");

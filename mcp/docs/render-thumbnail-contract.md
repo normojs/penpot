@@ -893,6 +893,43 @@ Shared contract shape:
   countersignatures, or audit records, appeal revocations, grant or deny
   appeals, create appeal records, sign or hash appeals, grant approval, or
   materialize files.
+- P25.66 package materialization approval audit countersignature revocation
+  appeal resolution policy fields are planning-only. They define future
+  countersignature revocation appeal resolution policies, required resolution
+  inputs, resolution checks, blocked resolution decisions, and no-op guarantees
+  while keeping
+  `packageMaterializationApprovalAuditCountersignatureRevocationAppealResolutionPolicy.countersignatureRevocationAppealResolutionPolicySelected:false`,
+  `packageMaterializationApprovalAuditCountersignatureRevocationAppealResolutionPolicy.countersignatureRevocationAppealResolutionSubjectIdentified:false`,
+  `packageMaterializationApprovalAuditCountersignatureRevocationAppealResolutionPolicy.countersignatureRevocationAppealResolutionAuthorityIdentified:false`,
+  `packageMaterializationApprovalAuditCountersignatureRevocationAppealResolutionPolicy.countersignatureRevocationAppealRead:false`,
+  `packageMaterializationApprovalAuditCountersignatureRevocationAppealResolutionPolicy.countersignatureRevocationAppealRecordRead:false`,
+  `packageMaterializationApprovalAuditCountersignatureRevocationAppealResolutionPolicy.countersignatureRevocationAppealResolutionReasonCaptured:false`,
+  `packageMaterializationApprovalAuditCountersignatureRevocationAppealResolutionPolicy.countersignatureRevocationAppealResolutionScopeComputed:false`,
+  `packageMaterializationApprovalAuditCountersignatureRevocationAppealResolutionPolicy.countersignatureRevocationAppealResolutionOutcomeSelected:false`,
+  `packageMaterializationApprovalAuditCountersignatureRevocationAppealResolutionPolicy.countersignatureRevocationAppealResolutionPrepared:false`,
+  `packageMaterializationApprovalAuditCountersignatureRevocationAppealResolutionPolicy.countersignatureRevocationAppealResolutionValidated:false`,
+  `packageMaterializationApprovalAuditCountersignatureRevocationAppealResolutionPolicy.countersignatureRevocationAppealResolutionStored:false`,
+  `packageMaterializationApprovalAuditCountersignatureRevocationAppealResolutionPolicy.countersignatureRevocationAppealResolutionExecuted:false`,
+  `packageMaterializationApprovalAuditCountersignatureRevocationAppealResolutionPolicy.countersignatureRevocationAppealResolved:false`,
+  `packageMaterializationApprovalAuditCountersignatureRevocationAppealResolutionPolicy.countersignatureRevocationAppealResolutionAccepted:false`,
+  `packageMaterializationApprovalAuditCountersignatureRevocationAppealResolutionPolicy.countersignatureRevocationAppealResolutionRejected:false`,
+  `packageMaterializationApprovalAuditCountersignatureRevocationAppealResolutionPolicy.countersignatureRevocationAppealResolutionPublished:false`,
+  `packageMaterializationApprovalAuditCountersignatureRevocationAppealResolutionPolicy.countersignatureRevocationAppealResolutionRecordCreated:false`,
+  `packageMaterializationApprovalAuditCountersignatureRevocationAppealResolutionPolicy.countersignatureRevocationAppealResolutionRecordStored:false`,
+  `packageMaterializationApprovalAuditCountersignatureRevocationAppealResolutionPolicy.countersignatureRevocationAppealResolutionRecordPublished:false`,
+  `packageMaterializationApprovalAuditCountersignatureRevocationAppealResolutionPolicy.countersignatureRevocationRead:false`,
+  `packageMaterializationApprovalAuditCountersignatureRevocationAppealResolutionPolicy.auditRecordRead:false`,
+  `packageMaterializationApprovalAuditCountersignatureRevocationAppealResolutionPolicy.auditRecordQueried:false`,
+  `packageMaterializationApprovalAuditCountersignatureRevocationAppealResolutionPolicy.countersignatureRevocationAppealResolutionHashComputed:false`,
+  `approved:false`, `finalApprovalGranted:false`, `filesWritten:false`,
+  `fileMaterialization:false`, `workspaceMutation:false`,
+  `commandExecution:false`, `buildOutput:false`, `runtimeRegistration:false`,
+  and `localFileWrites:false`. They do not select resolution policies, identify
+  subjects or authorities, read appeal or audit records, capture resolution
+  reasons, compute scopes, select outcomes, prepare, validate, store, execute,
+  or publish resolutions, resolve appeals, accept or reject resolutions, create,
+  store, or publish resolution records, sign or hash resolutions, grant
+  approval, or materialize files.
 - Exporter service execution is out of scope for this command unless a later
   task explicitly maps thumbnail rendering to exporter-compatible semantics.
 - P25.6 selects a future dedicated thumbnail renderer service as the executable
@@ -907,7 +944,7 @@ See `render-thumbnail-runtime-boundary.md` and
 audit, resource-return rules, cache refresh behavior, auth expectations, and
 future test strategy.
 See `render-thumbnail-renderer-service-api.md` and
-`render-thumbnail-renderer-service-fixtures.json` for the P25.65 future
+`render-thumbnail-renderer-service-fixtures.json` for the P25.66 future
 renderer-service request/response API, MCP/CLI dry-run/client boundary, and
 metadata-only availability probe plus response/error normalization and disabled
 client request, execution gate, health preflight, and execution harness
@@ -924,7 +961,7 @@ guardrails, package file templates, package workspace wiring, package build
   audit retention/access/integrity/provenance/custody/evidence/attestation/
   notarization/certification/endorsement/countersignature/countersignature
   verification/countersignature revocation/countersignature revocation appeal
-  policies.
+  /countersignature revocation appeal resolution policies.
 
 ## Fixtures
 

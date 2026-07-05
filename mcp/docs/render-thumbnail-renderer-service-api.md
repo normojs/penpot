@@ -454,6 +454,8 @@ P25.64 defines the package materialization approval audit countersignature
 revocation policy.
 P25.65 defines the package materialization approval audit countersignature
 revocation appeal policy.
+P25.66 defines the package materialization approval audit countersignature
+revocation appeal resolution policy.
 Plans now include `packageMaterializationApprovalPostHandoffAuditPolicy`,
 `packageMaterializationApprovalAuditRetentionPolicy`,
 `packageMaterializationApprovalAuditAccessPolicy`,
@@ -467,17 +469,28 @@ Plans now include `packageMaterializationApprovalPostHandoffAuditPolicy`,
 `packageMaterializationApprovalAuditEndorsementPolicy`,
 `packageMaterializationApprovalAuditCountersignaturePolicy`,
 `packageMaterializationApprovalAuditCountersignatureVerificationPolicy`, and
-`packageMaterializationApprovalAuditCountersignatureRevocationPolicy`, and
-`packageMaterializationApprovalAuditCountersignatureRevocationAppealPolicy`.
+`packageMaterializationApprovalAuditCountersignatureRevocationPolicy`,
+`packageMaterializationApprovalAuditCountersignatureRevocationAppealPolicy`,
+and
+`packageMaterializationApprovalAuditCountersignatureRevocationAppealResolutionPolicy`.
 These cover future audit sinks, retention, access, integrity, provenance,
 custody, evidence, attestation, notarization, certification, endorsement, and
 countersignature/countersignature verification/countersignature revocation/
-countersignature revocation appeal metadata, including required inputs, checks,
-blocked decisions, and no-op guarantees. The P25.65 revocation appeal slice
-keeps appeal policy selection, subject/authority identification, appeal reason
-capture, countersignature revocation reads, countersignature and audit record
-reads, countersignature revocation appeals, appeal grant/denial, appeal record
+countersignature revocation appeal/countersignature revocation appeal
+resolution metadata, including required inputs, checks, blocked decisions, and
+no-op guarantees. The P25.65 revocation appeal slice keeps appeal policy
+selection, subject/authority identification, appeal reason capture,
+countersignature revocation reads, countersignature and audit record reads,
+countersignature revocation appeals, appeal grant/denial, appeal record
 storage, signature verification, hash computation, file writes, package
+creation, workspace mutation, lockfile mutation, command execution, build
+output, materialization approval, process startup, dispatch, network dispatch,
+runtime registration, and local file writes disabled. The P25.66 revocation
+appeal resolution slice keeps resolution policy selection, subject/authority
+identification, appeal and appeal record reads, resolution reason/scope/outcome
+capture, resolution preparation/validation/storage/execution/publication,
+appeal resolution acceptance/rejection, resolution record storage, audit record
+linking, signature verification, hash computation, file writes, package
 creation, workspace mutation, lockfile mutation, command execution, build
 output, materialization approval, process startup, dispatch, network dispatch,
 runtime registration, and local file writes disabled.
