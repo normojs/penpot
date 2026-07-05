@@ -420,6 +420,48 @@ function assertAuditCertificationPolicyMetadataOnly(policy) {
     assert.equal(policy.auditCertificationDecision.canComputeCertificationHash, false);
 }
 
+function assertAuditEndorsementPolicyMetadataOnly(policy) {
+    assert.equal(policy.auditEndorsementVersion, "P25.61");
+    for (const key of [
+        "endorsementPolicySelected",
+        "endorsementSubjectIdentified",
+        "endorsementAuthorityIdentified",
+        "endorsementPrepared",
+        "endorsementCreated",
+        "endorsementValidated",
+        "endorsementStored",
+        "endorsementPublished",
+        "endorsementRecordCreated",
+        "endorsementRecordStored",
+        "endorsementRecordPublished",
+        "certificationRead",
+        "certificationEndorsed",
+        "certificationVerified",
+        "auditRecordRead",
+        "auditRecordQueried",
+        "auditRecordEndorsementLinked",
+        "auditRecordEndorsementVerified",
+        "endorsementSignatureCreated",
+        "endorsementSignatureVerified",
+        "endorsementHashComputed",
+        "endorsementHashStored",
+        "materializationApproved",
+        "dispatch",
+        "runtimeRegistration",
+        "localFileWrites",
+        "commandExecution",
+        "buildOutput",
+        "filesWritten",
+    ]) {
+        assert.equal(policy[key], false, key);
+    }
+    assert.equal(policy.auditEndorsementDecision.canCreateEndorsement, false);
+    assert.equal(policy.auditEndorsementDecision.canStoreEndorsementRecord, false);
+    assert.equal(policy.auditEndorsementDecision.canEndorseCertification, false);
+    assert.equal(policy.auditEndorsementDecision.canReadAuditRecord, false);
+    assert.equal(policy.auditEndorsementDecision.canComputeEndorsementHash, false);
+}
+
 function pickMcpConfigFields(data) {
     return {
         mode: data.mode,
@@ -3334,6 +3376,7 @@ test("render thumbnail dry-run returns renderer-service request plan", async () 
         assertAuditAttestationPolicyMetadataOnly(body.data.packageMaterializationApprovalAuditAttestationPolicy);
         assertAuditNotarizationPolicyMetadataOnly(body.data.packageMaterializationApprovalAuditNotarizationPolicy);
         assertAuditCertificationPolicyMetadataOnly(body.data.packageMaterializationApprovalAuditCertificationPolicy);
+        assertAuditEndorsementPolicyMetadataOnly(body.data.packageMaterializationApprovalAuditEndorsementPolicy);
         assert.equal(body.data.service.responseNormalization.successStatus, "ok");
         assert.equal(body.data.service.responseNormalization.localFileWrites, false);
         assert.equal(body.data.service.errorShape.code, "renderer_service_error");
@@ -3712,6 +3755,7 @@ test("render thumbnail execution reports renderer-service unavailable without ca
         assertAuditAttestationPolicyMetadataOnly(body.error.data.packageMaterializationApprovalAuditAttestationPolicy);
         assertAuditNotarizationPolicyMetadataOnly(body.error.data.packageMaterializationApprovalAuditNotarizationPolicy);
         assertAuditCertificationPolicyMetadataOnly(body.error.data.packageMaterializationApprovalAuditCertificationPolicy);
+        assertAuditEndorsementPolicyMetadataOnly(body.error.data.packageMaterializationApprovalAuditEndorsementPolicy);
         assert.equal(body.error.data.clientRequest.dispatch, false);
         assert.equal(body.error.data.serviceRequest.operation, "thumbnail.render");
     } finally {

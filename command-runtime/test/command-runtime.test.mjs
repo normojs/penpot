@@ -62,6 +62,7 @@ import {
     createRenderThumbnailRendererServicePackageMaterializationApprovalAuditAttestationPolicy,
     createRenderThumbnailRendererServicePackageMaterializationApprovalAuditNotarizationPolicy,
     createRenderThumbnailRendererServicePackageMaterializationApprovalAuditCertificationPolicy,
+    createRenderThumbnailRendererServicePackageMaterializationApprovalAuditEndorsementPolicy,
     createRenderThumbnailRendererServicePackageFileTemplates,
     createRenderThumbnailRendererServicePackageManifestScaffold,
     createRenderThumbnailRendererServicePackageMaterializationChecklist,
@@ -1027,6 +1028,117 @@ function assertAuditCertificationPolicyMetadataOnly(policy) {
     }
 }
 
+function assertAuditEndorsementPolicyMetadataOnly(policy) {
+    assert.equal(policy.auditEndorsementVersion, "P25.61");
+    assert.equal(policy.endorsementRequired, true);
+    assert.equal(policy.endorsementPlanned, true);
+
+    for (const key of [
+        "endorsementPolicySelected",
+        "endorsementSubjectIdentified",
+        "endorsementAuthorityIdentified",
+        "endorsementPrepared",
+        "endorsementCreated",
+        "endorsementValidated",
+        "endorsementStored",
+        "endorsementPublished",
+        "endorsementRecordCreated",
+        "endorsementRecordStored",
+        "endorsementRecordPublished",
+        "certificationRead",
+        "certificationEndorsed",
+        "certificationVerified",
+        "auditRecordRead",
+        "auditRecordQueried",
+        "auditRecordEndorsementLinked",
+        "auditRecordEndorsementVerified",
+        "endorsementSignatureCreated",
+        "endorsementSignatureVerified",
+        "endorsementHashComputed",
+        "endorsementHashStored",
+        "materializationApproved",
+        "dispatch",
+        "networkDispatch",
+        "runtimeRegistration",
+        "localFileWrites",
+        "hostStartup",
+        "processSpawn",
+        "packageCreated",
+        "workspaceMutation",
+        "scriptRunnable",
+        "fileMaterialization",
+        "lockfileMutation",
+        "rootPackageJsonMutation",
+        "pnpmWorkspaceMutation",
+        "commandExecution",
+        "buildOutput",
+        "packageScriptsRunnable",
+        "filesWritten",
+    ]) {
+        assert.equal(policy[key], false, key);
+    }
+
+    assert.equal(policy.consumes.packageMaterializationApprovalAuditCertificationPolicy.auditCertificationVersion, "P25.60");
+    assert.equal(policy.consumes.packageMaterializationApprovalAuditAccessPolicy.auditAccessVersion, "P25.53");
+    assert.equal(policy.consumes.packageMaterializationFinalApprovalChecklist.checklistVersion, "P25.40");
+
+    for (const key of [
+        "selectEndorsementPolicyNow",
+        "identifyEndorsementSubjectNow",
+        "identifyEndorsementAuthorityNow",
+        "prepareEndorsementNow",
+        "createEndorsementNow",
+        "validateEndorsementNow",
+        "storeEndorsementNow",
+        "publishEndorsementNow",
+        "createEndorsementRecordNow",
+        "storeEndorsementRecordNow",
+        "publishEndorsementRecordNow",
+        "readCertificationNow",
+        "endorseCertificationNow",
+        "verifyCertificationNow",
+        "readAuditRecordNow",
+        "queryAuditRecordNow",
+        "linkAuditRecordEndorsementNow",
+        "verifyAuditRecordEndorsementNow",
+        "signEndorsementNow",
+        "verifyEndorsementSignatureNow",
+        "computeEndorsementHashNow",
+        "storeEndorsementHashNow",
+    ]) {
+        assert.equal(policy.auditEndorsementPolicy[key], false, key);
+    }
+
+    for (const key of [
+        "canSelectEndorsementPolicy",
+        "canIdentifyEndorsementSubject",
+        "canIdentifyEndorsementAuthority",
+        "canPrepareEndorsement",
+        "canCreateEndorsement",
+        "canValidateEndorsement",
+        "canStoreEndorsement",
+        "canPublishEndorsement",
+        "canCreateEndorsementRecord",
+        "canStoreEndorsementRecord",
+        "canPublishEndorsementRecord",
+        "canReadCertification",
+        "canEndorseCertification",
+        "canVerifyCertification",
+        "canReadAuditRecord",
+        "canQueryAuditRecord",
+        "canLinkAuditRecordEndorsement",
+        "canVerifyAuditRecordEndorsement",
+        "canSignEndorsement",
+        "canVerifyEndorsementSignature",
+        "canComputeEndorsementHash",
+        "canStoreEndorsementHash",
+        "canMaterializeFiles",
+        "canEnableRuntimeDispatch",
+    ]) {
+        assert.equal(policy.auditEndorsementDecision[key], false, key);
+    }
+}
+
 test("descriptor groups expose stable command ids", () => {
     assert.deepEqual(
         LowRiskCommandDescriptors.map((descriptor) => descriptor.id),
@@ -1377,6 +1489,7 @@ test("render.thumbnail runtime boundary keeps execution unavailable until render
     assertAuditAttestationPolicyMetadataOnly(boundary.packageMaterializationApprovalAuditAttestationPolicy);
     assertAuditNotarizationPolicyMetadataOnly(boundary.packageMaterializationApprovalAuditNotarizationPolicy);
     assertAuditCertificationPolicyMetadataOnly(boundary.packageMaterializationApprovalAuditCertificationPolicy);
+    assertAuditEndorsementPolicyMetadataOnly(boundary.packageMaterializationApprovalAuditEndorsementPolicy);
     assert.ok(boundary.testStrategy.some((item) => item.includes("descriptor tests")));
 });
 
@@ -1714,6 +1827,8 @@ test("render.thumbnail renderer-service API fixtures define planning requests wi
     assertAuditNotarizationPolicyMetadataOnly(renderThumbnailRuntimeBoundaryFixtures.packageMaterializationApprovalAuditNotarizationPolicy);
     assertAuditCertificationPolicyMetadataOnly(fixtures.serviceApi.packageMaterializationApprovalAuditCertificationPolicy);
     assertAuditCertificationPolicyMetadataOnly(renderThumbnailRuntimeBoundaryFixtures.packageMaterializationApprovalAuditCertificationPolicy);
+    assertAuditEndorsementPolicyMetadataOnly(fixtures.serviceApi.packageMaterializationApprovalAuditEndorsementPolicy);
+    assertAuditEndorsementPolicyMetadataOnly(renderThumbnailRuntimeBoundaryFixtures.packageMaterializationApprovalAuditEndorsementPolicy);
     assert.deepEqual(fixtures.runtimeRegistration.commandDescriptorAdapters, ["renderer-service"]);
     assert.deepEqual(CommandDescriptors.RENDER_THUMBNAIL.adapters, ["renderer-service"]);
     assert.equal(fixtures.runtimeRegistration.mcpToolRegistered, true);
@@ -2860,6 +2975,8 @@ test("render.thumbnail renderer-service plan exposes dry-run client request whil
     assert.deepEqual(plan.service.packageMaterializationApprovalAuditNotarizationPolicy, plan.packageMaterializationApprovalAuditNotarizationPolicy);
     assertAuditCertificationPolicyMetadataOnly(plan.packageMaterializationApprovalAuditCertificationPolicy);
     assert.deepEqual(plan.service.packageMaterializationApprovalAuditCertificationPolicy, plan.packageMaterializationApprovalAuditCertificationPolicy);
+    assertAuditEndorsementPolicyMetadataOnly(plan.packageMaterializationApprovalAuditEndorsementPolicy);
+    assert.deepEqual(plan.service.packageMaterializationApprovalAuditEndorsementPolicy, plan.packageMaterializationApprovalAuditEndorsementPolicy);
     assert.equal(plan.clientRequest.status, "scaffolded");
     assert.equal(plan.clientRequest.dispatch, false);
     assert.equal(plan.clientRequest.method, "POST");
@@ -2936,6 +3053,7 @@ test("render.thumbnail renderer-service plan exposes dry-run client request whil
     assert.equal(plan.diagnostics.packageMaterializationApprovalAuditAttestationPolicyVersion, "P25.58");
     assert.equal(plan.diagnostics.packageMaterializationApprovalAuditNotarizationPolicyVersion, "P25.59");
     assert.equal(plan.diagnostics.packageMaterializationApprovalAuditCertificationPolicyVersion, "P25.60");
+    assert.equal(plan.diagnostics.packageMaterializationApprovalAuditEndorsementPolicyVersion, "P25.61");
 });
 
 test("render.thumbnail renderer-service plan reports not-configured availability without endpoint", () => {
@@ -5723,6 +5841,57 @@ test("render.thumbnail renderer-service package materialization approval audit c
     );
     assert.ok(auditCertificationPolicy.requiredBeforeRuntimeDispatch.includes("define audit certification policy schema"));
     assertAuditCertificationPolicyMetadataOnly(auditCertificationPolicy);
+});
+
+test("render.thumbnail renderer-service package materialization approval audit endorsement policy stays metadata-only", () => {
+    const auditEndorsementPolicy =
+        createRenderThumbnailRendererServicePackageMaterializationApprovalAuditEndorsementPolicy({
+            packageMaterializationApprovalAuditCertificationPolicy: {
+                status: "planned-disabled",
+                auditCertificationVersion: "P25.60",
+                certificationCreated: false,
+                certificationRecordStored: false,
+            },
+            packageMaterializationApprovalAuditAccessPolicy: {
+                status: "planned-disabled",
+                auditAccessVersion: "P25.53",
+                auditRecordRead: false,
+                accessGranted: false,
+            },
+            packageMaterializationFinalApprovalChecklist: {
+                status: "planned-disabled",
+                checklistVersion: "P25.40",
+                finalApprovalGranted: false,
+            },
+        });
+
+    assert.equal(auditEndorsementPolicy.status, "planned-disabled");
+    assert.equal(auditEndorsementPolicy.dryRunOnly, true);
+    assert.equal(auditEndorsementPolicy.approvalRequired, true);
+    assert.equal(auditEndorsementPolicy.approved, false);
+    assert.equal(auditEndorsementPolicy.finalApprovalGranted, false);
+    assert.equal(
+        auditEndorsementPolicy.auditEndorsementPolicy.policy,
+        "endorse-certification-after-certification-record-defined"
+    );
+    assert.equal(auditEndorsementPolicy.auditEndorsementPolicy.endorsementPayloadLogged, false);
+    assert.ok(auditEndorsementPolicy.auditEndorsementPolicy.requiredInputs.includes("trustedEndorsementAuthority"));
+    assert.ok(
+        auditEndorsementPolicy.auditEndorsementChecks.some(
+            (entry) => entry.id === "endorsement-not-created" && entry.executed === false
+        )
+    );
+    assert.equal(auditEndorsementPolicy.auditEndorsementDecision.status, "blocked");
+    assert.equal(auditEndorsementPolicy.auditEndorsementDecision.canCreateEndorsement, false);
+    assert.equal(auditEndorsementPolicy.auditEndorsementDecision.canStoreEndorsementRecord, false);
+    assert.equal(auditEndorsementPolicy.auditEndorsementDecision.canEndorseCertification, false);
+    assert.ok(
+        auditEndorsementPolicy.noOpGuarantees.includes(
+            "audit endorsement policy plan does not prepare, create, validate, store, or publish endorsements"
+        )
+    );
+    assert.ok(auditEndorsementPolicy.requiredBeforeRuntimeDispatch.includes("define audit endorsement policy schema"));
+    assertAuditEndorsementPolicyMetadataOnly(auditEndorsementPolicy);
 });
 
 test("render.thumbnail renderer-service client request scaffold adds MCP audit headers without dispatch", () => {

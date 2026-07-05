@@ -102,7 +102,9 @@ creating notarizations, storing notarization records, or notarizing
 attestations. P25.60 defines package materialization approval audit
 certification policy metadata without selecting certification policies,
 creating certifications, storing certification records, or certifying
-notarizations.
+notarizations. P25.61 defines package materialization approval audit
+endorsement policy metadata without selecting endorsement policies, creating
+endorsements, storing endorsement records, or endorsing certifications.
 
 ## Existing Surfaces
 
@@ -281,6 +283,8 @@ policy.
 P25.59 adds metadata-only package materialization approval audit notarization
 policy.
 P25.60 adds metadata-only package materialization approval audit certification
+policy.
+P25.61 adds metadata-only package materialization approval audit endorsement
 policy.
 MCP
 `render.thumbnail` and `penpot-cli render thumbnail --dry-run` can print the
@@ -518,6 +522,25 @@ plus `packageMaterializationApprovalAuditCertificationPolicy.certificationPolicy
 `packageMaterializationApprovalAuditCertificationPolicy.filesWritten:false`,
 `packageMaterializationApprovalAuditCertificationPolicy.commandExecution:false`, and
 `packageMaterializationApprovalAuditCertificationPolicy.buildOutput:false`,
+plus `packageMaterializationApprovalAuditEndorsementPolicy.endorsementPolicySelected:false`,
+`packageMaterializationApprovalAuditEndorsementPolicy.endorsementSubjectIdentified:false`,
+`packageMaterializationApprovalAuditEndorsementPolicy.endorsementAuthorityIdentified:false`,
+`packageMaterializationApprovalAuditEndorsementPolicy.endorsementPrepared:false`,
+`packageMaterializationApprovalAuditEndorsementPolicy.endorsementCreated:false`,
+`packageMaterializationApprovalAuditEndorsementPolicy.endorsementValidated:false`,
+`packageMaterializationApprovalAuditEndorsementPolicy.endorsementStored:false`,
+`packageMaterializationApprovalAuditEndorsementPolicy.endorsementPublished:false`,
+`packageMaterializationApprovalAuditEndorsementPolicy.endorsementRecordCreated:false`,
+`packageMaterializationApprovalAuditEndorsementPolicy.certificationRead:false`,
+`packageMaterializationApprovalAuditEndorsementPolicy.certificationEndorsed:false`,
+`packageMaterializationApprovalAuditEndorsementPolicy.certificationVerified:false`,
+`packageMaterializationApprovalAuditEndorsementPolicy.auditRecordRead:false`,
+`packageMaterializationApprovalAuditEndorsementPolicy.auditRecordQueried:false`,
+`packageMaterializationApprovalAuditEndorsementPolicy.endorsementHashComputed:false`,
+`packageMaterializationApprovalAuditEndorsementPolicy.materializationApproved:false`,
+`packageMaterializationApprovalAuditEndorsementPolicy.filesWritten:false`,
+`packageMaterializationApprovalAuditEndorsementPolicy.commandExecution:false`, and
+`packageMaterializationApprovalAuditEndorsementPolicy.buildOutput:false`,
 but execution still returns
 `renderer_service_unavailable` until explicit opt-in, config surfaces, renderer
 service, integration tests, health preflight, file cache probe, tagged-frame

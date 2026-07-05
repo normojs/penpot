@@ -1635,3 +1635,37 @@ certification policy:
   or verifying notarizations, reading or querying audit records, linking,
   verifying, signing, or hashing certifications, materializing files, starting
   processes, or enabling dispatch.
+
+P25.61 adds renderer-service package materialization approval audit endorsement
+policy:
+
+- Plans include `packageMaterializationApprovalAuditEndorsementPolicy`,
+  defining the future endorsement policy, required endorsement inputs,
+  endorsement checks, blocked endorsement decision, and no-op guarantees.
+- The audit endorsement policy remains planning-only with
+  `endorsementPolicySelected:false`, `endorsementSubjectIdentified:false`,
+  `endorsementAuthorityIdentified:false`, `endorsementPrepared:false`,
+  `endorsementCreated:false`, `endorsementValidated:false`,
+  `endorsementStored:false`, `endorsementPublished:false`,
+  `endorsementRecordCreated:false`, `endorsementRecordStored:false`,
+  `endorsementRecordPublished:false`, `certificationRead:false`,
+  `certificationEndorsed:false`, `certificationVerified:false`,
+  `auditRecordRead:false`, `auditRecordQueried:false`,
+  `auditRecordEndorsementLinked:false`,
+  `auditRecordEndorsementVerified:false`,
+  `endorsementSignatureCreated:false`,
+  `endorsementSignatureVerified:false`, `endorsementHashComputed:false`,
+  `endorsementHashStored:false`, `materializationApproved:false`,
+  `approved:false`, `finalApprovalGranted:false`, `filesWritten:false`,
+  `fileMaterialization:false`, `workspaceMutation:false`,
+  `lockfileMutation:false`, `commandExecution:false`, `buildOutput:false`,
+  `processSpawn:false`, `packageCreated:false`, `dispatch:false`,
+  `networkDispatch:false`, `runtimeRegistration:false`, and
+  `localFileWrites:false`.
+- MCP and CLI expose this policy in dry-run and unavailable execution JSON
+  without selecting endorsement policies, identifying subjects or authorities,
+  preparing, creating, validating, storing, or publishing endorsements, creating,
+  storing, or publishing endorsement records, reading, endorsing, or verifying
+  certifications, reading or querying audit records, linking, verifying,
+  signing, or hashing endorsements, materializing files, starting processes, or
+  enabling dispatch.

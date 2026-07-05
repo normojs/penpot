@@ -1,6 +1,6 @@
 # Render Thumbnail Contract
 
-Status: P25.4 descriptor contract; P25.60 MCP/CLI renderer-service dry-run
+Status: P25.4 descriptor contract; P25.61 MCP/CLI renderer-service dry-run
 boundaries, metadata-only availability probes, response normalization
 contracts, disabled client request scaffolding, closed execution gate, disabled
 health preflight, executable client harness plan, and dispatch adapter boundary
@@ -763,6 +763,32 @@ Shared contract shape:
   validate, store, or publish certifications, create certification records,
   read, certify, or verify notarizations, read or query audit records, sign or
   hash certifications, grant approval, or materialize files.
+- P25.61 package materialization approval audit endorsement policy fields are
+  planning-only. They define future endorsement policies, required endorsement
+  inputs, endorsement checks, blocked endorsement decisions, and no-op
+  guarantees while keeping
+  `packageMaterializationApprovalAuditEndorsementPolicy.endorsementPolicySelected:false`,
+  `packageMaterializationApprovalAuditEndorsementPolicy.endorsementSubjectIdentified:false`,
+  `packageMaterializationApprovalAuditEndorsementPolicy.endorsementAuthorityIdentified:false`,
+  `packageMaterializationApprovalAuditEndorsementPolicy.endorsementPrepared:false`,
+  `packageMaterializationApprovalAuditEndorsementPolicy.endorsementCreated:false`,
+  `packageMaterializationApprovalAuditEndorsementPolicy.endorsementValidated:false`,
+  `packageMaterializationApprovalAuditEndorsementPolicy.endorsementStored:false`,
+  `packageMaterializationApprovalAuditEndorsementPolicy.endorsementPublished:false`,
+  `packageMaterializationApprovalAuditEndorsementPolicy.endorsementRecordCreated:false`,
+  `packageMaterializationApprovalAuditEndorsementPolicy.certificationRead:false`,
+  `packageMaterializationApprovalAuditEndorsementPolicy.certificationEndorsed:false`,
+  `packageMaterializationApprovalAuditEndorsementPolicy.auditRecordRead:false`,
+  `packageMaterializationApprovalAuditEndorsementPolicy.auditRecordQueried:false`,
+  `packageMaterializationApprovalAuditEndorsementPolicy.endorsementHashComputed:false`,
+  `approved:false`, `finalApprovalGranted:false`, `filesWritten:false`,
+  `fileMaterialization:false`, `workspaceMutation:false`,
+  `commandExecution:false`, `buildOutput:false`,
+  `runtimeRegistration:false`, and `localFileWrites:false`. They do not select
+  endorsement policies, identify subjects or authorities, prepare, create,
+  validate, store, or publish endorsements, create endorsement records, read,
+  endorse, or verify certifications, read or query audit records, sign or hash
+  endorsements, grant approval, or materialize files.
 - Exporter service execution is out of scope for this command unless a later
   task explicitly maps thumbnail rendering to exporter-compatible semantics.
 - P25.6 selects a future dedicated thumbnail renderer service as the executable
@@ -777,7 +803,7 @@ See `render-thumbnail-runtime-boundary.md` and
 audit, resource-return rules, cache refresh behavior, auth expectations, and
 future test strategy.
 See `render-thumbnail-renderer-service-api.md` and
-`render-thumbnail-renderer-service-fixtures.json` for the P25.60 future
+`render-thumbnail-renderer-service-fixtures.json` for the P25.61 future
 renderer-service request/response API, MCP/CLI dry-run/client boundary, and
 metadata-only availability probe plus response/error normalization and disabled
 client request, execution gate, health preflight, and execution harness
@@ -792,7 +818,7 @@ guardrails, package file templates, package workspace wiring, package build
   binding/operator confirmation/emergency stop/readiness verdict/execution
   handoff/post-handoff audit policies, and package materialization approval
   audit retention/access/integrity/provenance/custody/evidence/attestation/
-  notarization/certification policies.
+  notarization/certification/endorsement policies.
 
 ## Fixtures
 

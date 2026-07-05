@@ -961,6 +961,7 @@ export class RenderThumbnailTool extends PenpotRpcTool<RenderThumbnailArgs> {
                     packageMaterializationApprovalAuditAttestationPolicy: plan.packageMaterializationApprovalAuditAttestationPolicy,
                     packageMaterializationApprovalAuditNotarizationPolicy: plan.packageMaterializationApprovalAuditNotarizationPolicy,
                     packageMaterializationApprovalAuditCertificationPolicy: plan.packageMaterializationApprovalAuditCertificationPolicy,
+                    packageMaterializationApprovalAuditEndorsementPolicy: plan.packageMaterializationApprovalAuditEndorsementPolicy,
                     clientRequest: plan.clientRequest,
                     requiredCapabilities: plan.requiredCapabilities,
                     serviceRequest: plan.serviceRequest,

@@ -1,6 +1,6 @@
 # Render Thumbnail Renderer Service API
 
-Status: P25.60 API fixtures, MCP/CLI dry-run/client boundaries, metadata-only
+Status: P25.61 API fixtures, MCP/CLI dry-run/client boundaries, metadata-only
 availability probes, response normalization contracts, disabled client request
 scaffold, closed execution gate, disabled health preflight, and executable
 client harness plus dispatch adapter boundary plans, and opt-in configuration
@@ -427,6 +427,7 @@ P25.57 defines the package materialization approval audit evidence policy.
 P25.58 defines the package materialization approval audit attestation policy.
 P25.59 defines the package materialization approval audit notarization policy.
 P25.60 defines the package materialization approval audit certification policy.
+P25.61 defines the package materialization approval audit endorsement policy.
 Plans now include `packageMaterializationApprovalPostHandoffAuditPolicy`,
 `packageMaterializationApprovalAuditRetentionPolicy`,
 `packageMaterializationApprovalAuditAccessPolicy`,
@@ -436,18 +437,19 @@ Plans now include `packageMaterializationApprovalPostHandoffAuditPolicy`,
 `packageMaterializationApprovalAuditEvidencePolicy`,
 `packageMaterializationApprovalAuditAttestationPolicy`,
 `packageMaterializationApprovalAuditNotarizationPolicy`, and
-`packageMaterializationApprovalAuditCertificationPolicy`.
+`packageMaterializationApprovalAuditCertificationPolicy`, and
+`packageMaterializationApprovalAuditEndorsementPolicy`.
 These cover future audit sinks, retention, access, integrity, provenance,
-custody, evidence, attestation, notarization, and certification metadata,
+custody, evidence, attestation, notarization, certification, and endorsement metadata,
 including required inputs, checks, blocked decisions, and no-op guarantees. The
-P25.60 certification slice keeps certification policy selection,
-subject/authority identification, certification preparation/creation/
-validation/storage/publication, certification record creation/storage/
-publication, notarization read/certify/verify, audit record read/query,
-certification linking/verification/signing/hashing, file writes, package
-creation, workspace mutation, lockfile mutation, command execution, build
-output, materialization approval, process startup, dispatch, network dispatch,
-runtime registration, and local file writes disabled.
+P25.61 endorsement slice keeps endorsement policy selection, subject/authority
+identification, endorsement preparation/creation/validation/storage/
+publication, endorsement record creation/storage/publication, certification
+read/endorse/verify, audit record read/query, endorsement linking/
+verification/signing/hashing, file writes, package creation, workspace mutation,
+lockfile mutation, command execution, build output, materialization approval,
+process startup, dispatch, network dispatch, runtime registration, and local
+file writes disabled.
 
 ## Service Boundary
 
