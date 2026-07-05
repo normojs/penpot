@@ -2007,3 +2007,21 @@ notarization policy:
   notarization signing/hash, file writes, package creation, workspace mutation,
   command execution, build output, process startup, and runtime dispatch
   disabled.
+
+P25.71 adds renderer-service package materialization approval audit
+countersignature revocation appeal resolution enforcement evidence attestation
+notarization certification policy:
+
+- Plans include
+  `packageMaterializationApprovalAuditCountersignatureRevocationAppealResolutionEnforcementEvidenceAttestationNotarizationCertificationPolicy`,
+  defining future enforcement evidence attestation notarization certification
+  metadata, required certification inputs, certification checks, blocked
+  certification decisions, and no-op guarantees.
+- MCP and CLI expose this certification policy in dry-run and unavailable
+  execution JSON while keeping certification policy selection,
+  subject/authority identification, certification prepare/create/validate/
+  store/publish, certification record creation/storage/publication,
+  notarization reads/certification/verification, audit-record certification
+  linking/verification, certification signing/hash, file writes, package
+  creation, workspace mutation, command execution, build output, process
+  startup, and runtime dispatch disabled.

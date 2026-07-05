@@ -1016,6 +1016,84 @@ function assertAuditCountersignatureRevocationAppealResolutionEnforcementEvidenc
     );
 }
 
+function assertAuditCountersignatureRevocationAppealResolutionEnforcementEvidenceAttestationNotarizationCertificationPolicyMetadataOnly(policy: any) {
+    assert.equal(policy.auditCountersignatureRevocationAppealResolutionEnforcementEvidenceAttestationNotarizationCertificationVersion, "P25.71");
+    assert.equal(policy.countersignatureRevocationAppealResolutionEnforcementEvidenceAttestationNotarizationCertificationRequired, true);
+    assert.equal(policy.countersignatureRevocationAppealResolutionEnforcementEvidenceAttestationNotarizationCertificationPlanned, true);
+    assert.equal(policy.dryRunOnly, true);
+    assert.equal(policy.approvalRequired, true);
+    for (const key of [
+        "countersignatureRevocationAppealResolutionEnforcementEvidenceAttestationNotarizationCertificationPolicySelected",
+        "countersignatureRevocationAppealResolutionEnforcementEvidenceAttestationNotarizationCertificationSubjectIdentified",
+        "countersignatureRevocationAppealResolutionEnforcementEvidenceAttestationNotarizationCertificationAuthorityIdentified",
+        "countersignatureRevocationAppealResolutionEnforcementEvidenceAttestationNotarizationCertificationPrepared",
+        "countersignatureRevocationAppealResolutionEnforcementEvidenceAttestationNotarizationCertificationCreated",
+        "countersignatureRevocationAppealResolutionEnforcementEvidenceAttestationNotarizationCertificationValidated",
+        "countersignatureRevocationAppealResolutionEnforcementEvidenceAttestationNotarizationCertificationStored",
+        "countersignatureRevocationAppealResolutionEnforcementEvidenceAttestationNotarizationCertificationPublished",
+        "countersignatureRevocationAppealResolutionEnforcementEvidenceAttestationNotarizationCertificationRecordCreated",
+        "countersignatureRevocationAppealResolutionEnforcementEvidenceAttestationNotarizationCertificationRecordStored",
+        "countersignatureRevocationAppealResolutionEnforcementEvidenceAttestationNotarizationCertificationRecordPublished",
+        "countersignatureRevocationAppealResolutionEnforcementEvidenceAttestationNotarizationRead",
+        "countersignatureRevocationAppealResolutionEnforcementEvidenceAttestationNotarizationCertified",
+        "countersignatureRevocationAppealResolutionEnforcementEvidenceAttestationNotarizationVerified",
+        "auditRecordRead",
+        "auditRecordQueried",
+        "auditRecordCountersignatureRevocationAppealResolutionEnforcementEvidenceAttestationNotarizationCertificationLinked",
+        "auditRecordCountersignatureRevocationAppealResolutionEnforcementEvidenceAttestationNotarizationCertificationVerified",
+        "countersignatureRevocationAppealResolutionEnforcementEvidenceAttestationNotarizationCertificationSignatureCreated",
+        "countersignatureRevocationAppealResolutionEnforcementEvidenceAttestationNotarizationCertificationSignatureVerified",
+        "countersignatureRevocationAppealResolutionEnforcementEvidenceAttestationNotarizationCertificationHashComputed",
+        "countersignatureRevocationAppealResolutionEnforcementEvidenceAttestationNotarizationCertificationHashStored",
+        "materializationReady",
+        "materializationApproved",
+        "materializationApprovedNow",
+        "approved",
+        "finalApprovalGranted",
+        "executeNow",
+        "verifyNow",
+        "rollbackNow",
+        "dispatch",
+        "networkDispatch",
+        "runtimeRegistration",
+        "localFileWrites",
+        "hostStartup",
+        "processSpawn",
+        "packageCreated",
+        "workspaceMutation",
+        "scriptRunnable",
+        "fileMaterialization",
+        "lockfileMutation",
+        "rootPackageJsonMutation",
+        "pnpmWorkspaceMutation",
+        "commandExecution",
+        "buildOutput",
+        "packageScriptsRunnable",
+        "filesWritten",
+        "rollbackExecuted",
+        "verificationExecuted",
+    ]) {
+        assert.equal(policy[key], false, key);
+    }
+    assert.equal(
+        policy.auditCountersignatureRevocationAppealResolutionEnforcementEvidenceAttestationNotarizationCertificationDecision.canCreateCountersignatureRevocationAppealResolutionEnforcementEvidenceAttestationNotarizationCertification,
+        false
+    );
+    assert.equal(
+        policy.auditCountersignatureRevocationAppealResolutionEnforcementEvidenceAttestationNotarizationCertificationDecision.canStoreCountersignatureRevocationAppealResolutionEnforcementEvidenceAttestationNotarizationCertificationRecord,
+        false
+    );
+    assert.equal(
+        policy.auditCountersignatureRevocationAppealResolutionEnforcementEvidenceAttestationNotarizationCertificationDecision.canCertifyCountersignatureRevocationAppealResolutionEnforcementEvidenceAttestationNotarization,
+        false
+    );
+    assert.equal(policy.auditCountersignatureRevocationAppealResolutionEnforcementEvidenceAttestationNotarizationCertificationDecision.canReadAuditRecord, false);
+    assert.equal(
+        policy.auditCountersignatureRevocationAppealResolutionEnforcementEvidenceAttestationNotarizationCertificationDecision.canComputeCountersignatureRevocationAppealResolutionEnforcementEvidenceAttestationNotarizationCertificationHash,
+        false
+    );
+}
+
 type SseCall = {
     methodName: string;
     params: Record<string, unknown>;
@@ -1753,6 +1831,9 @@ test("RenderThumbnailTool dry-run returns renderer-service request metadata with
         assertAuditCountersignatureRevocationAppealResolutionEnforcementEvidenceAttestationNotarizationPolicyMetadataOnly(
             body.data.packageMaterializationApprovalAuditCountersignatureRevocationAppealResolutionEnforcementEvidenceAttestationNotarizationPolicy
         );
+        assertAuditCountersignatureRevocationAppealResolutionEnforcementEvidenceAttestationNotarizationCertificationPolicyMetadataOnly(
+            body.data.packageMaterializationApprovalAuditCountersignatureRevocationAppealResolutionEnforcementEvidenceAttestationNotarizationCertificationPolicy
+        );
         assert.deepEqual(body.data.service.client, body.data.client);
         assert.equal(body.data.service.responseNormalization.successStatus, "ok");
         assert.equal(body.data.service.responseNormalization.localFileWrites, false);
@@ -2168,6 +2249,9 @@ test("RenderThumbnailTool execution reports renderer service unavailable without
         );
         assertAuditCountersignatureRevocationAppealResolutionEnforcementEvidenceAttestationNotarizationPolicyMetadataOnly(
             body.error.data.packageMaterializationApprovalAuditCountersignatureRevocationAppealResolutionEnforcementEvidenceAttestationNotarizationPolicy
+        );
+        assertAuditCountersignatureRevocationAppealResolutionEnforcementEvidenceAttestationNotarizationCertificationPolicyMetadataOnly(
+            body.error.data.packageMaterializationApprovalAuditCountersignatureRevocationAppealResolutionEnforcementEvidenceAttestationNotarizationCertificationPolicy
         );
         assert.equal(body.error.data.clientRequest.dispatch, false);
         assert.equal(body.error.data.serviceRequest.operation, "thumbnail.render");

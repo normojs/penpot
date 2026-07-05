@@ -492,6 +492,7 @@ export interface RenderThumbnailRendererServicePlan {
         packageMaterializationApprovalAuditCountersignatureRevocationAppealResolutionEnforcementEvidencePolicy: RenderThumbnailRendererServicePackageMaterializationApprovalAuditCountersignatureRevocationAppealResolutionEnforcementEvidencePolicy;
         packageMaterializationApprovalAuditCountersignatureRevocationAppealResolutionEnforcementEvidenceAttestationPolicy: RenderThumbnailRendererServicePackageMaterializationApprovalAuditCountersignatureRevocationAppealResolutionEnforcementEvidenceAttestationPolicy;
         packageMaterializationApprovalAuditCountersignatureRevocationAppealResolutionEnforcementEvidenceAttestationNotarizationPolicy: RenderThumbnailRendererServicePackageMaterializationApprovalAuditCountersignatureRevocationAppealResolutionEnforcementEvidenceAttestationNotarizationPolicy;
+        packageMaterializationApprovalAuditCountersignatureRevocationAppealResolutionEnforcementEvidenceAttestationNotarizationCertificationPolicy: RenderThumbnailRendererServicePackageMaterializationApprovalAuditCountersignatureRevocationAppealResolutionEnforcementEvidenceAttestationNotarizationCertificationPolicy;
         clientRequest: RenderThumbnailRendererServiceClientRequest;
     };
     client: RenderThumbnailRendererServiceClientConfig;
@@ -555,6 +556,7 @@ export interface RenderThumbnailRendererServicePlan {
     packageMaterializationApprovalAuditCountersignatureRevocationAppealResolutionEnforcementEvidencePolicy: RenderThumbnailRendererServicePackageMaterializationApprovalAuditCountersignatureRevocationAppealResolutionEnforcementEvidencePolicy;
     packageMaterializationApprovalAuditCountersignatureRevocationAppealResolutionEnforcementEvidenceAttestationPolicy: RenderThumbnailRendererServicePackageMaterializationApprovalAuditCountersignatureRevocationAppealResolutionEnforcementEvidenceAttestationPolicy;
     packageMaterializationApprovalAuditCountersignatureRevocationAppealResolutionEnforcementEvidenceAttestationNotarizationPolicy: RenderThumbnailRendererServicePackageMaterializationApprovalAuditCountersignatureRevocationAppealResolutionEnforcementEvidenceAttestationNotarizationPolicy;
+    packageMaterializationApprovalAuditCountersignatureRevocationAppealResolutionEnforcementEvidenceAttestationNotarizationCertificationPolicy: RenderThumbnailRendererServicePackageMaterializationApprovalAuditCountersignatureRevocationAppealResolutionEnforcementEvidenceAttestationNotarizationCertificationPolicy;
     clientRequest: RenderThumbnailRendererServiceClientRequest;
     serviceRequest: {
         command: "render.thumbnail";
@@ -678,6 +680,7 @@ export interface RenderThumbnailRendererServicePlan {
         packageMaterializationApprovalAuditCountersignatureRevocationAppealResolutionEnforcementEvidencePolicyVersion: "P25.68";
         packageMaterializationApprovalAuditCountersignatureRevocationAppealResolutionEnforcementEvidenceAttestationPolicyVersion: "P25.69";
         packageMaterializationApprovalAuditCountersignatureRevocationAppealResolutionEnforcementEvidenceAttestationNotarizationPolicyVersion: "P25.70";
+        packageMaterializationApprovalAuditCountersignatureRevocationAppealResolutionEnforcementEvidenceAttestationNotarizationCertificationPolicyVersion: "P25.71";
     };
 }
 
@@ -6828,6 +6831,177 @@ export interface RenderThumbnailRendererServicePackageMaterializationApprovalAud
     requiredBeforeRuntimeDispatch: string[];
 }
 
+export interface RenderThumbnailRendererServicePackageMaterializationApprovalAuditCountersignatureRevocationAppealResolutionEnforcementEvidenceAttestationNotarizationCertificationPolicy {
+    status: "planned-disabled";
+    auditCountersignatureRevocationAppealResolutionEnforcementEvidenceAttestationNotarizationCertificationVersion: "P25.71";
+    adapter: "renderer-service";
+    command: "render.thumbnail";
+    dryRunOnly: true;
+    approvalRequired: true;
+    approved: false;
+    finalApprovalGranted: false;
+    countersignatureRevocationAppealResolutionEnforcementEvidenceAttestationNotarizationCertificationRequired: true;
+    countersignatureRevocationAppealResolutionEnforcementEvidenceAttestationNotarizationCertificationPlanned: true;
+    countersignatureRevocationAppealResolutionEnforcementEvidenceAttestationNotarizationCertificationPolicySelected: false;
+    countersignatureRevocationAppealResolutionEnforcementEvidenceAttestationNotarizationCertificationSubjectIdentified: false;
+    countersignatureRevocationAppealResolutionEnforcementEvidenceAttestationNotarizationCertificationAuthorityIdentified: false;
+    countersignatureRevocationAppealResolutionEnforcementEvidenceAttestationNotarizationCertificationPrepared: false;
+    countersignatureRevocationAppealResolutionEnforcementEvidenceAttestationNotarizationCertificationCreated: false;
+    countersignatureRevocationAppealResolutionEnforcementEvidenceAttestationNotarizationCertificationValidated: false;
+    countersignatureRevocationAppealResolutionEnforcementEvidenceAttestationNotarizationCertificationStored: false;
+    countersignatureRevocationAppealResolutionEnforcementEvidenceAttestationNotarizationCertificationPublished: false;
+    countersignatureRevocationAppealResolutionEnforcementEvidenceAttestationNotarizationCertificationRecordCreated: false;
+    countersignatureRevocationAppealResolutionEnforcementEvidenceAttestationNotarizationCertificationRecordStored: false;
+    countersignatureRevocationAppealResolutionEnforcementEvidenceAttestationNotarizationCertificationRecordPublished: false;
+    countersignatureRevocationAppealResolutionEnforcementEvidenceAttestationNotarizationRead: false;
+    countersignatureRevocationAppealResolutionEnforcementEvidenceAttestationNotarizationCertified: false;
+    countersignatureRevocationAppealResolutionEnforcementEvidenceAttestationNotarizationVerified: false;
+    countersignatureRevocationAppealResolutionEnforcementEvidenceAttestationRead: false;
+    countersignatureRevocationAppealResolutionEnforcementEvidenceAttestationRecordRead: false;
+    countersignatureRevocationAppealResolutionEnforcementEvidenceAttestationBundleRead: false;
+    countersignatureRevocationAppealResolutionEnforcementEvidenceRecordRead: false;
+    countersignatureRevocationAppealResolutionEnforcementEvidenceRead: false;
+    countersignatureRevocationAppealResolutionEnforcementEvidenceBundleRead: false;
+    countersignatureRevocationAppealResolutionEnforcementRead: false;
+    countersignatureRevocationAppealResolutionEnforcementRecordRead: false;
+    countersignatureRevocationAppealResolutionRead: false;
+    countersignatureRevocationAppealResolutionRecordRead: false;
+    countersignatureRevocationAppealRead: false;
+    countersignatureRevocationAppealRecordRead: false;
+    countersignatureRevocationRead: false;
+    countersignatureRevocationRecordRead: false;
+    countersignatureRead: false;
+    countersignatureRevocationVerified: false;
+    auditRecordRead: false;
+    auditRecordQueried: false;
+    auditRecordCountersignatureRevocationAppealResolutionEnforcementEvidenceAttestationNotarizationCertificationLinked: false;
+    auditRecordCountersignatureRevocationAppealResolutionEnforcementEvidenceAttestationNotarizationCertificationVerified: false;
+    countersignatureRevocationAppealResolutionEnforcementEvidenceAttestationNotarizationCertificationSignatureCreated: false;
+    countersignatureRevocationAppealResolutionEnforcementEvidenceAttestationNotarizationCertificationSignatureVerified: false;
+    countersignatureRevocationAppealResolutionEnforcementEvidenceAttestationNotarizationCertificationHashComputed: false;
+    countersignatureRevocationAppealResolutionEnforcementEvidenceAttestationNotarizationCertificationHashStored: false;
+    materializationReady: false;
+    materializationApproved: false;
+    materializationApprovedNow: false;
+    tokenAccepted: false;
+    tokenStored: false;
+    tokenValidated: false;
+    tokenConsumed: false;
+    tokenRevoked: false;
+    executeNow: false;
+    verifyNow: false;
+    rollbackNow: false;
+    dispatch: false;
+    networkDispatch: false;
+    runtimeRegistration: false;
+    localFileWrites: false;
+    hostStartup: false;
+    processSpawn: false;
+    packageCreated: false;
+    workspaceMutation: false;
+    scriptRunnable: false;
+    fileMaterialization: false;
+    lockfileMutation: false;
+    rootPackageJsonMutation: false;
+    pnpmWorkspaceMutation: false;
+    commandExecution: false;
+    buildOutput: false;
+    packageScriptsRunnable: false;
+    filesWritten: false;
+    rollbackExecuted: false;
+    verificationExecuted: false;
+    consumes: {
+        packageMaterializationApprovalAuditCountersignatureRevocationAppealResolutionEnforcementEvidenceAttestationNotarizationPolicy: {
+            requiredStatus: "planned-disabled";
+            currentStatus: string;
+            auditCountersignatureRevocationAppealResolutionEnforcementEvidenceAttestationNotarizationVersion: string;
+            countersignatureRevocationAppealResolutionEnforcementEvidenceAttestationNotarizationCreated: false;
+            countersignatureRevocationAppealResolutionEnforcementEvidenceAttestationNotarizationRecordStored: false;
+        };
+        packageMaterializationApprovalAuditAccessPolicy: {
+            requiredStatus: "planned-disabled";
+            currentStatus: string;
+            auditAccessVersion: string;
+            auditRecordRead: false;
+            accessGranted: false;
+        };
+        packageMaterializationFinalApprovalChecklist: {
+            requiredStatus: "planned-disabled";
+            currentStatus: string;
+            checklistVersion: string;
+            finalApprovalGranted: false;
+        };
+    };
+    auditCountersignatureRevocationAppealResolutionEnforcementEvidenceAttestationNotarizationCertificationPolicy: {
+        policy: "certify-countersignature-revocation-appeal-resolution-enforcement-evidence-attestation-notarization-after-notarization-record-defined";
+        selectCountersignatureRevocationAppealResolutionEnforcementEvidenceAttestationNotarizationCertificationPolicyNow: false;
+        identifyCountersignatureRevocationAppealResolutionEnforcementEvidenceAttestationNotarizationCertificationSubjectNow: false;
+        identifyCountersignatureRevocationAppealResolutionEnforcementEvidenceAttestationNotarizationCertificationAuthorityNow: false;
+        prepareCountersignatureRevocationAppealResolutionEnforcementEvidenceAttestationNotarizationCertificationNow: false;
+        createCountersignatureRevocationAppealResolutionEnforcementEvidenceAttestationNotarizationCertificationNow: false;
+        validateCountersignatureRevocationAppealResolutionEnforcementEvidenceAttestationNotarizationCertificationNow: false;
+        storeCountersignatureRevocationAppealResolutionEnforcementEvidenceAttestationNotarizationCertificationNow: false;
+        publishCountersignatureRevocationAppealResolutionEnforcementEvidenceAttestationNotarizationCertificationNow: false;
+        createCountersignatureRevocationAppealResolutionEnforcementEvidenceAttestationNotarizationCertificationRecordNow: false;
+        storeCountersignatureRevocationAppealResolutionEnforcementEvidenceAttestationNotarizationCertificationRecordNow: false;
+        publishCountersignatureRevocationAppealResolutionEnforcementEvidenceAttestationNotarizationCertificationRecordNow: false;
+        readCountersignatureRevocationAppealResolutionEnforcementEvidenceAttestationNotarizationNow: false;
+        certifyCountersignatureRevocationAppealResolutionEnforcementEvidenceAttestationNotarizationNow: false;
+        verifyCountersignatureRevocationAppealResolutionEnforcementEvidenceAttestationNotarizationNow: false;
+        readAuditRecordNow: false;
+        queryAuditRecordNow: false;
+        linkAuditRecordCountersignatureRevocationAppealResolutionEnforcementEvidenceAttestationNotarizationCertificationNow: false;
+        verifyAuditRecordCountersignatureRevocationAppealResolutionEnforcementEvidenceAttestationNotarizationCertificationNow: false;
+        signCountersignatureRevocationAppealResolutionEnforcementEvidenceAttestationNotarizationCertificationNow: false;
+        verifyCountersignatureRevocationAppealResolutionEnforcementEvidenceAttestationNotarizationCertificationSignatureNow: false;
+        computeCountersignatureRevocationAppealResolutionEnforcementEvidenceAttestationNotarizationCertificationHashNow: false;
+        storeCountersignatureRevocationAppealResolutionEnforcementEvidenceAttestationNotarizationCertificationHashNow: false;
+        requiredInputs: string[];
+        countersignatureRevocationAppealResolutionEnforcementEvidenceAttestationNotarizationCertificationPolicyId: "future-materialization-audit-countersignature-revocation-appeal-resolution-enforcement-evidence-attestation-notarization-certification";
+        countersignatureRevocationAppealResolutionEnforcementEvidenceAttestationNotarizationCertificationScope: "future-policy-defined";
+        countersignatureRevocationAppealResolutionEnforcementEvidenceAttestationNotarizationCertificationPayloadLogged: false;
+        [key: string]: unknown;
+    };
+    auditCountersignatureRevocationAppealResolutionEnforcementEvidenceAttestationNotarizationCertificationChecks: Array<{
+        id: string;
+        required: true;
+        planned: true;
+        executed: false;
+        passed: false;
+    }>;
+    auditCountersignatureRevocationAppealResolutionEnforcementEvidenceAttestationNotarizationCertificationDecision: {
+        status: "blocked";
+        canSelectCountersignatureRevocationAppealResolutionEnforcementEvidenceAttestationNotarizationCertificationPolicy: false;
+        canIdentifyCountersignatureRevocationAppealResolutionEnforcementEvidenceAttestationNotarizationCertificationSubject: false;
+        canIdentifyCountersignatureRevocationAppealResolutionEnforcementEvidenceAttestationNotarizationCertificationAuthority: false;
+        canPrepareCountersignatureRevocationAppealResolutionEnforcementEvidenceAttestationNotarizationCertification: false;
+        canCreateCountersignatureRevocationAppealResolutionEnforcementEvidenceAttestationNotarizationCertification: false;
+        canValidateCountersignatureRevocationAppealResolutionEnforcementEvidenceAttestationNotarizationCertification: false;
+        canStoreCountersignatureRevocationAppealResolutionEnforcementEvidenceAttestationNotarizationCertification: false;
+        canPublishCountersignatureRevocationAppealResolutionEnforcementEvidenceAttestationNotarizationCertification: false;
+        canCreateCountersignatureRevocationAppealResolutionEnforcementEvidenceAttestationNotarizationCertificationRecord: false;
+        canStoreCountersignatureRevocationAppealResolutionEnforcementEvidenceAttestationNotarizationCertificationRecord: false;
+        canPublishCountersignatureRevocationAppealResolutionEnforcementEvidenceAttestationNotarizationCertificationRecord: false;
+        canReadCountersignatureRevocationAppealResolutionEnforcementEvidenceAttestationNotarization: false;
+        canCertifyCountersignatureRevocationAppealResolutionEnforcementEvidenceAttestationNotarization: false;
+        canVerifyCountersignatureRevocationAppealResolutionEnforcementEvidenceAttestationNotarization: false;
+        canReadAuditRecord: false;
+        canQueryAuditRecord: false;
+        canLinkAuditRecordCountersignatureRevocationAppealResolutionEnforcementEvidenceAttestationNotarizationCertification: false;
+        canVerifyAuditRecordCountersignatureRevocationAppealResolutionEnforcementEvidenceAttestationNotarizationCertification: false;
+        canSignCountersignatureRevocationAppealResolutionEnforcementEvidenceAttestationNotarizationCertification: false;
+        canVerifyCountersignatureRevocationAppealResolutionEnforcementEvidenceAttestationNotarizationCertificationSignature: false;
+        canComputeCountersignatureRevocationAppealResolutionEnforcementEvidenceAttestationNotarizationCertificationHash: false;
+        canStoreCountersignatureRevocationAppealResolutionEnforcementEvidenceAttestationNotarizationCertificationHash: false;
+        canMaterializeFiles: false;
+        canEnableRuntimeDispatch: false;
+        reason: string;
+        [key: string]: unknown;
+    };
+    noOpGuarantees: string[];
+    requiredBeforeRuntimeDispatch: string[];
+}
+
 export interface CreateRenderThumbnailRendererServiceClientRequestOptions {
     entrypoint?: "mcp" | "cli" | string | null;
     mcpToolName?: string | null;
@@ -7488,6 +7662,13 @@ export function createRenderThumbnailRendererServicePackageMaterializationApprov
         packageMaterializationFinalApprovalChecklist?: Partial<RenderThumbnailRendererServicePackageMaterializationFinalApprovalChecklist> | null;
     }
 ): RenderThumbnailRendererServicePackageMaterializationApprovalAuditCountersignatureRevocationAppealResolutionEnforcementEvidenceAttestationNotarizationPolicy;
+export function createRenderThumbnailRendererServicePackageMaterializationApprovalAuditCountersignatureRevocationAppealResolutionEnforcementEvidenceAttestationNotarizationCertificationPolicy(
+    options?: {
+        packageMaterializationApprovalAuditCountersignatureRevocationAppealResolutionEnforcementEvidenceAttestationNotarizationPolicy?: Partial<RenderThumbnailRendererServicePackageMaterializationApprovalAuditCountersignatureRevocationAppealResolutionEnforcementEvidenceAttestationNotarizationPolicy> | null;
+        packageMaterializationApprovalAuditAccessPolicy?: Partial<RenderThumbnailRendererServicePackageMaterializationApprovalAuditAccessPolicy> | null;
+        packageMaterializationFinalApprovalChecklist?: Partial<RenderThumbnailRendererServicePackageMaterializationFinalApprovalChecklist> | null;
+    }
+): RenderThumbnailRendererServicePackageMaterializationApprovalAuditCountersignatureRevocationAppealResolutionEnforcementEvidenceAttestationNotarizationCertificationPolicy;
 export function createRenderThumbnailRendererServiceClientRequest(
     plan: Partial<RenderThumbnailRendererServicePlan>,
     options?: CreateRenderThumbnailRendererServiceClientRequestOptions

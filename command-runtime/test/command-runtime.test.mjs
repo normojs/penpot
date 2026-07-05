@@ -72,6 +72,7 @@ import {
     createRenderThumbnailRendererServicePackageMaterializationApprovalAuditCountersignatureRevocationAppealResolutionEnforcementEvidencePolicy,
     createRenderThumbnailRendererServicePackageMaterializationApprovalAuditCountersignatureRevocationAppealResolutionEnforcementEvidenceAttestationPolicy,
     createRenderThumbnailRendererServicePackageMaterializationApprovalAuditCountersignatureRevocationAppealResolutionEnforcementEvidenceAttestationNotarizationPolicy,
+    createRenderThumbnailRendererServicePackageMaterializationApprovalAuditCountersignatureRevocationAppealResolutionEnforcementEvidenceAttestationNotarizationCertificationPolicy,
     createRenderThumbnailRendererServicePackageFileTemplates,
     createRenderThumbnailRendererServicePackageManifestScaffold,
     createRenderThumbnailRendererServicePackageMaterializationChecklist,
@@ -2459,6 +2460,163 @@ function assertAuditCountersignatureRevocationAppealResolutionEnforcementEvidenc
     }
 }
 
+function assertAuditCountersignatureRevocationAppealResolutionEnforcementEvidenceAttestationNotarizationCertificationPolicyMetadataOnly(policy) {
+    assert.equal(
+        policy.auditCountersignatureRevocationAppealResolutionEnforcementEvidenceAttestationNotarizationCertificationVersion,
+        "P25.71"
+    );
+    assert.equal(policy.countersignatureRevocationAppealResolutionEnforcementEvidenceAttestationNotarizationCertificationRequired, true);
+    assert.equal(policy.countersignatureRevocationAppealResolutionEnforcementEvidenceAttestationNotarizationCertificationPlanned, true);
+    assert.equal(policy.dryRunOnly, true);
+    assert.equal(policy.approvalRequired, true);
+
+    for (const key of [
+        "countersignatureRevocationAppealResolutionEnforcementEvidenceAttestationNotarizationCertificationPolicySelected",
+        "countersignatureRevocationAppealResolutionEnforcementEvidenceAttestationNotarizationCertificationSubjectIdentified",
+        "countersignatureRevocationAppealResolutionEnforcementEvidenceAttestationNotarizationCertificationAuthorityIdentified",
+        "countersignatureRevocationAppealResolutionEnforcementEvidenceAttestationNotarizationCertificationPrepared",
+        "countersignatureRevocationAppealResolutionEnforcementEvidenceAttestationNotarizationCertificationCreated",
+        "countersignatureRevocationAppealResolutionEnforcementEvidenceAttestationNotarizationCertificationValidated",
+        "countersignatureRevocationAppealResolutionEnforcementEvidenceAttestationNotarizationCertificationStored",
+        "countersignatureRevocationAppealResolutionEnforcementEvidenceAttestationNotarizationCertificationPublished",
+        "countersignatureRevocationAppealResolutionEnforcementEvidenceAttestationNotarizationCertificationRecordCreated",
+        "countersignatureRevocationAppealResolutionEnforcementEvidenceAttestationNotarizationCertificationRecordStored",
+        "countersignatureRevocationAppealResolutionEnforcementEvidenceAttestationNotarizationCertificationRecordPublished",
+        "countersignatureRevocationAppealResolutionEnforcementEvidenceAttestationNotarizationRead",
+        "countersignatureRevocationAppealResolutionEnforcementEvidenceAttestationNotarizationCertified",
+        "countersignatureRevocationAppealResolutionEnforcementEvidenceAttestationNotarizationVerified",
+        "countersignatureRevocationAppealResolutionEnforcementEvidenceAttestationRead",
+        "countersignatureRevocationAppealResolutionEnforcementEvidenceAttestationRecordRead",
+        "countersignatureRevocationAppealResolutionEnforcementEvidenceAttestationBundleRead",
+        "countersignatureRevocationAppealResolutionEnforcementEvidenceRecordRead",
+        "countersignatureRevocationAppealResolutionEnforcementEvidenceRead",
+        "countersignatureRevocationAppealResolutionEnforcementEvidenceBundleRead",
+        "countersignatureRevocationAppealResolutionEnforcementRead",
+        "countersignatureRevocationAppealResolutionEnforcementRecordRead",
+        "countersignatureRevocationAppealResolutionRead",
+        "countersignatureRevocationAppealResolutionRecordRead",
+        "countersignatureRevocationAppealRead",
+        "countersignatureRevocationAppealRecordRead",
+        "countersignatureRevocationRead",
+        "countersignatureRevocationRecordRead",
+        "countersignatureRead",
+        "countersignatureRevocationVerified",
+        "auditRecordRead",
+        "auditRecordQueried",
+        "auditRecordCountersignatureRevocationAppealResolutionEnforcementEvidenceAttestationNotarizationCertificationLinked",
+        "auditRecordCountersignatureRevocationAppealResolutionEnforcementEvidenceAttestationNotarizationCertificationVerified",
+        "countersignatureRevocationAppealResolutionEnforcementEvidenceAttestationNotarizationCertificationSignatureCreated",
+        "countersignatureRevocationAppealResolutionEnforcementEvidenceAttestationNotarizationCertificationSignatureVerified",
+        "countersignatureRevocationAppealResolutionEnforcementEvidenceAttestationNotarizationCertificationHashComputed",
+        "countersignatureRevocationAppealResolutionEnforcementEvidenceAttestationNotarizationCertificationHashStored",
+        "materializationReady",
+        "materializationApproved",
+        "materializationApprovedNow",
+        "approved",
+        "finalApprovalGranted",
+        "tokenAccepted",
+        "tokenStored",
+        "tokenValidated",
+        "tokenConsumed",
+        "tokenRevoked",
+        "executeNow",
+        "verifyNow",
+        "rollbackNow",
+        "dispatch",
+        "networkDispatch",
+        "runtimeRegistration",
+        "localFileWrites",
+        "hostStartup",
+        "processSpawn",
+        "packageCreated",
+        "workspaceMutation",
+        "scriptRunnable",
+        "fileMaterialization",
+        "lockfileMutation",
+        "rootPackageJsonMutation",
+        "pnpmWorkspaceMutation",
+        "commandExecution",
+        "buildOutput",
+        "packageScriptsRunnable",
+        "filesWritten",
+        "rollbackExecuted",
+        "verificationExecuted",
+    ]) {
+        assert.equal(policy[key], false, key);
+    }
+
+    assert.equal(
+        policy.consumes.packageMaterializationApprovalAuditCountersignatureRevocationAppealResolutionEnforcementEvidenceAttestationNotarizationPolicy.auditCountersignatureRevocationAppealResolutionEnforcementEvidenceAttestationNotarizationVersion,
+        "P25.70"
+    );
+    assert.equal(policy.consumes.packageMaterializationApprovalAuditAccessPolicy.auditAccessVersion, "P25.53");
+    assert.equal(policy.consumes.packageMaterializationFinalApprovalChecklist.checklistVersion, "P25.40");
+
+    for (const key of [
+        "selectCountersignatureRevocationAppealResolutionEnforcementEvidenceAttestationNotarizationCertificationPolicyNow",
+        "identifyCountersignatureRevocationAppealResolutionEnforcementEvidenceAttestationNotarizationCertificationSubjectNow",
+        "identifyCountersignatureRevocationAppealResolutionEnforcementEvidenceAttestationNotarizationCertificationAuthorityNow",
+        "prepareCountersignatureRevocationAppealResolutionEnforcementEvidenceAttestationNotarizationCertificationNow",
+        "createCountersignatureRevocationAppealResolutionEnforcementEvidenceAttestationNotarizationCertificationNow",
+        "validateCountersignatureRevocationAppealResolutionEnforcementEvidenceAttestationNotarizationCertificationNow",
+        "storeCountersignatureRevocationAppealResolutionEnforcementEvidenceAttestationNotarizationCertificationNow",
+        "publishCountersignatureRevocationAppealResolutionEnforcementEvidenceAttestationNotarizationCertificationNow",
+        "createCountersignatureRevocationAppealResolutionEnforcementEvidenceAttestationNotarizationCertificationRecordNow",
+        "storeCountersignatureRevocationAppealResolutionEnforcementEvidenceAttestationNotarizationCertificationRecordNow",
+        "publishCountersignatureRevocationAppealResolutionEnforcementEvidenceAttestationNotarizationCertificationRecordNow",
+        "readCountersignatureRevocationAppealResolutionEnforcementEvidenceAttestationNotarizationNow",
+        "certifyCountersignatureRevocationAppealResolutionEnforcementEvidenceAttestationNotarizationNow",
+        "verifyCountersignatureRevocationAppealResolutionEnforcementEvidenceAttestationNotarizationNow",
+        "readAuditRecordNow",
+        "queryAuditRecordNow",
+        "linkAuditRecordCountersignatureRevocationAppealResolutionEnforcementEvidenceAttestationNotarizationCertificationNow",
+        "verifyAuditRecordCountersignatureRevocationAppealResolutionEnforcementEvidenceAttestationNotarizationCertificationNow",
+        "signCountersignatureRevocationAppealResolutionEnforcementEvidenceAttestationNotarizationCertificationNow",
+        "verifyCountersignatureRevocationAppealResolutionEnforcementEvidenceAttestationNotarizationCertificationSignatureNow",
+        "computeCountersignatureRevocationAppealResolutionEnforcementEvidenceAttestationNotarizationCertificationHashNow",
+        "storeCountersignatureRevocationAppealResolutionEnforcementEvidenceAttestationNotarizationCertificationHashNow",
+    ]) {
+        assert.equal(
+            policy.auditCountersignatureRevocationAppealResolutionEnforcementEvidenceAttestationNotarizationCertificationPolicy[key],
+            false,
+            key
+        );
+    }
+
+    for (const key of [
+        "canSelectCountersignatureRevocationAppealResolutionEnforcementEvidenceAttestationNotarizationCertificationPolicy",
+        "canIdentifyCountersignatureRevocationAppealResolutionEnforcementEvidenceAttestationNotarizationCertificationSubject",
+        "canIdentifyCountersignatureRevocationAppealResolutionEnforcementEvidenceAttestationNotarizationCertificationAuthority",
+        "canPrepareCountersignatureRevocationAppealResolutionEnforcementEvidenceAttestationNotarizationCertification",
+        "canCreateCountersignatureRevocationAppealResolutionEnforcementEvidenceAttestationNotarizationCertification",
+        "canValidateCountersignatureRevocationAppealResolutionEnforcementEvidenceAttestationNotarizationCertification",
+        "canStoreCountersignatureRevocationAppealResolutionEnforcementEvidenceAttestationNotarizationCertification",
+        "canPublishCountersignatureRevocationAppealResolutionEnforcementEvidenceAttestationNotarizationCertification",
+        "canCreateCountersignatureRevocationAppealResolutionEnforcementEvidenceAttestationNotarizationCertificationRecord",
+        "canStoreCountersignatureRevocationAppealResolutionEnforcementEvidenceAttestationNotarizationCertificationRecord",
+        "canPublishCountersignatureRevocationAppealResolutionEnforcementEvidenceAttestationNotarizationCertificationRecord",
+        "canReadCountersignatureRevocationAppealResolutionEnforcementEvidenceAttestationNotarization",
+        "canCertifyCountersignatureRevocationAppealResolutionEnforcementEvidenceAttestationNotarization",
+        "canVerifyCountersignatureRevocationAppealResolutionEnforcementEvidenceAttestationNotarization",
+        "canReadAuditRecord",
+        "canQueryAuditRecord",
+        "canLinkAuditRecordCountersignatureRevocationAppealResolutionEnforcementEvidenceAttestationNotarizationCertification",
+        "canVerifyAuditRecordCountersignatureRevocationAppealResolutionEnforcementEvidenceAttestationNotarizationCertification",
+        "canSignCountersignatureRevocationAppealResolutionEnforcementEvidenceAttestationNotarizationCertification",
+        "canVerifyCountersignatureRevocationAppealResolutionEnforcementEvidenceAttestationNotarizationCertificationSignature",
+        "canComputeCountersignatureRevocationAppealResolutionEnforcementEvidenceAttestationNotarizationCertificationHash",
+        "canStoreCountersignatureRevocationAppealResolutionEnforcementEvidenceAttestationNotarizationCertificationHash",
+        "canMaterializeFiles",
+        "canEnableRuntimeDispatch",
+    ]) {
+        assert.equal(
+            policy.auditCountersignatureRevocationAppealResolutionEnforcementEvidenceAttestationNotarizationCertificationDecision[key],
+            false,
+            key
+        );
+    }
+}
+
 test("descriptor groups expose stable command ids", () => {
     assert.deepEqual(
         LowRiskCommandDescriptors.map((descriptor) => descriptor.id),
@@ -3167,6 +3325,8 @@ test("render.thumbnail renderer-service API fixtures define planning requests wi
     assertAuditCountersignatureRevocationAppealResolutionEnforcementEvidenceAttestationPolicyMetadataOnly(renderThumbnailRuntimeBoundaryFixtures.packageMaterializationApprovalAuditCountersignatureRevocationAppealResolutionEnforcementEvidenceAttestationPolicy);
     assertAuditCountersignatureRevocationAppealResolutionEnforcementEvidenceAttestationNotarizationPolicyMetadataOnly(fixtures.serviceApi.packageMaterializationApprovalAuditCountersignatureRevocationAppealResolutionEnforcementEvidenceAttestationNotarizationPolicy);
     assertAuditCountersignatureRevocationAppealResolutionEnforcementEvidenceAttestationNotarizationPolicyMetadataOnly(renderThumbnailRuntimeBoundaryFixtures.packageMaterializationApprovalAuditCountersignatureRevocationAppealResolutionEnforcementEvidenceAttestationNotarizationPolicy);
+    assertAuditCountersignatureRevocationAppealResolutionEnforcementEvidenceAttestationNotarizationCertificationPolicyMetadataOnly(fixtures.serviceApi.packageMaterializationApprovalAuditCountersignatureRevocationAppealResolutionEnforcementEvidenceAttestationNotarizationCertificationPolicy);
+    assertAuditCountersignatureRevocationAppealResolutionEnforcementEvidenceAttestationNotarizationCertificationPolicyMetadataOnly(renderThumbnailRuntimeBoundaryFixtures.packageMaterializationApprovalAuditCountersignatureRevocationAppealResolutionEnforcementEvidenceAttestationNotarizationCertificationPolicy);
     assert.deepEqual(fixtures.runtimeRegistration.commandDescriptorAdapters, ["renderer-service"]);
     assert.deepEqual(CommandDescriptors.RENDER_THUMBNAIL.adapters, ["renderer-service"]);
     assert.equal(fixtures.runtimeRegistration.mcpToolRegistered, true);
@@ -4336,6 +4496,13 @@ test("render.thumbnail renderer-service plan exposes dry-run client request whil
         plan.service.packageMaterializationApprovalAuditCountersignatureRevocationAppealResolutionEnforcementEvidenceAttestationNotarizationPolicy,
         plan.packageMaterializationApprovalAuditCountersignatureRevocationAppealResolutionEnforcementEvidenceAttestationNotarizationPolicy
     );
+    assertAuditCountersignatureRevocationAppealResolutionEnforcementEvidenceAttestationNotarizationCertificationPolicyMetadataOnly(
+        plan.packageMaterializationApprovalAuditCountersignatureRevocationAppealResolutionEnforcementEvidenceAttestationNotarizationCertificationPolicy
+    );
+    assert.deepEqual(
+        plan.service.packageMaterializationApprovalAuditCountersignatureRevocationAppealResolutionEnforcementEvidenceAttestationNotarizationCertificationPolicy,
+        plan.packageMaterializationApprovalAuditCountersignatureRevocationAppealResolutionEnforcementEvidenceAttestationNotarizationCertificationPolicy
+    );
     assert.equal(plan.clientRequest.status, "scaffolded");
     assert.equal(plan.clientRequest.dispatch, false);
     assert.equal(plan.clientRequest.method, "POST");
@@ -4422,6 +4589,7 @@ test("render.thumbnail renderer-service plan exposes dry-run client request whil
     assert.equal(plan.diagnostics.packageMaterializationApprovalAuditCountersignatureRevocationAppealResolutionEnforcementEvidencePolicyVersion, "P25.68");
     assert.equal(plan.diagnostics.packageMaterializationApprovalAuditCountersignatureRevocationAppealResolutionEnforcementEvidenceAttestationPolicyVersion, "P25.69");
     assert.equal(plan.diagnostics.packageMaterializationApprovalAuditCountersignatureRevocationAppealResolutionEnforcementEvidenceAttestationNotarizationPolicyVersion, "P25.70");
+    assert.equal(plan.diagnostics.packageMaterializationApprovalAuditCountersignatureRevocationAppealResolutionEnforcementEvidenceAttestationNotarizationCertificationPolicyVersion, "P25.71");
 });
 
 test("render.thumbnail renderer-service plan reports not-configured availability without endpoint", () => {
@@ -7893,6 +8061,85 @@ test("render.thumbnail renderer-service package materialization approval audit c
     );
     assertAuditCountersignatureRevocationAppealResolutionEnforcementEvidenceAttestationNotarizationPolicyMetadataOnly(
         auditCountersignatureRevocationAppealResolutionEnforcementEvidenceAttestationNotarizationPolicy
+    );
+});
+
+test("render.thumbnail renderer-service package materialization approval audit countersignature revocation appeal resolution enforcement evidence attestation notarization certification policy stays metadata-only", () => {
+    const auditCountersignatureRevocationAppealResolutionEnforcementEvidenceAttestationNotarizationCertificationPolicy =
+        createRenderThumbnailRendererServicePackageMaterializationApprovalAuditCountersignatureRevocationAppealResolutionEnforcementEvidenceAttestationNotarizationCertificationPolicy({
+            packageMaterializationApprovalAuditCountersignatureRevocationAppealResolutionEnforcementEvidenceAttestationNotarizationPolicy: {
+                status: "planned-disabled",
+                auditCountersignatureRevocationAppealResolutionEnforcementEvidenceAttestationNotarizationVersion: "P25.70",
+                countersignatureRevocationAppealResolutionEnforcementEvidenceAttestationNotarizationCreated: false,
+                countersignatureRevocationAppealResolutionEnforcementEvidenceAttestationNotarizationRecordStored: false,
+            },
+            packageMaterializationApprovalAuditAccessPolicy: {
+                status: "planned-disabled",
+                auditAccessVersion: "P25.53",
+                auditRecordRead: false,
+                accessGranted: false,
+            },
+            packageMaterializationFinalApprovalChecklist: {
+                status: "planned-disabled",
+                checklistVersion: "P25.40",
+                finalApprovalGranted: false,
+            },
+        });
+
+    assert.equal(auditCountersignatureRevocationAppealResolutionEnforcementEvidenceAttestationNotarizationCertificationPolicy.status, "planned-disabled");
+    assert.equal(auditCountersignatureRevocationAppealResolutionEnforcementEvidenceAttestationNotarizationCertificationPolicy.dryRunOnly, true);
+    assert.equal(auditCountersignatureRevocationAppealResolutionEnforcementEvidenceAttestationNotarizationCertificationPolicy.approvalRequired, true);
+    assert.equal(auditCountersignatureRevocationAppealResolutionEnforcementEvidenceAttestationNotarizationCertificationPolicy.approved, false);
+    assert.equal(auditCountersignatureRevocationAppealResolutionEnforcementEvidenceAttestationNotarizationCertificationPolicy.finalApprovalGranted, false);
+    assert.equal(
+        auditCountersignatureRevocationAppealResolutionEnforcementEvidenceAttestationNotarizationCertificationPolicy.auditCountersignatureRevocationAppealResolutionEnforcementEvidenceAttestationNotarizationCertificationPolicy.policy,
+        "certify-countersignature-revocation-appeal-resolution-enforcement-evidence-attestation-notarization-after-notarization-record-defined"
+    );
+    assert.equal(
+        auditCountersignatureRevocationAppealResolutionEnforcementEvidenceAttestationNotarizationCertificationPolicy.auditCountersignatureRevocationAppealResolutionEnforcementEvidenceAttestationNotarizationCertificationPolicy.countersignatureRevocationAppealResolutionEnforcementEvidenceAttestationNotarizationCertificationPayloadLogged,
+        false
+    );
+    assert.ok(
+        auditCountersignatureRevocationAppealResolutionEnforcementEvidenceAttestationNotarizationCertificationPolicy.auditCountersignatureRevocationAppealResolutionEnforcementEvidenceAttestationNotarizationCertificationPolicy.requiredInputs.includes(
+            "trustedCountersignatureRevocationAppealResolutionEnforcementEvidenceAttestationNotarizationCertificationAuthority"
+        )
+    );
+    assert.ok(
+        auditCountersignatureRevocationAppealResolutionEnforcementEvidenceAttestationNotarizationCertificationPolicy.auditCountersignatureRevocationAppealResolutionEnforcementEvidenceAttestationNotarizationCertificationChecks.some(
+            (entry) =>
+                entry.id ===
+                    "countersignature-revocation-appeal-resolution-enforcement-evidence-attestation-notarization-certification-not-created" &&
+                entry.executed === false
+        )
+    );
+    assert.equal(
+        auditCountersignatureRevocationAppealResolutionEnforcementEvidenceAttestationNotarizationCertificationPolicy.auditCountersignatureRevocationAppealResolutionEnforcementEvidenceAttestationNotarizationCertificationDecision.status,
+        "blocked"
+    );
+    assert.equal(
+        auditCountersignatureRevocationAppealResolutionEnforcementEvidenceAttestationNotarizationCertificationPolicy.auditCountersignatureRevocationAppealResolutionEnforcementEvidenceAttestationNotarizationCertificationDecision.canCreateCountersignatureRevocationAppealResolutionEnforcementEvidenceAttestationNotarizationCertification,
+        false
+    );
+    assert.equal(
+        auditCountersignatureRevocationAppealResolutionEnforcementEvidenceAttestationNotarizationCertificationPolicy.auditCountersignatureRevocationAppealResolutionEnforcementEvidenceAttestationNotarizationCertificationDecision.canStoreCountersignatureRevocationAppealResolutionEnforcementEvidenceAttestationNotarizationCertificationRecord,
+        false
+    );
+    assert.equal(
+        auditCountersignatureRevocationAppealResolutionEnforcementEvidenceAttestationNotarizationCertificationPolicy.auditCountersignatureRevocationAppealResolutionEnforcementEvidenceAttestationNotarizationCertificationDecision.canCertifyCountersignatureRevocationAppealResolutionEnforcementEvidenceAttestationNotarization,
+        false
+    );
+    assert.ok(
+        auditCountersignatureRevocationAppealResolutionEnforcementEvidenceAttestationNotarizationCertificationPolicy.noOpGuarantees.includes(
+            "audit countersignature revocation appeal resolution enforcement evidence attestation notarization certification policy plan does not prepare, create, validate, store, or publish certifications"
+        )
+    );
+    assert.ok(
+        auditCountersignatureRevocationAppealResolutionEnforcementEvidenceAttestationNotarizationCertificationPolicy.requiredBeforeRuntimeDispatch.includes(
+            "define audit countersignature revocation appeal resolution enforcement evidence attestation notarization certification policy schema"
+        )
+    );
+    assertAuditCountersignatureRevocationAppealResolutionEnforcementEvidenceAttestationNotarizationCertificationPolicyMetadataOnly(
+        auditCountersignatureRevocationAppealResolutionEnforcementEvidenceAttestationNotarizationCertificationPolicy
     );
 });
 
