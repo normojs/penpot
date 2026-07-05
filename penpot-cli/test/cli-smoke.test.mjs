@@ -1818,6 +1818,79 @@ function assertAuditCountersignatureRevocationAppealResolutionEnforcementEvidenc
     assert.equal(policy[`${auditEvidenceTopic}Decision`].canEnableRuntimeDispatch, false);
 }
 
+function assertAuditCountersignatureRevocationAppealResolutionEnforcementEvidenceAttestationNotarizationCertificationEndorsementCountersignatureVerificationRevocationAppealResolutionEnforcementEvidenceAttestationPolicyMetadataOnly(policy) {
+    const resolutionTopic =
+        "countersignatureRevocationAppealResolutionEnforcementEvidenceAttestationNotarizationCertificationEndorsementCountersignatureVerificationRevocationAppealResolution";
+    const enforcementTopic = `${resolutionTopic}Enforcement`;
+    const evidenceTopic = `${enforcementTopic}Evidence`;
+    const attestationTopic = `${evidenceTopic}Attestation`;
+    const capitalResolutionTopic =
+        "CountersignatureRevocationAppealResolutionEnforcementEvidenceAttestationNotarizationCertificationEndorsementCountersignatureVerificationRevocationAppealResolution";
+    const capitalEnforcementTopic = `${capitalResolutionTopic}Enforcement`;
+    const capitalEvidenceTopic = `${capitalEnforcementTopic}Evidence`;
+    const capitalAttestationTopic = `${capitalEvidenceTopic}Attestation`;
+    const auditAttestationTopic = `audit${capitalAttestationTopic}`;
+
+    assert.equal(policy[`${auditAttestationTopic}Version`], "P25.80");
+    assert.equal(policy[`${attestationTopic}Required`], true);
+    assert.equal(policy[`${attestationTopic}Planned`], true);
+    assert.equal(policy.dryRunOnly, true);
+    assert.equal(policy.approvalRequired, true);
+
+    for (const key of [
+        `${attestationTopic}PolicySelected`,
+        `${attestationTopic}SubjectIdentified`,
+        `${attestationTopic}AuthorityIdentified`,
+        `${attestationTopic}Prepared`,
+        `${attestationTopic}Created`,
+        `${attestationTopic}Validated`,
+        `${attestationTopic}Stored`,
+        `${attestationTopic}Published`,
+        `${attestationTopic}BundleCreated`,
+        `${attestationTopic}BundleStored`,
+        `${evidenceTopic}RecordRead`,
+        `${evidenceTopic}RecordAttested`,
+        `${evidenceTopic}RecordVerified`,
+        `${evidenceTopic}Read`,
+        `${evidenceTopic}BundleRead`,
+        `${enforcementTopic}Read`,
+        `${enforcementTopic}RecordRead`,
+        `${resolutionTopic}Read`,
+        `${resolutionTopic}RecordRead`,
+        "auditRecordRead",
+        "auditRecordQueried",
+        `auditRecord${capitalAttestationTopic}Linked`,
+        `auditRecord${capitalAttestationTopic}Verified`,
+        `${attestationTopic}SignatureCreated`,
+        `${attestationTopic}SignatureVerified`,
+        `${attestationTopic}HashComputed`,
+        `${attestationTopic}HashStored`,
+        "dispatch",
+        "networkDispatch",
+        "runtimeRegistration",
+        "localFileWrites",
+        "commandExecution",
+        "buildOutput",
+        "filesWritten",
+    ]) {
+        assert.equal(policy[key], false, key);
+    }
+
+    assert.equal(
+        policy.consumes.packageMaterializationApprovalAuditCountersignatureRevocationAppealResolutionEnforcementEvidenceAttestationNotarizationCertificationEndorsementCountersignatureVerificationRevocationAppealResolutionEnforcementEvidencePolicy.auditCountersignatureRevocationAppealResolutionEnforcementEvidenceAttestationNotarizationCertificationEndorsementCountersignatureVerificationRevocationAppealResolutionEnforcementEvidenceVersion,
+        "P25.79"
+    );
+    assert.ok(policy[`${auditAttestationTopic}Policy`].requiredInputs.includes("trustedCountersignatureRevocationAppealResolutionEnforcementEvidenceAttestationNotarizationCertificationEndorsementCountersignatureVerificationRevocationAppealResolutionEnforcementEvidenceAttestationAuthority"));
+    assert.equal(policy[`${auditAttestationTopic}Policy`][`create${capitalAttestationTopic}Now`], false);
+    assert.equal(policy[`${auditAttestationTopic}Policy`][`${attestationTopic}PayloadLogged`], false);
+    assert.equal(policy[`${auditAttestationTopic}Decision`].status, "blocked");
+    assert.equal(policy[`${auditAttestationTopic}Decision`][`canCreate${capitalAttestationTopic}`], false);
+    assert.equal(policy[`${auditAttestationTopic}Decision`][`canRead${capitalEvidenceTopic}Record`], false);
+    assert.equal(policy[`${auditAttestationTopic}Decision`].canReadAuditRecord, false);
+    assert.equal(policy[`${auditAttestationTopic}Decision`].canMaterializeFiles, false);
+    assert.equal(policy[`${auditAttestationTopic}Decision`].canEnableRuntimeDispatch, false);
+}
+
 test("top-level help lists first-class MCP, shape, and export commands", async () => {
     const result = await runCli(["--help"]);
 
@@ -4762,6 +4835,9 @@ test("render thumbnail dry-run returns renderer-service request plan", async () 
         assertAuditCountersignatureRevocationAppealResolutionEnforcementEvidenceAttestationNotarizationCertificationEndorsementCountersignatureVerificationRevocationAppealResolutionEnforcementEvidencePolicyMetadataOnly(
             body.data.packageMaterializationApprovalAuditCountersignatureRevocationAppealResolutionEnforcementEvidenceAttestationNotarizationCertificationEndorsementCountersignatureVerificationRevocationAppealResolutionEnforcementEvidencePolicy
         );
+        assertAuditCountersignatureRevocationAppealResolutionEnforcementEvidenceAttestationNotarizationCertificationEndorsementCountersignatureVerificationRevocationAppealResolutionEnforcementEvidenceAttestationPolicyMetadataOnly(
+            body.data.packageMaterializationApprovalAuditCountersignatureRevocationAppealResolutionEnforcementEvidenceAttestationNotarizationCertificationEndorsementCountersignatureVerificationRevocationAppealResolutionEnforcementEvidenceAttestationPolicy
+        );
         assert.equal(body.data.service.responseNormalization.successStatus, "ok");
         assert.equal(body.data.service.responseNormalization.localFileWrites, false);
         assert.equal(body.data.service.errorShape.code, "renderer_service_error");
@@ -5194,6 +5270,9 @@ test("render thumbnail execution reports renderer-service unavailable without ca
         );
         assertAuditCountersignatureRevocationAppealResolutionEnforcementEvidenceAttestationNotarizationCertificationEndorsementCountersignatureVerificationRevocationAppealResolutionEnforcementEvidencePolicyMetadataOnly(
             body.error.data.packageMaterializationApprovalAuditCountersignatureRevocationAppealResolutionEnforcementEvidenceAttestationNotarizationCertificationEndorsementCountersignatureVerificationRevocationAppealResolutionEnforcementEvidencePolicy
+        );
+        assertAuditCountersignatureRevocationAppealResolutionEnforcementEvidenceAttestationNotarizationCertificationEndorsementCountersignatureVerificationRevocationAppealResolutionEnforcementEvidenceAttestationPolicyMetadataOnly(
+            body.error.data.packageMaterializationApprovalAuditCountersignatureRevocationAppealResolutionEnforcementEvidenceAttestationNotarizationCertificationEndorsementCountersignatureVerificationRevocationAppealResolutionEnforcementEvidenceAttestationPolicy
         );
         assert.equal(body.error.data.clientRequest.dispatch, false);
         assert.equal(body.error.data.serviceRequest.operation, "thumbnail.render");

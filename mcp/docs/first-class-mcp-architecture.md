@@ -2332,6 +2332,28 @@ P25.79 render.thumbnail package materialization approval audit countersignature 
 - `executableAdapterRegistrationScaffold.dispatch`, `networkDispatch`,
   `runtimeRegistration`, and `localFileWrites` remain `false`.
 
+P25.80 render.thumbnail package materialization approval audit countersignature revocation appeal resolution enforcement evidence attestation notarization certification endorsement countersignature verification revocation appeal resolution enforcement evidence attestation policy result:
+
+- Shared plans include
+  `packageMaterializationApprovalAuditCountersignatureRevocationAppealResolutionEnforcementEvidenceAttestationNotarizationCertificationEndorsementCountersignatureVerificationRevocationAppealResolutionEnforcementEvidenceAttestationPolicy`,
+  defining metadata-only audit countersignature revocation appeal resolution
+  enforcement evidence attestation notarization certification endorsement
+  countersignature verification revocation appeal resolution enforcement
+  evidence attestation policies, required attestation inputs, attestation
+  checks, blocked attestation decisions, and no-op guarantees.
+- MCP and CLI expose the verification revocation appeal resolution enforcement
+  evidence attestation policy plan in dry-run and unavailable execution
+  payloads without selecting attestation policies, identifying attestation
+  subjects or authorities, preparing, creating, validating, storing, publishing,
+  or bundling attestations, reading, attesting, or verifying evidence records,
+  reading evidence bundles, enforcement, resolution, appeal, revocation,
+  countersignature, or audit records, granting approval, creating package
+  directories, writing files, mutating workspace manifests, mutating lockfiles,
+  running commands, emitting build output, starting processes, or registering
+  runtime dispatch.
+- `executableAdapterRegistrationScaffold.dispatch`, `networkDispatch`,
+  `runtimeRegistration`, and `localFileWrites` remain `false`.
+
 P25.21 render.thumbnail adapter registry manifest result:
 
 - Shared plans include `adapterRegistryManifest` with the future
@@ -3813,6 +3835,10 @@ P25.79 defines disabled package materialization approval audit countersignature
 revocation appeal resolution enforcement evidence attestation notarization
 certification endorsement countersignature verification revocation appeal
 resolution enforcement evidence policy.
+P25.80 defines disabled package materialization approval audit countersignature
+revocation appeal resolution enforcement evidence attestation notarization
+certification endorsement countersignature verification revocation appeal
+resolution enforcement evidence attestation policy.
 Runtime behavior remains unavailable
 until opt-in config surfaces, renderer-service implementation, workspace
 wiring, health preflight, cache probe, executable client, and tagged-frame

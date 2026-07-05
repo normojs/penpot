@@ -1032,6 +1032,17 @@ Shared contract shape:
   and audit record reads, approval, file writes, workspace mutation, command
   execution, build output, package creation, process startup, and runtime
   registration disabled.
+- P25.80 package materialization approval audit countersignature revocation appeal resolution enforcement evidence attestation notarization certification endorsement countersignature verification revocation appeal resolution enforcement evidence attestation policy fields are
+  planning-only. They define future verification revocation appeal resolution
+  enforcement evidence attestation policies, required attestation inputs,
+  attestation checks, blocked attestation decisions, and no-op guarantees while
+  keeping attestation policy selection, subject/authority identification,
+  attestation creation/storage/publication, attestation bundle storage,
+  evidence record reads/attestation/verification, evidence bundle reads,
+  enforcement, resolution, appeal, revocation, countersignature, and audit
+  record reads, approval, file writes, workspace mutation, command execution,
+  build output, package creation, process startup, and runtime registration
+  disabled.
 - P25.71 package materialization approval audit countersignature revocation
   appeal resolution enforcement evidence attestation notarization certification
   policy fields are planning-only. They define future enforcement evidence

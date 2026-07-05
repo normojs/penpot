@@ -195,6 +195,14 @@ resolution enforcement evidence policy metadata without selecting evidence
 policies, identifying evidence subjects or sources, collecting evidence,
 reading enforcement, resolution, appeal, revocation, countersignature, or audit
 records, storing evidence records or bundles, or enabling dispatch.
+P25.80 defines package materialization approval audit countersignature
+revocation appeal resolution enforcement evidence attestation notarization
+certification endorsement countersignature verification revocation appeal
+resolution enforcement evidence attestation policy metadata without selecting
+attestation policies, identifying attestation subjects or authorities, creating
+or storing attestations or attestation bundles, reading, attesting, or verifying
+evidence records, reading evidence bundles, reading enforcement, resolution,
+appeal, revocation, countersignature, or audit records, or enabling dispatch.
 
 ## Existing Surfaces
 
