@@ -676,6 +676,20 @@ reads, certification linking/verification/signing/hashing, materialization
 approval, files written, command execution, build output, process startup, and
 runtime dispatch disabled.
 
+P25.83 extends the `render.thumbnail` renderer-service planning payload with
+`packageMaterializationApprovalAuditCountersignatureRevocationAppealResolutionEnforcementEvidenceAttestationNotarizationCertificationEndorsementCountersignatureVerificationRevocationAppealResolutionEnforcementEvidenceAttestationNotarizationCertificationEndorsementPolicy`.
+MCP and CLI dry-run and unavailable execution payloads expose future audit
+countersignature revocation appeal resolution enforcement evidence attestation
+notarization certification endorsement countersignature verification revocation
+appeal resolution enforcement evidence attestation notarization certification
+endorsement metadata while keeping endorsement policy selection,
+subject/authority identification, endorsement prepare/create/validate/store/
+publish, endorsement record storage/publication, certification reads/
+endorsement/verification, lower audit-chain reads, endorsement
+linking/verification/signing/hashing, materialization approval, files written,
+command execution, build output, process startup, and runtime dispatch
+disabled.
+
 ## MCP Tool Names Declared But Not Registered
 
 `ToolNames.ts` already names several planned tools that `PenpotMcpServer` does
@@ -777,6 +791,10 @@ not register yet:
   appeal resolution enforcement evidence attestation notarization certification
   endorsement countersignature verification revocation appeal resolution
   enforcement evidence attestation notarization certification policy
+  and P25.83 package materialization approval audit countersignature revocation
+  appeal resolution enforcement evidence attestation notarization certification
+  endorsement countersignature verification revocation appeal resolution
+  enforcement evidence attestation notarization certification endorsement policy
   while runtime execution remains unavailable
 - debug: `debug.get_plugin_state`, `debug.get_agent_logs`
 

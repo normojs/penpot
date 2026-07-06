@@ -2115,6 +2115,24 @@ P25.82 adds renderer-service package materialization approval audit countersigna
   workspace mutation, command execution, build output, process startup, and
   runtime dispatch disabled.
 
+P25.83 adds renderer-service package materialization approval audit countersignature revocation appeal resolution enforcement evidence attestation notarization certification endorsement countersignature verification revocation appeal resolution enforcement evidence attestation notarization certification endorsement policy:
+
+- Plans include
+  `packageMaterializationApprovalAuditCountersignatureRevocationAppealResolutionEnforcementEvidenceAttestationNotarizationCertificationEndorsementCountersignatureVerificationRevocationAppealResolutionEnforcementEvidenceAttestationNotarizationCertificationEndorsementPolicy`,
+  defining future verification revocation appeal resolution enforcement
+  evidence attestation notarization certification endorsement metadata,
+  required endorsement inputs, endorsement checks, blocked endorsement
+  decisions, and no-op guarantees.
+- MCP and CLI expose this verification revocation appeal resolution
+  enforcement evidence attestation notarization certification endorsement policy
+  in dry-run and unavailable execution JSON while keeping endorsement policy
+  selection, subject/authority identification, endorsement preparation/
+  creation/validation/storage/publication, endorsement record creation/storage/
+  publication, certification reads/endorsement/verification, lower audit-chain
+  reads, endorsement linking/verification/signing/hashing, file writes, package
+  creation, workspace mutation, command execution, build output, process
+  startup, and runtime dispatch disabled.
+
 P25.71 adds renderer-service package materialization approval audit
 countersignature revocation appeal resolution enforcement evidence attestation
 notarization certification policy:

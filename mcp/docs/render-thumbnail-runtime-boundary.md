@@ -221,6 +221,14 @@ subjects or authorities, creating or storing certifications or certification
 records, reading, certifying, or verifying notarizations, reading, notarizing,
 or verifying attestations, reading evidence, enforcement, resolution, appeal,
 revocation, countersignature, or audit records, or enabling dispatch.
+P25.83 defines package materialization approval audit countersignature
+revocation appeal resolution enforcement evidence attestation notarization
+certification endorsement countersignature verification revocation appeal
+resolution enforcement evidence attestation notarization certification
+endorsement policy metadata without selecting endorsement policies, identifying
+endorsement subjects or authorities, creating or storing endorsements or
+endorsement records, reading, endorsing, or verifying certifications, reading
+lower audit-chain records, or enabling dispatch.
 
 ## Existing Surfaces
 
