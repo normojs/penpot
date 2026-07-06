@@ -2376,6 +2376,30 @@ P25.81 render.thumbnail package materialization approval audit countersignature 
 - `executableAdapterRegistrationScaffold.dispatch`, `networkDispatch`,
   `runtimeRegistration`, and `localFileWrites` remain `false`.
 
+P25.82 render.thumbnail package materialization approval audit countersignature revocation appeal resolution enforcement evidence attestation notarization certification endorsement countersignature verification revocation appeal resolution enforcement evidence attestation notarization certification policy result:
+
+- Shared plans include
+  `packageMaterializationApprovalAuditCountersignatureRevocationAppealResolutionEnforcementEvidenceAttestationNotarizationCertificationEndorsementCountersignatureVerificationRevocationAppealResolutionEnforcementEvidenceAttestationNotarizationCertificationPolicy`,
+  defining metadata-only audit countersignature revocation appeal resolution
+  enforcement evidence attestation notarization certification endorsement
+  countersignature verification revocation appeal resolution enforcement
+  evidence attestation notarization certification policies, required
+  certification inputs, certification checks, blocked certification decisions,
+  and no-op guarantees.
+- MCP and CLI expose the verification revocation appeal resolution enforcement
+  evidence attestation notarization certification policy plan in dry-run and
+  unavailable execution payloads without selecting certification policies,
+  identifying certification subjects or authorities, preparing, creating,
+  validating, storing, publishing, or recording certifications, reading,
+  certifying, or verifying notarizations, reading, notarizing, or verifying
+  attestations, reading evidence, enforcement, resolution, appeal, revocation,
+  countersignature, or audit records, granting approval, creating package
+  directories, writing files, mutating workspace manifests, mutating lockfiles,
+  running commands, emitting build output, starting processes, or registering
+  runtime dispatch.
+- `executableAdapterRegistrationScaffold.dispatch`, `networkDispatch`,
+  `runtimeRegistration`, and `localFileWrites` remain `false`.
+
 P25.21 render.thumbnail adapter registry manifest result:
 
 - Shared plans include `adapterRegistryManifest` with the future
@@ -3865,6 +3889,10 @@ P25.81 defines disabled package materialization approval audit countersignature
 revocation appeal resolution enforcement evidence attestation notarization
 certification endorsement countersignature verification revocation appeal
 resolution enforcement evidence attestation notarization policy.
+P25.82 defines disabled package materialization approval audit countersignature
+revocation appeal resolution enforcement evidence attestation notarization
+certification endorsement countersignature verification revocation appeal
+resolution enforcement evidence attestation notarization certification policy.
 Runtime behavior remains unavailable
 until opt-in config surfaces, renderer-service implementation, workspace
 wiring, health preflight, cache probe, executable client, and tagged-frame

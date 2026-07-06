@@ -661,6 +661,21 @@ reads, notarization linking/verification/signing/hashing, materialization
 approval, files written, command execution, build output, process startup, and
 runtime dispatch disabled.
 
+P25.82 extends the `render.thumbnail` renderer-service planning payload with
+`packageMaterializationApprovalAuditCountersignatureRevocationAppealResolutionEnforcementEvidenceAttestationNotarizationCertificationEndorsementCountersignatureVerificationRevocationAppealResolutionEnforcementEvidenceAttestationNotarizationCertificationPolicy`.
+MCP and CLI dry-run and unavailable execution payloads expose future audit
+countersignature revocation appeal resolution enforcement evidence attestation
+notarization certification endorsement countersignature verification revocation
+appeal resolution enforcement evidence attestation notarization certification
+metadata while keeping certification policy selection, subject/authority
+identification, certification prepare/create/validate/store/publish,
+certification record storage/publication, notarization reads/certification/
+verification, attestation reads/notarization/verification, evidence,
+enforcement, resolution, appeal, revocation, countersignature, and audit record
+reads, certification linking/verification/signing/hashing, materialization
+approval, files written, command execution, build output, process startup, and
+runtime dispatch disabled.
+
 ## MCP Tool Names Declared But Not Registered
 
 `ToolNames.ts` already names several planned tools that `PenpotMcpServer` does
@@ -758,6 +773,10 @@ not register yet:
   materialization approval audit countersignature revocation appeal resolution
   enforcement evidence attestation notarization certification endorsement
   countersignature verification revocation appeal resolution enforcement policy
+  and P25.82 package materialization approval audit countersignature revocation
+  appeal resolution enforcement evidence attestation notarization certification
+  endorsement countersignature verification revocation appeal resolution
+  enforcement evidence attestation notarization certification policy
   while runtime execution remains unavailable
 - debug: `debug.get_plugin_state`, `debug.get_agent_logs`
 

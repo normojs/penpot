@@ -2095,6 +2095,26 @@ P25.81 adds renderer-service package materialization approval audit countersigna
   writes, package creation, workspace mutation, command execution, build
   output, process startup, and runtime dispatch disabled.
 
+P25.82 adds renderer-service package materialization approval audit countersignature revocation appeal resolution enforcement evidence attestation notarization certification endorsement countersignature verification revocation appeal resolution enforcement evidence attestation notarization certification policy:
+
+- Plans include
+  `packageMaterializationApprovalAuditCountersignatureRevocationAppealResolutionEnforcementEvidenceAttestationNotarizationCertificationEndorsementCountersignatureVerificationRevocationAppealResolutionEnforcementEvidenceAttestationNotarizationCertificationPolicy`,
+  defining future verification revocation appeal resolution enforcement
+  evidence attestation notarization certification metadata, required
+  certification inputs, certification checks, blocked certification decisions,
+  and no-op guarantees.
+- MCP and CLI expose this verification revocation appeal resolution
+  enforcement evidence attestation notarization certification policy in dry-run
+  and unavailable execution JSON while keeping certification policy selection,
+  subject/authority identification, certification preparation/creation/
+  validation/storage/publication, certification record creation/storage/
+  publication, notarization reads/certification/verification, attestation
+  reads/notarization/verification, evidence, enforcement, resolution, appeal,
+  revocation, countersignature, and audit-record reads, certification
+  linking/verification/signing/hashing, file writes, package creation,
+  workspace mutation, command execution, build output, process startup, and
+  runtime dispatch disabled.
+
 P25.71 adds renderer-service package materialization approval audit
 countersignature revocation appeal resolution enforcement evidence attestation
 notarization certification policy:
