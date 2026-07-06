@@ -1094,6 +1094,19 @@ Shared contract shape:
   verification, hash computation/matching, chain verification, audit reads,
   approval, file writes, workspace mutation, command execution, build output,
   package creation, process startup, and runtime registration disabled.
+- P25.86 package materialization approval audit countersignature revocation
+  appeal resolution enforcement evidence attestation notarization certification
+  endorsement countersignature verification revocation appeal resolution
+  enforcement evidence attestation notarization certification endorsement
+  countersignature verification revocation policy fields are planning-only.
+  They define future countersignature verification revocation metadata,
+  required revocation inputs, revocation checks, blocked revocation decisions,
+  and no-op guarantees while keeping revocation policy selection,
+  subject/authority identification, reason capture, scope computation, request
+  storage/execution, verification record revocation, revocation record
+  storage/publication, countersignature and audit record reads, approval, file
+  writes, workspace mutation, command execution, build output, package
+  creation, process startup, and runtime registration disabled.
 - P25.71 package materialization approval audit countersignature revocation
   appeal resolution enforcement evidence attestation notarization certification
   policy fields are planning-only. They define future enforcement evidence
@@ -1200,7 +1213,8 @@ guardrails, package file templates, package workspace wiring, package build
   evidence attestation notarization certification/enforcement evidence
   attestation notarization certification endorsement/enforcement evidence
   attestation notarization certification endorsement countersignature
-  policies.
+  policies plus enforcement evidence attestation notarization certification
+  endorsement countersignature verification revocation policies.
 
 ## Fixtures
 

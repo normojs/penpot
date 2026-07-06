@@ -600,6 +600,8 @@ P25.84 adds
 `packageMaterializationApprovalAuditCountersignatureRevocationAppealResolutionEnforcementEvidenceAttestationNotarizationCertificationEndorsementCountersignatureVerificationRevocationAppealResolutionEnforcementEvidenceAttestationNotarizationCertificationEndorsementCountersignaturePolicy`.
 P25.85 adds
 `packageMaterializationApprovalAuditCountersignatureRevocationAppealResolutionEnforcementEvidenceAttestationNotarizationCertificationEndorsementCountersignatureVerificationRevocationAppealResolutionEnforcementEvidenceAttestationNotarizationCertificationEndorsementCountersignatureVerificationPolicy`.
+P25.86 adds
+`packageMaterializationApprovalAuditCountersignatureRevocationAppealResolutionEnforcementEvidenceAttestationNotarizationCertificationEndorsementCountersignatureVerificationRevocationAppealResolutionEnforcementEvidenceAttestationNotarizationCertificationEndorsementCountersignatureVerificationRevocationPolicy`.
 These cover future audit sinks, retention, access, integrity, provenance,
 custody, evidence, attestation, notarization, certification, endorsement, and
 countersignature/countersignature verification/countersignature revocation/
@@ -619,8 +621,10 @@ evidence/endorsement countersignature verification revocation appeal resolution
 enforcement evidence attestation notarization/enforcement evidence attestation
 notarization certification/enforcement evidence attestation notarization
 certification endorsement countersignature/enforcement evidence attestation
-notarization certification endorsement countersignature verification metadata,
-including required inputs, checks, blocked decisions, and no-op guarantees. The
+notarization certification endorsement countersignature verification/
+enforcement evidence attestation notarization certification endorsement
+countersignature verification revocation metadata, including required inputs,
+checks, blocked decisions, and no-op guarantees. The
 P25.65 revocation appeal slice keeps appeal policy
 selection, subject/authority identification, appeal reason capture,
 countersignature revocation reads, countersignature and audit record reads,
@@ -733,6 +737,17 @@ linking/verification/signing/hashing, file writes, package creation, workspace
 mutation, lockfile mutation, command execution, build output, materialization
 approval, process startup, dispatch, network dispatch, runtime registration,
 and local file writes disabled.
+
+The P25.86 revocation appeal resolution enforcement evidence attestation
+notarization certification endorsement countersignature verification
+revocation slice keeps revocation policy selection, subject/authority
+identification, reason capture, scope computation, revocation request
+preparation/storage/execution/publication, verification revocation, revocation
+record creation/storage/publication, countersignature and audit record reads,
+revocation linking/verification/signing/hashing, file writes, package
+creation, workspace mutation, lockfile mutation, command execution, build
+output, materialization approval, process startup, dispatch, network dispatch,
+runtime registration, and local file writes disabled.
 
 ## Service Boundary
 
