@@ -4,6 +4,7 @@
 
 ### :sparkles: New features & Enhancements
 
+- Add metadata-only renderer-service countersignature verification revocation policy planning for `render.thumbnail` across command-runtime, CLI, MCP, and fixtures while keeping revocation and dispatch disabled.
 - Document the first-class MCP architecture plan, routing audit, normalized public MCP URL sources, MCP status endpoint, local CLI dev orchestration contract, MCP lifecycle audit, global MCP state design, global MCP lifecycle migration, shared MCP tool naming rules, development tracker, feature roadmap, and AI coding rules for the `penpot-cli` fork.
 - Add a first-class `mcp.get_status` MCP tool that reports token-safe server, transport, plugin, current session, and file-context status.
 - Add first-class global MCP read tools for current account, teams, projects, project files, and recent files using existing Penpot backend permissions.
