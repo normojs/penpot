@@ -2133,6 +2133,25 @@ P25.83 adds renderer-service package materialization approval audit countersigna
   creation, workspace mutation, command execution, build output, process
   startup, and runtime dispatch disabled.
 
+P25.84 adds renderer-service package materialization approval audit countersignature revocation appeal resolution enforcement evidence attestation notarization certification endorsement countersignature verification revocation appeal resolution enforcement evidence attestation notarization certification endorsement countersignature policy:
+
+- Plans include
+  `packageMaterializationApprovalAuditCountersignatureRevocationAppealResolutionEnforcementEvidenceAttestationNotarizationCertificationEndorsementCountersignatureVerificationRevocationAppealResolutionEnforcementEvidenceAttestationNotarizationCertificationEndorsementCountersignaturePolicy`,
+  defining future verification revocation appeal resolution enforcement
+  evidence attestation notarization certification endorsement countersignature
+  metadata, required endorsement-countersignature inputs, countersignature
+  checks, blocked countersignature decisions, and no-op guarantees.
+- MCP and CLI expose this verification revocation appeal resolution
+  enforcement evidence attestation notarization certification endorsement
+  countersignature policy in dry-run and unavailable execution JSON while
+  keeping countersignature policy selection, subject/authority identification,
+  countersignature preparation/creation/validation/storage/publication,
+  countersignature record creation/storage/publication, endorsement reads/
+  countersigning/verification, lower audit-chain reads, countersignature
+  linking/verification/signing/hashing, file writes, package creation,
+  workspace mutation, command execution, build output, process startup, and
+  runtime dispatch disabled.
+
 P25.71 adds renderer-service package materialization approval audit
 countersignature revocation appeal resolution enforcement evidence attestation
 notarization certification policy:

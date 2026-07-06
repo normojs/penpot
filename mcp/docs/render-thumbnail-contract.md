@@ -1076,6 +1076,16 @@ Shared contract shape:
   endorsement/verification, lower audit-chain reads, approval, file writes,
   workspace mutation, command execution, build output, package creation,
   process startup, and runtime registration disabled.
+- P25.84 package materialization approval audit countersignature revocation appeal resolution enforcement evidence attestation notarization certification endorsement countersignature verification revocation appeal resolution enforcement evidence attestation notarization certification endorsement countersignature policy fields are
+  planning-only. They define future verification revocation appeal resolution
+  enforcement evidence attestation notarization certification endorsement
+  countersignature policies, required endorsement-countersignature inputs,
+  countersignature checks, blocked countersignature decisions, and no-op
+  guarantees while keeping countersignature policy selection, subject/authority
+  identification, endorsement countersigning, countersignature record storage/
+  publication, endorsement reads/countersigning/verification, audit-chain
+  reads, approval, file writes, workspace mutation, command execution, build
+  output, package creation, process startup, and runtime registration disabled.
 - P25.71 package materialization approval audit countersignature revocation
   appeal resolution enforcement evidence attestation notarization certification
   policy fields are planning-only. They define future enforcement evidence
