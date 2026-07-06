@@ -2479,6 +2479,24 @@ P25.86 render.thumbnail package materialization approval audit countersignature 
 - `executableAdapterRegistrationScaffold.dispatch`, `networkDispatch`,
   `runtimeRegistration`, and `localFileWrites` remain `false`.
 
+P25.87 render.thumbnail package materialization approval audit countersignature revocation appeal resolution enforcement evidence attestation notarization certification endorsement countersignature verification revocation appeal resolution enforcement evidence attestation notarization certification endorsement countersignature verification revocation appeal policy result:
+
+- Shared plans include
+  `packageMaterializationApprovalAuditCountersignatureRevocationAppealResolutionEnforcementEvidenceAttestationNotarizationCertificationEndorsementCountersignatureVerificationRevocationAppealResolutionEnforcementEvidenceAttestationNotarizationCertificationEndorsementCountersignatureVerificationRevocationAppealPolicy`,
+  defining metadata-only countersignature verification revocation appeal
+  policies, required appeal inputs, appeal checks, blocked appeal decisions,
+  and no-op guarantees.
+- MCP and CLI expose the countersignature verification revocation appeal plan
+  in dry-run and unavailable execution payloads without selecting appeal
+  policies, identifying subjects or authorities, capturing appeal reasons,
+  computing scopes, preparing or storing appeal requests, appealing
+  revocations, creating appeal records, reading revocations or audit records,
+  granting approval, creating package directories, writing files,
+  mutating workspace manifests, mutating lockfiles, running commands, emitting
+  build output, starting processes, or registering runtime dispatch.
+- `executableAdapterRegistrationScaffold.dispatch`, `networkDispatch`,
+  `runtimeRegistration`, and `localFileWrites` remain `false`.
+
 P25.21 render.thumbnail adapter registry manifest result:
 
 - Shared plans include `adapterRegistryManifest` with the future
@@ -3984,6 +4002,7 @@ resolution enforcement evidence attestation notarization certification
 endorsement countersignature policy.
 P25.85 defines disabled package materialization approval audit countersignature revocation appeal resolution enforcement evidence attestation notarization certification endorsement countersignature verification revocation appeal resolution enforcement evidence attestation notarization certification endorsement countersignature verification policy.
 P25.86 defines disabled package materialization approval audit countersignature revocation appeal resolution enforcement evidence attestation notarization certification endorsement countersignature verification revocation appeal resolution enforcement evidence attestation notarization certification endorsement countersignature verification revocation policy.
+P25.87 defines disabled package materialization approval audit countersignature revocation appeal resolution enforcement evidence attestation notarization certification endorsement countersignature verification revocation appeal resolution enforcement evidence attestation notarization certification endorsement countersignature verification revocation appeal policy.
 Runtime behavior remains unavailable
 until opt-in config surfaces, renderer-service implementation, workspace
 wiring, health preflight, cache probe, executable client, and tagged-frame

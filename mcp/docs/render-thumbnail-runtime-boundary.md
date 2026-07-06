@@ -253,6 +253,15 @@ endorsement countersignature verification revocation policy metadata without
 selecting revocation policies, revoking verification records, creating
 revocation records, reading countersignatures or audit records, materializing
 files, starting processes, or enabling dispatch.
+P25.87 defines package materialization approval audit countersignature
+revocation appeal resolution enforcement evidence attestation notarization
+certification endorsement countersignature verification revocation appeal
+resolution enforcement evidence attestation notarization certification
+endorsement countersignature verification revocation appeal policy metadata
+without selecting appeal policies, identifying appeal subjects or authorities,
+capturing appeal reasons, preparing appeal requests, creating appeal records,
+reading revocations or audit records, materializing files, starting processes,
+or enabling dispatch.
 
 ## Existing Surfaces
 
