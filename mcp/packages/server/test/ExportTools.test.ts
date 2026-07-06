@@ -13,6 +13,99 @@ const UUIDS = {
     profile: "00000000-0000-0000-0000-000000000004",
 };
 
+const P25105_POLICY_KEY = "packageMaterializationApprovalAuditCountersignatureRevocationAppealResolutionEnforcementEvidenceAttestationNotarizationCertificationEndorsementCountersignatureVerificationRevocationAppealResolutionEnforcementEvidenceAttestationNotarizationCertificationEndorsementCountersignatureVerificationRevocationAppealResolutionEnforcementEvidenceAttestationNotarizationCertificationEndorsementCountersignatureVerificationRevocationAppealResolutionEnforcementEvidenceAttestationNotarizationCertificationEndorsementPolicy";
+
+function assertP25105EndorsementPolicyMetadataOnly(policy: any) {
+    const resolutionTopic =
+        "countersignatureRevocationAppealResolutionEnforcementEvidenceAttestationNotarizationCertificationEndorsementCountersignatureVerificationRevocationAppealResolutionEnforcementEvidenceAttestationNotarizationCertificationEndorsementCountersignatureVerificationRevocationAppealResolutionEnforcementEvidenceAttestationNotarizationCertificationEndorsementCountersignatureVerificationRevocationAppealResolution";
+    const enforcementTopic = `${resolutionTopic}Enforcement`;
+    const evidenceTopic = `${enforcementTopic}Evidence`;
+    const attestationTopic = `${evidenceTopic}Attestation`;
+    const notarizationTopic = `${attestationTopic}Notarization`;
+    const certificationTopic = `${notarizationTopic}Certification`;
+    const endorsementTopic = `${certificationTopic}Endorsement`;
+    const capitalResolutionTopic =
+        "CountersignatureRevocationAppealResolutionEnforcementEvidenceAttestationNotarizationCertificationEndorsementCountersignatureVerificationRevocationAppealResolutionEnforcementEvidenceAttestationNotarizationCertificationEndorsementCountersignatureVerificationRevocationAppealResolutionEnforcementEvidenceAttestationNotarizationCertificationEndorsementCountersignatureVerificationRevocationAppealResolution";
+    const capitalEnforcementTopic = `${capitalResolutionTopic}Enforcement`;
+    const capitalEvidenceTopic = `${capitalEnforcementTopic}Evidence`;
+    const capitalAttestationTopic = `${capitalEvidenceTopic}Attestation`;
+    const capitalNotarizationTopic = `${capitalAttestationTopic}Notarization`;
+    const capitalCertificationTopic = `${capitalNotarizationTopic}Certification`;
+    const capitalEndorsementTopic = `${capitalCertificationTopic}Endorsement`;
+    const auditCertificationTopic = `audit${capitalCertificationTopic}`;
+    const auditEndorsementTopic = `audit${capitalEndorsementTopic}`;
+    const consumedCertificationPolicyKey = P25105_POLICY_KEY.replace(/EndorsementPolicy$/, "Policy");
+    const allowedTopLevelTrue = new Set([
+        "dryRunOnly",
+        "approvalRequired",
+        `${endorsementTopic}Required`,
+        `${endorsementTopic}Planned`,
+    ]);
+
+    assert.ok(policy, "P25.105 policy payload");
+    assert.equal(policy.status, "planned-disabled");
+    assert.equal(policy[`${auditEndorsementTopic}Version`], "P25.105");
+    assert.equal(policy.adapter, "renderer-service");
+    assert.equal(policy.command, "render.thumbnail");
+    assert.equal(policy.dryRunOnly, true);
+    assert.equal(policy.approvalRequired, true);
+    assert.equal(policy[`${endorsementTopic}Required`], true);
+    assert.equal(policy[`${endorsementTopic}Planned`], true);
+
+    for (const [key, value] of Object.entries(policy)) {
+        if (typeof value === "boolean" && !allowedTopLevelTrue.has(key)) {
+            assert.equal(value, false, key);
+        }
+    }
+
+    assert.equal(policy.consumes[consumedCertificationPolicyKey].currentStatus, "planned-disabled");
+    assert.equal(policy.consumes[consumedCertificationPolicyKey][`${auditCertificationTopic}Version`], "P25.104");
+    assert.equal(policy.consumes[consumedCertificationPolicyKey][`${certificationTopic}Created`], false);
+    assert.equal(policy.consumes[consumedCertificationPolicyKey][`${certificationTopic}Stored`], false);
+    assert.equal(policy.consumes.packageMaterializationApprovalAuditAccessPolicy.auditAccessVersion, "P25.53");
+    assert.equal(policy.consumes.packageMaterializationApprovalAuditAccessPolicy.auditRecordRead, false);
+    assert.equal(policy.consumes.packageMaterializationApprovalAuditAccessPolicy.accessGranted, false);
+    assert.equal(policy.consumes.packageMaterializationFinalApprovalChecklist.checklistVersion, "P25.40");
+    assert.equal(policy.consumes.packageMaterializationFinalApprovalChecklist.finalApprovalGranted, false);
+
+    const policyMetadata = policy[`${auditEndorsementTopic}Policy`];
+    assert.match(policyMetadata.policy, /^endorse-/);
+    assert.match(policyMetadata.policy, /after-certification-record-defined$/);
+    assert.ok(policyMetadata.requiredInputs.includes(`${certificationTopic}Record`));
+    assert.ok(policyMetadata.requiredInputs.includes(`trusted${capitalEndorsementTopic}Authority`));
+    assert.equal(policyMetadata[`${endorsementTopic}PayloadLogged`], false);
+    for (const [key, value] of Object.entries(policyMetadata)) {
+        if (typeof value === "boolean") {
+            assert.equal(value, false, key);
+        }
+    }
+
+    const checks = policy[`${auditEndorsementTopic}Checks`];
+    assert.ok(checks.some((entry) => entry.id.includes("certification-endorsement-not-created") && entry.executed === false && entry.passed === false));
+    for (const entry of checks) {
+        assert.equal(entry.required, true, entry.id);
+        assert.equal(entry.planned, true, entry.id);
+        assert.equal(entry.executed, false, entry.id);
+        assert.equal(entry.passed, false, entry.id);
+    }
+
+    const decision = policy[`${auditEndorsementTopic}Decision`];
+    assert.equal(decision.status, "blocked");
+    assert.match(decision.reason, /metadata-only/);
+    for (const [key, value] of Object.entries(decision)) {
+        if (typeof value === "boolean") {
+            assert.equal(value, false, key);
+        }
+    }
+
+    assert.ok(policy.noOpGuarantees.some((entry) => entry.includes("does not prepare, create, validate, store, or publish endorsements")));
+    assert.ok(policy.noOpGuarantees.some((entry) => entry.includes("does not read, endorse, or verify certifications")));
+    assert.ok(policy.noOpGuarantees.some((entry) => entry.includes("does not read or query audit records")));
+    assert.ok(policy.noOpGuarantees.some((entry) => entry.includes("does not register runtime dispatch")));
+    assert.ok(policy.requiredBeforeRuntimeDispatch.includes("define audit countersignature revocation appeal resolution enforcement evidence attestation notarization certification endorsement countersignature verification revocation appeal resolution enforcement evidence attestation notarization certification endorsement countersignature verification revocation appeal resolution enforcement evidence attestation notarization certification endorsement countersignature verification revocation appeal resolution enforcement evidence attestation notarization certification endorsement policy schema"));
+}
+
+
 function parseJsonResponse(response: Awaited<ReturnType<RenderPreviewTool["execute"]>>) {
     const text = response.content[0];
     assert.equal(text.type, "text");
@@ -4440,6 +4533,7 @@ test("RenderThumbnailTool dry-run returns renderer-service request metadata with
         assertAuditCountersignatureRevocationAppealResolutionEnforcementEvidenceAttestationNotarizationCertificationEndorsementCountersignatureVerificationRevocationAppealResolutionEnforcementEvidenceAttestationNotarizationCertificationEndorsementCountersignatureVerificationRevocationAppealResolutionEnforcementEvidenceAttestationNotarizationCertificationEndorsementCountersignatureVerificationRevocationAppealResolutionEnforcementEvidenceAttestationNotarizationCertificationPolicyMetadataOnly(
             body.data.packageMaterializationApprovalAuditCountersignatureRevocationAppealResolutionEnforcementEvidenceAttestationNotarizationCertificationEndorsementCountersignatureVerificationRevocationAppealResolutionEnforcementEvidenceAttestationNotarizationCertificationEndorsementCountersignatureVerificationRevocationAppealResolutionEnforcementEvidenceAttestationNotarizationCertificationEndorsementCountersignatureVerificationRevocationAppealResolutionEnforcementEvidenceAttestationNotarizationCertificationPolicy
         );
+        assertP25105EndorsementPolicyMetadataOnly(body.data[P25105_POLICY_KEY]);
         assert.deepEqual(body.data.service.client, body.data.client);
         assert.equal(body.data.service.responseNormalization.successStatus, "ok");
         assert.equal(body.data.service.responseNormalization.localFileWrites, false);
@@ -4958,6 +5052,7 @@ test("RenderThumbnailTool execution reports renderer service unavailable without
         assertAuditCountersignatureRevocationAppealResolutionEnforcementEvidenceAttestationNotarizationCertificationEndorsementCountersignatureVerificationRevocationAppealResolutionEnforcementEvidenceAttestationNotarizationCertificationEndorsementCountersignatureVerificationRevocationAppealResolutionEnforcementEvidenceAttestationNotarizationCertificationEndorsementCountersignatureVerificationRevocationAppealResolutionEnforcementEvidenceAttestationNotarizationCertificationPolicyMetadataOnly(
             body.error.data.packageMaterializationApprovalAuditCountersignatureRevocationAppealResolutionEnforcementEvidenceAttestationNotarizationCertificationEndorsementCountersignatureVerificationRevocationAppealResolutionEnforcementEvidenceAttestationNotarizationCertificationEndorsementCountersignatureVerificationRevocationAppealResolutionEnforcementEvidenceAttestationNotarizationCertificationEndorsementCountersignatureVerificationRevocationAppealResolutionEnforcementEvidenceAttestationNotarizationCertificationPolicy
         );
+        assertP25105EndorsementPolicyMetadataOnly(body.error.data[P25105_POLICY_KEY]);
         assert.equal(body.error.data.clientRequest.dispatch, false);
         assert.equal(body.error.data.serviceRequest.operation, "thumbnail.render");
         assert.deepEqual(body.error.data.requiredCapabilities, ["thumbnail-renderer-service-implementation", "file-thumbnail-cache-probe"]);
