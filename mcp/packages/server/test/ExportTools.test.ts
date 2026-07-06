@@ -13,8 +13,17 @@ const UUIDS = {
     profile: "00000000-0000-0000-0000-000000000004",
 };
 
+type PolicyCheck = {
+    id: string;
+    required?: boolean;
+    planned?: boolean;
+    executed?: boolean;
+    passed?: boolean;
+};
+
 const P25105_POLICY_KEY = "packageMaterializationApprovalAuditCountersignatureRevocationAppealResolutionEnforcementEvidenceAttestationNotarizationCertificationEndorsementCountersignatureVerificationRevocationAppealResolutionEnforcementEvidenceAttestationNotarizationCertificationEndorsementCountersignatureVerificationRevocationAppealResolutionEnforcementEvidenceAttestationNotarizationCertificationEndorsementCountersignatureVerificationRevocationAppealResolutionEnforcementEvidenceAttestationNotarizationCertificationEndorsementPolicy";
 const P25106_POLICY_KEY = P25105_POLICY_KEY.replace(/EndorsementPolicy$/, "EndorsementCountersignaturePolicy");
+const P25107_POLICY_KEY = P25106_POLICY_KEY.replace(/CountersignaturePolicy$/, "CountersignatureVerificationPolicy");
 
 function assertP25105EndorsementPolicyMetadataOnly(policy: any) {
     const resolutionTopic =
@@ -82,7 +91,7 @@ function assertP25105EndorsementPolicyMetadataOnly(policy: any) {
     }
 
     const checks = policy[`${auditEndorsementTopic}Checks`];
-    assert.ok(checks.some((entry) => entry.id.includes("certification-endorsement-not-created") && entry.executed === false && entry.passed === false));
+    assert.ok(checks.some((entry: PolicyCheck) => entry.id.includes("certification-endorsement-not-created") && entry.executed === false && entry.passed === false));
     for (const entry of checks) {
         assert.equal(entry.required, true, entry.id);
         assert.equal(entry.planned, true, entry.id);
@@ -99,10 +108,10 @@ function assertP25105EndorsementPolicyMetadataOnly(policy: any) {
         }
     }
 
-    assert.ok(policy.noOpGuarantees.some((entry) => entry.includes("does not prepare, create, validate, store, or publish endorsements")));
-    assert.ok(policy.noOpGuarantees.some((entry) => entry.includes("does not read, endorse, or verify certifications")));
-    assert.ok(policy.noOpGuarantees.some((entry) => entry.includes("does not read or query audit records")));
-    assert.ok(policy.noOpGuarantees.some((entry) => entry.includes("does not register runtime dispatch")));
+    assert.ok(policy.noOpGuarantees.some((entry: string) => entry.includes("does not prepare, create, validate, store, or publish endorsements")));
+    assert.ok(policy.noOpGuarantees.some((entry: string) => entry.includes("does not read, endorse, or verify certifications")));
+    assert.ok(policy.noOpGuarantees.some((entry: string) => entry.includes("does not read or query audit records")));
+    assert.ok(policy.noOpGuarantees.some((entry: string) => entry.includes("does not register runtime dispatch")));
     assert.ok(policy.requiredBeforeRuntimeDispatch.includes("define audit countersignature revocation appeal resolution enforcement evidence attestation notarization certification endorsement countersignature verification revocation appeal resolution enforcement evidence attestation notarization certification endorsement countersignature verification revocation appeal resolution enforcement evidence attestation notarization certification endorsement countersignature verification revocation appeal resolution enforcement evidence attestation notarization certification endorsement policy schema"));
 }
 
@@ -154,11 +163,68 @@ function assertP25106CountersignaturePolicyMetadataOnly(policy: any) {
     assert.ok(countersignaturePolicy.requiredInputs.includes(`${baseTopic}Record`));
     assert.ok(countersignaturePolicy.requiredInputs.includes("auditAccessGrant"));
 
-    assert.ok(policy[`${auditCountersignatureTopic}Checks`].some((check) => check.id === "audit-access-granted" && check.executed === false));
+    assert.ok(policy[`${auditCountersignatureTopic}Checks`].some((check: PolicyCheck) => check.id === "audit-access-granted" && check.executed === false));
     assert.equal(policy[`${auditCountersignatureTopic}Decision`].status, "blocked");
     assert.equal(policy[`${auditCountersignatureTopic}Decision`].canEnableRuntimeDispatch, false);
-    assert.ok(policy.noOpGuarantees.some((item) => item.includes("does not prepare, create, validate, store, or publish countersignatures")));
-    assert.ok(policy.noOpGuarantees.some((item) => item.includes("does not register runtime dispatch")));
+    assert.ok(policy.noOpGuarantees.some((item: string) => item.includes("does not prepare, create, validate, store, or publish countersignatures")));
+    assert.ok(policy.noOpGuarantees.some((item: string) => item.includes("does not register runtime dispatch")));
+    assert.ok(policy.requiredBeforeRuntimeDispatch.includes("keep render.thumbnail unavailable until executable adapter registration is approved"));
+}
+
+function assertP25107VerificationPolicyMetadataOnly(policy: any) {
+    const capitalBaseTopic = P25106_POLICY_KEY.replace(/^packageMaterializationApprovalAudit/, "").replace(/Policy$/, "");
+    const baseTopic = capitalBaseTopic[0].toLowerCase() + capitalBaseTopic.slice(1);
+    const verificationTopic = `${baseTopic}Verification`;
+    const auditBaseTopic = `audit${capitalBaseTopic}`;
+    const auditVerificationTopic = `audit${capitalBaseTopic}Verification`;
+    const allowedTopLevelTrue = new Set([
+        "dryRunOnly",
+        "approvalRequired",
+        `${verificationTopic}Required`,
+        `${verificationTopic}Planned`,
+    ]);
+
+    assert.ok(policy, "P25.107 policy payload");
+    assert.equal(policy.status, "planned-disabled");
+    assert.equal(policy[`${auditVerificationTopic}Version`], "P25.107");
+    assert.equal(policy.adapter, "renderer-service");
+    assert.equal(policy.command, "render.thumbnail");
+    assert.equal(policy.dryRunOnly, true);
+    assert.equal(policy.approvalRequired, true);
+    assert.equal(policy.approved, false);
+    assert.equal(policy.finalApprovalGranted, false);
+    assert.equal(policy[`${verificationTopic}Required`], true);
+    assert.equal(policy[`${verificationTopic}Planned`], true);
+
+    for (const [key, value] of Object.entries(policy)) {
+        if (typeof value === "boolean" && !allowedTopLevelTrue.has(key)) {
+            assert.equal(value, false, key);
+        }
+    }
+
+    assert.equal(policy.consumes[P25106_POLICY_KEY].currentStatus, "planned-disabled");
+    assert.equal(policy.consumes[P25106_POLICY_KEY][`${auditBaseTopic}Version`], "P25.106");
+    assert.equal(policy.consumes[P25106_POLICY_KEY][`${baseTopic}Created`], false);
+    assert.equal(policy.consumes[P25106_POLICY_KEY][`${baseTopic}RecordStored`], false);
+    assert.equal(policy.consumes.packageMaterializationApprovalAuditAccessPolicy.auditAccessVersion, "P25.53");
+    assert.equal(policy.consumes.packageMaterializationApprovalAuditAccessPolicy.auditRecordRead, false);
+    assert.equal(policy.consumes.packageMaterializationApprovalAuditAccessPolicy.accessGranted, false);
+    assert.equal(policy.consumes.packageMaterializationFinalApprovalChecklist.checklistVersion, "P25.40");
+    assert.equal(policy.consumes.packageMaterializationFinalApprovalChecklist.finalApprovalGranted, false);
+
+    const verificationPolicy = policy[`${auditVerificationTopic}Policy`];
+    assert.equal(verificationPolicy.policy.endsWith("after-countersignature-record-defined"), true);
+    assert.equal(verificationPolicy[`${verificationTopic}PayloadLogged`], false);
+    assert.equal(verificationPolicy[`${verificationTopic}Scope`], "future-policy-defined");
+    assert.ok(verificationPolicy.requiredInputs.includes(`${baseTopic}Record`));
+    assert.ok(verificationPolicy.requiredInputs.includes("auditAccessGrant"));
+
+    assert.ok(policy[`${auditVerificationTopic}Checks`].some((check: PolicyCheck) => check.id === "audit-access-granted" && check.executed === false));
+    assert.equal(policy[`${auditVerificationTopic}Decision`].status, "blocked");
+    assert.equal(policy[`${auditVerificationTopic}Decision`].canEnableRuntimeDispatch, false);
+    assert.ok(policy.noOpGuarantees.some((item: string) => item.includes("does not read or verify signatures")));
+    assert.ok(policy.noOpGuarantees.some((item: string) => item.includes("does not prepare, execute, store, or publish verification results")));
+    assert.ok(policy.noOpGuarantees.some((item: string) => item.includes("does not register runtime dispatch")));
     assert.ok(policy.requiredBeforeRuntimeDispatch.includes("keep render.thumbnail unavailable until executable adapter registration is approved"));
 }
 
@@ -2013,7 +2079,7 @@ function assertAuditCountersignatureRevocationAppealResolutionEnforcementEvidenc
 
     assert.ok(
         policy[`${auditEvidenceTopic}Checks`].some(
-            (entry) =>
+            (entry: PolicyCheck) =>
                 entry.id === "countersignature-revocation-appeal-resolution-enforcement-evidence-attestation-notarization-certification-endorsement-countersignature-verification-revocation-appeal-resolution-enforcement-evidence-attestation-notarization-certification-endorsement-countersignature-verification-revocation-appeal-resolution-enforcement-evidence-not-collected" &&
                 entry.executed === false &&
                 entry.passed === false
@@ -2034,9 +2100,9 @@ function assertAuditCountersignatureRevocationAppealResolutionEnforcementEvidenc
         }
     }
 
-    assert.ok(policy.noOpGuarantees.some((entry) => entry.includes("does not collect, validate, or normalize evidence")));
-    assert.ok(policy.noOpGuarantees.some((entry) => entry.includes("does not create renderer-service directory")));
-    assert.ok(policy.noOpGuarantees.some((entry) => entry.includes("does not register runtime dispatch")));
+    assert.ok(policy.noOpGuarantees.some((entry: string) => entry.includes("does not collect, validate, or normalize evidence")));
+    assert.ok(policy.noOpGuarantees.some((entry: string) => entry.includes("does not create renderer-service directory")));
+    assert.ok(policy.noOpGuarantees.some((entry: string) => entry.includes("does not register runtime dispatch")));
     assert.ok(
         policy.requiredBeforeRuntimeDispatch.includes(
             "define audit countersignature revocation appeal resolution enforcement evidence attestation notarization certification endorsement countersignature verification revocation appeal resolution enforcement evidence attestation notarization certification endorsement countersignature verification revocation appeal resolution enforcement evidence policy schema"
@@ -2101,7 +2167,7 @@ function assertAuditCountersignatureRevocationAppealResolutionEnforcementEvidenc
 
     assert.ok(
         policy[`${auditAttestationTopic}Checks`].some(
-            (entry) =>
+            (entry: PolicyCheck) =>
                 entry.id === "countersignature-revocation-appeal-resolution-enforcement-evidence-attestation-notarization-certification-endorsement-countersignature-verification-revocation-appeal-resolution-enforcement-evidence-attestation-notarization-certification-endorsement-countersignature-verification-revocation-appeal-resolution-enforcement-evidence-attestation-not-created" &&
                 entry.executed === false &&
                 entry.passed === false
@@ -2122,10 +2188,10 @@ function assertAuditCountersignatureRevocationAppealResolutionEnforcementEvidenc
         }
     }
 
-    assert.ok(policy.noOpGuarantees.some((entry) => entry.includes("does not prepare, create, validate, store, or publish attestations")));
-    assert.ok(policy.noOpGuarantees.some((entry) => entry.includes("does not read, attest, or verify evidence records")));
-    assert.ok(policy.noOpGuarantees.some((entry) => entry.includes("does not create renderer-service directory")));
-    assert.ok(policy.noOpGuarantees.some((entry) => entry.includes("does not register runtime dispatch")));
+    assert.ok(policy.noOpGuarantees.some((entry: string) => entry.includes("does not prepare, create, validate, store, or publish attestations")));
+    assert.ok(policy.noOpGuarantees.some((entry: string) => entry.includes("does not read, attest, or verify evidence records")));
+    assert.ok(policy.noOpGuarantees.some((entry: string) => entry.includes("does not create renderer-service directory")));
+    assert.ok(policy.noOpGuarantees.some((entry: string) => entry.includes("does not register runtime dispatch")));
     assert.ok(policy.requiredBeforeRuntimeDispatch.includes("define audit countersignature revocation appeal resolution enforcement evidence attestation notarization certification endorsement countersignature verification revocation appeal resolution enforcement evidence attestation notarization certification endorsement countersignature verification revocation appeal resolution enforcement evidence attestation policy schema"));
 }
 
@@ -2245,7 +2311,7 @@ function assertAuditCountersignatureRevocationAppealResolutionEnforcementEvidenc
 
     assert.ok(
         policy[`${auditNotarizationTopic}Checks`].some(
-            (entry) =>
+            (entry: PolicyCheck) =>
                 entry.id === "countersignature-revocation-appeal-resolution-enforcement-evidence-attestation-notarization-certification-endorsement-countersignature-verification-revocation-appeal-resolution-enforcement-evidence-attestation-notarization-certification-endorsement-countersignature-verification-revocation-appeal-resolution-enforcement-evidence-attestation-notarization-not-created" &&
                 entry.executed === false &&
                 entry.passed === false
@@ -2266,10 +2332,10 @@ function assertAuditCountersignatureRevocationAppealResolutionEnforcementEvidenc
         }
     }
 
-    assert.ok(policy.noOpGuarantees.some((entry) => entry.includes("does not prepare, create, validate, store, or publish notarizations")));
-    assert.ok(policy.noOpGuarantees.some((entry) => entry.includes("does not read, notarize, or verify attestation records")));
-    assert.ok(policy.noOpGuarantees.some((entry) => entry.includes("does not create renderer-service directory")));
-    assert.ok(policy.noOpGuarantees.some((entry) => entry.includes("does not register runtime dispatch")));
+    assert.ok(policy.noOpGuarantees.some((entry: string) => entry.includes("does not prepare, create, validate, store, or publish notarizations")));
+    assert.ok(policy.noOpGuarantees.some((entry: string) => entry.includes("does not read, notarize, or verify attestation records")));
+    assert.ok(policy.noOpGuarantees.some((entry: string) => entry.includes("does not create renderer-service directory")));
+    assert.ok(policy.noOpGuarantees.some((entry: string) => entry.includes("does not register runtime dispatch")));
     assert.ok(policy.requiredBeforeRuntimeDispatch.includes("define audit countersignature revocation appeal resolution enforcement evidence attestation notarization certification endorsement countersignature verification revocation appeal resolution enforcement evidence attestation notarization certification endorsement countersignature verification revocation appeal resolution enforcement evidence attestation notarization policy schema"));
 }
 
@@ -2330,7 +2396,7 @@ function assertAuditCountersignatureRevocationAppealResolutionEnforcementEvidenc
             assert.equal(value, false, key);
         }
     }
-    assert.ok(policy[`${auditCertificationTopic}Checks`].some((entry) => entry.id.includes("notarization-certification-not-created") && entry.executed === false && entry.passed === false));
+    assert.ok(policy[`${auditCertificationTopic}Checks`].some((entry: PolicyCheck) => entry.id.includes("notarization-certification-not-created") && entry.executed === false && entry.passed === false));
     for (const entry of policy[`${auditCertificationTopic}Checks`]) {
         assert.equal(entry.required, true, entry.id);
         assert.equal(entry.planned, true, entry.id);
@@ -2344,9 +2410,9 @@ function assertAuditCountersignatureRevocationAppealResolutionEnforcementEvidenc
             assert.equal(value, false, key);
         }
     }
-    assert.ok(policy.noOpGuarantees.some((entry) => entry.includes("does not certify notarizations")));
-    assert.ok(policy.noOpGuarantees.some((entry) => entry.includes("does not read or query audit records")));
-    assert.ok(policy.noOpGuarantees.some((entry) => entry.includes("does not register runtime dispatch")));
+    assert.ok(policy.noOpGuarantees.some((entry: string) => entry.includes("does not certify notarizations")));
+    assert.ok(policy.noOpGuarantees.some((entry: string) => entry.includes("does not read or query audit records")));
+    assert.ok(policy.noOpGuarantees.some((entry: string) => entry.includes("does not register runtime dispatch")));
     assert.ok(policy.requiredBeforeRuntimeDispatch.includes("define audit countersignature revocation appeal resolution enforcement evidence attestation notarization certification endorsement countersignature verification revocation appeal resolution enforcement evidence attestation notarization certification endorsement countersignature verification revocation appeal resolution enforcement evidence attestation notarization certification policy schema"));
 }
 
@@ -2560,7 +2626,7 @@ function assertAuditCountersignatureRevocationAppealResolutionEnforcementEvidenc
     assert.equal(policy[`${auditVerificationTopic}Policy`][`${verificationTopic}PayloadLogged`], false);
     assert.ok(
         policy[`${auditVerificationTopic}Checks`].some(
-            (entry) =>
+            (entry: PolicyCheck) =>
                 entry.id ===
                     "countersignature-revocation-appeal-resolution-enforcement-evidence-attestation-notarization-certification-endorsement-countersignature-verification-revocation-appeal-resolution-enforcement-evidence-attestation-notarization-certification-endorsement-countersignature-verification-revocation-appeal-resolution-enforcement-evidence-attestation-notarization-certification-endorsement-countersignature-signature-not-verified" &&
                 entry.executed === false
@@ -3199,7 +3265,7 @@ function assertAuditCountersignatureRevocationAppealResolutionEnforcementEvidenc
     assert.equal(policy[`${auditVerificationTopic}Policy`][`${verificationTopic}PayloadLogged`], false);
     assert.ok(
         policy[`${auditVerificationTopic}Checks`].some(
-            (entry) =>
+            (entry: PolicyCheck) =>
                 entry.id ===
                     "countersignature-revocation-appeal-resolution-enforcement-evidence-attestation-notarization-certification-endorsement-countersignature-verification-revocation-appeal-resolution-enforcement-evidence-attestation-notarization-certification-endorsement-countersignature-signature-not-verified" &&
                 entry.executed === false
@@ -3355,10 +3421,10 @@ function assertAuditCountersignatureRevocationAppealResolutionEnforcementEvidenc
     assert.equal(policy[auditResolutionTopic + "Decision"].canReadAuditRecord, false);
     assert.equal(policy[auditResolutionTopic + "Decision"].canMaterializeFiles, false);
     assert.equal(policy[auditResolutionTopic + "Decision"].canEnableRuntimeDispatch, false);
-    assert.ok(policy.noOpGuarantees.some((entry) => entry.includes("does not resolve countersignature verification revocation appeals")));
-    assert.ok(policy.noOpGuarantees.some((entry) => entry.includes("does not read appeal or appeal records")));
-    assert.ok(policy.noOpGuarantees.some((entry) => entry.includes("does not read or query audit records")));
-    assert.ok(policy.noOpGuarantees.some((entry) => entry.includes("does not register runtime dispatch")));
+    assert.ok(policy.noOpGuarantees.some((entry: string) => entry.includes("does not resolve countersignature verification revocation appeals")));
+    assert.ok(policy.noOpGuarantees.some((entry: string) => entry.includes("does not read appeal or appeal records")));
+    assert.ok(policy.noOpGuarantees.some((entry: string) => entry.includes("does not read or query audit records")));
+    assert.ok(policy.noOpGuarantees.some((entry: string) => entry.includes("does not register runtime dispatch")));
 }
 
 function assertAuditCountersignatureRevocationAppealResolutionEnforcementEvidenceAttestationNotarizationCertificationEndorsementCountersignatureVerificationRevocationAppealResolutionEnforcementEvidenceAttestationNotarizationCertificationEndorsementCountersignatureVerificationRevocationAppealResolutionEnforcementEvidenceAttestationNotarizationCertificationEndorsementCountersignatureVerificationRevocationAppealResolutionEnforcementPolicyMetadataOnly(policy: any) {
@@ -3401,9 +3467,9 @@ function assertAuditCountersignatureRevocationAppealResolutionEnforcementEvidenc
     assert.equal(policy[auditEnforcementTopic + "Decision"].canReadAuditRecord, false);
     assert.equal(policy[auditEnforcementTopic + "Decision"].canMaterializeFiles, false);
     assert.equal(policy[auditEnforcementTopic + "Decision"].canEnableRuntimeDispatch, false);
-    assert.ok(policy.noOpGuarantees.some((entry) => entry.includes("does not enforce countersignature verification revocation appeal resolutions")));
-    assert.ok(policy.noOpGuarantees.some((entry) => entry.includes("does not read appeal resolutions or resolution records")));
-    assert.ok(policy.noOpGuarantees.some((entry) => entry.includes("does not register runtime dispatch")));
+    assert.ok(policy.noOpGuarantees.some((entry: string) => entry.includes("does not enforce countersignature verification revocation appeal resolutions")));
+    assert.ok(policy.noOpGuarantees.some((entry: string) => entry.includes("does not read appeal resolutions or resolution records")));
+    assert.ok(policy.noOpGuarantees.some((entry: string) => entry.includes("does not register runtime dispatch")));
 }
 
 function assertAuditCountersignatureRevocationAppealResolutionEnforcementEvidenceAttestationNotarizationCertificationEndorsementCountersignatureVerificationRevocationAppealResolutionEnforcementEvidenceAttestationNotarizationCertificationEndorsementCountersignatureVerificationRevocationAppealResolutionEnforcementEvidenceAttestationNotarizationCertificationEndorsementCountersignatureVerificationRevocationAppealResolutionEnforcementEvidencePolicyMetadataOnly(policy: any) {
@@ -3449,9 +3515,9 @@ function assertAuditCountersignatureRevocationAppealResolutionEnforcementEvidenc
     assert.equal(policy[auditEvidenceTopic + "Decision"].canReadAuditRecord, false);
     assert.equal(policy[auditEvidenceTopic + "Decision"].canMaterializeFiles, false);
     assert.equal(policy[auditEvidenceTopic + "Decision"].canEnableRuntimeDispatch, false);
-    assert.ok(policy.noOpGuarantees.some((entry) => entry.includes("does not collect, validate, or normalize evidence")));
-    assert.ok(policy.noOpGuarantees.some((entry) => entry.includes("does not read appeal resolution enforcement records")));
-    assert.ok(policy.noOpGuarantees.some((entry) => entry.includes("does not register runtime dispatch")));
+    assert.ok(policy.noOpGuarantees.some((entry: string) => entry.includes("does not collect, validate, or normalize evidence")));
+    assert.ok(policy.noOpGuarantees.some((entry: string) => entry.includes("does not read appeal resolution enforcement records")));
+    assert.ok(policy.noOpGuarantees.some((entry: string) => entry.includes("does not register runtime dispatch")));
 }
 
 function assertAuditCountersignatureRevocationAppealResolutionEnforcementEvidenceAttestationNotarizationCertificationEndorsementCountersignatureVerificationRevocationAppealResolutionEnforcementEvidenceAttestationNotarizationCertificationEndorsementCountersignatureVerificationRevocationAppealResolutionEnforcementEvidenceAttestationNotarizationCertificationEndorsementCountersignatureVerificationRevocationAppealResolutionEnforcementEvidenceAttestationPolicyMetadataOnly(policy: any) {
@@ -3501,9 +3567,9 @@ function assertAuditCountersignatureRevocationAppealResolutionEnforcementEvidenc
     assert.equal(policy[auditAttestationTopic + "Decision"].canReadAuditRecord, false);
     assert.equal(policy[auditAttestationTopic + "Decision"].canMaterializeFiles, false);
     assert.equal(policy[auditAttestationTopic + "Decision"].canEnableRuntimeDispatch, false);
-    assert.ok(policy.noOpGuarantees.some((entry) => entry.includes("does not prepare, create, validate, store, or publish attestations")));
-    assert.ok(policy.noOpGuarantees.some((entry) => entry.includes("does not read, attest, or verify evidence records")));
-    assert.ok(policy.noOpGuarantees.some((entry) => entry.includes("does not register runtime dispatch")));
+    assert.ok(policy.noOpGuarantees.some((entry: string) => entry.includes("does not prepare, create, validate, store, or publish attestations")));
+    assert.ok(policy.noOpGuarantees.some((entry: string) => entry.includes("does not read, attest, or verify evidence records")));
+    assert.ok(policy.noOpGuarantees.some((entry: string) => entry.includes("does not register runtime dispatch")));
 }
 
 function assertAuditCountersignatureRevocationAppealResolutionEnforcementEvidenceAttestationNotarizationCertificationEndorsementCountersignatureVerificationRevocationAppealResolutionEnforcementEvidenceAttestationNotarizationCertificationEndorsementCountersignatureVerificationRevocationAppealResolutionEnforcementEvidenceAttestationNotarizationCertificationEndorsementCountersignatureVerificationRevocationAppealResolutionEnforcementEvidenceAttestationNotarizationPolicyMetadataOnly(policy: any) {
@@ -3552,9 +3618,9 @@ function assertAuditCountersignatureRevocationAppealResolutionEnforcementEvidenc
     assert.equal(policy[auditNotarizationTopic + "Decision"].canReadAuditRecord, false);
     assert.equal(policy[auditNotarizationTopic + "Decision"].canMaterializeFiles, false);
     assert.equal(policy[auditNotarizationTopic + "Decision"].canEnableRuntimeDispatch, false);
-    assert.ok(policy.noOpGuarantees.some((entry) => entry.includes("does not prepare, create, validate, store, or publish notarizations")));
-    assert.ok(policy.noOpGuarantees.some((entry) => entry.includes("does not read, notarize, or verify attestation records")));
-    assert.ok(policy.noOpGuarantees.some((entry) => entry.includes("does not register runtime dispatch")));
+    assert.ok(policy.noOpGuarantees.some((entry: string) => entry.includes("does not prepare, create, validate, store, or publish notarizations")));
+    assert.ok(policy.noOpGuarantees.some((entry: string) => entry.includes("does not read, notarize, or verify attestation records")));
+    assert.ok(policy.noOpGuarantees.some((entry: string) => entry.includes("does not register runtime dispatch")));
 }
 
 function assertAuditCountersignatureRevocationAppealResolutionEnforcementEvidenceAttestationNotarizationCertificationEndorsementCountersignatureVerificationRevocationAppealResolutionEnforcementEvidenceAttestationNotarizationCertificationEndorsementCountersignatureVerificationRevocationAppealResolutionEnforcementEvidenceAttestationNotarizationCertificationEndorsementCountersignatureVerificationRevocationAppealResolutionEnforcementEvidenceAttestationNotarizationCertificationPolicyMetadataOnly(policy: any) {
@@ -3613,7 +3679,7 @@ function assertAuditCountersignatureRevocationAppealResolutionEnforcementEvidenc
             assert.equal(value, false, key);
         }
     }
-    assert.ok(policy[`${auditCertificationTopic}Checks`].some((entry) => entry.id.includes("notarization-certification-not-created") && entry.executed === false && entry.passed === false));
+    assert.ok(policy[`${auditCertificationTopic}Checks`].some((entry: PolicyCheck) => entry.id.includes("notarization-certification-not-created") && entry.executed === false && entry.passed === false));
     for (const entry of policy[`${auditCertificationTopic}Checks`]) {
         assert.equal(entry.required, true, entry.id);
         assert.equal(entry.planned, true, entry.id);
@@ -3627,9 +3693,9 @@ function assertAuditCountersignatureRevocationAppealResolutionEnforcementEvidenc
             assert.equal(value, false, key);
         }
     }
-    assert.ok(policy.noOpGuarantees.some((entry) => entry.includes("does not certify notarizations")));
-    assert.ok(policy.noOpGuarantees.some((entry) => entry.includes("does not read or query audit records")));
-    assert.ok(policy.noOpGuarantees.some((entry) => entry.includes("does not register runtime dispatch")));
+    assert.ok(policy.noOpGuarantees.some((entry: string) => entry.includes("does not certify notarizations")));
+    assert.ok(policy.noOpGuarantees.some((entry: string) => entry.includes("does not read or query audit records")));
+    assert.ok(policy.noOpGuarantees.some((entry: string) => entry.includes("does not register runtime dispatch")));
     assert.ok(policy.requiredBeforeRuntimeDispatch.includes("define audit countersignature revocation appeal resolution enforcement evidence attestation notarization certification endorsement countersignature verification revocation appeal resolution enforcement evidence attestation notarization certification endorsement countersignature verification revocation appeal resolution enforcement evidence attestation notarization certification endorsement countersignature verification revocation appeal resolution enforcement evidence attestation notarization certification policy schema"));
 }
 
@@ -4592,6 +4658,7 @@ test("RenderThumbnailTool dry-run returns renderer-service request metadata with
         );
         assertP25105EndorsementPolicyMetadataOnly(body.data[P25105_POLICY_KEY]);
         assertP25106CountersignaturePolicyMetadataOnly(body.data[P25106_POLICY_KEY]);
+        assertP25107VerificationPolicyMetadataOnly(body.data[P25107_POLICY_KEY]);
         assert.deepEqual(body.data.service.client, body.data.client);
         assert.equal(body.data.service.responseNormalization.successStatus, "ok");
         assert.equal(body.data.service.responseNormalization.localFileWrites, false);
@@ -5112,6 +5179,7 @@ test("RenderThumbnailTool execution reports renderer service unavailable without
         );
         assertP25105EndorsementPolicyMetadataOnly(body.error.data[P25105_POLICY_KEY]);
         assertP25106CountersignaturePolicyMetadataOnly(body.error.data[P25106_POLICY_KEY]);
+        assertP25107VerificationPolicyMetadataOnly(body.error.data[P25107_POLICY_KEY]);
         assert.equal(body.error.data.clientRequest.dispatch, false);
         assert.equal(body.error.data.serviceRequest.operation, "thumbnail.render");
         assert.deepEqual(body.error.data.requiredCapabilities, ["thumbnail-renderer-service-implementation", "file-thumbnail-cache-probe"]);
