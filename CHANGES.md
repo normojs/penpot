@@ -4,6 +4,7 @@
 
 ### :sparkles: New features & Enhancements
 
+- Add metadata-only renderer-service countersignature verification revocation appeal resolution policy planning for `render.thumbnail` across command-runtime, CLI, MCP, and fixtures while keeping appeal resolution execution, record reads, materialization, and dispatch disabled.
 - Add metadata-only renderer-service countersignature verification revocation appeal policy planning for `render.thumbnail` across command-runtime, CLI, MCP, and fixtures while keeping appeal execution, record reads, materialization, and dispatch disabled.
 - Add metadata-only renderer-service countersignature verification revocation policy planning for `render.thumbnail` across command-runtime, CLI, MCP, and fixtures while keeping revocation and dispatch disabled.
 - Document the first-class MCP architecture plan, routing audit, normalized public MCP URL sources, MCP status endpoint, local CLI dev orchestration contract, MCP lifecycle audit, global MCP state design, global MCP lifecycle migration, shared MCP tool naming rules, development tracker, feature roadmap, and AI coding rules for the `penpot-cli` fork.
