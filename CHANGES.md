@@ -111,6 +111,7 @@
 - Add renderer-service package materialization approval audit countersignature revocation appeal policy planning for future `render.thumbnail` execution.
 - Add renderer-service package materialization approval audit countersignature revocation appeal resolution policy planning for future `render.thumbnail` execution.
 - Add renderer-service package materialization approval audit countersignature revocation appeal resolution enforcement policy planning for future `render.thumbnail` execution.
+- Add renderer-service package materialization approval audit countersignature verification revocation appeal resolution enforcement policy metadata-only test and fixture coverage for future `render.thumbnail` execution.
 - Add renderer-service package materialization approval audit countersignature revocation appeal resolution enforcement evidence policy planning for future `render.thumbnail` execution.
 - Add renderer-service package materialization approval audit countersignature revocation appeal resolution enforcement evidence attestation policy planning for future `render.thumbnail` execution.
 - Add renderer-service package materialization approval audit countersignature revocation appeal resolution enforcement evidence attestation notarization policy planning for future `render.thumbnail` execution.
