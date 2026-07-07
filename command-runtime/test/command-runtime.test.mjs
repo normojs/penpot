@@ -108,6 +108,7 @@ import {
     createRenderThumbnailRendererServicePackageMaterializationApprovalAuditCountersignatureRevocationAppealResolutionEnforcementEvidenceAttestationNotarizationCertificationEndorsementCountersignatureVerificationRevocationAppealResolutionEnforcementEvidenceAttestationNotarizationCertificationEndorsementCountersignatureVerificationRevocationAppealResolutionEnforcementEvidenceAttestationNotarizationCertificationEndorsementCountersignatureVerificationRevocationAppealResolutionEnforcementEvidenceAttestationNotarizationCertificationEndorsementCountersignatureVerificationRevocationAppealResolutionEnforcementEvidenceAttestationNotarizationCertificationPolicy,
     createRenderThumbnailRendererServicePackageMaterializationApprovalAuditCountersignatureRevocationAppealResolutionEnforcementEvidenceAttestationNotarizationCertificationEndorsementCountersignatureVerificationRevocationAppealResolutionEnforcementEvidenceAttestationNotarizationCertificationEndorsementCountersignatureVerificationRevocationAppealResolutionEnforcementEvidenceAttestationNotarizationCertificationEndorsementCountersignatureVerificationRevocationAppealResolutionEnforcementEvidenceAttestationNotarizationCertificationEndorsementCountersignatureVerificationRevocationAppealResolutionEnforcementEvidenceAttestationNotarizationCertificationEndorsementPolicy,
     createRenderThumbnailRendererServicePackageMaterializationApprovalAuditCountersignatureRevocationAppealResolutionEnforcementEvidenceAttestationNotarizationCertificationEndorsementCountersignatureVerificationRevocationAppealResolutionEnforcementEvidenceAttestationNotarizationCertificationEndorsementCountersignatureVerificationRevocationAppealResolutionEnforcementEvidenceAttestationNotarizationCertificationEndorsementCountersignatureVerificationRevocationAppealResolutionEnforcementEvidenceAttestationNotarizationCertificationEndorsementCountersignatureVerificationRevocationAppealResolutionEnforcementEvidenceAttestationNotarizationCertificationEndorsementCountersignaturePolicy,
+    createRenderThumbnailRendererServicePackageMaterializationApprovalAuditCountersignatureRevocationAppealResolutionEnforcementEvidenceAttestationNotarizationCertificationEndorsementCountersignatureVerificationRevocationAppealResolutionEnforcementEvidenceAttestationNotarizationCertificationEndorsementCountersignatureVerificationRevocationAppealResolutionEnforcementEvidenceAttestationNotarizationCertificationEndorsementCountersignatureVerificationRevocationAppealResolutionEnforcementEvidenceAttestationNotarizationCertificationEndorsementCountersignatureVerificationRevocationAppealResolutionEnforcementEvidenceAttestationNotarizationCertificationEndorsementCountersignatureVerificationPolicy,
     createRenderThumbnailRendererServicePackageMaterializationApprovalAuditCountersignatureRevocationAppealResolutionEnforcementEvidenceAttestationNotarizationCertificationEndorsementCountersignatureVerificationRevocationAppealResolutionEnforcementEvidenceAttestationNotarizationCertificationEndorsementCountersignatureVerificationRevocationAppealResolutionEnforcementEvidenceAttestationPolicy,
     createRenderThumbnailRendererServicePackageMaterializationApprovalAuditCountersignatureRevocationAppealResolutionEnforcementEvidenceAttestationNotarizationCertificationEndorsementCountersignatureVerificationRevocationAppealResolutionEnforcementEvidenceAttestationNotarizationCertificationEndorsementCountersignatureVerificationRevocationAppealResolutionEnforcementEvidenceAttestationNotarizationPolicy,
     createRenderThumbnailRendererServicePackageMaterializationApprovalAuditCountersignatureRevocationAppealResolutionEnforcementEvidenceAttestationNotarizationCertificationEndorsementCountersignatureVerificationRevocationAppealResolutionEnforcementEvidenceAttestationNotarizationCertificationEndorsementCountersignatureVerificationRevocationAppealResolutionEnforcementEvidenceAttestationNotarizationCertificationPolicy,
@@ -192,6 +193,7 @@ const P25114_POLICY_KEY = P25113_POLICY_KEY.replace(/AttestationPolicy$/, "Attes
 const P25115_POLICY_KEY = P25114_POLICY_KEY.replace(/NotarizationPolicy$/, "NotarizationCertificationPolicy");
 const P25116_POLICY_KEY = P25115_POLICY_KEY.replace(/CertificationPolicy$/, "CertificationEndorsementPolicy");
 const P25117_POLICY_KEY = P25116_POLICY_KEY.replace(/EndorsementPolicy$/, "EndorsementCountersignaturePolicy");
+const P25118_POLICY_KEY = P25117_POLICY_KEY.replace(/CountersignaturePolicy$/, "CountersignatureVerificationPolicy");
 
 function assertP25105EndorsementPolicyMetadataOnly(policy) {
     const resolutionTopic =
@@ -1011,6 +1013,78 @@ function assertP25117RevocationAppealResolutionEnforcementEvidenceAttestationNot
     assert.equal(policy[auditCountersignatureTopic + "Decision"].canEnableRuntimeDispatch, false);
     assert.ok(policy.noOpGuarantees.some((item) => item.includes("does not prepare, create, validate, store, or publish countersignatures")));
     assert.ok(policy.noOpGuarantees.some((item) => item.includes("does not read, countersign, or verify endorsements")));
+    assert.ok(policy.noOpGuarantees.some((item) => item.includes("does not register runtime dispatch")));
+    assert.ok(policy.requiredBeforeRuntimeDispatch.includes("keep render.thumbnail unavailable until executable adapter registration is approved"));
+}
+
+function assertP25118RevocationAppealResolutionEnforcementEvidenceAttestationNotarizationCertificationEndorsementCountersignatureVerificationPolicyMetadataOnly(policy) {
+    const capitalCountersignatureTopic = P25117_POLICY_KEY.replace(/^packageMaterializationApprovalAudit/, "").replace(/Policy$/, "");
+    const countersignatureTopic = capitalCountersignatureTopic[0].toLowerCase() + capitalCountersignatureTopic.slice(1);
+    const capitalVerificationTopic = capitalCountersignatureTopic + "Verification";
+    const verificationTopic = countersignatureTopic + "Verification";
+    const auditCountersignatureTopic = "audit" + capitalCountersignatureTopic;
+    const auditVerificationTopic = "audit" + capitalVerificationTopic;
+    const allowedTopLevelTrue = new Set(["dryRunOnly", "approvalRequired", verificationTopic + "Required", verificationTopic + "Planned"]);
+
+    assert.ok(policy, "P25.118 policy payload");
+    assert.equal(policy.status, "planned-disabled");
+    assert.equal(policy[auditVerificationTopic + "Version"], "P25.118");
+    assert.equal(policy.adapter, "renderer-service");
+    assert.equal(policy.command, "render.thumbnail");
+    assert.equal(policy.dryRunOnly, true);
+    assert.equal(policy.approvalRequired, true);
+    assert.equal(policy.approved, false);
+    assert.equal(policy.finalApprovalGranted, false);
+    assert.equal(policy[verificationTopic + "Required"], true);
+    assert.equal(policy[verificationTopic + "Planned"], true);
+
+    for (const [key, value] of Object.entries(policy)) {
+        if (typeof value === "boolean" && !allowedTopLevelTrue.has(key)) {
+            assert.equal(value, false, key);
+        }
+    }
+
+    assert.equal(policy.consumes[P25117_POLICY_KEY].currentStatus, "planned-disabled");
+    assert.equal(policy.consumes[P25117_POLICY_KEY][auditCountersignatureTopic + "Version"], "P25.117");
+    assert.equal(policy.consumes[P25117_POLICY_KEY][countersignatureTopic + "Created"], false);
+    assert.equal(policy.consumes[P25117_POLICY_KEY][countersignatureTopic + "Stored"], false);
+    assert.equal(policy.consumes[P25117_POLICY_KEY][countersignatureTopic + "RecordStored"], false);
+    assert.equal(policy.consumes[P25117_POLICY_KEY][countersignatureTopic + "RecordRead"], false);
+    assert.equal(policy.consumes[P25117_POLICY_KEY][countersignatureTopic + "Verified"], false);
+    assert.equal(policy.consumes.packageMaterializationApprovalAuditAccessPolicy.auditAccessVersion, "P25.53");
+    assert.equal(policy.consumes.packageMaterializationApprovalAuditAccessPolicy.auditRecordRead, false);
+    assert.equal(policy.consumes.packageMaterializationApprovalAuditAccessPolicy.accessGranted, false);
+    assert.equal(policy.consumes.packageMaterializationFinalApprovalChecklist.checklistVersion, "P25.40");
+    assert.equal(policy.consumes.packageMaterializationFinalApprovalChecklist.finalApprovalGranted, false);
+
+    const verificationPolicy = policy[auditVerificationTopic + "Policy"];
+    assert.equal(verificationPolicy.policy.startsWith("verify-"), true);
+    assert.equal(verificationPolicy.policy.endsWith("after-countersignature-record-defined"), true);
+    assert.equal(verificationPolicy[verificationTopic + "PayloadLogged"], false);
+    assert.equal(verificationPolicy[verificationTopic + "Scope"], "future-policy-defined");
+    assert.ok(verificationPolicy.requiredInputs.includes(countersignatureTopic + "Record"));
+    assert.ok(verificationPolicy.requiredInputs.includes("auditAccessGrant"));
+    assert.ok(verificationPolicy.requiredInputs.includes(verificationTopic + "PolicyId"));
+    assert.ok(verificationPolicy.requiredInputs.includes("trusted" + capitalVerificationTopic + "Authority"));
+
+    assert.ok(policy[auditVerificationTopic + "Checks"].some((check) => check.id === "audit-access-granted" && check.executed === false));
+    assert.ok(policy[auditVerificationTopic + "Checks"].some((check) => check.id.endsWith("-not-executed") && check.executed === false));
+    assert.ok(policy[auditVerificationTopic + "Checks"].some((check) => check.id.endsWith("-result-not-stored") && check.executed === false));
+    assert.equal(policy[auditVerificationTopic + "Decision"].status, "blocked");
+    assert.equal(policy[auditVerificationTopic + "Decision"]["canRead" + capitalCountersignatureTopic], false);
+    assert.equal(policy[auditVerificationTopic + "Decision"]["canRead" + capitalCountersignatureTopic + "Record"], false);
+    assert.equal(policy[auditVerificationTopic + "Decision"].canReadCountersignature, false);
+    assert.equal(policy[auditVerificationTopic + "Decision"].canReadCountersignatureRecord, false);
+    assert.equal(policy[auditVerificationTopic + "Decision"].canVerifyCountersignatureSignature, false);
+    assert.equal(policy[auditVerificationTopic + "Decision"].canComputeCountersignatureHash, false);
+    assert.equal(policy[auditVerificationTopic + "Decision"].canMatchCountersignatureHash, false);
+    assert.equal(policy[auditVerificationTopic + "Decision"]["canPrepare" + capitalVerificationTopic], false);
+    assert.equal(policy[auditVerificationTopic + "Decision"]["canExecute" + capitalVerificationTopic], false);
+    assert.equal(policy[auditVerificationTopic + "Decision"]["canStore" + capitalVerificationTopic], false);
+    assert.equal(policy[auditVerificationTopic + "Decision"].canReadAuditRecord, false);
+    assert.equal(policy[auditVerificationTopic + "Decision"].canEnableRuntimeDispatch, false);
+    assert.ok(policy.noOpGuarantees.some((item) => item.includes("does not read countersignatures or countersignature records")));
+    assert.ok(policy.noOpGuarantees.some((item) => item.includes("does not prepare, execute, store, or publish countersignature verification results")));
     assert.ok(policy.noOpGuarantees.some((item) => item.includes("does not register runtime dispatch")));
     assert.ok(policy.requiredBeforeRuntimeDispatch.includes("keep render.thumbnail unavailable until executable adapter registration is approved"));
 }
@@ -7956,10 +8030,10 @@ test("render.thumbnail renderer-service API fixtures define planning requests wi
     const p25104PolicyKey = p25103PolicyKey.replace(/NotarizationPolicy$/, "NotarizationCertificationPolicy");
     const p25105PolicyKey = p25104PolicyKey.replace(/CertificationPolicy$/, "CertificationEndorsementPolicy");
 
-    assert.equal(fixtures.version, "P25.117");
-    assert.equal(renderThumbnailRuntimeBoundaryFixtures.version, "P25.117");
-    assert.equal(fixtures.nextTask.id, "P25.118");
-    assert.equal(renderThumbnailRuntimeBoundaryFixtures.nextTask.id, "P25.118");
+    assert.equal(fixtures.version, "P25.118");
+    assert.equal(renderThumbnailRuntimeBoundaryFixtures.version, "P25.118");
+    assert.equal(fixtures.nextTask.id, "P25.119");
+    assert.equal(renderThumbnailRuntimeBoundaryFixtures.nextTask.id, "P25.119");
     assert.equal(fixtures.command, "render.thumbnail");
     assert.equal(fixtures.adapter, "renderer-service");
     assert.equal(fixtures.serviceApi.operation, "thumbnail.render");
@@ -15404,6 +15478,30 @@ test("render.thumbnail renderer-service P25.117 certification endorsement counte
     assertP25117RevocationAppealResolutionEnforcementEvidenceAttestationNotarizationCertificationEndorsementCountersignaturePolicyMetadataOnly(renderThumbnailRendererServiceFixtures.serviceApi[P25117_POLICY_KEY]);
     assertP25117RevocationAppealResolutionEnforcementEvidenceAttestationNotarizationCertificationEndorsementCountersignaturePolicyMetadataOnly(renderThumbnailRendererServiceFixtures[P25117_POLICY_KEY]);
     assertP25117RevocationAppealResolutionEnforcementEvidenceAttestationNotarizationCertificationEndorsementCountersignaturePolicyMetadataOnly(renderThumbnailRuntimeBoundaryFixtures[P25117_POLICY_KEY]);
+});
+
+test("render.thumbnail renderer-service P25.118 certification endorsement countersignature verification revocation appeal resolution enforcement evidence attestation notarization certification endorsement countersignature verification policy stays metadata-only", () => {
+    const sourcePlan = createRenderThumbnailRendererServicePlan();
+    const policy = createRenderThumbnailRendererServicePackageMaterializationApprovalAuditCountersignatureRevocationAppealResolutionEnforcementEvidenceAttestationNotarizationCertificationEndorsementCountersignatureVerificationRevocationAppealResolutionEnforcementEvidenceAttestationNotarizationCertificationEndorsementCountersignatureVerificationRevocationAppealResolutionEnforcementEvidenceAttestationNotarizationCertificationEndorsementCountersignatureVerificationRevocationAppealResolutionEnforcementEvidenceAttestationNotarizationCertificationEndorsementCountersignatureVerificationRevocationAppealResolutionEnforcementEvidenceAttestationNotarizationCertificationEndorsementCountersignatureVerificationPolicy({
+        [P25117_POLICY_KEY]: sourcePlan[P25117_POLICY_KEY],
+        packageMaterializationApprovalAuditAccessPolicy: sourcePlan.packageMaterializationApprovalAuditAccessPolicy,
+        packageMaterializationFinalApprovalChecklist: sourcePlan.packageMaterializationFinalApprovalChecklist,
+    });
+
+    assert.equal(policy.status, "planned-disabled");
+    assert.equal(policy.dryRunOnly, true);
+    assert.equal(policy.approvalRequired, true);
+    assert.equal(policy.approved, false);
+    assert.equal(policy.finalApprovalGranted, false);
+    assertP25118RevocationAppealResolutionEnforcementEvidenceAttestationNotarizationCertificationEndorsementCountersignatureVerificationPolicyMetadataOnly(policy);
+
+    const plan = createRenderThumbnailRendererServicePlan();
+    assertP25118RevocationAppealResolutionEnforcementEvidenceAttestationNotarizationCertificationEndorsementCountersignatureVerificationPolicyMetadataOnly(plan[P25118_POLICY_KEY]);
+    assert.deepEqual(plan.service[P25118_POLICY_KEY], plan[P25118_POLICY_KEY]);
+    assert.equal(plan.diagnostics[P25118_POLICY_KEY + "Version"], "P25.118");
+    assertP25118RevocationAppealResolutionEnforcementEvidenceAttestationNotarizationCertificationEndorsementCountersignatureVerificationPolicyMetadataOnly(renderThumbnailRendererServiceFixtures.serviceApi[P25118_POLICY_KEY]);
+    assertP25118RevocationAppealResolutionEnforcementEvidenceAttestationNotarizationCertificationEndorsementCountersignatureVerificationPolicyMetadataOnly(renderThumbnailRendererServiceFixtures[P25118_POLICY_KEY]);
+    assertP25118RevocationAppealResolutionEnforcementEvidenceAttestationNotarizationCertificationEndorsementCountersignatureVerificationPolicyMetadataOnly(renderThumbnailRuntimeBoundaryFixtures[P25118_POLICY_KEY]);
 });
 
 test("render.thumbnail renderer-service P25.109 certification endorsement countersignature verification revocation appeal policy stays metadata-only", () => {
