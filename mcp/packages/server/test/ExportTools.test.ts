@@ -187,6 +187,68 @@ function assertP25114RevocationAppealResolutionEnforcementEvidenceAttestationNot
     assert.ok(policy.requiredBeforeRuntimeDispatch.includes("keep render.thumbnail unavailable until executable adapter registration is approved"));
 }
 
+function assertP25115RevocationAppealResolutionEnforcementEvidenceAttestationNotarizationCertificationPolicyMetadataOnly(policy: any) {
+    const capitalNotarizationTopic = P25114_POLICY_KEY.replace(/^packageMaterializationApprovalAudit/, "").replace(/Policy$/, "");
+    const notarizationTopic = capitalNotarizationTopic[0].toLowerCase() + capitalNotarizationTopic.slice(1);
+    const capitalCertificationTopic = capitalNotarizationTopic + "Certification";
+    const certificationTopic = notarizationTopic + "Certification";
+    const auditNotarizationTopic = "audit" + capitalNotarizationTopic;
+    const auditCertificationTopic = "audit" + capitalCertificationTopic;
+    const allowedTopLevelTrue = new Set(["dryRunOnly", "approvalRequired", certificationTopic + "Required", certificationTopic + "Planned"]);
+
+    assert.ok(policy, "P25.115 policy payload");
+    assert.equal(policy.status, "planned-disabled");
+    assert.equal(policy[auditCertificationTopic + "Version"], "P25.115");
+    assert.equal(policy.adapter, "renderer-service");
+    assert.equal(policy.command, "render.thumbnail");
+    assert.equal(policy.dryRunOnly, true);
+    assert.equal(policy.approvalRequired, true);
+    assert.equal(policy.approved, false);
+    assert.equal(policy.finalApprovalGranted, false);
+    assert.equal(policy[certificationTopic + "Required"], true);
+    assert.equal(policy[certificationTopic + "Planned"], true);
+
+    for (const [key, value] of Object.entries(policy)) {
+        if (typeof value === "boolean" && !allowedTopLevelTrue.has(key)) {
+            assert.equal(value, false, key);
+        }
+    }
+
+    assert.equal(policy.consumes[P25114_POLICY_KEY].currentStatus, "planned-disabled");
+    assert.equal(policy.consumes[P25114_POLICY_KEY][auditNotarizationTopic + "Version"], "P25.114");
+    assert.equal(policy.consumes[P25114_POLICY_KEY][notarizationTopic + "Created"], false);
+    assert.equal(policy.consumes[P25114_POLICY_KEY][notarizationTopic + "Stored"], false);
+    assert.equal(policy.consumes[P25114_POLICY_KEY][notarizationTopic + "RecordRead"], false);
+    assert.equal(policy.consumes[P25114_POLICY_KEY][notarizationTopic + "Certified"], false);
+    assert.equal(policy.consumes.packageMaterializationApprovalAuditAccessPolicy.auditAccessVersion, "P25.53");
+    assert.equal(policy.consumes.packageMaterializationApprovalAuditAccessPolicy.auditRecordRead, false);
+    assert.equal(policy.consumes.packageMaterializationApprovalAuditAccessPolicy.accessGranted, false);
+    assert.equal(policy.consumes.packageMaterializationFinalApprovalChecklist.checklistVersion, "P25.40");
+    assert.equal(policy.consumes.packageMaterializationFinalApprovalChecklist.finalApprovalGranted, false);
+
+    const certificationPolicy = policy[auditCertificationTopic + "Policy"];
+    assert.equal(certificationPolicy.policy.startsWith("certify-"), true);
+    assert.equal(certificationPolicy.policy.endsWith("after-notarization-record-defined"), true);
+    assert.equal(certificationPolicy[certificationTopic + "PayloadLogged"], false);
+    assert.equal(certificationPolicy[certificationTopic + "Scope"], "future-policy-defined");
+    assert.ok(certificationPolicy.requiredInputs.includes(notarizationTopic + "Record"));
+    assert.ok(certificationPolicy.requiredInputs.includes("auditAccessGrant"));
+    assert.ok(certificationPolicy.requiredInputs.includes(certificationTopic + "PolicyId"));
+    assert.ok(certificationPolicy.requiredInputs.includes("trusted" + capitalCertificationTopic + "Authority"));
+
+    assert.ok(policy[auditCertificationTopic + "Checks"].some((check: PolicyCheck) => check.id === "audit-access-granted" && check.executed === false));
+    assert.ok(policy[auditCertificationTopic + "Checks"].some((check: PolicyCheck) => check.id.endsWith("-not-created") && check.executed === false));
+    assert.equal(policy[auditCertificationTopic + "Decision"].status, "blocked");
+    assert.equal(policy[auditCertificationTopic + "Decision"]["canCreate" + capitalCertificationTopic], false);
+    assert.equal(policy[auditCertificationTopic + "Decision"]["canRead" + capitalNotarizationTopic + "Record"], false);
+    assert.equal(policy[auditCertificationTopic + "Decision"].canReadAuditRecord, false);
+    assert.equal(policy[auditCertificationTopic + "Decision"].canEnableRuntimeDispatch, false);
+    assert.ok(policy.noOpGuarantees.some((item: string) => item.includes("does not prepare, create, validate, store, or publish certifications")));
+    assert.ok(policy.noOpGuarantees.some((item: string) => item.includes("does not read, certify, or verify notarizations")));
+    assert.ok(policy.noOpGuarantees.some((item: string) => item.includes("does not register runtime dispatch")));
+    assert.ok(policy.requiredBeforeRuntimeDispatch.includes("keep render.thumbnail unavailable until executable adapter registration is approved"));
+}
+
 const UUIDS = {
     file: "00000000-0000-0000-0000-000000000001",
     page: "00000000-0000-0000-0000-000000000002",
@@ -212,6 +274,7 @@ const P25111_POLICY_KEY = P25110_POLICY_KEY.replace(/ResolutionPolicy$/, "Resolu
 const P25112_POLICY_KEY = P25111_POLICY_KEY.replace(/EnforcementPolicy$/, "EnforcementEvidencePolicy");
 const P25113_POLICY_KEY = P25112_POLICY_KEY.replace(/EvidencePolicy$/, "EvidenceAttestationPolicy");
 const P25114_POLICY_KEY = P25113_POLICY_KEY.replace(/AttestationPolicy$/, "AttestationNotarizationPolicy");
+const P25115_POLICY_KEY = P25114_POLICY_KEY.replace(/NotarizationPolicy$/, "NotarizationCertificationPolicy");
 
 function assertP25105EndorsementPolicyMetadataOnly(policy: any) {
     const resolutionTopic =
@@ -5101,6 +5164,7 @@ test("RenderThumbnailTool dry-run returns renderer-service request metadata with
         assertP25112RevocationAppealResolutionEnforcementEvidencePolicyMetadataOnly(body.data[P25112_POLICY_KEY]);
         assertP25113RevocationAppealResolutionEnforcementEvidenceAttestationPolicyMetadataOnly(body.data[P25113_POLICY_KEY]);
         assertP25114RevocationAppealResolutionEnforcementEvidenceAttestationNotarizationPolicyMetadataOnly(body.data[P25114_POLICY_KEY]);
+        assertP25115RevocationAppealResolutionEnforcementEvidenceAttestationNotarizationCertificationPolicyMetadataOnly(body.data[P25115_POLICY_KEY]);
         assert.deepEqual(body.data.service.client, body.data.client);
         assert.equal(body.data.service.responseNormalization.successStatus, "ok");
         assert.equal(body.data.service.responseNormalization.localFileWrites, false);
@@ -5629,6 +5693,7 @@ test("RenderThumbnailTool execution reports renderer service unavailable without
         assertP25112RevocationAppealResolutionEnforcementEvidencePolicyMetadataOnly(body.error.data[P25112_POLICY_KEY]);
         assertP25113RevocationAppealResolutionEnforcementEvidenceAttestationPolicyMetadataOnly(body.error.data[P25113_POLICY_KEY]);
         assertP25114RevocationAppealResolutionEnforcementEvidenceAttestationNotarizationPolicyMetadataOnly(body.error.data[P25114_POLICY_KEY]);
+        assertP25115RevocationAppealResolutionEnforcementEvidenceAttestationNotarizationCertificationPolicyMetadataOnly(body.error.data[P25115_POLICY_KEY]);
         assert.equal(body.error.data.clientRequest.dispatch, false);
         assert.equal(body.error.data.serviceRequest.operation, "thumbnail.render");
         assert.deepEqual(body.error.data.requiredCapabilities, ["thumbnail-renderer-service-implementation", "file-thumbnail-cache-probe"]);
