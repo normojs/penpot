@@ -4,6 +4,7 @@
 
 ### :sparkles: New features & Enhancements
 
+- Add metadata-only renderer-service package materialization approval audit countersignature verification revocation appeal resolution enforcement evidence policy planning for future `render.thumbnail` execution.
 - Add metadata-only renderer-service certification endorsement countersignature verification revocation appeal resolution policy planning for `render.thumbnail` across command-runtime, CLI, MCP, and fixtures while keeping appeal resolution execution, record reads, materialization, and dispatch disabled.
 - Add metadata-only renderer-service certification endorsement countersignature verification revocation appeal resolution enforcement evidence attestation notarization certification endorsement countersignature verification revocation appeal policy planning for `render.thumbnail` across command-runtime, CLI, MCP, and fixtures while keeping appeal execution, appeal decision handling, record reads, materialization, and dispatch disabled.
 - Add metadata-only renderer-service certification endorsement countersignature verification revocation appeal resolution enforcement evidence attestation notarization certification endorsement countersignature verification revocation policy planning for `render.thumbnail` across command-runtime, CLI, MCP, and fixtures while keeping countersignature verification revocation, verification/audit record reads, materialization, and dispatch disabled.
