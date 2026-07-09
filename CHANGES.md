@@ -4,6 +4,7 @@
 
 ### :sparkles: New features & Enhancements
 
+- Add metadata-only renderer-service countersignature verification revocation appeal resolution enforcement evidence attestation notarization certification endorsement countersignature verification policy planning for `render.thumbnail` across command-runtime, CLI, MCP, and fixtures while keeping countersignature verification, countersignature/audit record reads, materialization, and dispatch disabled.
 - Add metadata-only renderer-service countersignature verification revocation appeal resolution enforcement evidence attestation notarization certification endorsement countersignature policy planning for `render.thumbnail` across command-runtime, CLI, MCP, and fixtures while keeping endorsement countersignature, record reads, materialization, and dispatch disabled.
 - Add metadata-only renderer-service countersignature verification revocation appeal resolution enforcement evidence attestation notarization certification endorsement policy planning for `render.thumbnail` across command-runtime, CLI, MCP, and fixtures while keeping endorsement, record reads, materialization, and dispatch disabled.
 - Add metadata-only renderer-service countersignature verification revocation appeal resolution enforcement evidence attestation notarization certification policy planning for `render.thumbnail` across command-runtime, CLI, MCP, and fixtures while keeping notarization certification, record reads, materialization, and dispatch disabled.
