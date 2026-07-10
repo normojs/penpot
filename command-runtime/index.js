@@ -1634,6 +1634,12 @@ export function createRenderThumbnailRendererServicePlan(options = EMPTY_OBJECT)
             packageMaterializationApprovalAuditAccessPolicy,
             packageMaterializationFinalApprovalChecklist,
         });
+    const packageMaterializationApprovalAuditCountersignatureRevocationAppealResolutionEnforcementEvidenceAttestationNotarizationCertificationEndorsementCountersignatureVerificationRevocationAppealResolutionEnforcementEvidenceAttestationNotarizationCertificationEndorsementCountersignatureVerificationRevocationAppealResolutionEnforcementEvidenceAttestationNotarizationCertificationEndorsementCountersignatureVerificationRevocationAppealResolutionEnforcementEvidenceAttestationNotarizationCertificationEndorsementCountersignatureVerificationRevocationAppealResolutionEnforcementEvidenceAttestationNotarizationCertificationEndorsementCountersignatureVerificationRevocationAppealResolutionEnforcementEvidenceAttestationNotarizationCertificationEndorsementCountersignatureVerificationRevocationAppealResolutionEnforcementEvidenceAttestationPolicy =
+        createRenderThumbnailRendererServicePackageMaterializationApprovalAuditCountersignatureRevocationAppealResolutionEnforcementEvidenceAttestationNotarizationCertificationEndorsementCountersignatureVerificationRevocationAppealResolutionEnforcementEvidenceAttestationNotarizationCertificationEndorsementCountersignatureVerificationRevocationAppealResolutionEnforcementEvidenceAttestationNotarizationCertificationEndorsementCountersignatureVerificationRevocationAppealResolutionEnforcementEvidenceAttestationNotarizationCertificationEndorsementCountersignatureVerificationRevocationAppealResolutionEnforcementEvidenceAttestationNotarizationCertificationEndorsementCountersignatureVerificationRevocationAppealResolutionEnforcementEvidenceAttestationNotarizationCertificationEndorsementCountersignatureVerificationRevocationAppealResolutionEnforcementEvidenceAttestationPolicy({
+            packageMaterializationApprovalAuditCountersignatureRevocationAppealResolutionEnforcementEvidenceAttestationNotarizationCertificationEndorsementCountersignatureVerificationRevocationAppealResolutionEnforcementEvidenceAttestationNotarizationCertificationEndorsementCountersignatureVerificationRevocationAppealResolutionEnforcementEvidenceAttestationNotarizationCertificationEndorsementCountersignatureVerificationRevocationAppealResolutionEnforcementEvidenceAttestationNotarizationCertificationEndorsementCountersignatureVerificationRevocationAppealResolutionEnforcementEvidenceAttestationNotarizationCertificationEndorsementCountersignatureVerificationRevocationAppealResolutionEnforcementEvidenceAttestationNotarizationCertificationEndorsementCountersignatureVerificationRevocationAppealResolutionEnforcementEvidencePolicy,
+            packageMaterializationApprovalAuditAccessPolicy,
+            packageMaterializationFinalApprovalChecklist,
+        });
     return {
         command: CommandDescriptors.RENDER_THUMBNAIL.id,
         status: "planned",
@@ -1799,6 +1805,7 @@ export function createRenderThumbnailRendererServicePlan(options = EMPTY_OBJECT)
             packageMaterializationApprovalAuditCountersignatureRevocationAppealResolutionEnforcementEvidenceAttestationNotarizationCertificationEndorsementCountersignatureVerificationRevocationAppealResolutionEnforcementEvidenceAttestationNotarizationCertificationEndorsementCountersignatureVerificationRevocationAppealResolutionEnforcementEvidenceAttestationNotarizationCertificationEndorsementCountersignatureVerificationRevocationAppealResolutionEnforcementEvidenceAttestationNotarizationCertificationEndorsementCountersignatureVerificationRevocationAppealResolutionEnforcementEvidenceAttestationNotarizationCertificationEndorsementCountersignatureVerificationRevocationAppealResolutionEnforcementEvidenceAttestationNotarizationCertificationEndorsementCountersignatureVerificationRevocationAppealResolutionPolicy,
             packageMaterializationApprovalAuditCountersignatureRevocationAppealResolutionEnforcementEvidenceAttestationNotarizationCertificationEndorsementCountersignatureVerificationRevocationAppealResolutionEnforcementEvidenceAttestationNotarizationCertificationEndorsementCountersignatureVerificationRevocationAppealResolutionEnforcementEvidenceAttestationNotarizationCertificationEndorsementCountersignatureVerificationRevocationAppealResolutionEnforcementEvidenceAttestationNotarizationCertificationEndorsementCountersignatureVerificationRevocationAppealResolutionEnforcementEvidenceAttestationNotarizationCertificationEndorsementCountersignatureVerificationRevocationAppealResolutionEnforcementEvidenceAttestationNotarizationCertificationEndorsementCountersignatureVerificationRevocationAppealResolutionEnforcementPolicy,
             packageMaterializationApprovalAuditCountersignatureRevocationAppealResolutionEnforcementEvidenceAttestationNotarizationCertificationEndorsementCountersignatureVerificationRevocationAppealResolutionEnforcementEvidenceAttestationNotarizationCertificationEndorsementCountersignatureVerificationRevocationAppealResolutionEnforcementEvidenceAttestationNotarizationCertificationEndorsementCountersignatureVerificationRevocationAppealResolutionEnforcementEvidenceAttestationNotarizationCertificationEndorsementCountersignatureVerificationRevocationAppealResolutionEnforcementEvidenceAttestationNotarizationCertificationEndorsementCountersignatureVerificationRevocationAppealResolutionEnforcementEvidenceAttestationNotarizationCertificationEndorsementCountersignatureVerificationRevocationAppealResolutionEnforcementEvidencePolicy,
+            packageMaterializationApprovalAuditCountersignatureRevocationAppealResolutionEnforcementEvidenceAttestationNotarizationCertificationEndorsementCountersignatureVerificationRevocationAppealResolutionEnforcementEvidenceAttestationNotarizationCertificationEndorsementCountersignatureVerificationRevocationAppealResolutionEnforcementEvidenceAttestationNotarizationCertificationEndorsementCountersignatureVerificationRevocationAppealResolutionEnforcementEvidenceAttestationNotarizationCertificationEndorsementCountersignatureVerificationRevocationAppealResolutionEnforcementEvidenceAttestationNotarizationCertificationEndorsementCountersignatureVerificationRevocationAppealResolutionEnforcementEvidenceAttestationNotarizationCertificationEndorsementCountersignatureVerificationRevocationAppealResolutionEnforcementEvidenceAttestationPolicy,
             clientRequest,
         },
         client,
@@ -1926,6 +1933,7 @@ export function createRenderThumbnailRendererServicePlan(options = EMPTY_OBJECT)
         packageMaterializationApprovalAuditCountersignatureRevocationAppealResolutionEnforcementEvidenceAttestationNotarizationCertificationEndorsementCountersignatureVerificationRevocationAppealResolutionEnforcementEvidenceAttestationNotarizationCertificationEndorsementCountersignatureVerificationRevocationAppealResolutionEnforcementEvidenceAttestationNotarizationCertificationEndorsementCountersignatureVerificationRevocationAppealResolutionEnforcementEvidenceAttestationNotarizationCertificationEndorsementCountersignatureVerificationRevocationAppealResolutionEnforcementEvidenceAttestationNotarizationCertificationEndorsementCountersignatureVerificationRevocationAppealResolutionEnforcementEvidenceAttestationNotarizationCertificationEndorsementCountersignatureVerificationRevocationAppealResolutionPolicy,
         packageMaterializationApprovalAuditCountersignatureRevocationAppealResolutionEnforcementEvidenceAttestationNotarizationCertificationEndorsementCountersignatureVerificationRevocationAppealResolutionEnforcementEvidenceAttestationNotarizationCertificationEndorsementCountersignatureVerificationRevocationAppealResolutionEnforcementEvidenceAttestationNotarizationCertificationEndorsementCountersignatureVerificationRevocationAppealResolutionEnforcementEvidenceAttestationNotarizationCertificationEndorsementCountersignatureVerificationRevocationAppealResolutionEnforcementEvidenceAttestationNotarizationCertificationEndorsementCountersignatureVerificationRevocationAppealResolutionEnforcementEvidenceAttestationNotarizationCertificationEndorsementCountersignatureVerificationRevocationAppealResolutionEnforcementPolicy,
         packageMaterializationApprovalAuditCountersignatureRevocationAppealResolutionEnforcementEvidenceAttestationNotarizationCertificationEndorsementCountersignatureVerificationRevocationAppealResolutionEnforcementEvidenceAttestationNotarizationCertificationEndorsementCountersignatureVerificationRevocationAppealResolutionEnforcementEvidenceAttestationNotarizationCertificationEndorsementCountersignatureVerificationRevocationAppealResolutionEnforcementEvidenceAttestationNotarizationCertificationEndorsementCountersignatureVerificationRevocationAppealResolutionEnforcementEvidenceAttestationNotarizationCertificationEndorsementCountersignatureVerificationRevocationAppealResolutionEnforcementEvidenceAttestationNotarizationCertificationEndorsementCountersignatureVerificationRevocationAppealResolutionEnforcementEvidencePolicy,
+        packageMaterializationApprovalAuditCountersignatureRevocationAppealResolutionEnforcementEvidenceAttestationNotarizationCertificationEndorsementCountersignatureVerificationRevocationAppealResolutionEnforcementEvidenceAttestationNotarizationCertificationEndorsementCountersignatureVerificationRevocationAppealResolutionEnforcementEvidenceAttestationNotarizationCertificationEndorsementCountersignatureVerificationRevocationAppealResolutionEnforcementEvidenceAttestationNotarizationCertificationEndorsementCountersignatureVerificationRevocationAppealResolutionEnforcementEvidenceAttestationNotarizationCertificationEndorsementCountersignatureVerificationRevocationAppealResolutionEnforcementEvidenceAttestationNotarizationCertificationEndorsementCountersignatureVerificationRevocationAppealResolutionEnforcementEvidenceAttestationPolicy,
         clientRequest,
         serviceRequest: {
             command: CommandDescriptors.RENDER_THUMBNAIL.id,
@@ -2179,6 +2187,8 @@ export function createRenderThumbnailRendererServicePlan(options = EMPTY_OBJECT)
                 packageMaterializationApprovalAuditCountersignatureRevocationAppealResolutionEnforcementEvidenceAttestationNotarizationCertificationEndorsementCountersignatureVerificationRevocationAppealResolutionEnforcementEvidenceAttestationNotarizationCertificationEndorsementCountersignatureVerificationRevocationAppealResolutionEnforcementEvidenceAttestationNotarizationCertificationEndorsementCountersignatureVerificationRevocationAppealResolutionEnforcementEvidenceAttestationNotarizationCertificationEndorsementCountersignatureVerificationRevocationAppealResolutionEnforcementEvidenceAttestationNotarizationCertificationEndorsementCountersignatureVerificationRevocationAppealResolutionEnforcementEvidenceAttestationNotarizationCertificationEndorsementCountersignatureVerificationRevocationAppealResolutionEnforcementPolicy.auditCountersignatureRevocationAppealResolutionEnforcementEvidenceAttestationNotarizationCertificationEndorsementCountersignatureVerificationRevocationAppealResolutionEnforcementEvidenceAttestationNotarizationCertificationEndorsementCountersignatureVerificationRevocationAppealResolutionEnforcementEvidenceAttestationNotarizationCertificationEndorsementCountersignatureVerificationRevocationAppealResolutionEnforcementEvidenceAttestationNotarizationCertificationEndorsementCountersignatureVerificationRevocationAppealResolutionEnforcementEvidenceAttestationNotarizationCertificationEndorsementCountersignatureVerificationRevocationAppealResolutionEnforcementEvidenceAttestationNotarizationCertificationEndorsementCountersignatureVerificationRevocationAppealResolutionEnforcementVersion,
             packageMaterializationApprovalAuditCountersignatureRevocationAppealResolutionEnforcementEvidenceAttestationNotarizationCertificationEndorsementCountersignatureVerificationRevocationAppealResolutionEnforcementEvidenceAttestationNotarizationCertificationEndorsementCountersignatureVerificationRevocationAppealResolutionEnforcementEvidenceAttestationNotarizationCertificationEndorsementCountersignatureVerificationRevocationAppealResolutionEnforcementEvidenceAttestationNotarizationCertificationEndorsementCountersignatureVerificationRevocationAppealResolutionEnforcementEvidenceAttestationNotarizationCertificationEndorsementCountersignatureVerificationRevocationAppealResolutionEnforcementEvidenceAttestationNotarizationCertificationEndorsementCountersignatureVerificationRevocationAppealResolutionEnforcementEvidencePolicyVersion:
                 packageMaterializationApprovalAuditCountersignatureRevocationAppealResolutionEnforcementEvidenceAttestationNotarizationCertificationEndorsementCountersignatureVerificationRevocationAppealResolutionEnforcementEvidenceAttestationNotarizationCertificationEndorsementCountersignatureVerificationRevocationAppealResolutionEnforcementEvidenceAttestationNotarizationCertificationEndorsementCountersignatureVerificationRevocationAppealResolutionEnforcementEvidenceAttestationNotarizationCertificationEndorsementCountersignatureVerificationRevocationAppealResolutionEnforcementEvidenceAttestationNotarizationCertificationEndorsementCountersignatureVerificationRevocationAppealResolutionEnforcementEvidenceAttestationNotarizationCertificationEndorsementCountersignatureVerificationRevocationAppealResolutionEnforcementEvidencePolicy.auditCountersignatureRevocationAppealResolutionEnforcementEvidenceAttestationNotarizationCertificationEndorsementCountersignatureVerificationRevocationAppealResolutionEnforcementEvidenceAttestationNotarizationCertificationEndorsementCountersignatureVerificationRevocationAppealResolutionEnforcementEvidenceAttestationNotarizationCertificationEndorsementCountersignatureVerificationRevocationAppealResolutionEnforcementEvidenceAttestationNotarizationCertificationEndorsementCountersignatureVerificationRevocationAppealResolutionEnforcementEvidenceAttestationNotarizationCertificationEndorsementCountersignatureVerificationRevocationAppealResolutionEnforcementEvidenceAttestationNotarizationCertificationEndorsementCountersignatureVerificationRevocationAppealResolutionEnforcementEvidenceVersion,
+            packageMaterializationApprovalAuditCountersignatureRevocationAppealResolutionEnforcementEvidenceAttestationNotarizationCertificationEndorsementCountersignatureVerificationRevocationAppealResolutionEnforcementEvidenceAttestationNotarizationCertificationEndorsementCountersignatureVerificationRevocationAppealResolutionEnforcementEvidenceAttestationNotarizationCertificationEndorsementCountersignatureVerificationRevocationAppealResolutionEnforcementEvidenceAttestationNotarizationCertificationEndorsementCountersignatureVerificationRevocationAppealResolutionEnforcementEvidenceAttestationNotarizationCertificationEndorsementCountersignatureVerificationRevocationAppealResolutionEnforcementEvidenceAttestationNotarizationCertificationEndorsementCountersignatureVerificationRevocationAppealResolutionEnforcementEvidenceAttestationPolicyVersion:
+                packageMaterializationApprovalAuditCountersignatureRevocationAppealResolutionEnforcementEvidenceAttestationNotarizationCertificationEndorsementCountersignatureVerificationRevocationAppealResolutionEnforcementEvidenceAttestationNotarizationCertificationEndorsementCountersignatureVerificationRevocationAppealResolutionEnforcementEvidenceAttestationNotarizationCertificationEndorsementCountersignatureVerificationRevocationAppealResolutionEnforcementEvidenceAttestationNotarizationCertificationEndorsementCountersignatureVerificationRevocationAppealResolutionEnforcementEvidenceAttestationNotarizationCertificationEndorsementCountersignatureVerificationRevocationAppealResolutionEnforcementEvidenceAttestationNotarizationCertificationEndorsementCountersignatureVerificationRevocationAppealResolutionEnforcementEvidenceAttestationPolicy.auditCountersignatureRevocationAppealResolutionEnforcementEvidenceAttestationNotarizationCertificationEndorsementCountersignatureVerificationRevocationAppealResolutionEnforcementEvidenceAttestationNotarizationCertificationEndorsementCountersignatureVerificationRevocationAppealResolutionEnforcementEvidenceAttestationNotarizationCertificationEndorsementCountersignatureVerificationRevocationAppealResolutionEnforcementEvidenceAttestationNotarizationCertificationEndorsementCountersignatureVerificationRevocationAppealResolutionEnforcementEvidenceAttestationNotarizationCertificationEndorsementCountersignatureVerificationRevocationAppealResolutionEnforcementEvidenceAttestationNotarizationCertificationEndorsementCountersignatureVerificationRevocationAppealResolutionEnforcementEvidenceAttestationVersion,
         },
     };
 }
@@ -25097,6 +25107,286 @@ export function createRenderThumbnailRendererServicePackageMaterializationApprov
             "require countersignature verification revocation appeal resolution enforcement record and audit access grant before evidence collection",
             "define trusted countersignature verification revocation appeal resolution enforcement evidence source and bundle semantics",
             "define countersignature verification revocation appeal resolution enforcement evidence signature and hash semantics",
+            "keep render.thumbnail unavailable until executable adapter registration is approved",
+        ],
+    };
+}
+
+export function createRenderThumbnailRendererServicePackageMaterializationApprovalAuditCountersignatureRevocationAppealResolutionEnforcementEvidenceAttestationNotarizationCertificationEndorsementCountersignatureVerificationRevocationAppealResolutionEnforcementEvidenceAttestationNotarizationCertificationEndorsementCountersignatureVerificationRevocationAppealResolutionEnforcementEvidenceAttestationNotarizationCertificationEndorsementCountersignatureVerificationRevocationAppealResolutionEnforcementEvidenceAttestationNotarizationCertificationEndorsementCountersignatureVerificationRevocationAppealResolutionEnforcementEvidenceAttestationNotarizationCertificationEndorsementCountersignatureVerificationRevocationAppealResolutionEnforcementEvidenceAttestationNotarizationCertificationEndorsementCountersignatureVerificationRevocationAppealResolutionEnforcementEvidenceAttestationPolicy(options = EMPTY_OBJECT) {
+    const evidencePolicyKey = "packageMaterializationApprovalAuditCountersignatureRevocationAppealResolutionEnforcementEvidenceAttestationNotarizationCertificationEndorsementCountersignatureVerificationRevocationAppealResolutionEnforcementEvidenceAttestationNotarizationCertificationEndorsementCountersignatureVerificationRevocationAppealResolutionEnforcementEvidenceAttestationNotarizationCertificationEndorsementCountersignatureVerificationRevocationAppealResolutionEnforcementEvidenceAttestationNotarizationCertificationEndorsementCountersignatureVerificationRevocationAppealResolutionEnforcementEvidenceAttestationNotarizationCertificationEndorsementCountersignatureVerificationRevocationAppealResolutionEnforcementEvidenceAttestationNotarizationCertificationEndorsementCountersignatureVerificationRevocationAppealResolutionEnforcementEvidencePolicy";
+    const evidencePolicy = options[evidencePolicyKey] ?? EMPTY_OBJECT;
+    const packageMaterializationApprovalAuditAccessPolicy = options.packageMaterializationApprovalAuditAccessPolicy ?? EMPTY_OBJECT;
+    const packageMaterializationFinalApprovalChecklist = options.packageMaterializationFinalApprovalChecklist ?? EMPTY_OBJECT;
+    const capitalEvidenceTopic = evidencePolicyKey
+        .replace(/^packageMaterializationApprovalAudit/, "")
+        .replace(/Policy$/, "");
+    const evidenceTopic = capitalEvidenceTopic[0].toLowerCase() + capitalEvidenceTopic.slice(1);
+    const capitalEnforcementTopic = capitalEvidenceTopic.replace(/Evidence$/, "");
+    const enforcementTopic = evidenceTopic.replace(/Evidence$/, "");
+    const capitalResolutionTopic = capitalEnforcementTopic.replace(/Enforcement$/, "");
+    const resolutionTopic = enforcementTopic.replace(/Enforcement$/, "");
+    const capitalAppealTopic = capitalResolutionTopic.replace(/Resolution$/, "");
+    const appealTopic = resolutionTopic.replace(/Resolution$/, "");
+    const capitalRevocationTopic = capitalAppealTopic.replace(/Appeal$/, "");
+    const revocationTopic = appealTopic.replace(/Appeal$/, "");
+    const capitalVerificationTopic = capitalRevocationTopic.replace(/Revocation$/, "");
+    const verificationTopic = revocationTopic.replace(/Revocation$/, "");
+    const capitalCountersignatureTopic = capitalVerificationTopic.replace(/Verification$/, "");
+    const countersignatureTopic = verificationTopic.replace(/Verification$/, "");
+    const capitalAttestationTopic = capitalEvidenceTopic + "Attestation";
+    const attestationTopic = evidenceTopic + "Attestation";
+    const auditEvidenceTopic = "audit" + capitalEvidenceTopic;
+    const auditAttestationTopic = "audit" + capitalAttestationTopic;
+    const kebabEvidenceTopic = evidenceTopic.replace(/[A-Z]/g, (char) => `-${char.toLowerCase()}`);
+    const kebabAttestationTopic = kebabEvidenceTopic + "-attestation";
+    const noOpPrefix = "audit " + kebabAttestationTopic.replace(/-/g, " ") + " policy plan";
+    const disabledFlags = [
+        attestationTopic + "PolicySelected",
+        attestationTopic + "SubjectIdentified",
+        attestationTopic + "AuthorityIdentified",
+        attestationTopic + "Prepared",
+        attestationTopic + "Created",
+        attestationTopic + "Validated",
+        attestationTopic + "RecordCreated",
+        attestationTopic + "RecordStored",
+        attestationTopic + "RecordPublished",
+        attestationTopic + "Stored",
+        attestationTopic + "Published",
+        evidenceTopic + "Read",
+        evidenceTopic + "RecordRead",
+        evidenceTopic + "BundleRead",
+        enforcementTopic + "Read",
+        enforcementTopic + "RecordRead",
+        resolutionTopic + "Read",
+        resolutionTopic + "RecordRead",
+        appealTopic + "Read",
+        appealTopic + "RecordRead",
+        revocationTopic + "Read",
+        revocationTopic + "RecordRead",
+        verificationTopic + "Read",
+        verificationTopic + "RecordRead",
+        countersignatureTopic + "Read",
+        countersignatureTopic + "RecordRead",
+        "countersignatureVerificationRead",
+        "countersignatureVerificationRecordRead",
+        "countersignatureVerificationRevocationRead",
+        "countersignatureVerificationRevocationRecordRead",
+        "countersignatureRead",
+        "countersignatureRecordRead",
+        evidenceTopic + "Attested",
+        "auditRecordRead",
+        "auditRecordQueried",
+        "auditRecord" + capitalAttestationTopic + "Linked",
+        "auditRecord" + capitalAttestationTopic + "Verified",
+        attestationTopic + "SignatureCreated",
+        attestationTopic + "SignatureVerified",
+        attestationTopic + "HashComputed",
+        attestationTopic + "HashStored",
+        "materializationReady",
+        "materializationApproved",
+        "materializationApprovedNow",
+        "tokenAccepted",
+        "tokenStored",
+        "tokenValidated",
+        "tokenConsumed",
+        "tokenRevoked",
+        "executeNow",
+        "verifyNow",
+        "rollbackNow",
+        "dispatch",
+        "networkDispatch",
+        "runtimeRegistration",
+        "localFileWrites",
+        "hostStartup",
+        "processSpawn",
+        "packageCreated",
+        "workspaceMutation",
+        "scriptRunnable",
+        "fileMaterialization",
+        "lockfileMutation",
+        "rootPackageJsonMutation",
+        "pnpmWorkspaceMutation",
+        "commandExecution",
+        "buildOutput",
+        "packageScriptsRunnable",
+        "filesWritten",
+        "rollbackExecuted",
+        "verificationExecuted",
+    ];
+    const disabledPolicyFlags = [
+        "select" + capitalAttestationTopic + "PolicyNow",
+        "identify" + capitalAttestationTopic + "SubjectNow",
+        "identify" + capitalAttestationTopic + "AuthorityNow",
+        "prepare" + capitalAttestationTopic + "Now",
+        "create" + capitalAttestationTopic + "Now",
+        "validate" + capitalAttestationTopic + "Now",
+        "create" + capitalAttestationTopic + "RecordNow",
+        "store" + capitalAttestationTopic + "RecordNow",
+        "publish" + capitalAttestationTopic + "RecordNow",
+        "store" + capitalAttestationTopic + "Now",
+        "publish" + capitalAttestationTopic + "Now",
+        "read" + capitalEvidenceTopic + "Now",
+        "read" + capitalEvidenceTopic + "RecordNow",
+        "read" + capitalEvidenceTopic + "BundleNow",
+        "read" + capitalEnforcementTopic + "Now",
+        "read" + capitalEnforcementTopic + "RecordNow",
+        "read" + capitalResolutionTopic + "Now",
+        "read" + capitalResolutionTopic + "RecordNow",
+        "read" + capitalAppealTopic + "Now",
+        "read" + capitalAppealTopic + "RecordNow",
+        "read" + capitalRevocationTopic + "Now",
+        "read" + capitalRevocationTopic + "RecordNow",
+        "read" + capitalVerificationTopic + "Now",
+        "read" + capitalVerificationTopic + "RecordNow",
+        "read" + capitalCountersignatureTopic + "Now",
+        "read" + capitalCountersignatureTopic + "RecordNow",
+        "readCountersignatureVerificationNow",
+        "readCountersignatureVerificationRecordNow",
+        "readCountersignatureVerificationRevocationNow",
+        "readCountersignatureVerificationRevocationRecordNow",
+        "readCountersignatureNow",
+        "readCountersignatureRecordNow",
+        "attest" + capitalEvidenceTopic + "Now",
+        "readAuditRecordNow",
+        "queryAuditRecordNow",
+        "linkAuditRecord" + capitalAttestationTopic + "Now",
+        "verifyAuditRecord" + capitalAttestationTopic + "Now",
+        "sign" + capitalAttestationTopic + "Now",
+        "verify" + capitalAttestationTopic + "SignatureNow",
+        "compute" + capitalAttestationTopic + "HashNow",
+        "store" + capitalAttestationTopic + "HashNow",
+    ];
+    const disabledDecisionFlags = [
+        "canSelect" + capitalAttestationTopic + "Policy",
+        "canIdentify" + capitalAttestationTopic + "Subject",
+        "canIdentify" + capitalAttestationTopic + "Authority",
+        "canPrepare" + capitalAttestationTopic,
+        "canCreate" + capitalAttestationTopic,
+        "canValidate" + capitalAttestationTopic,
+        "canCreate" + capitalAttestationTopic + "Record",
+        "canStore" + capitalAttestationTopic + "Record",
+        "canPublish" + capitalAttestationTopic + "Record",
+        "canStore" + capitalAttestationTopic,
+        "canPublish" + capitalAttestationTopic,
+        "canRead" + capitalEvidenceTopic,
+        "canRead" + capitalEvidenceTopic + "Record",
+        "canRead" + capitalEvidenceTopic + "Bundle",
+        "canRead" + capitalEnforcementTopic,
+        "canRead" + capitalEnforcementTopic + "Record",
+        "canRead" + capitalResolutionTopic,
+        "canRead" + capitalResolutionTopic + "Record",
+        "canRead" + capitalAppealTopic,
+        "canRead" + capitalAppealTopic + "Record",
+        "canRead" + capitalRevocationTopic,
+        "canRead" + capitalRevocationTopic + "Record",
+        "canRead" + capitalVerificationTopic,
+        "canRead" + capitalVerificationTopic + "Record",
+        "canRead" + capitalCountersignatureTopic,
+        "canRead" + capitalCountersignatureTopic + "Record",
+        "canReadCountersignatureVerification",
+        "canReadCountersignatureVerificationRecord",
+        "canReadCountersignatureVerificationRevocation",
+        "canReadCountersignatureVerificationRevocationRecord",
+        "canReadCountersignature",
+        "canReadCountersignatureRecord",
+        "canAttest" + capitalEvidenceTopic,
+        "canReadAuditRecord",
+        "canQueryAuditRecord",
+        "canLinkAuditRecord" + capitalAttestationTopic,
+        "canVerifyAuditRecord" + capitalAttestationTopic,
+        "canSign" + capitalAttestationTopic,
+        "canVerify" + capitalAttestationTopic + "Signature",
+        "canCompute" + capitalAttestationTopic + "Hash",
+        "canStore" + capitalAttestationTopic + "Hash",
+        "canMaterializeFiles",
+        "canEnableRuntimeDispatch",
+    ];
+
+    return {
+        status: "planned-disabled",
+        [auditAttestationTopic + "Version"]: "P25.135",
+        adapter: "renderer-service",
+        command: CommandDescriptors.RENDER_THUMBNAIL.id,
+        dryRunOnly: true,
+        approvalRequired: true,
+        approved: false,
+        finalApprovalGranted: false,
+        [attestationTopic + "Required"]: true,
+        [attestationTopic + "Planned"]: true,
+        ...Object.fromEntries(disabledFlags.map((key) => [key, false])),
+        consumes: {
+            [evidencePolicyKey]: {
+                requiredStatus: "planned-disabled",
+                currentStatus: evidencePolicy.status ?? "planned-disabled",
+                [auditEvidenceTopic + "Version"]: evidencePolicy[auditEvidenceTopic + "Version"] ?? "P25.134",
+                [evidenceTopic + "RecordCreated"]: false,
+                [evidenceTopic + "RecordStored"]: false,
+                [evidenceTopic + "BundleStored"]: false,
+                [evidenceTopic + "Attested"]: false,
+            },
+            packageMaterializationApprovalAuditAccessPolicy: {
+                requiredStatus: "planned-disabled",
+                currentStatus: packageMaterializationApprovalAuditAccessPolicy.status ?? "planned-disabled",
+                auditAccessVersion: packageMaterializationApprovalAuditAccessPolicy.auditAccessVersion ?? "P25.53",
+                auditRecordRead: false,
+                accessGranted: false,
+            },
+            packageMaterializationFinalApprovalChecklist: {
+                requiredStatus: "planned-disabled",
+                currentStatus: packageMaterializationFinalApprovalChecklist.status ?? "planned-disabled",
+                checklistVersion: packageMaterializationFinalApprovalChecklist.checklistVersion ?? "P25.40",
+                finalApprovalGranted: false,
+            },
+        },
+        [auditAttestationTopic + "Policy"]: {
+            policy: "attest-" + kebabEvidenceTopic + "-after-evidence-record-defined",
+            ...Object.fromEntries(disabledPolicyFlags.map((key) => [key, false])),
+            requiredInputs: [
+                evidenceTopic + "Record",
+                "auditAccessGrant",
+                attestationTopic + "PolicyId",
+                "trusted" + capitalAttestationTopic + "Authority",
+                "attestationStatement",
+                "attestationEvidenceDigest",
+            ],
+            [attestationTopic + "PolicyId"]: "future-materialization-audit-" + kebabAttestationTopic,
+            [attestationTopic + "Scope"]: "future-policy-defined",
+            [attestationTopic + "PayloadLogged"]: false,
+        },
+        [auditAttestationTopic + "Checks"]: [
+            { id: kebabEvidenceTopic + "-record-present", required: true, planned: true, executed: false, passed: false },
+            { id: "audit-access-granted", required: true, planned: true, executed: false, passed: false },
+            { id: kebabAttestationTopic + "-policy-selected", required: true, planned: true, executed: false, passed: false },
+            { id: kebabAttestationTopic + "-not-created", required: true, planned: true, executed: false, passed: false },
+            { id: kebabAttestationTopic + "-record-not-stored", required: true, planned: true, executed: false, passed: false },
+        ],
+        [auditAttestationTopic + "Decision"]: {
+            status: "blocked",
+            ...Object.fromEntries(disabledDecisionFlags.map((key) => [key, false])),
+            reason: "audit countersignature verification revocation appeal resolution enforcement evidence attestation policy is metadata-only and no countersignature verification revocation appeal resolution enforcement evidence record or audit access grant has been established",
+        },
+        noOpGuarantees: [
+            noOpPrefix + " does not select countersignature verification revocation appeal resolution enforcement evidence attestation policies",
+            noOpPrefix + " does not identify attestation subjects or authorities",
+            noOpPrefix + " does not prepare, create, validate, store, or publish attestations",
+            noOpPrefix + " does not create, store, or publish attestation records",
+            noOpPrefix + " does not read, attest, or verify countersignature verification revocation appeal resolution enforcement evidence records or bundles",
+            noOpPrefix + " does not read countersignature verification revocation appeal resolution enforcement, resolution, appeal, verification, revocation, countersignature, or audit records",
+            noOpPrefix + " does not link or verify audit record attestations",
+            noOpPrefix + " does not sign or verify attestation signatures",
+            noOpPrefix + " does not compute or store attestation hashes",
+            noOpPrefix + " does not create renderer-service directory",
+            noOpPrefix + " does not write package or workspace files",
+            noOpPrefix + " does not mutate lockfiles",
+            noOpPrefix + " does not run commands",
+            noOpPrefix + " does not generate build output",
+            noOpPrefix + " does not register runtime dispatch",
+        ],
+        requiredBeforeRuntimeDispatch: [
+            "define audit countersignature verification revocation appeal resolution enforcement evidence attestation policy schema",
+            "require countersignature verification revocation appeal resolution enforcement evidence record and audit access grant before attestation",
+            "define trusted countersignature verification revocation appeal resolution enforcement evidence attestation authority and record semantics",
+            "define countersignature verification revocation appeal resolution enforcement evidence attestation signature and hash semantics",
             "keep render.thumbnail unavailable until executable adapter registration is approved",
         ],
     };
