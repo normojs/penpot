@@ -4,6 +4,7 @@
 
 ### :sparkles: New features & Enhancements
 
+- Add metadata-only renderer-service P25.139 evidence attestation notarization certification endorsement countersignature policy planning for future `render.thumbnail` package materialization approval audit execution across command-runtime, CLI, MCP, and fixtures while keeping countersignature creation, endorsement/certification/notarization/attestation/evidence/audit record reads, materialization, and dispatch disabled.
 - Add metadata-only renderer-service P25.138 evidence attestation notarization certification endorsement policy planning for future `render.thumbnail` package materialization approval audit execution across command-runtime, CLI, MCP, and fixtures while keeping endorsement creation, certification/notarization/attestation/evidence/audit record reads, materialization, and dispatch disabled.
 - Add metadata-only renderer-service P25.137 evidence attestation notarization certification policy planning for future `render.thumbnail` package materialization approval audit execution across command-runtime, CLI, MCP, and fixtures while keeping certification creation, notarization/attestation/evidence/audit record reads, materialization, and dispatch disabled.
 - Add metadata-only renderer-service P25.136 evidence attestation notarization policy planning for future `render.thumbnail` package materialization approval audit execution across command-runtime, CLI, MCP, and fixtures while keeping notarization creation, attestation/evidence/audit record reads, materialization, and dispatch disabled.

@@ -1204,6 +1204,7 @@ const P25135_POLICY_KEY = P25134_POLICY_KEY.replace(/EvidencePolicy$/, "Evidence
 const P25136_POLICY_KEY = P25135_POLICY_KEY.replace(/AttestationPolicy$/, "AttestationNotarizationPolicy");
 const P25137_POLICY_KEY = P25136_POLICY_KEY.replace(/NotarizationPolicy$/, "NotarizationCertificationPolicy");
 const P25138_POLICY_KEY = P25137_POLICY_KEY.replace(/CertificationPolicy$/, "CertificationEndorsementPolicy");
+const P25139_POLICY_KEY = P25138_POLICY_KEY.replace(/EndorsementPolicy$/, "EndorsementCountersignaturePolicy");
 
 function assertP25105EndorsementPolicyMetadataOnly(policy: any) {
     const resolutionTopic =
@@ -2375,6 +2376,71 @@ function assertP25138AttestationNotarizationCertificationEndorsementPolicyMetada
     assert.ok(policy.requiredBeforeRuntimeDispatch.includes("keep render.thumbnail unavailable until executable adapter registration is approved"));
 }
 
+function assertP25139AttestationNotarizationCertificationEndorsementCountersignaturePolicyMetadataOnly(policy: any) {
+    const capitalEndorsementTopic = P25138_POLICY_KEY.replace(/^packageMaterializationApprovalAudit/, "").replace(/Policy$/, "");
+    const endorsementTopic = capitalEndorsementTopic[0].toLowerCase() + capitalEndorsementTopic.slice(1);
+    const capitalCountersignatureTopic = capitalEndorsementTopic + "Countersignature";
+    const countersignatureTopic = endorsementTopic + "Countersignature";
+    const capitalCertificationTopic = capitalEndorsementTopic.replace(/Endorsement$/, "");
+    const auditEndorsementTopic = "audit" + capitalEndorsementTopic;
+    const auditCountersignatureTopic = "audit" + capitalCountersignatureTopic;
+    const allowedTopLevelTrue = new Set(["dryRunOnly", "approvalRequired", countersignatureTopic + "Required", countersignatureTopic + "Planned"]);
+
+    assert.ok(policy, "P25.139 policy payload");
+    assert.equal(policy.status, "planned-disabled");
+    assert.equal(policy[auditCountersignatureTopic + "Version"], "P25.139");
+    assert.equal(policy.adapter, "renderer-service");
+    assert.equal(policy.command, "render.thumbnail");
+    assert.equal(policy.dryRunOnly, true);
+    assert.equal(policy.approvalRequired, true);
+    assert.equal(policy.approved, false);
+    assert.equal(policy.finalApprovalGranted, false);
+    assert.equal(policy[countersignatureTopic + "Required"], true);
+    assert.equal(policy[countersignatureTopic + "Planned"], true);
+
+    for (const [key, value] of Object.entries(policy)) {
+        if (typeof value === "boolean" && !allowedTopLevelTrue.has(key)) {
+            assert.equal(value, false, key);
+        }
+    }
+
+    assert.equal(policy.consumes[P25138_POLICY_KEY].currentStatus, "planned-disabled");
+    assert.equal(policy.consumes[P25138_POLICY_KEY][auditEndorsementTopic + "Version"], "P25.138");
+    assert.equal(policy.consumes[P25138_POLICY_KEY][endorsementTopic + "Created"], false);
+    assert.equal(policy.consumes[P25138_POLICY_KEY][endorsementTopic + "Stored"], false);
+    assert.equal(policy.consumes[P25138_POLICY_KEY][endorsementTopic + "RecordRead"], false);
+    assert.equal(policy.consumes[P25138_POLICY_KEY][endorsementTopic + "Countersigned"], false);
+    assert.equal(policy.consumes.packageMaterializationApprovalAuditAccessPolicy.auditAccessVersion, "P25.53");
+    assert.equal(policy.consumes.packageMaterializationApprovalAuditAccessPolicy.auditRecordRead, false);
+    assert.equal(policy.consumes.packageMaterializationApprovalAuditAccessPolicy.accessGranted, false);
+    assert.equal(policy.consumes.packageMaterializationFinalApprovalChecklist.checklistVersion, "P25.40");
+    assert.equal(policy.consumes.packageMaterializationFinalApprovalChecklist.finalApprovalGranted, false);
+
+    const countersignaturePolicy = policy[auditCountersignatureTopic + "Policy"];
+    assert.equal(countersignaturePolicy.policy.startsWith("countersign-"), true);
+    assert.equal(countersignaturePolicy.policy.endsWith("after-endorsement-record-defined"), true);
+    assert.equal(countersignaturePolicy[countersignatureTopic + "PayloadLogged"], false);
+    assert.equal(countersignaturePolicy[countersignatureTopic + "Scope"], "future-policy-defined");
+    assert.ok(countersignaturePolicy.requiredInputs.includes(endorsementTopic + "Record"));
+    assert.ok(countersignaturePolicy.requiredInputs.includes("auditAccessGrant"));
+    assert.ok(countersignaturePolicy.requiredInputs.includes(countersignatureTopic + "PolicyId"));
+    assert.ok(countersignaturePolicy.requiredInputs.includes("trusted" + capitalCountersignatureTopic + "Authority"));
+
+    assert.ok(policy[auditCountersignatureTopic + "Checks"].some((check: PolicyCheck) => check.id === "audit-access-granted" && check.executed === false));
+    assert.ok(policy[auditCountersignatureTopic + "Checks"].some((check: PolicyCheck) => check.id.endsWith("-not-created") && check.executed === false));
+    assert.ok(policy[auditCountersignatureTopic + "Checks"].some((check: PolicyCheck) => check.id.endsWith("-record-not-stored") && check.executed === false));
+    assert.equal(policy[auditCountersignatureTopic + "Decision"].status, "blocked");
+    assert.equal(policy[auditCountersignatureTopic + "Decision"]["canCreate" + capitalCountersignatureTopic], false);
+    assert.equal(policy[auditCountersignatureTopic + "Decision"]["canCountersign" + capitalEndorsementTopic], false);
+    assert.equal(policy[auditCountersignatureTopic + "Decision"]["canRead" + capitalEndorsementTopic + "Record"], false);
+    assert.equal(policy[auditCountersignatureTopic + "Decision"]["canRead" + capitalCertificationTopic + "Record"], false);
+    assert.equal(policy[auditCountersignatureTopic + "Decision"].canReadAuditRecord, false);
+    assert.equal(policy[auditCountersignatureTopic + "Decision"].canEnableRuntimeDispatch, false);
+    assert.ok(policy.noOpGuarantees.some((item: string) => item.includes("does not prepare, create, validate, store, or publish countersignatures")));
+    assert.ok(policy.noOpGuarantees.some((item: string) => item.includes("does not read, countersign, or verify endorsements")));
+    assert.ok(policy.noOpGuarantees.some((item: string) => item.includes("does not register runtime dispatch")));
+    assert.ok(policy.requiredBeforeRuntimeDispatch.includes("keep render.thumbnail unavailable until executable adapter registration is approved"));
+}
 
 function assertAuditRetentionPolicyMetadataOnly(policy: any) {
     assert.equal(policy.auditRetentionVersion, "P25.52");
@@ -6831,6 +6897,7 @@ test("RenderThumbnailTool dry-run returns renderer-service request metadata with
         assertP25136AttestationNotarizationPolicyMetadataOnly(body.data[P25136_POLICY_KEY]);
         assertP25137AttestationNotarizationCertificationPolicyMetadataOnly(body.data[P25137_POLICY_KEY]);
         assertP25138AttestationNotarizationCertificationEndorsementPolicyMetadataOnly(body.data[P25138_POLICY_KEY]);
+        assertP25139AttestationNotarizationCertificationEndorsementCountersignaturePolicyMetadataOnly(body.data[P25139_POLICY_KEY]);
         assert.deepEqual(body.data.service.client, body.data.client);
         assert.equal(body.data.service.responseNormalization.successStatus, "ok");
         assert.equal(body.data.service.responseNormalization.localFileWrites, false);
@@ -7383,6 +7450,7 @@ test("RenderThumbnailTool execution reports renderer service unavailable without
         assertP25136AttestationNotarizationPolicyMetadataOnly(body.error.data[P25136_POLICY_KEY]);
         assertP25137AttestationNotarizationCertificationPolicyMetadataOnly(body.error.data[P25137_POLICY_KEY]);
         assertP25138AttestationNotarizationCertificationEndorsementPolicyMetadataOnly(body.error.data[P25138_POLICY_KEY]);
+        assertP25139AttestationNotarizationCertificationEndorsementCountersignaturePolicyMetadataOnly(body.error.data[P25139_POLICY_KEY]);
         assert.equal(body.error.data.clientRequest.dispatch, false);
         assert.equal(body.error.data.serviceRequest.operation, "thumbnail.render");
         assert.deepEqual(body.error.data.requiredCapabilities, ["thumbnail-renderer-service-implementation", "file-thumbnail-cache-probe"]);
