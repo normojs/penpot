@@ -2134,6 +2134,16 @@ P26.1 renderer-service no-op host result:
 - MCP and CLI still do not contact this host; their renderer-service execution
   gate and runtime registration remain disabled.
 
+P26.2 renderer-service lifecycle guidance result:
+
+- `penpot-cli renderer-service status` returns token-free local lifecycle
+  metadata: the planned endpoints, cache directory, manual start command, and
+  disabled side-effect flags.
+- `penpot-cli renderer-service start` intentionally returns a structured
+  manual-start boundary rather than spawning a process.
+- Neither lifecycle command probes `/health`, calls backend RPC, writes
+  artifacts, or changes the closed MCP/CLI thumbnail dispatch gate.
+
 P25.7 render.thumbnail renderer-service API result:
 
 - `render-thumbnail-renderer-service-api.md` defines the future

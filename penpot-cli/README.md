@@ -220,6 +220,29 @@ for startup, but their dry-run JSON includes dependency checks, port checks,
 planned services, public/internal MCP surfaces, and unsupported-startup
 boundaries.
 
+## Renderer-Service Lifecycle
+
+Inspect the local renderer-service no-op host plan without starting or probing
+it:
+
+```bash
+node penpot-cli/dist/index.js renderer-service status --format json
+node penpot-cli/dist/index.js renderer-service status --host 127.0.0.1 --port 6072
+```
+
+`renderer-service status` reports the P26.1 build cache, `/health`, and
+`/thumbnail` endpoints plus the exact manual command to run. It does not create
+a process or make an HTTP request. `renderer-service start` deliberately returns
+the same command as a structured manual-start boundary; it does not spawn a
+child process:
+
+```bash
+pnpm --filter @penpot/renderer-service start:noop
+```
+
+After starting the host, stop it with `Ctrl-C` or `SIGTERM`. The host remains a
+no-op service; MCP and CLI `render thumbnail` execution is still disabled.
+
 ## File Commands
 
 File list and create commands call Penpot backend RPC directly. They require a

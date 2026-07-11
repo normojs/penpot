@@ -38,6 +38,7 @@ The CLI smoke suite runs without a live Penpot deployment. It verifies:
 - top-level command discovery for MCP, shape, and export commands
 - derived MCP stream, SSE, WebSocket, status, and log configuration
 - `dev up --mcp --dry-run` service surface planning
+- `renderer-service status` no-probe lifecycle planning and manual-start boundary
 - `file open` workspace URL generation without claiming MCP context binding
 - backend-command page and shape creation/update paths with adapter diagnostics
 - exporter-backed `export page --dry-run` adapter selection and request payload

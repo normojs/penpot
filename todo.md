@@ -823,7 +823,7 @@ process boundary before MCP or CLI execution is enabled.
 | ID | Status | Capability | Modules | Acceptance check |
 | --- | --- | --- | --- | --- |
 | P26.1 | done | Materialize the no-op thumbnail renderer-service host | `renderer-service`, workspace manifests, `todo.md`, `CHANGES.md` | Completed 2026-07-12; the package starts on an explicit local port, `GET /health` returns the P25.24 no-op health shape, and `POST /thumbnail` returns the P25.24 501 no-op shape; service tests, type checks, and cached builds prove no MCP/CLI dispatch, backend RPC, PNG rendering, or filesystem artifact writing occurs |
-| P26.2 | todo | Add host lifecycle management metadata and manual developer command | `renderer-service`, `penpot-cli`, `mcp/docs`, `todo.md` | `penpot-cli` can report explicit host lifecycle guidance without starting or wiring render execution implicitly |
+| P26.2 | done | Add host lifecycle management metadata and manual developer command | `renderer-service`, `penpot-cli`, `mcp/docs`, `todo.md` | Completed 2026-07-12; `penpot-cli renderer-service status` returns a token-free manual lifecycle plan without network access, while `renderer-service start` returns the same explicit command as a controlled no-spawn boundary; JSON and text output confirm renderer dispatch remains disabled |
 | P26.3 | todo | Enable gated health preflight from MCP and CLI | `command-runtime`, `mcp`, `penpot-cli`, `renderer-service` | Explicit opt-in performs only a health request and preserves current unavailable behavior when it fails |
 | P26.4 | todo | Implement renderer-backed thumbnail request execution | `renderer-service`, `backend`, `command-runtime`, `mcp`, `penpot-cli` | Explicit opt-in produces a normalized PNG resource for file and tagged-frame requests with integration coverage |
 
@@ -833,6 +833,13 @@ package with a real no-op HTTP lifecycle. Its TypeScript output is written to
 contracted health response and a 501 no-op thumbnail response. MCP/CLI
 execution, backend RPC, PNG rendering, artifact writes, and runtime dispatch
 remain disabled.
+
+P26.2 is complete: `penpot-cli renderer-service status` now reports the local
+no-op host's endpoints, build cache, lifecycle status, and exact manual start
+command without probing health or spawning a process. `renderer-service start`
+returns a structured manual-start boundary rather than launching a child
+process. Both commands state that backend RPC, artifacts, and
+`render.thumbnail` dispatch remain disabled.
 
 ## Detailed Upcoming Task Queue
 

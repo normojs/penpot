@@ -6974,6 +6974,56 @@ test("dev up host startup returns plan with unsupported boundary", async () => {
     assert.equal(body.error.data.plan.startupBoundaries[0].status, "planning_only");
 });
 
+test("renderer-service status reports a no-spawn lifecycle plan without probing", async () => {
+    const originalFetch = globalThis.fetch;
+    globalThis.fetch = async () => {
+        throw new Error("renderer-service status must not send a health request");
+    };
+
+    try {
+        const result = await runCli(["renderer-service", "status", "--host", "127.0.0.1", "--port", "6072", "--format", "json"]);
+        const body = parseJson(result.stdout);
+
+        assert.equal(result.exitCode, 0);
+        assert.equal(body.status, "ok");
+        assert.equal(body.data.status, "manual-start-required");
+        assert.equal(body.data.lifecycle.baseUri, "http://127.0.0.1:6072");
+        assert.equal(body.data.lifecycle.healthUri, "http://127.0.0.1:6072/health");
+        assert.equal(body.data.lifecycle.thumbnailUri, "http://127.0.0.1:6072/thumbnail");
+        assert.equal(body.data.lifecycle.processSpawn, false);
+        assert.equal(body.data.lifecycle.healthProbe, false);
+        assert.equal(body.data.lifecycle.rendererDispatch, false);
+        assert.equal(body.data.lifecycle.backendRpc, false);
+        assert.equal(body.data.lifecycle.artifactWrites, false);
+        assert.match(body.data.lifecycle.startCommand, /PENPOT_RENDERER_SERVICE_PORT=6072/);
+    } finally {
+        globalThis.fetch = originalFetch;
+    }
+});
+
+test("renderer-service start keeps startup manual and does not spawn a process", async () => {
+    const result = await runCli(["renderer-service", "start", "--port", "6073", "--format", "json"]);
+    const body = parseJson(result.stdout);
+
+    assert.equal(result.exitCode, 2);
+    assert.equal(body.status, "error");
+    assert.equal(body.error.code, "renderer_service_host_start_manual");
+    assert.equal(body.error.data.lifecycle.processSpawn, false);
+    assert.equal(body.error.data.lifecycle.healthProbe, false);
+    assert.equal(body.error.data.lifecycle.rendererDispatch, false);
+    assert.match(body.error.actions[0], /PENPOT_RENDERER_SERVICE_PORT=6073/);
+});
+
+test("renderer-service lifecycle commands reject invalid local ports", async () => {
+    const result = await runCli(["renderer-service", "status", "--port", "70000", "--format", "json"]);
+    const body = parseJson(result.stdout);
+
+    assert.equal(result.exitCode, 2);
+    assert.equal(body.status, "error");
+    assert.equal(body.error.code, "renderer_service_port_invalid");
+    assert.equal(body.error.data.port, "70000");
+});
+
 test("file open emits a workspace URL and does not claim to bind MCP context", async () => {
     const result = await runCli(["file", "open", UUIDS.file, "--team-id", "team-1", "--page-id", UUIDS.page, "--format", "json"], {
         PENPOT_PUBLIC_URI: "https://penpot.example.test",

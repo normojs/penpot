@@ -42,6 +42,9 @@ const DEFAULT_LOCAL_MCP_STATUS_URI = "http://localhost:4401/status";
 const DEFAULT_BACKEND_URI = "http://localhost:6060";
 const DEFAULT_EXPORTER_URI = "http://localhost:6061";
 const DEFAULT_RENDERER_SERVICE_URI = "http://localhost:6070/thumbnail";
+const DEFAULT_RENDERER_SERVICE_HOST = "127.0.0.1";
+const DEFAULT_RENDERER_SERVICE_PORT = 6070;
+const RENDERER_SERVICE_BUILD_DIR = "/Volumes/fushilu/.caches/penpot/renderer-service";
 const DEFAULT_PLUGIN_PREVIEW_URI = "http://localhost:4400/manifest.json";
 
 const HELP_TEXT = `penpot-cli ${VERSION}
@@ -53,6 +56,8 @@ Usage:
   penpot-cli mcp config [--mode builtin|custom|local] [--profile-source off|auto|backend] [--format text|json]
   penpot-cli mcp logs [--dir <path>] [--follow] [--format text|json]
   penpot-cli dev up --mcp [--mode devenv|host|hybrid] [--dry-run] [--format text|json]
+  penpot-cli renderer-service status [--host <host>] [--port <port>] [--format text|json]
+  penpot-cli renderer-service start [--host <host>] [--port <port>] [--format text|json]
   penpot-cli file list --project-id <id> [--format text|json]
   penpot-cli file create --project-id <id> [--name <name>] [--format text|json]
   penpot-cli file open <file-id> [--team-id <id>] [--page-id <id>] [--format text|json]
@@ -108,6 +113,20 @@ Modes:
   devenv   Reuse the existing Docker devenv managed by ./manage.sh
   host     Planned future host-native startup mode
   hybrid   Planned future mixed Docker/host startup mode`;
+
+const RENDERER_SERVICE_HELP_TEXT = `penpot-cli renderer-service
+
+Usage:
+  penpot-cli renderer-service status [--host <host>] [--port <port>] [--format text|json]
+  penpot-cli renderer-service start [--host <host>] [--port <port>] [--format text|json]
+
+Notes:
+  status reports a local no-op host lifecycle plan without probing or starting it.
+  start deliberately returns the explicit manual command and never spawns a process.
+
+Environment:
+  PENPOT_RENDERER_SERVICE_HOST  No-op host bind host, default 127.0.0.1
+  PENPOT_RENDERER_SERVICE_PORT  No-op host bind port, default 6070`;
 
 const FILE_HELP_TEXT = `penpot-cli file
 
@@ -1054,6 +1073,47 @@ function getRendererServiceUri(args: string[], env: NodeJS.ProcessEnv): string {
             env.PENPOT_RENDERER_SERVICE_URI ??
             DEFAULT_RENDERER_SERVICE_URI
     );
+}
+
+function getRendererServiceLifecyclePlan(args: string[], env: NodeJS.ProcessEnv): {
+    host: string;
+    port: number | null;
+    baseUri: string | null;
+    healthUri: string | null;
+    thumbnailUri: string | null;
+    buildDir: string;
+    startCommand: string | null;
+    invalidPort: string | null;
+    processSpawn: false;
+    healthProbe: false;
+    rendererDispatch: false;
+    backendRpc: false;
+    artifactWrites: false;
+} {
+    const host = readOption(args, ["--host"]) ?? env.PENPOT_RENDERER_SERVICE_HOST ?? DEFAULT_RENDERER_SERVICE_HOST;
+    const portValue = readOption(args, ["--port"]) ?? env.PENPOT_RENDERER_SERVICE_PORT ?? String(DEFAULT_RENDERER_SERVICE_PORT);
+    const port = Number(portValue);
+    const portIsValid = Number.isInteger(port) && port >= 1 && port <= 65535;
+    const baseUri = portIsValid ? `http://${host}:${port}` : null;
+    const startPrefix = host === DEFAULT_RENDERER_SERVICE_HOST && port === DEFAULT_RENDERER_SERVICE_PORT
+        ? ""
+        : `PENPOT_RENDERER_SERVICE_HOST=${host} PENPOT_RENDERER_SERVICE_PORT=${portValue} `;
+
+    return {
+        host,
+        port: portIsValid ? port : null,
+        baseUri,
+        healthUri: baseUri ? `${baseUri}/health` : null,
+        thumbnailUri: baseUri ? `${baseUri}/thumbnail` : null,
+        buildDir: RENDERER_SERVICE_BUILD_DIR,
+        startCommand: portIsValid ? `${startPrefix}pnpm --filter @penpot/renderer-service start:noop` : null,
+        invalidPort: portIsValid ? null : portValue,
+        processSpawn: false,
+        healthProbe: false,
+        rendererDispatch: false,
+        backendRpc: false,
+        artifactWrites: false,
+    };
 }
 
 function readRequestedAdapter(args: string[]): RequestedCommandAdapter | string {
@@ -4831,6 +4891,87 @@ async function handleDevCommand(args: string[], io: CliIO, env: NodeJS.ProcessEn
     }
 }
 
+async function handleRendererServiceStatus(args: string[], io: CliIO, env: NodeJS.ProcessEnv): Promise<number> {
+    const format = parseFormat(args, io);
+    if (!format) {
+        return 2;
+    }
+
+    const plan = getRendererServiceLifecyclePlan(args, env);
+    if (plan.invalidPort) {
+        writeError(io, format, "renderer_service_port_invalid", "Renderer-service port must be an integer between 1 and 65535.", [
+            "Pass --port <port> or set PENPOT_RENDERER_SERVICE_PORT.",
+        ], { port: plan.invalidPort });
+        return 2;
+    }
+
+    writeOk(io, format, {
+        status: "manual-start-required",
+        lifecycle: plan,
+        nextActions: [plan.startCommand, "Stop the manually started host with Ctrl-C or SIGTERM."],
+    }, () => {
+        writeLine(io.stdout, "Renderer-service lifecycle: manual-start-required");
+        writeLine(io.stdout, `Host: ${plan.host}:${plan.port}`);
+        writeLine(io.stdout, `Health endpoint: ${plan.healthUri}`);
+        writeLine(io.stdout, `Thumbnail endpoint: ${plan.thumbnailUri}`);
+        writeLine(io.stdout, `Build cache: ${plan.buildDir}`);
+        writeLine(io.stdout, `Start manually: ${plan.startCommand}`);
+        writeLine(io.stdout, "No process was started, no health request was sent, and renderer dispatch remains disabled.");
+    });
+    return 0;
+}
+
+async function handleRendererServiceStart(args: string[], io: CliIO, env: NodeJS.ProcessEnv): Promise<number> {
+    const format = parseFormat(args, io);
+    if (!format) {
+        return 2;
+    }
+
+    const plan = getRendererServiceLifecyclePlan(args, env);
+    if (plan.invalidPort) {
+        writeError(io, format, "renderer_service_port_invalid", "Renderer-service port must be an integer between 1 and 65535.", [
+            "Pass --port <port> or set PENPOT_RENDERER_SERVICE_PORT.",
+        ], { port: plan.invalidPort });
+        return 2;
+    }
+
+    writeError(
+        io,
+        format,
+        "renderer_service_host_start_manual",
+        "renderer-service host startup remains an explicit manual developer action.",
+        [
+            `Run: ${plan.startCommand}`,
+            "Stop the host with Ctrl-C or SIGTERM.",
+            "MCP and CLI render.thumbnail execution remains disabled after the host starts.",
+        ],
+        {
+            lifecycle: plan,
+        }
+    );
+    return 2;
+}
+
+async function handleRendererServiceCommand(args: string[], io: CliIO, env: NodeJS.ProcessEnv): Promise<number> {
+    const [subcommand, ...rest] = args;
+
+    if (isHelpFlag(subcommand)) {
+        writeLine(io.stdout, RENDERER_SERVICE_HELP_TEXT);
+        return 0;
+    }
+
+    switch (subcommand) {
+        case "status":
+            return await handleRendererServiceStatus(rest, io, env);
+        case "start":
+            return await handleRendererServiceStart(rest, io, env);
+        default:
+            writeLine(io.stderr, `Unknown renderer-service command: ${subcommand}`);
+            writeLine(io.stderr, 'Run "penpot-cli renderer-service --help" for usage.');
+            return 2;
+    }
+}
+
 async function handleFileList(args: string[], io: CliIO, env: NodeJS.ProcessEnv): Promise<number> {
     const format = parseFormat(args, io);
     if (!format) {
@@ -6607,6 +6748,10 @@ export async function run(
 
     if (first === "dev") {
         return await handleDevCommand(argv.slice(1), io, env);
+    }
+
+    if (first === "renderer-service") {
+        return await handleRendererServiceCommand(argv.slice(1), io, env);
     }
 
     if (first === "file") {

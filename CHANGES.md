@@ -4,6 +4,7 @@
 
 ### :sparkles: New features & Enhancements
 
+- Add `penpot-cli renderer-service` lifecycle guidance with a no-probe status plan and explicit no-spawn manual-start boundary while thumbnail execution remains disabled.
 - Add the private `@penpot/renderer-service` no-op host with P25.24-compatible health and thumbnail responses, lifecycle coverage, and build output under `/Volumes/fushilu/.caches/penpot/renderer-service` while keeping MCP/CLI rendering disabled.
 - Add metadata-only renderer-service P25.143 countersignature verification revocation appeal resolution policy planning for future `render.thumbnail` package materialization approval audit execution across command-runtime, CLI, MCP, and fixtures while keeping appeal resolution, record reads, materialization, and dispatch disabled.
 - Add metadata-only renderer-service P25.142 evidence attestation notarization certification endorsement countersignature verification revocation appeal policy planning for future `render.thumbnail` package materialization approval audit execution across command-runtime, CLI, MCP, and fixtures while keeping verification revocation appeals, revocation/verification/countersignature/endorsement/certification/notarization/attestation/evidence/audit record reads, materialization, and dispatch disabled.
