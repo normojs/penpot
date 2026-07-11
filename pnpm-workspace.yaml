@@ -4,3 +4,4 @@ allowBuilds:
 packages:
   - "./command-runtime"
   - "./penpot-cli"
+  - "./renderer-service"

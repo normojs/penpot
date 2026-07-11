@@ -489,6 +489,14 @@ type RenderThumbnailPlan = RenderThumbnailRendererServicePlan & {
     output: string | null;
 };
 
+function collectRenderThumbnailPackageMetadata(plan: RenderThumbnailRendererServicePlan): Record<string, unknown> {
+    return Object.fromEntries(
+        Object.entries(plan as unknown as Record<string, unknown>).filter(
+            ([key, value]) => key.startsWith("packageMaterialization") && value !== undefined
+        )
+    );
+}
+
 type ShapeCreateKind = "frame" | "rect" | "text";
 type ShapeLayoutType = "none" | "flex" | "grid";
 type ShapeLayoutDirection = "row" | "row-reverse" | "column" | "column-reverse";
@@ -6318,6 +6326,7 @@ async function handleRenderThumbnail(args: string[], io: CliIO, env: NodeJS.Proc
             dispatchAdapterBoundary: plan.dispatchAdapterBoundary,
             unavailableErrorTaxonomy: plan.unavailableErrorTaxonomy,
             integrationFixtureHarness: plan.integrationFixtureHarness,
+            ...collectRenderThumbnailPackageMetadata(plan),
             dispatchRegistrationPreflight: plan.dispatchRegistrationPreflight,
             executableAdapterRegistrationScaffold: plan.executableAdapterRegistrationScaffold,
             adapterRegistryManifest: plan.adapterRegistryManifest,

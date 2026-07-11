@@ -1,5 +1,12 @@
 # Render Thumbnail Renderer Service API
 
+P26.1 materializes the private `@penpot/renderer-service` no-op host. It binds
+only when started manually, exposes `GET /health` with the P25.24 health body,
+and returns the P25.24 `501 renderer_service_noop` body from `POST /thumbnail`.
+Its build output is kept under `/Volumes/fushilu/.caches/penpot/renderer-service`.
+It does not render PNG bytes, call backend RPCs, write artifacts, or enable MCP
+or CLI network dispatch.
+
 Status: P25.64 API fixtures, MCP/CLI dry-run/client boundaries, metadata-only
 availability probes, response normalization contracts, disabled client request
 scaffold, closed execution gate, disabled health preflight, and executable
@@ -119,11 +126,11 @@ owner for `render.thumbnail`. This document defines the service-facing request
 and response contract that MCP and `penpot-cli` should share once a renderer
 service exists.
 
-This is not a renderer implementation. MCP `render.thumbnail` and CLI
-`render thumbnail --dry-run` can print the future renderer-service plan, and
-execution returns `renderer_service_unavailable` until the service exists. The
-shared command descriptor advertises the planning adapter `renderer-service`,
-but runtime execution remains unavailable.
+This is not a PNG renderer implementation. MCP `render.thumbnail` and CLI
+`render thumbnail --dry-run` can print the renderer-service plan, and execution
+continues to return `renderer_service_unavailable` until gated render dispatch
+is implemented. The shared command descriptor advertises the planning adapter
+`renderer-service`, but runtime execution remains unavailable.
 
 P25.10 adds client configuration metadata to the plan. Callers can inspect the
 configured endpoint, derived `/health` endpoint, probe timeout, content types,

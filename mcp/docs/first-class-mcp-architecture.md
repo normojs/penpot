@@ -2122,6 +2122,18 @@ P25.6 render.thumbnail runtime boundary result:
   returns, tagged-frame URI normalization, cache reuse/refresh, auth
   propagation, and tests. P25.8 later adds only the CLI planning adapter.
 
+P26.1 renderer-service no-op host result:
+
+- `@penpot/renderer-service` is now a private pnpm workspace package with a
+  manually started Node HTTP host.
+- `GET /health` returns the P25.24 no-op health contract, and `POST /thumbnail`
+  returns the contracted 501 no-op response without rendering or persisting an
+  artifact.
+- Compiled output is kept outside the repository at
+  `/Volumes/fushilu/.caches/penpot/renderer-service`.
+- MCP and CLI still do not contact this host; their renderer-service execution
+  gate and runtime registration remain disabled.
+
 P25.7 render.thumbnail renderer-service API result:
 
 - `render-thumbnail-renderer-service-api.md` defines the future

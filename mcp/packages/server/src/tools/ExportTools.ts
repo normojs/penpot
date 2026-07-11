@@ -42,6 +42,14 @@ function asRecord(value: unknown): PenpotRecord {
     return value !== null && typeof value === "object" && !Array.isArray(value) ? (value as PenpotRecord) : {};
 }
 
+function collectRenderThumbnailPackageMetadata(plan: RenderThumbnailRendererServicePlan): PenpotRecord {
+    return Object.fromEntries(
+        Object.entries(plan as unknown as PenpotRecord).filter(
+            ([key, value]) => key.startsWith("packageMaterialization") && value !== undefined
+        )
+    );
+}
+
 function trimTrailingSlash(uri: string): string {
     return uri.replace(/\/+$/, "");
 }
@@ -919,6 +927,7 @@ export class RenderThumbnailTool extends PenpotRpcTool<RenderThumbnailArgs> {
                     dispatchAdapterBoundary: plan.dispatchAdapterBoundary,
                     unavailableErrorTaxonomy: plan.unavailableErrorTaxonomy,
                     integrationFixtureHarness: plan.integrationFixtureHarness,
+                    ...collectRenderThumbnailPackageMetadata(plan),
                     dispatchRegistrationPreflight: plan.dispatchRegistrationPreflight,
                     executableAdapterRegistrationScaffold: plan.executableAdapterRegistrationScaffold,
                     adapterRegistryManifest: plan.adapterRegistryManifest,
