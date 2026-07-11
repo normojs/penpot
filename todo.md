@@ -841,6 +841,18 @@ returns a structured manual-start boundary rather than launching a child
 process. Both commands state that backend RPC, artifacts, and
 `render.thumbnail` dispatch remain disabled.
 
+## Maintenance: Build Cache Hygiene
+
+| ID | Status | Capability | Modules | Acceptance check |
+| --- | --- | --- | --- | --- |
+| CACHE.1 | done | Move `render-wasm` Cargo build output outside the repository | `render-wasm`, `todo.md`, `CHANGES.md` | Completed 2026-07-12; `_build_env` defaults `CARGO_TARGET_DIR` to `/Volumes/fushilu/.caches/revocloud/target`, artifact copy paths read from that variable, clean-shell default/override checks pass, and `bash -n render-wasm/_build_env` passes |
+| CACHE.2 | todo | Move Shadow CLJS test/storybook/bench compile output outside the repository | `frontend`, `common`, `todo.md`, `CHANGES.md` | `frontend` and `common` generated `target/` outputs are redirected to `/Volumes/fushilu/.caches` subdirectories without changing public runtime assets |
+
+CACHE.1 is complete: `render-wasm` no longer assumes Cargo emits under the
+repository-local `target/` directory. The build script still copies final WASM
+and JS runtime artifacts into the frontend public resources, but intermediate
+Cargo output now defaults to `/Volumes/fushilu/.caches/revocloud/target`.
+
 ## Detailed Upcoming Task Queue
 
 Use this queue when continuing development. Complete the first unchecked item
