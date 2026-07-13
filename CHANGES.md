@@ -19,6 +19,7 @@
 - Validate renderer-service backend RPC intent metadata for thumbnail source-data and persistence commands before no-op rendering, without executing backend RPCs.
 - Validate renderer-service cache probe intent metadata so reuse and refresh thumbnail requests expose explicit cache-hit/cache-miss semantics before no-op rendering.
 - Execute renderer-service file thumbnail source-data reads for configured refresh requests and reuse cache misses, validating token-safe backend responses while keeping tagged-frame source-data reads, thumbnail persistence, and network dispatch disabled.
+- Add renderer-service render input summaries after configured file thumbnail source-data reads, keeping render dispatch disabled and rejecting source-data/page/artifact/media/credential value exposure.
 - Validate renderer-service thumbnail identity consistency across target ids/revisions, cache keys, backend data requests, and persist requests before no-op rendering.
 - Validate generated renderer-service thumbnail response metadata before returning success, rejecting malformed resource/cache/renderer/request/auth summaries with `renderer_service_response_invalid`.
 - Forward caller-session auth headers for executable `render.thumbnail` renderer-service dispatch from MCP and `penpot-cli`, while exposing only token-safe auth presence metadata in service results.

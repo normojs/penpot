@@ -8,9 +8,9 @@ at `/assets/by-id/noop-thumbnail-png`. MCP and `penpot-cli` execute this path
 only when the renderer-service endpoint and explicit `renderer-service` opt-in
 are configured; dry-run planning remains network-free. CLI `--output` downloads
 the normalized `downloadUri`, while MCP returns resource metadata only. The
-later slices add backend cache probe and source-data read execution on the
-gated file-thumbnail path; thumbnail persistence writes and render dispatch
-remain disabled.
+later slices add backend cache probe execution, source-data reads, and
+source-data render input summaries on the gated file-thumbnail path; thumbnail
+persistence writes and render dispatch remain disabled.
 P26.5 adds a token-safe `backendRpcClient` plan to renderer-service thumbnail
 responses so backend data/cache/persist endpoints are normalized for staged
 execution. That plan now feeds the executable file-thumbnail cache probe and
@@ -30,6 +30,11 @@ P26.9 adds a disabled `backendRpcClient.cacheProbe` plan for reuse requests,
 recording the future cache lookup strategy, identity keys, hit/miss shape, and
 false cache-read/network-dispatch/value flags without reading caches or
 returning cached resources.
+P26.12 adds `backendRpcClient.renderInput` after successful configured
+file-thumbnail source-data reads. The summary records the render handoff
+envelope with cache/artifact/runtime metadata and hard false source-data,
+page, artifact, media, token, and render-dispatch value flags; cache hits,
+unconfigured requests, and tagged-frame requests keep `renderInput:null`.
 
 Status: P25.144 supersedes the earlier disabled-planning boundary for the
 first executable slice. The renderer-service package, health/no-op host, MCP
@@ -397,6 +402,18 @@ reuse cache probe hits, validates response file/revision/page identity, and
 exposes only execution metadata. Tagged-frame source-data reads, thumbnail
 persistence writes, scene rendering, media values, source-data values, and
 credential values remain disabled or redacted.
+
+P26.12 adds a token-safe renderer handoff summary after successful configured
+file-thumbnail source-data reads. `backendRpcClient.renderInput` is present
+only when `get-file-data-for-thumbnail` executed and returned a validated
+file/revision/page envelope. It records the source-data endpoint, identity
+field names, revision source, cache policy/scope/key, PNG dimensions, renderer
+runtime/fallback names, and hard false `renderDispatch`,
+`sourceDataValuesIncluded`, `pageValuesIncluded`, `artifactValuesIncluded`,
+`mediaValuesIncluded`, and `tokenValuesIncluded` flags. Cache hits,
+unconfigured requests, and tagged-frame requests keep `renderInput:null`. The
+response validator rejects malformed render-input metadata and accidental
+source-data/page/artifact/media/credential value exposure before success.
 
 The P25.77 revocation appeal resolution enforcement evidence attestation
 notarization certification endorsement countersignature verification revocation
@@ -1379,8 +1396,42 @@ Successful response:
       "sourceDataValuesIncluded": false,
       "artifactValuesIncluded": false,
       "tokenValuesIncluded": false
-    }
+    },
+    "renderInput": null
   }
+}
+```
+
+After a configured file-thumbnail refresh or reuse cache miss executes
+`get-file-data-for-thumbnail`, `backendRpcClient.renderInput` has this
+metadata-only shape:
+
+```json
+{
+  "status": "source-data-ready",
+  "condition": "after-source-data-read",
+  "sourceDataRead": true,
+  "sourceDataEndpoint": "https://penpot.example.test/api/main/methods/get-file-data-for-thumbnail?_fmt=json",
+  "targetKind": "file",
+  "identityKeys": ["file-id", "revn"],
+  "revisionSource": "backend-source-data",
+  "requestRevision": "matched",
+  "revisionValueIncluded": false,
+  "cachePolicy": "refresh",
+  "cacheScope": "file-thumbnail",
+  "cacheKey": "file:<fileId>:revn:<revn>",
+  "artifactFormat": "png",
+  "artifactMimeType": "image/png",
+  "artifactWidth": 252,
+  "artifactHeight": 168,
+  "renderRuntime": "render-wasm-worker",
+  "renderFallback": "frontend-rasterizer",
+  "renderDispatch": false,
+  "sourceDataValuesIncluded": false,
+  "pageValuesIncluded": false,
+  "artifactValuesIncluded": false,
+  "mediaValuesIncluded": false,
+  "tokenValuesIncluded": false
 }
 ```
 

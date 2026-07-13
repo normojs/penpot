@@ -118,6 +118,35 @@ function backendRpcCacheProbe(strategy, scope, key, requestKeys, { status = "pla
     };
 }
 
+function backendRpcRenderInput(cachePolicy = "reuse") {
+    return {
+        status: "source-data-ready",
+        condition: "after-source-data-read",
+        sourceDataRead: true,
+        sourceDataEndpoint: "https://penpot.example.test/api/main/methods/get-file-data-for-thumbnail?_fmt=json",
+        targetKind: "file",
+        identityKeys: ["file-id", "revn"],
+        revisionSource: "backend-source-data",
+        requestRevision: "matched",
+        revisionValueIncluded: false,
+        cachePolicy,
+        cacheScope: "file-thumbnail",
+        cacheKey: "file:file-1:revn:1",
+        artifactFormat: "png",
+        artifactMimeType: "image/png",
+        artifactWidth: 252,
+        artifactHeight: 168,
+        renderRuntime: "render-wasm-worker",
+        renderFallback: "frontend-rasterizer",
+        renderDispatch: false,
+        sourceDataValuesIncluded: false,
+        pageValuesIncluded: false,
+        artifactValuesIncluded: false,
+        mediaValuesIncluded: false,
+        tokenValuesIncluded: false,
+    };
+}
+
 test("noop host exposes the P25.24 health contract", async () => {
     await withService(async ({ host, port }) => {
         const response = await fetch(`http://${host}:${port}/health`);
@@ -218,6 +247,7 @@ test("noop host executes configured file thumbnail cache probe and returns cache
         assert.equal(body.backendRpcClient.pipeline.dataRead, false);
         assert.equal(body.backendRpcClient.pipeline.renderDispatch, false);
         assert.equal(body.backendRpcClient.pipeline.persistWrite, false);
+        assert.equal(body.backendRpcClient.renderInput, null);
         assert.equal(body.cache.outcome, "hit");
         assert.deepEqual(body.resource, {
             mediaId: "cached-thumbnail-png",
@@ -291,6 +321,7 @@ test("noop host continues the no-op render path after configured cache probe mis
         assert.equal(body.backendRpcClient.pipeline.renderDispatch, false);
         assert.equal(body.backendRpcClient.pipeline.persistWrite, false);
         assert.equal(body.backendRpcClient.pipeline.sourceDataValuesIncluded, false);
+        assert.deepEqual(body.backendRpcClient.renderInput, backendRpcRenderInput("reuse"));
         assert.deepEqual(body.cache, {
             outcome: "rendered",
             policy: "reuse",
@@ -363,6 +394,7 @@ test("noop host executes configured file thumbnail source-data reads for refresh
         assert.equal(body.backendRpcClient.pipeline.renderDispatch, false);
         assert.equal(body.backendRpcClient.pipeline.persistWrite, false);
         assert.equal(body.backendRpcClient.pipeline.sourceDataValuesIncluded, false);
+        assert.deepEqual(body.backendRpcClient.renderInput, backendRpcRenderInput("refresh"));
         assert.deepEqual(body.cache, {
             outcome: "rendered",
             policy: "refresh",
@@ -505,6 +537,7 @@ test("noop host returns a normalized PNG thumbnail resource", async () => {
                     command: "create-file-thumbnail",
                 }),
             ]),
+            renderInput: null,
         });
         assert.equal(JSON.stringify(body).includes("service-secret-token"), false);
         assert.deepEqual(body.request, {
@@ -622,6 +655,7 @@ test("noop host plans backend RPC client endpoints without dispatching them", as
                     command: "create-file-object-thumbnail",
                 }),
             ]),
+            renderInput: null,
         });
         assert.equal(JSON.stringify(body).includes("service-secret-token"), false);
         assert.equal(fetchCalls, 0);
@@ -837,6 +871,49 @@ test("noop host validates generated backend RPC pipeline plans before returning 
         assert.equal(body.code, "renderer_service_response_invalid");
         assert.equal(body.field, "backendRpcClient.pipeline.sourceData");
         assert.equal(JSON.stringify(body).includes("file-1"), false);
+    } finally {
+        await service.stop();
+    }
+});
+
+test("noop host validates generated backend RPC render input summaries before returning them", async () => {
+    const service = await serviceModule.startRendererService({
+        port: 0,
+        backendRpc: {
+            baseUri: "https://penpot.example.test",
+            fetch: async (url) => {
+                if (String(url).includes("get-file-thumbnail")) {
+                    return new Response(JSON.stringify({ hit: false, "file-id": "file-1", revn: 1 }), {
+                        status: 200,
+                        headers: { "content-type": "application/json" },
+                    });
+                }
+                return new Response(JSON.stringify({ "file-id": "file-1", revn: 1, page: { id: "page-secret", objects: {} } }), {
+                    status: 200,
+                    headers: { "content-type": "application/json" },
+                });
+            },
+        },
+        thumbnailResponseOverride: (body) => ({
+            ...body,
+            backendRpcClient: {
+                ...body.backendRpcClient,
+                renderInput: {
+                    ...body.backendRpcClient.renderInput,
+                    sourceData: { page: "page-secret" },
+                },
+            },
+        }),
+    });
+    try {
+        const response = await postValidFileThumbnail(service.host, service.port);
+
+        assert.equal(response.status, 500);
+        const body = await response.json();
+        assert.equal(body.status, "error");
+        assert.equal(body.code, "renderer_service_response_invalid");
+        assert.equal(body.field, "backendRpcClient.renderInput.sourceData");
+        assert.equal(JSON.stringify(body).includes("page-secret"), false);
     } finally {
         await service.stop();
     }

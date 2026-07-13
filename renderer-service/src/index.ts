@@ -41,6 +41,7 @@ export const healthResponse = {
         "thumbnail.backend-rpc.pipeline-plan",
         "thumbnail.backend-rpc.file-cache-probe",
         "thumbnail.backend-rpc.file-source-data-read",
+        "thumbnail.backend-rpc.file-render-input-summary",
     ],
 } as const;
 
@@ -173,6 +174,33 @@ type BackendRpcPipelineSummary = {
     tokenValuesIncluded: false;
 };
 
+type BackendRpcRenderInputSummary = {
+    status: "source-data-ready";
+    condition: "after-source-data-read";
+    sourceDataRead: true;
+    sourceDataEndpoint: string;
+    targetKind: "file";
+    identityKeys: ["file-id", "revn"];
+    revisionSource: "backend-source-data";
+    requestRevision: "matched" | "not-provided";
+    revisionValueIncluded: false;
+    cachePolicy: ThumbnailRequestSummary["cachePolicy"];
+    cacheScope: ThumbnailRequestSummary["cacheScope"];
+    cacheKey: ThumbnailRequestSummary["cacheKey"];
+    artifactFormat: "png";
+    artifactMimeType: "image/png";
+    artifactWidth: number;
+    artifactHeight: number;
+    renderRuntime: ThumbnailRequestSummary["renderRuntime"];
+    renderFallback: ThumbnailRequestSummary["renderFallback"];
+    renderDispatch: false;
+    sourceDataValuesIncluded: false;
+    pageValuesIncluded: false;
+    artifactValuesIncluded: false;
+    mediaValuesIncluded: false;
+    tokenValuesIncluded: false;
+};
+
 type BackendRpcClientSummary = {
     status: "not-configured" | "configured-disabled" | "cache-probe-executed" | "source-data-read-executed";
     baseUriConfigured: boolean;
@@ -189,6 +217,7 @@ type BackendRpcClientSummary = {
     };
     cacheProbe: BackendRpcCacheProbeSummary | null;
     pipeline: BackendRpcPipelineSummary;
+    renderInput: BackendRpcRenderInputSummary | null;
 };
 
 type BackendRpcCacheProbeExecution = {
@@ -1103,6 +1132,42 @@ function summarizeBackendRpcPipeline(
     };
 }
 
+function summarizeBackendRpcRenderInput(
+    summary: ThumbnailRequestSummary,
+    sourceDataReadExecution: BackendRpcSourceDataReadExecution
+): BackendRpcRenderInputSummary | null {
+    if (!sourceDataReadExecution.executed || summary.targetKind !== "file" || !sourceDataReadExecution.endpoint) {
+        return null;
+    }
+
+    return {
+        status: "source-data-ready",
+        condition: "after-source-data-read",
+        sourceDataRead: true,
+        sourceDataEndpoint: sourceDataReadExecution.endpoint,
+        targetKind: "file",
+        identityKeys: ["file-id", "revn"],
+        revisionSource: "backend-source-data",
+        requestRevision: summary.revn === null ? "not-provided" : "matched",
+        revisionValueIncluded: false,
+        cachePolicy: summary.cachePolicy,
+        cacheScope: summary.cacheScope,
+        cacheKey: summary.cacheKey,
+        artifactFormat: "png",
+        artifactMimeType: "image/png",
+        artifactWidth: summary.width,
+        artifactHeight: summary.height,
+        renderRuntime: summary.renderRuntime,
+        renderFallback: summary.renderFallback,
+        renderDispatch: false,
+        sourceDataValuesIncluded: false,
+        pageValuesIncluded: false,
+        artifactValuesIncluded: false,
+        mediaValuesIncluded: false,
+        tokenValuesIncluded: false,
+    };
+}
+
 function summarizeBackendRpcClient(
     summary: ThumbnailRequestSummary,
     auth: AuthSummary,
@@ -1129,6 +1194,7 @@ function summarizeBackendRpcClient(
         },
         cacheProbe: summarizeBackendRpcCacheProbe(summary, baseUri, cacheProbeExecution),
         pipeline: summarizeBackendRpcPipeline(summary, cacheProbeExecution, sourceDataReadExecution),
+        renderInput: summarizeBackendRpcRenderInput(summary, sourceDataReadExecution),
     };
 }
 
@@ -1241,6 +1307,8 @@ function rejectResponseValueFields(record: Record<string, unknown>, fieldPrefix:
         "media",
         "artifact",
         "sourceData",
+        "page",
+        "pageValues",
         "resource",
         "resourceUri",
         "downloadUri",
@@ -1374,6 +1442,40 @@ function validateBackendRpcPipelineResponse(actual: unknown, expected: BackendRp
     }
 }
 
+function validateBackendRpcRenderInputResponse(actual: unknown, expected: BackendRpcRenderInputSummary | null): void {
+    if (expected === null) {
+        requireResponseEqual(actual ?? null, null, "backendRpcClient.renderInput");
+        return;
+    }
+
+    const record = responseRecord(actual, "backendRpcClient.renderInput");
+    rejectResponseValueFields(record, "backendRpcClient.renderInput");
+    requireResponseEqual(record.status, expected.status, "backendRpcClient.renderInput.status");
+    requireResponseEqual(record.condition, expected.condition, "backendRpcClient.renderInput.condition");
+    requireResponseEqual(responseBoolean(record, "sourceDataRead", "backendRpcClient.renderInput.sourceDataRead"), true, "backendRpcClient.renderInput.sourceDataRead");
+    requireResponseEqual(record.sourceDataEndpoint, expected.sourceDataEndpoint, "backendRpcClient.renderInput.sourceDataEndpoint");
+    requireResponseEqual(record.targetKind, expected.targetKind, "backendRpcClient.renderInput.targetKind");
+    requireResponseArrayEqual(responseStringArray(record, "identityKeys", "backendRpcClient.renderInput.identityKeys"), expected.identityKeys, "backendRpcClient.renderInput.identityKeys");
+    requireResponseEqual(record.revisionSource, expected.revisionSource, "backendRpcClient.renderInput.revisionSource");
+    requireResponseEqual(record.requestRevision, expected.requestRevision, "backendRpcClient.renderInput.requestRevision");
+    requireResponseEqual(record.revisionValueIncluded, false, "backendRpcClient.renderInput.revisionValueIncluded");
+    requireResponseEqual(record.cachePolicy, expected.cachePolicy, "backendRpcClient.renderInput.cachePolicy");
+    requireResponseEqual(record.cacheScope, expected.cacheScope, "backendRpcClient.renderInput.cacheScope");
+    requireResponseEqual(record.cacheKey, expected.cacheKey, "backendRpcClient.renderInput.cacheKey");
+    requireResponseEqual(record.artifactFormat, expected.artifactFormat, "backendRpcClient.renderInput.artifactFormat");
+    requireResponseEqual(record.artifactMimeType, expected.artifactMimeType, "backendRpcClient.renderInput.artifactMimeType");
+    requireResponseEqual(record.artifactWidth, expected.artifactWidth, "backendRpcClient.renderInput.artifactWidth");
+    requireResponseEqual(record.artifactHeight, expected.artifactHeight, "backendRpcClient.renderInput.artifactHeight");
+    requireResponseEqual(record.renderRuntime, expected.renderRuntime, "backendRpcClient.renderInput.renderRuntime");
+    requireResponseEqual(record.renderFallback, expected.renderFallback, "backendRpcClient.renderInput.renderFallback");
+    requireResponseEqual(record.renderDispatch, false, "backendRpcClient.renderInput.renderDispatch");
+    requireResponseEqual(record.sourceDataValuesIncluded, false, "backendRpcClient.renderInput.sourceDataValuesIncluded");
+    requireResponseEqual(record.pageValuesIncluded, false, "backendRpcClient.renderInput.pageValuesIncluded");
+    requireResponseEqual(record.artifactValuesIncluded, false, "backendRpcClient.renderInput.artifactValuesIncluded");
+    requireResponseEqual(record.mediaValuesIncluded, false, "backendRpcClient.renderInput.mediaValuesIncluded");
+    requireResponseEqual(record.tokenValuesIncluded, false, "backendRpcClient.renderInput.tokenValuesIncluded");
+}
+
 function validateBackendRpcCacheProbeResponse(actual: unknown, expected: BackendRpcCacheProbeSummary | null): void {
     if (expected === null) {
         requireResponseEqual(actual ?? null, null, "backendRpcClient.cacheProbe");
@@ -1433,6 +1535,7 @@ function validateThumbnailBackendRpcClientResponse(client: Record<string, unknow
     validateBackendRpcClientEntryResponse(entries.cacheMissPersist, expected.entries.cacheMissPersist, "backendRpcClient.entries.cacheMissPersist");
     validateBackendRpcCacheProbeResponse(client.cacheProbe, expected.cacheProbe);
     validateBackendRpcPipelineResponse(client.pipeline, expected.pipeline);
+    validateBackendRpcRenderInputResponse(client.renderInput, expected.renderInput);
 }
 
 function validateThumbnailResponseContract(

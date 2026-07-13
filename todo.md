@@ -244,7 +244,15 @@ P26.10 is complete: configured file-target reuse requests now execute the
 read-only backend `get-file-thumbnail` cache probe, return normalized cached
 resource metadata on hits, and continue the no-op render path on misses while
 keeping source-data reads, real rendering, thumbnail persistence, tagged-frame
-cache probes, and credential/media value exposure disabled.
+cache probes, and credential/media value exposure disabled. P26.11 is complete:
+configured file-target refresh requests and reuse cache misses now execute
+`get-file-data-for-thumbnail` before no-op rendering, validate file/revision
+identity, and expose only token-safe execution metadata. P26.12 is complete:
+configured file-target source-data reads now produce a token-safe
+`backendRpcClient.renderInput` summary for the future renderer handoff while
+cache hits and unsupported targets keep `renderInput:null`; real render
+dispatch, persistence writes, source-data/page/artifact/media values, and
+credential values remain disabled.
 P25.7 is complete: thumbnail renderer-service API fixtures now define
 future file refresh, file reuse, tagged frame refresh, auth forwarding,
 resource URI normalization, and MCP/CLI test expectations. P25.8 is complete:
@@ -889,6 +897,7 @@ process boundary before MCP or CLI execution is enabled.
 | P26.9 | done | Add renderer-service disabled cache-probe planning boundary | `renderer-service`, `mcp/docs`, `todo.md`, `CHANGES.md` | Completed 2026-07-14; reuse responses now expose `backendRpcClient.cacheProbe` with disabled strategy, request keys, cache key, hit/miss result shape, and false cache-read/network-dispatch/value flags, while refresh responses keep `cacheProbe:null` and validator coverage rejects leaked cache-hit/resource values | Fixes cache-reuse lookup semantics before implementing a backend cache probe API, without reading caches, resolving cache hits, returning cached resources, dispatching backend RPCs, or exposing media/token values |
 | P26.10 | done | Execute file thumbnail cache probe for reuse requests | `backend`, `renderer-service`, `command-runtime`, `mcp/docs`, `todo.md`, `CHANGES.md` | Completed 2026-07-14; added a read-only backend `get-file-thumbnail` RPC and renderer-service execution for configured file-target `reuse` requests, returning normalized cached resource metadata on hit and continuing the no-op render path on miss | Enables the first backend cache read without source-data reads, real scene rendering, thumbnail persistence, tagged-frame cache probes, or credential/media value exposure |
 | P26.11 | done | Execute file thumbnail source-data reads before no-op rendering | `renderer-service`, `mcp/docs`, `todo.md`, `CHANGES.md` | Completed 2026-07-14; configured file-target refresh requests now call `get-file-data-for-thumbnail` after request validation, reuse requests call it only after cache misses, and token-safe response identity validation keeps cache-hit short-circuiting intact | Enables the first backend source-data read without exposing source data, rendering scene data, persisting thumbnails, tagged-frame source-data reads, or credential/media value exposure |
+| P26.12 | done | Add source-data render input summary before no-op rendering | `renderer-service`, `mcp/docs`, `todo.md`, `CHANGES.md` | Completed 2026-07-14; source-data-read file thumbnail responses now include token-safe `backendRpcClient.renderInput` metadata, cache hits keep `renderInput:null`, and response validation rejects leaked render input values | Prepares the renderer execution handoff without rendering scene data, persisting thumbnails, exposing source-data/page/artifact/media/credential values, or enabling tagged-frame source-data reads |
 
 P26.1 is complete: `@penpot/renderer-service` is a private pnpm workspace
 package with a real no-op HTTP lifecycle. Its TypeScript output is written to
@@ -981,6 +990,13 @@ only after the configured cache probe misses. Cache hits remain short-circuited,
 tagged-frame source-data loading remains a future capability, and the response
 exposes only execution metadata, not page/source-data, credential, media, or
 rendered artifact values.
+
+P26.12 is complete: this slice adds a renderer-service render input summary
+after successful file thumbnail source-data reads. The summary identifies the
+validated file/revision/cache/artifact envelope that future rendering will
+consume, remains absent for cache hits and unconfigured/tagged-frame requests,
+and keeps real render dispatch, thumbnail persistence, page/source-data,
+artifact bytes, media values, and credential values disabled.
 
 ## Maintenance: Build Cache Hygiene
 
