@@ -1,4 +1,7 @@
 import assert from "node:assert/strict";
+import { mkdtemp, rm, writeFile } from "node:fs/promises";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
 import test from "node:test";
 import { pathToFileURL } from "node:url";
 
@@ -191,6 +194,7 @@ test("noop host reads backend RPC planning base URI from environment", async () 
             PENPOT_RENDERER_SERVICE_HOST: "127.0.0.1",
             PENPOT_RENDERER_SERVICE_PORT: "6074",
             PENPOT_RENDERER_SERVICE_BACKEND_URI: "https://penpot.example.test/",
+            PENPOT_RENDERER_SERVICE_RUNTIME_MODULE: " /tmp/renderer-runtime.mjs ",
         }),
         {
             host: "127.0.0.1",
@@ -198,6 +202,7 @@ test("noop host reads backend RPC planning base URI from environment", async () 
             backendRpc: {
                 baseUri: "https://penpot.example.test",
             },
+            rendererRuntimeModule: "/tmp/renderer-runtime.mjs",
         }
     );
 
@@ -215,6 +220,101 @@ test("noop host reads backend RPC planning base URI from environment", async () 
         () => serviceModule.readRendererServiceOptionsFromEnv({ PENPOT_RENDERER_SERVICE_BACKEND_URI: "file:///tmp/backend" }),
         /backend RPC baseUri must be an absolute HTTP\(S\) URL/
     );
+});
+
+test("noop host loads renderer runtime adapter modules from environment", async () => {
+    const runtimeDir = await mkdtemp(join(tmpdir(), "penpot-renderer-runtime-"));
+    const runtimeModulePath = join(runtimeDir, "runtime.mjs");
+    await writeFile(
+        runtimeModulePath,
+        `
+import { Buffer } from "node:buffer";
+
+export default {
+    async renderThumbnail(input) {
+        if (input.sourceData.page.id !== "page-secret") {
+            throw new Error("unexpected source data");
+        }
+        return {
+            png: Buffer.from("${pngFixture.toString("base64")}", "base64"),
+            runtime: "frontend-rasterizer",
+            fallbackUsed: true
+        };
+    }
+};
+`
+    );
+
+    let service = null;
+    try {
+        const options = serviceModule.readRendererServiceOptionsFromEnv({
+            PENPOT_RENDERER_SERVICE_BACKEND_URI: "https://penpot.example.test/",
+            PENPOT_RENDERER_SERVICE_RUNTIME_MODULE: runtimeModulePath,
+        });
+        assert.equal(options.rendererRuntimeModule, runtimeModulePath);
+
+        service = await serviceModule.startRendererService({
+            ...options,
+            port: 0,
+            backendRpc: {
+                ...options.backendRpc,
+                fetch: async (url) => {
+                    if (String(url).includes("get-file-data-for-thumbnail")) {
+                        return new Response(JSON.stringify({ "file-id": "file-1", revn: 1, page: { id: "page-secret", objects: {} } }), {
+                            status: 200,
+                            headers: { "content-type": "application/json" },
+                        });
+                    }
+                    return new Response(JSON.stringify({ hit: false, "file-id": "file-1", revn: 1 }), {
+                        status: 200,
+                        headers: { "content-type": "application/json" },
+                    });
+                },
+            },
+        });
+
+        const response = await postValidFileThumbnail(service.host, service.port);
+        assert.equal(response.status, 200);
+        const body = await response.json();
+        assert.equal(body.backendRpcClient.status, "render-executed");
+        assert.deepEqual(
+            body.backendRpcClient.renderOutput,
+            backendRpcRenderOutput(pngFixture.byteLength, { runtime: "frontend-rasterizer", fallbackUsed: true })
+        );
+        assert.deepEqual(body.renderer, {
+            runtime: "frontend-rasterizer",
+            fallbackUsed: true,
+        });
+
+        const asset = await fetch(body.resource.downloadUri);
+        assert.equal(asset.status, 200);
+        assert.equal(Buffer.from(await asset.arrayBuffer()).equals(pngFixture), true);
+        assert.equal(JSON.stringify(body).includes("page-secret"), false);
+    } finally {
+        if (service) {
+            await service.stop();
+        }
+        await rm(runtimeDir, { recursive: true, force: true });
+    }
+});
+
+test("noop host rejects invalid renderer runtime adapter modules", async () => {
+    const runtimeDir = await mkdtemp(join(tmpdir(), "penpot-renderer-runtime-"));
+    const runtimeModulePath = join(runtimeDir, "runtime.mjs");
+    await writeFile(runtimeModulePath, "export const notRenderer = true;\n");
+
+    try {
+        await assert.rejects(
+            () => serviceModule.loadRendererRuntimeAdapterModule(runtimeModulePath),
+            /runtime module must export a renderThumbnail function/
+        );
+        await assert.rejects(
+            () => serviceModule.loadRendererRuntimeAdapterModule("relative-runtime.mjs"),
+            /runtime module must be an absolute file path/
+        );
+    } finally {
+        await rm(runtimeDir, { recursive: true, force: true });
+    }
 });
 
 test("noop host executes configured file thumbnail cache probe and returns cache hits", async () => {

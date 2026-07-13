@@ -21,6 +21,7 @@
 - Execute renderer-service file thumbnail source-data reads for configured refresh requests and reuse cache misses, validating token-safe backend responses while keeping tagged-frame source-data reads, thumbnail persistence, and network dispatch disabled.
 - Add renderer-service render input summaries after configured file thumbnail source-data reads, with response validation that rejects source-data/page/artifact/media/credential value exposure.
 - Execute injected renderer-service runtime adapters after configured file thumbnail source-data reads, serving adapter PNG bytes from in-memory resource URLs while keeping persistence, tagged-frame source-data, local file writes, and value exposure disabled.
+- Add explicit renderer-service runtime adapter module registration via `PENPOT_RENDERER_SERVICE_RUNTIME_MODULE`, with CLI lifecycle metadata and startup validation while keeping bundled real scene rendering and persistence disabled.
 - Validate renderer-service thumbnail identity consistency across target ids/revisions, cache keys, backend data requests, and persist requests before no-op rendering.
 - Validate generated renderer-service thumbnail response metadata before returning success, rejecting malformed resource/cache/renderer/request/auth summaries with `renderer_service_response_invalid`.
 - Forward caller-session auth headers for executable `render.thumbnail` renderer-service dispatch from MCP and `penpot-cli`, while exposing only token-safe auth presence metadata in service results.

@@ -131,6 +131,7 @@ Environment:
   PENPOT_RENDERER_SERVICE_HOST  No-op host bind host, default 127.0.0.1
   PENPOT_RENDERER_SERVICE_PORT  No-op host bind port, default 6070
   PENPOT_RENDERER_SERVICE_BACKEND_URI  Optional backend RPC base URI for disabled endpoint planning
+  PENPOT_RENDERER_SERVICE_RUNTIME_MODULE  Optional local renderer runtime adapter module
   PENPOT_BACKEND_URI           Fallback backend RPC base URI for disabled endpoint planning`;
 
 const FILE_HELP_TEXT = `penpot-cli file
@@ -1087,6 +1088,13 @@ function getRendererServiceUri(args: string[], env: NodeJS.ProcessEnv): string {
     );
 }
 
+function shellEnvAssignment(name: string, value: string): string {
+    if (/^[A-Za-z0-9_./:@%+-]+$/.test(value)) {
+        return `${name}=${value}`;
+    }
+    return `${name}='${value.replace(/'/g, "'\"'\"'")}'`;
+}
+
 function getRendererServiceLifecyclePlan(args: string[], env: NodeJS.ProcessEnv): {
     host: string;
     port: number | null;
@@ -1100,6 +1108,13 @@ function getRendererServiceLifecyclePlan(args: string[], env: NodeJS.ProcessEnv)
     healthProbe: false;
     rendererDispatch: false;
     backendRpc: false;
+    rendererRuntime: {
+        configured: boolean;
+        module: string | null;
+        source: "PENPOT_RENDERER_SERVICE_RUNTIME_MODULE" | null;
+        moduleImport: false;
+        renderDispatch: false;
+    };
     backendRpcPlanning: {
         configured: boolean;
         baseUri: string | null;
@@ -1123,11 +1138,16 @@ function getRendererServiceLifecyclePlan(args: string[], env: NodeJS.ProcessEnv)
         : env.PENPOT_BACKEND_URI
             ? "PENPOT_BACKEND_URI"
             : null;
+    const rendererRuntimeModule = env.PENPOT_RENDERER_SERVICE_RUNTIME_MODULE?.trim() || null;
     const startEnv = [
         ...(host === DEFAULT_RENDERER_SERVICE_HOST && port === DEFAULT_RENDERER_SERVICE_PORT
             ? []
-            : [`PENPOT_RENDERER_SERVICE_HOST=${host}`, `PENPOT_RENDERER_SERVICE_PORT=${portValue}`]),
-        ...(backendRpcBaseUri ? [`PENPOT_RENDERER_SERVICE_BACKEND_URI=${backendRpcBaseUri}`] : []),
+            : [
+                  shellEnvAssignment("PENPOT_RENDERER_SERVICE_HOST", host),
+                  shellEnvAssignment("PENPOT_RENDERER_SERVICE_PORT", portValue),
+              ]),
+        ...(backendRpcBaseUri ? [shellEnvAssignment("PENPOT_RENDERER_SERVICE_BACKEND_URI", backendRpcBaseUri)] : []),
+        ...(rendererRuntimeModule ? [shellEnvAssignment("PENPOT_RENDERER_SERVICE_RUNTIME_MODULE", rendererRuntimeModule)] : []),
     ];
     const startPrefix = startEnv.length ? `${startEnv.join(" ")} ` : "";
 
@@ -1144,6 +1164,13 @@ function getRendererServiceLifecyclePlan(args: string[], env: NodeJS.ProcessEnv)
         healthProbe: false,
         rendererDispatch: false,
         backendRpc: false,
+        rendererRuntime: {
+            configured: Boolean(rendererRuntimeModule),
+            module: rendererRuntimeModule,
+            source: rendererRuntimeModule ? "PENPOT_RENDERER_SERVICE_RUNTIME_MODULE" : null,
+            moduleImport: false,
+            renderDispatch: false,
+        },
         backendRpcPlanning: {
             configured: Boolean(backendRpcBaseUri),
             baseUri: backendRpcBaseUri,

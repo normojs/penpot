@@ -1,11 +1,13 @@
 import { createHash } from "node:crypto";
 import { createServer, type IncomingMessage, type Server, type ServerResponse } from "node:http";
+import { isAbsolute } from "node:path";
 import { pathToFileURL } from "node:url";
 
 const DEFAULT_HOST = "127.0.0.1";
 const DEFAULT_PORT = 6070;
 const BACKEND_RPC_BASE_URI_ENV = "PENPOT_RENDERER_SERVICE_BACKEND_URI";
 const BACKEND_RPC_BASE_URI_FALLBACK_ENV = "PENPOT_BACKEND_URI";
+const RENDERER_RUNTIME_MODULE_ENV = "PENPOT_RENDERER_SERVICE_RUNTIME_MODULE";
 
 export type RendererBackendRpcClientOptions = {
     baseUri?: string;
@@ -56,6 +58,7 @@ export type RendererServiceOptions = {
     port?: number;
     backendRpc?: RendererBackendRpcClientOptions;
     renderer?: RendererRuntimeOptions;
+    rendererRuntimeModule?: string;
     thumbnailResponseOverride?: (response: Record<string, unknown>) => unknown;
 };
 
@@ -84,6 +87,7 @@ export const healthResponse = {
         "thumbnail.backend-rpc.file-source-data-read",
         "thumbnail.backend-rpc.file-render-input-summary",
         "thumbnail.render.runtime-adapter",
+        "thumbnail.render.runtime-module",
     ],
 } as const;
 
@@ -337,6 +341,96 @@ function isRecord(value: unknown): value is Record<string, unknown> {
 
 function optionalString(value: unknown): string | null {
     return typeof value === "string" && value.trim() ? value : null;
+}
+
+function rendererStartupError(message: string, code: string, field: string, cause?: unknown): never {
+    throw Object.assign(new Error(message), {
+        code,
+        field,
+        status: 500,
+        retryable: false,
+        ...(cause ? { cause } : {}),
+    });
+}
+
+function normalizeRendererRuntimeModuleSpecifier(moduleSpecifier: string): string {
+    const specifier = moduleSpecifier.trim();
+    if (!specifier) {
+        rendererStartupError(
+            "Renderer-service runtime module path is required.",
+            "renderer_service_runtime_module_invalid",
+            "renderer.runtimeModule"
+        );
+    }
+
+    try {
+        const url = new URL(specifier);
+        if (url.protocol === "file:") {
+            return url.href;
+        }
+        rendererStartupError(
+            "Renderer-service runtime module must be a local file URL or absolute file path.",
+            "renderer_service_runtime_module_invalid",
+            "renderer.runtimeModule"
+        );
+    } catch (error) {
+        if (!(error instanceof TypeError)) {
+            throw error;
+        }
+    }
+
+    if (!isAbsolute(specifier)) {
+        rendererStartupError(
+            "Renderer-service runtime module must be an absolute file path.",
+            "renderer_service_runtime_module_invalid",
+            "renderer.runtimeModule"
+        );
+    }
+    return pathToFileURL(specifier).href;
+}
+
+export async function loadRendererRuntimeAdapterModule(moduleSpecifier: string): Promise<RendererRuntimeOptions> {
+    const href = normalizeRendererRuntimeModuleSpecifier(moduleSpecifier);
+    let moduleExports: unknown;
+    try {
+        moduleExports = await import(href);
+    } catch (error) {
+        rendererStartupError(
+            "Renderer-service runtime module could not be imported.",
+            "renderer_service_runtime_module_unavailable",
+            "renderer.runtimeModule",
+            error
+        );
+    }
+
+    if (!isRecord(moduleExports)) {
+        rendererStartupError(
+            "Renderer-service runtime module must export a renderThumbnail function.",
+            "renderer_service_runtime_module_invalid",
+            "renderer.runtimeModule"
+        );
+    }
+
+    const defaultExport = moduleExports.default;
+    const candidate = isRecord(defaultExport) ? defaultExport : moduleExports;
+    const renderThumbnail =
+        typeof candidate.renderThumbnail === "function"
+            ? candidate.renderThumbnail
+            : typeof defaultExport === "function"
+              ? defaultExport
+              : null;
+
+    if (!renderThumbnail) {
+        rendererStartupError(
+            "Renderer-service runtime module must export a renderThumbnail function.",
+            "renderer_service_runtime_module_invalid",
+            "renderer.runtimeModule.renderThumbnail"
+        );
+    }
+
+    return {
+        renderThumbnail: renderThumbnail as RendererRuntimeOptions["renderThumbnail"],
+    };
 }
 
 function requireTargetString(target: Record<string, unknown>, field: string, code: string): string {
@@ -1945,9 +2039,10 @@ export function createRendererService(options: Pick<RendererServiceOptions, "bac
 export async function startRendererService(options: RendererServiceOptions = {}): Promise<StartedRendererService> {
     const host = options.host ?? DEFAULT_HOST;
     const port = options.port ?? DEFAULT_PORT;
+    const renderer = options.renderer ?? (options.rendererRuntimeModule ? await loadRendererRuntimeAdapterModule(options.rendererRuntimeModule) : undefined);
     const server = createRendererService({
         backendRpc: options.backendRpc,
-        renderer: options.renderer,
+        renderer,
         thumbnailResponseOverride: options.thumbnailResponseOverride,
     });
 
@@ -2002,11 +2097,13 @@ export function readRendererServiceOptionsFromEnv(env: NodeJS.ProcessEnv = proce
     const backendBaseUri = normalizeBackendRpcBaseUri({
         baseUri: backendBaseUriInput,
     });
+    const rendererRuntimeModule = optionalString(env[RENDERER_RUNTIME_MODULE_ENV])?.trim();
 
     return {
         host: env.PENPOT_RENDERER_SERVICE_HOST ?? DEFAULT_HOST,
         port: readPort(env.PENPOT_RENDERER_SERVICE_PORT),
         ...(backendBaseUri ? { backendRpc: { baseUri: backendBaseUri } } : {}),
+        ...(rendererRuntimeModule ? { rendererRuntimeModule } : {}),
     };
 }
 

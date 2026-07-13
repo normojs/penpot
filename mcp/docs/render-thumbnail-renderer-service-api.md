@@ -11,7 +11,9 @@ the normalized `downloadUri`, while MCP returns resource metadata only. The
 later slices add backend cache probe execution, source-data reads, source-data
 render input summaries, and an injectable renderer runtime adapter on the
 gated file-thumbnail path; thumbnail persistence writes remain disabled and
-manual hosts without a renderer adapter keep the no-op PNG path.
+manual hosts without a renderer adapter keep the no-op PNG path. P26.14 adds
+an explicit local runtime module registration boundary for manual hosts via
+`PENPOT_RENDERER_SERVICE_RUNTIME_MODULE`.
 P26.5 adds a token-safe `backendRpcClient` plan to renderer-service thumbnail
 responses so backend data/cache/persist endpoints are normalized for staged
 execution. That plan now feeds the executable file-thumbnail cache probe,
@@ -45,6 +47,12 @@ only in memory and served by resource URL. Responses mark
 `backendRpcClient.renderOutput` metadata without source-data, page, artifact
 byte, media, or credential values. Cache hits and hosts without an adapter
 still keep the existing short-circuit/no-op behavior.
+P26.14 lets the manual host load a local ES module runtime adapter at startup.
+The module must be configured with an absolute file path or `file:` URL and
+export `renderThumbnail` directly or through its default export. Loading the
+module does not change dry-run behavior, does not import modules from CLI
+lifecycle status/start planning, and still routes adapter results through the
+P26.13 PNG byte and response redaction validators.
 
 Status: P25.144 supersedes the earlier disabled-planning boundary for the
 first executable slice. The renderer-service package, health/no-op host, MCP
@@ -437,6 +445,19 @@ without an adapter, cache hits, unconfigured requests, and tagged-frame
 requests do not dispatch render. Thumbnail persistence writes, tagged-frame
 source-data reads, source-data/page values, artifact bytes in JSON, media
 values, and credential values remain disabled or redacted.
+
+P26.14 adds manual runtime adapter module registration. When
+`PENPOT_RENDERER_SERVICE_RUNTIME_MODULE` is set to an absolute local path or
+`file:` URL, startup imports that ES module and accepts a named
+`renderThumbnail`, default object `renderThumbnail`, or default function as the
+runtime adapter. Invalid or missing exports fail startup before the host binds.
+`penpot-cli renderer-service status/start` reports the configured module path
+as no-import/no-dispatch lifecycle metadata; the CLI still does not spawn,
+probe, import, or render. This is a registration boundary only: bundled
+render-wasm/frontend rasterizer scene rendering, tagged-frame source-data
+reads, thumbnail persistence writes, local file writes, source-data/page
+values, artifact byte exposure, media values, and credential values remain
+disabled or redacted.
 
 The P25.77 revocation appeal resolution enforcement evidence attestation
 notarization certification endorsement countersignature verification revocation
@@ -1495,7 +1516,7 @@ gates remain before the renderer can be treated as fully implemented:
 - keep MCP `render.thumbnail` dry-run and `penpot-cli render thumbnail
   --dry-run` as request inspection paths
 - keep manual hosts no-op unless a renderer runtime adapter is explicitly
-  configured
+  injected or configured through `PENPOT_RENDERER_SERVICE_RUNTIME_MODULE`
 - keep file thumbnail cache probe execution limited to file reuse while
   tagged-frame source-data loading remains pending
 - replace the injected test adapter with a bundled render-wasm/frontend
@@ -1505,7 +1526,7 @@ gates remain before the renderer can be treated as fully implemented:
 - add or expose explicit frame source-data loading for tagged frame targets
 - normalize tagged frame media ids to resource URIs
 - keep response normalization covered by fixtures before persistence writes or
-  runtime registration expand
+  bundled runtime registration expand
 - extend MCP tests from dry-run/unavailable planning into auth forwarding,
   resource metadata, and renderer-service error responses
 - add CLI smoke tests for dry-run, execution metadata, `--output`, and missing

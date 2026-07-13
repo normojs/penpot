@@ -7063,6 +7063,7 @@ test("renderer-service status reports a no-spawn lifecycle plan without probing"
     try {
         const result = await runCli(["renderer-service", "status", "--host", "127.0.0.1", "--port", "6072", "--format", "json"], {
             PENPOT_RENDERER_SERVICE_BACKEND_URI: "https://penpot.example.test/",
+            PENPOT_RENDERER_SERVICE_RUNTIME_MODULE: "/tmp/penpot renderer runtime.mjs",
         });
         const body = parseJson(result.stdout);
 
@@ -7076,6 +7077,13 @@ test("renderer-service status reports a no-spawn lifecycle plan without probing"
         assert.equal(body.data.lifecycle.healthProbe, false);
         assert.equal(body.data.lifecycle.rendererDispatch, false);
         assert.equal(body.data.lifecycle.backendRpc, false);
+        assert.deepEqual(body.data.lifecycle.rendererRuntime, {
+            configured: true,
+            module: "/tmp/penpot renderer runtime.mjs",
+            source: "PENPOT_RENDERER_SERVICE_RUNTIME_MODULE",
+            moduleImport: false,
+            renderDispatch: false,
+        });
         assert.deepEqual(body.data.lifecycle.backendRpcPlanning, {
             configured: true,
             baseUri: "https://penpot.example.test",
@@ -7085,6 +7093,7 @@ test("renderer-service status reports a no-spawn lifecycle plan without probing"
         assert.equal(body.data.lifecycle.artifactWrites, false);
         assert.match(body.data.lifecycle.startCommand, /PENPOT_RENDERER_SERVICE_PORT=6072/);
         assert.match(body.data.lifecycle.startCommand, /PENPOT_RENDERER_SERVICE_BACKEND_URI=https:\/\/penpot\.example\.test/);
+        assert.match(body.data.lifecycle.startCommand, /PENPOT_RENDERER_SERVICE_RUNTIME_MODULE='\/tmp\/penpot renderer runtime\.mjs'/);
     } finally {
         globalThis.fetch = originalFetch;
     }
@@ -7100,6 +7109,7 @@ test("renderer-service start keeps startup manual and does not spawn a process",
     assert.equal(body.error.data.lifecycle.processSpawn, false);
     assert.equal(body.error.data.lifecycle.healthProbe, false);
     assert.equal(body.error.data.lifecycle.rendererDispatch, false);
+    assert.equal(body.error.data.lifecycle.rendererRuntime.configured, false);
     assert.equal(body.error.data.lifecycle.backendRpcPlanning.configured, false);
     assert.match(body.error.actions[0], /PENPOT_RENDERER_SERVICE_PORT=6073/);
 });

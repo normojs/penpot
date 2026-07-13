@@ -233,10 +233,12 @@ node penpot-cli/dist/index.js renderer-service status --host 127.0.0.1 --port 60
 `renderer-service status` reports the build cache, `/health`, and `/thumbnail`
 endpoints plus the exact manual command to run. It also shows whether
 `PENPOT_RENDERER_SERVICE_BACKEND_URI` or `PENPOT_BACKEND_URI` will be used for
-disabled backend RPC endpoint planning. It does not create a process, make an
-HTTP request, or execute backend RPCs. `renderer-service start` deliberately
-returns the same command as a structured manual-start boundary; it does not
-spawn a child process:
+disabled backend RPC endpoint planning, and whether
+`PENPOT_RENDERER_SERVICE_RUNTIME_MODULE` is configured for a local runtime
+adapter module. It does not create a process, make an HTTP request, import the
+module, or execute backend RPCs. `renderer-service start` deliberately returns
+the same command as a structured manual-start boundary; it does not spawn a
+child process:
 
 ```bash
 pnpm --filter @penpot/renderer-service start:noop

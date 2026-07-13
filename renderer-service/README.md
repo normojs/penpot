@@ -10,6 +10,8 @@ The current host implements:
   normalized PNG resource.
 - Optional injected renderer runtime adapters for file thumbnail source-data
   reads. Adapter PNG bytes are stored only in memory and served by resource URL.
+- Optional local runtime adapter module loading via
+  `PENPOT_RENDERER_SERVICE_RUNTIME_MODULE`.
 - `GET /assets/by-id/noop-thumbnail-png`, serving the fixture PNG resource, and
   `GET /assets/by-id/{renderedMediaId}` for in-memory adapter artifacts.
 
@@ -27,7 +29,9 @@ The host defaults to `127.0.0.1:6070`. Set
 the bind address. Set `PENPOT_RENDERER_SERVICE_BACKEND_URI`, or
 `PENPOT_BACKEND_URI` as a fallback, to expose backend RPC endpoint planning
 metadata in thumbnail responses. File-target cache probes and source-data reads
-run only on the gated thumbnail path. Manual hosts do not bundle a render-wasm
-bridge yet, so they keep the fixture PNG path unless a renderer adapter is
-injected by tests or future host wiring; tagged-frame source-data reads,
-thumbnail persistence, and bundled real scene rendering remain disabled.
+run only on the gated thumbnail path. Set
+`PENPOT_RENDERER_SERVICE_RUNTIME_MODULE` to an absolute local path or `file:`
+URL for an ES module that exports `renderThumbnail`; default manual hosts keep
+the fixture PNG path. Manual hosts do not bundle a render-wasm bridge yet, so
+tagged-frame source-data reads, thumbnail persistence, and bundled real scene
+rendering remain disabled.
