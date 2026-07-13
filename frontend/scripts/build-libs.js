@@ -1,5 +1,17 @@
 import * as esbuild from "esbuild";
 import { readFile } from "node:fs/promises";
+import { resolve } from "node:path";
+
+const frontendCacheDir =
+  process.env.PENPOT_FRONTEND_CACHE_DIR ??
+  "/Volumes/fushilu/.caches/penpot/frontend";
+const externalIndexPath = resolve(
+  process.env.PENPOT_FRONTEND_EXTERNAL_INDEX ??
+    `${frontendCacheDir}/index.js`,
+);
+const externalIndexFilter = new RegExp(
+  externalIndexPath.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"),
+);
 
 /**
  * esbuild plugin to watch a directory recursively
@@ -8,7 +20,7 @@ const watchExtraDirPlugin = {
   name: "watch-extra-dir",
   setup(build) {
     build.onLoad(
-      { filter: /target\/index.js/, namespace: "file" },
+      { filter: externalIndexFilter, namespace: "file" },
       async (args) => {
         return {
           watchDirs: ["packages/ui/dist"],
@@ -46,7 +58,7 @@ const rebuildNotify = {
 };
 
 const config = {
-  entryPoints: ["target/index.js"],
+  entryPoints: [externalIndexPath],
   bundle: true,
   format: "esm",
   banner: {

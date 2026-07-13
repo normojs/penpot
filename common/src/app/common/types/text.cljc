@@ -413,14 +413,14 @@
         paragraph-style
         (merge
          default-text-attrs
-         styles
-         (select-keys (->> content (node-seq is-paragraph-node?) first) text-all-attrs))
+         (select-keys (->> content (node-seq is-paragraph-node?) first) text-all-attrs)
+         styles)
 
         text-style
         (merge
          default-text-attrs
-         styles
-         (select-keys (->> content (node-seq is-text-node?) first) text-all-attrs))
+         (select-keys (->> content (node-seq is-text-node?) first) text-all-attrs)
+         styles)
 
         paragraph-texts
         (str/split text "\n")

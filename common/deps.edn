@@ -74,7 +74,8 @@
 
   :shadow-cljs
   {:main-opts ["-m" "shadow.cljs.devtools.cli"]
-   :jvm-opts ["--sun-misc-unsafe-memory-access=allow"]}
+   :jvm-opts ["-XX:+IgnoreUnrecognizedVMOptions"
+              "--sun-misc-unsafe-memory-access=allow"]}
 
   :outdated
   {:extra-deps {com.github.liquidz/antq {:mvn/version "RELEASE"}}

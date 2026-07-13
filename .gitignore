@@ -70,7 +70,8 @@
 /other/
 /penpot-cli/dist/
 /penpot-cli/*.tsbuildinfo
-/scripts/
+/scripts/*
+!/scripts/link-node-modules-cache.mjs
 /nexus/
 /tmp/
 /vendor/**/target

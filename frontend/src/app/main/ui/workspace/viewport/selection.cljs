@@ -75,6 +75,113 @@
               :stroke-width (/ selection-rect-width zoom)
               :fill "none"}}]))
 
+(defn- straight-line-path?
+  [shape]
+  (let [content (dm/get-prop shape :content)]
+    (and (cfh/path-shape? shape)
+         (= 2 (count content))
+         (= :move-to (dm/get-prop (nth content 0) :command))
+         (= :line-to (dm/get-prop (nth content 1) :command)))))
+
+(defn- line-path-resize-positions
+  [shape]
+  (let [content (dm/get-prop shape :content)
+        start   (dm/get-prop (nth content 0) :params)
+        end     (dm/get-prop (nth content 1) :params)
+        start-x (dm/get-prop start :x)
+        start-y (dm/get-prop start :y)
+        end-x   (dm/get-prop end :x)
+        end-y   (dm/get-prop end :y)]
+    (cond
+      (= start-x end-x)
+      [:top :bottom]
+
+      (= start-y end-y)
+      [:left :right]
+
+      (= (< start-x end-x) (< start-y end-y))
+      [:top-left :bottom-right]
+
+      :else
+      [:top-right :bottom-left])))
+
+(defn- resize-point-handler-data
+  [position x y width height align]
+  (case position
+    :top-left
+    #js {:type :resize-point
+         :position :top-left
+         :props #js {:cx x :cy y :align align}}
+
+    :top-right
+    #js {:type :resize-point
+         :position :top-right
+         :props #js {:cx (+ x width) :cy y :align align}}
+
+    :bottom-right
+    #js {:type :resize-point
+         :position :bottom-right
+         :props #js {:cx (+ x width) :cy (+ y height) :align align}}
+
+    :bottom-left
+    #js {:type :resize-point
+         :position :bottom-left
+         :props #js {:cx x :cy (+ y height) :align align}}))
+
+(defn- resize-side-handler-data
+  [position x y width height threshold-small small-width? small-height? align
+   tiny-width? tiny-height?]
+  (case position
+    :top
+    #js {:type :resize-side
+         :position :top
+         :props #js {:x (if ^boolean small-width?
+                          (+ x (/ (- width threshold-small) 2))
+                          x)
+                     :y y
+                     :length (if ^boolean small-width?
+                               threshold-small
+                               width)
+                     :angle 0
+                     :align align
+                     :show-handler tiny-width?}}
+
+    :bottom
+    #js {:type :resize-side
+         :position :bottom
+         :props #js {:x (if ^boolean small-width?
+                          (+ x (/ (+ width threshold-small) 2))
+                          (+ x width))
+                     :y (+ y height)
+                     :length (if small-width? threshold-small width)
+                     :angle 180
+                     :align align
+                     :show-handler tiny-width?}}
+
+    :right
+    #js {:type :resize-side
+         :position :right
+         :props #js {:x (+ x width)
+                     :y (if small-height? (+ y (/ (- height threshold-small) 2)) y)
+                     :length (if small-height? threshold-small height)
+                     :angle 90
+                     :align align
+                     :show-handler tiny-height?}}
+
+    :left
+    #js {:type :resize-side
+         :position :left
+         :props #js {:x x
+                     :y (if ^boolean small-height?
+                          (+ y (/ (+ height threshold-small) 2))
+                          (+ y height))
+                     :length (if ^boolean small-height?
+                               threshold-small
+                               height)
+                     :angle 270
+                     :align align
+                     :show-handler tiny-height?}}))
+
 (defn- calculate-handlers
   "Calculates selection handlers for the current selection."
   [selection shape zoom]
@@ -93,6 +200,7 @@
         tiny-height?     (<= height threshold-tiny)
 
         path?            (cfh/path-shape? shape)
+        line-path?       (straight-line-path? shape)
         vertical-line?   (and ^boolean path? ^boolean tiny-width?)
         horizontal-line? (and ^boolean path? ^boolean tiny-height?)
 
@@ -117,69 +225,45 @@
                                    :props #js {:cx x :cy (+ y height)}}]]
 
 
-    (when-not ^boolean horizontal-line?
-      (array/conj! result
-                   #js {:type :resize-side
-                        :position :top
-                        :props #js {:x (if ^boolean small-width?
-                                         (+ x (/ (- width threshold-small) 2))
-                                         x)
-                                    :y y
-                                    :length (if ^boolean small-width?
-                                              threshold-small
-                                              width)
-                                    :angle 0
-                                    :align align
-                                    :show-handler tiny-width?}}
-                   #js {:type :resize-side
-                        :position :bottom
-                        :props #js {:x (if ^boolean small-width?
-                                         (+ x (/ (+ width threshold-small) 2))
-                                         (+ x width))
-                                    :y (+ y height)
-                                    :length (if small-width? threshold-small width)
-                                    :angle 180
-                                    :align align
-                                    :show-handler tiny-width?}}))
+    (if ^boolean line-path?
+      (do
+        (doseq [position (line-path-resize-positions shape)]
+          (array/conj!
+           result
+           (case position
+             (:top :bottom :right :left)
+             (resize-side-handler-data
+              position x y width height threshold-small small-width? small-height?
+              align tiny-width? tiny-height?)
 
-    (when-not vertical-line?
-      (array/conj! result
-                   #js {:type :resize-side
-                        :position :right
-                        :props #js {:x (+ x width)
-                                    :y (if small-height? (+ y (/ (- height threshold-small) 2)) y)
-                                    :length (if small-height? threshold-small height)
-                                    :angle 90
-                                    :align align
-                                    :show-handler tiny-height?}}
+             (resize-point-handler-data position x y width height align))))
+        result)
 
-                   #js {:type :resize-side
-                        :position :left
-                        :props #js {:x x
-                                    :y (if ^boolean small-height?
-                                         (+ y (/ (+ height threshold-small) 2))
-                                         (+ y height))
-                                    :length (if ^boolean small-height?
-                                              threshold-small
-                                              height)
-                                    :angle 270
-                                    :align align
-                                    :show-handler tiny-height?}}))
+      (do
+        (when-not ^boolean horizontal-line?
+          (array/conj! result
+                       (resize-side-handler-data
+                        :top x y width height threshold-small small-width?
+                        small-height? align tiny-width? tiny-height?)
+                       (resize-side-handler-data
+                        :bottom x y width height threshold-small small-width?
+                        small-height? align tiny-width? tiny-height?)))
 
-    (when (and (not tiny-width?) (not tiny-height?))
-      (array/conj! result
-                   #js {:type :resize-point
-                        :position :top-left
-                        :props #js {:cx x :cy y :align align}}
-                   #js {:type :resize-point
-                        :position :top-right
-                        :props #js {:cx (+ x width) :cy y :align align}}
-                   #js {:type :resize-point
-                        :position :bottom-right
-                        :props #js {:cx (+ x width) :cy (+ y height) :align align}}
-                   #js {:type :resize-point
-                        :position :bottom-left
-                        :props #js {:cx x :cy (+ y height) :align align}}))))
+        (when-not vertical-line?
+          (array/conj! result
+                       (resize-side-handler-data
+                        :right x y width height threshold-small small-width?
+                        small-height? align tiny-width? tiny-height?)
+                       (resize-side-handler-data
+                        :left x y width height threshold-small small-width?
+                        small-height? align tiny-width? tiny-height?)))
+
+        (when (and (not tiny-width?) (not tiny-height?))
+          (array/conj! result
+                       (resize-point-handler-data :top-left x y width height align)
+                       (resize-point-handler-data :top-right x y width height align)
+                       (resize-point-handler-data :bottom-right x y width height align)
+                       (resize-point-handler-data :bottom-left x y width height align)))))))
 
 (mf/defc rotation-handler
   {::mf/wrap-props false}

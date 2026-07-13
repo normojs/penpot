@@ -1,4 +1,5 @@
 allowBuilds:
+  esbuild: true
   opencode-ai: true
 
 packages:

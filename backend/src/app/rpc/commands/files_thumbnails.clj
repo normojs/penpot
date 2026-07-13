@@ -217,6 +217,42 @@
                     :revn (:revn file)
                     :page (get-file-data-for-thumbnail cfg file strip-frames-with-thumbnails)}))))
 
+;; --- COMMAND QUERY: get-file-thumbnail
+
+(def ^:private
+  schema:get-file-thumbnail
+  [:map {:title "get-file-thumbnail"}
+   [:file-id ::sm/uuid]
+   [:revn ::sm/int]])
+
+(def ^:private
+  schema:file-thumbnail-cache-probe
+  [:map {:title "FileThumbnailCacheProbe"}
+   [:hit ::sm/boolean]
+   [:file-id ::sm/uuid]
+   [:revn ::sm/int]
+   [:media-id {:optional true} ::sm/uuid]
+   [:uri {:optional true} [::sm/text {:max 2048}]]])
+
+(sv/defmethod ::get-file-thumbnail
+  "Retrieves cached file thumbnail metadata for a specific file revision."
+  {::doc/added "2.9"
+   ::doc/module :files
+   ::sm/params schema:get-file-thumbnail
+   ::sm/result schema:file-thumbnail-cache-probe}
+  [cfg {:keys [::rpc/profile-id file-id revn]}]
+  (db/run! cfg (fn [{:keys [::db/conn] :as cfg}]
+                 (files/check-read-permissions! conn profile-id file-id)
+                 (if-let [{:keys [media-id]} (bfc/get-file-thumbnail cfg {:id file-id :revn revn})]
+                   {:hit true
+                    :file-id file-id
+                    :revn revn
+                    :media-id media-id
+                    :uri (files/resolve-public-uri media-id)}
+                   {:hit false
+                    :file-id file-id
+                    :revn revn}))))
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; MUTATION COMMANDS
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;

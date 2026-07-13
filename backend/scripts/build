@@ -6,6 +6,7 @@ set -ex
 
 rm -rf target;
 mkdir -p target/classes;
+# target/dist is the explicit backend release bundle, not an intermediate cache.
 mkdir -p target/dist;
 mkdir -p target/dist/scripts;
 

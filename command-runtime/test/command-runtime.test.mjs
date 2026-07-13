@@ -152,6 +152,7 @@ import {
     createRenderThumbnailRendererServiceUnavailableErrorTaxonomy,
     createRenderThumbnailRendererServiceErrorPayload,
     createRenderThumbnailRendererServicePlan,
+    executeRenderThumbnailRendererServiceHealthPreflight,
     createRenderThumbnailRendererServiceResult,
     createFileOpenHandoff,
     createWorkspaceUrl,
@@ -10316,6 +10317,10 @@ test("render.thumbnail renderer-service API fixtures define planning requests wi
     for (const fixture of fixtures.cases) {
         await t.test(fixture.id, () => {
             const contract = createRenderThumbnailContract(fixture.input);
+            const plan = createRenderThumbnailRendererServicePlan(fixture.input);
+            const result = createRenderThumbnailRendererServiceResult(plan, fixture.expectedResponse, {
+                publicUri: fixture.input.publicUri ?? "https://penpot.example.test",
+            });
             assert.equal(fixture.serviceRequest.command, contract.command);
             assert.equal(fixture.serviceRequest.operation, fixtures.serviceApi.operation);
             assert.equal(fixture.serviceRequest.adapter, fixtures.adapter);
@@ -10327,6 +10332,7 @@ test("render.thumbnail renderer-service API fixtures define planning requests wi
             assert.equal(fixture.serviceRequest.cache.policy, contract.cache.policy);
             assert.equal(fixture.serviceRequest.cache.scope, contract.cache.scope);
             assert.equal(fixture.serviceRequest.cache.key, contract.cache.key);
+            assert.deepEqual(fixture.serviceRequest, plan.serviceRequest);
 
             if (fixture.serviceRequest.backendRpc.data.command === "get-file-data-for-thumbnail") {
                 assert.deepEqual(fixture.serviceRequest.backendRpc.data.request, contract.backendRpc.data.request);
@@ -10345,6 +10351,17 @@ test("render.thumbnail renderer-service API fixtures define planning requests wi
             assert.match(fixture.expectedResponse.resource.resourceUri, /^\/assets\/by-id\//);
             assert.match(fixture.expectedResponse.resource.downloadUri, /^https:\/\/penpot\.example\.test\/assets\/by-id\//);
             assert.equal(fixture.expectedResponse.resource.contentType, "image/png");
+            assert.equal(fixture.expectedResponse.request.operation, "thumbnail.render");
+            assert.equal(fixture.expectedResponse.request.cacheKey, fixture.serviceRequest.cache.key);
+            assert.equal(fixture.expectedResponse.auth.mode, "caller-session");
+            assert.equal(fixture.expectedResponse.auth.tokenValuesIncluded, false);
+            assert.deepEqual(result.resource, fixture.expectedResponse.resource);
+            assert.deepEqual(result.cache, {
+                ...fixture.expectedResponse.cache,
+                policy: fixture.serviceRequest.cache.policy,
+            });
+            assert.deepEqual(result.serviceResponse.request, fixture.expectedResponse.request);
+            assert.deepEqual(result.serviceResponse.auth, fixture.expectedResponse.auth);
         });
     }
 
@@ -10356,6 +10373,16 @@ test("render.thumbnail renderer-service API fixtures define planning requests wi
                 assert.equal(error.code, fixture.expectedError.code);
                 assert.equal(error.data.retryable, fixture.expectedError.retryable);
                 assert.equal(fixture.expectedError.dispatchServiceRequest, false);
+                return;
+            }
+
+            if (fixture.serviceResponse) {
+                const plan = createRenderThumbnailRendererServicePlan(fixture.input);
+                assert.throws(() => createRenderThumbnailRendererServiceResult(plan, fixture.serviceResponse), {
+                    code: fixture.expectedError.code,
+                    retryable: fixture.expectedError.retryable,
+                });
+                assert.equal(fixture.expectedError.dispatchServiceRequest, true);
                 return;
             }
 
@@ -10391,14 +10418,14 @@ test("render.thumbnail renderer-service plan exposes dry-run client request whil
 
     assert.equal(plan.command, "render.thumbnail");
     assert.equal(plan.status, "planned");
-    assert.equal(plan.executable, false);
-    assert.equal(plan.runtimeAvailable, false);
+    assert.equal(plan.executable, true);
+    assert.equal(plan.runtimeAvailable, true);
     assert.equal(plan.adapter, "renderer-service");
     assert.equal(plan.endpoint, "http://127.0.0.1:6070/thumbnail");
     assert.equal(plan.service.operation, "thumbnail.render");
     assert.equal(plan.service.localFileWrites, false);
     assert.equal(plan.client.configured, true);
-    assert.equal(plan.client.healthEndpoint, "http://127.0.0.1:6070/thumbnail/health");
+    assert.equal(plan.client.healthEndpoint, "http://127.0.0.1:6070/health");
     assert.equal(plan.client.probeTimeoutMs, 3500);
     assert.equal(plan.client.networkProbe, false);
     assert.equal(plan.availability.status, "configured-unverified");
@@ -10412,18 +10439,18 @@ test("render.thumbnail renderer-service plan exposes dry-run client request whil
     assert.equal(plan.optInConfiguration.resolution.selectedValue, "renderer-service");
     assert.equal(plan.optInConfiguration.diagnostics.executionEnabledByConfiguration, false);
     assert.deepEqual(plan.service.optInConfiguration, plan.optInConfiguration);
-    assert.equal(plan.executionGate.status, "closed");
-    assert.equal(plan.executionGate.dispatch, false);
+    assert.equal(plan.executionGate.status, "open");
+    assert.equal(plan.executionGate.dispatch, true);
     assert.equal(plan.executionGate.optIn.env, "PENPOT_RENDER_THUMBNAIL_EXECUTION");
     assert.equal(plan.executionGate.optIn.configured, true);
     assert.equal(plan.executionGate.blockers.includes("explicit-opt-in"), false);
-    assert.ok(plan.executionGate.blockers.includes("renderer-service-integration-tests"));
+    assert.deepEqual(plan.executionGate.blockers, []);
     assert.equal(plan.executionGate.integrationTestPlan.requiredBeforeDispatch, true);
     assert.deepEqual(plan.service.executionGate, plan.executionGate);
-    assert.equal(plan.healthPreflight.status, "planned-disabled");
-    assert.equal(plan.healthPreflight.dispatch, false);
+    assert.equal(plan.healthPreflight.status, "ready");
+    assert.equal(plan.healthPreflight.dispatch, true);
     assert.equal(plan.healthPreflight.method, "GET");
-    assert.equal(plan.healthPreflight.endpoint, "http://127.0.0.1:6070/thumbnail/health");
+    assert.equal(plan.healthPreflight.endpoint, "http://127.0.0.1:6070/health");
     assert.equal(plan.healthPreflight.networkProbe, false);
     assert.equal(plan.executionClientHarness.status, "planned-disabled");
     assert.equal(plan.executionClientHarness.dispatch, false);
@@ -10462,7 +10489,7 @@ test("render.thumbnail renderer-service plan exposes dry-run client request whil
         plan.executableAdapterRegistrationScaffold.consumes.dispatchRegistrationPreflight.preflightVersion,
         "P25.19"
     );
-    assert.equal(plan.executableAdapterRegistrationScaffold.consumes.clientRequest.currentDispatch, false);
+    assert.equal(plan.executableAdapterRegistrationScaffold.consumes.clientRequest.currentDispatch, true);
     assert.equal(plan.executableAdapterRegistrationScaffold.registrationSurface.runtimeExecutionRegistered, false);
     assert.deepEqual(plan.service.executableAdapterRegistrationScaffold, plan.executableAdapterRegistrationScaffold);
     assert.equal(plan.adapterRegistryManifest.manifestVersion, "P25.21");
@@ -10507,8 +10534,8 @@ test("render.thumbnail renderer-service plan exposes dry-run client request whil
     assert.equal(plan.healthNoopContractFixtures.localFileWrites, false);
     assert.equal(plan.healthNoopContractFixtures.selectedSlice, "renderer-service-health-and-noop-contract");
     assert.equal(plan.healthNoopContractFixtures.consumes.implementationSliceAudit.auditVersion, "P25.23");
-    assert.equal(plan.healthNoopContractFixtures.consumes.clientRequest.currentDispatch, false);
-    assert.equal(plan.healthNoopContractFixtures.healthContract.endpoint, "http://127.0.0.1:6070/thumbnail/health");
+    assert.equal(plan.healthNoopContractFixtures.consumes.clientRequest.currentDispatch, true);
+    assert.equal(plan.healthNoopContractFixtures.healthContract.endpoint, "http://127.0.0.1:6070/health");
     assert.equal(plan.healthNoopContractFixtures.healthContract.okResponse.status, 200);
     assert.equal(plan.healthNoopContractFixtures.noopRenderContract.response.status, 501);
     assert.equal(plan.healthNoopContractFixtures.noopRenderContract.response.body.resource, null);
@@ -10522,7 +10549,7 @@ test("render.thumbnail renderer-service plan exposes dry-run client request whil
     assert.equal(plan.noopServiceHostScaffold.hostStartup, false);
     assert.equal(plan.noopServiceHostScaffold.consumes.healthNoopContractFixtures.fixtureVersion, "P25.24");
     assert.equal(plan.noopServiceHostScaffold.host.endpoint, "http://127.0.0.1:6070/thumbnail");
-    assert.equal(plan.noopServiceHostScaffold.host.healthEndpoint, "http://127.0.0.1:6070/thumbnail/health");
+    assert.equal(plan.noopServiceHostScaffold.host.healthEndpoint, "http://127.0.0.1:6070/health");
     assert.equal(plan.noopServiceHostScaffold.host.startsProcess, false);
     assert.equal(plan.noopServiceHostScaffold.host.rendersPng, false);
     assert.ok(plan.noopServiceHostScaffold.routes.some((entry) => entry.id === "thumbnail-render-noop"));
@@ -11634,8 +11661,8 @@ test("render.thumbnail renderer-service plan exposes dry-run client request whil
         plan.service.packageMaterializationApprovalAuditCountersignatureRevocationAppealResolutionEnforcementEvidenceAttestationNotarizationCertificationEndorsementCountersignatureVerificationRevocationAppealResolutionEnforcementEvidenceAttestationNotarizationCertificationPolicy,
         plan.packageMaterializationApprovalAuditCountersignatureRevocationAppealResolutionEnforcementEvidenceAttestationNotarizationCertificationEndorsementCountersignatureVerificationRevocationAppealResolutionEnforcementEvidenceAttestationNotarizationCertificationPolicy
     );
-    assert.equal(plan.clientRequest.status, "scaffolded");
-    assert.equal(plan.clientRequest.dispatch, false);
+    assert.equal(plan.clientRequest.status, "ready");
+    assert.equal(plan.clientRequest.dispatch, true);
     assert.equal(plan.clientRequest.method, "POST");
     assert.equal(plan.clientRequest.endpoint, "http://127.0.0.1:6070/thumbnail");
     assert.equal(plan.clientRequest.timeoutMs, 3500);
@@ -11658,11 +11685,11 @@ test("render.thumbnail renderer-service plan exposes dry-run client request whil
     assert.ok(plan.requiredCapabilities.includes("frame-source-data-provider"));
     assert.ok(plan.requiredCapabilities.includes("tagged-frame-resource-normalizer"));
     assert.equal(plan.diagnostics.adapterBoundary, "renderer-service-dry-run");
-    assert.equal(plan.diagnostics.runtimeExecutionRegistered, false);
+    assert.equal(plan.diagnostics.runtimeExecutionRegistered, true);
     assert.equal(plan.diagnostics.availabilityProbe, "metadata-only");
     assert.equal(plan.diagnostics.optInConfigurationStatus, "planned-disabled");
-    assert.equal(plan.diagnostics.executionGateStatus, "closed");
-    assert.equal(plan.diagnostics.healthPreflightDispatch, false);
+    assert.equal(plan.diagnostics.executionGateStatus, "open");
+    assert.equal(plan.diagnostics.healthPreflightDispatch, true);
     assert.equal(plan.diagnostics.executionClientHarnessDispatch, false);
     assert.equal(plan.diagnostics.dispatchAdapterBoundaryStatus, "planned-disabled");
     assert.equal(plan.diagnostics.dispatchAdapterBoundaryDispatch, false);
@@ -12309,9 +12336,9 @@ test("render.thumbnail renderer-service execution gate requires explicit opt-in 
     assert.equal(gate.readiness.serviceImplemented, true);
     assert.equal(gate.readiness.integrationTestsReady, false);
     assert.ok(gate.blockers.includes("renderer-service-integration-tests"));
-    assert.ok(gate.blockers.includes("file-thumbnail-cache-probe"));
+    assert.equal(gate.blockers.includes("file-thumbnail-cache-probe"), false);
     assert.equal(gate.blockers.includes("thumbnail-renderer-service-implementation"), false);
-    assert.ok(gate.blockers.includes("runtime-execution-registration"));
+    assert.equal(gate.blockers.includes("runtime-execution-registration"), false);
     assert.equal(gate.integrationTestPlan.status, "required-before-dispatch");
     assert.ok(gate.integrationTestPlan.cases.some((entry) => entry.includes("file reuse")));
     assert.ok(gate.failureModes.some((entry) => entry.code === "renderer_service_execution_disabled"));
@@ -12345,7 +12372,7 @@ test("render.thumbnail renderer-service opt-in configuration resolves sources wi
 test("render.thumbnail renderer-service health preflight and client harness stay disabled", () => {
     const healthPreflight = createRenderThumbnailRendererServiceHealthPreflight({
         client: {
-            healthEndpoint: "http://127.0.0.1:6070/thumbnail/health",
+            healthEndpoint: "http://127.0.0.1:6070/health",
             probeTimeoutMs: 4100,
         },
         executionGate: {
@@ -12360,7 +12387,7 @@ test("render.thumbnail renderer-service health preflight and client harness stay
     assert.equal(healthPreflight.status, "planned-disabled");
     assert.equal(healthPreflight.dispatch, false);
     assert.equal(healthPreflight.method, "GET");
-    assert.equal(healthPreflight.endpoint, "http://127.0.0.1:6070/thumbnail/health");
+    assert.equal(healthPreflight.endpoint, "http://127.0.0.1:6070/health");
     assert.equal(healthPreflight.timeoutMs, 4100);
     assert.equal(healthPreflight.headers["x-penpot-preflight"], "renderer-service-health");
     assert.ok(healthPreflight.failureModes.some((entry) => entry.code === "renderer_service_preflight_disabled"));
@@ -12368,6 +12395,68 @@ test("render.thumbnail renderer-service health preflight and client harness stay
     assert.equal(harness.dispatch, false);
     assert.equal(harness.current.healthPreflightStatus, "planned-disabled");
     assert.ok(harness.integrationTestPlan.cases.some((entry) => entry.includes("health preflight failure")));
+});
+
+test("render.thumbnail renderer-service health preflight executes only GET health after opt-in", async () => {
+    const plan = createRenderThumbnailRendererServicePlan({
+        fileId: "file-1",
+        endpoint: "http://127.0.0.1:6070/thumbnail",
+        optInConfiguration: {
+            entrypoint: "cli",
+            cliFlagValue: "renderer-service",
+        },
+    });
+    const calls = [];
+    const healthPreflight = await executeRenderThumbnailRendererServiceHealthPreflight(plan, {
+        fetch: async (url, init) => {
+            calls.push({ url, init });
+            return new Response(
+                JSON.stringify({
+                    status: "ok",
+                    renderer: "penpot-thumbnail-renderer",
+                    mode: "noop",
+                    runtimeRegistration: false,
+                    dispatch: false,
+                    capabilities: ["health", "thumbnail.render.noop"],
+                }),
+                { status: 200, headers: { "content-type": "application/json; charset=utf-8" } }
+            );
+        },
+    });
+
+    assert.equal(calls.length, 1);
+    assert.equal(calls[0].url, "http://127.0.0.1:6070/health");
+    assert.equal(calls[0].init.method, "GET");
+    assert.equal(healthPreflight.status, "ok");
+    assert.equal(healthPreflight.dispatch, true);
+    assert.equal(healthPreflight.networkProbe, true);
+    assert.equal(healthPreflight.checked, true);
+    assert.equal(healthPreflight.response.status, 200);
+    assert.equal(healthPreflight.response.body.runtimeRegistration, false);
+    assert.equal(healthPreflight.response.body.dispatch, false);
+    assert.ok(healthPreflight.response.body.capabilities.includes("thumbnail.render.noop"));
+});
+
+test("render.thumbnail renderer-service health preflight normalizes unavailable health responses", async () => {
+    const plan = createRenderThumbnailRendererServicePlan({
+        fileId: "file-1",
+        endpoint: "http://127.0.0.1:6070/thumbnail",
+        optInConfiguration: {
+            entrypoint: "mcp",
+            mcpArgValue: "renderer-service",
+        },
+    });
+    const healthPreflight = await executeRenderThumbnailRendererServiceHealthPreflight(plan, {
+        fetch: async () => new Response(JSON.stringify({ status: "unavailable" }), { status: 503 }),
+    });
+
+    assert.equal(healthPreflight.status, "unavailable");
+    assert.equal(healthPreflight.dispatch, true);
+    assert.equal(healthPreflight.networkProbe, true);
+    assert.equal(healthPreflight.checked, true);
+    assert.equal(healthPreflight.response.status, 503);
+    assert.equal(healthPreflight.error.code, "renderer_service_health_unavailable");
+    assert.equal(healthPreflight.error.retryable, true);
 });
 
 test("render.thumbnail renderer-service dispatch adapter boundary stays no-dispatch", () => {
@@ -12672,7 +12761,7 @@ test("render.thumbnail renderer-service health/no-op contract fixtures stay meta
     const fixtures = createRenderThumbnailRendererServiceHealthNoopContractFixtures({
         client: {
             endpoint: "http://127.0.0.1:6070/thumbnail",
-            healthEndpoint: "http://127.0.0.1:6070/thumbnail/health",
+            healthEndpoint: "http://127.0.0.1:6070/health",
             probeTimeoutMs: 3000,
         },
         implementationSliceAudit: {
@@ -12697,7 +12786,7 @@ test("render.thumbnail renderer-service health/no-op contract fixtures stay meta
     assert.equal(fixtures.consumes.healthPreflight.currentDispatch, false);
     assert.equal(fixtures.consumes.clientRequest.currentDispatch, false);
     assert.equal(fixtures.healthContract.method, "GET");
-    assert.equal(fixtures.healthContract.endpoint, "http://127.0.0.1:6070/thumbnail/health");
+    assert.equal(fixtures.healthContract.endpoint, "http://127.0.0.1:6070/health");
     assert.equal(fixtures.healthContract.timeoutMs, 3000);
     assert.equal(fixtures.healthContract.dispatch, false);
     assert.equal(fixtures.healthContract.networkDispatch, false);
@@ -12720,7 +12809,7 @@ test("render.thumbnail renderer-service no-op service host scaffold stays disabl
     const scaffold = createRenderThumbnailRendererServiceNoopServiceHostScaffold({
         client: {
             endpoint: "http://127.0.0.1:6070/thumbnail",
-            healthEndpoint: "http://127.0.0.1:6070/thumbnail/health",
+            healthEndpoint: "http://127.0.0.1:6070/health",
         },
         healthNoopContractFixtures: {
             status: "planned-disabled",
@@ -12751,7 +12840,7 @@ test("render.thumbnail renderer-service no-op service host scaffold stays disabl
     assert.equal(scaffold.host.id, "renderer-service-noop-host");
     assert.equal(scaffold.host.packageName, "@penpot/renderer-service");
     assert.equal(scaffold.host.endpoint, "http://127.0.0.1:6070/thumbnail");
-    assert.equal(scaffold.host.healthEndpoint, "http://127.0.0.1:6070/thumbnail/health");
+    assert.equal(scaffold.host.healthEndpoint, "http://127.0.0.1:6070/health");
     assert.equal(scaffold.host.startsProcess, false);
     assert.equal(scaffold.host.registersRuntime, false);
     assert.equal(scaffold.host.callsBackendRpc, false);
@@ -18113,16 +18202,94 @@ test("render.thumbnail renderer-service result normalizes resource metadata", ()
     assert.equal(result.renderer.runtime, "render-wasm-worker");
     assert.equal(result.renderer.fallbackUsed, false);
     assert.equal(result.serviceResponse.localFileWrites, false);
+    assert.equal(result.serviceResponse.request.operation, "thumbnail.render");
+    assert.equal(result.serviceResponse.request.cacheKey, "file:file-1:revn:7");
+    assert.equal(result.serviceResponse.auth.mode, "caller-session");
+    assert.equal(result.serviceResponse.auth.tokenValuesIncluded, false);
 });
 
-test("render.thumbnail renderer-service result derives resource URI and errors consistently", () => {
+test("render.thumbnail renderer-service result validates response contract and errors consistently", () => {
     const plan = createRenderThumbnailRendererServicePlan({ fileId: "file-1" });
-    const result = createRenderThumbnailRendererServiceResult(plan, {
+    const request = plan.serviceRequest;
+    const response = {
+        status: "ok",
         resource: {
             mediaId: "media-derived",
+            resourceUri: "/assets/by-id/media-derived",
+            downloadUri: "https://penpot.example.test/assets/by-id/media-derived",
             contentType: "image/png",
         },
-    });
+        cache: {
+            outcome: "rendered",
+            scope: request.cache.scope,
+            key: request.cache.key,
+        },
+        renderer: {
+            runtime: "noop-png-fixture",
+            fallbackUsed: false,
+        },
+        request: {
+            operation: request.operation,
+            targetKind: request.target.kind,
+            fileId: request.target.fileId,
+            pageId: request.target.pageId,
+            objectId: request.target.objectId,
+            objectKey: request.target.objectKey,
+            tag: request.target.tag,
+            revn: request.target.revn,
+            format: request.artifact.format,
+            cachePolicy: request.cache.policy,
+            cacheScope: request.cache.scope,
+            cacheKey: request.cache.key,
+            cacheProbe: request.cache.probe,
+            width: request.artifact.width,
+            height: request.artifact.height,
+            mimeType: request.artifact.mimeType,
+            extension: request.artifact.extension,
+            renderRequired: request.render.required,
+            renderRuntime: request.render.runtime,
+            renderFallback: request.render.fallback,
+            backendRpc: {
+                data: {
+                    command: request.backendRpc.data.command,
+                    method: request.backendRpc.data.method,
+                    requestPresent: true,
+                },
+                persist: null,
+                cacheMissPersist: {
+                    command: request.backendRpc.cacheMissPersist.command,
+                    method: request.backendRpc.cacheMissPersist.method,
+                    requestPresent: true,
+                },
+            },
+        },
+        auth: {
+            mode: "caller-session",
+            authorizationPresent: false,
+            cookiePresent: false,
+            authTokenCookiePresent: false,
+            tokenValuesIncluded: false,
+        },
+    };
+    const result = createRenderThumbnailRendererServiceResult(plan, response);
+    const hitResponse = {
+        ...response,
+        resource: {
+            mediaId: "cached-file-thumb-1",
+            resourceUri: "/assets/by-id/cached-file-thumb-1",
+            downloadUri: "https://penpot.example.test/assets/by-id/cached-file-thumb-1",
+            contentType: "image/png",
+        },
+        cache: {
+            ...response.cache,
+            outcome: "hit",
+        },
+        renderer: {
+            runtime: null,
+            fallbackUsed: false,
+        },
+    };
+    const hitResult = createRenderThumbnailRendererServiceResult(plan, hitResponse);
     const error = createRenderThumbnailRendererServiceErrorPayload(plan, {
         status: 503,
         code: "renderer_service_unavailable",
@@ -18132,10 +18299,18 @@ test("render.thumbnail renderer-service result derives resource URI and errors c
 
     assert.equal(result.resource.resourceUri, "/assets/by-id/media-derived");
     assert.equal(result.resource.downloadUri, "https://penpot.example.test/assets/by-id/media-derived");
-    assert.throws(
-        () => createRenderThumbnailRendererServiceResult(plan, { resource: {} }),
-        /renderer-service response requires/
-    );
+    assert.equal(hitResult.cache.outcome, "hit");
+    assert.equal(hitResult.resource.mediaId, "cached-file-thumb-1");
+    assert.equal(hitResult.renderer.runtime, null);
+    assert.throws(() => createRenderThumbnailRendererServiceResult(plan, { ...response, request: { ...response.request, cacheKey: "wrong" } }), {
+        code: "renderer_service_response_invalid",
+    });
+    assert.throws(() => createRenderThumbnailRendererServiceResult(plan, { ...response, resource: { ...response.resource, downloadUri: "https://penpot.example.test/assets/by-id/other" } }), {
+        code: "renderer_service_response_invalid",
+    });
+    assert.throws(() => createRenderThumbnailRendererServiceResult(plan, { ...response, auth: { ...response.auth, tokenValuesIncluded: true } }), {
+        code: "renderer_service_response_invalid",
+    });
     assert.equal(error.code, "renderer_service_unavailable");
     assert.equal(error.message, "Renderer service unavailable.");
     assert.equal(error.data.command, "render.thumbnail");

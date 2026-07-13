@@ -442,18 +442,18 @@
 
 (t/deftest bind-current-file-context-sets-binding-status
   (let [result (ptk/update (mcp/bind-current-file-context)
-                           (assoc-in (state true) [:mcp :file-context {:status "unbound"}]))]
+                           (assoc-in (state true) [:mcp :file-context] {:status "unbound"}))]
     (t/is (= "binding" (get-in result [:mcp :file-context :status])))))
 
 (t/deftest release-current-file-context-sets-releasing-status
   (let [result (ptk/update (mcp/release-current-file-context)
-                           (assoc-in (state true) [:mcp :file-context {:status "bound"}]))]
+                           (assoc-in (state true) [:mcp :file-context] {:status "bound"}))]
     (t/is (= "releasing" (get-in result [:mcp :file-context :status])))))
 
 (t/deftest update-mcp-file-context-status-stores-plugin-status
   (let [result (ptk/update (mcp/update-mcp-file-context-status
-                           {:status "bound"
-                            :context {:fileId "file-1"}})
+                            {:status "bound"
+                             :context {:fileId "file-1"}})
                            (state true))]
     (t/is (= "bound" (get-in result [:mcp :file-context :status])))
     (t/is (= "file-1" (get-in result [:mcp :file-context :context :fileId])))))
@@ -496,7 +496,7 @@
     (t/is (= "integrations.mcp-server.context.expired-token" (:label-key expired)))))
 
 (t/deftest disconnect-flow-resets-file-context-to-unbound
-  (let [bound-state (assoc-in (state true) [:mcp :file-context {:status "bound"}])
+  (let [bound-state (assoc-in (state true) [:mcp :file-context] {:status "bound"})
         result (ptk/update (mcp/update-mcp-file-context-status {:status "unbound"})
                            bound-state)]
     (t/is (= "unbound" (get-in result [:mcp :file-context :status])))))

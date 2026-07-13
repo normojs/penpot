@@ -4,6 +4,7 @@
    [clojure.tools.build.api :as b]
    [clojure.java.io]))
 
+;; Keep class output repo-local because deps.edn includes target/classes on the classpath.
 (def class-dir "target/classes")
 (def basis (b/create-basis {:project "deps.edn"}))
 (def jar-file "target/penpot.jar")

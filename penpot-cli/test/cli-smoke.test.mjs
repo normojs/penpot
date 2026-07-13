@@ -28,6 +28,86 @@ const UUIDS = {
     profile: "00000000-0000-0000-0000-000000000004",
 };
 
+const renderThumbnailRendererServiceFixtures = JSON.parse(
+    readFileSync(new URL("../../mcp/docs/render-thumbnail-renderer-service-fixtures.json", import.meta.url), "utf8")
+);
+
+function getRenderThumbnailRendererServiceFixture(id) {
+    const fixture = renderThumbnailRendererServiceFixtures.cases.find((entry) => entry.id === id);
+    assert.ok(fixture, `missing render.thumbnail renderer-service fixture ${id}`);
+    return fixture;
+}
+
+function thumbnailBackendRpcSummary(entry) {
+    if (entry === null || entry === undefined) {
+        return null;
+    }
+
+    return {
+        command: entry.command,
+        method: entry.method ?? null,
+        requestPresent: Boolean(entry.request),
+    };
+}
+
+function thumbnailServiceResponseFromRequest(serviceRequest, options = {}) {
+    const mediaId = options.mediaId ?? "thumb-1";
+    const authPresent = options.authPresent ?? true;
+
+    return {
+        status: "ok",
+        resource: {
+            mediaId,
+            resourceUri: `/assets/by-id/${mediaId}`,
+            downloadUri: options.downloadUri ?? `http://localhost:3449/assets/by-id/${mediaId}`,
+            contentType: "image/png",
+        },
+        cache: {
+            outcome: options.cacheOutcome ?? "rendered",
+            scope: serviceRequest.cache.scope,
+            key: serviceRequest.cache.key,
+        },
+        renderer: {
+            runtime: options.rendererRuntime ?? "noop-png-fixture",
+            fallbackUsed: false,
+        },
+        request: {
+            operation: serviceRequest.operation,
+            targetKind: serviceRequest.target.kind,
+            fileId: serviceRequest.target.fileId,
+            pageId: serviceRequest.target.pageId ?? null,
+            objectId: serviceRequest.target.objectId ?? null,
+            objectKey: serviceRequest.target.objectKey ?? null,
+            tag: serviceRequest.target.tag ?? null,
+            revn: serviceRequest.target.revn ?? null,
+            format: serviceRequest.artifact.format,
+            cachePolicy: serviceRequest.cache.policy,
+            cacheScope: serviceRequest.cache.scope,
+            cacheKey: serviceRequest.cache.key,
+            cacheProbe: serviceRequest.cache.probe ?? null,
+            width: serviceRequest.artifact.width,
+            height: serviceRequest.artifact.height,
+            mimeType: serviceRequest.artifact.mimeType,
+            extension: serviceRequest.artifact.extension,
+            renderRequired: serviceRequest.render.required,
+            renderRuntime: serviceRequest.render.runtime,
+            renderFallback: serviceRequest.render.fallback,
+            backendRpc: {
+                data: thumbnailBackendRpcSummary(serviceRequest.backendRpc.data),
+                persist: thumbnailBackendRpcSummary(serviceRequest.backendRpc.persist),
+                cacheMissPersist: thumbnailBackendRpcSummary(serviceRequest.backendRpc.cacheMissPersist),
+            },
+        },
+        auth: {
+            mode: "caller-session",
+            authorizationPresent: authPresent,
+            cookiePresent: authPresent,
+            authTokenCookiePresent: authPresent,
+            tokenValuesIncluded: false,
+        },
+    };
+}
+
 function assertP25124RevocationAppealResolutionEnforcementEvidenceAttestationNotarizationCertificationEndorsementCountersignatureVerificationRevocationAppealResolutionEnforcementEvidenceAttestationPolicyMetadataOnly(policy) {
     const capitalEvidenceTopic = P25123_POLICY_KEY.replace(/^packageMaterializationApprovalAudit/, "").replace(/Policy$/, "");
     const evidenceTopic = capitalEvidenceTopic[0].toLowerCase() + capitalEvidenceTopic.slice(1);
@@ -6981,7 +7061,9 @@ test("renderer-service status reports a no-spawn lifecycle plan without probing"
     };
 
     try {
-        const result = await runCli(["renderer-service", "status", "--host", "127.0.0.1", "--port", "6072", "--format", "json"]);
+        const result = await runCli(["renderer-service", "status", "--host", "127.0.0.1", "--port", "6072", "--format", "json"], {
+            PENPOT_RENDERER_SERVICE_BACKEND_URI: "https://penpot.example.test/",
+        });
         const body = parseJson(result.stdout);
 
         assert.equal(result.exitCode, 0);
@@ -6994,8 +7076,15 @@ test("renderer-service status reports a no-spawn lifecycle plan without probing"
         assert.equal(body.data.lifecycle.healthProbe, false);
         assert.equal(body.data.lifecycle.rendererDispatch, false);
         assert.equal(body.data.lifecycle.backendRpc, false);
+        assert.deepEqual(body.data.lifecycle.backendRpcPlanning, {
+            configured: true,
+            baseUri: "https://penpot.example.test",
+            source: "PENPOT_RENDERER_SERVICE_BACKEND_URI",
+            networkDispatch: false,
+        });
         assert.equal(body.data.lifecycle.artifactWrites, false);
         assert.match(body.data.lifecycle.startCommand, /PENPOT_RENDERER_SERVICE_PORT=6072/);
+        assert.match(body.data.lifecycle.startCommand, /PENPOT_RENDERER_SERVICE_BACKEND_URI=https:\/\/penpot\.example\.test/);
     } finally {
         globalThis.fetch = originalFetch;
     }
@@ -7011,6 +7100,7 @@ test("renderer-service start keeps startup manual and does not spawn a process",
     assert.equal(body.error.data.lifecycle.processSpawn, false);
     assert.equal(body.error.data.lifecycle.healthProbe, false);
     assert.equal(body.error.data.lifecycle.rendererDispatch, false);
+    assert.equal(body.error.data.lifecycle.backendRpcPlanning.configured, false);
     assert.match(body.error.actions[0], /PENPOT_RENDERER_SERVICE_PORT=6073/);
 });
 
@@ -8952,9 +9042,9 @@ test("render thumbnail dry-run returns renderer-service request plan", async () 
         assert.equal(body.status, "ok");
         assert.equal(body.data.command, "render.thumbnail");
         assert.equal(body.data.adapter, "renderer-service");
-        assert.equal(body.data.runtimeAvailable, false);
+        assert.equal(body.data.runtimeAvailable, true);
         assert.equal(body.data.endpoint, "http://127.0.0.1:6070/thumbnail");
-        assert.equal(body.data.client.healthEndpoint, "http://127.0.0.1:6070/thumbnail/health");
+        assert.equal(body.data.client.healthEndpoint, "http://127.0.0.1:6070/health");
         assert.equal(body.data.client.probeTimeoutMs, 3500);
         assert.equal(body.data.client.networkProbe, false);
         assert.equal(body.data.availability.status, "configured-unverified");
@@ -8964,13 +9054,13 @@ test("render thumbnail dry-run returns renderer-service request plan", async () 
         assert.equal(body.data.optInConfiguration.resolution.selectedSource, "cli-flag");
         assert.equal(body.data.optInConfiguration.resolution.selectedValue, "renderer-service");
         assert.equal(body.data.optInConfiguration.diagnostics.executionEnabledByConfiguration, false);
-        assert.equal(body.data.executionGate.status, "closed");
-        assert.equal(body.data.executionGate.dispatch, false);
+        assert.equal(body.data.executionGate.status, "open");
+        assert.equal(body.data.executionGate.dispatch, true);
         assert.equal(body.data.executionGate.optIn.env, "PENPOT_RENDER_THUMBNAIL_EXECUTION");
         assert.equal(body.data.executionGate.blockers.includes("explicit-opt-in"), false);
         assert.equal(body.data.executionGate.integrationTestPlan.requiredBeforeDispatch, true);
-        assert.equal(body.data.healthPreflight.dispatch, false);
-        assert.equal(body.data.healthPreflight.endpoint, "http://127.0.0.1:6070/thumbnail/health");
+        assert.equal(body.data.healthPreflight.dispatch, true);
+        assert.equal(body.data.healthPreflight.endpoint, "http://127.0.0.1:6070/health");
         assert.equal(body.data.executionClientHarness.dispatch, false);
         assert.equal(body.data.dispatchAdapterBoundary.dispatch, false);
         assert.equal(body.data.dispatchAdapterBoundary.resultMapping.cliReturn, "resource metadata plus optional --output download");
@@ -9003,7 +9093,7 @@ test("render thumbnail dry-run returns renderer-service request plan", async () 
             body.data.executableAdapterRegistrationScaffold.consumes.dispatchRegistrationPreflight.preflightVersion,
             "P25.19"
         );
-        assert.equal(body.data.executableAdapterRegistrationScaffold.consumes.clientRequest.currentDispatch, false);
+        assert.equal(body.data.executableAdapterRegistrationScaffold.consumes.clientRequest.currentDispatch, true);
         assert.equal(body.data.executableAdapterRegistrationScaffold.registrationSurface.runtimeExecutionRegistered, false);
         assert.equal(body.data.adapterRegistryManifest.manifestVersion, "P25.21");
         assert.equal(body.data.adapterRegistryManifest.dispatch, false);
@@ -9508,7 +9598,7 @@ test("render thumbnail dry-run returns renderer-service request plan", async () 
         assert.equal(body.data.service.responseNormalization.successStatus, "ok");
         assert.equal(body.data.service.responseNormalization.localFileWrites, false);
         assert.equal(body.data.service.errorShape.code, "renderer_service_error");
-        assert.equal(body.data.clientRequest.dispatch, false);
+        assert.equal(body.data.clientRequest.dispatch, true);
         assert.equal(body.data.clientRequest.headers["x-penpot-entrypoint"], "cli");
         assert.equal(body.data.clientRequest.headers["x-penpot-cli-command"], "render thumbnail");
         assert.equal(body.data.clientRequest.authForwarding.tokenValuesIncluded, false);
@@ -9518,7 +9608,7 @@ test("render thumbnail dry-run returns renderer-service request plan", async () 
         assert.equal(body.data.serviceRequest.operation, "thumbnail.render");
         assert.equal(body.data.serviceRequest.backendRpc.data.command, "get-file-frame-data-for-thumbnail");
         assert.equal(body.data.serviceRequest.backendRpc.persist.command, "create-file-object-thumbnail");
-        assert.equal(body.data.diagnostics.runtimeExecutionRegistered, false);
+        assert.equal(body.data.diagnostics.runtimeExecutionRegistered, true);
     } finally {
         globalThis.fetch = originalFetch;
     }
@@ -9547,513 +9637,165 @@ test("render thumbnail execution reports renderer-service unavailable without ca
         assert.equal(body.error.code, "renderer_service_unavailable");
         assert.equal(body.error.data.command, "render.thumbnail");
         assert.equal(body.error.data.adapter, "renderer-service");
-        assert.equal(body.error.data.client.healthEndpoint, "http://localhost:6070/thumbnail/health");
-        assert.equal(body.error.data.availability.status, "configured-unverified");
-        assert.equal(body.error.data.optInConfiguration.status, "planned-disabled");
-        assert.equal(body.error.data.optInConfiguration.resolution.configured, false);
-        assert.equal(body.error.data.executionGate.status, "closed");
-        assert.ok(body.error.data.executionGate.blockers.includes("explicit-opt-in"));
-        assert.equal(body.error.data.healthPreflight.dispatch, false);
-        assert.equal(body.error.data.executionClientHarness.dispatch, false);
-        assert.equal(body.error.data.dispatchAdapterBoundary.dispatch, false);
-        assert.equal(body.error.data.unavailableErrorTaxonomy.taxonomyVersion, "P25.17");
-        assert.equal(body.error.data.unavailableErrorTaxonomy.dispatch, false);
-        assert.equal(body.error.data.unavailableErrorTaxonomy.defaultCode, "renderer_service_unavailable");
-        assert.equal(body.error.data.integrationFixtureHarness.harnessVersion, "P25.18");
-        assert.equal(body.error.data.integrationFixtureHarness.dispatch, false);
-        assert.equal(body.error.data.integrationFixtureHarness.networkDispatch, false);
-        assert.equal(body.error.data.dispatchRegistrationPreflight.preflightVersion, "P25.19");
-        assert.equal(body.error.data.dispatchRegistrationPreflight.dispatch, false);
-        assert.equal(body.error.data.dispatchRegistrationPreflight.runtimeRegistration, false);
-        assert.equal(body.error.data.executableAdapterRegistrationScaffold.scaffoldVersion, "P25.20");
-        assert.equal(body.error.data.executableAdapterRegistrationScaffold.dispatch, false);
-        assert.equal(body.error.data.executableAdapterRegistrationScaffold.networkDispatch, false);
-        assert.equal(body.error.data.executableAdapterRegistrationScaffold.runtimeRegistration, false);
-        assert.equal(body.error.data.executableAdapterRegistrationScaffold.localFileWrites, false);
-        assert.equal(body.error.data.adapterRegistryManifest.manifestVersion, "P25.21");
-        assert.equal(body.error.data.adapterRegistryManifest.dispatch, false);
-        assert.equal(body.error.data.adapterRegistryManifest.networkDispatch, false);
-        assert.equal(body.error.data.adapterRegistryManifest.runtimeRegistration, false);
-        assert.equal(body.error.data.adapterRegistryManifest.localFileWrites, false);
-        assert.equal(body.error.data.enablementChecklist.checklistVersion, "P25.22");
-        assert.equal(body.error.data.enablementChecklist.dispatch, false);
-        assert.equal(body.error.data.enablementChecklist.networkDispatch, false);
-        assert.equal(body.error.data.enablementChecklist.runtimeRegistration, false);
-        assert.equal(body.error.data.enablementChecklist.localFileWrites, false);
-        assert.equal(body.error.data.implementationSliceAudit.auditVersion, "P25.23");
-        assert.equal(body.error.data.implementationSliceAudit.dispatch, false);
-        assert.equal(body.error.data.implementationSliceAudit.networkDispatch, false);
-        assert.equal(body.error.data.implementationSliceAudit.runtimeRegistration, false);
-        assert.equal(body.error.data.implementationSliceAudit.localFileWrites, false);
-        assert.equal(body.error.data.implementationSliceAudit.selectedSlice.enablesRuntimeDispatch, false);
-        assert.equal(body.error.data.healthNoopContractFixtures.fixtureVersion, "P25.24");
-        assert.equal(body.error.data.healthNoopContractFixtures.dispatch, false);
-        assert.equal(body.error.data.healthNoopContractFixtures.networkDispatch, false);
-        assert.equal(body.error.data.healthNoopContractFixtures.runtimeRegistration, false);
-        assert.equal(body.error.data.healthNoopContractFixtures.localFileWrites, false);
-        assert.equal(body.error.data.healthNoopContractFixtures.noopRenderContract.response.body.resource, null);
-        assert.equal(body.error.data.noopServiceHostScaffold.scaffoldVersion, "P25.25");
-        assert.equal(body.error.data.noopServiceHostScaffold.dispatch, false);
-        assert.equal(body.error.data.noopServiceHostScaffold.networkDispatch, false);
-        assert.equal(body.error.data.noopServiceHostScaffold.runtimeRegistration, false);
-        assert.equal(body.error.data.noopServiceHostScaffold.localFileWrites, false);
-        assert.equal(body.error.data.noopServiceHostScaffold.hostStartup, false);
-        assert.equal(body.error.data.hostLifecycleTestFixtures.fixtureVersion, "P25.26");
-        assert.equal(body.error.data.hostLifecycleTestFixtures.dispatch, false);
-        assert.equal(body.error.data.hostLifecycleTestFixtures.networkDispatch, false);
-        assert.equal(body.error.data.hostLifecycleTestFixtures.runtimeRegistration, false);
-        assert.equal(body.error.data.hostLifecycleTestFixtures.localFileWrites, false);
-        assert.equal(body.error.data.hostLifecycleTestFixtures.hostStartup, false);
-        assert.equal(body.error.data.hostLifecycleTestFixtures.processSpawn, false);
-        assert.equal(body.error.data.packageManifestScaffold.manifestVersion, "P25.27");
-        assert.equal(body.error.data.packageManifestScaffold.dispatch, false);
-        assert.equal(body.error.data.packageManifestScaffold.networkDispatch, false);
-        assert.equal(body.error.data.packageManifestScaffold.runtimeRegistration, false);
-        assert.equal(body.error.data.packageManifestScaffold.localFileWrites, false);
-        assert.equal(body.error.data.packageManifestScaffold.packageCreated, false);
-        assert.equal(body.error.data.packageManifestScaffold.workspaceMutation, false);
-        assert.equal(body.error.data.packageCreationGuardrails.guardrailVersion, "P25.28");
-        assert.equal(body.error.data.packageCreationGuardrails.dispatch, false);
-        assert.equal(body.error.data.packageCreationGuardrails.networkDispatch, false);
-        assert.equal(body.error.data.packageCreationGuardrails.runtimeRegistration, false);
-        assert.equal(body.error.data.packageCreationGuardrails.localFileWrites, false);
-        assert.equal(body.error.data.packageCreationGuardrails.packageCreated, false);
-        assert.equal(body.error.data.packageCreationGuardrails.workspaceMutation, false);
-        assert.equal(body.error.data.packageCreationGuardrails.scriptRunnable, false);
-        assert.equal(body.error.data.packageFileTemplates.templateVersion, "P25.29");
-        assert.equal(body.error.data.packageFileTemplates.dispatch, false);
-        assert.equal(body.error.data.packageFileTemplates.networkDispatch, false);
-        assert.equal(body.error.data.packageFileTemplates.runtimeRegistration, false);
-        assert.equal(body.error.data.packageFileTemplates.localFileWrites, false);
-        assert.equal(body.error.data.packageFileTemplates.packageCreated, false);
-        assert.equal(body.error.data.packageFileTemplates.workspaceMutation, false);
-        assert.equal(body.error.data.packageFileTemplates.fileMaterialization, false);
-        assert.equal(body.error.data.packageWorkspaceWiring.wiringVersion, "P25.30");
-        assert.equal(body.error.data.packageWorkspaceWiring.dispatch, false);
-        assert.equal(body.error.data.packageWorkspaceWiring.networkDispatch, false);
-        assert.equal(body.error.data.packageWorkspaceWiring.runtimeRegistration, false);
-        assert.equal(body.error.data.packageWorkspaceWiring.localFileWrites, false);
-        assert.equal(body.error.data.packageWorkspaceWiring.workspaceMutation, false);
-        assert.equal(body.error.data.packageWorkspaceWiring.lockfileMutation, false);
-        assert.equal(body.error.data.packageWorkspaceWiring.pnpmWorkspaceMutation, false);
-        assert.equal(body.error.data.packageBuildVerification.verificationVersion, "P25.31");
-        assert.equal(body.error.data.packageBuildVerification.dispatch, false);
-        assert.equal(body.error.data.packageBuildVerification.networkDispatch, false);
-        assert.equal(body.error.data.packageBuildVerification.runtimeRegistration, false);
-        assert.equal(body.error.data.packageBuildVerification.localFileWrites, false);
-        assert.equal(body.error.data.packageBuildVerification.processSpawn, false);
-        assert.equal(body.error.data.packageBuildVerification.commandExecution, false);
-        assert.equal(body.error.data.packageBuildVerification.buildOutput, false);
-        assert.equal(body.error.data.packageMaterializationChecklist.checklistVersion, "P25.32");
-        assert.equal(body.error.data.packageMaterializationChecklist.dispatch, false);
-        assert.equal(body.error.data.packageMaterializationChecklist.networkDispatch, false);
-        assert.equal(body.error.data.packageMaterializationChecklist.runtimeRegistration, false);
-        assert.equal(body.error.data.packageMaterializationChecklist.localFileWrites, false);
-        assert.equal(body.error.data.packageMaterializationChecklist.fileMaterialization, false);
-        assert.equal(body.error.data.packageMaterializationChecklist.materializationApproved, false);
-        assert.equal(body.error.data.packageCreationDryRunSummary.summaryVersion, "P25.33");
-        assert.equal(body.error.data.packageCreationDryRunSummary.dryRunOnly, true);
-        assert.equal(body.error.data.packageCreationDryRunSummary.dispatch, false);
-        assert.equal(body.error.data.packageCreationDryRunSummary.runtimeRegistration, false);
-        assert.equal(body.error.data.packageCreationDryRunSummary.localFileWrites, false);
-        assert.equal(body.error.data.packageCreationDryRunSummary.filesWritten, false);
-        assert.equal(body.error.data.packageCreationFileManifest.manifestVersion, "P25.34");
-        assert.equal(body.error.data.packageCreationFileManifest.dryRunOnly, true);
-        assert.equal(body.error.data.packageCreationFileManifest.dispatch, false);
-        assert.equal(body.error.data.packageCreationFileManifest.runtimeRegistration, false);
-        assert.equal(body.error.data.packageCreationFileManifest.localFileWrites, false);
-        assert.equal(body.error.data.packageCreationFileManifest.fileMaterialization, false);
-        assert.equal(body.error.data.packageCreationFileManifest.filesWritten, false);
-        assert.equal(body.error.data.packageMaterializationApprovalGate.gateVersion, "P25.35");
-        assert.equal(body.error.data.packageMaterializationApprovalGate.approvalRequired, true);
-        assert.equal(body.error.data.packageMaterializationApprovalGate.approved, false);
-        assert.equal(body.error.data.packageMaterializationApprovalGate.dispatch, false);
-        assert.equal(body.error.data.packageMaterializationApprovalGate.runtimeRegistration, false);
-        assert.equal(body.error.data.packageMaterializationApprovalGate.localFileWrites, false);
-        assert.equal(body.error.data.packageMaterializationApprovalGate.fileMaterialization, false);
-        assert.equal(body.error.data.packageMaterializationApprovalGate.materializationApproved, false);
-        assert.equal(body.error.data.packageMaterializationExecutionDryRun.dryRunVersion, "P25.36");
-        assert.equal(body.error.data.packageMaterializationExecutionDryRun.dryRunOnly, true);
-        assert.equal(body.error.data.packageMaterializationExecutionDryRun.executeNow, false);
-        assert.equal(body.error.data.packageMaterializationExecutionDryRun.approved, false);
-        assert.equal(body.error.data.packageMaterializationExecutionDryRun.dispatch, false);
-        assert.equal(body.error.data.packageMaterializationExecutionDryRun.runtimeRegistration, false);
-        assert.equal(body.error.data.packageMaterializationExecutionDryRun.localFileWrites, false);
-        assert.equal(body.error.data.packageMaterializationExecutionDryRun.fileMaterialization, false);
-        assert.equal(body.error.data.packageMaterializationExecutionDryRun.filesWritten, false);
-        assert.equal(body.error.data.packageMaterializationWriteContract.contractVersion, "P25.37");
-        assert.equal(body.error.data.packageMaterializationWriteContract.dryRunOnly, true);
-        assert.equal(body.error.data.packageMaterializationWriteContract.executeNow, false);
-        assert.equal(body.error.data.packageMaterializationWriteContract.approved, false);
-        assert.equal(body.error.data.packageMaterializationWriteContract.dispatch, false);
-        assert.equal(body.error.data.packageMaterializationWriteContract.runtimeRegistration, false);
-        assert.equal(body.error.data.packageMaterializationWriteContract.localFileWrites, false);
-        assert.equal(body.error.data.packageMaterializationWriteContract.fileMaterialization, false);
-        assert.equal(body.error.data.packageMaterializationWriteContract.filesWritten, false);
-        assert.ok(body.error.data.packageMaterializationWriteContract.writeContract.packageFiles.some((entry) => entry.path === "renderer-service/package.json" && entry.writeNow === false));
-        assert.ok(body.error.data.packageMaterializationWriteContract.writeContract.workspaceFiles.some((entry) => entry.path === "pnpm-lock.yaml" && entry.writeNow === false));
-        assert.equal(body.error.data.packageMaterializationRollbackContract.contractVersion, "P25.38");
-        assert.equal(body.error.data.packageMaterializationRollbackContract.dryRunOnly, true);
-        assert.equal(body.error.data.packageMaterializationRollbackContract.executeNow, false);
-        assert.equal(body.error.data.packageMaterializationRollbackContract.rollbackNow, false);
-        assert.equal(body.error.data.packageMaterializationRollbackContract.approved, false);
-        assert.equal(body.error.data.packageMaterializationRollbackContract.dispatch, false);
-        assert.equal(body.error.data.packageMaterializationRollbackContract.runtimeRegistration, false);
-        assert.equal(body.error.data.packageMaterializationRollbackContract.localFileWrites, false);
-        assert.equal(body.error.data.packageMaterializationRollbackContract.fileMaterialization, false);
-        assert.equal(body.error.data.packageMaterializationRollbackContract.filesWritten, false);
-        assert.ok(body.error.data.packageMaterializationRollbackContract.snapshotPlan.workspaceFiles.includes("pnpm-lock.yaml"));
-        assert.ok(body.error.data.packageMaterializationRollbackContract.rollbackPlan.phases.some((entry) => entry.id === "restore-workspace-files" && entry.executesNow === false));
-        assert.equal(body.error.data.packageMaterializationVerificationManifest.manifestVersion, "P25.39");
-        assert.equal(body.error.data.packageMaterializationVerificationManifest.dryRunOnly, true);
-        assert.equal(body.error.data.packageMaterializationVerificationManifest.executeNow, false);
-        assert.equal(body.error.data.packageMaterializationVerificationManifest.verifyNow, false);
-        assert.equal(body.error.data.packageMaterializationVerificationManifest.approved, false);
-        assert.equal(body.error.data.packageMaterializationVerificationManifest.dispatch, false);
-        assert.equal(body.error.data.packageMaterializationVerificationManifest.runtimeRegistration, false);
-        assert.equal(body.error.data.packageMaterializationVerificationManifest.localFileWrites, false);
-        assert.equal(body.error.data.packageMaterializationVerificationManifest.commandExecution, false);
-        assert.equal(body.error.data.packageMaterializationVerificationManifest.buildOutput, false);
-        assert.equal(body.error.data.packageMaterializationVerificationManifest.filesWritten, false);
-        assert.ok(body.error.data.packageMaterializationVerificationManifest.verificationManifest.workspaceFiles.some((entry) => entry.path === "pnpm-lock.yaml" && entry.verifyNow === false));
-        assert.equal(body.error.data.packageMaterializationVerificationManifest.commandManifest.commandsRun, false);
-        assert.equal(body.error.data.packageMaterializationFinalApprovalChecklist.checklistVersion, "P25.40");
-        assert.equal(body.error.data.packageMaterializationFinalApprovalChecklist.dryRunOnly, true);
-        assert.equal(body.error.data.packageMaterializationFinalApprovalChecklist.executeNow, false);
-        assert.equal(body.error.data.packageMaterializationFinalApprovalChecklist.approved, false);
-        assert.equal(body.error.data.packageMaterializationFinalApprovalChecklist.finalApprovalGranted, false);
-        assert.equal(body.error.data.packageMaterializationFinalApprovalChecklist.dispatch, false);
-        assert.equal(body.error.data.packageMaterializationFinalApprovalChecklist.runtimeRegistration, false);
-        assert.equal(body.error.data.packageMaterializationFinalApprovalChecklist.localFileWrites, false);
-        assert.equal(body.error.data.packageMaterializationFinalApprovalChecklist.commandExecution, false);
-        assert.equal(body.error.data.packageMaterializationFinalApprovalChecklist.buildOutput, false);
-        assert.equal(body.error.data.packageMaterializationFinalApprovalChecklist.filesWritten, false);
-        assert.ok(body.error.data.packageMaterializationFinalApprovalChecklist.checklist.some((entry) => entry.id === "explicit-user-approval" && entry.satisfied === false));
-        assert.equal(body.error.data.packageMaterializationFinalApprovalChecklist.approvalDecision.canGrantFinalApproval, false);
-        assert.equal(body.error.data.packageMaterializationExplicitApprovalToken.tokenVersion, "P25.41");
-        assert.equal(body.error.data.packageMaterializationExplicitApprovalToken.tokenProvided, false);
-        assert.equal(body.error.data.packageMaterializationExplicitApprovalToken.tokenAccepted, false);
-        assert.equal(body.error.data.packageMaterializationExplicitApprovalToken.approved, false);
-        assert.equal(body.error.data.packageMaterializationExplicitApprovalToken.finalApprovalGranted, false);
-        assert.equal(body.error.data.packageMaterializationExplicitApprovalToken.commandExecution, false);
-        assert.equal(body.error.data.packageMaterializationExplicitApprovalToken.buildOutput, false);
-        assert.equal(body.error.data.packageMaterializationExplicitApprovalToken.filesWritten, false);
-        assert.equal(body.error.data.packageMaterializationExplicitApprovalToken.approvalDecision.canAcceptToken, false);
-        assert.equal(body.error.data.packageMaterializationApprovalAuditTrail.auditTrailVersion, "P25.42");
-        assert.equal(body.error.data.packageMaterializationApprovalAuditTrail.auditRecordWritten, false);
-        assert.equal(body.error.data.packageMaterializationApprovalAuditTrail.writeAuditNow, false);
-        assert.equal(body.error.data.packageMaterializationApprovalAuditTrail.approved, false);
-        assert.equal(body.error.data.packageMaterializationApprovalAuditTrail.finalApprovalGranted, false);
-        assert.equal(body.error.data.packageMaterializationApprovalAuditTrail.commandExecution, false);
-        assert.equal(body.error.data.packageMaterializationApprovalAuditTrail.buildOutput, false);
-        assert.equal(body.error.data.packageMaterializationApprovalAuditTrail.filesWritten, false);
-        assert.equal(body.error.data.packageMaterializationApprovalAuditTrail.approvalDecision.canWriteAuditRecord, false);
-        assert.equal(body.error.data.packageMaterializationApprovalReplayGuard.replayGuardVersion, "P25.43");
-        assert.equal(body.error.data.packageMaterializationApprovalReplayGuard.replayCheckExecuted, false);
-        assert.equal(body.error.data.packageMaterializationApprovalReplayGuard.tokenAccepted, false);
-        assert.equal(body.error.data.packageMaterializationApprovalReplayGuard.tokenConsumed, false);
-        assert.equal(body.error.data.packageMaterializationApprovalReplayGuard.approved, false);
-        assert.equal(body.error.data.packageMaterializationApprovalReplayGuard.finalApprovalGranted, false);
-        assert.equal(body.error.data.packageMaterializationApprovalReplayGuard.commandExecution, false);
-        assert.equal(body.error.data.packageMaterializationApprovalReplayGuard.buildOutput, false);
-        assert.equal(body.error.data.packageMaterializationApprovalReplayGuard.filesWritten, false);
-        assert.equal(body.error.data.packageMaterializationApprovalReplayGuard.replayDecision.canCheckReplay, false);
-        assert.equal(body.error.data.packageMaterializationApprovalExpiryPolicy.expiryPolicyVersion, "P25.44");
-        assert.equal(body.error.data.packageMaterializationApprovalExpiryPolicy.expiryCheckExecuted, false);
-        assert.equal(body.error.data.packageMaterializationApprovalExpiryPolicy.tokenAccepted, false);
-        assert.equal(body.error.data.packageMaterializationApprovalExpiryPolicy.tokenValidated, false);
-        assert.equal(body.error.data.packageMaterializationApprovalExpiryPolicy.approved, false);
-        assert.equal(body.error.data.packageMaterializationApprovalExpiryPolicy.finalApprovalGranted, false);
-        assert.equal(body.error.data.packageMaterializationApprovalExpiryPolicy.commandExecution, false);
-        assert.equal(body.error.data.packageMaterializationApprovalExpiryPolicy.buildOutput, false);
-        assert.equal(body.error.data.packageMaterializationApprovalExpiryPolicy.filesWritten, false);
-        assert.equal(body.error.data.packageMaterializationApprovalExpiryPolicy.expiryDecision.canCheckExpiry, false);
-        assert.equal(body.error.data.packageMaterializationApprovalRevocationPolicy.revocationPolicyVersion, "P25.45");
-        assert.equal(body.error.data.packageMaterializationApprovalRevocationPolicy.revocationCheckExecuted, false);
-        assert.equal(body.error.data.packageMaterializationApprovalRevocationPolicy.revocationRegistryFetched, false);
-        assert.equal(body.error.data.packageMaterializationApprovalRevocationPolicy.revocationStatusTrusted, false);
-        assert.equal(body.error.data.packageMaterializationApprovalRevocationPolicy.tokenAccepted, false);
-        assert.equal(body.error.data.packageMaterializationApprovalRevocationPolicy.tokenValidated, false);
-        assert.equal(body.error.data.packageMaterializationApprovalRevocationPolicy.approved, false);
-        assert.equal(body.error.data.packageMaterializationApprovalRevocationPolicy.finalApprovalGranted, false);
-        assert.equal(body.error.data.packageMaterializationApprovalRevocationPolicy.commandExecution, false);
-        assert.equal(body.error.data.packageMaterializationApprovalRevocationPolicy.buildOutput, false);
-        assert.equal(body.error.data.packageMaterializationApprovalRevocationPolicy.filesWritten, false);
-        assert.equal(body.error.data.packageMaterializationApprovalRevocationPolicy.revocationDecision.canCheckRevocation, false);
-        assert.equal(body.error.data.packageMaterializationApprovalScopeBindingPolicy.scopeBindingVersion, "P25.46");
-        assert.equal(body.error.data.packageMaterializationApprovalScopeBindingPolicy.scopeBindingExecuted, false);
-        assert.equal(body.error.data.packageMaterializationApprovalScopeBindingPolicy.approvalScopeHashComputed, false);
-        assert.equal(body.error.data.packageMaterializationApprovalScopeBindingPolicy.fileSnapshotRead, false);
-        assert.equal(body.error.data.packageMaterializationApprovalScopeBindingPolicy.workspaceHashComputed, false);
-        assert.equal(body.error.data.packageMaterializationApprovalScopeBindingPolicy.tokenAccepted, false);
-        assert.equal(body.error.data.packageMaterializationApprovalScopeBindingPolicy.tokenValidated, false);
-        assert.equal(body.error.data.packageMaterializationApprovalScopeBindingPolicy.approved, false);
-        assert.equal(body.error.data.packageMaterializationApprovalScopeBindingPolicy.finalApprovalGranted, false);
-        assert.equal(body.error.data.packageMaterializationApprovalScopeBindingPolicy.commandExecution, false);
-        assert.equal(body.error.data.packageMaterializationApprovalScopeBindingPolicy.buildOutput, false);
-        assert.equal(body.error.data.packageMaterializationApprovalScopeBindingPolicy.filesWritten, false);
-        assert.equal(body.error.data.packageMaterializationApprovalScopeBindingPolicy.scopeBindingDecision.canBindScope, false);
-        assert.equal(body.error.data.packageMaterializationApprovalOperatorConfirmationPolicy.operatorConfirmationVersion, "P25.47");
-        assert.equal(body.error.data.packageMaterializationApprovalOperatorConfirmationPolicy.operatorConfirmationPrompted, false);
-        assert.equal(body.error.data.packageMaterializationApprovalOperatorConfirmationPolicy.operatorConfirmationReceived, false);
-        assert.equal(body.error.data.packageMaterializationApprovalOperatorConfirmationPolicy.operatorConfirmationStored, false);
-        assert.equal(body.error.data.packageMaterializationApprovalOperatorConfirmationPolicy.operatorIdentityVerified, false);
-        assert.equal(body.error.data.packageMaterializationApprovalOperatorConfirmationPolicy.confirmationTokenIssued, false);
-        assert.equal(body.error.data.packageMaterializationApprovalOperatorConfirmationPolicy.tokenAccepted, false);
-        assert.equal(body.error.data.packageMaterializationApprovalOperatorConfirmationPolicy.tokenValidated, false);
-        assert.equal(body.error.data.packageMaterializationApprovalOperatorConfirmationPolicy.approved, false);
-        assert.equal(body.error.data.packageMaterializationApprovalOperatorConfirmationPolicy.finalApprovalGranted, false);
-        assert.equal(body.error.data.packageMaterializationApprovalOperatorConfirmationPolicy.commandExecution, false);
-        assert.equal(body.error.data.packageMaterializationApprovalOperatorConfirmationPolicy.buildOutput, false);
-        assert.equal(body.error.data.packageMaterializationApprovalOperatorConfirmationPolicy.filesWritten, false);
-        assert.equal(body.error.data.packageMaterializationApprovalOperatorConfirmationPolicy.operatorConfirmationDecision.canPromptOperator, false);
-        assert.equal(body.error.data.packageMaterializationApprovalEmergencyStopPolicy.emergencyStopVersion, "P25.48");
-        assert.equal(body.error.data.packageMaterializationApprovalEmergencyStopPolicy.emergencyStopChecked, false);
-        assert.equal(body.error.data.packageMaterializationApprovalEmergencyStopPolicy.emergencyStopFetched, false);
-        assert.equal(body.error.data.packageMaterializationApprovalEmergencyStopPolicy.emergencyStopStateRead, false);
-        assert.equal(body.error.data.packageMaterializationApprovalEmergencyStopPolicy.emergencyStopStateTrusted, false);
-        assert.equal(body.error.data.packageMaterializationApprovalEmergencyStopPolicy.stopRegistryFetched, false);
-        assert.equal(body.error.data.packageMaterializationApprovalEmergencyStopPolicy.stopStatusTrusted, false);
-        assert.equal(body.error.data.packageMaterializationApprovalEmergencyStopPolicy.tokenAccepted, false);
-        assert.equal(body.error.data.packageMaterializationApprovalEmergencyStopPolicy.tokenValidated, false);
-        assert.equal(body.error.data.packageMaterializationApprovalEmergencyStopPolicy.approved, false);
-        assert.equal(body.error.data.packageMaterializationApprovalEmergencyStopPolicy.finalApprovalGranted, false);
-        assert.equal(body.error.data.packageMaterializationApprovalEmergencyStopPolicy.commandExecution, false);
-        assert.equal(body.error.data.packageMaterializationApprovalEmergencyStopPolicy.buildOutput, false);
-        assert.equal(body.error.data.packageMaterializationApprovalEmergencyStopPolicy.filesWritten, false);
-        assert.equal(body.error.data.packageMaterializationApprovalEmergencyStopPolicy.emergencyStopDecision.canCheckEmergencyStop, false);
-        assert.equal(body.error.data.packageMaterializationApprovalReadinessVerdictPolicy.readinessVerdictVersion, "P25.49");
-        assert.equal(body.error.data.packageMaterializationApprovalReadinessVerdictPolicy.readinessVerdictComputed, false);
-        assert.equal(body.error.data.packageMaterializationApprovalReadinessVerdictPolicy.readinessVerdictStored, false);
-        assert.equal(body.error.data.packageMaterializationApprovalReadinessVerdictPolicy.readinessVerdictTrusted, false);
-        assert.equal(body.error.data.packageMaterializationApprovalReadinessVerdictPolicy.readinessInputsValidated, false);
-        assert.equal(body.error.data.packageMaterializationApprovalReadinessVerdictPolicy.readinessBlockersEvaluated, false);
-        assert.equal(body.error.data.packageMaterializationApprovalReadinessVerdictPolicy.materializationReady, false);
-        assert.equal(body.error.data.packageMaterializationApprovalReadinessVerdictPolicy.tokenAccepted, false);
-        assert.equal(body.error.data.packageMaterializationApprovalReadinessVerdictPolicy.tokenValidated, false);
-        assert.equal(body.error.data.packageMaterializationApprovalReadinessVerdictPolicy.approved, false);
-        assert.equal(body.error.data.packageMaterializationApprovalReadinessVerdictPolicy.finalApprovalGranted, false);
-        assert.equal(body.error.data.packageMaterializationApprovalReadinessVerdictPolicy.commandExecution, false);
-        assert.equal(body.error.data.packageMaterializationApprovalReadinessVerdictPolicy.buildOutput, false);
-        assert.equal(body.error.data.packageMaterializationApprovalReadinessVerdictPolicy.filesWritten, false);
-        assert.equal(body.error.data.packageMaterializationApprovalReadinessVerdictPolicy.readinessVerdictDecision.canComputeVerdict, false);
-        assert.equal(body.error.data.packageMaterializationApprovalExecutionHandoffPolicy.executionHandoffVersion, "P25.50");
-        assert.equal(body.error.data.packageMaterializationApprovalExecutionHandoffPolicy.handoffPrepared, false);
-        assert.equal(body.error.data.packageMaterializationApprovalExecutionHandoffPolicy.handoffQueued, false);
-        assert.equal(body.error.data.packageMaterializationApprovalExecutionHandoffPolicy.handoffStored, false);
-        assert.equal(body.error.data.packageMaterializationApprovalExecutionHandoffPolicy.handoffValidated, false);
-        assert.equal(body.error.data.packageMaterializationApprovalExecutionHandoffPolicy.executionJobCreated, false);
-        assert.equal(body.error.data.packageMaterializationApprovalExecutionHandoffPolicy.executionJobQueued, false);
-        assert.equal(body.error.data.packageMaterializationApprovalExecutionHandoffPolicy.executionJobDispatched, false);
-        assert.equal(body.error.data.packageMaterializationApprovalExecutionHandoffPolicy.materializationReady, false);
-        assert.equal(body.error.data.packageMaterializationApprovalExecutionHandoffPolicy.materializationApproved, false);
-        assert.equal(body.error.data.packageMaterializationApprovalExecutionHandoffPolicy.dispatch, false);
-        assert.equal(body.error.data.packageMaterializationApprovalExecutionHandoffPolicy.runtimeRegistration, false);
-        assert.equal(body.error.data.packageMaterializationApprovalExecutionHandoffPolicy.localFileWrites, false);
-        assert.equal(body.error.data.packageMaterializationApprovalExecutionHandoffPolicy.commandExecution, false);
-        assert.equal(body.error.data.packageMaterializationApprovalExecutionHandoffPolicy.buildOutput, false);
-        assert.equal(body.error.data.packageMaterializationApprovalExecutionHandoffPolicy.filesWritten, false);
-        assert.equal(body.error.data.packageMaterializationApprovalExecutionHandoffPolicy.executionHandoffDecision.canPrepareHandoff, false);
-        assert.equal(body.error.data.packageMaterializationApprovalExecutionHandoffPolicy.executionHandoffDecision.canCreateExecutionJob, false);
-        assert.equal(body.error.data.packageMaterializationApprovalExecutionHandoffPolicy.executionHandoffDecision.canDispatchExecution, false);
-        assert.equal(body.error.data.packageMaterializationApprovalPostHandoffAuditPolicy.postHandoffAuditVersion, "P25.51");
-        assert.equal(body.error.data.packageMaterializationApprovalPostHandoffAuditPolicy.auditRecordPrepared, false);
-        assert.equal(body.error.data.packageMaterializationApprovalPostHandoffAuditPolicy.auditRecordValidated, false);
-        assert.equal(body.error.data.packageMaterializationApprovalPostHandoffAuditPolicy.auditRecordStored, false);
-        assert.equal(body.error.data.packageMaterializationApprovalPostHandoffAuditPolicy.auditRecordWritten, false);
-        assert.equal(body.error.data.packageMaterializationApprovalPostHandoffAuditPolicy.handoffSnapshotCaptured, false);
-        assert.equal(body.error.data.packageMaterializationApprovalPostHandoffAuditPolicy.executionJobSnapshotCaptured, false);
-        assert.equal(body.error.data.packageMaterializationApprovalPostHandoffAuditPolicy.materializationReady, false);
-        assert.equal(body.error.data.packageMaterializationApprovalPostHandoffAuditPolicy.materializationApproved, false);
-        assert.equal(body.error.data.packageMaterializationApprovalPostHandoffAuditPolicy.dispatch, false);
-        assert.equal(body.error.data.packageMaterializationApprovalPostHandoffAuditPolicy.runtimeRegistration, false);
-        assert.equal(body.error.data.packageMaterializationApprovalPostHandoffAuditPolicy.localFileWrites, false);
-        assert.equal(body.error.data.packageMaterializationApprovalPostHandoffAuditPolicy.commandExecution, false);
-        assert.equal(body.error.data.packageMaterializationApprovalPostHandoffAuditPolicy.buildOutput, false);
-        assert.equal(body.error.data.packageMaterializationApprovalPostHandoffAuditPolicy.filesWritten, false);
-        assert.equal(body.error.data.packageMaterializationApprovalPostHandoffAuditPolicy.postHandoffAuditDecision.canPrepareAudit, false);
-        assert.equal(body.error.data.packageMaterializationApprovalPostHandoffAuditPolicy.postHandoffAuditDecision.canWriteAudit, false);
-        assert.equal(body.error.data.packageMaterializationApprovalPostHandoffAuditPolicy.postHandoffAuditDecision.canDispatchExecution, false);
-        assertAuditRetentionPolicyMetadataOnly(body.error.data.packageMaterializationApprovalAuditRetentionPolicy);
-        assertAuditAccessPolicyMetadataOnly(body.error.data.packageMaterializationApprovalAuditAccessPolicy);
-        assertAuditIntegrityPolicyMetadataOnly(body.error.data.packageMaterializationApprovalAuditIntegrityPolicy);
-        assertAuditProvenancePolicyMetadataOnly(body.error.data.packageMaterializationApprovalAuditProvenancePolicy);
-        assertAuditCustodyPolicyMetadataOnly(body.error.data.packageMaterializationApprovalAuditCustodyPolicy);
-        assertAuditEvidencePolicyMetadataOnly(body.error.data.packageMaterializationApprovalAuditEvidencePolicy);
-        assertAuditAttestationPolicyMetadataOnly(body.error.data.packageMaterializationApprovalAuditAttestationPolicy);
-        assertAuditNotarizationPolicyMetadataOnly(body.error.data.packageMaterializationApprovalAuditNotarizationPolicy);
-        assertAuditCertificationPolicyMetadataOnly(body.error.data.packageMaterializationApprovalAuditCertificationPolicy);
-        assertAuditEndorsementPolicyMetadataOnly(body.error.data.packageMaterializationApprovalAuditEndorsementPolicy);
-        assertAuditCountersignaturePolicyMetadataOnly(
-            body.error.data.packageMaterializationApprovalAuditCountersignaturePolicy
+        assert.equal(body.error.data.operation, "thumbnail.render");
+        assert.equal(body.error.data.retryable, true);
+        assert.equal(body.error.data.serviceData.healthPreflight.status, "planned-disabled");
+        assert.equal(body.error.data.serviceData.healthPreflight.dispatch, false);
+    } finally {
+        globalThis.fetch = originalFetch;
+    }
+});
+
+test("render thumbnail execution opt-in posts to renderer-service and returns resource metadata", async () => {
+    const originalFetch = globalThis.fetch;
+    const calls = [];
+    const fixture = getRenderThumbnailRendererServiceFixture("p25154-entrypoint-file-reuse-current");
+    globalThis.fetch = async (url, init) => {
+        calls.push({ url, init });
+        if (url === "http://127.0.0.1:6070/health") {
+            return new Response(
+                JSON.stringify({
+                    status: "ok",
+                    renderer: "penpot-thumbnail-renderer",
+                    mode: "service",
+                    runtimeRegistration: true,
+                    dispatch: true,
+                    capabilities: ["health", "thumbnail.render"],
+                }),
+                { status: 200, headers: { "content-type": "application/json; charset=utf-8" } }
+            );
+        }
+
+        assert.equal(url, "http://127.0.0.1:6070/thumbnail");
+        assert.equal(init.method, "POST");
+        const serviceRequest = JSON.parse(init.body);
+        assert.deepEqual(serviceRequest, fixture.serviceRequest);
+        return new Response(JSON.stringify(fixture.expectedResponse), {
+            status: 200,
+            headers: { "content-type": "application/json; charset=utf-8" },
+        });
+    };
+
+    try {
+        const result = await runCli(
+            [
+                "render",
+                "thumbnail",
+                "--file",
+                UUIDS.file,
+                "--revn",
+                "7",
+                "--renderer-service-uri",
+                "http://127.0.0.1:6070/thumbnail",
+                "--render-thumbnail-execution",
+                "renderer-service",
+                "--public-uri",
+                "https://penpot.example.test",
+                "--format",
+                "json",
+            ],
+            { PENPOT_CLI_TOKEN: "Token cli-secret-token" }
         );
-        assertAuditCountersignatureVerificationPolicyMetadataOnly(
-            body.error.data.packageMaterializationApprovalAuditCountersignatureVerificationPolicy
+        const body = parseJson(result.stdout);
+
+        assert.equal(result.exitCode, 0);
+        assert.equal(result.stderr, "");
+        assert.equal(calls.length, 2);
+        assert.equal(calls[0].url, "http://127.0.0.1:6070/health");
+        assert.equal(calls[0].init.method, "GET");
+        assert.equal(calls[0].init.headers.authorization, undefined);
+        assert.equal(calls[0].init.headers.cookie, undefined);
+        assert.equal(calls[1].url, "http://127.0.0.1:6070/thumbnail");
+        assert.equal(calls[1].init.headers.authorization, "Bearer cli-secret-token");
+        assert.equal(calls[1].init.headers.cookie, "auth-token=cli-secret-token");
+        const requestBody = JSON.parse(calls[1].init.body);
+        assert.deepEqual(requestBody, fixture.serviceRequest);
+        assert.equal(body.status, "ok");
+        assert.equal(body.data.status, "ok");
+        assert.deepEqual(body.data.resource, fixture.expectedResponse.resource);
+        assert.deepEqual(body.data.cache, {
+            ...fixture.expectedResponse.cache,
+            policy: fixture.serviceRequest.cache.policy,
+        });
+        assert.deepEqual(body.data.serviceResponse.request, fixture.expectedResponse.request);
+        assert.deepEqual(body.data.serviceResponse.auth, fixture.expectedResponse.auth);
+        assert.equal(result.stdout.includes("cli-secret-token"), false);
+        assert.equal(body.data.healthPreflight.status, "ok");
+    } finally {
+        globalThis.fetch = originalFetch;
+    }
+});
+
+test("render thumbnail execution rejects malformed renderer-service success responses", async () => {
+    const originalFetch = globalThis.fetch;
+    const calls = [];
+    globalThis.fetch = async (url, init) => {
+        calls.push({ url, init });
+        if (url === "http://127.0.0.1:6070/health") {
+            return new Response(
+                JSON.stringify({
+                    status: "ok",
+                    renderer: "penpot-thumbnail-renderer",
+                    mode: "service",
+                    runtimeRegistration: true,
+                    dispatch: true,
+                    capabilities: ["health", "thumbnail.render"],
+                }),
+                { status: 200, headers: { "content-type": "application/json; charset=utf-8" } }
+            );
+        }
+
+        assert.equal(url, "http://127.0.0.1:6070/thumbnail");
+        return new Response(
+            JSON.stringify({
+                status: "ok",
+                resource: {
+                    mediaId: "thumb-1",
+                    resourceUri: "/assets/by-id/thumb-1",
+                    downloadUri: "http://localhost:3449/assets/by-id/thumb-1",
+                    contentType: "text/plain",
+                },
+                cache: { outcome: "rendered", scope: "file-thumbnail", key: `file:${UUIDS.file}:revn:<resolved-revn>` },
+                renderer: { runtime: "noop-png-fixture", fallbackUsed: false },
+                request: {},
+                auth: {
+                    mode: "caller-session",
+                    authorizationPresent: true,
+                    cookiePresent: true,
+                    authTokenCookiePresent: true,
+                    tokenValuesIncluded: false,
+                },
+            }),
+            { status: 200, headers: { "content-type": "application/json; charset=utf-8" } }
         );
-        assertAuditCountersignatureRevocationPolicyMetadataOnly(
-            body.error.data.packageMaterializationApprovalAuditCountersignatureRevocationPolicy
+    };
+
+    try {
+        const result = await runCli(
+            [
+                "render",
+                "thumbnail",
+                "--file",
+                UUIDS.file,
+                "--renderer-service-uri",
+                "http://127.0.0.1:6070/thumbnail",
+                "--render-thumbnail-execution",
+                "renderer-service",
+                "--format",
+                "json",
+            ],
+            { PENPOT_CLI_TOKEN: "Token cli-secret-token" }
         );
-        assertAuditCountersignatureRevocationAppealPolicyMetadataOnly(
-            body.error.data.packageMaterializationApprovalAuditCountersignatureRevocationAppealPolicy
-        );
-        assertAuditCountersignatureRevocationAppealResolutionPolicyMetadataOnly(
-            body.error.data.packageMaterializationApprovalAuditCountersignatureRevocationAppealResolutionPolicy
-        );
-        assertAuditCountersignatureRevocationAppealResolutionEnforcementPolicyMetadataOnly(
-            body.error.data.packageMaterializationApprovalAuditCountersignatureRevocationAppealResolutionEnforcementPolicy
-        );
-        assertAuditCountersignatureRevocationAppealResolutionEnforcementEvidencePolicyMetadataOnly(
-            body.error.data.packageMaterializationApprovalAuditCountersignatureRevocationAppealResolutionEnforcementEvidencePolicy
-        );
-        assertAuditCountersignatureRevocationAppealResolutionEnforcementEvidenceAttestationPolicyMetadataOnly(
-            body.error.data.packageMaterializationApprovalAuditCountersignatureRevocationAppealResolutionEnforcementEvidenceAttestationPolicy
-        );
-        assertAuditCountersignatureRevocationAppealResolutionEnforcementEvidenceAttestationNotarizationPolicyMetadataOnly(
-            body.error.data.packageMaterializationApprovalAuditCountersignatureRevocationAppealResolutionEnforcementEvidenceAttestationNotarizationPolicy
-        );
-        assertAuditCountersignatureRevocationAppealResolutionEnforcementEvidenceAttestationNotarizationCertificationPolicyMetadataOnly(
-            body.error.data.packageMaterializationApprovalAuditCountersignatureRevocationAppealResolutionEnforcementEvidenceAttestationNotarizationCertificationPolicy
-        );
-        assertAuditCountersignatureRevocationAppealResolutionEnforcementEvidenceAttestationNotarizationCertificationEndorsementPolicyMetadataOnly(
-            body.error.data.packageMaterializationApprovalAuditCountersignatureRevocationAppealResolutionEnforcementEvidenceAttestationNotarizationCertificationEndorsementPolicy
-        );
-        assertAuditCountersignatureRevocationAppealResolutionEnforcementEvidenceAttestationNotarizationCertificationEndorsementCountersignaturePolicyMetadataOnly(
-            body.error.data.packageMaterializationApprovalAuditCountersignatureRevocationAppealResolutionEnforcementEvidenceAttestationNotarizationCertificationEndorsementCountersignaturePolicy
-        );
-        assertAuditCountersignatureRevocationAppealResolutionEnforcementEvidenceAttestationNotarizationCertificationEndorsementCountersignatureVerificationPolicyMetadataOnly(
-            body.error.data.packageMaterializationApprovalAuditCountersignatureRevocationAppealResolutionEnforcementEvidenceAttestationNotarizationCertificationEndorsementCountersignatureVerificationPolicy
-        );
-        assertAuditCountersignatureRevocationAppealResolutionEnforcementEvidenceAttestationNotarizationCertificationEndorsementCountersignatureVerificationRevocationPolicyMetadataOnly(
-            body.error.data.packageMaterializationApprovalAuditCountersignatureRevocationAppealResolutionEnforcementEvidenceAttestationNotarizationCertificationEndorsementCountersignatureVerificationRevocationPolicy
-        );
-        assertAuditCountersignatureRevocationAppealResolutionEnforcementEvidenceAttestationNotarizationCertificationEndorsementCountersignatureVerificationRevocationAppealPolicyMetadataOnly(
-            body.error.data.packageMaterializationApprovalAuditCountersignatureRevocationAppealResolutionEnforcementEvidenceAttestationNotarizationCertificationEndorsementCountersignatureVerificationRevocationAppealPolicy
-        );
-        assertAuditCountersignatureRevocationAppealResolutionEnforcementEvidenceAttestationNotarizationCertificationEndorsementCountersignatureVerificationRevocationAppealResolutionPolicyMetadataOnly(
-            body.error.data.packageMaterializationApprovalAuditCountersignatureRevocationAppealResolutionEnforcementEvidenceAttestationNotarizationCertificationEndorsementCountersignatureVerificationRevocationAppealResolutionPolicy
-        );
-        assertAuditCountersignatureRevocationAppealResolutionEnforcementEvidenceAttestationNotarizationCertificationEndorsementCountersignatureVerificationRevocationAppealResolutionEnforcementPolicyMetadataOnly(
-            body.error.data.packageMaterializationApprovalAuditCountersignatureRevocationAppealResolutionEnforcementEvidenceAttestationNotarizationCertificationEndorsementCountersignatureVerificationRevocationAppealResolutionEnforcementPolicy
-        );
-        assertAuditCountersignatureRevocationAppealResolutionEnforcementEvidenceAttestationNotarizationCertificationEndorsementCountersignatureVerificationRevocationAppealResolutionEnforcementEvidencePolicyMetadataOnly(
-            body.error.data.packageMaterializationApprovalAuditCountersignatureRevocationAppealResolutionEnforcementEvidenceAttestationNotarizationCertificationEndorsementCountersignatureVerificationRevocationAppealResolutionEnforcementEvidencePolicy
-        );
-        assertAuditCountersignatureRevocationAppealResolutionEnforcementEvidenceAttestationNotarizationCertificationEndorsementCountersignatureVerificationRevocationAppealResolutionEnforcementEvidenceAttestationPolicyMetadataOnly(
-            body.error.data.packageMaterializationApprovalAuditCountersignatureRevocationAppealResolutionEnforcementEvidenceAttestationNotarizationCertificationEndorsementCountersignatureVerificationRevocationAppealResolutionEnforcementEvidenceAttestationPolicy
-        );
-        assertAuditCountersignatureRevocationAppealResolutionEnforcementEvidenceAttestationNotarizationCertificationEndorsementCountersignatureVerificationRevocationAppealResolutionEnforcementEvidenceAttestationNotarizationPolicyMetadataOnly(
-            body.error.data.packageMaterializationApprovalAuditCountersignatureRevocationAppealResolutionEnforcementEvidenceAttestationNotarizationCertificationEndorsementCountersignatureVerificationRevocationAppealResolutionEnforcementEvidenceAttestationNotarizationPolicy
-        );
-        assertAuditCountersignatureRevocationAppealResolutionEnforcementEvidenceAttestationNotarizationCertificationEndorsementCountersignatureVerificationRevocationAppealResolutionEnforcementEvidenceAttestationNotarizationCertificationPolicyMetadataOnly(
-            body.error.data.packageMaterializationApprovalAuditCountersignatureRevocationAppealResolutionEnforcementEvidenceAttestationNotarizationCertificationEndorsementCountersignatureVerificationRevocationAppealResolutionEnforcementEvidenceAttestationNotarizationCertificationPolicy
-        );
-        assertAuditCountersignatureRevocationAppealResolutionEnforcementEvidenceAttestationNotarizationCertificationEndorsementCountersignatureVerificationRevocationAppealResolutionEnforcementEvidenceAttestationNotarizationCertificationEndorsementPolicyMetadataOnly(
-            body.error.data.packageMaterializationApprovalAuditCountersignatureRevocationAppealResolutionEnforcementEvidenceAttestationNotarizationCertificationEndorsementCountersignatureVerificationRevocationAppealResolutionEnforcementEvidenceAttestationNotarizationCertificationEndorsementPolicy
-        );
-        assertAuditCountersignatureRevocationAppealResolutionEnforcementEvidenceAttestationNotarizationCertificationEndorsementCountersignatureVerificationRevocationAppealResolutionEnforcementEvidenceAttestationNotarizationCertificationEndorsementCountersignaturePolicyMetadataOnly(
-            body.error.data.packageMaterializationApprovalAuditCountersignatureRevocationAppealResolutionEnforcementEvidenceAttestationNotarizationCertificationEndorsementCountersignatureVerificationRevocationAppealResolutionEnforcementEvidenceAttestationNotarizationCertificationEndorsementCountersignaturePolicy
-        );
-        assertAuditCountersignatureRevocationAppealResolutionEnforcementEvidenceAttestationNotarizationCertificationEndorsementCountersignatureVerificationRevocationAppealResolutionEnforcementEvidenceAttestationNotarizationCertificationEndorsementCountersignatureVerificationPolicyMetadataOnly(
-            body.error.data.packageMaterializationApprovalAuditCountersignatureRevocationAppealResolutionEnforcementEvidenceAttestationNotarizationCertificationEndorsementCountersignatureVerificationRevocationAppealResolutionEnforcementEvidenceAttestationNotarizationCertificationEndorsementCountersignatureVerificationPolicy
-        );
-        assertAuditCountersignatureRevocationAppealResolutionEnforcementEvidenceAttestationNotarizationCertificationEndorsementCountersignatureVerificationRevocationAppealResolutionEnforcementEvidenceAttestationNotarizationCertificationEndorsementCountersignatureVerificationRevocationPolicyMetadataOnly(
-            body.error.data.packageMaterializationApprovalAuditCountersignatureRevocationAppealResolutionEnforcementEvidenceAttestationNotarizationCertificationEndorsementCountersignatureVerificationRevocationAppealResolutionEnforcementEvidenceAttestationNotarizationCertificationEndorsementCountersignatureVerificationRevocationPolicy
-        );
-        assertAuditCountersignatureRevocationAppealResolutionEnforcementEvidenceAttestationNotarizationCertificationEndorsementCountersignatureVerificationRevocationAppealResolutionEnforcementEvidenceAttestationNotarizationCertificationEndorsementCountersignatureVerificationRevocationAppealPolicyMetadataOnly(
-            body.error.data.packageMaterializationApprovalAuditCountersignatureRevocationAppealResolutionEnforcementEvidenceAttestationNotarizationCertificationEndorsementCountersignatureVerificationRevocationAppealResolutionEnforcementEvidenceAttestationNotarizationCertificationEndorsementCountersignatureVerificationRevocationAppealPolicy
-        );
-        assertAuditCountersignatureRevocationAppealResolutionEnforcementEvidenceAttestationNotarizationCertificationEndorsementCountersignatureVerificationRevocationAppealResolutionEnforcementEvidenceAttestationNotarizationCertificationEndorsementCountersignatureVerificationRevocationAppealResolutionPolicyMetadataOnly(
-            body.error.data.packageMaterializationApprovalAuditCountersignatureRevocationAppealResolutionEnforcementEvidenceAttestationNotarizationCertificationEndorsementCountersignatureVerificationRevocationAppealResolutionEnforcementEvidenceAttestationNotarizationCertificationEndorsementCountersignatureVerificationRevocationAppealResolutionPolicy
-        );
-        assertAuditCountersignatureRevocationAppealResolutionEnforcementEvidenceAttestationNotarizationCertificationEndorsementCountersignatureVerificationRevocationAppealResolutionEnforcementEvidenceAttestationNotarizationCertificationEndorsementCountersignatureVerificationRevocationAppealResolutionEnforcementPolicyMetadataOnly(
-            body.error.data.packageMaterializationApprovalAuditCountersignatureRevocationAppealResolutionEnforcementEvidenceAttestationNotarizationCertificationEndorsementCountersignatureVerificationRevocationAppealResolutionEnforcementEvidenceAttestationNotarizationCertificationEndorsementCountersignatureVerificationRevocationAppealResolutionEnforcementPolicy
-        );
-        assertAuditCountersignatureRevocationAppealResolutionEnforcementEvidenceAttestationNotarizationCertificationEndorsementCountersignatureVerificationRevocationAppealResolutionEnforcementEvidenceAttestationNotarizationCertificationEndorsementCountersignatureVerificationRevocationAppealResolutionEnforcementEvidencePolicyMetadataOnly(
-            body.error.data.packageMaterializationApprovalAuditCountersignatureRevocationAppealResolutionEnforcementEvidenceAttestationNotarizationCertificationEndorsementCountersignatureVerificationRevocationAppealResolutionEnforcementEvidenceAttestationNotarizationCertificationEndorsementCountersignatureVerificationRevocationAppealResolutionEnforcementEvidencePolicy
-        );
-        assertAuditCountersignatureRevocationAppealResolutionEnforcementEvidenceAttestationNotarizationCertificationEndorsementCountersignatureVerificationRevocationAppealResolutionEnforcementEvidenceAttestationNotarizationCertificationEndorsementCountersignatureVerificationRevocationAppealResolutionEnforcementEvidenceAttestationPolicyMetadataOnly(
-            body.error.data.packageMaterializationApprovalAuditCountersignatureRevocationAppealResolutionEnforcementEvidenceAttestationNotarizationCertificationEndorsementCountersignatureVerificationRevocationAppealResolutionEnforcementEvidenceAttestationNotarizationCertificationEndorsementCountersignatureVerificationRevocationAppealResolutionEnforcementEvidenceAttestationPolicy
-        );
-        assertAuditCountersignatureRevocationAppealResolutionEnforcementEvidenceAttestationNotarizationCertificationEndorsementCountersignatureVerificationRevocationAppealResolutionEnforcementEvidenceAttestationNotarizationCertificationEndorsementCountersignatureVerificationRevocationAppealResolutionEnforcementEvidenceAttestationNotarizationPolicyMetadataOnly(
-            body.error.data.packageMaterializationApprovalAuditCountersignatureRevocationAppealResolutionEnforcementEvidenceAttestationNotarizationCertificationEndorsementCountersignatureVerificationRevocationAppealResolutionEnforcementEvidenceAttestationNotarizationCertificationEndorsementCountersignatureVerificationRevocationAppealResolutionEnforcementEvidenceAttestationNotarizationPolicy
-        );
-        assertAuditCountersignatureRevocationAppealResolutionEnforcementEvidenceAttestationNotarizationCertificationEndorsementCountersignatureVerificationRevocationAppealResolutionEnforcementEvidenceAttestationNotarizationCertificationEndorsementCountersignatureVerificationRevocationAppealResolutionEnforcementEvidenceAttestationNotarizationCertificationPolicyMetadataOnly(
-            body.error.data.packageMaterializationApprovalAuditCountersignatureRevocationAppealResolutionEnforcementEvidenceAttestationNotarizationCertificationEndorsementCountersignatureVerificationRevocationAppealResolutionEnforcementEvidenceAttestationNotarizationCertificationEndorsementCountersignatureVerificationRevocationAppealResolutionEnforcementEvidenceAttestationNotarizationCertificationPolicy
-        );
-        assertAuditCountersignatureRevocationAppealResolutionEnforcementEvidenceAttestationNotarizationCertificationEndorsementCountersignatureVerificationRevocationAppealResolutionEnforcementEvidenceAttestationNotarizationCertificationEndorsementCountersignatureVerificationRevocationAppealResolutionEnforcementEvidenceAttestationNotarizationCertificationEndorsementPolicyMetadataOnly(
-            body.error.data.packageMaterializationApprovalAuditCountersignatureRevocationAppealResolutionEnforcementEvidenceAttestationNotarizationCertificationEndorsementCountersignatureVerificationRevocationAppealResolutionEnforcementEvidenceAttestationNotarizationCertificationEndorsementCountersignatureVerificationRevocationAppealResolutionEnforcementEvidenceAttestationNotarizationCertificationEndorsementPolicy
-        );
-        assertAuditCountersignatureRevocationAppealResolutionEnforcementEvidenceAttestationNotarizationCertificationEndorsementCountersignatureVerificationRevocationAppealResolutionEnforcementEvidenceAttestationNotarizationCertificationEndorsementCountersignatureVerificationRevocationAppealResolutionEnforcementEvidenceAttestationNotarizationCertificationEndorsementCountersignaturePolicyMetadataOnly(
-            body.error.data.packageMaterializationApprovalAuditCountersignatureRevocationAppealResolutionEnforcementEvidenceAttestationNotarizationCertificationEndorsementCountersignatureVerificationRevocationAppealResolutionEnforcementEvidenceAttestationNotarizationCertificationEndorsementCountersignatureVerificationRevocationAppealResolutionEnforcementEvidenceAttestationNotarizationCertificationEndorsementCountersignaturePolicy
-        );
-        assertAuditCountersignatureRevocationAppealResolutionEnforcementEvidenceAttestationNotarizationCertificationEndorsementCountersignatureVerificationRevocationAppealResolutionEnforcementEvidenceAttestationNotarizationCertificationEndorsementCountersignatureVerificationRevocationAppealResolutionEnforcementEvidenceAttestationNotarizationCertificationEndorsementCountersignatureVerificationPolicyMetadataOnly(
-            body.error.data.packageMaterializationApprovalAuditCountersignatureRevocationAppealResolutionEnforcementEvidenceAttestationNotarizationCertificationEndorsementCountersignatureVerificationRevocationAppealResolutionEnforcementEvidenceAttestationNotarizationCertificationEndorsementCountersignatureVerificationRevocationAppealResolutionEnforcementEvidenceAttestationNotarizationCertificationEndorsementCountersignatureVerificationPolicy
-        );
-        assertAuditCountersignatureRevocationAppealResolutionEnforcementEvidenceAttestationNotarizationCertificationEndorsementCountersignatureVerificationRevocationAppealResolutionEnforcementEvidenceAttestationNotarizationCertificationEndorsementCountersignatureVerificationRevocationAppealResolutionEnforcementEvidenceAttestationNotarizationCertificationEndorsementCountersignatureVerificationRevocationPolicyMetadataOnly(
-            body.error.data.packageMaterializationApprovalAuditCountersignatureRevocationAppealResolutionEnforcementEvidenceAttestationNotarizationCertificationEndorsementCountersignatureVerificationRevocationAppealResolutionEnforcementEvidenceAttestationNotarizationCertificationEndorsementCountersignatureVerificationRevocationAppealResolutionEnforcementEvidenceAttestationNotarizationCertificationEndorsementCountersignatureVerificationRevocationPolicy
-        );
-        assertAuditCountersignatureRevocationAppealResolutionEnforcementEvidenceAttestationNotarizationCertificationEndorsementCountersignatureVerificationRevocationAppealResolutionEnforcementEvidenceAttestationNotarizationCertificationEndorsementCountersignatureVerificationRevocationAppealResolutionEnforcementEvidenceAttestationNotarizationCertificationEndorsementCountersignatureVerificationRevocationAppealPolicyMetadataOnly(
-            body.error.data.packageMaterializationApprovalAuditCountersignatureRevocationAppealResolutionEnforcementEvidenceAttestationNotarizationCertificationEndorsementCountersignatureVerificationRevocationAppealResolutionEnforcementEvidenceAttestationNotarizationCertificationEndorsementCountersignatureVerificationRevocationAppealResolutionEnforcementEvidenceAttestationNotarizationCertificationEndorsementCountersignatureVerificationRevocationAppealPolicy
-        );
-        assertAuditCountersignatureRevocationAppealResolutionEnforcementEvidenceAttestationNotarizationCertificationEndorsementCountersignatureVerificationRevocationAppealResolutionEnforcementEvidenceAttestationNotarizationCertificationEndorsementCountersignatureVerificationRevocationAppealResolutionEnforcementEvidenceAttestationNotarizationCertificationEndorsementCountersignatureVerificationRevocationAppealResolutionPolicyMetadataOnly(
-            body.error.data.packageMaterializationApprovalAuditCountersignatureRevocationAppealResolutionEnforcementEvidenceAttestationNotarizationCertificationEndorsementCountersignatureVerificationRevocationAppealResolutionEnforcementEvidenceAttestationNotarizationCertificationEndorsementCountersignatureVerificationRevocationAppealResolutionEnforcementEvidenceAttestationNotarizationCertificationEndorsementCountersignatureVerificationRevocationAppealResolutionPolicy
-        );
-        assertAuditCountersignatureRevocationAppealResolutionEnforcementEvidenceAttestationNotarizationCertificationEndorsementCountersignatureVerificationRevocationAppealResolutionEnforcementEvidenceAttestationNotarizationCertificationEndorsementCountersignatureVerificationRevocationAppealResolutionEnforcementEvidenceAttestationNotarizationCertificationEndorsementCountersignatureVerificationRevocationAppealResolutionEnforcementPolicyMetadataOnly(
-            body.error.data.packageMaterializationApprovalAuditCountersignatureRevocationAppealResolutionEnforcementEvidenceAttestationNotarizationCertificationEndorsementCountersignatureVerificationRevocationAppealResolutionEnforcementEvidenceAttestationNotarizationCertificationEndorsementCountersignatureVerificationRevocationAppealResolutionEnforcementEvidenceAttestationNotarizationCertificationEndorsementCountersignatureVerificationRevocationAppealResolutionEnforcementPolicy
-        );
-        assertAuditCountersignatureRevocationAppealResolutionEnforcementEvidenceAttestationNotarizationCertificationEndorsementCountersignatureVerificationRevocationAppealResolutionEnforcementEvidenceAttestationNotarizationCertificationEndorsementCountersignatureVerificationRevocationAppealResolutionEnforcementEvidenceAttestationNotarizationCertificationEndorsementCountersignatureVerificationRevocationAppealResolutionEnforcementEvidencePolicyMetadataOnly(
-            body.error.data.packageMaterializationApprovalAuditCountersignatureRevocationAppealResolutionEnforcementEvidenceAttestationNotarizationCertificationEndorsementCountersignatureVerificationRevocationAppealResolutionEnforcementEvidenceAttestationNotarizationCertificationEndorsementCountersignatureVerificationRevocationAppealResolutionEnforcementEvidenceAttestationNotarizationCertificationEndorsementCountersignatureVerificationRevocationAppealResolutionEnforcementEvidencePolicy
-        );
-        assertAuditCountersignatureRevocationAppealResolutionEnforcementEvidenceAttestationNotarizationCertificationEndorsementCountersignatureVerificationRevocationAppealResolutionEnforcementEvidenceAttestationNotarizationCertificationEndorsementCountersignatureVerificationRevocationAppealResolutionEnforcementEvidenceAttestationNotarizationCertificationEndorsementCountersignatureVerificationRevocationAppealResolutionEnforcementEvidenceAttestationPolicyMetadataOnly(
-            body.error.data.packageMaterializationApprovalAuditCountersignatureRevocationAppealResolutionEnforcementEvidenceAttestationNotarizationCertificationEndorsementCountersignatureVerificationRevocationAppealResolutionEnforcementEvidenceAttestationNotarizationCertificationEndorsementCountersignatureVerificationRevocationAppealResolutionEnforcementEvidenceAttestationNotarizationCertificationEndorsementCountersignatureVerificationRevocationAppealResolutionEnforcementEvidenceAttestationPolicy
-        );
-        assertAuditCountersignatureRevocationAppealResolutionEnforcementEvidenceAttestationNotarizationCertificationEndorsementCountersignatureVerificationRevocationAppealResolutionEnforcementEvidenceAttestationNotarizationCertificationEndorsementCountersignatureVerificationRevocationAppealResolutionEnforcementEvidenceAttestationNotarizationCertificationEndorsementCountersignatureVerificationRevocationAppealResolutionEnforcementEvidenceAttestationNotarizationPolicyMetadataOnly(
-            body.error.data.packageMaterializationApprovalAuditCountersignatureRevocationAppealResolutionEnforcementEvidenceAttestationNotarizationCertificationEndorsementCountersignatureVerificationRevocationAppealResolutionEnforcementEvidenceAttestationNotarizationCertificationEndorsementCountersignatureVerificationRevocationAppealResolutionEnforcementEvidenceAttestationNotarizationCertificationEndorsementCountersignatureVerificationRevocationAppealResolutionEnforcementEvidenceAttestationNotarizationPolicy
-        );
-        assertAuditCountersignatureRevocationAppealResolutionEnforcementEvidenceAttestationNotarizationCertificationEndorsementCountersignatureVerificationRevocationAppealResolutionEnforcementEvidenceAttestationNotarizationCertificationEndorsementCountersignatureVerificationRevocationAppealResolutionEnforcementEvidenceAttestationNotarizationCertificationEndorsementCountersignatureVerificationRevocationAppealResolutionEnforcementEvidenceAttestationNotarizationCertificationPolicyMetadataOnly(
-            body.error.data.packageMaterializationApprovalAuditCountersignatureRevocationAppealResolutionEnforcementEvidenceAttestationNotarizationCertificationEndorsementCountersignatureVerificationRevocationAppealResolutionEnforcementEvidenceAttestationNotarizationCertificationEndorsementCountersignatureVerificationRevocationAppealResolutionEnforcementEvidenceAttestationNotarizationCertificationEndorsementCountersignatureVerificationRevocationAppealResolutionEnforcementEvidenceAttestationNotarizationCertificationPolicy
-        );
-        assertP25105EndorsementPolicyMetadataOnly(body.error.data[P25105_POLICY_KEY]);
-        assertP25106CountersignaturePolicyMetadataOnly(body.error.data[P25106_POLICY_KEY]);
-        assertP25107VerificationPolicyMetadataOnly(body.error.data[P25107_POLICY_KEY]);
-        assertP25108RevocationPolicyMetadataOnly(body.error.data[P25108_POLICY_KEY]);
-        assertP25109RevocationAppealPolicyMetadataOnly(body.error.data[P25109_POLICY_KEY]);
-        assertP25110RevocationAppealResolutionPolicyMetadataOnly(body.error.data[P25110_POLICY_KEY]);
-        assertP25111RevocationAppealResolutionEnforcementPolicyMetadataOnly(body.error.data[P25111_POLICY_KEY]);
-        assertP25112RevocationAppealResolutionEnforcementEvidencePolicyMetadataOnly(body.error.data[P25112_POLICY_KEY]);
-        assertP25113RevocationAppealResolutionEnforcementEvidenceAttestationPolicyMetadataOnly(body.error.data[P25113_POLICY_KEY]);
-        assertP25114RevocationAppealResolutionEnforcementEvidenceAttestationNotarizationPolicyMetadataOnly(body.error.data[P25114_POLICY_KEY]);
-        assertP25115RevocationAppealResolutionEnforcementEvidenceAttestationNotarizationCertificationPolicyMetadataOnly(body.error.data[P25115_POLICY_KEY]);
-        assertP25116RevocationAppealResolutionEnforcementEvidenceAttestationNotarizationCertificationEndorsementPolicyMetadataOnly(body.error.data[P25116_POLICY_KEY]);
-        assertP25117RevocationAppealResolutionEnforcementEvidenceAttestationNotarizationCertificationEndorsementCountersignaturePolicyMetadataOnly(body.error.data[P25117_POLICY_KEY]);
-        assertP25118RevocationAppealResolutionEnforcementEvidenceAttestationNotarizationCertificationEndorsementCountersignatureVerificationPolicyMetadataOnly(body.error.data[P25118_POLICY_KEY]);
-        assertP25119RevocationAppealResolutionEnforcementEvidenceAttestationNotarizationCertificationEndorsementCountersignatureVerificationRevocationPolicyMetadataOnly(body.error.data[P25119_POLICY_KEY]);
-        assertP25120RevocationAppealResolutionEnforcementEvidenceAttestationNotarizationCertificationEndorsementCountersignatureVerificationRevocationAppealPolicyMetadataOnly(body.error.data[P25120_POLICY_KEY]);
-        assertP25121RevocationAppealResolutionEnforcementEvidenceAttestationNotarizationCertificationEndorsementCountersignatureVerificationRevocationAppealResolutionPolicyMetadataOnly(body.error.data[P25121_POLICY_KEY]);
-        assertP25122RevocationAppealResolutionEnforcementEvidenceAttestationNotarizationCertificationEndorsementCountersignatureVerificationRevocationAppealResolutionEnforcementPolicyMetadataOnly(body.error.data[P25122_POLICY_KEY]);
-        assertP25123RevocationAppealResolutionEnforcementEvidenceAttestationNotarizationCertificationEndorsementCountersignatureVerificationRevocationAppealResolutionEnforcementEvidencePolicyMetadataOnly(body.error.data[P25123_POLICY_KEY]);
-        assertP25124RevocationAppealResolutionEnforcementEvidenceAttestationNotarizationCertificationEndorsementCountersignatureVerificationRevocationAppealResolutionEnforcementEvidenceAttestationPolicyMetadataOnly(body.error.data[P25124_POLICY_KEY]);
-        assertP25125RevocationAppealResolutionEnforcementEvidenceAttestationNotarizationPolicyMetadataOnly(body.error.data[P25125_POLICY_KEY]);
-        assertP25126RevocationAppealResolutionEnforcementEvidenceAttestationNotarizationCertificationPolicyMetadataOnly(body.error.data[P25126_POLICY_KEY]);
-        assertP25127RevocationAppealResolutionEnforcementEvidenceAttestationNotarizationCertificationEndorsementPolicyMetadataOnly(body.error.data[P25127_POLICY_KEY]);
-        assertP25128RevocationAppealResolutionEnforcementEvidenceAttestationNotarizationCertificationEndorsementCountersignaturePolicyMetadataOnly(body.error.data[P25128_POLICY_KEY]);
-        assertP25129RevocationAppealResolutionEnforcementEvidenceAttestationNotarizationCertificationEndorsementCountersignatureVerificationPolicyMetadataOnly(body.error.data[P25129_POLICY_KEY]);
-        assertP25130RevocationAppealResolutionEnforcementEvidenceAttestationNotarizationCertificationEndorsementCountersignatureVerificationRevocationPolicyMetadataOnly(body.error.data[P25130_POLICY_KEY]);
-        assertP25131RevocationAppealResolutionEnforcementEvidenceAttestationNotarizationCertificationEndorsementCountersignatureVerificationRevocationAppealPolicyMetadataOnly(body.error.data[P25131_POLICY_KEY]);
-        assertP25132RevocationAppealResolutionEnforcementEvidenceAttestationNotarizationCertificationEndorsementCountersignatureVerificationRevocationAppealResolutionPolicyMetadataOnly(body.error.data[P25132_POLICY_KEY]);
-        assertP25133RevocationAppealResolutionEnforcementEvidenceAttestationNotarizationCertificationEndorsementCountersignatureVerificationRevocationAppealResolutionEnforcementPolicyMetadataOnly(body.error.data[P25133_POLICY_KEY]);
-        assertP25134RevocationAppealResolutionEnforcementEvidenceAttestationNotarizationCertificationEndorsementCountersignatureVerificationRevocationAppealResolutionEnforcementEvidencePolicyMetadataOnly(body.error.data[P25134_POLICY_KEY]);
-        assertP25135RevocationAppealResolutionEnforcementEvidenceAttestationNotarizationCertificationEndorsementCountersignatureVerificationRevocationAppealResolutionEnforcementEvidenceAttestationPolicyMetadataOnly(body.error.data[P25135_POLICY_KEY]);
-        assertP25136AttestationNotarizationPolicyMetadataOnly(body.error.data[P25136_POLICY_KEY]);
-        assertP25137AttestationNotarizationCertificationPolicyMetadataOnly(body.error.data[P25137_POLICY_KEY]);
-        assertP25138AttestationNotarizationCertificationEndorsementPolicyMetadataOnly(body.error.data[P25138_POLICY_KEY]);
-        assertP25139AttestationNotarizationCertificationEndorsementCountersignaturePolicyMetadataOnly(body.error.data[P25139_POLICY_KEY]);
-        assertP25140AttestationNotarizationCertificationEndorsementCountersignatureVerificationPolicyMetadataOnly(body.error.data[P25140_POLICY_KEY]);
-        assertP25141AttestationNotarizationCertificationEndorsementCountersignatureVerificationRevocationPolicyMetadataOnly(body.error.data[P25141_POLICY_KEY]);
-        assertP25142AttestationNotarizationCertificationEndorsementCountersignatureVerificationRevocationAppealPolicyMetadataOnly(body.error.data[P25142_POLICY_KEY]);
-        assertP25143AttestationNotarizationCertificationEndorsementCountersignatureVerificationRevocationAppealResolutionPolicyMetadataOnly(body.error.data[P25143_POLICY_KEY]);
-        assert.equal(body.error.data.clientRequest.dispatch, false);
-        assert.equal(body.error.data.serviceRequest.operation, "thumbnail.render");
+        const body = parseJson(result.stdout);
+
+        assert.equal(result.exitCode, 2);
+        assert.equal(result.stderr, "");
+        assert.equal(calls.length, 2);
+        assert.equal(body.status, "error");
+        assert.equal(body.error.code, "renderer_service_response_invalid");
+        assert.equal(body.error.data.retryable, false);
+        assert.equal(body.error.data.serviceData.field, "resource.contentType");
+        assert.equal(result.stdout.includes("cli-secret-token"), false);
     } finally {
         globalThis.fetch = originalFetch;
     }

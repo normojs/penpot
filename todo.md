@@ -189,7 +189,63 @@ revocation appeal resolution policy is derived from the disabled P25.142 appeal
 policy and exposed consistently through command-runtime, CLI, MCP, and renderer
 fixtures; appeal resolution, record reads, materialization, process startup,
 file writes, command execution, build output, runtime registration, and network
-dispatch remain disabled. P25.7 is complete: thumbnail renderer-service API fixtures now define
+dispatch remain disabled. P25.144 is complete: the earlier disabled-planning
+boundary has been superseded for the first executable slice; MCP and
+`penpot-cli render thumbnail` now execute the renderer-service path only with a
+configured endpoint and explicit `renderer-service` opt-in, dry runs remain
+network-free, CLI `--output` downloads the normalized resource URI, and MCP
+returns metadata without writing local files. P25.145 is complete:
+renderer-service `POST /thumbnail` now validates the executable
+`thumbnail.render` JSON request contract before returning the no-op PNG
+resource, including operation, target kind, and PNG artifact format checks.
+P25.146 is complete: renderer-service target identity validation now requires
+file thumbnails to include `target.fileId` and frame thumbnails to include
+`target.fileId`, `target.pageId`, and `target.objectId` before returning the
+no-op PNG resource. P25.147 is complete: renderer-service cache validation now
+requires `cache.policy`, target-matching `cache.scope`, and non-empty
+`cache.key` before no-op rendering. P25.148 is complete: renderer-service
+artifact validation now requires bounded PNG dimensions plus `image/png` MIME
+type and `.png` extension before no-op rendering. P25.149 is complete:
+renderer-service render intent validation now requires refresh calls to render
+unconditionally, reuse calls to render on cache miss, and the shared runtime
+and fallback names before no-op rendering. P25.150 is complete: executable
+renderer-service thumbnail dispatch now forwards caller-session auth headers
+from MCP and `penpot-cli`, while the service returns only token-safe auth
+presence metadata and never echoes credential values. P25.151 is complete:
+renderer-service backend RPC intent validation now requires target/cache-policy
+appropriate source-data and persist command metadata before no-op rendering,
+while keeping backend RPC execution disabled. P25.152 is complete:
+renderer-service cache probe intent validation now requires target-specific
+probe metadata for reuse requests and rejects probe metadata on refresh
+requests before no-op rendering. P25.153 is complete: renderer-service
+thumbnail identity consistency validation now requires target identities,
+cache keys, backend source-data requests, and persist/cache-miss persist
+requests to agree before no-op rendering. P25.154 is complete:
+renderer-service response contract validation now verifies normalized no-op
+responses remain resource/cache/renderer/request/auth consistent before MCP/CLI
+consumption. P26.5 is complete: renderer-service thumbnail responses now expose
+a token-safe backend RPC client plan with normalized future RPC endpoints while
+keeping backend cache reads, source-data reads, persistence writes, and network
+dispatch disabled. P26.6 is complete: backend RPC client entries now include
+token-safe disabled request-envelope metadata that fixes future GET query and
+POST JSON body key shapes without exposing request values, media values, token
+values, or enabling dispatch. P26.7 is complete: backend RPC client responses
+now include a disabled ordered pipeline plan for cache probing, source-data
+reads, rendering, and thumbnail persistence, with response validation proving
+the plan remains value-free and all IO/dispatch flags stay false. P26.8 is
+complete: the manual no-op host now reads backend RPC planning base URI metadata
+from `PENPOT_RENDERER_SERVICE_BACKEND_URI` or `PENPOT_BACKEND_URI`, normalizes
+HTTP(S) values before startup, and still keeps backend RPC dispatch, cache
+reads, source-data reads, render dispatch, and persistence disabled. P26.9 is
+complete: reuse responses now include a disabled cache-probe plan that fixes
+the future cache lookup strategy, identity keys, hit/miss shape, and hard false
+cache-read/network-dispatch/value flags before any cache lookup API exists.
+P26.10 is complete: configured file-target reuse requests now execute the
+read-only backend `get-file-thumbnail` cache probe, return normalized cached
+resource metadata on hits, and continue the no-op render path on misses while
+keeping source-data reads, real rendering, thumbnail persistence, tagged-frame
+cache probes, and credential/media value exposure disabled.
+P25.7 is complete: thumbnail renderer-service API fixtures now define
 future file refresh, file reuse, tagged frame refresh, auth forwarding,
 resource URI normalization, and MCP/CLI test expectations. P25.8 is complete:
 `penpot-cli render thumbnail --dry-run` now prints the future renderer-service
@@ -824,8 +880,15 @@ process boundary before MCP or CLI execution is enabled.
 | --- | --- | --- | --- | --- |
 | P26.1 | done | Materialize the no-op thumbnail renderer-service host | `renderer-service`, workspace manifests, `todo.md`, `CHANGES.md` | Completed 2026-07-12; the package starts on an explicit local port, `GET /health` returns the P25.24 no-op health shape, and `POST /thumbnail` returns the P25.24 501 no-op shape; service tests, type checks, and cached builds prove no MCP/CLI dispatch, backend RPC, PNG rendering, or filesystem artifact writing occurs |
 | P26.2 | done | Add host lifecycle management metadata and manual developer command | `renderer-service`, `penpot-cli`, `mcp/docs`, `todo.md` | Completed 2026-07-12; `penpot-cli renderer-service status` returns a token-free manual lifecycle plan without network access, while `renderer-service start` returns the same explicit command as a controlled no-spawn boundary; JSON and text output confirm renderer dispatch remains disabled |
-| P26.3 | todo | Enable gated health preflight from MCP and CLI | `command-runtime`, `mcp`, `penpot-cli`, `renderer-service` | Explicit opt-in performs only a health request and preserves current unavailable behavior when it fails |
-| P26.4 | todo | Implement renderer-backed thumbnail request execution | `renderer-service`, `backend`, `command-runtime`, `mcp`, `penpot-cli` | Explicit opt-in produces a normalized PNG resource for file and tagged-frame requests with integration coverage |
+| P26.3 | done | Enable gated health preflight from MCP and CLI | `command-runtime`, `mcp`, `penpot-cli`, `renderer-service` | Completed 2026-07-12; explicit opt-in performs only a renderer-service `GET /health` request, normalizes success/failure metadata, and preserves current unavailable thumbnail dispatch behavior |
+| P26.4 | done | Implement renderer-backed thumbnail request execution | `renderer-service`, `backend`, `command-runtime`, `mcp`, `penpot-cli` | Completed 2026-07-13; explicit opt-in performs health preflight, dispatches `POST /thumbnail`, normalizes PNG resource metadata for MCP/CLI, and CLI `--output` downloads the renderer-service PNG resource; focused command-runtime, MCP, CLI, and renderer-service tests pass |
+| P26.5 | done | Add renderer-service backend RPC client planning boundary | `renderer-service`, `mcp/docs`, `todo.md`, `CHANGES.md` | Completed 2026-07-14; renderer-service responses now include a token-safe `backendRpcClient` plan with normalized Penpot backend RPC endpoints when configured, explicit `dispatch:false`/`networkDispatch:false`, and tests proving no injected fetch is called | Prepares source-data/cache/persistence execution without reading backend data, probing caches, persisting thumbnails, or enabling renderer-service backend network dispatch |
+| P26.6 | done | Add renderer-service backend RPC request-envelope planning boundary | `renderer-service`, `mcp/docs`, `todo.md`, `CHANGES.md` | Completed 2026-07-14; `backendRpcClient.entries.*.requestEnvelope` now records disabled Penpot RPC transport, HTTP method, canonical request keys, GET query keys, POST body keys, and hard false value/media/token/dispatch flags with response validation coverage | Prepares safe backend RPC dispatch wiring without exposing request values, media values, credential values, cache reads, source-data reads, persistence writes, or network dispatch |
+| P26.7 | done | Add renderer-service backend RPC pipeline planning boundary | `renderer-service`, `mcp/docs`, `todo.md`, `CHANGES.md` | Completed 2026-07-14; `backendRpcClient.pipeline` now records the disabled ordered runtime plan for reuse cache probes, source-data reads, render dispatch, and refresh/cache-miss persistence with token/source/artifact value redaction and self-validation coverage | Prepares staged cache/source/render/persist execution without probing caches, reading backend data, rendering scene data, persisting thumbnails, exposing values, or enabling backend network dispatch |
+| P26.8 | done | Add renderer-service backend RPC planning environment configuration | `renderer-service`, `penpot-cli`, `mcp/docs`, `todo.md`, `CHANGES.md` | Completed 2026-07-14; manual no-op host startup now accepts `PENPOT_RENDERER_SERVICE_BACKEND_URI` with `PENPOT_BACKEND_URI` fallback for normalized disabled endpoint metadata, CLI lifecycle plans report the configured planning base URI without probing, and tests cover env parsing plus configured thumbnail responses | Makes backend RPC planning discoverable in real manual host runs without calling backend RPCs, reading caches/source data, rendering scene data, persisting thumbnails, or exposing token/request/media values |
+| P26.9 | done | Add renderer-service disabled cache-probe planning boundary | `renderer-service`, `mcp/docs`, `todo.md`, `CHANGES.md` | Completed 2026-07-14; reuse responses now expose `backendRpcClient.cacheProbe` with disabled strategy, request keys, cache key, hit/miss result shape, and false cache-read/network-dispatch/value flags, while refresh responses keep `cacheProbe:null` and validator coverage rejects leaked cache-hit/resource values | Fixes cache-reuse lookup semantics before implementing a backend cache probe API, without reading caches, resolving cache hits, returning cached resources, dispatching backend RPCs, or exposing media/token values |
+| P26.10 | done | Execute file thumbnail cache probe for reuse requests | `backend`, `renderer-service`, `command-runtime`, `mcp/docs`, `todo.md`, `CHANGES.md` | Completed 2026-07-14; added a read-only backend `get-file-thumbnail` RPC and renderer-service execution for configured file-target `reuse` requests, returning normalized cached resource metadata on hit and continuing the no-op render path on miss | Enables the first backend cache read without source-data reads, real scene rendering, thumbnail persistence, tagged-frame cache probes, or credential/media value exposure |
+| P26.11 | done | Execute file thumbnail source-data reads before no-op rendering | `renderer-service`, `mcp/docs`, `todo.md`, `CHANGES.md` | Completed 2026-07-14; configured file-target refresh requests now call `get-file-data-for-thumbnail` after request validation, reuse requests call it only after cache misses, and token-safe response identity validation keeps cache-hit short-circuiting intact | Enables the first backend source-data read without exposing source data, rendering scene data, persisting thumbnails, tagged-frame source-data reads, or credential/media value exposure |
 
 P26.1 is complete: `@penpot/renderer-service` is a private pnpm workspace
 package with a real no-op HTTP lifecycle. Its TypeScript output is written to
@@ -841,17 +904,113 @@ returns a structured manual-start boundary rather than launching a child
 process. Both commands state that backend RPC, artifacts, and
 `render.thumbnail` dispatch remain disabled.
 
+P26.3 is complete: MCP and CLI `render.thumbnail` execution paths now run a
+gated renderer-service health preflight only when explicit renderer-service
+opt-in is configured. The preflight validates the no-op health response shape,
+records retryable and invalid-health errors, and still returns the existing
+`renderer_service_unavailable` response without backend SSE, PNG rendering, or
+artifact writes.
+
+P26.4 is complete: MCP and CLI `render.thumbnail` execution now uses the gated
+renderer-service path after a successful health preflight. The renderer-service
+host returns a normalized PNG resource and serves the fixture PNG from its
+resource URL; MCP returns metadata only, while CLI `--output` downloads the PNG.
+Dry-run planning remains network-free and missing opt-in still returns
+`renderer_service_unavailable` without contacting the service.
+
+P26.5 is complete: the renderer-service no-op host now plans the future backend
+RPC client boundary from the validated thumbnail request. `POST /thumbnail`
+responses expose token-safe `backendRpcClient` metadata with configured backend
+base URI status, normalized `api/main/methods/<command>?_fmt=json` endpoints
+for data and persistence commands, caller-session auth presence, and hard false
+execution flags. Backend cache reads, source-data reads, persistence writes,
+and network dispatch remain disabled.
+
+P26.6 is complete: each planned backend RPC client entry now includes a
+disabled request envelope. The envelope names the Penpot RPC JSON transport,
+HTTP method, canonical request keys, GET query keys, POST JSON body keys, and
+hard false value/media/token/dispatch flags. The renderer-service response
+validator rejects malformed envelopes before success, while backend cache reads,
+source-data reads, persistence writes, and network dispatch remain disabled.
+
+P26.7 is complete: the renderer-service backend RPC client plan now includes a
+disabled ordered pipeline. Reuse requests plan `cache-probe`, then
+`source-data-read`, `render`, and `thumbnail-persist` on cache miss; refresh
+requests plan `source-data-read`, `render`, and `thumbnail-persist` always.
+The response validator rejects malformed pipeline metadata or accidental
+request/media/source-data/credential value exposure before success. Backend
+cache reads, source-data reads, render dispatch, persistence writes, and
+backend network dispatch remain disabled.
+
+P26.8 is complete: manual no-op host startup can now read
+`PENPOT_RENDERER_SERVICE_BACKEND_URI`, falling back to `PENPOT_BACKEND_URI`, to
+configure backend RPC endpoint planning metadata. The value is normalized and
+validated as an absolute HTTP(S) base URI before startup; configured responses
+switch `backendRpcClient.status` to `configured-disabled` and fill endpoint
+metadata only. CLI lifecycle plans surface the same planning configuration
+without probing health or starting a process. Backend RPC execution, cache
+reads, source-data reads, render dispatch, thumbnail persistence, and
+request/media/token value exposure remain disabled.
+
+P26.9 is complete: renderer-service reuse responses now include a disabled
+`backendRpcClient.cacheProbe` plan. File reuse plans
+`file-thumbnail-by-file-id-and-revn` with `file-id`/`revn` lookup keys; tagged
+object reuse plans can use the matching object-key strategy once that target is
+enabled. The plan records cache key, hit result as resource metadata, miss
+result as continuing the render pipeline, and hard false cache-read,
+network-dispatch, dispatch, cache-hit/resource/media/token value flags. Refresh
+responses return `cacheProbe:null`. The response validator rejects malformed
+probe metadata or accidental cached resource value exposure before success.
+Actual cache reads, cached resource returns, backend RPC dispatch, source-data
+reads, render dispatch, and thumbnail persistence remain disabled.
+
+P26.10 is complete: the first executable cache probe is enabled only for file
+thumbnail reuse. The backend exposes a read-only `get-file-thumbnail` RPC that
+checks file read permissions and returns token-safe cache metadata for
+`(file-id, revn)` hits. The renderer-service calls that RPC only when a backend
+planning URI is configured and the request is a file-target `reuse` request;
+cache hits return normalized resource metadata, and cache misses continue the
+existing no-op render response. Tagged-frame cache probes, source-data reads,
+real scene rendering, thumbnail persistence, and credential/media value
+exposure remain out of scope.
+
+P26.11 is complete: this slice executes the first backend source-data read for
+file thumbnail requests that still need rendering. Refresh requests read
+`get-file-data-for-thumbnail` after request validation; reuse requests read it
+only after the configured cache probe misses. Cache hits remain short-circuited,
+tagged-frame source-data loading remains a future capability, and the response
+exposes only execution metadata, not page/source-data, credential, media, or
+rendered artifact values.
+
 ## Maintenance: Build Cache Hygiene
 
 | ID | Status | Capability | Modules | Acceptance check |
 | --- | --- | --- | --- | --- |
 | CACHE.1 | done | Move `render-wasm` Cargo build output outside the repository | `render-wasm`, `todo.md`, `CHANGES.md` | Completed 2026-07-12; `_build_env` defaults `CARGO_TARGET_DIR` to `/Volumes/fushilu/.caches/revocloud/target`, artifact copy paths read from that variable, clean-shell default/override checks pass, and `bash -n render-wasm/_build_env` passes |
-| CACHE.2 | todo | Move Shadow CLJS test/storybook/bench compile output outside the repository | `frontend`, `common`, `todo.md`, `CHANGES.md` | `frontend` and `common` generated `target/` outputs are redirected to `/Volumes/fushilu/.caches` subdirectories without changing public runtime assets |
+| CACHE.2 | done | Move Shadow CLJS test/storybook/bench compile output outside the repository | `frontend`, `common`, `todo.md`, `CHANGES.md` | Completed 2026-07-12; frontend and common Shadow CLJS test/storybook/bench outputs now default to `/Volumes/fushilu/.caches/penpot` subdirectories, cache-root `node_modules` symlinks preserve Node ESM dependency resolution, public frontend assets stay in `resources/public`, and `pnpm --dir common run test:js` plus `pnpm --dir frontend run test` pass with JDK 21 |
+| CACHE.3 | done | Audit JVM class and release bundle output directories | `backend`, `common`, `frontend`, `todo.md`, `CHANGES.md` | Completed 2026-07-13; `target/classes` remains repo-local classpath output, `target/dist` remains explicit release package output, and `pnpm cache:audit` checks that no external `/Volumes/...` paths enter `deps.edn` | Avoids deprecated machine-local `deps.edn` paths while preserving package artifacts and classpath semantics |
 
 CACHE.1 is complete: `render-wasm` no longer assumes Cargo emits under the
 repository-local `target/` directory. The build script still copies final WASM
 and JS runtime artifacts into the frontend public resources, but intermediate
 Cargo output now defaults to `/Volumes/fushilu/.caches/revocloud/target`.
+
+CACHE.2 is complete: `frontend` and `common` Shadow CLJS cache, test,
+storybook, and bench outputs now default to `/Volumes/fushilu/.caches/penpot`
+subdirectories. Test/package scripts create a safe `node_modules` symlink at the
+cache root before executing generated ESM so Node can resolve workspace
+dependencies from outside the repository. During verification, this also fixed
+two blocking regressions exposed by the full suites: MCP public URL derivation
+keeps `/mcp/<path>`, and explicit text style updates override previous text
+styles.
+
+CACHE.3 is complete: JVM `target/classes` outputs remain repo-local because
+`backend/deps.edn` and `common/deps.edn` include `target/classes` on the
+classpath, and moving those paths to `/Volumes/fushilu/.caches` would introduce
+machine-local classpath entries. Backend and frontend `target/dist` directories
+also remain repo-local as explicit release bundle outputs rather than
+intermediate build caches. `pnpm cache:audit` verifies those boundaries and
+checks that `deps.edn` files do not contain external cache paths.
 
 ## Detailed Upcoming Task Queue
 
@@ -1605,3 +1764,14 @@ catalog before adding executable MCP, CLI, or exporter behavior.
 | P25.141 | done | Plan renderer-service package materialization approval audit countersignature revocation appeal resolution enforcement evidence attestation notarization certification endorsement countersignature verification revocation appeal resolution enforcement evidence attestation notarization certification endorsement countersignature verification revocation appeal resolution enforcement evidence attestation notarization certification endorsement countersignature verification revocation appeal resolution enforcement evidence attestation notarization certification endorsement countersignature verification revocation appeal resolution enforcement evidence attestation notarization certification endorsement countersignature verification revocation appeal resolution enforcement evidence attestation notarization certification endorsement countersignature verification revocation appeal resolution enforcement evidence attestation notarization certification endorsement countersignature verification revocation policy | `mcp`, `penpot-cli`, `command-runtime`, `mcp/docs`, `todo.md` | Completed 2026-07-11; command-runtime tests cover `packageMaterializationApprovalAuditCountersignatureRevocationAppealResolutionEnforcementEvidenceAttestationNotarizationCertificationEndorsementCountersignatureVerificationRevocationAppealResolutionEnforcementEvidenceAttestationNotarizationCertificationEndorsementCountersignatureVerificationRevocationAppealResolutionEnforcementEvidenceAttestationNotarizationCertificationEndorsementCountersignatureVerificationRevocationAppealResolutionEnforcementEvidenceAttestationNotarizationCertificationEndorsementCountersignatureVerificationRevocationAppealResolutionEnforcementEvidenceAttestationNotarizationCertificationEndorsementCountersignatureVerificationRevocationAppealResolutionEnforcementEvidenceAttestationNotarizationCertificationEndorsementCountersignatureVerificationRevocationAppealResolutionEnforcementEvidenceAttestationNotarizationCertificationEndorsementCountersignatureVerificationRevocationPolicy`, consumed P25.140 countersignature verification metadata, audit-access, and final-approval metadata, service mirror, diagnostics, renderer-service and runtime-boundary fixtures, and hard-disabled countersignature verification revocation policy selection, subject/authority identification, revocation reason capture, scope computation, request preparation/validation/storage/execution/publication, verification-result revocation, revocation record creation/storage/publication, countersignature verification and verification-record reads, countersignature/endorsement/certification/notarization/attestation/evidence/enforcement/audit-record reads, audit-record query/linking/verification, revocation signing/signature verification/hash computation/storage, materialization approval, file writes, package creation, workspace mutation, command execution, build output, process startup, network dispatch, runtime registration, and local file writes; CLI/MCP tests assert dry-run and unavailable execution expose the new countersignature verification revocation policy metadata without revoking verification results or enabling renderer-service dispatch; verified `node --check command-runtime/index.js`, `node --check command-runtime/test/command-runtime.test.mjs`, `node --check penpot-cli/src/index.ts`, `node --check penpot-cli/test/cli-smoke.test.mjs`, exact runtime/fixture P25.141 check, `pnpm --filter @penpot/command-runtime test`, `pnpm --filter penpot-cli build`, `types:check`, `lint`, `smoke:help`, `test`, MCP server `tsc --noEmit`, MCP direct node test suite, `git diff --check`, no `renderer-service/`, and no package/lock/workspace/common-target diff | Future renderer-service execution now has an audit countersignature verification revocation policy contract, but no revocation policy is selected, no subject or authority is identified, no revocation reason or scope is captured or computed, no revocation request is prepared, validated, stored, executed, or published, no verification result is revoked, no revocation record is created, stored, or published, no countersignature verification, verification record, countersignature, endorsement, certification, notarization, attestation, evidence, enforcement, or audit record is read, queried, linked, or verified, no revocation signature or hash is created or verified, and no approval, package directory, package files, workspace entry, lockfile update, generated output, process startup, network dispatch, runtime registration, or local file write is created |
 | P25.142 | done | Plan renderer-service package materialization approval audit countersignature revocation appeal resolution enforcement evidence attestation notarization certification endorsement countersignature verification revocation appeal resolution enforcement evidence attestation notarization certification endorsement countersignature verification revocation appeal resolution enforcement evidence attestation notarization certification endorsement countersignature verification revocation appeal resolution enforcement evidence attestation notarization certification endorsement countersignature verification revocation appeal resolution enforcement evidence attestation notarization certification endorsement countersignature verification revocation appeal resolution enforcement evidence attestation notarization certification endorsement countersignature verification revocation appeal resolution enforcement evidence attestation notarization certification endorsement countersignature verification revocation appeal policy | `mcp`, `penpot-cli`, `command-runtime`, `mcp/docs`, `todo.md` | Completed 2026-07-11; command-runtime tests cover `packageMaterializationApprovalAuditCountersignatureRevocationAppealResolutionEnforcementEvidenceAttestationNotarizationCertificationEndorsementCountersignatureVerificationRevocationAppealResolutionEnforcementEvidenceAttestationNotarizationCertificationEndorsementCountersignatureVerificationRevocationAppealResolutionEnforcementEvidenceAttestationNotarizationCertificationEndorsementCountersignatureVerificationRevocationAppealResolutionEnforcementEvidenceAttestationNotarizationCertificationEndorsementCountersignatureVerificationRevocationAppealResolutionEnforcementEvidenceAttestationNotarizationCertificationEndorsementCountersignatureVerificationRevocationAppealResolutionEnforcementEvidenceAttestationNotarizationCertificationEndorsementCountersignatureVerificationRevocationAppealResolutionEnforcementEvidenceAttestationNotarizationCertificationEndorsementCountersignatureVerificationRevocationAppealPolicy`, consumed P25.141 countersignature verification revocation metadata, audit-access, and final-approval metadata, service mirror, diagnostics, renderer-service and runtime-boundary fixtures, and hard-disabled countersignature verification revocation appeal policy selection, subject/authority identification, appeal reason capture, scope computation, request preparation/validation/storage/execution, appeal acceptance/rejection/resolution/enforcement/evidence/attestation/notarization/certification/endorsement/countersignature/verification/revocation, appeal record creation/storage/publication, revocation/verification/countersignature/audit-record reads, audit-record query/linking/verification, appeal signing/signature verification/hash computation/storage, materialization approval, file writes, package creation, workspace mutation, command execution, build output, process startup, network dispatch, runtime registration, and local file writes; CLI/MCP tests assert dry-run and unavailable execution expose the new countersignature verification revocation appeal policy metadata without appealing revocations or enabling renderer-service dispatch; verified `node --check command-runtime/index.js`, `node --check command-runtime/test/command-runtime.test.mjs`, `node --check penpot-cli/src/index.ts`, `node --check penpot-cli/test/cli-smoke.test.mjs`, exact runtime/fixture P25.142 check, `pnpm --filter @penpot/command-runtime test`, `pnpm --filter penpot-cli build`, `types:check`, `lint`, `smoke:help`, `test`, MCP server `tsc --noEmit`, MCP direct node test suite, `git diff --check`, no `renderer-service/`, and no package/lock/workspace/common-target diff | Future renderer-service execution now has an audit countersignature verification revocation appeal policy contract, but no appeal policy is selected, no subject or authority is identified, no appeal reason or scope is captured or computed, no appeal request is prepared, validated, stored, executed, or published, no verification revocation is appealed, accepted, rejected, resolved, enforced, evidenced, attested, notarized, certified, endorsed, countersigned, verified, revoked, linked, signed, or hashed, no revocation, verification, countersignature, endorsement, certification, notarization, attestation, evidence, enforcement, or audit record is read, queried, linked, or verified, and no approval, package directory, package files, workspace entry, lockfile update, generated output, process startup, network dispatch, runtime registration, or local file write is created |
 | P25.143 | done | Plan renderer-service package materialization approval audit countersignature revocation appeal resolution enforcement evidence attestation notarization certification endorsement countersignature verification revocation appeal resolution enforcement evidence attestation notarization certification endorsement countersignature verification revocation appeal resolution enforcement evidence attestation notarization certification endorsement countersignature verification revocation appeal resolution enforcement evidence attestation notarization certification endorsement countersignature verification revocation appeal resolution enforcement evidence attestation notarization certification endorsement countersignature verification revocation appeal resolution enforcement evidence attestation notarization certification endorsement countersignature verification revocation appeal resolution enforcement evidence attestation notarization certification endorsement countersignature verification revocation appeal resolution policy | `mcp`, `penpot-cli`, `command-runtime`, `mcp/docs`, `todo.md` | Derive countersignature verification revocation appeal resolution policy metadata from the disabled P25.142 verification revocation appeal policy, consume P25.142 appeal metadata plus audit access and final approval metadata, and expose the payload through command-runtime, CLI, MCP, renderer fixtures, and dry-run/unavailable tests | Define future countersignature verification revocation appeal resolution metadata without resolving appeals, reading appeal/revocation/verification/countersignature/endorsement/certification/notarization/attestation/evidence/enforcement/audit records, materializing files, starting processes, or enabling dispatch |
+| P25.144 | done | Enable the first explicitly gated renderer-service thumbnail execution slice | `renderer-service`, `command-runtime`, `mcp`, `penpot-cli`, `mcp/docs`, `todo.md` | Completed 2026-07-13; command-runtime, CLI smoke, and renderer-service noop-host tests pass with opt-in execution, health preflight, POST dispatch, resource normalization, and CLI output download coverage | Supersedes the disabled-planning-only renderer-service boundary for this narrow slice: dry-run remains metadata-only, execution requires endpoint plus `renderer-service` opt-in, MCP returns resource metadata without local file writes, CLI can download the normalized resource URI, and real Penpot scene rendering/backend thumbnail persistence remain future work |
+| P25.145 | done | Validate renderer-service `thumbnail.render` request bodies before returning the no-op PNG resource | `renderer-service`, `penpot-cli`, `mcp/docs`, `todo.md` | Completed 2026-07-13; renderer-service tests cover valid request summaries and structured invalid-format 400 errors, and CLI smoke tests assert POST bodies include operation, target kind, and PNG artifact format | Keeps the current no-op PNG renderer, but turns the executable service boundary into a contract-checked endpoint before real scene rendering or backend thumbnail persistence is added |
+| P25.146 | done | Validate renderer-service thumbnail target identity for file and frame requests | `renderer-service`, `penpot-cli`, `mcp/docs`, `todo.md` | Completed 2026-07-13; renderer-service tests cover file request summaries, frame request summaries, invalid-format errors, and missing frame object identity, and CLI smoke tests assert fileId is sent in the POST body | Keeps real rendering deferred while making the executable service boundary reject requests that cannot be mapped to backend thumbnail data/persist contracts |
+| P25.147 | done | Validate renderer-service thumbnail cache contract before no-op rendering | `renderer-service`, `penpot-cli`, `mcp/docs`, `todo.md` | Completed 2026-07-13; renderer-service tests cover cache summary echo and cache-scope mismatch errors, and CLI smoke tests assert POST bodies include cache policy, scope, and key | Prepares the executable service boundary for future cache reuse/refresh and backend thumbnail persistence without implementing real cache probes yet |
+| P25.148 | done | Validate renderer-service PNG artifact dimensions and media metadata | `renderer-service`, `penpot-cli`, `mcp/docs`, `todo.md` | Completed 2026-07-13; renderer-service tests cover artifact summary echo and invalid width errors, and CLI smoke tests assert POST bodies include PNG MIME type, extension, width, and height | Prepares the executable service boundary for real renderer sizing without implementing actual scene rasterization yet |
+| P25.149 | done | Validate renderer-service render execution intent before no-op rendering | `renderer-service`, `penpot-cli`, `mcp/docs`, `todo.md` | Completed 2026-07-13; renderer-service tests cover render intent summary echo and cache-policy mismatch errors, and CLI smoke tests assert POST bodies include required/runtime/fallback render fields | Keeps the no-op renderer honest about whether refresh must render or reuse may render only on cache miss before real cache probes exist |
+| P25.150 | done | Forward caller-session auth metadata through executable renderer-service thumbnail dispatch | `renderer-service`, `mcp`, `penpot-cli`, `command-runtime`, `mcp/docs`, `todo.md` | Completed 2026-07-13; renderer-service, CLI smoke, and MCP ExportTools tests prove CLI/MCP POST dispatch forwards caller-session auth headers while service results expose only token-safe presence metadata | Keeps dry-run metadata token-free and does not add backend data reads, real scene rendering, or thumbnail persistence |
+| P25.151 | done | Validate renderer-service backend RPC intent before no-op rendering | `renderer-service`, `command-runtime`, `mcp`, `penpot-cli`, `mcp/docs`, `todo.md` | Completed 2026-07-13; renderer-service tests cover backendRpc summary echo and invalid reuse persist metadata, and CLI/MCP tests assert executable POST bodies carry target/cache-appropriate backendRpc data and persistence intent | Keeps backend RPC execution disabled while making the executable service boundary ready for future source-data reads and thumbnail persistence |
+| P25.152 | done | Validate renderer-service cache probe intent before no-op rendering | `renderer-service`, `mcp`, `penpot-cli`, `mcp/docs`, `todo.md` | Completed 2026-07-13; renderer-service tests cover accepted file reuse probe summaries and refresh-probe rejection, and CLI/MCP tests assert executable POST bodies carry the expected file reuse probe | Keeps actual cache reads disabled while making cache-hit/cache-miss semantics explicit at the executable service boundary |
+| P25.153 | done | Validate renderer-service thumbnail request identity consistency before no-op rendering | `renderer-service`, `command-runtime`, `mcp`, `penpot-cli`, `mcp/docs`, `todo.md` | Completed 2026-07-13; renderer-service tests cover file cache-key revision mismatches and tagged-frame persist object-key mismatches, and CLI/MCP tests assert executable POST bodies carry identity-consistent cache keys plus backend source-data and persist/cache-miss persist requests | Keeps backend/cache execution disabled while preventing the executable boundary from accepting internally inconsistent thumbnail identities before real cache probes, backend reads, or thumbnail persistence are implemented |
+| P25.154 | done | Validate renderer-service thumbnail response contract before MCP/CLI consumption | `renderer-service`, `mcp/docs`, `todo.md` | Completed 2026-07-13; renderer-service tests cover malformed generated response metadata for PNG content type, cache identity, and token-safe auth summary, returning `renderer_service_response_invalid` before any `ok` body reaches MCP/CLI normalization | Keeps executable dispatch explicit while preventing MCP/CLI from accepting malformed renderer-service responses before real rendering, cache reads, backend reads, or thumbnail persistence are implemented |

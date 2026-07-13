@@ -27,9 +27,10 @@
     "fmt:clj": "cljfmt fix --parallel=true src/ test/",
     "fmt:js": "prettier -c src/**/*.js -w",
     "lint": "pnpm run lint:clj",
-    "watch:test": "concurrently \"clojure -M:dev:shadow-cljs watch test\" \"nodemon -C -d 2 -w target/tests/ --exec 'node target/tests/test.js'\"",
+    "link:shadow-cache": "node ../scripts/link-node-modules-cache.mjs \"${PENPOT_COMMON_CACHE_DIR:-/Volumes/fushilu/.caches/penpot/common}\"",
+    "watch:test": "pnpm run link:shadow-cache && mkdir -p \"${PENPOT_COMMON_TEST_OUTPUT_DIR:-/Volumes/fushilu/.caches/penpot/common/tests}\" && concurrently \"clojure -M:dev:shadow-cljs watch test\" \"nodemon -C -d 2 -w ${PENPOT_COMMON_TEST_OUTPUT_DIR:-/Volumes/fushilu/.caches/penpot/common/tests} --exec 'node ${PENPOT_COMMON_TEST_OUTPUT_DIR:-/Volumes/fushilu/.caches/penpot/common/tests}/test.js'\"",
     "build:test": "clojure -M:dev:shadow-cljs compile test",
-    "test:js": "pnpm run build:test && node target/tests/test.js",
+    "test:js": "pnpm run build:test && pnpm run link:shadow-cache && node \"${PENPOT_COMMON_TEST_OUTPUT_DIR:-/Volumes/fushilu/.caches/penpot/common/tests}/test.js\"",
     "test:jvm": "clojure -M:dev:test"
   }
 }

@@ -1,8 +1,8 @@
 {:deps {:aliases [:dev]}
+ :cache-dir #shadow/env ["CACHE" :default "/Volumes/fushilu/.caches/penpot/frontend/shadow-cache"]
  :http {:port #shadow/env ["HTTP_PORT" :as :int :default 3448]}
  :nrepl {:port #shadow/env ["NREPL_PORT" :as :int :default 3447] :host "0.0.0.0"}
  :dev-http {#shadow/env ["DEV_PORT" :as :int :default 8888] "classpath:public"}
- :cache-dir #shadow/env ["CACHE" :default ".shadow-cljs"]
 
  :builds
  {:main
@@ -60,7 +60,7 @@
    {:entry-keys ["module" "browser" "main"]
     :export-conditions ["module" "import", "browser" "require" "default"]
     :js-provider :external
-    :external-index "target/index.js"
+    :external-index #shadow/env ["PENPOT_FRONTEND_EXTERNAL_INDEX" :default "/Volumes/fushilu/.caches/penpot/frontend/index.js"]
     :external-index-format :esm}
 
    :compiler-options
@@ -122,7 +122,7 @@
   ;; initially on storybook but not limited to storybook)
   :storybook
   {:target :esm
-   :output-dir "target/storybook/"
+   :output-dir #shadow/env ["PENPOT_FRONTEND_STORYBOOK_OUTPUT_DIR" :default "/Volumes/fushilu/.caches/penpot/frontend/storybook"]
    :devtools {:enabled false
               :console-support false}
    :js-options
@@ -144,7 +144,7 @@
 
   :test
   {:target :esm
-   :output-dir "target/tests"
+   :output-dir #shadow/env ["PENPOT_FRONTEND_TEST_OUTPUT_DIR" :default "/Volumes/fushilu/.caches/penpot/frontend/tests"]
    :runtime :custom
    :js-options {:js-provider :import}
 
@@ -155,8 +155,8 @@
 
   :bench
   {:target :node-script
-   :output-to "target/bench.js"
-   :output-dir "target/bench/"
+   :output-to #shadow/env ["PENPOT_FRONTEND_BENCH_OUTPUT" :default "/Volumes/fushilu/.caches/penpot/frontend/bench.js"]
+   :output-dir #shadow/env ["PENPOT_FRONTEND_BENCH_OUTPUT_DIR" :default "/Volumes/fushilu/.caches/penpot/frontend/bench"]
    :main bench/main
 
    :compiler-options

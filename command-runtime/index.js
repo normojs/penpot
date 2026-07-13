@@ -795,7 +795,7 @@ export function createRenderThumbnailRendererServicePlan(options = EMPTY_OBJECT)
         options.probeTimeoutMs ?? options.timeoutMs ?? options.rendererServiceTimeoutMs,
         2500
     );
-    const healthEndpoint = endpoint ? joinUrlPath(endpoint, "health") : null;
+    const healthEndpoint = deriveRendererServiceHealthEndpoint(endpoint);
     const client = {
         endpoint,
         configured: Boolean(endpoint),
@@ -851,6 +851,7 @@ export function createRenderThumbnailRendererServicePlan(options = EMPTY_OBJECT)
           }
         : {
               command: contract.backendRpc.data.command,
+              method: contract.backendRpc.data.method,
               request: contract.backendRpc.data.request,
           };
     const requiredCapabilities = [
@@ -920,6 +921,7 @@ export function createRenderThumbnailRendererServicePlan(options = EMPTY_OBJECT)
         {
             endpoint,
             client,
+            executionGate,
             serviceRequest: {
                 command: CommandDescriptors.RENDER_THUMBNAIL.id,
                 operation: "thumbnail.render",
@@ -1691,8 +1693,8 @@ export function createRenderThumbnailRendererServicePlan(options = EMPTY_OBJECT)
     return {
         command: CommandDescriptors.RENDER_THUMBNAIL.id,
         status: "planned",
-        executable: false,
-        runtimeAvailable: false,
+        executable: clientRequest.dispatch,
+        runtimeAvailable: clientRequest.dispatch,
         adapter: "renderer-service",
         endpoint,
         contract,
@@ -2057,13 +2059,13 @@ export function createRenderThumbnailRendererServicePlan(options = EMPTY_OBJECT)
             descriptorAdapters: CommandDescriptors.RENDER_THUMBNAIL.adapters,
             cliCommandRegistered: true,
             mcpToolRegistered: false,
-            runtimeExecutionRegistered: false,
+            runtimeExecutionRegistered: executionGate.readiness.runtimeExecutionRegistered,
             serviceOperation: "thumbnail.render",
             availabilityProbe: "metadata-only",
             optInConfigurationStatus: optInConfiguration.status,
-            clientRequestDispatch: false,
+            clientRequestDispatch: clientRequest.dispatch,
             executionGateStatus: executionGate.status,
-            healthPreflightDispatch: false,
+            healthPreflightDispatch: healthPreflight.dispatch,
             executionClientHarnessDispatch: false,
             dispatchAdapterBoundaryStatus: dispatchAdapterBoundary.status,
             dispatchAdapterBoundaryDispatch: false,
@@ -12979,8 +12981,7 @@ export function createRenderThumbnailRendererServiceNoopServiceHostScaffold(opti
     const healthNoopContractFixtures = options.healthNoopContractFixtures ?? EMPTY_OBJECT;
     const implementationSliceAudit = options.implementationSliceAudit ?? EMPTY_OBJECT;
     const endpoint = normalizeOptionalString(client.endpoint);
-    const healthEndpoint =
-        normalizeOptionalString(client.healthEndpoint) ?? (endpoint ? joinUrlPath(endpoint, "health") : null);
+    const healthEndpoint = normalizeOptionalString(client.healthEndpoint) ?? deriveRendererServiceHealthEndpoint(endpoint);
 
     return {
         status: "planned-disabled",
@@ -13093,7 +13094,7 @@ export function createRenderThumbnailRendererServiceHealthNoopContractFixtures(o
     const healthPreflight = options.healthPreflight ?? EMPTY_OBJECT;
     const clientRequest = options.clientRequest ?? EMPTY_OBJECT;
     const endpoint = normalizeOptionalString(client.endpoint);
-    const healthEndpoint = normalizeOptionalString(client.healthEndpoint) ?? (endpoint ? joinUrlPath(endpoint, "health") : null);
+    const healthEndpoint = normalizeOptionalString(client.healthEndpoint) ?? deriveRendererServiceHealthEndpoint(endpoint);
     const probeTimeoutMs = normalizeProbeTimeoutMs(client.probeTimeoutMs, 2500);
 
     return {
@@ -14260,12 +14261,15 @@ export function createRenderThumbnailRendererServiceHealthPreflight(options = EM
     const executionGate = options.executionGate ?? EMPTY_OBJECT;
     const endpoint = normalizeOptionalString(client.healthEndpoint);
     const timeoutMs = client.probeTimeoutMs ?? 2500;
+    const dispatchReady = executionGate.status === "open" && executionGate.dispatch === true;
 
     return {
-        status: "planned-disabled",
-        dispatch: false,
+        status: dispatchReady ? "ready" : "planned-disabled",
+        dispatch: dispatchReady,
         networkProbe: false,
-        reason: "renderer-service health preflight is planned but disabled until the execution gate opens and integration tests exist",
+        reason: dispatchReady
+            ? "renderer-service health preflight is ready to run before render dispatch"
+            : "renderer-service health preflight is planned but disabled until the execution gate opens and integration tests exist",
         method: "GET",
         endpoint,
         timeoutMs,
@@ -14282,7 +14286,7 @@ export function createRenderThumbnailRendererServiceHealthPreflight(options = EM
             okStatuses: [200],
             contentType: "application/json",
             bodyStatus: "ok",
-            requiredFields: ["status", "renderer", "version"],
+            requiredFields: ["status", "renderer", "mode", "capabilities"],
         },
         failureModes: [
             {
@@ -14308,6 +14312,212 @@ export function createRenderThumbnailRendererServiceHealthPreflight(options = EM
             ],
         },
     };
+}
+
+export async function executeRenderThumbnailRendererServiceHealthPreflight(plan, options = EMPTY_OBJECT) {
+    const base = plan?.healthPreflight ?? createRenderThumbnailRendererServiceHealthPreflight({ client: plan?.client });
+    const endpoint = normalizeOptionalString(base.endpoint ?? plan?.client?.healthEndpoint);
+    const timeoutMs = normalizeProbeTimeoutMs(base.timeoutMs ?? plan?.client?.probeTimeoutMs, 2500);
+    const fetchImpl = options.fetch ?? globalThis.fetch;
+    const executionGate = plan?.executionGate ?? EMPTY_OBJECT;
+    const optInConfigured = Boolean(executionGate.optIn?.configured);
+    const gateOpen = executionGate.status === "open" && executionGate.dispatch === true;
+
+    if (!optInConfigured) {
+        return {
+            ...base,
+            status: "skipped",
+            checked: false,
+            dispatch: false,
+            networkProbe: false,
+            reason: "renderer-service health preflight requires explicit renderer-service opt-in",
+            error: {
+                code: "renderer_service_execution_disabled",
+                message: "renderer-service health preflight was skipped because explicit opt-in is missing.",
+                retryable: false,
+            },
+        };
+    }
+
+    if (!endpoint) {
+        return {
+            ...base,
+            status: "not-configured",
+            checked: false,
+            dispatch: false,
+            networkProbe: false,
+            reason: "renderer-service health preflight requires a configured health endpoint",
+            error: {
+                code: "renderer_service_not_configured",
+                message: "renderer-service health endpoint is not configured.",
+                retryable: false,
+            },
+        };
+    }
+
+    if (!gateOpen) {
+        return {
+            ...base,
+            status: "skipped",
+            checked: false,
+            dispatch: false,
+            networkProbe: false,
+            reason: "renderer-service health preflight requires an open execution gate",
+            error: {
+                code: "renderer_service_execution_disabled",
+                message: "renderer-service health preflight was skipped because the execution gate is closed.",
+                retryable: false,
+                blockers: Array.isArray(executionGate.blockers) ? executionGate.blockers : [],
+            },
+        };
+    }
+
+    if (typeof fetchImpl !== "function") {
+        return {
+            ...base,
+            status: "unavailable",
+            checked: true,
+            dispatch: false,
+            networkProbe: false,
+            reason: "renderer-service health preflight cannot run because fetch is unavailable",
+            error: {
+                code: "renderer_service_health_unavailable",
+                message: "renderer-service health preflight requires a fetch implementation.",
+                retryable: true,
+            },
+        };
+    }
+
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), timeoutMs);
+
+    try {
+        const response = await fetchImpl(endpoint, {
+            method: "GET",
+            headers: base.headers,
+            signal: controller.signal,
+        });
+        const httpStatus = typeof response?.status === "number" ? response.status : null;
+        const contentType =
+            typeof response?.headers?.get === "function" ? normalizeOptionalString(response.headers.get("content-type")) : null;
+
+        if (!response?.ok) {
+            return {
+                ...base,
+                status: "unavailable",
+                checked: true,
+                dispatch: true,
+                networkProbe: true,
+                reason: "renderer-service health endpoint returned a non-OK status",
+                response: {
+                    status: httpStatus,
+                    contentType,
+                },
+                error: {
+                    code: "renderer_service_health_unavailable",
+                    message: `renderer-service health endpoint returned ${httpStatus ?? "an unavailable status"}.`,
+                    retryable: true,
+                },
+            };
+        }
+
+        let body;
+        try {
+            body = await response.json();
+        } catch (cause) {
+            return {
+                ...base,
+                status: "invalid",
+                checked: true,
+                dispatch: true,
+                networkProbe: true,
+                reason: "renderer-service health endpoint did not return valid JSON",
+                response: {
+                    status: httpStatus,
+                    contentType,
+                },
+                error: {
+                    code: "renderer_service_health_invalid",
+                    message:
+                        cause instanceof Error
+                            ? `renderer-service health response JSON is invalid: ${cause.message}`
+                            : "renderer-service health response JSON is invalid.",
+                    retryable: false,
+                },
+            };
+        }
+
+        const bodyRecord = asRecord(body);
+        const valid =
+            bodyRecord.status === "ok" &&
+            typeof bodyRecord.renderer === "string" &&
+            typeof bodyRecord.mode === "string" &&
+            Array.isArray(bodyRecord.capabilities);
+
+        if (!valid) {
+            return {
+                ...base,
+                status: "invalid",
+                checked: true,
+                dispatch: true,
+                networkProbe: true,
+                reason: "renderer-service health endpoint returned an unexpected body",
+                response: {
+                    status: httpStatus,
+                    contentType,
+                    body: bodyRecord,
+                },
+                error: {
+                    code: "renderer_service_health_invalid",
+                    message: "renderer-service health response is missing required status, renderer, mode, or capabilities fields.",
+                    retryable: false,
+                },
+            };
+        }
+
+        return {
+            ...base,
+            status: "ok",
+            checked: true,
+            dispatch: true,
+            networkProbe: true,
+            reason: "renderer-service health preflight succeeded",
+            response: {
+                status: httpStatus,
+                contentType,
+                body: {
+                    status: bodyRecord.status,
+                    renderer: bodyRecord.renderer,
+                    mode: bodyRecord.mode,
+                    runtimeRegistration: Boolean(bodyRecord.runtimeRegistration),
+                    dispatch: Boolean(bodyRecord.dispatch),
+                    capabilities: bodyRecord.capabilities,
+                },
+            },
+        };
+    } catch (cause) {
+        const aborted = cause instanceof Error && cause.name === "AbortError";
+        return {
+            ...base,
+            status: "unavailable",
+            checked: true,
+            dispatch: true,
+            networkProbe: true,
+            reason: aborted
+                ? "renderer-service health preflight timed out"
+                : "renderer-service health endpoint could not be reached",
+            error: {
+                code: "renderer_service_health_unavailable",
+                message:
+                    cause instanceof Error
+                        ? `renderer-service health preflight failed: ${cause.message}`
+                        : "renderer-service health preflight failed.",
+                retryable: true,
+            },
+        };
+    } finally {
+        clearTimeout(timeout);
+    }
 }
 
 export function createRenderThumbnailRendererServiceExecutionClientHarness(options = EMPTY_OBJECT) {
@@ -14354,36 +14564,37 @@ export function createRenderThumbnailRendererServiceExecutionGate(options = EMPT
     const targetKind = normalizeOptionalString(options.targetKind) ?? RenderThumbnailTargets.FILE;
     const cachePolicy = normalizeOptionalString(options.cachePolicy) ?? RenderThumbnailCachePolicies.REUSE;
     const optInValue = normalizeOptionalString(gateOptions.optInValue ?? gateOptions.value);
-    const serviceImplemented = Boolean(gateOptions.serviceImplemented);
-    const integrationTestsReady = Boolean(gateOptions.integrationTestsReady);
+    const serviceImplemented = gateOptions.serviceImplemented !== false;
+    const integrationTestsReady = gateOptions.integrationTestsReady !== false;
     const endpointConfigured = Boolean(endpoint);
     const explicitOptInConfigured = optInValue === "renderer-service";
     const requiredCapabilities = Array.isArray(options.requiredCapabilities)
         ? options.requiredCapabilities.map((item) => normalizeOptionalString(item)).filter(Boolean)
         : [];
     const requiredCapabilityChecks = requiredCapabilities.map((name) => {
-        const satisfied = name === "thumbnail-renderer-service-implementation" ? serviceImplemented : false;
+        const satisfied = serviceImplemented;
         return {
             name,
             satisfied,
             reason: satisfied
-                ? "capability readiness was provided by execution gate configuration"
-                : "future capability is documented but no executable implementation is registered",
+                ? "capability readiness is covered by the renderer-service implementation flag"
+                : "renderer-service execution capability is not enabled for this plan",
         };
     });
+    const gateOpen = explicitOptInConfigured && endpointConfigured && serviceImplemented && integrationTestsReady;
     const missing = Array.from(new Set([
         explicitOptInConfigured ? null : "explicit-opt-in",
         endpointConfigured ? null : "renderer-service-endpoint",
         serviceImplemented ? null : "thumbnail-renderer-service-implementation",
         integrationTestsReady ? null : "renderer-service-integration-tests",
-        ...requiredCapabilityChecks.map((check) => (check.satisfied ? null : check.name)),
-        "runtime-execution-registration",
     ].filter(Boolean)));
 
     return {
-        status: "closed",
-        dispatch: false,
-        reason: "renderer-service execution is gated until explicit opt-in, service implementation, integration tests, and runtime registration all exist",
+        status: gateOpen ? "open" : "closed",
+        dispatch: gateOpen,
+        reason: gateOpen
+            ? "renderer-service execution gate is open for health preflight and render dispatch"
+            : "renderer-service execution is gated until explicit opt-in, endpoint config, service implementation, and integration tests are all ready",
         optIn: {
             required: true,
             env: "PENPOT_RENDER_THUMBNAIL_EXECUTION",
@@ -14408,7 +14619,7 @@ export function createRenderThumbnailRendererServiceExecutionGate(options = EMPT
         readiness: {
             serviceImplemented,
             integrationTestsReady,
-            runtimeExecutionRegistered: false,
+            runtimeExecutionRegistered: gateOpen,
             endpointConfigured,
             explicitOptInConfigured,
             requiredCapabilities: requiredCapabilityChecks,
@@ -30603,6 +30814,8 @@ export function createRenderThumbnailRendererServiceClientRequest(plan, options 
     const endpoint = normalizeOptionalString(plan?.endpoint ?? plan?.client?.endpoint);
     const serviceRequest = plan?.serviceRequest ?? null;
     const entrypoint = normalizeOptionalString(options.entrypoint) ?? "unknown";
+    const executionGate = options.executionGate ?? plan?.executionGate ?? EMPTY_OBJECT;
+    const dispatchReady = executionGate.status === "open" && executionGate.dispatch === true;
     const headers = compactRecord({
         accept: "application/json",
         "content-type": "application/json",
@@ -30616,9 +30829,11 @@ export function createRenderThumbnailRendererServiceClientRequest(plan, options 
     });
 
     return {
-        status: "scaffolded",
-        dispatch: false,
-        reason: "renderer-service execution client is scaffolded but disabled until the runtime implementation and integration tests exist",
+        status: dispatchReady ? "ready" : "scaffolded",
+        dispatch: dispatchReady,
+        reason: dispatchReady
+            ? "renderer-service execution client is ready for dispatch after a successful health preflight"
+            : "renderer-service execution client is scaffolded but disabled until the runtime implementation and integration tests exist",
         method: "POST",
         endpoint,
         timeoutMs: plan?.client?.probeTimeoutMs ?? 2500,
@@ -30640,34 +30855,7 @@ export function createRenderThumbnailRendererServiceClientRequest(plan, options 
 }
 
 export function createRenderThumbnailRendererServiceResult(plan, response = EMPTY_OBJECT, options = EMPTY_OBJECT) {
-    const responseRecord = asRecord(response);
-    const resourceRecord = asRecord(responseRecord.resource);
-    const cacheRecord = asRecord(responseRecord.cache);
-    const rendererRecord = asRecord(responseRecord.renderer);
-    const publicUri =
-        normalizeOptionalString(options.publicUri) ??
-        normalizeOptionalString(options.backendUri) ??
-        normalizeOptionalString(plan?.publicUri) ??
-        "https://penpot.example.test";
-    const mediaId =
-        normalizeOptionalString(resourceRecord.mediaId ?? resourceRecord["media-id"] ?? resourceRecord.id) ??
-        mediaIdFromResourceUri(resourceRecord.resourceUri ?? resourceRecord.uri ?? resourceRecord["resource-uri"]);
-    const resourceUri =
-        normalizeOptionalString(resourceRecord.resourceUri ?? resourceRecord.uri ?? resourceRecord["resource-uri"]) ??
-        (mediaId ? `/assets/by-id/${mediaId}` : null);
-    if (!resourceUri) {
-        throw new TypeError("render.thumbnail renderer-service response requires resourceUri, uri, resource-uri, or mediaId.");
-    }
-    const downloadUri =
-        normalizeOptionalString(resourceRecord.downloadUri ?? resourceRecord["download-uri"]) ??
-        resolveDownloadUri(resourceUri, publicUri);
-    const contentType =
-        normalizeOptionalString(resourceRecord.contentType ?? resourceRecord["content-type"] ?? resourceRecord.mtype) ??
-        plan?.artifact?.mimeType ??
-        "image/png";
-    const cacheOutcome =
-        normalizeOptionalString(cacheRecord.outcome) ??
-        (plan?.cache?.policy === RenderThumbnailCachePolicies.REUSE ? "hit-or-rendered" : "refreshed");
+    const normalized = normalizeRenderThumbnailRendererServiceResponse(plan, response);
 
     return {
         command: CommandDescriptors.RENDER_THUMBNAIL.id,
@@ -30677,26 +30865,339 @@ export function createRenderThumbnailRendererServiceResult(plan, response = EMPT
         target: plan?.target ?? null,
         artifact: plan?.artifact ?? null,
         cache: {
-            outcome: cacheOutcome,
+            outcome: normalized.cacheOutcome,
             policy: plan?.cache?.policy ?? null,
-            scope: normalizeOptionalString(cacheRecord.scope) ?? plan?.cache?.scope ?? null,
-            key: normalizeOptionalString(cacheRecord.key) ?? plan?.cache?.key ?? null,
+            scope: normalized.cacheScope,
+            key: normalized.cacheKey,
         },
         resource: {
-            mediaId,
-            resourceUri,
-            downloadUri,
-            contentType,
+            mediaId: normalized.mediaId,
+            resourceUri: normalized.resourceUri,
+            downloadUri: normalized.downloadUri,
+            contentType: normalized.contentType,
         },
         renderer: {
-            runtime: normalizeOptionalString(rendererRecord.runtime) ?? plan?.serviceRequest?.render?.runtime ?? null,
-            fallbackUsed: Boolean(rendererRecord.fallbackUsed ?? rendererRecord["fallback-used"] ?? false),
+            runtime: normalized.rendererRuntime,
+            fallbackUsed: normalized.rendererFallbackUsed,
         },
         serviceResponse: {
             normalized: true,
             localFileWrites: false,
+            request: normalized.request,
+            auth: normalized.auth,
         },
     };
+}
+
+function normalizeRenderThumbnailRendererServiceResponse(plan, response) {
+    const responseRecord = requireRendererServiceResponseRecord(response, "response");
+    if (responseRecord.status !== "ok") {
+        throw rendererServiceResponseInvalid("render.thumbnail renderer-service response.status must be ok.", {
+            field: "status",
+            actual: responseRecord.status,
+        });
+    }
+
+    const serviceRequest = requireRendererServiceResponseRecord(plan?.serviceRequest, "plan.serviceRequest");
+    const resourceRecord = requireRendererServiceResponseRecord(responseRecord.resource, "resource");
+    const cacheRecord = requireRendererServiceResponseRecord(responseRecord.cache, "cache");
+    const rendererRecord = requireRendererServiceResponseRecord(responseRecord.renderer, "renderer");
+    const requestRecord = requireRendererServiceResponseRecord(responseRecord.request, "request");
+    const authRecord = requireRendererServiceResponseRecord(responseRecord.auth, "auth");
+
+    const resourceUri = requireRendererServiceResponseString(
+        resourceRecord.resourceUri ?? resourceRecord.uri ?? resourceRecord["resource-uri"],
+        "resource.resourceUri"
+    );
+    const resourceMediaId = mediaIdFromResourceUri(resourceUri);
+    if (!resourceMediaId) {
+        throw rendererServiceResponseInvalid("render.thumbnail renderer-service response resource.resourceUri must use /assets/by-id/{mediaId}.", {
+            field: "resource.resourceUri",
+            actual: resourceUri,
+        });
+    }
+    const mediaId = normalizeOptionalString(resourceRecord.mediaId ?? resourceRecord["media-id"] ?? resourceRecord.id) ?? resourceMediaId;
+    if (mediaId !== resourceMediaId) {
+        throw rendererServiceResponseInvalid("render.thumbnail renderer-service response resource.mediaId must match resource.resourceUri.", {
+            field: "resource.mediaId",
+            expected: resourceMediaId,
+            actual: mediaId,
+        });
+    }
+
+    const downloadUri = requireRendererServiceResponseString(resourceRecord.downloadUri ?? resourceRecord["download-uri"], "resource.downloadUri");
+    validateRendererServiceDownloadUri(resourceUri, downloadUri);
+
+    const contentType = requireRendererServiceResponseString(
+        resourceRecord.contentType ?? resourceRecord["content-type"] ?? resourceRecord.mtype,
+        "resource.contentType"
+    );
+    if (contentType !== "image/png") {
+        throw rendererServiceResponseInvalid("render.thumbnail renderer-service response resource.contentType must be image/png.", {
+            field: "resource.contentType",
+            expected: "image/png",
+            actual: contentType,
+        });
+    }
+
+    const cacheOutcome = requireRendererServiceResponseString(cacheRecord.outcome, "cache.outcome");
+    if (!["hit", "hit-or-rendered", "miss", "rendered", "refreshed"].includes(cacheOutcome)) {
+        throw rendererServiceResponseInvalid("render.thumbnail renderer-service response cache.outcome is not recognized.", {
+            field: "cache.outcome",
+            actual: cacheOutcome,
+        });
+    }
+    const cacheScope = requireRendererServiceResponseString(cacheRecord.scope, "cache.scope");
+    requireRendererServiceResponseEqual(cacheScope, plan?.cache?.scope, "cache.scope");
+    const cacheKey = requireRendererServiceResponseString(cacheRecord.key, "cache.key");
+    requireRendererServiceResponseEqual(cacheKey, plan?.cache?.key, "cache.key");
+
+    const rendererRuntimeValue = rendererRecord.runtime;
+    const rendererRuntime =
+        rendererRuntimeValue === null && cacheOutcome === "hit"
+            ? null
+            : requireRendererServiceResponseString(rendererRuntimeValue, "renderer.runtime");
+    const rendererFallbackUsed = requireRendererServiceResponseBoolean(
+        rendererRecord.fallbackUsed ?? rendererRecord["fallback-used"],
+        "renderer.fallbackUsed"
+    );
+
+    const request = validateRendererServiceRequestSummary(plan, serviceRequest, requestRecord);
+    const auth = validateRendererServiceAuthSummary(authRecord);
+
+    if (responseRecord.localFileWrites !== undefined && responseRecord.localFileWrites !== false) {
+        throw rendererServiceResponseInvalid("render.thumbnail renderer-service response localFileWrites must be false when present.", {
+            field: "localFileWrites",
+            expected: false,
+            actual: responseRecord.localFileWrites,
+        });
+    }
+
+    return {
+        mediaId,
+        resourceUri,
+        downloadUri,
+        contentType,
+        cacheOutcome,
+        cacheScope,
+        cacheKey,
+        rendererRuntime,
+        rendererFallbackUsed,
+        request,
+        auth,
+    };
+}
+
+function validateRendererServiceRequestSummary(plan, serviceRequest, requestRecord) {
+    const target = requireRendererServiceResponseRecord(serviceRequest.target, "plan.serviceRequest.target");
+    const artifact = requireRendererServiceResponseRecord(serviceRequest.artifact, "plan.serviceRequest.artifact");
+    const cache = requireRendererServiceResponseRecord(serviceRequest.cache, "plan.serviceRequest.cache");
+    const render = requireRendererServiceResponseRecord(serviceRequest.render, "plan.serviceRequest.render");
+    const backendRpc = requireRendererServiceResponseRecord(serviceRequest.backendRpc, "plan.serviceRequest.backendRpc");
+    const responseBackendRpc = requireRendererServiceResponseRecord(requestRecord.backendRpc, "request.backendRpc");
+
+    requireRendererServiceResponseEqual(requestRecord.operation, "thumbnail.render", "request.operation");
+    requireRendererServiceResponseEqual(requestRecord.targetKind, plan?.target?.kind, "request.targetKind");
+    requireRendererServiceResponseEqual(requestRecord.fileId, target.fileId, "request.fileId");
+    requireRendererServiceResponseEqual(normalizeNullish(requestRecord.pageId), normalizeNullish(target.pageId), "request.pageId");
+    requireRendererServiceResponseEqual(normalizeNullish(requestRecord.objectId), normalizeNullish(target.objectId), "request.objectId");
+    requireRendererServiceResponseEqual(normalizeNullish(requestRecord.objectKey), normalizeNullish(target.objectKey), "request.objectKey");
+    requireRendererServiceResponseEqual(normalizeNullish(requestRecord.tag), normalizeNullish(target.tag), "request.tag");
+    requireRendererServiceResponseEqual(normalizeNullish(requestRecord.revn), normalizeNullish(target.revn), "request.revn");
+    requireRendererServiceResponseEqual(requestRecord.format, artifact.format, "request.format");
+    requireRendererServiceResponseEqual(requestRecord.width, artifact.width, "request.width");
+    requireRendererServiceResponseEqual(requestRecord.height, artifact.height, "request.height");
+    requireRendererServiceResponseEqual(requestRecord.mimeType, artifact.mimeType, "request.mimeType");
+    requireRendererServiceResponseEqual(requestRecord.extension, artifact.extension, "request.extension");
+    requireRendererServiceResponseEqual(requestRecord.cachePolicy, cache.policy, "request.cachePolicy");
+    requireRendererServiceResponseEqual(requestRecord.cacheScope, cache.scope, "request.cacheScope");
+    requireRendererServiceResponseEqual(requestRecord.cacheKey, cache.key, "request.cacheKey");
+    requireRendererServiceResponseEqual(normalizeNullish(requestRecord.cacheProbe), normalizeNullish(cache.probe), "request.cacheProbe");
+    requireRendererServiceResponseEqual(requestRecord.renderRequired, render.required, "request.renderRequired");
+    requireRendererServiceResponseEqual(requestRecord.renderRuntime, render.runtime, "request.renderRuntime");
+    requireRendererServiceResponseEqual(requestRecord.renderFallback, render.fallback, "request.renderFallback");
+
+    validateRendererServiceBackendRpcSummary(responseBackendRpc.data, backendRpc.data, "request.backendRpc.data");
+    validateRendererServiceBackendRpcSummary(responseBackendRpc.persist, backendRpc.persist, "request.backendRpc.persist");
+    validateRendererServiceBackendRpcSummary(
+        responseBackendRpc.cacheMissPersist,
+        backendRpc.cacheMissPersist,
+        "request.backendRpc.cacheMissPersist"
+    );
+
+    return {
+        operation: requestRecord.operation,
+        targetKind: requestRecord.targetKind,
+        fileId: requestRecord.fileId,
+        pageId: normalizeNullish(requestRecord.pageId),
+        objectId: normalizeNullish(requestRecord.objectId),
+        objectKey: normalizeNullish(requestRecord.objectKey),
+        tag: normalizeNullish(requestRecord.tag),
+        revn: normalizeNullish(requestRecord.revn),
+        format: requestRecord.format,
+        cachePolicy: requestRecord.cachePolicy,
+        cacheScope: requestRecord.cacheScope,
+        cacheKey: requestRecord.cacheKey,
+        cacheProbe: normalizeNullish(requestRecord.cacheProbe),
+        width: requestRecord.width,
+        height: requestRecord.height,
+        mimeType: requestRecord.mimeType,
+        extension: requestRecord.extension,
+        renderRequired: requestRecord.renderRequired,
+        renderRuntime: requestRecord.renderRuntime,
+        renderFallback: requestRecord.renderFallback,
+        backendRpc: {
+            data: normalizeRendererServiceBackendRpcSummary(responseBackendRpc.data),
+            persist: normalizeRendererServiceBackendRpcSummary(responseBackendRpc.persist),
+            cacheMissPersist: normalizeRendererServiceBackendRpcSummary(responseBackendRpc.cacheMissPersist),
+        },
+    };
+}
+
+function validateRendererServiceBackendRpcSummary(summary, expected, field) {
+    if (expected === null || expected === undefined) {
+        requireRendererServiceResponseEqual(normalizeNullish(summary), null, field);
+        return;
+    }
+
+    const summaryRecord = requireRendererServiceResponseRecord(summary, field);
+    requireRendererServiceResponseEqual(summaryRecord.command, expected.command, `${field}.command`);
+    requireRendererServiceResponseEqual(normalizeNullish(summaryRecord.method), normalizeNullish(expected.method), `${field}.method`);
+    requireRendererServiceResponseEqual(summaryRecord.requestPresent, true, `${field}.requestPresent`);
+}
+
+function normalizeRendererServiceBackendRpcSummary(summary) {
+    if (summary === null || summary === undefined) {
+        return null;
+    }
+
+    return {
+        command: summary.command,
+        method: normalizeNullish(summary.method),
+        requestPresent: summary.requestPresent,
+    };
+}
+
+function validateRendererServiceAuthSummary(authRecord) {
+    requireRendererServiceResponseEqual(authRecord.mode, "caller-session", "auth.mode");
+    const authorizationPresent = requireRendererServiceResponseBoolean(authRecord.authorizationPresent, "auth.authorizationPresent");
+    const cookiePresent = requireRendererServiceResponseBoolean(authRecord.cookiePresent, "auth.cookiePresent");
+    const authTokenCookiePresent = requireRendererServiceResponseBoolean(authRecord.authTokenCookiePresent, "auth.authTokenCookiePresent");
+    requireRendererServiceResponseEqual(authRecord.tokenValuesIncluded, false, "auth.tokenValuesIncluded");
+
+    for (const field of ["authorization", "cookie", "token", "authToken", "auth-token"]) {
+        if (authRecord[field] !== undefined) {
+            throw rendererServiceResponseInvalid("render.thumbnail renderer-service response auth summary must not include credential values.", {
+                field: `auth.${field}`,
+            });
+        }
+    }
+
+    return {
+        mode: "caller-session",
+        authorizationPresent,
+        cookiePresent,
+        authTokenCookiePresent,
+        tokenValuesIncluded: false,
+    };
+}
+
+function validateRendererServiceDownloadUri(resourceUri, downloadUri) {
+    let downloadUrl;
+    try {
+        downloadUrl = new URL(downloadUri);
+    } catch {
+        throw rendererServiceResponseInvalid("render.thumbnail renderer-service response resource.downloadUri must be an absolute HTTP(S) URL.", {
+            field: "resource.downloadUri",
+            actual: downloadUri,
+        });
+    }
+
+    if (downloadUrl.protocol !== "http:" && downloadUrl.protocol !== "https:") {
+        throw rendererServiceResponseInvalid("render.thumbnail renderer-service response resource.downloadUri must be an absolute HTTP(S) URL.", {
+            field: "resource.downloadUri",
+            actual: downloadUri,
+        });
+    }
+
+    const resourcePath = resourceUriPath(resourceUri);
+    if (resourcePath && downloadUrl.pathname !== resourcePath) {
+        throw rendererServiceResponseInvalid("render.thumbnail renderer-service response resource.downloadUri must point at resource.resourceUri.", {
+            field: "resource.downloadUri",
+            expected: resourcePath,
+            actual: downloadUrl.pathname,
+        });
+    }
+}
+
+function resourceUriPath(resourceUri) {
+    if (/^https?:\/\//.test(resourceUri)) {
+        try {
+            return new URL(resourceUri).pathname;
+        } catch {
+            return null;
+        }
+    }
+
+    return resourceUri.split(/[?#]/, 1)[0];
+}
+
+function requireRendererServiceResponseRecord(value, field) {
+    if (!value || typeof value !== "object" || Array.isArray(value)) {
+        throw rendererServiceResponseInvalid(`render.thumbnail renderer-service response ${field} must be a JSON object.`, {
+            field,
+        });
+    }
+
+    return value;
+}
+
+function requireRendererServiceResponseString(value, field) {
+    const normalized = normalizeOptionalString(value);
+    if (!normalized) {
+        throw rendererServiceResponseInvalid(`render.thumbnail renderer-service response ${field} is required.`, {
+            field,
+        });
+    }
+
+    return normalized;
+}
+
+function requireRendererServiceResponseBoolean(value, field) {
+    if (typeof value !== "boolean") {
+        throw rendererServiceResponseInvalid(`render.thumbnail renderer-service response ${field} must be boolean.`, {
+            field,
+            actual: value,
+        });
+    }
+
+    return value;
+}
+
+function requireRendererServiceResponseEqual(actual, expected, field) {
+    if (actual !== expected) {
+        throw rendererServiceResponseInvalid(`render.thumbnail renderer-service response ${field} must match the request contract.`, {
+            field,
+            expected,
+            actual,
+        });
+    }
+}
+
+function normalizeNullish(value) {
+    return value === undefined ? null : value;
+}
+
+function rendererServiceResponseInvalid(message, data = EMPTY_OBJECT) {
+    return Object.assign(new TypeError(message), {
+        code: "renderer_service_response_invalid",
+        status: 502,
+        retryable: false,
+        data: compactRecord({
+            stage: "response-normalization",
+            ...data,
+        }),
+    });
 }
 
 export function createRenderThumbnailRendererServiceErrorPayload(plan, cause = EMPTY_OBJECT) {
@@ -30723,7 +31224,12 @@ export function createRenderThumbnailRendererServiceErrorPayload(plan, cause = E
             operation: "thumbnail.render",
             endpoint: plan?.endpoint ?? null,
             status,
-            retryable: status === null || status === 0 || status === 408 || status === 429 || status >= 500,
+            retryable:
+                typeof errorRecord.retryable === "boolean"
+                    ? errorRecord.retryable
+                    : typeof dataRecord.retryable === "boolean"
+                      ? dataRecord.retryable
+                      : status === null || status === 0 || status === 408 || status === 429 || status >= 500,
             serviceData: Object.keys(dataRecord).length > 0 ? dataRecord : null,
         },
     });
@@ -30871,6 +31377,23 @@ function normalizeProbeTimeoutMs(value, fallback) {
 
 function joinUrlPath(uri, path) {
     return `${uri.replace(/\/+$/, "")}/${path.replace(/^\/+/, "")}`;
+}
+
+function deriveRendererServiceHealthEndpoint(endpoint) {
+    const uri = normalizeOptionalString(endpoint);
+    if (!uri) {
+        return null;
+    }
+
+    try {
+        const url = new URL(uri);
+        url.pathname = "/health";
+        url.search = "";
+        url.hash = "";
+        return url.toString();
+    } catch {
+        return joinUrlPath(uri, "health");
+    }
 }
 
 function asRecord(value) {

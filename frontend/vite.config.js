@@ -13,6 +13,12 @@ const dirname =
   typeof __dirname !== "undefined"
     ? __dirname
     : path.dirname(fileURLToPath(import.meta.url));
+const frontendCacheDir =
+  process.env.PENPOT_FRONTEND_CACHE_DIR ??
+  "/Volumes/fushilu/.caches/penpot/frontend";
+const storybookOutputDir =
+  process.env.PENPOT_FRONTEND_STORYBOOK_OUTPUT_DIR ??
+  path.join(frontendCacheDir, "storybook");
 
 // More info at: https://storybook.js.org/docs/next/writing-tests/integrations/vitest-addon
 export default defineConfig({
@@ -52,8 +58,8 @@ export default defineConfig({
   },
   resolve: {
     alias: {
-      "@target": resolve(__dirname, "./target/storybook"),
-      "@public": resolve(__dirname, "./resources/public/js/"),
+      "@target": resolve(dirname, storybookOutputDir),
+      "@public": resolve(dirname, "./resources/public/js/"),
     },
   },
 });

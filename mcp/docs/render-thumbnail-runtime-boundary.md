@@ -361,6 +361,51 @@ media.
   requires edition permission.
 - Renderer-service requests must carry caller auth and audit context.
 
+## Backend RPC Client Plan
+
+P26.5 adds a renderer-service `backendRpcClient` response field as an execution
+guardrail for the future backend integration. The service may be configured with
+a backend base URI, then derives Penpot RPC endpoints using the existing
+`api/main/methods/<command>?_fmt=json` convention for the validated source-data
+and persistence commands. The field also echoes caller-session auth presence
+without credential values.
+
+This is still non-executing metadata. The plan must keep `dispatch:false`,
+`networkDispatch:false`, `cacheRead:false`, `dataRead:false`, and
+`persistWrite:false` until cache probing, source-data reads, rendering, and
+thumbnail persistence are implemented and tested as separate runtime slices.
+
+P26.6 extends each planned backend RPC entry with a disabled request envelope.
+The envelope fixes the Penpot RPC JSON transport, HTTP method, canonical request
+keys, GET query keys, and POST JSON body keys while keeping
+`requestValuesIncluded:false`, `mediaValuesIncluded:false`,
+`tokenValuesIncluded:false`, and `dispatch:false`. This prepares request
+construction for a later execution slice without exposing backend request
+values or enabling network dispatch.
+
+P26.7 adds a disabled ordered pipeline plan to the same response. Reuse
+requests plan a `cache-probe` stage followed by `source-data-read`, `render`,
+and `thumbnail-persist` stages that run only on cache miss; refresh requests
+plan source-data, render, and persist stages unconditionally. The pipeline
+keeps `cacheRead:false`, `dataRead:false`, `renderDispatch:false`,
+`persistWrite:false`, `networkDispatch:false`, and value-redaction flags false
+until each runtime stage is implemented and tested as an execution slice.
+
+P26.8 exposes this planning boundary through manual host configuration.
+`PENPOT_RENDERER_SERVICE_BACKEND_URI`, with `PENPOT_BACKEND_URI` as a fallback,
+sets only the backend RPC base URI used to derive disabled endpoint metadata.
+Invalid non-HTTP(S) values fail before the host starts. The environment setting
+does not enable cache probes, backend source-data reads, render dispatch,
+thumbnail persistence, or backend network dispatch.
+
+P26.9 adds a disabled cache-probe plan to reuse renderer-service responses.
+The plan records the future cache lookup strategy, canonical request keys,
+cache scope/key, cache-hit result shape, and cache-miss continuation behavior
+while keeping `cacheRead:false`, `networkDispatch:false`, `dispatch:false`,
+and cache-hit/resource/media/token value flags false. Refresh responses keep
+`backendRpcClient.cacheProbe:null`. This makes cache-reuse semantics explicit
+without implementing cache reads or cached resource returns.
+
 ## Test Strategy
 
 Before `render.thumbnail` becomes executable:

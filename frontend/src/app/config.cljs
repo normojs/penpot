@@ -184,9 +184,10 @@
   ([path]
    (mcp-public-url mcp-public-uri path))
   ([base-uri path]
-   (-> (normalize-uri base-uri)
-       (u/join "mcp" path)
-       str)))
+   (let [path (-> path str (str/replace #"^/+" ""))]
+     (-> (normalize-uri base-uri)
+         (u/join (dm/str "mcp/" path))
+         str))))
 
 (def mcp-ws-uri
   (or (some-> (obj/get global "penpotMcpWebSocketURI") u/uri str)

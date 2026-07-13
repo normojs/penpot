@@ -22,6 +22,7 @@ corepack enable;
 corepack install;
 pnpm install;
 
+# target/dist is the explicit frontend release bundle, not an intermediate cache.
 rm -rf target/dist;
 rm -rf resources/public;
 

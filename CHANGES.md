@@ -4,9 +4,30 @@
 
 ### :sparkles: New features & Enhancements
 
+- Enable explicitly gated `render.thumbnail` renderer-service execution from MCP and `penpot-cli`, with health preflight, POST dispatch, normalized PNG resource metadata, and optional CLI `--output` downloads from the renderer-service resource URL.
+- Add renderer-service backend RPC client planning metadata for thumbnail responses, normalizing future backend data/persist endpoints while keeping backend reads, writes, and network dispatch disabled.
+- Add renderer-service backend RPC request-envelope planning metadata for future GET query and POST JSON body wiring, without exposing request/media/token values or enabling dispatch.
+- Add renderer-service backend RPC pipeline planning metadata for cache probe, source-data read, render, and thumbnail persistence stages, without reading caches/data, rendering scene data, persisting thumbnails, exposing values, or enabling dispatch.
+- Add renderer-service backend RPC planning environment configuration via `PENPOT_RENDERER_SERVICE_BACKEND_URI` with `PENPOT_BACKEND_URI` fallback, keeping backend RPC execution disabled.
+- Add renderer-service disabled cache-probe planning metadata for reuse thumbnails, including lookup strategy, cache keys, hit/miss shape, and false cache-read/network-dispatch/value flags.
+- Execute renderer-service read-only file thumbnail cache probes for configured file-target reuse requests, returning cached resource metadata on hits and falling back to no-op rendering on misses.
+- Validate renderer-service `thumbnail.render` request bodies before returning the no-op PNG resource, with structured non-retryable 400 errors for invalid operations, targets, or formats.
+- Require renderer-service thumbnail requests to include file target identity, and frame target identity with file/page/object ids, before returning the no-op PNG resource.
+- Validate renderer-service thumbnail cache metadata, including reuse/refresh policy, target-specific cache scope, and non-empty cache key, before no-op rendering.
+- Validate renderer-service PNG artifact metadata, including bounded dimensions, `image/png` MIME type, and `.png` extension, before no-op rendering.
+- Validate renderer-service render intent, including refresh-vs-cache-miss render requirements and selected runtime/fallback names, before no-op rendering.
+- Validate renderer-service backend RPC intent metadata for thumbnail source-data and persistence commands before no-op rendering, without executing backend RPCs.
+- Validate renderer-service cache probe intent metadata so reuse and refresh thumbnail requests expose explicit cache-hit/cache-miss semantics before no-op rendering.
+- Execute renderer-service file thumbnail source-data reads for configured refresh requests and reuse cache misses, validating token-safe backend responses while keeping tagged-frame source-data reads, thumbnail persistence, and network dispatch disabled.
+- Validate renderer-service thumbnail identity consistency across target ids/revisions, cache keys, backend data requests, and persist requests before no-op rendering.
+- Validate generated renderer-service thumbnail response metadata before returning success, rejecting malformed resource/cache/renderer/request/auth summaries with `renderer_service_response_invalid`.
+- Forward caller-session auth headers for executable `render.thumbnail` renderer-service dispatch from MCP and `penpot-cli`, while exposing only token-safe auth presence metadata in service results.
+- Document and guard JVM classpath/release bundle output boundaries: keep `target/classes` and `target/dist` repo-local while adding a `pnpm cache:audit` check that prevents machine-local cache paths from entering `deps.edn`.
+- Move frontend and common Shadow CLJS test/storybook/bench outputs to `/Volumes/fushilu/.caches/penpot` subdirectories while preserving public frontend assets.
+- Add gated renderer-service health preflight execution for `render.thumbnail` MCP and CLI opt-in paths.
 - Move the default `render-wasm` Cargo target directory to `/Volumes/fushilu/.caches/revocloud/target` while preserving `CARGO_TARGET_DIR` overrides.
-- Add `penpot-cli renderer-service` lifecycle guidance with a no-probe status plan and explicit no-spawn manual-start boundary while thumbnail execution remains disabled.
-- Add the private `@penpot/renderer-service` no-op host with P25.24-compatible health and thumbnail responses, lifecycle coverage, and build output under `/Volumes/fushilu/.caches/penpot/renderer-service` while keeping MCP/CLI rendering disabled.
+- Add `penpot-cli renderer-service` lifecycle guidance with a no-probe status plan and explicit no-spawn manual-start boundary.
+- Add the private `@penpot/renderer-service` no-op host with P25.24-compatible health and thumbnail responses, lifecycle coverage, and build output under `/Volumes/fushilu/.caches/penpot/renderer-service`.
 - Add metadata-only renderer-service P25.143 countersignature verification revocation appeal resolution policy planning for future `render.thumbnail` package materialization approval audit execution across command-runtime, CLI, MCP, and fixtures while keeping appeal resolution, record reads, materialization, and dispatch disabled.
 - Add metadata-only renderer-service P25.142 evidence attestation notarization certification endorsement countersignature verification revocation appeal policy planning for future `render.thumbnail` package materialization approval audit execution across command-runtime, CLI, MCP, and fixtures while keeping verification revocation appeals, revocation/verification/countersignature/endorsement/certification/notarization/attestation/evidence/audit record reads, materialization, and dispatch disabled.
 - Add metadata-only renderer-service P25.141 evidence attestation notarization certification endorsement countersignature verification revocation policy planning for future `render.thumbnail` package materialization approval audit execution across command-runtime, CLI, MCP, and fixtures while keeping verification revocation, verification/countersignature/endorsement/certification/notarization/attestation/evidence/audit record reads, materialization, and dispatch disabled.
@@ -259,6 +280,8 @@
 
 ### :bug: Bugs fixed
 
+- Fix frontend MCP public URL derivation so built-in/custom gateway URLs keep the `/mcp` prefix.
+- Fix text content updates so explicit `change-text` style overrides apply instead of being replaced by the previous text style.
 - Emit `create-shape-layout` for flex/grid layout creation from plugins and MCP (same event as workspace) [#9652](https://github.com/penpot/penpot/issues/9652) (PR: [#9654](https://github.com/penpot/penpot/pull/9654))
 - Fix broken authentication on /assets handlers [#9677](https://github.com/penpot/penpot/issues/9677) (PR: [#9679](https://github.com/penpot/penpot/pull/9679))
 - Fix API doc endpoint returning HTML as text/plain [#9680](https://github.com/penpot/penpot/issues/9680) (PR: [#9681](https://github.com/penpot/penpot/pull/9681))

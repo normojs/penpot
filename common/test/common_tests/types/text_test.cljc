@@ -30,6 +30,22 @@
 (def line
   (get-in content-base [:children 0 :children 0 :children 0]))
 
+(t/deftest test-change-text-explicit-styles-override-existing-styles
+  (let [content (cttx/change-text content-base
+                                  "hello"
+                                  :font-size "24"
+                                  :fills [{:fill-color "#112233"
+                                           :fill-opacity 1}])
+        updated (cttx/change-text content
+                                  "updated"
+                                  :font-size "30"
+                                  :fills [{:fill-color "#445566"
+                                           :fill-opacity 1}])]
+    (t/is (= "updated" (cttx/content->text updated)))
+    (t/is (= "30" (get-in updated [:children 0 :children 0 :children 0 :font-size])))
+    (t/is (= [{:fill-color "#445566" :fill-opacity 1}]
+             (get-in updated [:children 0 :children 0 :children 0 :fills])))))
+
 (def content-changed-structure
   (update-in content-base [:children 0 :children 0 :children]
              #(conj % (assoc line :font-weight "700"))))

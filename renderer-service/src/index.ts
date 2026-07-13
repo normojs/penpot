@@ -3,10 +3,19 @@ import { pathToFileURL } from "node:url";
 
 const DEFAULT_HOST = "127.0.0.1";
 const DEFAULT_PORT = 6070;
+const BACKEND_RPC_BASE_URI_ENV = "PENPOT_RENDERER_SERVICE_BACKEND_URI";
+const BACKEND_RPC_BASE_URI_FALLBACK_ENV = "PENPOT_BACKEND_URI";
+
+export type RendererBackendRpcClientOptions = {
+    baseUri?: string;
+    fetch?: typeof fetch;
+};
 
 export type RendererServiceOptions = {
     host?: string;
     port?: number;
+    backendRpc?: RendererBackendRpcClientOptions;
+    thumbnailResponseOverride?: (response: Record<string, unknown>) => unknown;
 };
 
 export type StartedRendererService = {
@@ -22,19 +31,1451 @@ export const healthResponse = {
     mode: "noop",
     runtimeRegistration: false,
     dispatch: false,
-    capabilities: ["health", "thumbnail.render.noop"],
+    capabilities: [
+        "health",
+        "thumbnail.render.noop",
+        "thumbnail.render.validate",
+        "thumbnail.render.auth-summary",
+        "thumbnail.backend-rpc.client-plan",
+        "thumbnail.backend-rpc.request-envelope",
+        "thumbnail.backend-rpc.pipeline-plan",
+        "thumbnail.backend-rpc.file-cache-probe",
+        "thumbnail.backend-rpc.file-source-data-read",
+    ],
 } as const;
 
 export const noopThumbnailResponse = {
-    status: "noop",
-    code: "renderer_service_noop",
-    message: "renderer-service no-op fixture does not render PNG bytes",
-    artifact: null,
-    resource: null,
+    status: "ok",
+    resource: {
+        mediaId: "noop-thumbnail-png",
+        resourceUri: "/assets/by-id/noop-thumbnail-png",
+        downloadUri: "/assets/by-id/noop-thumbnail-png",
+        contentType: "image/png",
+    },
+    cache: {
+        outcome: "rendered",
+    },
+    renderer: {
+        runtime: "noop-png-fixture",
+        fallbackUsed: false,
+    },
     runtimeRegistration: false,
-    dispatch: false,
+    dispatch: true,
     localFileWrites: false,
 } as const;
+
+const MAX_REQUEST_BODY_BYTES = 1024 * 1024;
+
+const noopPng = Buffer.from(
+    "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==",
+    "base64"
+);
+
+type ThumbnailRequestSummary = {
+    operation: "thumbnail.render";
+    targetKind: "file" | "frame";
+    fileId: string;
+    pageId: string | null;
+    objectId: string | null;
+    objectKey: string | null;
+    tag: string | null;
+    revn: number | null;
+    format: "png";
+    cachePolicy: "reuse" | "refresh";
+    cacheScope: "file-thumbnail" | "file-object-thumbnail";
+    cacheKey: string;
+    cacheProbe: "file-thumbnail-by-file-id-and-revn" | "file-object-thumbnail-by-object-key" | null;
+    width: number;
+    height: number;
+    mimeType: "image/png";
+    extension: ".png";
+    renderRequired: true | "on-cache-miss";
+    renderRuntime: "render-wasm-worker";
+    renderFallback: "frontend-rasterizer";
+    backendRpc: BackendRpcSummary;
+};
+
+type BackendRpcEntrySummary = {
+    command: string;
+    method: string | null;
+    requestPresent: boolean;
+};
+
+type BackendRpcSummary = {
+    data: BackendRpcEntrySummary;
+    persist: BackendRpcEntrySummary | null;
+    cacheMissPersist: BackendRpcEntrySummary | null;
+};
+
+type BackendRpcRequestEnvelopeSummary = {
+    status: "planned-disabled";
+    transport: "penpot-rpc-json";
+    method: string | null;
+    requestKeys: string[];
+    queryKeys: string[];
+    bodyKeys: string[];
+    requestValuesIncluded: false;
+    mediaValuesIncluded: false;
+    tokenValuesIncluded: false;
+    dispatch: false;
+};
+
+type BackendRpcClientEntrySummary = BackendRpcEntrySummary & {
+    endpoint: string | null;
+    dispatch: false;
+    requestEnvelope: BackendRpcRequestEnvelopeSummary;
+};
+
+type BackendRpcCacheProbeSummary = {
+    status: "planned-disabled" | "executed";
+    strategy: Exclude<ThumbnailRequestSummary["cacheProbe"], null>;
+    condition: "before-source-data-read";
+    scope: ThumbnailRequestSummary["cacheScope"];
+    key: ThumbnailRequestSummary["cacheKey"];
+    requestKeys: string[];
+    command: "get-file-thumbnail" | null;
+    endpoint: string | null;
+    hitResult: "resource-metadata";
+    missResult: "continue-pipeline";
+    result: "hit" | "miss" | null;
+    cacheRead: boolean;
+    networkDispatch: boolean;
+    dispatch: boolean;
+    cacheHitValuesIncluded: false;
+    resourceValuesIncluded: false;
+    mediaValuesIncluded: false;
+    tokenValuesIncluded: false;
+};
+
+type BackendRpcPipelineStageSummary = {
+    name: "cache-probe" | "source-data-read" | "render" | "thumbnail-persist";
+    status: "planned-disabled" | "executed";
+    condition: "always" | "on-cache-miss";
+    entry: "data" | "persist" | "cacheMissPersist" | null;
+    command: string | null;
+    cacheProbe: ThumbnailRequestSummary["cacheProbe"];
+    runtime: ThumbnailRequestSummary["renderRuntime"] | null;
+    dispatch: boolean;
+};
+
+type BackendRpcPipelineSummary = {
+    status: "planned-disabled" | "cache-probe-executed" | "source-data-read-executed";
+    cachePolicy: ThumbnailRequestSummary["cachePolicy"];
+    cacheHitShortCircuit: boolean;
+    orderedStages: BackendRpcPipelineStageSummary[];
+    networkDispatch: boolean;
+    cacheRead: boolean;
+    dataRead: boolean;
+    renderDispatch: false;
+    persistWrite: false;
+    sourceDataValuesIncluded: false;
+    artifactValuesIncluded: false;
+    tokenValuesIncluded: false;
+};
+
+type BackendRpcClientSummary = {
+    status: "not-configured" | "configured-disabled" | "cache-probe-executed" | "source-data-read-executed";
+    baseUriConfigured: boolean;
+    baseUri: string | null;
+    networkDispatch: boolean;
+    cacheRead: boolean;
+    dataRead: boolean;
+    persistWrite: false;
+    authForwarding: AuthSummary;
+    entries: {
+        data: BackendRpcClientEntrySummary;
+        persist: BackendRpcClientEntrySummary | null;
+        cacheMissPersist: BackendRpcClientEntrySummary | null;
+    };
+    cacheProbe: BackendRpcCacheProbeSummary | null;
+    pipeline: BackendRpcPipelineSummary;
+};
+
+type BackendRpcCacheProbeExecution = {
+    executed: boolean;
+    endpoint: string | null;
+    hit: boolean | null;
+    mediaId: string | null;
+    resourceUri: string | null;
+    downloadUri: string | null;
+};
+
+type BackendRpcSourceDataReadExecution = {
+    executed: boolean;
+    endpoint: string | null;
+    revn: number | null;
+};
+
+type AuthSummary = {
+    mode: "caller-session";
+    authorizationPresent: boolean;
+    cookiePresent: boolean;
+    authTokenCookiePresent: boolean;
+    tokenValuesIncluded: false;
+};
+
+type RendererError = Error & {
+    code?: string;
+    field?: string;
+    status?: number;
+    retryable?: boolean;
+};
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+    return typeof value === "object" && value !== null && !Array.isArray(value);
+}
+
+function optionalString(value: unknown): string | null {
+    return typeof value === "string" && value.trim() ? value : null;
+}
+
+function requireTargetString(target: Record<string, unknown>, field: string, code: string): string {
+    const value = optionalString(target[field]);
+    if (!value) {
+        throw Object.assign(new Error(`Renderer-service thumbnail request target.${field} is required.`), {
+            code,
+            status: 400,
+        });
+    }
+    return value;
+}
+
+function requireRecord(value: unknown, name: string, code: string): Record<string, unknown> {
+    if (!isRecord(value)) {
+        throw Object.assign(new Error(`Renderer-service thumbnail request ${name} must be a JSON object.`), {
+            code,
+            status: 400,
+        });
+    }
+    return value;
+}
+
+function requireNullableRecord(value: unknown, name: string, code: string): Record<string, unknown> | null {
+    if (value === null) {
+        return null;
+    }
+    return requireRecord(value, name, code);
+}
+
+function requireBoundedInteger(record: Record<string, unknown>, field: string, code: string): number {
+    const value = record[field];
+    if (!Number.isInteger(value) || (value as number) < 1 || (value as number) > 4096) {
+        throw Object.assign(new Error(`Renderer-service thumbnail request artifact.${field} must be an integer between 1 and 4096.`), {
+            code,
+            status: 400,
+        });
+    }
+    return value as number;
+}
+
+function optionalNonnegativeInteger(record: Record<string, unknown>, field: string, name: string, code: string): number | null {
+    const value = record[field];
+    if (value === undefined || value === null) {
+        return null;
+    }
+    if (!Number.isInteger(value) || (value as number) < 0) {
+        throw Object.assign(new Error(`Renderer-service thumbnail request ${name}.${field} must be a non-negative integer.`), {
+            code,
+            status: 400,
+        });
+    }
+    return value as number;
+}
+
+function requireRecordField(record: Record<string, unknown>, field: string, expected: unknown, name: string, code: string): void {
+    if (record[field] !== expected) {
+        throw Object.assign(new Error(`Renderer-service thumbnail request ${name}.${field} must match ${String(expected)}.`), {
+            code,
+            status: 400,
+        });
+    }
+}
+
+function requireBackendRpcCommand(record: Record<string, unknown>, name: string, expected: string, code: string): string {
+    if (record.command !== expected) {
+        throw Object.assign(new Error(`Renderer-service thumbnail request ${name}.command must be ${expected}.`), {
+            code,
+            status: 400,
+        });
+    }
+    return expected;
+}
+
+function requireBackendRpcMethod(record: Record<string, unknown>, name: string, expected: string, code: string): string {
+    if (record.method !== expected) {
+        throw Object.assign(new Error(`Renderer-service thumbnail request ${name}.method must be ${expected}.`), {
+            code,
+            status: 400,
+        });
+    }
+    return expected;
+}
+
+function summarizeBackendRpcEntry(record: Record<string, unknown>): BackendRpcEntrySummary {
+    return {
+        command: String(record.command),
+        method: typeof record.method === "string" ? record.method : null,
+        requestPresent: isRecord(record.request),
+    };
+}
+
+async function readJsonBody(request: IncomingMessage): Promise<unknown> {
+    const chunks: Buffer[] = [];
+    let bytes = 0;
+
+    for await (const chunk of request) {
+        const buffer = Buffer.isBuffer(chunk) ? chunk : Buffer.from(chunk);
+        bytes += buffer.byteLength;
+        if (bytes > MAX_REQUEST_BODY_BYTES) {
+            throw Object.assign(new Error("Renderer-service thumbnail request body is too large."), {
+                code: "renderer_service_request_too_large",
+                status: 413,
+            });
+        }
+        chunks.push(buffer);
+    }
+
+    if (chunks.length === 0) {
+        throw Object.assign(new Error("Renderer-service thumbnail request requires a JSON body."), {
+            code: "renderer_service_request_body_required",
+            status: 400,
+        });
+    }
+
+    try {
+        return JSON.parse(Buffer.concat(chunks).toString("utf8"));
+    } catch (cause) {
+        throw Object.assign(
+            new Error(cause instanceof Error ? `Renderer-service thumbnail request JSON is invalid: ${cause.message}` : "Renderer-service thumbnail request JSON is invalid."),
+            {
+                code: "renderer_service_request_json_invalid",
+                status: 400,
+            }
+        );
+    }
+}
+
+function validateThumbnailRequest(body: unknown): ThumbnailRequestSummary {
+    if (!isRecord(body)) {
+        throw Object.assign(new Error("Renderer-service thumbnail request body must be a JSON object."), {
+            code: "renderer_service_request_invalid",
+            status: 400,
+        });
+    }
+
+    if (body.operation !== "thumbnail.render") {
+        throw Object.assign(new Error("Renderer-service thumbnail request operation must be thumbnail.render."), {
+            code: "renderer_service_operation_invalid",
+            status: 400,
+        });
+    }
+
+    const target = requireRecord(body.target, "target", "renderer_service_target_invalid");
+    const targetKind = target?.kind;
+    if (targetKind !== "file" && targetKind !== "frame") {
+        throw Object.assign(new Error("Renderer-service thumbnail request target.kind must be file or frame."), {
+            code: "renderer_service_target_invalid",
+            status: 400,
+        });
+    }
+    const fileId = requireTargetString(target, "fileId", "renderer_service_target_file_id_required");
+    const pageId = targetKind === "frame" ? requireTargetString(target, "pageId", "renderer_service_target_page_id_required") : null;
+    const objectId = targetKind === "frame" ? requireTargetString(target, "objectId", "renderer_service_target_object_id_required") : null;
+    const tag = targetKind === "frame" ? optionalString(target.tag) ?? "frame" : null;
+    const revn = targetKind === "file" ? optionalNonnegativeInteger(target, "revn", "target", "renderer_service_target_revn_invalid") : null;
+    const expectedObjectKey = targetKind === "frame" ? `${fileId}/${pageId}/${objectId}/${tag}` : null;
+    if (targetKind === "frame" && target.objectKey !== expectedObjectKey) {
+        throw Object.assign(new Error(`Renderer-service thumbnail request target.objectKey must match ${expectedObjectKey}.`), {
+            code: "renderer_service_target_object_key_invalid",
+            status: 400,
+        });
+    }
+
+    const artifact = requireRecord(body.artifact, "artifact", "renderer_service_artifact_invalid");
+    if (artifact?.format !== "png") {
+        throw Object.assign(new Error("Renderer-service thumbnail request artifact.format must be png."), {
+            code: "renderer_service_format_invalid",
+            status: 400,
+        });
+    }
+    if (artifact.mimeType !== "image/png") {
+        throw Object.assign(new Error("Renderer-service thumbnail request artifact.mimeType must be image/png."), {
+            code: "renderer_service_mime_type_invalid",
+            status: 400,
+        });
+    }
+    if (artifact.extension !== ".png") {
+        throw Object.assign(new Error("Renderer-service thumbnail request artifact.extension must be .png."), {
+            code: "renderer_service_extension_invalid",
+            status: 400,
+        });
+    }
+    const width = requireBoundedInteger(artifact, "width", "renderer_service_width_invalid");
+    const height = requireBoundedInteger(artifact, "height", "renderer_service_height_invalid");
+
+    const cache = requireRecord(body.cache, "cache", "renderer_service_cache_invalid");
+    const cachePolicy = cache.policy;
+    if (cachePolicy !== "reuse" && cachePolicy !== "refresh") {
+        throw Object.assign(new Error("Renderer-service thumbnail request cache.policy must be reuse or refresh."), {
+            code: "renderer_service_cache_policy_invalid",
+            status: 400,
+        });
+    }
+    const expectedScope = targetKind === "file" ? "file-thumbnail" : "file-object-thumbnail";
+    if (cache.scope !== expectedScope) {
+        throw Object.assign(new Error(`Renderer-service thumbnail request cache.scope must be ${expectedScope} for ${targetKind} thumbnails.`), {
+            code: "renderer_service_cache_scope_invalid",
+            status: 400,
+        });
+    }
+    const cacheKey = optionalString(cache.key);
+    if (!cacheKey) {
+        throw Object.assign(new Error("Renderer-service thumbnail request cache.key is required."), {
+            code: "renderer_service_cache_key_required",
+            status: 400,
+        });
+    }
+    const expectedCacheKey = targetKind === "file" ? `file:${fileId}:revn:${revn ?? "<resolved-revn>"}` : expectedObjectKey;
+    if (cacheKey !== expectedCacheKey) {
+        throw Object.assign(new Error(`Renderer-service thumbnail request cache.key must match ${expectedCacheKey}.`), {
+            code: "renderer_service_cache_key_mismatch",
+            status: 400,
+        });
+    }
+    const expectedCacheProbe = cachePolicy === "reuse" ? (targetKind === "file" ? "file-thumbnail-by-file-id-and-revn" : "file-object-thumbnail-by-object-key") : null;
+    if (expectedCacheProbe) {
+        if (cache.probe !== expectedCacheProbe) {
+            throw Object.assign(new Error(`Renderer-service thumbnail request cache.probe must be ${expectedCacheProbe} for ${targetKind} reuse thumbnails.`), {
+                code: "renderer_service_cache_probe_invalid",
+                status: 400,
+            });
+        }
+    } else if (cache.probe !== undefined && cache.probe !== null) {
+        throw Object.assign(new Error("Renderer-service thumbnail request cache.probe must be omitted for refresh cache policy."), {
+            code: "renderer_service_cache_probe_unexpected",
+            status: 400,
+        });
+    }
+
+    const render = requireRecord(body.render, "render", "renderer_service_render_invalid");
+    const expectedRenderRequired = cachePolicy === "refresh" ? true : "on-cache-miss";
+    if (render.required !== expectedRenderRequired) {
+        throw Object.assign(
+            new Error(`Renderer-service thumbnail request render.required must be ${String(expectedRenderRequired)} for ${cachePolicy} cache policy.`),
+            {
+                code: "renderer_service_render_required_invalid",
+                status: 400,
+            }
+        );
+    }
+    if (render.runtime !== "render-wasm-worker") {
+        throw Object.assign(new Error("Renderer-service thumbnail request render.runtime must be render-wasm-worker."), {
+            code: "renderer_service_render_runtime_invalid",
+            status: 400,
+        });
+    }
+    if (render.fallback !== "frontend-rasterizer") {
+        throw Object.assign(new Error("Renderer-service thumbnail request render.fallback must be frontend-rasterizer."), {
+            code: "renderer_service_render_fallback_invalid",
+            status: 400,
+        });
+    }
+
+    const backendRpc = requireRecord(body.backendRpc, "backendRpc", "renderer_service_backend_rpc_invalid");
+    const data = requireRecord(backendRpc.data, "backendRpc.data", "renderer_service_backend_rpc_data_invalid");
+    const expectedDataCommand = targetKind === "file" ? "get-file-data-for-thumbnail" : "get-file-frame-data-for-thumbnail";
+    requireBackendRpcCommand(data, "backendRpc.data", expectedDataCommand, "renderer_service_backend_rpc_data_command_invalid");
+    if (targetKind === "file") {
+        requireBackendRpcMethod(data, "backendRpc.data", "GET", "renderer_service_backend_rpc_data_method_invalid");
+    } else if (data.status !== "required-future-capability") {
+        throw Object.assign(new Error("Renderer-service thumbnail request backendRpc.data.status must be required-future-capability for frame thumbnails."), {
+            code: "renderer_service_backend_rpc_data_status_invalid",
+            status: 400,
+        });
+    }
+    if (!isRecord(data.request)) {
+        throw Object.assign(new Error("Renderer-service thumbnail request backendRpc.data.request must be a JSON object."), {
+            code: "renderer_service_backend_rpc_data_request_invalid",
+            status: 400,
+        });
+    }
+    if (targetKind === "file") {
+        requireRecordField(data.request, "file-id", fileId, "backendRpc.data.request", "renderer_service_backend_rpc_data_file_id_mismatch");
+        requireRecordField(
+            data.request,
+            "strip-frames-with-thumbnails",
+            false,
+            "backendRpc.data.request",
+            "renderer_service_backend_rpc_data_strip_frames_invalid"
+        );
+    } else {
+        requireRecordField(data.request, "file-id", fileId, "backendRpc.data.request", "renderer_service_backend_rpc_data_file_id_mismatch");
+        requireRecordField(data.request, "page-id", pageId, "backendRpc.data.request", "renderer_service_backend_rpc_data_page_id_mismatch");
+        requireRecordField(data.request, "object-id", objectId, "backendRpc.data.request", "renderer_service_backend_rpc_data_object_id_mismatch");
+    }
+
+    const expectedPersistCommand = targetKind === "file" ? "create-file-thumbnail" : "create-file-object-thumbnail";
+    const persist = requireNullableRecord(backendRpc.persist, "backendRpc.persist", "renderer_service_backend_rpc_persist_invalid");
+    const cacheMissPersist = requireNullableRecord(
+        backendRpc.cacheMissPersist,
+        "backendRpc.cacheMissPersist",
+        "renderer_service_backend_rpc_cache_miss_persist_invalid"
+    );
+
+    if (cachePolicy === "refresh") {
+        if (!persist) {
+            throw Object.assign(new Error("Renderer-service thumbnail request backendRpc.persist is required for refresh cache policy."), {
+                code: "renderer_service_backend_rpc_persist_required",
+                status: 400,
+            });
+        }
+        if (cacheMissPersist !== null) {
+            throw Object.assign(new Error("Renderer-service thumbnail request backendRpc.cacheMissPersist must be null for refresh cache policy."), {
+                code: "renderer_service_backend_rpc_cache_miss_persist_unexpected",
+                status: 400,
+            });
+        }
+    } else {
+        if (persist !== null) {
+            throw Object.assign(new Error("Renderer-service thumbnail request backendRpc.persist must be null for reuse cache policy."), {
+                code: "renderer_service_backend_rpc_persist_unexpected",
+                status: 400,
+            });
+        }
+        if (!cacheMissPersist) {
+            throw Object.assign(new Error("Renderer-service thumbnail request backendRpc.cacheMissPersist is required for reuse cache policy."), {
+                code: "renderer_service_backend_rpc_cache_miss_persist_required",
+                status: 400,
+            });
+        }
+    }
+
+    const activePersist = persist ?? cacheMissPersist;
+    if (activePersist) {
+        requireBackendRpcCommand(activePersist, "backendRpc.persist", expectedPersistCommand, "renderer_service_backend_rpc_persist_command_invalid");
+        requireBackendRpcMethod(activePersist, "backendRpc.persist", "POST", "renderer_service_backend_rpc_persist_method_invalid");
+        if (!isRecord(activePersist.request)) {
+            throw Object.assign(new Error("Renderer-service thumbnail request backendRpc persist request must be a JSON object."), {
+                code: "renderer_service_backend_rpc_persist_request_invalid",
+                status: 400,
+            });
+        }
+        requireRecordField(activePersist.request, "file-id", fileId, "backendRpc.persist.request", "renderer_service_backend_rpc_persist_file_id_mismatch");
+        if (targetKind === "file") {
+            requireRecordField(
+                activePersist.request,
+                "revn",
+                revn ?? "<from get-file-data-for-thumbnail>",
+                "backendRpc.persist.request",
+                "renderer_service_backend_rpc_persist_revn_mismatch"
+            );
+        } else {
+            requireRecordField(
+                activePersist.request,
+                "object-id",
+                expectedObjectKey,
+                "backendRpc.persist.request",
+                "renderer_service_backend_rpc_persist_object_id_mismatch"
+            );
+            requireRecordField(activePersist.request, "tag", tag, "backendRpc.persist.request", "renderer_service_backend_rpc_persist_tag_mismatch");
+        }
+    }
+
+    const backendRpcSummary = {
+        data: summarizeBackendRpcEntry(data),
+        persist: persist ? summarizeBackendRpcEntry(persist) : null,
+        cacheMissPersist: cacheMissPersist ? summarizeBackendRpcEntry(cacheMissPersist) : null,
+    };
+
+    return {
+        operation: "thumbnail.render",
+        targetKind,
+        fileId,
+        pageId,
+        objectId,
+        objectKey: expectedObjectKey,
+        tag,
+        revn,
+        format: "png",
+        cachePolicy,
+        cacheScope: expectedScope,
+        cacheKey,
+        cacheProbe: expectedCacheProbe,
+        width,
+        height,
+        mimeType: "image/png",
+        extension: ".png",
+        renderRequired: expectedRenderRequired,
+        renderRuntime: "render-wasm-worker",
+        renderFallback: "frontend-rasterizer",
+        backendRpc: backendRpcSummary,
+    };
+}
+
+function summarizeAuthHeaders(request: IncomingMessage): AuthSummary {
+    const authorization = request.headers.authorization;
+    const cookie = request.headers.cookie;
+
+    return {
+        mode: "caller-session",
+        authorizationPresent: typeof authorization === "string" && authorization.trim().length > 0,
+        cookiePresent: typeof cookie === "string" && cookie.trim().length > 0,
+        authTokenCookiePresent:
+            typeof cookie === "string" &&
+            cookie
+                .split(";")
+                .map((part) => part.trim().toLowerCase())
+                .some((part) => part.startsWith("auth-token=")),
+        tokenValuesIncluded: false,
+    };
+}
+
+function backendRpcConfigInvalid(message: string, field: string): never {
+    throw Object.assign(new Error(message), {
+        code: "renderer_service_backend_rpc_config_invalid",
+        field,
+        status: 500,
+    });
+}
+
+function normalizeBackendRpcBaseUri(options: RendererBackendRpcClientOptions | undefined): string | null {
+    const raw = optionalString(options?.baseUri);
+    if (!raw) {
+        return null;
+    }
+
+    let url: URL;
+    try {
+        url = new URL(raw);
+    } catch {
+        backendRpcConfigInvalid("Renderer-service backend RPC baseUri must be an absolute HTTP(S) URL.", "backendRpcClient.baseUri");
+    }
+
+    if (url.protocol !== "http:" && url.protocol !== "https:") {
+        backendRpcConfigInvalid("Renderer-service backend RPC baseUri must be an absolute HTTP(S) URL.", "backendRpcClient.baseUri");
+    }
+
+    return url.toString().replace(/\/+$/, "");
+}
+
+function backendRpcEndpoint(baseUri: string | null, command: string): string | null {
+    if (!baseUri) {
+        return null;
+    }
+    const url = new URL(`api/main/methods/${command}`, `${baseUri}/`);
+    url.searchParams.set("_fmt", "json");
+    return url.toString();
+}
+
+function cacheProbeNotExecuted(baseUri: string | null): BackendRpcCacheProbeExecution {
+    return {
+        executed: false,
+        endpoint: backendRpcEndpoint(baseUri, "get-file-thumbnail"),
+        hit: null,
+        mediaId: null,
+        resourceUri: null,
+        downloadUri: null,
+    };
+}
+
+function sourceDataReadNotExecuted(baseUri: string | null): BackendRpcSourceDataReadExecution {
+    return {
+        executed: false,
+        endpoint: backendRpcEndpoint(baseUri, "get-file-data-for-thumbnail"),
+        revn: null,
+    };
+}
+
+function backendRpcHeaderValue(value: string | string[] | undefined): string | null {
+    if (Array.isArray(value)) {
+        return optionalString(value.join("; "));
+    }
+    return optionalString(value);
+}
+
+function backendRpcAuthHeaders(request: IncomingMessage): Record<string, string> {
+    const headers: Record<string, string> = {
+        accept: "application/json",
+        "x-client": "@penpot/renderer-service/0.1",
+    };
+    const authorization = backendRpcHeaderValue(request.headers.authorization);
+    const cookie = backendRpcHeaderValue(request.headers.cookie);
+    if (authorization) {
+        headers.authorization = authorization;
+    }
+    if (cookie) {
+        headers.cookie = cookie;
+    }
+    return headers;
+}
+
+function backendRpcError(message: string, code: string, status: number, retryable: boolean, field?: string): never {
+    throw Object.assign(new Error(message), {
+        code,
+        status,
+        retryable,
+        ...(field ? { field } : {}),
+    });
+}
+
+function parseBackendJson(
+    text: string,
+    field: string,
+    message = "Renderer-service backend cache probe response JSON is invalid.",
+    code = "renderer_service_backend_cache_probe_response_invalid"
+): unknown {
+    if (!text.trim()) {
+        return null;
+    }
+    try {
+        return JSON.parse(text);
+    } catch {
+        backendRpcError(message, code, 502, true, field);
+    }
+}
+
+function backendResponseString(record: Record<string, unknown>, field: string, ...keys: string[]): string | null {
+    for (const key of keys) {
+        const value = optionalString(record[key]);
+        if (value) {
+            return value;
+        }
+    }
+    return optionalString(record[field]);
+}
+
+function parseBackendFileThumbnailCacheProbe(
+    data: unknown,
+    summary: ThumbnailRequestSummary,
+    endpoint: string
+): BackendRpcCacheProbeExecution {
+    if (!isRecord(data)) {
+        backendRpcError("Renderer-service backend cache probe response must be a JSON object.", "renderer_service_backend_cache_probe_response_invalid", 502, true, "backendRpcClient.cacheProbe.response");
+    }
+    if (typeof data.hit !== "boolean") {
+        backendRpcError("Renderer-service backend cache probe response hit must be boolean.", "renderer_service_backend_cache_probe_response_invalid", 502, true, "backendRpcClient.cacheProbe.response.hit");
+    }
+
+    const fileId = backendResponseString(data, "fileId", "file-id");
+    const revn = typeof data.revn === "number" ? data.revn : null;
+    if (fileId !== summary.fileId) {
+        backendRpcError("Renderer-service backend cache probe response file id does not match the request.", "renderer_service_backend_cache_probe_response_invalid", 502, true, "backendRpcClient.cacheProbe.response.file-id");
+    }
+    if (revn !== summary.revn) {
+        backendRpcError("Renderer-service backend cache probe response revision does not match the request.", "renderer_service_backend_cache_probe_response_invalid", 502, true, "backendRpcClient.cacheProbe.response.revn");
+    }
+
+    if (!data.hit) {
+        return {
+            executed: true,
+            endpoint,
+            hit: false,
+            mediaId: null,
+            resourceUri: null,
+            downloadUri: null,
+        };
+    }
+
+    const mediaId = backendResponseString(data, "mediaId", "media-id");
+    const uri = backendResponseString(data, "uri");
+    if (!mediaId || !uri) {
+        backendRpcError("Renderer-service backend cache probe hit must include media id and uri.", "renderer_service_backend_cache_probe_response_invalid", 502, true, "backendRpcClient.cacheProbe.response.resource");
+    }
+
+    let parsedUri: URL;
+    try {
+        parsedUri = new URL(uri);
+    } catch {
+        backendRpcError("Renderer-service backend cache probe uri must be an absolute HTTP(S) URL.", "renderer_service_backend_cache_probe_response_invalid", 502, true, "backendRpcClient.cacheProbe.response.uri");
+    }
+    if (parsedUri.protocol !== "http:" && parsedUri.protocol !== "https:") {
+        backendRpcError("Renderer-service backend cache probe uri must be an absolute HTTP(S) URL.", "renderer_service_backend_cache_probe_response_invalid", 502, true, "backendRpcClient.cacheProbe.response.uri");
+    }
+
+    const resourceUri = `/assets/by-id/${mediaId}`;
+    if (parsedUri.pathname !== resourceUri) {
+        backendRpcError("Renderer-service backend cache probe uri must point to /assets/by-id/{mediaId}.", "renderer_service_backend_cache_probe_response_invalid", 502, true, "backendRpcClient.cacheProbe.response.uri");
+    }
+
+    return {
+        executed: true,
+        endpoint,
+        hit: true,
+        mediaId,
+        resourceUri,
+        downloadUri: parsedUri.toString(),
+    };
+}
+
+function parseBackendFileThumbnailSourceDataRead(
+    data: unknown,
+    summary: ThumbnailRequestSummary,
+    endpoint: string
+): BackendRpcSourceDataReadExecution {
+    if (!isRecord(data)) {
+        backendRpcError("Renderer-service backend source-data response must be a JSON object.", "renderer_service_backend_source_data_response_invalid", 502, true, "backendRpcClient.entries.data.response");
+    }
+
+    const fileId = backendResponseString(data, "fileId", "file-id");
+    if (fileId !== summary.fileId) {
+        backendRpcError("Renderer-service backend source-data response file id does not match the request.", "renderer_service_backend_source_data_response_invalid", 502, true, "backendRpcClient.entries.data.response.file-id");
+    }
+
+    const revn = typeof data.revn === "number" && Number.isInteger(data.revn) && data.revn >= 0 ? data.revn : null;
+    if (revn === null) {
+        backendRpcError("Renderer-service backend source-data response revision must be a non-negative integer.", "renderer_service_backend_source_data_response_invalid", 502, true, "backendRpcClient.entries.data.response.revn");
+    }
+    if (summary.revn !== null && revn !== summary.revn) {
+        backendRpcError("Renderer-service backend source-data response revision does not match the request.", "renderer_service_backend_source_data_response_invalid", 502, true, "backendRpcClient.entries.data.response.revn");
+    }
+    if (!isRecord(data.page)) {
+        backendRpcError("Renderer-service backend source-data response page must be a JSON object.", "renderer_service_backend_source_data_response_invalid", 502, true, "backendRpcClient.entries.data.response.page");
+    }
+
+    return {
+        executed: true,
+        endpoint,
+        revn,
+    };
+}
+
+async function executeFileThumbnailCacheProbe(
+    request: IncomingMessage,
+    summary: ThumbnailRequestSummary,
+    options: RendererBackendRpcClientOptions | undefined
+): Promise<BackendRpcCacheProbeExecution> {
+    const baseUri = normalizeBackendRpcBaseUri(options);
+    const endpoint = backendRpcEndpoint(baseUri, "get-file-thumbnail");
+    if (!baseUri || !endpoint || summary.targetKind !== "file" || summary.cachePolicy !== "reuse" || summary.revn === null) {
+        return cacheProbeNotExecuted(baseUri);
+    }
+
+    const fetchImpl = options?.fetch ?? globalThis.fetch;
+    if (typeof fetchImpl !== "function") {
+        backendRpcError("Renderer-service backend cache probe requires a fetch implementation.", "renderer_service_backend_cache_probe_unavailable", 500, true, "backendRpcClient.cacheProbe.fetch");
+    }
+
+    const url = new URL(endpoint);
+    url.searchParams.set("file-id", summary.fileId);
+    url.searchParams.set("revn", String(summary.revn));
+
+    let response: Response;
+    try {
+        response = await fetchImpl(url, {
+            method: "GET",
+            headers: backendRpcAuthHeaders(request),
+        });
+    } catch {
+        backendRpcError("Renderer-service backend cache probe could not reach the Penpot backend.", "renderer_service_backend_cache_probe_unavailable", 502, true, "backendRpcClient.cacheProbe");
+    }
+
+    const text = await response.text();
+    if (!response.ok) {
+        backendRpcError(
+            `Renderer-service backend cache probe failed with HTTP ${response.status}.`,
+            "renderer_service_backend_cache_probe_failed",
+            response.status,
+            response.status === 429 || response.status >= 500,
+            "backendRpcClient.cacheProbe"
+        );
+    }
+
+    return parseBackendFileThumbnailCacheProbe(parseBackendJson(text, "backendRpcClient.cacheProbe.response"), summary, endpoint);
+}
+
+async function executeFileThumbnailSourceDataRead(
+    request: IncomingMessage,
+    summary: ThumbnailRequestSummary,
+    options: RendererBackendRpcClientOptions | undefined,
+    cacheProbeExecution: BackendRpcCacheProbeExecution
+): Promise<BackendRpcSourceDataReadExecution> {
+    const baseUri = normalizeBackendRpcBaseUri(options);
+    const endpoint = backendRpcEndpoint(baseUri, "get-file-data-for-thumbnail");
+    const cacheHit = cacheProbeExecution.executed && cacheProbeExecution.hit === true;
+    const shouldRead =
+        Boolean(baseUri && endpoint) &&
+        summary.targetKind === "file" &&
+        !cacheHit &&
+        (summary.cachePolicy === "refresh" || (summary.cachePolicy === "reuse" && cacheProbeExecution.executed && cacheProbeExecution.hit === false));
+
+    if (!shouldRead || !endpoint) {
+        return sourceDataReadNotExecuted(baseUri);
+    }
+
+    const fetchImpl = options?.fetch ?? globalThis.fetch;
+    if (typeof fetchImpl !== "function") {
+        backendRpcError("Renderer-service backend source-data read requires a fetch implementation.", "renderer_service_backend_source_data_unavailable", 500, true, "backendRpcClient.entries.data.fetch");
+    }
+
+    const url = new URL(endpoint);
+    url.searchParams.set("file-id", summary.fileId);
+    url.searchParams.set("strip-frames-with-thumbnails", "false");
+
+    let response: Response;
+    try {
+        response = await fetchImpl(url, {
+            method: "GET",
+            headers: backendRpcAuthHeaders(request),
+        });
+    } catch {
+        backendRpcError("Renderer-service backend source-data read could not reach the Penpot backend.", "renderer_service_backend_source_data_unavailable", 502, true, "backendRpcClient.entries.data");
+    }
+
+    const text = await response.text();
+    if (!response.ok) {
+        backendRpcError(
+            `Renderer-service backend source-data read failed with HTTP ${response.status}.`,
+            "renderer_service_backend_source_data_failed",
+            response.status,
+            response.status === 429 || response.status >= 500,
+            "backendRpcClient.entries.data"
+        );
+    }
+
+    return parseBackendFileThumbnailSourceDataRead(
+        parseBackendJson(
+            text,
+            "backendRpcClient.entries.data.response",
+            "Renderer-service backend source-data response JSON is invalid.",
+            "renderer_service_backend_source_data_response_invalid"
+        ),
+        summary,
+        endpoint
+    );
+}
+
+function backendRpcCanonicalRequestKeys(command: string): string[] {
+    switch (command) {
+        case "get-file-thumbnail":
+            return ["file-id", "revn"];
+        case "get-file-data-for-thumbnail":
+            return ["file-id", "strip-frames-with-thumbnails"];
+        case "get-file-frame-data-for-thumbnail":
+            return ["file-id", "object-id", "page-id"];
+        case "create-file-thumbnail":
+            return ["file-id", "media", "revn"];
+        case "create-file-object-thumbnail":
+            return ["file-id", "media", "object-id", "tag"];
+        default:
+            return [];
+    }
+}
+
+function backendRpcRequestEnvelope(entry: BackendRpcEntrySummary): BackendRpcRequestEnvelopeSummary {
+    const requestKeys = entry.requestPresent ? backendRpcCanonicalRequestKeys(entry.command) : [];
+    return {
+        status: "planned-disabled",
+        transport: "penpot-rpc-json",
+        method: entry.method,
+        requestKeys,
+        queryKeys: entry.method === "GET" ? requestKeys : [],
+        bodyKeys: entry.method === "POST" ? requestKeys : [],
+        requestValuesIncluded: false,
+        mediaValuesIncluded: false,
+        tokenValuesIncluded: false,
+        dispatch: false,
+    };
+}
+
+function backendRpcClientEntry(entry: BackendRpcEntrySummary | null, baseUri: string | null): BackendRpcClientEntrySummary | null {
+    if (!entry) {
+        return null;
+    }
+
+    return {
+        ...entry,
+        endpoint: backendRpcEndpoint(baseUri, entry.command),
+        dispatch: false,
+        requestEnvelope: backendRpcRequestEnvelope(entry),
+    };
+}
+
+function summarizeBackendRpcCacheProbe(
+    summary: ThumbnailRequestSummary,
+    baseUri: string | null,
+    execution: BackendRpcCacheProbeExecution
+): BackendRpcCacheProbeSummary | null {
+    if (summary.cachePolicy !== "reuse" || !summary.cacheProbe) {
+        return null;
+    }
+
+    const executed = execution.executed && summary.targetKind === "file";
+    return {
+        status: executed ? "executed" : "planned-disabled",
+        strategy: summary.cacheProbe,
+        condition: "before-source-data-read",
+        scope: summary.cacheScope,
+        key: summary.cacheKey,
+        requestKeys: summary.targetKind === "file" ? ["file-id", "revn"] : ["object-key"],
+        command: executed ? "get-file-thumbnail" : null,
+        endpoint: executed ? execution.endpoint : null,
+        hitResult: "resource-metadata",
+        missResult: "continue-pipeline",
+        result: executed ? (execution.hit ? "hit" : "miss") : null,
+        cacheRead: executed,
+        networkDispatch: executed,
+        dispatch: executed,
+        cacheHitValuesIncluded: false,
+        resourceValuesIncluded: false,
+        mediaValuesIncluded: false,
+        tokenValuesIncluded: false,
+    };
+}
+
+function backendRpcPipelineStage(
+    name: BackendRpcPipelineStageSummary["name"],
+    condition: BackendRpcPipelineStageSummary["condition"],
+    values: Pick<BackendRpcPipelineStageSummary, "entry" | "command" | "cacheProbe" | "runtime"> & Partial<Pick<BackendRpcPipelineStageSummary, "status" | "dispatch">>
+): BackendRpcPipelineStageSummary {
+    return {
+        name,
+        status: values.status ?? "planned-disabled",
+        condition,
+        entry: values.entry,
+        command: values.command,
+        cacheProbe: values.cacheProbe,
+        runtime: values.runtime,
+        dispatch: values.dispatch ?? false,
+    };
+}
+
+function summarizeBackendRpcPipeline(
+    summary: ThumbnailRequestSummary,
+    cacheProbeExecution: BackendRpcCacheProbeExecution,
+    sourceDataReadExecution: BackendRpcSourceDataReadExecution
+): BackendRpcPipelineSummary {
+    const cacheMissCondition = summary.cachePolicy === "reuse" ? "on-cache-miss" : "always";
+    const persistEntry = summary.cachePolicy === "refresh" ? "persist" : "cacheMissPersist";
+    const persistSummary = summary.cachePolicy === "refresh" ? summary.backendRpc.persist : summary.backendRpc.cacheMissPersist;
+    const orderedStages: BackendRpcPipelineStageSummary[] = [];
+    const cacheProbeExecuted = cacheProbeExecution.executed && summary.targetKind === "file";
+    const sourceDataReadExecuted = sourceDataReadExecution.executed && summary.targetKind === "file";
+
+    if (summary.cachePolicy === "reuse") {
+        orderedStages.push(
+            backendRpcPipelineStage("cache-probe", "always", {
+                entry: null,
+                command: cacheProbeExecuted ? "get-file-thumbnail" : null,
+                cacheProbe: summary.cacheProbe,
+                runtime: null,
+                status: cacheProbeExecuted ? "executed" : "planned-disabled",
+                dispatch: cacheProbeExecuted,
+            })
+        );
+    }
+
+    orderedStages.push(
+        backendRpcPipelineStage("source-data-read", cacheMissCondition, {
+            entry: "data",
+            command: summary.backendRpc.data.command,
+            cacheProbe: null,
+            runtime: null,
+            status: sourceDataReadExecuted ? "executed" : "planned-disabled",
+            dispatch: sourceDataReadExecuted,
+        }),
+        backendRpcPipelineStage("render", cacheMissCondition, {
+            entry: null,
+            command: null,
+            cacheProbe: null,
+            runtime: summary.renderRuntime,
+        }),
+        backendRpcPipelineStage("thumbnail-persist", cacheMissCondition, {
+            entry: persistEntry,
+            command: persistSummary?.command ?? null,
+            cacheProbe: null,
+            runtime: null,
+        })
+    );
+
+    return {
+        status: sourceDataReadExecuted ? "source-data-read-executed" : cacheProbeExecuted ? "cache-probe-executed" : "planned-disabled",
+        cachePolicy: summary.cachePolicy,
+        cacheHitShortCircuit: summary.cachePolicy === "reuse",
+        orderedStages,
+        networkDispatch: cacheProbeExecuted || sourceDataReadExecuted,
+        cacheRead: cacheProbeExecuted,
+        dataRead: sourceDataReadExecuted,
+        renderDispatch: false,
+        persistWrite: false,
+        sourceDataValuesIncluded: false,
+        artifactValuesIncluded: false,
+        tokenValuesIncluded: false,
+    };
+}
+
+function summarizeBackendRpcClient(
+    summary: ThumbnailRequestSummary,
+    auth: AuthSummary,
+    options: RendererBackendRpcClientOptions | undefined,
+    cacheProbeExecution: BackendRpcCacheProbeExecution,
+    sourceDataReadExecution: BackendRpcSourceDataReadExecution
+): BackendRpcClientSummary {
+    const baseUri = normalizeBackendRpcBaseUri(options);
+    const cacheProbeExecuted = cacheProbeExecution.executed && summary.targetKind === "file";
+    const sourceDataReadExecuted = sourceDataReadExecution.executed && summary.targetKind === "file";
+    return {
+        status: sourceDataReadExecuted ? "source-data-read-executed" : cacheProbeExecuted ? "cache-probe-executed" : baseUri ? "configured-disabled" : "not-configured",
+        baseUriConfigured: Boolean(baseUri),
+        baseUri,
+        networkDispatch: cacheProbeExecuted || sourceDataReadExecuted,
+        cacheRead: cacheProbeExecuted,
+        dataRead: sourceDataReadExecuted,
+        persistWrite: false,
+        authForwarding: auth,
+        entries: {
+            data: backendRpcClientEntry(summary.backendRpc.data, baseUri) as BackendRpcClientEntrySummary,
+            persist: backendRpcClientEntry(summary.backendRpc.persist, baseUri),
+            cacheMissPersist: backendRpcClientEntry(summary.backendRpc.cacheMissPersist, baseUri),
+        },
+        cacheProbe: summarizeBackendRpcCacheProbe(summary, baseUri, cacheProbeExecution),
+        pipeline: summarizeBackendRpcPipeline(summary, cacheProbeExecution, sourceDataReadExecution),
+    };
+}
+
+function thumbnailResponse(
+    request: IncomingMessage,
+    summary: ThumbnailRequestSummary,
+    auth: AuthSummary,
+    options: Pick<RendererServiceOptions, "backendRpc">,
+    cacheProbeExecution: BackendRpcCacheProbeExecution,
+    sourceDataReadExecution: BackendRpcSourceDataReadExecution
+): Record<string, unknown> {
+    const host = request.headers.host ?? `${DEFAULT_HOST}:${DEFAULT_PORT}`;
+    const downloadUri = `http://${host}/assets/by-id/noop-thumbnail-png`;
+    const cacheHit = cacheProbeExecution.executed && cacheProbeExecution.hit === true;
+
+    return {
+        ...noopThumbnailResponse,
+        request: summary,
+        auth,
+        backendRpcClient: summarizeBackendRpcClient(summary, auth, options.backendRpc, cacheProbeExecution, sourceDataReadExecution),
+        cache: {
+            ...noopThumbnailResponse.cache,
+            outcome: cacheHit ? "hit" : noopThumbnailResponse.cache.outcome,
+            policy: summary.cachePolicy,
+            scope: summary.cacheScope,
+            key: summary.cacheKey,
+            probe: summary.cacheProbe,
+        },
+        renderer: cacheHit
+            ? {
+                  runtime: null,
+                  fallbackUsed: false,
+              }
+            : noopThumbnailResponse.renderer,
+        resource: {
+            ...noopThumbnailResponse.resource,
+            ...(cacheHit
+                ? {
+                      mediaId: cacheProbeExecution.mediaId,
+                      resourceUri: cacheProbeExecution.resourceUri,
+                      downloadUri: cacheProbeExecution.downloadUri,
+                  }
+                : {
+                      downloadUri,
+                  }),
+        },
+    };
+}
+
+function responseInvalid(message: string, field: string): never {
+    throw Object.assign(new Error(message), {
+        code: "renderer_service_response_invalid",
+        field,
+        status: 500,
+    });
+}
+
+function responseRecord(value: unknown, field: string): Record<string, unknown> {
+    if (!isRecord(value)) {
+        responseInvalid(`Renderer-service thumbnail response ${field} must be a JSON object.`, field);
+    }
+    return value;
+}
+
+function responseString(record: Record<string, unknown>, property: string, field: string): string {
+    const value = record[property];
+    if (typeof value !== "string" || value.length === 0) {
+        responseInvalid(`Renderer-service thumbnail response ${field} must be a non-empty string.`, field);
+    }
+    return value;
+}
+
+function responseBoolean(record: Record<string, unknown>, property: string, field: string): boolean {
+    const value = record[property];
+    if (typeof value !== "boolean") {
+        responseInvalid(`Renderer-service thumbnail response ${field} must be a boolean.`, field);
+    }
+    return value;
+}
+
+function responseStringArray(record: Record<string, unknown>, property: string, field: string): string[] {
+    const value = record[property];
+    if (!Array.isArray(value) || value.some((entry) => typeof entry !== "string")) {
+        responseInvalid(`Renderer-service thumbnail response ${field} must be a string array.`, field);
+    }
+    return value as string[];
+}
+
+function responseRecordArray(value: unknown, field: string): Record<string, unknown>[] {
+    if (!Array.isArray(value) || value.some((entry) => !isRecord(entry))) {
+        responseInvalid(`Renderer-service thumbnail response ${field} must be an array of JSON objects.`, field);
+    }
+    return value as Record<string, unknown>[];
+}
+
+function requireResponseEqual(actual: unknown, expected: unknown, field: string): void {
+    if (actual !== expected) {
+        responseInvalid(`Renderer-service thumbnail response ${field} must match ${String(expected)}.`, field);
+    }
+}
+
+function rejectResponseValueFields(record: Record<string, unknown>, fieldPrefix: string): void {
+    for (const field of [
+        "request",
+        "requestValues",
+        "query",
+        "queryValues",
+        "body",
+        "bodyValues",
+        "media",
+        "artifact",
+        "sourceData",
+        "resource",
+        "resourceUri",
+        "downloadUri",
+        "mediaId",
+        "cacheHit",
+        "cacheHitResource",
+        "authorization",
+        "cookie",
+        "token",
+        "authToken",
+        "auth-token",
+    ]) {
+        if (record[field] !== undefined) {
+            responseInvalid("Renderer-service thumbnail response backend RPC plan must not include request, media, source-data, resource, cache-hit, or credential values.", `${fieldPrefix}.${field}`);
+        }
+    }
+}
+
+function requireResponseArrayEqual(actual: string[], expected: string[], field: string): void {
+    if (JSON.stringify(actual) !== JSON.stringify(expected)) {
+        responseInvalid(`Renderer-service thumbnail response ${field} must match the planned request envelope.`, field);
+    }
+}
+
+function requireResponseJsonEqual(actual: unknown, expected: unknown, field: string): void {
+    if (JSON.stringify(actual) !== JSON.stringify(expected)) {
+        responseInvalid(`Renderer-service thumbnail response ${field} must match the validated request summary.`, field);
+    }
+}
+
+function validateThumbnailResourceResponse(resource: Record<string, unknown>): void {
+    const mediaId = responseString(resource, "mediaId", "resource.mediaId");
+    const resourceUri = responseString(resource, "resourceUri", "resource.resourceUri");
+    const downloadUri = responseString(resource, "downloadUri", "resource.downloadUri");
+    requireResponseEqual(resource.contentType, "image/png", "resource.contentType");
+
+    const expectedResourceUri = `/assets/by-id/${mediaId}`;
+    requireResponseEqual(resourceUri, expectedResourceUri, "resource.resourceUri");
+
+    let parsedDownloadUri: URL;
+    try {
+        parsedDownloadUri = new URL(downloadUri);
+    } catch {
+        responseInvalid("Renderer-service thumbnail response resource.downloadUri must be an absolute HTTP(S) URL.", "resource.downloadUri");
+    }
+
+    if (parsedDownloadUri.protocol !== "http:" && parsedDownloadUri.protocol !== "https:") {
+        responseInvalid("Renderer-service thumbnail response resource.downloadUri must be an absolute HTTP(S) URL.", "resource.downloadUri");
+    }
+    requireResponseEqual(parsedDownloadUri.pathname, resourceUri, "resource.downloadUri");
+}
+
+function validateThumbnailCacheResponse(cache: Record<string, unknown>, summary: ThumbnailRequestSummary, execution: BackendRpcCacheProbeExecution): void {
+    requireResponseEqual(cache.outcome, execution.executed && execution.hit === true ? "hit" : noopThumbnailResponse.cache.outcome, "cache.outcome");
+    requireResponseEqual(cache.policy, summary.cachePolicy, "cache.policy");
+    requireResponseEqual(cache.scope, summary.cacheScope, "cache.scope");
+    requireResponseEqual(cache.key, summary.cacheKey, "cache.key");
+    requireResponseEqual(cache.probe ?? null, summary.cacheProbe, "cache.probe");
+}
+
+function validateThumbnailRendererResponse(renderer: Record<string, unknown>, execution: BackendRpcCacheProbeExecution): void {
+    requireResponseEqual(renderer.runtime, execution.executed && execution.hit === true ? null : noopThumbnailResponse.renderer.runtime, "renderer.runtime");
+    requireResponseEqual(renderer.fallbackUsed, false, "renderer.fallbackUsed");
+}
+
+function validateTokenSafeAuthResponse(auth: Record<string, unknown>, expectedAuth: AuthSummary, fieldPrefix: string): void {
+    requireResponseEqual(auth.mode, expectedAuth.mode, `${fieldPrefix}.mode`);
+    requireResponseEqual(responseBoolean(auth, "authorizationPresent", `${fieldPrefix}.authorizationPresent`), expectedAuth.authorizationPresent, `${fieldPrefix}.authorizationPresent`);
+    requireResponseEqual(responseBoolean(auth, "cookiePresent", `${fieldPrefix}.cookiePresent`), expectedAuth.cookiePresent, `${fieldPrefix}.cookiePresent`);
+    requireResponseEqual(responseBoolean(auth, "authTokenCookiePresent", `${fieldPrefix}.authTokenCookiePresent`), expectedAuth.authTokenCookiePresent, `${fieldPrefix}.authTokenCookiePresent`);
+    requireResponseEqual(auth.tokenValuesIncluded, false, `${fieldPrefix}.tokenValuesIncluded`);
+
+    for (const field of ["authorization", "cookie", "token", "authToken", "auth-token"]) {
+        if (auth[field] !== undefined) {
+            responseInvalid("Renderer-service thumbnail response auth summary must not include credential values.", `${fieldPrefix}.${field}`);
+        }
+    }
+}
+
+function validateThumbnailAuthResponse(auth: Record<string, unknown>, expectedAuth: AuthSummary): void {
+    validateTokenSafeAuthResponse(auth, expectedAuth, "auth");
+}
+
+function validateBackendRpcRequestEnvelopeResponse(actual: unknown, expected: BackendRpcRequestEnvelopeSummary, field: string): void {
+    const record = responseRecord(actual, field);
+    rejectResponseValueFields(record, field);
+    requireResponseEqual(record.status, expected.status, `${field}.status`);
+    requireResponseEqual(record.transport, expected.transport, `${field}.transport`);
+    requireResponseEqual(record.method ?? null, expected.method, `${field}.method`);
+    requireResponseArrayEqual(responseStringArray(record, "requestKeys", `${field}.requestKeys`), expected.requestKeys, `${field}.requestKeys`);
+    requireResponseArrayEqual(responseStringArray(record, "queryKeys", `${field}.queryKeys`), expected.queryKeys, `${field}.queryKeys`);
+    requireResponseArrayEqual(responseStringArray(record, "bodyKeys", `${field}.bodyKeys`), expected.bodyKeys, `${field}.bodyKeys`);
+    requireResponseEqual(record.requestValuesIncluded, false, `${field}.requestValuesIncluded`);
+    requireResponseEqual(record.mediaValuesIncluded, false, `${field}.mediaValuesIncluded`);
+    requireResponseEqual(record.tokenValuesIncluded, false, `${field}.tokenValuesIncluded`);
+    requireResponseEqual(record.dispatch, false, `${field}.dispatch`);
+}
+
+function validateBackendRpcPipelineStageResponse(actual: unknown, expected: BackendRpcPipelineStageSummary, field: string): void {
+    const record = responseRecord(actual, field);
+    rejectResponseValueFields(record, field);
+    requireResponseEqual(record.name, expected.name, `${field}.name`);
+    requireResponseEqual(record.status, expected.status, `${field}.status`);
+    requireResponseEqual(record.condition, expected.condition, `${field}.condition`);
+    requireResponseEqual(record.entry ?? null, expected.entry, `${field}.entry`);
+    requireResponseEqual(record.command ?? null, expected.command, `${field}.command`);
+    requireResponseEqual(record.cacheProbe ?? null, expected.cacheProbe, `${field}.cacheProbe`);
+    requireResponseEqual(record.runtime ?? null, expected.runtime, `${field}.runtime`);
+    requireResponseEqual(record.dispatch, expected.dispatch, `${field}.dispatch`);
+}
+
+function validateBackendRpcPipelineResponse(actual: unknown, expected: BackendRpcPipelineSummary): void {
+    const record = responseRecord(actual, "backendRpcClient.pipeline");
+    rejectResponseValueFields(record, "backendRpcClient.pipeline");
+    requireResponseEqual(record.status, expected.status, "backendRpcClient.pipeline.status");
+    requireResponseEqual(record.cachePolicy, expected.cachePolicy, "backendRpcClient.pipeline.cachePolicy");
+    requireResponseEqual(responseBoolean(record, "cacheHitShortCircuit", "backendRpcClient.pipeline.cacheHitShortCircuit"), expected.cacheHitShortCircuit, "backendRpcClient.pipeline.cacheHitShortCircuit");
+    requireResponseEqual(record.networkDispatch, expected.networkDispatch, "backendRpcClient.pipeline.networkDispatch");
+    requireResponseEqual(record.cacheRead, expected.cacheRead, "backendRpcClient.pipeline.cacheRead");
+    requireResponseEqual(record.dataRead, expected.dataRead, "backendRpcClient.pipeline.dataRead");
+    requireResponseEqual(record.renderDispatch, false, "backendRpcClient.pipeline.renderDispatch");
+    requireResponseEqual(record.persistWrite, false, "backendRpcClient.pipeline.persistWrite");
+    requireResponseEqual(record.sourceDataValuesIncluded, false, "backendRpcClient.pipeline.sourceDataValuesIncluded");
+    requireResponseEqual(record.artifactValuesIncluded, false, "backendRpcClient.pipeline.artifactValuesIncluded");
+    requireResponseEqual(record.tokenValuesIncluded, false, "backendRpcClient.pipeline.tokenValuesIncluded");
+
+    const stages = responseRecordArray(record.orderedStages, "backendRpcClient.pipeline.orderedStages");
+    requireResponseEqual(stages.length, expected.orderedStages.length, "backendRpcClient.pipeline.orderedStages.length");
+    for (let index = 0; index < expected.orderedStages.length; index += 1) {
+        validateBackendRpcPipelineStageResponse(stages[index], expected.orderedStages[index], `backendRpcClient.pipeline.orderedStages.${index}`);
+    }
+}
+
+function validateBackendRpcCacheProbeResponse(actual: unknown, expected: BackendRpcCacheProbeSummary | null): void {
+    if (expected === null) {
+        requireResponseEqual(actual ?? null, null, "backendRpcClient.cacheProbe");
+        return;
+    }
+
+    const record = responseRecord(actual, "backendRpcClient.cacheProbe");
+    rejectResponseValueFields(record, "backendRpcClient.cacheProbe");
+    requireResponseEqual(record.status, expected.status, "backendRpcClient.cacheProbe.status");
+    requireResponseEqual(record.strategy, expected.strategy, "backendRpcClient.cacheProbe.strategy");
+    requireResponseEqual(record.condition, expected.condition, "backendRpcClient.cacheProbe.condition");
+    requireResponseEqual(record.scope, expected.scope, "backendRpcClient.cacheProbe.scope");
+    requireResponseEqual(record.key, expected.key, "backendRpcClient.cacheProbe.key");
+    requireResponseArrayEqual(responseStringArray(record, "requestKeys", "backendRpcClient.cacheProbe.requestKeys"), expected.requestKeys, "backendRpcClient.cacheProbe.requestKeys");
+    requireResponseEqual(record.command ?? null, expected.command, "backendRpcClient.cacheProbe.command");
+    requireResponseEqual(record.endpoint ?? null, expected.endpoint, "backendRpcClient.cacheProbe.endpoint");
+    requireResponseEqual(record.hitResult, expected.hitResult, "backendRpcClient.cacheProbe.hitResult");
+    requireResponseEqual(record.missResult, expected.missResult, "backendRpcClient.cacheProbe.missResult");
+    requireResponseEqual(record.result ?? null, expected.result, "backendRpcClient.cacheProbe.result");
+    requireResponseEqual(record.cacheRead, expected.cacheRead, "backendRpcClient.cacheProbe.cacheRead");
+    requireResponseEqual(record.networkDispatch, expected.networkDispatch, "backendRpcClient.cacheProbe.networkDispatch");
+    requireResponseEqual(record.dispatch, expected.dispatch, "backendRpcClient.cacheProbe.dispatch");
+    requireResponseEqual(record.cacheHitValuesIncluded, false, "backendRpcClient.cacheProbe.cacheHitValuesIncluded");
+    requireResponseEqual(record.resourceValuesIncluded, false, "backendRpcClient.cacheProbe.resourceValuesIncluded");
+    requireResponseEqual(record.mediaValuesIncluded, false, "backendRpcClient.cacheProbe.mediaValuesIncluded");
+    requireResponseEqual(record.tokenValuesIncluded, false, "backendRpcClient.cacheProbe.tokenValuesIncluded");
+}
+
+function validateBackendRpcClientEntryResponse(actual: unknown, expected: BackendRpcClientEntrySummary | null, field: string): void {
+    if (expected === null) {
+        requireResponseEqual(actual ?? null, null, field);
+        return;
+    }
+
+    const record = responseRecord(actual, field);
+    requireResponseEqual(record.command, expected.command, `${field}.command`);
+    requireResponseEqual(record.method ?? null, expected.method, `${field}.method`);
+    requireResponseEqual(responseBoolean(record, "requestPresent", `${field}.requestPresent`), expected.requestPresent, `${field}.requestPresent`);
+    requireResponseEqual(record.endpoint ?? null, expected.endpoint, `${field}.endpoint`);
+    requireResponseEqual(record.dispatch, false, `${field}.dispatch`);
+    validateBackendRpcRequestEnvelopeResponse(record.requestEnvelope, expected.requestEnvelope, `${field}.requestEnvelope`);
+}
+
+function validateThumbnailBackendRpcClientResponse(client: Record<string, unknown>, expected: BackendRpcClientSummary): void {
+    requireResponseEqual(client.status, expected.status, "backendRpcClient.status");
+    requireResponseEqual(responseBoolean(client, "baseUriConfigured", "backendRpcClient.baseUriConfigured"), expected.baseUriConfigured, "backendRpcClient.baseUriConfigured");
+    requireResponseEqual(client.baseUri ?? null, expected.baseUri, "backendRpcClient.baseUri");
+    requireResponseEqual(client.networkDispatch, expected.networkDispatch, "backendRpcClient.networkDispatch");
+    requireResponseEqual(client.cacheRead, expected.cacheRead, "backendRpcClient.cacheRead");
+    requireResponseEqual(client.dataRead, expected.dataRead, "backendRpcClient.dataRead");
+    requireResponseEqual(client.persistWrite, false, "backendRpcClient.persistWrite");
+    validateTokenSafeAuthResponse(responseRecord(client.authForwarding, "backendRpcClient.authForwarding"), expected.authForwarding, "backendRpcClient.authForwarding");
+
+    const entries = responseRecord(client.entries, "backendRpcClient.entries");
+    validateBackendRpcClientEntryResponse(entries.data, expected.entries.data, "backendRpcClient.entries.data");
+    validateBackendRpcClientEntryResponse(entries.persist, expected.entries.persist, "backendRpcClient.entries.persist");
+    validateBackendRpcClientEntryResponse(entries.cacheMissPersist, expected.entries.cacheMissPersist, "backendRpcClient.entries.cacheMissPersist");
+    validateBackendRpcCacheProbeResponse(client.cacheProbe, expected.cacheProbe);
+    validateBackendRpcPipelineResponse(client.pipeline, expected.pipeline);
+}
+
+function validateThumbnailResponseContract(
+    response: unknown,
+    summary: ThumbnailRequestSummary,
+    expectedAuth: AuthSummary,
+    options: Pick<RendererServiceOptions, "backendRpc">,
+    cacheProbeExecution: BackendRpcCacheProbeExecution,
+    sourceDataReadExecution: BackendRpcSourceDataReadExecution
+): Record<string, unknown> {
+    const record = responseRecord(response, "response");
+    requireResponseEqual(record.status, "ok", "status");
+    requireResponseEqual(record.runtimeRegistration, false, "runtimeRegistration");
+    requireResponseEqual(record.dispatch, true, "dispatch");
+    requireResponseEqual(record.localFileWrites, false, "localFileWrites");
+
+    validateThumbnailResourceResponse(responseRecord(record.resource, "resource"));
+    validateThumbnailCacheResponse(responseRecord(record.cache, "cache"), summary, cacheProbeExecution);
+    validateThumbnailRendererResponse(responseRecord(record.renderer, "renderer"), cacheProbeExecution);
+    validateThumbnailAuthResponse(responseRecord(record.auth, "auth"), expectedAuth);
+    validateThumbnailBackendRpcClientResponse(
+        responseRecord(record.backendRpcClient, "backendRpcClient"),
+        summarizeBackendRpcClient(summary, expectedAuth, options.backendRpc, cacheProbeExecution, sourceDataReadExecution)
+    );
+    requireResponseJsonEqual(record.request, summary, "request");
+
+    return record;
+}
+
+function rendererErrorBody(error: unknown): { status: "error"; code: string; message: string; retryable: boolean; field?: string } {
+    const record = isRecord(error) ? error : {};
+    const code = typeof record.code === "string" ? record.code : "renderer_service_request_invalid";
+    const message = error instanceof Error ? error.message : "Renderer-service thumbnail request is invalid.";
+    const field = typeof record.field === "string" ? record.field : undefined;
+    const retryable = typeof record.retryable === "boolean" ? record.retryable : false;
+    return {
+        status: "error",
+        code,
+        message,
+        retryable,
+        ...(field ? { field } : {}),
+    };
+}
 
 function sendJson(response: ServerResponse, statusCode: number, body: unknown): void {
     const payload = JSON.stringify(body);
@@ -45,7 +1486,7 @@ function sendJson(response: ServerResponse, statusCode: number, body: unknown): 
     response.end(payload);
 }
 
-function handleRequest(request: IncomingMessage, response: ServerResponse): void {
+async function handleRequest(request: IncomingMessage, response: ServerResponse, options: Pick<RendererServiceOptions, "backendRpc" | "thumbnailResponseOverride"> = {}): Promise<void> {
     const url = new URL(request.url ?? "/", "http://renderer-service.local");
 
     if (request.method === "GET" && url.pathname === "/health") {
@@ -54,8 +1495,31 @@ function handleRequest(request: IncomingMessage, response: ServerResponse): void
     }
 
     if (request.method === "POST" && url.pathname === "/thumbnail") {
-        request.resume();
-        sendJson(response, 501, noopThumbnailResponse);
+        try {
+            const body = await readJsonBody(request);
+            const summary = validateThumbnailRequest(body);
+            const auth = summarizeAuthHeaders(request);
+            const cacheProbeExecution = await executeFileThumbnailCacheProbe(request, summary, options.backendRpc);
+            const sourceDataReadExecution = await executeFileThumbnailSourceDataRead(request, summary, options.backendRpc, cacheProbeExecution);
+            const generatedResponse = thumbnailResponse(request, summary, auth, options, cacheProbeExecution, sourceDataReadExecution);
+            const responseBody = options.thumbnailResponseOverride
+                ? options.thumbnailResponseOverride(generatedResponse)
+                : generatedResponse;
+            sendJson(response, 200, validateThumbnailResponseContract(responseBody, summary, auth, options, cacheProbeExecution, sourceDataReadExecution));
+        } catch (error) {
+            const status = isRecord(error) && typeof error.status === "number" ? error.status : 400;
+            sendJson(response, status, rendererErrorBody(error));
+        }
+        return;
+    }
+
+    if (request.method === "GET" && url.pathname === "/assets/by-id/noop-thumbnail-png") {
+        response.writeHead(200, {
+            "content-type": "image/png",
+            "content-length": noopPng.byteLength,
+            "cache-control": "no-store",
+        });
+        response.end(noopPng);
         return;
     }
 
@@ -65,14 +1529,26 @@ function handleRequest(request: IncomingMessage, response: ServerResponse): void
     });
 }
 
-export function createRendererService(): Server {
-    return createServer(handleRequest);
+export function createRendererService(options: Pick<RendererServiceOptions, "backendRpc" | "thumbnailResponseOverride"> = {}): Server {
+    return createServer((request, response) => {
+        void handleRequest(request, response, options).catch((error: unknown) => {
+            sendJson(response, 500, {
+                status: "error",
+                code: "renderer_service_internal_error",
+                message: error instanceof Error ? error.message : "Renderer-service request failed.",
+                retryable: true,
+            });
+        });
+    });
 }
 
 export async function startRendererService(options: RendererServiceOptions = {}): Promise<StartedRendererService> {
     const host = options.host ?? DEFAULT_HOST;
     const port = options.port ?? DEFAULT_PORT;
-    const server = createRendererService();
+    const server = createRendererService({
+        backendRpc: options.backendRpc,
+        thumbnailResponseOverride: options.thumbnailResponseOverride,
+    });
 
     await new Promise<void>((resolve, reject) => {
         const onError = (error: Error) => {
@@ -119,11 +1595,22 @@ function readPort(value: string | undefined): number {
     return port;
 }
 
-async function runNoopHost(): Promise<void> {
-    const service = await startRendererService({
-        host: process.env.PENPOT_RENDERER_SERVICE_HOST ?? DEFAULT_HOST,
-        port: readPort(process.env.PENPOT_RENDERER_SERVICE_PORT),
+export function readRendererServiceOptionsFromEnv(env: NodeJS.ProcessEnv = process.env): RendererServiceOptions {
+    const backendBaseUriInput =
+        optionalString(env[BACKEND_RPC_BASE_URI_ENV]) ?? optionalString(env[BACKEND_RPC_BASE_URI_FALLBACK_ENV]) ?? undefined;
+    const backendBaseUri = normalizeBackendRpcBaseUri({
+        baseUri: backendBaseUriInput,
     });
+
+    return {
+        host: env.PENPOT_RENDERER_SERVICE_HOST ?? DEFAULT_HOST,
+        port: readPort(env.PENPOT_RENDERER_SERVICE_PORT),
+        ...(backendBaseUri ? { backendRpc: { baseUri: backendBaseUri } } : {}),
+    };
+}
+
+async function runNoopHost(): Promise<void> {
+    const service = await startRendererService(readRendererServiceOptionsFromEnv(process.env));
     const shutdown = () => {
         void service.stop().finally(() => process.exit(0));
     };

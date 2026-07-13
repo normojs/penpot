@@ -192,17 +192,17 @@
                                                       :height 640})
         data     (cpc/process-changes data (:changes frame))
         rect     (headless/create-shape-request data {:page-id page-id
-                                                     :shape-id rect-id
-                                                     :parent-id frame-id
-                                                     :type :rect
-                                                     :name "CTA"
-                                                     :x 24
-                                                     :y 32
-                                                     :width 120
-                                                     :height 40
-                                                     :fill {:color "#ff00aa"
-                                                            :opacity 0.5}
-                                                     :border-radius 8})
+                                                      :shape-id rect-id
+                                                      :parent-id frame-id
+                                                      :type :rect
+                                                      :name "CTA"
+                                                      :x 24
+                                                      :y 32
+                                                      :width 120
+                                                      :height 40
+                                                      :fill {:color "#ff00aa"
+                                                             :opacity 0.5}
+                                                      :border-radius 8})
         data'    (cpc/process-changes data (:changes rect))
         shape    (get-in data' [:pages-index page-id :objects rect-id])]
     (t/is (= frame-id (:parent-id shape)))
@@ -359,14 +359,14 @@
                                                             :height 640})
         data     (cpc/process-changes data (:changes frame-b-result))
         rect     (headless/create-shape-request data {:page-id page-id
-                                                     :shape-id rect-id
-                                                     :parent-id frame-a
-                                                     :type :rect
-                                                     :name "CTA"
-                                                     :x 24
-                                                     :y 32
-                                                     :width 120
-                                                     :height 40})
+                                                      :shape-id rect-id
+                                                      :parent-id frame-a
+                                                      :type :rect
+                                                      :name "CTA"
+                                                      :x 24
+                                                      :y 32
+                                                      :width 120
+                                                      :height 40})
         data     (cpc/process-changes data (:changes rect))
         result   (headless/create-prototype-interaction-request
                   data
@@ -439,14 +439,14 @@
                                                             :height 640})
         data     (cpc/process-changes data (:changes frame-b-result))
         rect     (headless/create-shape-request data {:page-id page-id
-                                                     :shape-id rect-id
-                                                     :parent-id frame-a
-                                                     :type :rect
-                                                     :name "CTA"
-                                                     :x 24
-                                                     :y 32
-                                                     :width 120
-                                                     :height 40})
+                                                      :shape-id rect-id
+                                                      :parent-id frame-a
+                                                      :type :rect
+                                                      :name "CTA"
+                                                      :x 24
+                                                      :y 32
+                                                      :width 120
+                                                      :height 40})
         data     (cpc/process-changes data (:changes rect))
         flow     (headless/create-prototype-flow-request data {:page-id page-id
                                                                :flow-id flow-id
@@ -502,8 +502,8 @@
                                            (ctsi/add-interaction close-overlay))}]}])
         summary  (headless/prototype-interactions-summary data {:page-id page-id})
         filtered (headless/prototype-interactions-summary data {:page-id page-id
-                                                               :flow-id flow-id
-                                                               :source-shape-id rect-id})]
+                                                                :flow-id flow-id
+                                                                :source-shape-id rect-id})]
     (t/is (uuid? created-interaction-id))
     (t/is (= [{:id flow-id
                :name "Checkout flow"
@@ -622,14 +622,14 @@
                                                             :height 160})
         data     (cpc/process-changes data (:changes frame-b-result))
         rect     (headless/create-shape-request data {:page-id page-id
-                                                     :shape-id rect-id
-                                                     :parent-id frame-a
-                                                     :type :rect
-                                                     :name "CTA"
-                                                     :x 24
-                                                     :y 32
-                                                     :width 120
-                                                     :height 40})
+                                                      :shape-id rect-id
+                                                      :parent-id frame-a
+                                                      :type :rect
+                                                      :name "CTA"
+                                                      :x 24
+                                                      :y 32
+                                                      :width 120
+                                                      :height 40})
         data     (cpc/process-changes data (:changes rect))
         open-result (headless/create-prototype-overlay-request
                      data
@@ -746,14 +746,14 @@
                                                             :height 160})
         data     (cpc/process-changes data (:changes frame-b-result))
         rect     (headless/create-shape-request data {:page-id page-id
-                                                     :shape-id rect-id
-                                                     :parent-id frame-a
-                                                     :type :rect
-                                                     :name "CTA"
-                                                     :x 24
-                                                     :y 32
-                                                     :width 120
-                                                     :height 40})
+                                                      :shape-id rect-id
+                                                      :parent-id frame-a
+                                                      :type :rect
+                                                      :name "CTA"
+                                                      :x 24
+                                                      :y 32
+                                                      :width 120
+                                                      :height 40})
         data     (cpc/process-changes data (:changes rect))]
     (t/is (thrown? #?(:clj Exception :cljs :default)
                    (headless/create-prototype-overlay-request
@@ -801,14 +801,14 @@
                                                             :height 640})
         data     (cpc/process-changes data (:changes frame-c-result))
         rect     (headless/create-shape-request data {:page-id page-id
-                                                     :shape-id rect-id
-                                                     :parent-id frame-a
-                                                     :type :rect
-                                                     :name "CTA"
-                                                     :x 24
-                                                     :y 32
-                                                     :width 120
-                                                     :height 40})
+                                                      :shape-id rect-id
+                                                      :parent-id frame-a
+                                                      :type :rect
+                                                      :name "CTA"
+                                                      :x 24
+                                                      :y 32
+                                                      :width 120
+                                                      :height 40})
         data     (cpc/process-changes data (:changes rect))
         first-interaction (headless/create-prototype-interaction-request
                            data
@@ -1118,14 +1118,14 @@
                                                       :height 640})
         data     (cpc/process-changes data (:changes frame))
         rect     (headless/create-shape-request data {:page-id page-id
-                                                     :shape-id rect-id
-                                                     :parent-id frame-id
-                                                     :type :rect
-                                                     :name "CTA"
-                                                     :x 24
-                                                     :y 32
-                                                     :width 120
-                                                     :height 40})
+                                                      :shape-id rect-id
+                                                      :parent-id frame-id
+                                                      :type :rect
+                                                      :name "CTA"
+                                                      :x 24
+                                                      :y 32
+                                                      :width 120
+                                                      :height 40})
         data     (cpc/process-changes data (:changes rect))]
     (t/is (thrown? #?(:clj Exception :cljs :default)
                    (headless/delete-prototype-interaction-request
@@ -1160,13 +1160,13 @@
                                                       :height 640})
         data     (cpc/process-changes data (:changes frame))
         rect     (headless/create-shape-request data {:page-id page-id
-                                                     :shape-id rect-id
-                                                     :parent-id frame-id
-                                                     :type :rect
-                                                     :x 24
-                                                     :y 32
-                                                     :width 120
-                                                     :height 40})
+                                                      :shape-id rect-id
+                                                      :parent-id frame-id
+                                                      :type :rect
+                                                      :x 24
+                                                      :y 32
+                                                      :width 120
+                                                      :height 40})
         data     (cpc/process-changes data (:changes rect))
         update   (headless/update-shape-request data {:shape-id rect-id
                                                       :name "  Primary CTA  "
@@ -1223,13 +1223,13 @@
                                                       :height 640})
         data     (cpc/process-changes data (:changes frame))
         rect     (headless/create-shape-request data {:page-id page-id
-                                                     :shape-id rect-id
-                                                     :parent-id frame-id
-                                                     :type :rect
-                                                     :x 24
-                                                     :y 32
-                                                     :width 120
-                                                     :height 40})
+                                                      :shape-id rect-id
+                                                      :parent-id frame-id
+                                                      :type :rect
+                                                      :x 24
+                                                      :y 32
+                                                      :width 120
+                                                      :height 40})
         data     (cpc/process-changes data (:changes rect))
         update   (headless/update-shape-request data {:shape-id rect-id
                                                       :fills [{:color "#abcdef"
@@ -1291,13 +1291,13 @@
                                                           :height 640})
         data         (cpc/process-changes data (:changes frame))
         rect         (headless/create-shape-request data {:page-id page-id
-                                                         :shape-id rect-id
-                                                         :parent-id frame-id
-                                                         :type :rect
-                                                         :x 24
-                                                         :y 32
-                                                         :width 120
-                                                         :height 40})
+                                                          :shape-id rect-id
+                                                          :parent-id frame-id
+                                                          :type :rect
+                                                          :x 24
+                                                          :y 32
+                                                          :width 120
+                                                          :height 40})
         data         (cpc/process-changes data (:changes rect))
         update       (headless/update-shape-request data {:shape-id frame-id
                                                           :layout {:type "flex"
@@ -1402,13 +1402,13 @@
                                                         :height 640})
         data       (cpc/process-changes data (:changes frame-b))
         rect       (headless/create-shape-request data {:page-id page-id
-                                                       :shape-id rect-id
-                                                       :parent-id frame-a-id
-                                                       :type :rect
-                                                       :x 24
-                                                       :y 32
-                                                       :width 120
-                                                       :height 40})
+                                                        :shape-id rect-id
+                                                        :parent-id frame-a-id
+                                                        :type :rect
+                                                        :x 24
+                                                        :y 32
+                                                        :width 120
+                                                        :height 40})
         data       (cpc/process-changes data (:changes rect))
         update     (headless/update-shape-request data {:shape-id rect-id
                                                         :parent-id frame-b-id
@@ -1499,13 +1499,13 @@
                                                       :height 640})
         data     (cpc/process-changes data (:changes frame))
         rect     (headless/create-shape-request data {:page-id page-id
-                                                     :shape-id rect-id
-                                                     :parent-id frame-id
-                                                     :type :rect
-                                                     :x 24
-                                                     :y 32
-                                                     :width 120
-                                                     :height 40})
+                                                      :shape-id rect-id
+                                                      :parent-id frame-id
+                                                      :type :rect
+                                                      :x 24
+                                                      :y 32
+                                                      :width 120
+                                                      :height 40})
         data     (cpc/process-changes data (:changes rect))
         delete   (headless/delete-shape-request data {:shape-id rect-id})
         data'    (cpc/process-changes data (:changes delete))]
@@ -1519,9 +1519,9 @@
         data    (ctf/make-file-data file-id page-id)]
     (t/is (thrown? #?(:clj Exception :cljs :default)
                    (headless/create-shape-request data {:page-id page-id
-                                                       :parent-id (uuid/next)
-                                                       :type :rect
-                                                       :x 0
-                                                       :y 0
-                                                       :width 10
-                                                       :height 10})))))
+                                                        :parent-id (uuid/next)
+                                                        :type :rect
+                                                        :x 0
+                                                        :y 0
+                                                        :width 10
+                                                        :height 10})))))

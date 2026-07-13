@@ -1,7 +1,11 @@
+allowBuilds:
+  esbuild: true
+  sharp: true
+
 linkWorkspacePackages: true
 
 packages:
-    - "../command-runtime"
-    - "./packages/common"
-    - "./packages/server"
-    - "./packages/plugin"
+  - "../command-runtime"
+  - "./packages/common"
+  - "./packages/server"
+  - "./packages/plugin"

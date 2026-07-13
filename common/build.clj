@@ -2,6 +2,7 @@
   (:refer-clojure :exclude [compile])
   (:require [clojure.tools.build.api :as b]))
 
+;; Keep class output repo-local because deps.edn includes target/classes on the classpath.
 (def class-dir "target/classes")
 (def basis (b/create-basis {:project "deps.edn"}))
 

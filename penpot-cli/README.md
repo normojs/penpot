@@ -230,18 +230,21 @@ node penpot-cli/dist/index.js renderer-service status --format json
 node penpot-cli/dist/index.js renderer-service status --host 127.0.0.1 --port 6072
 ```
 
-`renderer-service status` reports the P26.1 build cache, `/health`, and
-`/thumbnail` endpoints plus the exact manual command to run. It does not create
-a process or make an HTTP request. `renderer-service start` deliberately returns
-the same command as a structured manual-start boundary; it does not spawn a
-child process:
+`renderer-service status` reports the build cache, `/health`, and `/thumbnail`
+endpoints plus the exact manual command to run. It also shows whether
+`PENPOT_RENDERER_SERVICE_BACKEND_URI` or `PENPOT_BACKEND_URI` will be used for
+disabled backend RPC endpoint planning. It does not create a process, make an
+HTTP request, or execute backend RPCs. `renderer-service start` deliberately
+returns the same command as a structured manual-start boundary; it does not
+spawn a child process:
 
 ```bash
 pnpm --filter @penpot/renderer-service start:noop
 ```
 
-After starting the host, stop it with `Ctrl-C` or `SIGTERM`. The host remains a
-no-op service; MCP and CLI `render thumbnail` execution is still disabled.
+After starting the host, stop it with `Ctrl-C` or `SIGTERM`. The host returns a
+validated fixture PNG resource for explicitly opted-in `render thumbnail`
+requests; backend RPC execution and real scene rendering remain disabled.
 
 ## File Commands
 

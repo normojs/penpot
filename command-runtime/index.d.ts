@@ -396,8 +396,8 @@ export interface CreateRenderThumbnailRendererServicePlanOptions extends CreateR
 export interface RenderThumbnailRendererServicePlan {
     command: "render.thumbnail";
     status: "planned";
-    executable: false;
-    runtimeAvailable: false;
+    executable: boolean;
+    runtimeAvailable: boolean;
     adapter: "renderer-service";
     endpoint: string | null;
     contract: RenderThumbnailContract;
@@ -1531,9 +1531,10 @@ export interface RenderThumbnailRendererServiceExecutionGate {
 }
 
 export interface RenderThumbnailRendererServiceHealthPreflight {
-    status: "planned-disabled";
-    dispatch: false;
-    networkProbe: false;
+    status: "planned-disabled" | "ready" | "skipped" | "not-configured" | "ok" | "unavailable" | "invalid";
+    dispatch: boolean;
+    networkProbe: boolean;
+    checked?: boolean;
     reason: string;
     method: "GET";
     endpoint: string | null;
@@ -1548,6 +1549,20 @@ export interface RenderThumbnailRendererServiceHealthPreflight {
         contentType: "application/json";
         bodyStatus: "ok";
         requiredFields: string[];
+    };
+    response?: {
+        status: number | null;
+        contentType: string | null;
+        body?: Record<string, unknown>;
+    };
+    error?: {
+        code:
+            | "renderer_service_execution_disabled"
+            | "renderer_service_not_configured"
+            | "renderer_service_health_unavailable"
+            | "renderer_service_health_invalid";
+        message: string;
+        retryable: boolean;
     };
     failureModes: Array<{
         code:
@@ -9184,6 +9199,14 @@ export interface RenderThumbnailRendererServiceResult {
     serviceResponse: {
         normalized: true;
         localFileWrites: false;
+        request: Record<string, unknown>;
+        auth: {
+            mode?: "caller-session" | string;
+            authorizationPresent?: boolean;
+            cookiePresent?: boolean;
+            authTokenCookiePresent?: boolean;
+            tokenValuesIncluded: false;
+        };
     };
 }
 
@@ -10000,6 +10023,12 @@ export function createRenderThumbnailRendererServiceHealthPreflight(
         executionGate?: Partial<RenderThumbnailRendererServiceExecutionGate> | null;
     }
 ): RenderThumbnailRendererServiceHealthPreflight;
+export function executeRenderThumbnailRendererServiceHealthPreflight(
+    plan: Partial<RenderThumbnailRendererServicePlan>,
+    options?: {
+        fetch?: typeof fetch;
+    }
+): Promise<RenderThumbnailRendererServiceHealthPreflight>;
 export function createRenderThumbnailRendererServiceExecutionClientHarness(
     options?: {
         executionGate?: Partial<RenderThumbnailRendererServiceExecutionGate> | null;

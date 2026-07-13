@@ -283,6 +283,63 @@
       (t/is (thrown? org.postgresql.util.PSQLException
                      (th/db-delete! :storage-object {:id (:media-id row1)}))))))
 
+(t/deftest get-file-thumbnail-cache-probe
+  (let [profile (th/create-profile* 1)
+        file    (th/create-file* 1 {:profile-id (:id profile)
+                                    :project-id (:default-project-id profile)
+                                    :is-shared false
+                                    :revn 3})
+        data    {::th/type :create-file-thumbnail
+                 ::rpc/profile-id (:id profile)
+                 :file-id (:id file)
+                 :revn 3
+                 :media {:filename "sample.jpg"
+                         :size 312043
+                         :path (th/tempfile "backend_tests/test_files/sample.jpg")
+                         :mtype "image/jpeg"}}]
+
+    (let [out (th/command! data)]
+      (t/is (nil? (:error out)))
+      (t/is (contains? (:result out) :uri)))
+
+    (let [[row] (th/db-query :file-thumbnail {:file-id (:id file)})
+          out   (th/command! {::th/type :get-file-thumbnail
+                              ::rpc/profile-id (:id profile)
+                              :file-id (:id file)
+                              :revn 3})]
+      (t/is (nil? (:error out)))
+      (t/is (= {:hit true
+                :file-id (:id file)
+                :revn 3
+                :media-id (:media-id row)
+                :uri (str (cf/get :public-uri) "/assets/by-id/" (:media-id row))}
+               (:result out))))
+
+    (let [out (th/command! {::th/type :get-file-thumbnail
+                            ::rpc/profile-id (:id profile)
+                            :file-id (:id file)
+                            :revn 2})]
+      (t/is (nil? (:error out)))
+      (t/is (= {:hit false
+                :file-id (:id file)
+                :revn 2}
+               (:result out))))))
+
+(t/deftest get-file-thumbnail-denies-read-permission
+  (let [owner  (th/create-profile* 1)
+        viewer (th/create-profile* 2)
+        file   (th/create-file* 1 {:profile-id (:id owner)
+                                   :project-id (:default-project-id owner)
+                                   :is-shared false
+                                   :revn 3})]
+    (let [out (th/command! {::th/type :get-file-thumbnail
+                            ::rpc/profile-id (:id viewer)
+                            :file-id (:id file)
+                            :revn 3})]
+      (t/is (some? (:error out)))
+      (t/is (th/ex-of-type? (:error out) :not-found))
+      (t/is (th/ex-of-code? (:error out) :object-not-found)))))
+
 (t/deftest get-file-object-thumbnail
   (let [storage (::sto/storage th/*system*)
         profile (th/create-profile* 1)
@@ -353,4 +410,3 @@
           out  (th/command! data)]
       (t/is (nil? (:error out)))
       (t/is (map? (:result out))))))
-

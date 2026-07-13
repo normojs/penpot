@@ -1,8 +1,9 @@
 {:deps {:aliases [:dev]}
+ :cache-dir #shadow/env ["CACHE" :default "/Volumes/fushilu/.caches/penpot/common/shadow-cache"]
  :builds
  {:test
   {:target :esm
-   :output-dir "target/tests"
+   :output-dir #shadow/env ["PENPOT_COMMON_TEST_OUTPUT_DIR" :default "/Volumes/fushilu/.caches/penpot/common/tests"]
    :runtime :node
    :js-options {:js-provider :import}
 
@@ -13,8 +14,8 @@
 
   :bench
   {:target :node-script
-   :output-to "target/bench.js"
-   :output-dir "target/bench/"
+   :output-to #shadow/env ["PENPOT_COMMON_BENCH_OUTPUT" :default "/Volumes/fushilu/.caches/penpot/common/bench.js"]
+   :output-dir #shadow/env ["PENPOT_COMMON_BENCH_OUTPUT_DIR" :default "/Volumes/fushilu/.caches/penpot/common/bench"]
    :main bench/main
    :devtools {:autoload false}
 
@@ -22,5 +23,4 @@
    {:output-feature-set :es-next
     :output-wrapper false}}}
  }
-
 

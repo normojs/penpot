@@ -19,6 +19,7 @@
     "cli:package-check": "pnpm --filter penpot-cli package:check",
     "mcp:plugin:package": "pnpm --dir mcp --filter mcp-plugin package:frontend",
     "mcp:plugin:check": "pnpm --dir mcp --filter mcp-plugin check:frontend",
+    "cache:audit": "node scripts/audit-build-cache-paths.mjs",
     "lint": "./scripts/lint",
     "check-fmt": "./scripts/check-fmt",
     "fmt": "./scripts/fmt"

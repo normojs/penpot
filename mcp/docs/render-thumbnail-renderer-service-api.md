@@ -1,24 +1,57 @@
 # Render Thumbnail Renderer Service API
 
-P26.1 materializes the private `@penpot/renderer-service` no-op host. It binds
-only when started manually, exposes `GET /health` with the P25.24 health body,
-and returns the P25.24 `501 renderer_service_noop` body from `POST /thumbnail`.
-Its build output is kept under `/Volumes/fushilu/.caches/penpot/renderer-service`.
-It does not render PNG bytes, call backend RPCs, write artifacts, or enable MCP
-or CLI network dispatch.
+P26.4 enables the first explicitly gated renderer-service execution slice. The
+private `@penpot/renderer-service` host still binds only when started manually
+and exposes `GET /health` with the P25.24 health body, but `POST /thumbnail`
+now returns a normalized PNG resource record backed by a host-served fixture PNG
+at `/assets/by-id/noop-thumbnail-png`. MCP and `penpot-cli` execute this path
+only when the renderer-service endpoint and explicit `renderer-service` opt-in
+are configured; dry-run planning remains network-free. CLI `--output` downloads
+the normalized `downloadUri`, while MCP returns resource metadata only. The
+later slices add backend cache probe and source-data read execution on the
+gated file-thumbnail path; thumbnail persistence writes and render dispatch
+remain disabled.
+P26.5 adds a token-safe `backendRpcClient` plan to renderer-service thumbnail
+responses so backend data/cache/persist endpoints are normalized for staged
+execution. That plan now feeds the executable file-thumbnail cache probe and
+source-data read path, while persistence writes and render dispatch remain
+disabled.
+P26.6 extends each planned backend RPC entry with a disabled request envelope
+that fixes the future GET query and POST JSON body key shapes without exposing
+request values, media values, token values, or enabling network dispatch.
+P26.7 adds a disabled ordered backend RPC pipeline plan so cache probe,
+source-data read, render, and persistence stages are visible and self-validated
+before any backend IO or scene rendering is enabled.
+P26.8 wires backend RPC planning configuration into the manual no-op host:
+`PENPOT_RENDERER_SERVICE_BACKEND_URI`, falling back to `PENPOT_BACKEND_URI`,
+configures only disabled endpoint metadata and still never dispatches backend
+RPCs.
+P26.9 adds a disabled `backendRpcClient.cacheProbe` plan for reuse requests,
+recording the future cache lookup strategy, identity keys, hit/miss shape, and
+false cache-read/network-dispatch/value flags without reading caches or
+returning cached resources.
 
-Status: P25.64 API fixtures, MCP/CLI dry-run/client boundaries, metadata-only
-availability probes, response normalization contracts, disabled client request
-scaffold, closed execution gate, disabled health preflight, and executable
-client harness plus dispatch adapter boundary plans, and opt-in configuration
-surfaces plus unavailable error taxonomy and integration fixture harness
-plus dispatch registration preflight and executable adapter registration
-scaffold plus adapter registry manifest, final enablement checklist,
-implementation slice audit, health/no-op contract fixtures, and no-op service
-host scaffold plus host lifecycle test fixtures and package manifest scaffold
-plus package creation guardrails, package file templates, and package
-workspace wiring plus package build verification defined; executable runtime
-registration remains blocked. P25.32 adds package materialization checklist
+Status: P25.144 supersedes the earlier disabled-planning boundary for the
+first executable slice. The renderer-service package, health/no-op host, MCP
+tool path, and `penpot-cli render thumbnail` path are materialized and
+registered. Execution remains explicit and narrow: callers must provide a
+renderer-service endpoint and set the `renderer-service` opt-in, dry runs stay
+network-free, the renderer service returns fixture PNG resource metadata, and
+no backend thumbnail RPC persistence is attempted by this slice. Earlier P25
+metadata remains useful as audit history for the gates that led to this
+execution boundary.
+
+Historical status: P25.64 API fixtures, MCP/CLI dry-run/client boundaries,
+metadata-only availability probes, response normalization contracts, disabled
+client request scaffold, closed execution gate, disabled health preflight, and
+executable client harness plus dispatch adapter boundary plans, and opt-in
+configuration surfaces plus unavailable error taxonomy and integration fixture
+harness plus dispatch registration preflight and executable adapter
+registration scaffold plus adapter registry manifest, final enablement
+checklist, implementation slice audit, health/no-op contract fixtures, and
+no-op service host scaffold plus host lifecycle test fixtures and package
+manifest scaffold plus package creation guardrails, package file templates, and
+package workspace wiring plus package build verification defined. P25.32 adds package materialization checklist
 metadata without creating package files. P25.33 adds package creation dry-run
 summary metadata without writing files. P25.34 adds package creation file
 manifest metadata without materializing files. P25.35 adds package
@@ -121,16 +154,16 @@ requests, revoking countersignatures, creating/storing/publishing revocation
 records, reading countersignatures or audit records, signing or hashing
 revocations, or writing files.
 
-P25.6 selected a dedicated thumbnail renderer service as the future executable
-owner for `render.thumbnail`. This document defines the service-facing request
-and response contract that MCP and `penpot-cli` should share once a renderer
-service exists.
+P25.6 selected a dedicated thumbnail renderer service as the executable owner
+for `render.thumbnail`. This document defines the service-facing request and
+response contract shared by MCP and `penpot-cli`.
 
-This is not a PNG renderer implementation. MCP `render.thumbnail` and CLI
-`render thumbnail --dry-run` can print the renderer-service plan, and execution
-continues to return `renderer_service_unavailable` until gated render dispatch
-is implemented. The shared command descriptor advertises the planning adapter
-`renderer-service`, but runtime execution remains unavailable.
+This is still not a real Penpot scene renderer implementation. MCP
+`render.thumbnail` and CLI `render thumbnail --dry-run` can print the
+renderer-service plan without contacting the service. With a configured
+endpoint and explicit `renderer-service` opt-in, non-dry-run calls execute the
+P25.144 no-op renderer-service slice and normalize the returned PNG resource
+metadata.
 
 P25.10 adds client configuration metadata to the plan. Callers can inspect the
 configured endpoint, derived `/health` endpoint, probe timeout, content types,
@@ -209,6 +242,161 @@ P25.23 audits the first concrete implementation slice. Plans now include
 `implementationSliceAudit`, which selects the renderer-service health/no-op
 contract fixture slice and keeps dispatch, network dispatch, runtime
 registration, and local file writes disabled.
+
+P25.144 executes the first renderer-service slice. The package and no-op host
+are present, `GET /health` is probed before rendering, `POST /thumbnail` is
+dispatched only after explicit opt-in, and the response is normalized into the
+shared cache/resource/renderer metadata contract. MCP returns metadata only;
+CLI may download the normalized `downloadUri` when `--output` is supplied.
+This slice still does not render real Penpot scene data or persist thumbnails
+through backend RPCs.
+
+P25.145 validates executable `thumbnail.render` request bodies at the service
+boundary before returning the no-op PNG resource. The service requires JSON
+`operation: thumbnail.render`, `target.kind` of `file` or `frame`, and
+`artifact.format: png`; invalid requests return structured non-retryable 400
+errors. The success response includes a compact request summary so MCP/CLI
+integration tests can prove the shared request contract reached the service.
+
+P25.146 extends service-boundary validation to target identity. File thumbnail
+requests must include `target.fileId`, and frame thumbnail requests must
+include `target.fileId`, `target.pageId`, and `target.objectId`; the no-op
+success response echoes those ids in the request summary. This keeps invalid
+requests from reaching future backend data/persist work that cannot be mapped
+to a file thumbnail or tagged frame thumbnail.
+
+P25.147 validates cache metadata at the service boundary. Requests must include
+`cache.policy` of `reuse` or `refresh`, a non-empty `cache.key`, and a
+target-matching `cache.scope`: `file-thumbnail` for file thumbnails and
+`file-object-thumbnail` for frame thumbnails. The no-op success response echoes
+the cache identity so later cache reuse, refresh, and backend persistence work
+can rely on the executable request contract.
+
+P25.148 validates PNG artifact sizing and media metadata at the service
+boundary. Requests must include positive bounded integer `artifact.width` and
+`artifact.height` values, `artifact.mimeType: image/png`, and
+`artifact.extension: .png`; the no-op success response echoes those artifact
+fields. This prepares the service boundary for real renderer sizing without
+claiming scene rasterization is implemented.
+
+P25.149 validates render execution intent. Requests must include
+`render.runtime: render-wasm-worker`, `render.fallback: frontend-rasterizer`,
+and a `render.required` value that matches the cache policy: `true` for
+`refresh` and `on-cache-miss` for `reuse`. The no-op response echoes this
+intent so later cache probing can decide whether the renderer must run without
+changing the request contract.
+
+P25.150 forwards caller-session auth metadata through executable thumbnail
+dispatch. CLI execution derives `Authorization: Bearer <token>` and an
+`auth-token` cookie from `--token`, `PENPOT_CLI_TOKEN`,
+`PENPOT_MCP_USER_TOKEN`, or `PENPOT_ACCESS_TOKEN`; MCP execution derives the
+same headers from the current MCP session token. Dry-run plans remain
+token-free. The renderer-service no-op host returns only auth presence metadata
+(`authorizationPresent`, `cookiePresent`, `authTokenCookiePresent`, and
+`tokenValuesIncluded: false`) and never echoes credential values.
+
+P25.151 validates backend RPC intent metadata before no-op rendering. Requests
+must include `backendRpc.data` matching the target kind
+(`get-file-data-for-thumbnail` with `GET` for file thumbnails, or
+`get-file-frame-data-for-thumbnail` with `required-future-capability` status for
+frame thumbnails). Refresh requests must provide `backendRpc.persist`, reuse
+requests must provide `backendRpc.cacheMissPersist`, and those persist entries
+must target `create-file-thumbnail` or `create-file-object-thumbnail` with
+`POST` as appropriate. The service echoes only command/method/request-presence
+metadata and still does not call backend RPCs or persist thumbnails.
+
+P25.152 validates cache probe intent metadata before no-op rendering. Reuse
+requests must include `cache.probe` with `file-thumbnail-by-file-id-and-revn`
+for file thumbnails or `file-object-thumbnail-by-object-key` for tagged frame
+thumbnails; refresh requests must omit cache probe metadata. The service echoes
+the accepted probe in the compact request summary, but it still does not read
+thumbnail cache records or decide cache hits.
+
+P25.153 validates thumbnail request identity consistency before no-op
+rendering. File thumbnail requests must keep target file/revision identity,
+`cache.key`, backend source-data request identity, and persist/cache-miss persist
+request identity aligned, using the unresolved revision placeholder until source
+data supplies a concrete revision. Tagged frame thumbnail requests must keep the
+target object key, cache key, backend source-data request, and persist request
+aligned on the same file/page/object/tag identity. The service rejects mismatches
+with structured non-retryable 400 errors while still avoiding cache reads,
+backend RPC calls, real rendering, or thumbnail persistence.
+
+P25.154 validates the generated thumbnail response before returning it to
+MCP/CLI callers. The no-op host now rejects internally malformed resource,
+cache, renderer, request-summary, or auth-summary metadata with
+`renderer_service_response_invalid` instead of sending an `ok` body that client
+normalization could consume. This keeps response resource URIs, download URIs,
+PNG content type, cache identity, renderer metadata, request echo, token-safe
+auth summary, `runtimeRegistration`, `dispatch`, and `localFileWrites`
+consistent before future real rendering, cache reads, backend reads, or
+thumbnail persistence replace the no-op implementation.
+
+P26.5 plans the renderer-service backend RPC client boundary without executing
+it. When a backend base URI is configured, the no-op host now derives
+`api/main/methods/<command>?_fmt=json` endpoints for the validated source-data
+and persistence commands, echoes only caller-session auth presence, and marks
+`dispatch`, `networkDispatch`, `cacheRead`, `dataRead`, and `persistWrite` as
+false. The response validator rejects malformed `backendRpcClient` metadata
+before returning success, and tests prove an injected fetch implementation is
+not called.
+
+P26.6 plans the renderer-service backend RPC request envelope boundary without
+executing it. Each `backendRpcClient.entries.*.requestEnvelope` records the
+Penpot RPC JSON transport, HTTP method, canonical request keys, GET query keys,
+POST JSON body keys, and hard false `requestValuesIncluded`,
+`mediaValuesIncluded`, `tokenValuesIncluded`, and `dispatch` flags. The
+response validator rejects malformed envelopes before returning success, and
+the service still does not read thumbnail caches, read backend source data,
+persist thumbnails, or perform backend network dispatch.
+
+P26.7 plans the renderer-service backend RPC runtime pipeline without executing
+it. `backendRpcClient.pipeline` records ordered stages for cache probing,
+source-data reads, render dispatch, and thumbnail persistence. Reuse requests
+start with `cache-probe` and run later stages `on-cache-miss`; refresh requests
+run source-data, render, and persist stages `always`. The plan keeps
+`networkDispatch`, `cacheRead`, `dataRead`, `renderDispatch`, `persistWrite`,
+`sourceDataValuesIncluded`, `artifactValuesIncluded`, and
+`tokenValuesIncluded` false. The response validator rejects malformed pipeline
+metadata or accidental request/media/source-data/credential value exposure
+before returning success.
+
+P26.8 exposes backend RPC planning base URI configuration to the manual
+renderer-service host. `PENPOT_RENDERER_SERVICE_BACKEND_URI` is preferred and
+`PENPOT_BACKEND_URI` is accepted as a fallback; both are normalized to absolute
+HTTP(S) base URIs before the service starts. This only switches
+`backendRpcClient.status` from `not-configured` to `configured-disabled` and
+fills disabled endpoint metadata. It does not call backend RPCs, read thumbnail
+caches, read source data, render scene data, persist thumbnails, or expose
+request/media/token values.
+
+P26.9 plans the renderer-service cache probe boundary without executing it.
+Reuse responses include `backendRpcClient.cacheProbe` with
+`status:"planned-disabled"`, the selected strategy such as
+`file-thumbnail-by-file-id-and-revn`, canonical cache lookup keys, cache key,
+`hitResult:"resource-metadata"`, `missResult:"continue-pipeline"`, and hard
+false `cacheRead`, `networkDispatch`, `dispatch`,
+`cacheHitValuesIncluded`, `resourceValuesIncluded`, `mediaValuesIncluded`, and
+`tokenValuesIncluded` flags. Refresh responses use `cacheProbe:null`. The
+response validator rejects malformed probe plans and accidental cached resource
+or cache-hit value exposure before success.
+
+P26.10 executes the first read-only cache probe for configured file-target
+reuse requests. The renderer-service now calls `get-file-thumbnail` only when
+backend URI planning is configured, the request targets a file, and
+`cache.policy` is `reuse`. A cache hit returns normalized cached resource
+metadata with `cache.outcome:"hit"` and `renderer.runtime:null`; a cache miss
+keeps the existing no-op PNG resource path. Backend dispatch failures remain
+retryable service errors, and the validator still rejects malformed probe
+responses or credential/value leakage.
+
+P26.11 executes the first backend source-data read for configured file-target
+refresh requests and reuse cache misses. The renderer-service now calls
+`get-file-data-for-thumbnail` after request validation, skips the read when a
+reuse cache probe hits, validates response file/revision/page identity, and
+exposes only execution metadata. Tagged-frame source-data reads, thumbnail
+persistence writes, scene rendering, media values, source-data values, and
+credential values remain disabled or redacted.
 
 The P25.77 revocation appeal resolution enforcement evidence attestation
 notarization certification endorsement countersignature verification revocation
@@ -782,7 +970,7 @@ Planning responses include:
   "client": {
     "endpoint": "http://127.0.0.1:6070/thumbnail",
     "configured": true,
-    "healthEndpoint": "http://127.0.0.1:6070/thumbnail/health",
+    "healthEndpoint": "http://127.0.0.1:6070/health",
     "healthMethod": "GET",
     "probeTimeoutMs": 2500,
     "networkProbe": false
@@ -804,12 +992,12 @@ Health preflight and execution harness scaffold:
     "dispatch": false,
     "networkProbe": false,
     "method": "GET",
-    "endpoint": "http://127.0.0.1:6070/thumbnail/health",
+    "endpoint": "http://127.0.0.1:6070/health",
     "expected": {
       "okStatuses": [200],
       "contentType": "application/json",
       "bodyStatus": "ok",
-      "requiredFields": ["status", "renderer", "version"]
+      "requiredFields": ["status", "renderer", "mode", "capabilities"]
     }
   },
   "executionClientHarness": {
@@ -972,6 +1160,60 @@ credentials. MCP should forward MCP audit context; CLI should forward command
 context. The fixture names these headers without requiring every transport to
 use HTTP.
 
+## P25.154 Entrypoint Fixture
+
+`p25154-entrypoint-file-reuse-current` pins the opt-in MCP and CLI execution
+path without writing files. The focused tests load this fixture, assert the live
+renderer-service `POST` body equals `serviceRequest`, return `expectedResponse`
+from the mocked service, and verify the normalized resource/cache/request/auth
+metadata while keeping credential values out of JSON output.
+
+```json
+{
+  "serviceRequest": {
+    "command": "render.thumbnail",
+    "operation": "thumbnail.render",
+    "adapter": "renderer-service",
+    "target": {
+      "kind": "file",
+      "fileId": "00000000-0000-0000-0000-000000000001",
+      "pageId": null,
+      "objectId": null,
+      "objectKey": null,
+      "tag": null,
+      "revn": 7
+    },
+    "cache": {
+      "policy": "reuse",
+      "scope": "file-thumbnail",
+      "key": "file:00000000-0000-0000-0000-000000000001:revn:7",
+      "probe": "file-thumbnail-by-file-id-and-revn"
+    }
+  },
+  "expectedResponse": {
+    "status": "ok",
+    "cache": {
+      "outcome": "hit",
+      "scope": "file-thumbnail",
+      "key": "file:00000000-0000-0000-0000-000000000001:revn:7"
+    },
+    "resource": {
+      "mediaId": "media-file-thumb-p25154",
+      "resourceUri": "/assets/by-id/media-file-thumb-p25154",
+      "downloadUri": "https://penpot.example.test/assets/by-id/media-file-thumb-p25154",
+      "contentType": "image/png"
+    },
+    "auth": {
+      "mode": "caller-session",
+      "authorizationPresent": true,
+      "cookiePresent": true,
+      "authTokenCookiePresent": true,
+      "tokenValuesIncluded": false
+    }
+  }
+}
+```
+
 ## File Targets
 
 File thumbnail refresh uses:
@@ -1035,6 +1277,109 @@ Successful response:
   "renderer": {
     "runtime": "render-wasm-worker",
     "fallbackUsed": false
+  },
+  "backendRpcClient": {
+    "status": "configured-disabled",
+    "baseUriConfigured": true,
+    "baseUri": "https://penpot.example.test",
+    "networkDispatch": false,
+    "cacheRead": false,
+    "dataRead": false,
+    "persistWrite": false,
+    "authForwarding": {
+      "mode": "caller-session",
+      "authorizationPresent": true,
+      "cookiePresent": true,
+      "authTokenCookiePresent": true,
+      "tokenValuesIncluded": false
+    },
+    "entries": {
+      "data": {
+        "command": "get-file-data-for-thumbnail",
+        "method": "GET",
+        "requestPresent": true,
+        "endpoint": "https://penpot.example.test/api/main/methods/get-file-data-for-thumbnail?_fmt=json",
+        "dispatch": false,
+        "requestEnvelope": {
+          "status": "planned-disabled",
+          "transport": "penpot-rpc-json",
+          "method": "GET",
+          "requestKeys": ["file-id", "strip-frames-with-thumbnails"],
+          "queryKeys": ["file-id", "strip-frames-with-thumbnails"],
+          "bodyKeys": [],
+          "requestValuesIncluded": false,
+          "mediaValuesIncluded": false,
+          "tokenValuesIncluded": false,
+          "dispatch": false
+        }
+      },
+      "persist": {
+        "command": "create-file-thumbnail",
+        "method": "POST",
+        "requestPresent": true,
+        "endpoint": "https://penpot.example.test/api/main/methods/create-file-thumbnail?_fmt=json",
+        "dispatch": false,
+        "requestEnvelope": {
+          "status": "planned-disabled",
+          "transport": "penpot-rpc-json",
+          "method": "POST",
+          "requestKeys": ["file-id", "media", "revn"],
+          "queryKeys": [],
+          "bodyKeys": ["file-id", "media", "revn"],
+          "requestValuesIncluded": false,
+          "mediaValuesIncluded": false,
+          "tokenValuesIncluded": false,
+          "dispatch": false
+        }
+      },
+      "cacheMissPersist": null
+    },
+    "cacheProbe": null,
+    "pipeline": {
+      "status": "planned-disabled",
+      "cachePolicy": "refresh",
+      "cacheHitShortCircuit": false,
+      "orderedStages": [
+        {
+          "name": "source-data-read",
+          "status": "planned-disabled",
+          "condition": "always",
+          "entry": "data",
+          "command": "get-file-data-for-thumbnail",
+          "cacheProbe": null,
+          "runtime": null,
+          "dispatch": false
+        },
+        {
+          "name": "render",
+          "status": "planned-disabled",
+          "condition": "always",
+          "entry": null,
+          "command": null,
+          "cacheProbe": null,
+          "runtime": "render-wasm-worker",
+          "dispatch": false
+        },
+        {
+          "name": "thumbnail-persist",
+          "status": "planned-disabled",
+          "condition": "always",
+          "entry": "persist",
+          "command": "create-file-thumbnail",
+          "cacheProbe": null,
+          "runtime": null,
+          "dispatch": false
+        }
+      ],
+      "networkDispatch": false,
+      "cacheRead": false,
+      "dataRead": false,
+      "renderDispatch": false,
+      "persistWrite": false,
+      "sourceDataValuesIncluded": false,
+      "artifactValuesIncluded": false,
+      "tokenValuesIncluded": false
+    }
   }
 }
 ```
@@ -1052,7 +1397,8 @@ Before `render.thumbnail` becomes executable:
   --dry-run` as request inspection paths until execution exists
 - keep availability probes metadata-only until a real health endpoint and
   execution client are implemented
-- add a file thumbnail cache probe for `reuse`
+- keep file thumbnail cache probe execution limited to file reuse while
+  tagged-frame source-data loading remains pending
 - add or expose explicit frame source-data loading for tagged frame targets
 - normalize tagged frame media ids to resource URIs
 - keep response normalization covered by fixtures before any network client is
