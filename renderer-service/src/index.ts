@@ -1,3 +1,4 @@
+import { createHash } from "node:crypto";
 import { createServer, type IncomingMessage, type Server, type ServerResponse } from "node:http";
 import { pathToFileURL } from "node:url";
 
@@ -11,10 +12,50 @@ export type RendererBackendRpcClientOptions = {
     fetch?: typeof fetch;
 };
 
+export type RendererRuntimeRenderInput = {
+    target: {
+        kind: "file";
+        fileId: string;
+        revn: number | null;
+    };
+    artifact: {
+        format: "png";
+        mimeType: "image/png";
+        width: number;
+        height: number;
+        extension: ".png";
+    };
+    cache: {
+        policy: "reuse" | "refresh";
+        scope: "file-thumbnail";
+        key: string;
+    };
+    render: {
+        runtime: "render-wasm-worker";
+        fallback: "frontend-rasterizer";
+    };
+    sourceData: {
+        fileId: string;
+        revn: number;
+        page: Record<string, unknown>;
+    };
+};
+
+export type RendererRuntimeRenderResult = {
+    png: ArrayBuffer | Uint8Array;
+    runtime?: "render-wasm-worker" | "frontend-rasterizer";
+    fallbackUsed?: boolean;
+};
+
+export type RendererRuntimeOptions = {
+    renderThumbnail?: (input: RendererRuntimeRenderInput) => RendererRuntimeRenderResult | Promise<RendererRuntimeRenderResult>;
+};
+
 export type RendererServiceOptions = {
     host?: string;
     port?: number;
     backendRpc?: RendererBackendRpcClientOptions;
+    renderer?: RendererRuntimeOptions;
     thumbnailResponseOverride?: (response: Record<string, unknown>) => unknown;
 };
 
@@ -42,6 +83,7 @@ export const healthResponse = {
         "thumbnail.backend-rpc.file-cache-probe",
         "thumbnail.backend-rpc.file-source-data-read",
         "thumbnail.backend-rpc.file-render-input-summary",
+        "thumbnail.render.runtime-adapter",
     ],
 } as const;
 
@@ -160,14 +202,14 @@ type BackendRpcPipelineStageSummary = {
 };
 
 type BackendRpcPipelineSummary = {
-    status: "planned-disabled" | "cache-probe-executed" | "source-data-read-executed";
+    status: "planned-disabled" | "cache-probe-executed" | "source-data-read-executed" | "render-executed";
     cachePolicy: ThumbnailRequestSummary["cachePolicy"];
     cacheHitShortCircuit: boolean;
     orderedStages: BackendRpcPipelineStageSummary[];
     networkDispatch: boolean;
     cacheRead: boolean;
     dataRead: boolean;
-    renderDispatch: false;
+    renderDispatch: boolean;
     persistWrite: false;
     sourceDataValuesIncluded: false;
     artifactValuesIncluded: false;
@@ -193,7 +235,24 @@ type BackendRpcRenderInputSummary = {
     artifactHeight: number;
     renderRuntime: ThumbnailRequestSummary["renderRuntime"];
     renderFallback: ThumbnailRequestSummary["renderFallback"];
-    renderDispatch: false;
+    renderDispatch: boolean;
+    sourceDataValuesIncluded: false;
+    pageValuesIncluded: false;
+    artifactValuesIncluded: false;
+    mediaValuesIncluded: false;
+    tokenValuesIncluded: false;
+};
+
+type BackendRpcRenderOutputSummary = {
+    status: "artifact-ready";
+    condition: "after-render";
+    runtime: ThumbnailRequestSummary["renderRuntime"] | "frontend-rasterizer";
+    fallbackUsed: boolean;
+    artifactFormat: "png";
+    artifactMimeType: "image/png";
+    artifactByteLength: number;
+    renderDispatch: true;
+    localFileWrites: false;
     sourceDataValuesIncluded: false;
     pageValuesIncluded: false;
     artifactValuesIncluded: false;
@@ -202,7 +261,7 @@ type BackendRpcRenderInputSummary = {
 };
 
 type BackendRpcClientSummary = {
-    status: "not-configured" | "configured-disabled" | "cache-probe-executed" | "source-data-read-executed";
+    status: "not-configured" | "configured-disabled" | "cache-probe-executed" | "source-data-read-executed" | "render-executed";
     baseUriConfigured: boolean;
     baseUri: string | null;
     networkDispatch: boolean;
@@ -218,6 +277,7 @@ type BackendRpcClientSummary = {
     cacheProbe: BackendRpcCacheProbeSummary | null;
     pipeline: BackendRpcPipelineSummary;
     renderInput: BackendRpcRenderInputSummary | null;
+    renderOutput: BackendRpcRenderOutputSummary | null;
 };
 
 type BackendRpcCacheProbeExecution = {
@@ -233,6 +293,27 @@ type BackendRpcSourceDataReadExecution = {
     executed: boolean;
     endpoint: string | null;
     revn: number | null;
+    sourceData: RendererRuntimeRenderInput["sourceData"] | null;
+};
+
+type ThumbnailRenderExecution = {
+    executed: boolean;
+    mediaId: string | null;
+    resourceUri: string | null;
+    runtime: NonNullable<RendererRuntimeRenderResult["runtime"]> | null;
+    fallbackUsed: boolean;
+    artifactByteLength: number | null;
+};
+
+type RenderedAsset = {
+    contentType: "image/png";
+    bytes: Buffer;
+};
+
+type RenderedAssetStore = Map<string, RenderedAsset>;
+
+type RendererServiceRuntimeOptions = Pick<RendererServiceOptions, "backendRpc" | "renderer" | "thumbnailResponseOverride"> & {
+    renderedAssets: RenderedAssetStore;
 };
 
 type AuthSummary = {
@@ -712,6 +793,7 @@ function sourceDataReadNotExecuted(baseUri: string | null): BackendRpcSourceData
         executed: false,
         endpoint: backendRpcEndpoint(baseUri, "get-file-data-for-thumbnail"),
         revn: null,
+        sourceData: null,
     };
 }
 
@@ -857,7 +939,8 @@ function parseBackendFileThumbnailSourceDataRead(
     if (summary.revn !== null && revn !== summary.revn) {
         backendRpcError("Renderer-service backend source-data response revision does not match the request.", "renderer_service_backend_source_data_response_invalid", 502, true, "backendRpcClient.entries.data.response.revn");
     }
-    if (!isRecord(data.page)) {
+    const page = data.page;
+    if (!isRecord(page)) {
         backendRpcError("Renderer-service backend source-data response page must be a JSON object.", "renderer_service_backend_source_data_response_invalid", 502, true, "backendRpcClient.entries.data.response.page");
     }
 
@@ -865,6 +948,11 @@ function parseBackendFileThumbnailSourceDataRead(
         executed: true,
         endpoint,
         revn,
+        sourceData: {
+            fileId: summary.fileId,
+            revn,
+            page,
+        },
     };
 }
 
@@ -973,6 +1061,116 @@ async function executeFileThumbnailSourceDataRead(
     );
 }
 
+function renderNotExecuted(): ThumbnailRenderExecution {
+    return {
+        executed: false,
+        mediaId: null,
+        resourceUri: null,
+        runtime: null,
+        fallbackUsed: false,
+        artifactByteLength: null,
+    };
+}
+
+function rendererRuntimeError(message: string, code: string, status: number, retryable: boolean, field?: string): never {
+    throw Object.assign(new Error(message), {
+        code,
+        status,
+        retryable,
+        ...(field ? { field } : {}),
+    });
+}
+
+function normalizeRendererPngBytes(result: Record<string, unknown>): Buffer {
+    const png = result.png;
+    let buffer: Buffer;
+    if (png instanceof ArrayBuffer) {
+        buffer = Buffer.from(png);
+    } else if (png instanceof Uint8Array) {
+        buffer = Buffer.from(png);
+    } else {
+        rendererRuntimeError("Renderer-service runtime adapter must return PNG bytes.", "renderer_service_render_response_invalid", 502, true, "renderer.runtime.png");
+    }
+
+    const pngSignature = "89504e470d0a1a0a";
+    if (buffer.byteLength < 8 || buffer.subarray(0, 8).toString("hex") !== pngSignature) {
+        rendererRuntimeError("Renderer-service runtime adapter must return PNG bytes.", "renderer_service_render_response_invalid", 502, true, "renderer.runtime.png");
+    }
+    return buffer;
+}
+
+async function executeThumbnailRender(
+    summary: ThumbnailRequestSummary,
+    sourceDataReadExecution: BackendRpcSourceDataReadExecution,
+    renderer: RendererRuntimeOptions | undefined,
+    renderedAssets: RenderedAssetStore
+): Promise<ThumbnailRenderExecution> {
+    if (!sourceDataReadExecution.executed || summary.targetKind !== "file" || !sourceDataReadExecution.sourceData) {
+        return renderNotExecuted();
+    }
+
+    if (typeof renderer?.renderThumbnail !== "function") {
+        return renderNotExecuted();
+    }
+
+    let result: RendererRuntimeRenderResult;
+    try {
+        result = await renderer.renderThumbnail({
+            target: {
+                kind: "file",
+                fileId: summary.fileId,
+                revn: summary.revn,
+            },
+            artifact: {
+                format: "png",
+                mimeType: "image/png",
+                width: summary.width,
+                height: summary.height,
+                extension: ".png",
+            },
+            cache: {
+                policy: summary.cachePolicy,
+                scope: "file-thumbnail",
+                key: summary.cacheKey,
+            },
+            render: {
+                runtime: summary.renderRuntime,
+                fallback: summary.renderFallback,
+            },
+            sourceData: sourceDataReadExecution.sourceData,
+        });
+    } catch {
+        rendererRuntimeError("Renderer-service runtime adapter failed while rendering the thumbnail.", "renderer_service_render_failed", 502, true, "renderer.runtime");
+    }
+
+    if (!isRecord(result)) {
+        rendererRuntimeError("Renderer-service runtime adapter response must be a JSON object.", "renderer_service_render_response_invalid", 502, true, "renderer.runtime.response");
+    }
+
+    const resultRecord = result;
+    const runtime = typeof resultRecord.runtime === "string" ? resultRecord.runtime : summary.renderRuntime;
+    if (runtime !== "render-wasm-worker" && runtime !== "frontend-rasterizer") {
+        rendererRuntimeError("Renderer-service runtime adapter response runtime is invalid.", "renderer_service_render_response_invalid", 502, true, "renderer.runtime.response.runtime");
+    }
+
+    const bytes = normalizeRendererPngBytes(resultRecord);
+    const mediaId = `rendered-thumbnail-${createHash("sha256").update(bytes).digest("hex").slice(0, 32)}`;
+    const resourceUri = `/assets/by-id/${mediaId}`;
+    renderedAssets.set(mediaId, {
+        contentType: "image/png",
+        bytes,
+    });
+
+    return {
+        executed: true,
+        mediaId,
+        resourceUri,
+        runtime,
+        fallbackUsed: result.fallbackUsed === true,
+        artifactByteLength: bytes.byteLength,
+    };
+}
+
 function backendRpcCanonicalRequestKeys(command: string): string[] {
     switch (command) {
         case "get-file-thumbnail":
@@ -1071,7 +1269,8 @@ function backendRpcPipelineStage(
 function summarizeBackendRpcPipeline(
     summary: ThumbnailRequestSummary,
     cacheProbeExecution: BackendRpcCacheProbeExecution,
-    sourceDataReadExecution: BackendRpcSourceDataReadExecution
+    sourceDataReadExecution: BackendRpcSourceDataReadExecution,
+    renderExecution: ThumbnailRenderExecution
 ): BackendRpcPipelineSummary {
     const cacheMissCondition = summary.cachePolicy === "reuse" ? "on-cache-miss" : "always";
     const persistEntry = summary.cachePolicy === "refresh" ? "persist" : "cacheMissPersist";
@@ -1079,6 +1278,7 @@ function summarizeBackendRpcPipeline(
     const orderedStages: BackendRpcPipelineStageSummary[] = [];
     const cacheProbeExecuted = cacheProbeExecution.executed && summary.targetKind === "file";
     const sourceDataReadExecuted = sourceDataReadExecution.executed && summary.targetKind === "file";
+    const renderExecuted = renderExecution.executed && summary.targetKind === "file";
 
     if (summary.cachePolicy === "reuse") {
         orderedStages.push(
@@ -1107,6 +1307,8 @@ function summarizeBackendRpcPipeline(
             command: null,
             cacheProbe: null,
             runtime: summary.renderRuntime,
+            status: renderExecuted ? "executed" : "planned-disabled",
+            dispatch: renderExecuted,
         }),
         backendRpcPipelineStage("thumbnail-persist", cacheMissCondition, {
             entry: persistEntry,
@@ -1117,14 +1319,14 @@ function summarizeBackendRpcPipeline(
     );
 
     return {
-        status: sourceDataReadExecuted ? "source-data-read-executed" : cacheProbeExecuted ? "cache-probe-executed" : "planned-disabled",
+        status: renderExecuted ? "render-executed" : sourceDataReadExecuted ? "source-data-read-executed" : cacheProbeExecuted ? "cache-probe-executed" : "planned-disabled",
         cachePolicy: summary.cachePolicy,
         cacheHitShortCircuit: summary.cachePolicy === "reuse",
         orderedStages,
         networkDispatch: cacheProbeExecuted || sourceDataReadExecuted,
         cacheRead: cacheProbeExecuted,
         dataRead: sourceDataReadExecuted,
-        renderDispatch: false,
+        renderDispatch: renderExecuted,
         persistWrite: false,
         sourceDataValuesIncluded: false,
         artifactValuesIncluded: false,
@@ -1134,7 +1336,8 @@ function summarizeBackendRpcPipeline(
 
 function summarizeBackendRpcRenderInput(
     summary: ThumbnailRequestSummary,
-    sourceDataReadExecution: BackendRpcSourceDataReadExecution
+    sourceDataReadExecution: BackendRpcSourceDataReadExecution,
+    renderExecution: ThumbnailRenderExecution
 ): BackendRpcRenderInputSummary | null {
     if (!sourceDataReadExecution.executed || summary.targetKind !== "file" || !sourceDataReadExecution.endpoint) {
         return null;
@@ -1159,7 +1362,30 @@ function summarizeBackendRpcRenderInput(
         artifactHeight: summary.height,
         renderRuntime: summary.renderRuntime,
         renderFallback: summary.renderFallback,
-        renderDispatch: false,
+        renderDispatch: renderExecution.executed,
+        sourceDataValuesIncluded: false,
+        pageValuesIncluded: false,
+        artifactValuesIncluded: false,
+        mediaValuesIncluded: false,
+        tokenValuesIncluded: false,
+    };
+}
+
+function summarizeBackendRpcRenderOutput(renderExecution: ThumbnailRenderExecution): BackendRpcRenderOutputSummary | null {
+    if (!renderExecution.executed || !renderExecution.runtime || renderExecution.artifactByteLength === null) {
+        return null;
+    }
+
+    return {
+        status: "artifact-ready",
+        condition: "after-render",
+        runtime: renderExecution.runtime,
+        fallbackUsed: renderExecution.fallbackUsed,
+        artifactFormat: "png",
+        artifactMimeType: "image/png",
+        artifactByteLength: renderExecution.artifactByteLength,
+        renderDispatch: true,
+        localFileWrites: false,
         sourceDataValuesIncluded: false,
         pageValuesIncluded: false,
         artifactValuesIncluded: false,
@@ -1173,13 +1399,15 @@ function summarizeBackendRpcClient(
     auth: AuthSummary,
     options: RendererBackendRpcClientOptions | undefined,
     cacheProbeExecution: BackendRpcCacheProbeExecution,
-    sourceDataReadExecution: BackendRpcSourceDataReadExecution
+    sourceDataReadExecution: BackendRpcSourceDataReadExecution,
+    renderExecution: ThumbnailRenderExecution
 ): BackendRpcClientSummary {
     const baseUri = normalizeBackendRpcBaseUri(options);
     const cacheProbeExecuted = cacheProbeExecution.executed && summary.targetKind === "file";
     const sourceDataReadExecuted = sourceDataReadExecution.executed && summary.targetKind === "file";
+    const renderExecuted = renderExecution.executed && summary.targetKind === "file";
     return {
-        status: sourceDataReadExecuted ? "source-data-read-executed" : cacheProbeExecuted ? "cache-probe-executed" : baseUri ? "configured-disabled" : "not-configured",
+        status: renderExecuted ? "render-executed" : sourceDataReadExecuted ? "source-data-read-executed" : cacheProbeExecuted ? "cache-probe-executed" : baseUri ? "configured-disabled" : "not-configured",
         baseUriConfigured: Boolean(baseUri),
         baseUri,
         networkDispatch: cacheProbeExecuted || sourceDataReadExecuted,
@@ -1193,8 +1421,9 @@ function summarizeBackendRpcClient(
             cacheMissPersist: backendRpcClientEntry(summary.backendRpc.cacheMissPersist, baseUri),
         },
         cacheProbe: summarizeBackendRpcCacheProbe(summary, baseUri, cacheProbeExecution),
-        pipeline: summarizeBackendRpcPipeline(summary, cacheProbeExecution, sourceDataReadExecution),
-        renderInput: summarizeBackendRpcRenderInput(summary, sourceDataReadExecution),
+        pipeline: summarizeBackendRpcPipeline(summary, cacheProbeExecution, sourceDataReadExecution, renderExecution),
+        renderInput: summarizeBackendRpcRenderInput(summary, sourceDataReadExecution, renderExecution),
+        renderOutput: summarizeBackendRpcRenderOutput(renderExecution),
     };
 }
 
@@ -1204,17 +1433,19 @@ function thumbnailResponse(
     auth: AuthSummary,
     options: Pick<RendererServiceOptions, "backendRpc">,
     cacheProbeExecution: BackendRpcCacheProbeExecution,
-    sourceDataReadExecution: BackendRpcSourceDataReadExecution
+    sourceDataReadExecution: BackendRpcSourceDataReadExecution,
+    renderExecution: ThumbnailRenderExecution
 ): Record<string, unknown> {
     const host = request.headers.host ?? `${DEFAULT_HOST}:${DEFAULT_PORT}`;
     const downloadUri = `http://${host}/assets/by-id/noop-thumbnail-png`;
     const cacheHit = cacheProbeExecution.executed && cacheProbeExecution.hit === true;
+    const rendered = renderExecution.executed && renderExecution.mediaId && renderExecution.resourceUri;
 
     return {
         ...noopThumbnailResponse,
         request: summary,
         auth,
-        backendRpcClient: summarizeBackendRpcClient(summary, auth, options.backendRpc, cacheProbeExecution, sourceDataReadExecution),
+        backendRpcClient: summarizeBackendRpcClient(summary, auth, options.backendRpc, cacheProbeExecution, sourceDataReadExecution, renderExecution),
         cache: {
             ...noopThumbnailResponse.cache,
             outcome: cacheHit ? "hit" : noopThumbnailResponse.cache.outcome,
@@ -1228,6 +1459,11 @@ function thumbnailResponse(
                   runtime: null,
                   fallbackUsed: false,
               }
+            : rendered
+              ? {
+                    runtime: renderExecution.runtime,
+                    fallbackUsed: renderExecution.fallbackUsed,
+                }
             : noopThumbnailResponse.renderer,
         resource: {
             ...noopThumbnailResponse.resource,
@@ -1237,6 +1473,12 @@ function thumbnailResponse(
                       resourceUri: cacheProbeExecution.resourceUri,
                       downloadUri: cacheProbeExecution.downloadUri,
                   }
+                : rendered
+                  ? {
+                        mediaId: renderExecution.mediaId,
+                        resourceUri: renderExecution.resourceUri,
+                        downloadUri: `http://${host}${renderExecution.resourceUri}`,
+                    }
                 : {
                       downloadUri,
                   }),
@@ -1306,6 +1548,9 @@ function rejectResponseValueFields(record: Record<string, unknown>, fieldPrefix:
         "bodyValues",
         "media",
         "artifact",
+        "artifactBytes",
+        "bytes",
+        "png",
         "sourceData",
         "page",
         "pageValues",
@@ -1369,9 +1614,12 @@ function validateThumbnailCacheResponse(cache: Record<string, unknown>, summary:
     requireResponseEqual(cache.probe ?? null, summary.cacheProbe, "cache.probe");
 }
 
-function validateThumbnailRendererResponse(renderer: Record<string, unknown>, execution: BackendRpcCacheProbeExecution): void {
-    requireResponseEqual(renderer.runtime, execution.executed && execution.hit === true ? null : noopThumbnailResponse.renderer.runtime, "renderer.runtime");
-    requireResponseEqual(renderer.fallbackUsed, false, "renderer.fallbackUsed");
+function validateThumbnailRendererResponse(renderer: Record<string, unknown>, cacheExecution: BackendRpcCacheProbeExecution, renderExecution: ThumbnailRenderExecution): void {
+    const cacheHit = cacheExecution.executed && cacheExecution.hit === true;
+    const expectedRuntime = cacheHit ? null : renderExecution.executed ? renderExecution.runtime : noopThumbnailResponse.renderer.runtime;
+    const expectedFallbackUsed = cacheHit ? false : renderExecution.executed ? renderExecution.fallbackUsed : false;
+    requireResponseEqual(renderer.runtime, expectedRuntime, "renderer.runtime");
+    requireResponseEqual(renderer.fallbackUsed, expectedFallbackUsed, "renderer.fallbackUsed");
 }
 
 function validateTokenSafeAuthResponse(auth: Record<string, unknown>, expectedAuth: AuthSummary, fieldPrefix: string): void {
@@ -1429,7 +1677,7 @@ function validateBackendRpcPipelineResponse(actual: unknown, expected: BackendRp
     requireResponseEqual(record.networkDispatch, expected.networkDispatch, "backendRpcClient.pipeline.networkDispatch");
     requireResponseEqual(record.cacheRead, expected.cacheRead, "backendRpcClient.pipeline.cacheRead");
     requireResponseEqual(record.dataRead, expected.dataRead, "backendRpcClient.pipeline.dataRead");
-    requireResponseEqual(record.renderDispatch, false, "backendRpcClient.pipeline.renderDispatch");
+    requireResponseEqual(record.renderDispatch, expected.renderDispatch, "backendRpcClient.pipeline.renderDispatch");
     requireResponseEqual(record.persistWrite, false, "backendRpcClient.pipeline.persistWrite");
     requireResponseEqual(record.sourceDataValuesIncluded, false, "backendRpcClient.pipeline.sourceDataValuesIncluded");
     requireResponseEqual(record.artifactValuesIncluded, false, "backendRpcClient.pipeline.artifactValuesIncluded");
@@ -1468,12 +1716,36 @@ function validateBackendRpcRenderInputResponse(actual: unknown, expected: Backen
     requireResponseEqual(record.artifactHeight, expected.artifactHeight, "backendRpcClient.renderInput.artifactHeight");
     requireResponseEqual(record.renderRuntime, expected.renderRuntime, "backendRpcClient.renderInput.renderRuntime");
     requireResponseEqual(record.renderFallback, expected.renderFallback, "backendRpcClient.renderInput.renderFallback");
-    requireResponseEqual(record.renderDispatch, false, "backendRpcClient.renderInput.renderDispatch");
+    requireResponseEqual(record.renderDispatch, expected.renderDispatch, "backendRpcClient.renderInput.renderDispatch");
     requireResponseEqual(record.sourceDataValuesIncluded, false, "backendRpcClient.renderInput.sourceDataValuesIncluded");
     requireResponseEqual(record.pageValuesIncluded, false, "backendRpcClient.renderInput.pageValuesIncluded");
     requireResponseEqual(record.artifactValuesIncluded, false, "backendRpcClient.renderInput.artifactValuesIncluded");
     requireResponseEqual(record.mediaValuesIncluded, false, "backendRpcClient.renderInput.mediaValuesIncluded");
     requireResponseEqual(record.tokenValuesIncluded, false, "backendRpcClient.renderInput.tokenValuesIncluded");
+}
+
+function validateBackendRpcRenderOutputResponse(actual: unknown, expected: BackendRpcRenderOutputSummary | null): void {
+    if (expected === null) {
+        requireResponseEqual(actual ?? null, null, "backendRpcClient.renderOutput");
+        return;
+    }
+
+    const record = responseRecord(actual, "backendRpcClient.renderOutput");
+    rejectResponseValueFields(record, "backendRpcClient.renderOutput");
+    requireResponseEqual(record.status, expected.status, "backendRpcClient.renderOutput.status");
+    requireResponseEqual(record.condition, expected.condition, "backendRpcClient.renderOutput.condition");
+    requireResponseEqual(record.runtime, expected.runtime, "backendRpcClient.renderOutput.runtime");
+    requireResponseEqual(responseBoolean(record, "fallbackUsed", "backendRpcClient.renderOutput.fallbackUsed"), expected.fallbackUsed, "backendRpcClient.renderOutput.fallbackUsed");
+    requireResponseEqual(record.artifactFormat, expected.artifactFormat, "backendRpcClient.renderOutput.artifactFormat");
+    requireResponseEqual(record.artifactMimeType, expected.artifactMimeType, "backendRpcClient.renderOutput.artifactMimeType");
+    requireResponseEqual(record.artifactByteLength, expected.artifactByteLength, "backendRpcClient.renderOutput.artifactByteLength");
+    requireResponseEqual(record.renderDispatch, true, "backendRpcClient.renderOutput.renderDispatch");
+    requireResponseEqual(record.localFileWrites, false, "backendRpcClient.renderOutput.localFileWrites");
+    requireResponseEqual(record.sourceDataValuesIncluded, false, "backendRpcClient.renderOutput.sourceDataValuesIncluded");
+    requireResponseEqual(record.pageValuesIncluded, false, "backendRpcClient.renderOutput.pageValuesIncluded");
+    requireResponseEqual(record.artifactValuesIncluded, false, "backendRpcClient.renderOutput.artifactValuesIncluded");
+    requireResponseEqual(record.mediaValuesIncluded, false, "backendRpcClient.renderOutput.mediaValuesIncluded");
+    requireResponseEqual(record.tokenValuesIncluded, false, "backendRpcClient.renderOutput.tokenValuesIncluded");
 }
 
 function validateBackendRpcCacheProbeResponse(actual: unknown, expected: BackendRpcCacheProbeSummary | null): void {
@@ -1536,6 +1808,7 @@ function validateThumbnailBackendRpcClientResponse(client: Record<string, unknow
     validateBackendRpcCacheProbeResponse(client.cacheProbe, expected.cacheProbe);
     validateBackendRpcPipelineResponse(client.pipeline, expected.pipeline);
     validateBackendRpcRenderInputResponse(client.renderInput, expected.renderInput);
+    validateBackendRpcRenderOutputResponse(client.renderOutput, expected.renderOutput);
 }
 
 function validateThumbnailResponseContract(
@@ -1544,7 +1817,8 @@ function validateThumbnailResponseContract(
     expectedAuth: AuthSummary,
     options: Pick<RendererServiceOptions, "backendRpc">,
     cacheProbeExecution: BackendRpcCacheProbeExecution,
-    sourceDataReadExecution: BackendRpcSourceDataReadExecution
+    sourceDataReadExecution: BackendRpcSourceDataReadExecution,
+    renderExecution: ThumbnailRenderExecution
 ): Record<string, unknown> {
     const record = responseRecord(response, "response");
     requireResponseEqual(record.status, "ok", "status");
@@ -1554,11 +1828,11 @@ function validateThumbnailResponseContract(
 
     validateThumbnailResourceResponse(responseRecord(record.resource, "resource"));
     validateThumbnailCacheResponse(responseRecord(record.cache, "cache"), summary, cacheProbeExecution);
-    validateThumbnailRendererResponse(responseRecord(record.renderer, "renderer"), cacheProbeExecution);
+    validateThumbnailRendererResponse(responseRecord(record.renderer, "renderer"), cacheProbeExecution, renderExecution);
     validateThumbnailAuthResponse(responseRecord(record.auth, "auth"), expectedAuth);
     validateThumbnailBackendRpcClientResponse(
         responseRecord(record.backendRpcClient, "backendRpcClient"),
-        summarizeBackendRpcClient(summary, expectedAuth, options.backendRpc, cacheProbeExecution, sourceDataReadExecution)
+        summarizeBackendRpcClient(summary, expectedAuth, options.backendRpc, cacheProbeExecution, sourceDataReadExecution, renderExecution)
     );
     requireResponseJsonEqual(record.request, summary, "request");
 
@@ -1589,7 +1863,7 @@ function sendJson(response: ServerResponse, statusCode: number, body: unknown): 
     response.end(payload);
 }
 
-async function handleRequest(request: IncomingMessage, response: ServerResponse, options: Pick<RendererServiceOptions, "backendRpc" | "thumbnailResponseOverride"> = {}): Promise<void> {
+async function handleRequest(request: IncomingMessage, response: ServerResponse, options: RendererServiceRuntimeOptions): Promise<void> {
     const url = new URL(request.url ?? "/", "http://renderer-service.local");
 
     if (request.method === "GET" && url.pathname === "/health") {
@@ -1604,16 +1878,31 @@ async function handleRequest(request: IncomingMessage, response: ServerResponse,
             const auth = summarizeAuthHeaders(request);
             const cacheProbeExecution = await executeFileThumbnailCacheProbe(request, summary, options.backendRpc);
             const sourceDataReadExecution = await executeFileThumbnailSourceDataRead(request, summary, options.backendRpc, cacheProbeExecution);
-            const generatedResponse = thumbnailResponse(request, summary, auth, options, cacheProbeExecution, sourceDataReadExecution);
+            const renderExecution = await executeThumbnailRender(summary, sourceDataReadExecution, options.renderer, options.renderedAssets);
+            const generatedResponse = thumbnailResponse(request, summary, auth, options, cacheProbeExecution, sourceDataReadExecution, renderExecution);
             const responseBody = options.thumbnailResponseOverride
                 ? options.thumbnailResponseOverride(generatedResponse)
                 : generatedResponse;
-            sendJson(response, 200, validateThumbnailResponseContract(responseBody, summary, auth, options, cacheProbeExecution, sourceDataReadExecution));
+            sendJson(response, 200, validateThumbnailResponseContract(responseBody, summary, auth, options, cacheProbeExecution, sourceDataReadExecution, renderExecution));
         } catch (error) {
             const status = isRecord(error) && typeof error.status === "number" ? error.status : 400;
             sendJson(response, status, rendererErrorBody(error));
         }
         return;
+    }
+
+    if (request.method === "GET" && url.pathname.startsWith("/assets/by-id/")) {
+        const mediaId = decodeURIComponent(url.pathname.slice("/assets/by-id/".length));
+        const renderedAsset = options.renderedAssets.get(mediaId);
+        if (renderedAsset) {
+            response.writeHead(200, {
+                "content-type": renderedAsset.contentType,
+                "content-length": renderedAsset.bytes.byteLength,
+                "cache-control": "no-store",
+            });
+            response.end(renderedAsset.bytes);
+            return;
+        }
     }
 
     if (request.method === "GET" && url.pathname === "/assets/by-id/noop-thumbnail-png") {
@@ -1632,9 +1921,17 @@ async function handleRequest(request: IncomingMessage, response: ServerResponse,
     });
 }
 
-export function createRendererService(options: Pick<RendererServiceOptions, "backendRpc" | "thumbnailResponseOverride"> = {}): Server {
+export function createRendererService(options: Pick<RendererServiceOptions, "backendRpc" | "renderer" | "thumbnailResponseOverride"> = {}): Server {
+    const renderedAssets: RenderedAssetStore = new Map();
+    const runtimeOptions: RendererServiceRuntimeOptions = {
+        backendRpc: options.backendRpc,
+        renderer: options.renderer,
+        thumbnailResponseOverride: options.thumbnailResponseOverride,
+        renderedAssets,
+    };
+
     return createServer((request, response) => {
-        void handleRequest(request, response, options).catch((error: unknown) => {
+        void handleRequest(request, response, runtimeOptions).catch((error: unknown) => {
             sendJson(response, 500, {
                 status: "error",
                 code: "renderer_service_internal_error",
@@ -1650,6 +1947,7 @@ export async function startRendererService(options: RendererServiceOptions = {})
     const port = options.port ?? DEFAULT_PORT;
     const server = createRendererService({
         backendRpc: options.backendRpc,
+        renderer: options.renderer,
         thumbnailResponseOverride: options.thumbnailResponseOverride,
     });
 

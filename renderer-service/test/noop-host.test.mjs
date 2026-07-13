@@ -4,6 +4,10 @@ import { pathToFileURL } from "node:url";
 
 const buildPath = "/Volumes/fushilu/.caches/penpot/renderer-service/index.js";
 const serviceModule = await import(`${pathToFileURL(buildPath).href}?test=${Date.now()}`);
+const pngFixture = Buffer.from(
+    "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==",
+    "base64"
+);
 
 async function withService(run) {
     const service = await serviceModule.startRendererService({ port: 0 });
@@ -78,7 +82,7 @@ function pipelineStage(name, condition, { entry = null, command = null, cachePro
     };
 }
 
-function backendRpcPipeline(cachePolicy, orderedStages, { status = "planned-disabled", networkDispatch = false, cacheRead = false, dataRead = false } = {}) {
+function backendRpcPipeline(cachePolicy, orderedStages, { status = "planned-disabled", networkDispatch = false, cacheRead = false, dataRead = false, renderDispatch = false } = {}) {
     return {
         status,
         cachePolicy,
@@ -87,7 +91,7 @@ function backendRpcPipeline(cachePolicy, orderedStages, { status = "planned-disa
         networkDispatch,
         cacheRead,
         dataRead,
-        renderDispatch: false,
+        renderDispatch,
         persistWrite: false,
         sourceDataValuesIncluded: false,
         artifactValuesIncluded: false,
@@ -118,7 +122,7 @@ function backendRpcCacheProbe(strategy, scope, key, requestKeys, { status = "pla
     };
 }
 
-function backendRpcRenderInput(cachePolicy = "reuse") {
+function backendRpcRenderInput(cachePolicy = "reuse", { renderDispatch = false } = {}) {
     return {
         status: "source-data-ready",
         condition: "after-source-data-read",
@@ -138,7 +142,26 @@ function backendRpcRenderInput(cachePolicy = "reuse") {
         artifactHeight: 168,
         renderRuntime: "render-wasm-worker",
         renderFallback: "frontend-rasterizer",
-        renderDispatch: false,
+        renderDispatch,
+        sourceDataValuesIncluded: false,
+        pageValuesIncluded: false,
+        artifactValuesIncluded: false,
+        mediaValuesIncluded: false,
+        tokenValuesIncluded: false,
+    };
+}
+
+function backendRpcRenderOutput(byteLength, { runtime = "render-wasm-worker", fallbackUsed = false } = {}) {
+    return {
+        status: "artifact-ready",
+        condition: "after-render",
+        runtime,
+        fallbackUsed,
+        artifactFormat: "png",
+        artifactMimeType: "image/png",
+        artifactByteLength: byteLength,
+        renderDispatch: true,
+        localFileWrites: false,
         sourceDataValuesIncluded: false,
         pageValuesIncluded: false,
         artifactValuesIncluded: false,
@@ -248,6 +271,7 @@ test("noop host executes configured file thumbnail cache probe and returns cache
         assert.equal(body.backendRpcClient.pipeline.renderDispatch, false);
         assert.equal(body.backendRpcClient.pipeline.persistWrite, false);
         assert.equal(body.backendRpcClient.renderInput, null);
+        assert.equal(body.backendRpcClient.renderOutput, null);
         assert.equal(body.cache.outcome, "hit");
         assert.deepEqual(body.resource, {
             mediaId: "cached-thumbnail-png",
@@ -322,6 +346,7 @@ test("noop host continues the no-op render path after configured cache probe mis
         assert.equal(body.backendRpcClient.pipeline.persistWrite, false);
         assert.equal(body.backendRpcClient.pipeline.sourceDataValuesIncluded, false);
         assert.deepEqual(body.backendRpcClient.renderInput, backendRpcRenderInput("reuse"));
+        assert.equal(body.backendRpcClient.renderOutput, null);
         assert.deepEqual(body.cache, {
             outcome: "rendered",
             policy: "reuse",
@@ -395,6 +420,7 @@ test("noop host executes configured file thumbnail source-data reads for refresh
         assert.equal(body.backendRpcClient.pipeline.persistWrite, false);
         assert.equal(body.backendRpcClient.pipeline.sourceDataValuesIncluded, false);
         assert.deepEqual(body.backendRpcClient.renderInput, backendRpcRenderInput("refresh"));
+        assert.equal(body.backendRpcClient.renderOutput, null);
         assert.deepEqual(body.cache, {
             outcome: "rendered",
             policy: "refresh",
@@ -406,6 +432,130 @@ test("noop host executes configured file thumbnail source-data reads for refresh
         assert.equal(fetchCalls.length, 1);
         assert.equal(fetchCalls[0].url, "https://penpot.example.test/api/main/methods/get-file-data-for-thumbnail?_fmt=json&file-id=file-1&strip-frames-with-thumbnails=false");
         assert.equal(fetchCalls[0].init.method, "GET");
+    } finally {
+        await service.stop();
+    }
+});
+
+test("noop host executes injected renderer runtime adapter after source-data reads", async () => {
+    const fetchCalls = [];
+    const renderInputs = [];
+    const service = await serviceModule.startRendererService({
+        port: 0,
+        backendRpc: {
+            baseUri: "https://penpot.example.test",
+            fetch: async (url, init) => {
+                fetchCalls.push({ url: String(url), init });
+                if (String(url).includes("get-file-data-for-thumbnail")) {
+                    return new Response(
+                        JSON.stringify({
+                            "file-id": "file-1",
+                            revn: 1,
+                            page: { id: "page-secret", objects: {} },
+                        }),
+                        { status: 200, headers: { "content-type": "application/json" } }
+                    );
+                }
+                return new Response(
+                    JSON.stringify({
+                        hit: false,
+                        "file-id": "file-1",
+                        revn: 1,
+                    }),
+                    { status: 200, headers: { "content-type": "application/json" } }
+                );
+            },
+        },
+        renderer: {
+            renderThumbnail: async (input) => {
+                renderInputs.push(input);
+                return {
+                    png: pngFixture,
+                    runtime: "render-wasm-worker",
+                    fallbackUsed: false,
+                };
+            },
+        },
+    });
+    try {
+        const response = await postValidFileThumbnail(service.host, service.port);
+
+        assert.equal(response.status, 200);
+        const body = await response.json();
+        assert.equal(body.backendRpcClient.status, "render-executed");
+        assert.equal(body.backendRpcClient.pipeline.status, "render-executed");
+        assert.equal(body.backendRpcClient.pipeline.renderDispatch, true);
+        assert.equal(body.backendRpcClient.pipeline.persistWrite, false);
+        assert.equal(body.backendRpcClient.pipeline.orderedStages[2].name, "render");
+        assert.equal(body.backendRpcClient.pipeline.orderedStages[2].status, "executed");
+        assert.equal(body.backendRpcClient.pipeline.orderedStages[2].dispatch, true);
+        assert.deepEqual(body.backendRpcClient.renderInput, backendRpcRenderInput("reuse", { renderDispatch: true }));
+        assert.deepEqual(body.backendRpcClient.renderOutput, backendRpcRenderOutput(pngFixture.byteLength));
+        assert.deepEqual(body.renderer, {
+            runtime: "render-wasm-worker",
+            fallbackUsed: false,
+        });
+        assert.equal(body.resource.mediaId.startsWith("rendered-thumbnail-"), true);
+        assert.equal(body.resource.resourceUri, `/assets/by-id/${body.resource.mediaId}`);
+        assert.equal(body.resource.downloadUri, `http://${service.host}:${service.port}${body.resource.resourceUri}`);
+        assert.equal(body.resource.contentType, "image/png");
+        assert.equal(JSON.stringify(body).includes("page-secret"), false);
+        assert.equal(JSON.stringify(body).includes(pngFixture.toString("base64")), false);
+
+        const asset = await fetch(body.resource.downloadUri);
+        assert.equal(asset.status, 200);
+        assert.equal(asset.headers.get("content-type"), "image/png");
+        assert.equal(Buffer.from(await asset.arrayBuffer()).equals(pngFixture), true);
+
+        assert.equal(renderInputs.length, 1);
+        assert.equal(renderInputs[0].target.fileId, "file-1");
+        assert.equal(renderInputs[0].sourceData.fileId, "file-1");
+        assert.equal(renderInputs[0].sourceData.revn, 1);
+        assert.deepEqual(renderInputs[0].sourceData.page, { id: "page-secret", objects: {} });
+        assert.equal(renderInputs[0].artifact.width, 252);
+        assert.equal(renderInputs[0].artifact.height, 168);
+        assert.equal(fetchCalls.length, 2);
+    } finally {
+        await service.stop();
+    }
+});
+
+test("noop host rejects invalid renderer runtime adapter PNG bytes", async () => {
+    const service = await serviceModule.startRendererService({
+        port: 0,
+        backendRpc: {
+            baseUri: "https://penpot.example.test",
+            fetch: async (url) => {
+                if (String(url).includes("get-file-thumbnail")) {
+                    return new Response(JSON.stringify({ hit: false, "file-id": "file-1", revn: 1 }), {
+                        status: 200,
+                        headers: { "content-type": "application/json" },
+                    });
+                }
+                return new Response(JSON.stringify({ "file-id": "file-1", revn: 1, page: { id: "page-secret", objects: {} } }), {
+                    status: 200,
+                    headers: { "content-type": "application/json" },
+                });
+            },
+        },
+        renderer: {
+            renderThumbnail: async () => ({
+                png: Buffer.from("not a png"),
+                runtime: "render-wasm-worker",
+                fallbackUsed: false,
+            }),
+        },
+    });
+    try {
+        const response = await postValidFileThumbnail(service.host, service.port);
+
+        assert.equal(response.status, 502);
+        const body = await response.json();
+        assert.equal(body.status, "error");
+        assert.equal(body.code, "renderer_service_render_response_invalid");
+        assert.equal(body.field, "renderer.runtime.png");
+        assert.equal(body.retryable, true);
+        assert.equal(JSON.stringify(body).includes("page-secret"), false);
     } finally {
         await service.stop();
     }
@@ -538,6 +688,7 @@ test("noop host returns a normalized PNG thumbnail resource", async () => {
                 }),
             ]),
             renderInput: null,
+            renderOutput: null,
         });
         assert.equal(JSON.stringify(body).includes("service-secret-token"), false);
         assert.deepEqual(body.request, {
@@ -656,6 +807,7 @@ test("noop host plans backend RPC client endpoints without dispatching them", as
                 }),
             ]),
             renderInput: null,
+            renderOutput: null,
         });
         assert.equal(JSON.stringify(body).includes("service-secret-token"), false);
         assert.equal(fetchCalls, 0);
@@ -914,6 +1066,56 @@ test("noop host validates generated backend RPC render input summaries before re
         assert.equal(body.code, "renderer_service_response_invalid");
         assert.equal(body.field, "backendRpcClient.renderInput.sourceData");
         assert.equal(JSON.stringify(body).includes("page-secret"), false);
+    } finally {
+        await service.stop();
+    }
+});
+
+test("noop host validates generated backend RPC render output summaries before returning them", async () => {
+    const service = await serviceModule.startRendererService({
+        port: 0,
+        backendRpc: {
+            baseUri: "https://penpot.example.test",
+            fetch: async (url) => {
+                if (String(url).includes("get-file-thumbnail")) {
+                    return new Response(JSON.stringify({ hit: false, "file-id": "file-1", revn: 1 }), {
+                        status: 200,
+                        headers: { "content-type": "application/json" },
+                    });
+                }
+                return new Response(JSON.stringify({ "file-id": "file-1", revn: 1, page: { id: "page-secret", objects: {} } }), {
+                    status: 200,
+                    headers: { "content-type": "application/json" },
+                });
+            },
+        },
+        renderer: {
+            renderThumbnail: async () => ({
+                png: pngFixture,
+                runtime: "render-wasm-worker",
+                fallbackUsed: false,
+            }),
+        },
+        thumbnailResponseOverride: (body) => ({
+            ...body,
+            backendRpcClient: {
+                ...body.backendRpcClient,
+                renderOutput: {
+                    ...body.backendRpcClient.renderOutput,
+                    png: pngFixture.toString("base64"),
+                },
+            },
+        }),
+    });
+    try {
+        const response = await postValidFileThumbnail(service.host, service.port);
+
+        assert.equal(response.status, 500);
+        const body = await response.json();
+        assert.equal(body.status, "error");
+        assert.equal(body.code, "renderer_service_response_invalid");
+        assert.equal(body.field, "backendRpcClient.renderOutput.png");
+        assert.equal(JSON.stringify(body).includes(pngFixture.toString("base64")), false);
     } finally {
         await service.stop();
     }

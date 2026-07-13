@@ -8,14 +8,15 @@ at `/assets/by-id/noop-thumbnail-png`. MCP and `penpot-cli` execute this path
 only when the renderer-service endpoint and explicit `renderer-service` opt-in
 are configured; dry-run planning remains network-free. CLI `--output` downloads
 the normalized `downloadUri`, while MCP returns resource metadata only. The
-later slices add backend cache probe execution, source-data reads, and
-source-data render input summaries on the gated file-thumbnail path; thumbnail
-persistence writes and render dispatch remain disabled.
+later slices add backend cache probe execution, source-data reads, source-data
+render input summaries, and an injectable renderer runtime adapter on the
+gated file-thumbnail path; thumbnail persistence writes remain disabled and
+manual hosts without a renderer adapter keep the no-op PNG path.
 P26.5 adds a token-safe `backendRpcClient` plan to renderer-service thumbnail
 responses so backend data/cache/persist endpoints are normalized for staged
-execution. That plan now feeds the executable file-thumbnail cache probe and
-source-data read path, while persistence writes and render dispatch remain
-disabled.
+execution. That plan now feeds the executable file-thumbnail cache probe,
+source-data read path, and injected renderer runtime adapter boundary, while
+persistence writes remain disabled.
 P26.6 extends each planned backend RPC entry with a disabled request envelope
 that fixes the future GET query and POST JSON body key shapes without exposing
 request values, media values, token values, or enabling network dispatch.
@@ -33,8 +34,17 @@ returning cached resources.
 P26.12 adds `backendRpcClient.renderInput` after successful configured
 file-thumbnail source-data reads. The summary records the render handoff
 envelope with cache/artifact/runtime metadata and hard false source-data,
-page, artifact, media, token, and render-dispatch value flags; cache hits,
-unconfigured requests, and tagged-frame requests keep `renderInput:null`.
+page, artifact, media, and token value flags; cache hits, unconfigured
+requests, and tagged-frame requests keep `renderInput:null`.
+P26.13 adds an explicit renderer runtime adapter execution boundary after
+successful configured file-thumbnail source-data reads. Injected adapters
+receive validated source data internally and return PNG bytes that are stored
+only in memory and served by resource URL. Responses mark
+`backendRpcClient.pipeline.renderDispatch:true`,
+`backendRpcClient.renderInput.renderDispatch:true`, and expose
+`backendRpcClient.renderOutput` metadata without source-data, page, artifact
+byte, media, or credential values. Cache hits and hosts without an adapter
+still keep the existing short-circuit/no-op behavior.
 
 Status: P25.144 supersedes the earlier disabled-planning boundary for the
 first executable slice. The renderer-service package, health/no-op host, MCP
@@ -408,12 +418,25 @@ file-thumbnail source-data reads. `backendRpcClient.renderInput` is present
 only when `get-file-data-for-thumbnail` executed and returned a validated
 file/revision/page envelope. It records the source-data endpoint, identity
 field names, revision source, cache policy/scope/key, PNG dimensions, renderer
-runtime/fallback names, and hard false `renderDispatch`,
-`sourceDataValuesIncluded`, `pageValuesIncluded`, `artifactValuesIncluded`,
-`mediaValuesIncluded`, and `tokenValuesIncluded` flags. Cache hits,
-unconfigured requests, and tagged-frame requests keep `renderInput:null`. The
-response validator rejects malformed render-input metadata and accidental
-source-data/page/artifact/media/credential value exposure before success.
+runtime/fallback names, the current `renderDispatch` execution state, and hard
+false `sourceDataValuesIncluded`, `pageValuesIncluded`,
+`artifactValuesIncluded`, `mediaValuesIncluded`, and `tokenValuesIncluded`
+flags. Cache hits, unconfigured requests, and tagged-frame requests keep
+`renderInput:null`. The response validator rejects malformed render-input
+metadata and accidental source-data/page/artifact/media/credential value
+exposure before success.
+
+P26.13 executes the first renderer runtime adapter boundary for configured
+file-thumbnail source-data reads. The service calls an injected
+`renderThumbnail` adapter only after source data is validated and only when the
+cache path did not hit. Adapter PNG bytes are registered in an in-memory asset
+store and returned as normalized `/assets/by-id/{mediaId}` metadata; no local
+filesystem writes occur. The pipeline records `status:"render-executed"`,
+marks the render stage executed, and keeps `persistWrite:false`. Manual hosts
+without an adapter, cache hits, unconfigured requests, and tagged-frame
+requests do not dispatch render. Thumbnail persistence writes, tagged-frame
+source-data reads, source-data/page values, artifact bytes in JSON, media
+values, and credential values remain disabled or redacted.
 
 The P25.77 revocation appeal resolution enforcement evidence attestation
 notarization certification endorsement countersignature verification revocation
@@ -1397,14 +1420,16 @@ Successful response:
       "artifactValuesIncluded": false,
       "tokenValuesIncluded": false
     },
-    "renderInput": null
+    "renderInput": null,
+    "renderOutput": null
   }
 }
 ```
 
 After a configured file-thumbnail refresh or reuse cache miss executes
 `get-file-data-for-thumbnail`, `backendRpcClient.renderInput` has this
-metadata-only shape:
+metadata-only shape. `renderDispatch` is `false` when no runtime adapter is
+configured and `true` when the P26.13 adapter boundary executes.
 
 ```json
 {
@@ -1435,55 +1460,52 @@ metadata-only shape:
 }
 ```
 
+When an injected renderer runtime adapter executes, the pipeline render stage
+is marked executed and `backendRpcClient.renderOutput` has this metadata-only
+shape:
+
+```json
+{
+  "status": "artifact-ready",
+  "condition": "after-render",
+  "runtime": "render-wasm-worker",
+  "fallbackUsed": false,
+  "artifactFormat": "png",
+  "artifactMimeType": "image/png",
+  "artifactByteLength": 68,
+  "renderDispatch": true,
+  "localFileWrites": false,
+  "sourceDataValuesIncluded": false,
+  "pageValuesIncluded": false,
+  "artifactValuesIncluded": false,
+  "mediaValuesIncluded": false,
+  "tokenValuesIncluded": false
+}
+```
+
 MCP must return resource metadata only; it must not write files on the MCP
 server filesystem. CLI should return the same metadata, and a future
 `--output` flag may download the PNG resource locally.
 
-## Registration Gates
+## Remaining Gates
 
-Before `render.thumbnail` becomes executable:
+`render.thumbnail` has an explicit renderer-service execution path, but these
+gates remain before the renderer can be treated as fully implemented:
 
-- implement the thumbnail renderer service
 - keep MCP `render.thumbnail` dry-run and `penpot-cli render thumbnail
-  --dry-run` as request inspection paths until execution exists
-- keep availability probes metadata-only until a real health endpoint and
-  execution client are implemented
+  --dry-run` as request inspection paths
+- keep manual hosts no-op unless a renderer runtime adapter is explicitly
+  configured
 - keep file thumbnail cache probe execution limited to file reuse while
   tagged-frame source-data loading remains pending
+- replace the injected test adapter with a bundled render-wasm/frontend
+  rasterizer runtime bridge before claiming real scene rendering
+- add thumbnail persistence writes only after rendered PNG bytes can be mapped
+  to backend `media` upload payloads safely
 - add or expose explicit frame source-data loading for tagged frame targets
 - normalize tagged frame media ids to resource URIs
-- keep response normalization covered by fixtures before any network client is
-  enabled
-- keep `clientRequest.dispatch` false until an explicit execution gate and
-  integration tests exist
-- keep `executionGate.dispatch` false until opt-in env, endpoint config,
-  service implementation, integration tests, target/cache capabilities, and
-  runtime registration all exist
-- keep `healthPreflight.dispatch`, `healthPreflight.networkProbe`, and
-  `executionClientHarness.dispatch` false until the executable adapter boundary
-  is explicitly implemented
-- keep `dispatchAdapterBoundary.dispatch` false until opt-in configuration
-  surfaces and executable adapter registration are implemented
-- keep `optInConfiguration.dispatch` false and treat opt-in values as
-  diagnostics-only until runtime dispatch is explicitly implemented
-- keep `unavailableErrorTaxonomy.dispatch` false and expose stable
-  unavailable/preflight/dispatch/resource codes in dry-run and unavailable
-  responses before executable network paths exist
-- keep `integrationFixtureHarness.dispatch`, `networkDispatch`, and
-  `localFileWrites` false while using fixture cases to define the future
-  integration suite required before executable renderer-service dispatch
-- keep `dispatchRegistrationPreflight.dispatch`, `networkDispatch`, and
-  `runtimeRegistration` false while using readiness checks to document the
-  final gate before executable renderer-service registration
-- keep `executableAdapterRegistrationScaffold.dispatch`, `networkDispatch`,
-  `runtimeRegistration`, and `localFileWrites` false while exposing the no-op
-  registration surface in MCP/CLI dry-run and unavailable responses
-- keep `adapterRegistryManifest.dispatch`, `networkDispatch`,
-  `runtimeRegistration`, and `localFileWrites` false while exposing future
-  registry and entrypoint wiring as metadata only
-- keep `enablementChecklist.dispatch`, `networkDispatch`,
-  `runtimeRegistration`, and `localFileWrites` false while using it as the
-  final metadata-only gate summary before implementation work
+- keep response normalization covered by fixtures before persistence writes or
+  runtime registration expand
 - extend MCP tests from dry-run/unavailable planning into auth forwarding,
   resource metadata, and renderer-service error responses
 - add CLI smoke tests for dry-run, execution metadata, `--output`, and missing

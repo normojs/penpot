@@ -252,7 +252,13 @@ configured file-target source-data reads now produce a token-safe
 `backendRpcClient.renderInput` summary for the future renderer handoff while
 cache hits and unsupported targets keep `renderInput:null`; real render
 dispatch, persistence writes, source-data/page/artifact/media values, and
-credential values remain disabled.
+credential values remain disabled. P26.13 is complete: successful file
+source-data reads can now dispatch an injected renderer runtime adapter, serve
+the returned PNG bytes from an in-memory resource URL, and report
+`backendRpcClient.renderOutput` metadata while manual hosts without an adapter
+keep the existing no-op path. Thumbnail persistence, tagged-frame source-data,
+local file writes, source-data/page value exposure, artifact byte exposure,
+media value exposure, and credential value exposure remain disabled.
 P25.7 is complete: thumbnail renderer-service API fixtures now define
 future file refresh, file reuse, tagged frame refresh, auth forwarding,
 resource URI normalization, and MCP/CLI test expectations. P25.8 is complete:
@@ -898,6 +904,7 @@ process boundary before MCP or CLI execution is enabled.
 | P26.10 | done | Execute file thumbnail cache probe for reuse requests | `backend`, `renderer-service`, `command-runtime`, `mcp/docs`, `todo.md`, `CHANGES.md` | Completed 2026-07-14; added a read-only backend `get-file-thumbnail` RPC and renderer-service execution for configured file-target `reuse` requests, returning normalized cached resource metadata on hit and continuing the no-op render path on miss | Enables the first backend cache read without source-data reads, real scene rendering, thumbnail persistence, tagged-frame cache probes, or credential/media value exposure |
 | P26.11 | done | Execute file thumbnail source-data reads before no-op rendering | `renderer-service`, `mcp/docs`, `todo.md`, `CHANGES.md` | Completed 2026-07-14; configured file-target refresh requests now call `get-file-data-for-thumbnail` after request validation, reuse requests call it only after cache misses, and token-safe response identity validation keeps cache-hit short-circuiting intact | Enables the first backend source-data read without exposing source data, rendering scene data, persisting thumbnails, tagged-frame source-data reads, or credential/media value exposure |
 | P26.12 | done | Add source-data render input summary before no-op rendering | `renderer-service`, `mcp/docs`, `todo.md`, `CHANGES.md` | Completed 2026-07-14; source-data-read file thumbnail responses now include token-safe `backendRpcClient.renderInput` metadata, cache hits keep `renderInput:null`, and response validation rejects leaked render input values | Prepares the renderer execution handoff without rendering scene data, persisting thumbnails, exposing source-data/page/artifact/media/credential values, or enabling tagged-frame source-data reads |
+| P26.13 | done | Execute injected renderer runtime adapter after file source-data reads | `renderer-service`, `mcp/docs`, `todo.md`, `CHANGES.md` | Completed 2026-07-14; renderer-service tests inject a runtime adapter that receives validated file source data internally, returns PNG bytes served from an in-memory resource URL, marks render dispatch executed, and keeps cache-hit short-circuiting intact | Enables the render stage boundary without thumbnail persistence, tagged-frame source-data reads, local file writes, source-data/page/artifact/media/credential value exposure, or a bundled render-wasm bridge |
 
 P26.1 is complete: `@penpot/renderer-service` is a private pnpm workspace
 package with a real no-op HTTP lifecycle. Its TypeScript output is written to
@@ -997,6 +1004,15 @@ validated file/revision/cache/artifact envelope that future rendering will
 consume, remains absent for cache hits and unconfigured/tagged-frame requests,
 and keeps real render dispatch, thumbnail persistence, page/source-data,
 artifact bytes, media values, and credential values disabled.
+
+P26.13 is complete: this slice adds a renderer-service runtime adapter hook
+after successful file thumbnail source-data reads. The adapter is injected by
+tests/future hosts, receives validated source-data internally, returns PNG
+bytes that the service stores only in memory and serves by resource URL, and
+updates response pipeline metadata to prove the render stage executed. The
+default manual host remains no-op unless an adapter is configured; persistence,
+tagged-frame source-data reads, local file writes, source-data/page values,
+artifact bytes in JSON, media values, and credential values stay disabled.
 
 ## Maintenance: Build Cache Hygiene
 
