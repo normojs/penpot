@@ -369,6 +369,259 @@ export const bundledRuntimeAssetMaterializationPreflight = {
     execution: null,
 } as const;
 
+type RuntimeAssetMaterializationDryRunPlan = {
+    status: "planned-disabled";
+    planVersion: "P26.26";
+    owner: "renderer-service";
+    mode: "metadata-only";
+    sourcePreflight: {
+        preflightVersion: "P26.21";
+        executionVersion: string | null;
+        diagnosticsVersion: "P26.25";
+        status: "not-executed" | "ready" | "degraded";
+        readiness: "not-checked" | "ready" | "degraded";
+        ready: boolean;
+        diagnosticCodes: string[];
+        missingAssetIds: string[];
+        missingCacheOutputIds: string[];
+    };
+    prerequisites: Array<{
+        id: string;
+        required: true;
+        status: "satisfied" | "blocked" | "approval-required";
+        source: string;
+        diagnosticCodes: string[];
+        nextActions: string[];
+    }>;
+    copyPlan: Array<{
+        id: string;
+        assetId: string;
+        source: "public-asset";
+        destination: "runtime-asset-cache";
+        preflightReadiness: "ready" | "blocked" | "unknown";
+        copyRequired: true;
+        futureLocalFileWrites: true;
+        localFileWrites: false;
+        copyApproved: false;
+        blockedByDiagnosticCodes: string[];
+    }>;
+    cacheOutputPlan: Array<{
+        id: string;
+        cacheOutputId: string;
+        preflightReadiness: "ready" | "blocked" | "unknown";
+        requiredBeforeMaterialization: true;
+        futureLocalFileWrites: true;
+        localFileWrites: false;
+        blockedByDiagnosticCodes: string[];
+    }>;
+    approvalGate: {
+        status: "closed";
+        approvalRequired: true;
+        approvalGranted: false;
+        approvalTokenAccepted: false;
+        approvalTokenConsumed: false;
+        writesEnabled: false;
+        currentBlockers: string[];
+        opensWhen: string[];
+    };
+    sideEffects: {
+        browserProcessStarted: false;
+        runtimeExecutionRegistered: false;
+        runtimeAdapterImported: false;
+        runtimeAssetsLoaded: false;
+        assetManifestMaterialized: false;
+        fileRead: false;
+        hashComputed: false;
+        networkDispatch: false;
+        dispatch: false;
+        localFileWrites: false;
+    };
+    redaction: {
+        sourceDataValuesIncluded: false;
+        pageValuesIncluded: false;
+        artifactValuesIncluded: false;
+        mediaValuesIncluded: false;
+        tokenValuesIncluded: false;
+    };
+    omitted: {
+        workspaceRoot: true;
+        cacheRoot: true;
+        publicPaths: true;
+        cachePaths: true;
+        sha256: true;
+        tokenValues: true;
+        sourceDataValues: true;
+        pageValues: true;
+        artifactValues: true;
+        mediaValues: true;
+    };
+    execution: null;
+};
+
+function unknownStringArray(value: unknown): string[] {
+    return Array.isArray(value) ? value.filter((entry): entry is string => typeof entry === "string") : [];
+}
+
+function preflightDiagnosticCodes(execution: Record<string, unknown> | null): string[] {
+    return uniqueStrings(
+        Array.isArray(execution?.diagnostics)
+            ? execution.diagnostics
+                  .filter((entry): entry is Record<string, unknown> => isRecord(entry))
+                  .map((entry) => (typeof entry.code === "string" ? entry.code : null))
+                  .filter((entry): entry is string => Boolean(entry))
+            : []
+    );
+}
+
+function runtimeAssetMaterializationDryRunPlan(preflight: Record<string, unknown>): RuntimeAssetMaterializationDryRunPlan {
+    const execution = isRecord(preflight.execution) ? preflight.execution : null;
+    const summary = isRecord(execution?.summary) ? execution.summary : {};
+    const diagnosticCodes = preflightDiagnosticCodes(execution);
+    const missingAssetIds = unknownStringArray(summary.missingAssetIds);
+    const missingCacheOutputIds = unknownStringArray(summary.missingCacheOutputIds);
+    const readiness = execution?.readiness === "ready" || execution?.readiness === "degraded" ? execution.readiness : "not-checked";
+    const preflightReady = readiness === "ready" && summary.ready === true;
+    const preflightExecuted = execution !== null;
+    const materializationApprovalCode = "renderer_service_runtime_asset_materialization_approval_required";
+    const preflightRequiredCode = "renderer_service_runtime_asset_materialization_preflight_required";
+    const blockers = uniqueStrings([
+        ...(preflightExecuted ? diagnosticCodes : [preflightRequiredCode]),
+        materializationApprovalCode,
+    ]);
+
+    return {
+        status: "planned-disabled",
+        planVersion: "P26.26",
+        owner: "renderer-service",
+        mode: "metadata-only",
+        sourcePreflight: {
+            preflightVersion: "P26.21",
+            executionVersion: typeof execution?.executionVersion === "string" ? execution.executionVersion : null,
+            diagnosticsVersion: "P26.25",
+            status: preflightExecuted ? (preflightReady ? "ready" : "degraded") : "not-executed",
+            readiness,
+            ready: preflightReady,
+            diagnosticCodes,
+            missingAssetIds,
+            missingCacheOutputIds,
+        },
+        prerequisites: [
+            {
+                id: "runtime-asset-preflight-executed",
+                required: true,
+                status: preflightExecuted ? "satisfied" : "blocked",
+                source: "runtimeAssetMaterializationPreflight.execution",
+                diagnosticCodes: preflightExecuted ? [] : [preflightRequiredCode],
+                nextActions: preflightExecuted
+                    ? []
+                    : [
+                          `Set ${RUNTIME_ASSET_PREFLIGHT_ENV}=read-only.`,
+                          `Set ${RUNTIME_ASSET_PREFLIGHT_WORKSPACE_ROOT_ENV} to the Penpot workspace root.`,
+                          "Start renderer-service and rerun /health before materialization dry-run approval.",
+                      ],
+            },
+            {
+                id: "runtime-asset-preflight-ready",
+                required: true,
+                status: preflightReady ? "satisfied" : "blocked",
+                source: "runtimeAssetMaterializationPreflight.execution.diagnostics",
+                diagnosticCodes: preflightReady ? [] : diagnosticCodes,
+                nextActions: preflightReady ? [] : unknownStringArray(execution?.nextActions),
+            },
+            {
+                id: "runtime-asset-materialization-approval",
+                required: true,
+                status: "approval-required",
+                source: "runtimeAssetMaterializationDryRun.approvalGate",
+                diagnosticCodes: [materializationApprovalCode],
+                nextActions: [
+                    "Review the dry-run copy and cache-output plan before enabling runtime asset materialization.",
+                    "Keep materialization disabled until an explicit future approval gate is implemented.",
+                ],
+            },
+        ],
+        copyPlan: bundledRuntimeBridgeAssetManifest.assets.map((asset) => ({
+            id: `${asset.id}-materialization-copy-dry-run`,
+            assetId: asset.id,
+            source: "public-asset",
+            destination: "runtime-asset-cache",
+            preflightReadiness: !preflightExecuted ? "unknown" : missingAssetIds.includes(asset.id) ? "blocked" : "ready",
+            copyRequired: true,
+            futureLocalFileWrites: true,
+            localFileWrites: false,
+            copyApproved: false,
+            blockedByDiagnosticCodes: !preflightExecuted
+                ? [preflightRequiredCode]
+                : missingAssetIds.includes(asset.id)
+                    ? diagnosticCodes
+                    : [],
+        })),
+        cacheOutputPlan: bundledRuntimeBridgeAssetManifest.cacheOutputs.map((entry) => ({
+            id: `${entry.id}-materialization-dry-run`,
+            cacheOutputId: entry.id,
+            preflightReadiness: !preflightExecuted ? "unknown" : missingCacheOutputIds.includes(entry.id) ? "blocked" : "ready",
+            requiredBeforeMaterialization: true,
+            futureLocalFileWrites: true,
+            localFileWrites: false,
+            blockedByDiagnosticCodes: !preflightExecuted
+                ? [preflightRequiredCode]
+                : missingCacheOutputIds.includes(entry.id)
+                    ? diagnosticCodes
+                    : [],
+        })),
+        approvalGate: {
+            status: "closed",
+            approvalRequired: true,
+            approvalGranted: false,
+            approvalTokenAccepted: false,
+            approvalTokenConsumed: false,
+            writesEnabled: false,
+            currentBlockers: blockers,
+            opensWhen: [
+                "runtime asset preflight has executed",
+                "runtime asset preflight readiness is ready",
+                "explicit future materialization approval gate is implemented",
+            ],
+        },
+        sideEffects: {
+            browserProcessStarted: false,
+            runtimeExecutionRegistered: false,
+            runtimeAdapterImported: false,
+            runtimeAssetsLoaded: false,
+            assetManifestMaterialized: false,
+            fileRead: false,
+            hashComputed: false,
+            networkDispatch: false,
+            dispatch: false,
+            localFileWrites: false,
+        },
+        redaction: {
+            sourceDataValuesIncluded: false,
+            pageValuesIncluded: false,
+            artifactValuesIncluded: false,
+            mediaValuesIncluded: false,
+            tokenValuesIncluded: false,
+        },
+        omitted: {
+            workspaceRoot: true,
+            cacheRoot: true,
+            publicPaths: true,
+            cachePaths: true,
+            sha256: true,
+            tokenValues: true,
+            sourceDataValues: true,
+            pageValues: true,
+            artifactValues: true,
+            mediaValues: true,
+        },
+        execution: null,
+    };
+}
+
+export const bundledRuntimeAssetMaterializationDryRunPlan = runtimeAssetMaterializationDryRunPlan(
+    bundledRuntimeAssetMaterializationPreflight
+);
+
 export const healthResponse = {
     status: "ok",
     renderer: "penpot-thumbnail-renderer",
@@ -392,11 +645,13 @@ export const healthResponse = {
         "thumbnail.render.runtime-module",
         "thumbnail.render.runtime-asset-manifest",
         "thumbnail.render.runtime-asset-preflight",
+        "thumbnail.render.runtime-asset-materialization-dry-run",
         "thumbnail.backend-rpc.file-thumbnail-persist",
         "thumbnail.backend-rpc.frame-thumbnail-persist",
     ],
     runtimeAssetManifest: bundledRuntimeBridgeAssetManifest,
     runtimeAssetMaterializationPreflight: bundledRuntimeAssetMaterializationPreflight,
+    runtimeAssetMaterializationDryRun: bundledRuntimeAssetMaterializationDryRunPlan,
 } as const;
 
 export const noopThumbnailResponse = {
@@ -419,6 +674,7 @@ export const noopThumbnailResponse = {
     localFileWrites: false,
     runtimeAssetManifest: bundledRuntimeBridgeAssetManifest,
     runtimeAssetMaterializationPreflight: bundledRuntimeAssetMaterializationPreflight,
+    runtimeAssetMaterializationDryRun: bundledRuntimeAssetMaterializationDryRunPlan,
 } as const;
 
 const MAX_REQUEST_BODY_BYTES = 1024 * 1024;
@@ -1068,6 +1324,10 @@ async function runtimeAssetMaterializationPreflightResponse(
         ...bundledRuntimeAssetMaterializationPreflight,
         execution: await executeRuntimeAssetMaterializationPreflight(options),
     };
+}
+
+function runtimeAssetMaterializationDryRunResponse(preflight: Record<string, unknown>): RuntimeAssetMaterializationDryRunPlan {
+    return runtimeAssetMaterializationDryRunPlan(preflight);
 }
 
 function normalizeRendererRuntimeModuleSpecifier(moduleSpecifier: string): string {
@@ -2534,7 +2794,8 @@ function thumbnailResponse(
     sourceDataReadExecution: BackendRpcSourceDataReadExecution,
     renderExecution: ThumbnailRenderExecution,
     persistExecution: BackendRpcThumbnailPersistExecution,
-    runtimeAssetPreflight: Record<string, unknown>
+    runtimeAssetPreflight: Record<string, unknown>,
+    runtimeAssetMaterializationDryRun: Record<string, unknown>
 ): Record<string, unknown> {
     const host = request.headers.host ?? `${DEFAULT_HOST}:${DEFAULT_PORT}`;
     const downloadUri = `http://${host}/assets/by-id/noop-thumbnail-png`;
@@ -2545,6 +2806,7 @@ function thumbnailResponse(
     return {
         ...noopThumbnailResponse,
         runtimeAssetMaterializationPreflight: runtimeAssetPreflight,
+        runtimeAssetMaterializationDryRun,
         request: summary,
         auth,
         backendRpcClient: summarizeBackendRpcClient(
@@ -3112,6 +3374,134 @@ function validateRuntimeAssetMaterializationPreflightExecutionResponse(actual: u
     }
 }
 
+function validateRuntimeAssetMaterializationDryRunResponse(actual: unknown, field: string): void {
+    const record = responseRecord(actual, field);
+    requireResponseEqual(record.status, "planned-disabled", `${field}.status`);
+    requireResponseEqual(record.planVersion, "P26.26", `${field}.planVersion`);
+    requireResponseEqual(record.owner, "renderer-service", `${field}.owner`);
+    requireResponseEqual(record.mode, "metadata-only", `${field}.mode`);
+
+    const sourcePreflight = responseRecord(record.sourcePreflight, `${field}.sourcePreflight`);
+    requireResponseEqual(sourcePreflight.preflightVersion, "P26.21", `${field}.sourcePreflight.preflightVersion`);
+    requireResponseEqual(sourcePreflight.diagnosticsVersion, "P26.25", `${field}.sourcePreflight.diagnosticsVersion`);
+    requireResponseEqual(
+        sourcePreflight.status === "not-executed" || sourcePreflight.status === "ready" || sourcePreflight.status === "degraded",
+        true,
+        `${field}.sourcePreflight.status`
+    );
+    requireResponseEqual(
+        sourcePreflight.readiness === "not-checked" || sourcePreflight.readiness === "ready" || sourcePreflight.readiness === "degraded",
+        true,
+        `${field}.sourcePreflight.readiness`
+    );
+    requireResponseEqual(responseBoolean(sourcePreflight, "ready", `${field}.sourcePreflight.ready`), sourcePreflight.readiness === "ready", `${field}.sourcePreflight.ready`);
+    requireResponseArrayEqual(
+        responseStringArray(sourcePreflight, "diagnosticCodes", `${field}.sourcePreflight.diagnosticCodes`),
+        (sourcePreflight.diagnosticCodes as string[] | undefined) ?? [],
+        `${field}.sourcePreflight.diagnosticCodes`
+    );
+
+    const prerequisites = responseRecordArray(record.prerequisites, `${field}.prerequisites`);
+    requireResponseEqual(prerequisites.length, 3, `${field}.prerequisites.length`);
+    for (const [index, prerequisite] of prerequisites.entries()) {
+        requireResponseEqual(prerequisite.required, true, `${field}.prerequisites.${index}.required`);
+        requireResponseEqual(
+            ["satisfied", "blocked", "approval-required"].includes(String(prerequisite.status)),
+            true,
+            `${field}.prerequisites.${index}.status`
+        );
+        requireResponseArrayEqual(
+            responseStringArray(prerequisite, "diagnosticCodes", `${field}.prerequisites.${index}.diagnosticCodes`),
+            (prerequisite.diagnosticCodes as string[] | undefined) ?? [],
+            `${field}.prerequisites.${index}.diagnosticCodes`
+        );
+        requireResponseEqual(responseStringArray(prerequisite, "nextActions", `${field}.prerequisites.${index}.nextActions`).length >= 0, true, `${field}.prerequisites.${index}.nextActions`);
+    }
+
+    const copyPlan = responseRecordArray(record.copyPlan, `${field}.copyPlan`);
+    requireResponseEqual(copyPlan.length, bundledRuntimeBridgeAssetManifest.assets.length, `${field}.copyPlan.length`);
+    for (const [index, entry] of copyPlan.entries()) {
+        requireResponseEqual(entry.copyRequired, true, `${field}.copyPlan.${index}.copyRequired`);
+        requireResponseEqual(entry.source, "public-asset", `${field}.copyPlan.${index}.source`);
+        requireResponseEqual(entry.destination, "runtime-asset-cache", `${field}.copyPlan.${index}.destination`);
+        requireResponseEqual(entry.futureLocalFileWrites, true, `${field}.copyPlan.${index}.futureLocalFileWrites`);
+        requireResponseEqual(entry.localFileWrites, false, `${field}.copyPlan.${index}.localFileWrites`);
+        requireResponseEqual(entry.copyApproved, false, `${field}.copyPlan.${index}.copyApproved`);
+        requireResponseEqual(
+            ["ready", "blocked", "unknown"].includes(String(entry.preflightReadiness)),
+            true,
+            `${field}.copyPlan.${index}.preflightReadiness`
+        );
+    }
+
+    const cacheOutputPlan = responseRecordArray(record.cacheOutputPlan, `${field}.cacheOutputPlan`);
+    requireResponseEqual(cacheOutputPlan.length, bundledRuntimeBridgeAssetManifest.cacheOutputs.length, `${field}.cacheOutputPlan.length`);
+    for (const [index, entry] of cacheOutputPlan.entries()) {
+        requireResponseEqual(entry.requiredBeforeMaterialization, true, `${field}.cacheOutputPlan.${index}.requiredBeforeMaterialization`);
+        requireResponseEqual(entry.futureLocalFileWrites, true, `${field}.cacheOutputPlan.${index}.futureLocalFileWrites`);
+        requireResponseEqual(entry.localFileWrites, false, `${field}.cacheOutputPlan.${index}.localFileWrites`);
+        requireResponseEqual(
+            ["ready", "blocked", "unknown"].includes(String(entry.preflightReadiness)),
+            true,
+            `${field}.cacheOutputPlan.${index}.preflightReadiness`
+        );
+    }
+
+    const approvalGate = responseRecord(record.approvalGate, `${field}.approvalGate`);
+    requireResponseEqual(approvalGate.status, "closed", `${field}.approvalGate.status`);
+    requireResponseEqual(approvalGate.approvalRequired, true, `${field}.approvalGate.approvalRequired`);
+    requireResponseEqual(approvalGate.approvalGranted, false, `${field}.approvalGate.approvalGranted`);
+    requireResponseEqual(approvalGate.approvalTokenAccepted, false, `${field}.approvalGate.approvalTokenAccepted`);
+    requireResponseEqual(approvalGate.approvalTokenConsumed, false, `${field}.approvalGate.approvalTokenConsumed`);
+    requireResponseEqual(approvalGate.writesEnabled, false, `${field}.approvalGate.writesEnabled`);
+    requireResponseEqual(responseStringArray(approvalGate, "currentBlockers", `${field}.approvalGate.currentBlockers`).length >= 1, true, `${field}.approvalGate.currentBlockers`);
+    requireResponseEqual(responseStringArray(approvalGate, "opensWhen", `${field}.approvalGate.opensWhen`).length >= 1, true, `${field}.approvalGate.opensWhen`);
+
+    const sideEffects = responseRecord(record.sideEffects, `${field}.sideEffects`);
+    for (const property of [
+        "browserProcessStarted",
+        "runtimeExecutionRegistered",
+        "runtimeAdapterImported",
+        "runtimeAssetsLoaded",
+        "assetManifestMaterialized",
+        "fileRead",
+        "hashComputed",
+        "networkDispatch",
+        "dispatch",
+        "localFileWrites",
+    ]) {
+        requireResponseEqual(sideEffects[property], false, `${field}.sideEffects.${property}`);
+    }
+
+    const redaction = responseRecord(record.redaction, `${field}.redaction`);
+    for (const property of [
+        "sourceDataValuesIncluded",
+        "pageValuesIncluded",
+        "artifactValuesIncluded",
+        "mediaValuesIncluded",
+        "tokenValuesIncluded",
+    ]) {
+        requireResponseEqual(redaction[property], false, `${field}.redaction.${property}`);
+    }
+
+    const omitted = responseRecord(record.omitted, `${field}.omitted`);
+    for (const property of [
+        "workspaceRoot",
+        "cacheRoot",
+        "publicPaths",
+        "cachePaths",
+        "sha256",
+        "tokenValues",
+        "sourceDataValues",
+        "pageValues",
+        "artifactValues",
+        "mediaValues",
+    ]) {
+        requireResponseEqual(omitted[property], true, `${field}.omitted.${property}`);
+    }
+    requireResponseEqual(record.execution, null, `${field}.execution`);
+}
+
 function validateRuntimeAssetMaterializationPreflightResponse(actual: unknown, field: string): void {
     const record = responseRecord(actual, field);
     requireResponseEqual(record.status, bundledRuntimeAssetMaterializationPreflight.status, `${field}.status`);
@@ -3433,6 +3823,10 @@ function validateThumbnailResponseContract(
         record.runtimeAssetMaterializationPreflight,
         "runtimeAssetMaterializationPreflight"
     );
+    validateRuntimeAssetMaterializationDryRunResponse(
+        record.runtimeAssetMaterializationDryRun,
+        "runtimeAssetMaterializationDryRun"
+    );
 
     validateThumbnailResourceResponse(responseRecord(record.resource, "resource"));
     validateThumbnailCacheResponse(responseRecord(record.cache, "cache"), summary, cacheProbeExecution);
@@ -3484,9 +3878,11 @@ async function handleRequest(request: IncomingMessage, response: ServerResponse,
 
     if (request.method === "GET" && url.pathname === "/health") {
         const runtimeAssetPreflight = await runtimeAssetMaterializationPreflightResponse(options.runtimeAssetPreflight);
+        const runtimeAssetMaterializationDryRun = runtimeAssetMaterializationDryRunResponse(runtimeAssetPreflight);
         sendJson(response, 200, {
             ...healthResponse,
             runtimeAssetMaterializationPreflight: runtimeAssetPreflight,
+            runtimeAssetMaterializationDryRun,
         });
         return;
     }
@@ -3501,6 +3897,7 @@ async function handleRequest(request: IncomingMessage, response: ServerResponse,
             const renderExecution = await executeThumbnailRender(summary, sourceDataReadExecution, options.renderer, options.renderedAssets);
             const persistExecution = await executeThumbnailPersist(request, summary, options.backendRpc, sourceDataReadExecution, renderExecution);
             const runtimeAssetPreflight = await runtimeAssetMaterializationPreflightResponse(options.runtimeAssetPreflight);
+            const runtimeAssetMaterializationDryRun = runtimeAssetMaterializationDryRunResponse(runtimeAssetPreflight);
             const generatedResponse = thumbnailResponse(
                 request,
                 summary,
@@ -3510,7 +3907,8 @@ async function handleRequest(request: IncomingMessage, response: ServerResponse,
                 sourceDataReadExecution,
                 renderExecution,
                 persistExecution,
-                runtimeAssetPreflight
+                runtimeAssetPreflight,
+                runtimeAssetMaterializationDryRun
             );
             const responseBody = options.thumbnailResponseOverride
                 ? options.thumbnailResponseOverride(generatedResponse)

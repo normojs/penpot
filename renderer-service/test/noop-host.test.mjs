@@ -100,6 +100,61 @@ function assertRuntimeAssetMaterializationPreflightScaffold(preflight) {
     assert.equal(preflight.redaction.tokenValuesIncluded, false);
 }
 
+function assertRuntimeAssetMaterializationDryRunPlan(plan, { status = "not-executed", readiness = "not-checked", ready = false } = {}) {
+    assert.equal(plan.status, "planned-disabled");
+    assert.equal(plan.planVersion, "P26.26");
+    assert.equal(plan.owner, "renderer-service");
+    assert.equal(plan.mode, "metadata-only");
+    assert.equal(plan.sourcePreflight.preflightVersion, "P26.21");
+    assert.equal(plan.sourcePreflight.diagnosticsVersion, "P26.25");
+    assert.equal(plan.sourcePreflight.status, status);
+    assert.equal(plan.sourcePreflight.readiness, readiness);
+    assert.equal(plan.sourcePreflight.ready, ready);
+    assert.equal(plan.prerequisites.length, 3);
+    assert.deepEqual(
+        plan.copyPlan.map((entry) => entry.assetId),
+        serviceModule.bundledRuntimeBridgeAssetManifest.assets.map((asset) => asset.id)
+    );
+    assert.deepEqual(
+        plan.cacheOutputPlan.map((entry) => entry.cacheOutputId),
+        serviceModule.bundledRuntimeBridgeAssetManifest.cacheOutputs.map((entry) => entry.id)
+    );
+    assert.ok(plan.copyPlan.every((entry) => entry.futureLocalFileWrites === true));
+    assert.ok(plan.copyPlan.every((entry) => entry.localFileWrites === false));
+    assert.ok(plan.copyPlan.every((entry) => entry.copyApproved === false));
+    assert.ok(plan.cacheOutputPlan.every((entry) => entry.futureLocalFileWrites === true));
+    assert.ok(plan.cacheOutputPlan.every((entry) => entry.localFileWrites === false));
+    assert.equal(plan.approvalGate.status, "closed");
+    assert.equal(plan.approvalGate.approvalRequired, true);
+    assert.equal(plan.approvalGate.approvalGranted, false);
+    assert.equal(plan.approvalGate.approvalTokenAccepted, false);
+    assert.equal(plan.approvalGate.approvalTokenConsumed, false);
+    assert.equal(plan.approvalGate.writesEnabled, false);
+    assert.ok(plan.approvalGate.currentBlockers.includes("renderer_service_runtime_asset_materialization_approval_required"));
+    assert.equal(plan.sideEffects.browserProcessStarted, false);
+    assert.equal(plan.sideEffects.runtimeExecutionRegistered, false);
+    assert.equal(plan.sideEffects.runtimeAdapterImported, false);
+    assert.equal(plan.sideEffects.runtimeAssetsLoaded, false);
+    assert.equal(plan.sideEffects.assetManifestMaterialized, false);
+    assert.equal(plan.sideEffects.fileRead, false);
+    assert.equal(plan.sideEffects.hashComputed, false);
+    assert.equal(plan.sideEffects.networkDispatch, false);
+    assert.equal(plan.sideEffects.dispatch, false);
+    assert.equal(plan.sideEffects.localFileWrites, false);
+    assert.equal(plan.redaction.sourceDataValuesIncluded, false);
+    assert.equal(plan.redaction.pageValuesIncluded, false);
+    assert.equal(plan.redaction.artifactValuesIncluded, false);
+    assert.equal(plan.redaction.mediaValuesIncluded, false);
+    assert.equal(plan.redaction.tokenValuesIncluded, false);
+    assert.equal(plan.omitted.workspaceRoot, true);
+    assert.equal(plan.omitted.cacheRoot, true);
+    assert.equal(plan.omitted.publicPaths, true);
+    assert.equal(plan.omitted.cachePaths, true);
+    assert.equal(plan.omitted.sha256, true);
+    assert.equal(plan.execution, null);
+    return plan;
+}
+
 const rendererServiceCacheRoot = "/Volumes/fushilu/.caches/penpot/renderer-service";
 
 function remapRuntimeAssetCachePath(path, cacheRoot) {
@@ -450,8 +505,10 @@ test("noop host exposes the P25.24 health contract", async () => {
         assert.ok(serviceModule.healthResponse.capabilities.includes("thumbnail.backend-rpc.frame-thumbnail-persist"));
         assert.ok(serviceModule.healthResponse.capabilities.includes("thumbnail.render.runtime-asset-manifest"));
         assert.ok(serviceModule.healthResponse.capabilities.includes("thumbnail.render.runtime-asset-preflight"));
+        assert.ok(serviceModule.healthResponse.capabilities.includes("thumbnail.render.runtime-asset-materialization-dry-run"));
         assertRuntimeAssetManifestScaffold(body.runtimeAssetManifest);
         assertRuntimeAssetMaterializationPreflightScaffold(body.runtimeAssetMaterializationPreflight);
+        assertRuntimeAssetMaterializationDryRunPlan(body.runtimeAssetMaterializationDryRun);
     });
 });
 
@@ -504,6 +561,14 @@ test("noop host executes the P26.22 runtime asset preflight read-only ready slic
         assert.ok(execution.cacheOutputChecks.every((check) => check.localFileWrites === false));
         assert.equal(execution.sideEffects.fileRead, true);
         assert.equal(execution.sideEffects.hashComputed, true);
+        const dryRun = assertRuntimeAssetMaterializationDryRunPlan(body.runtimeAssetMaterializationDryRun, {
+            status: "ready",
+            readiness: "ready",
+            ready: true,
+        });
+        assert.ok(dryRun.copyPlan.every((entry) => entry.preflightReadiness === "ready"));
+        assert.ok(dryRun.cacheOutputPlan.every((entry) => entry.preflightReadiness === "ready"));
+        assert.deepEqual(dryRun.sourcePreflight.diagnosticCodes, []);
     } finally {
         await service.stop();
         await fixture.cleanup();
@@ -585,6 +650,18 @@ test("noop host reports degraded P26.22 runtime asset preflight readiness", asyn
         assert.equal(missingCacheOutput.writable, false);
         assert.equal(missingCacheOutput.fileRead, false);
         assert.equal(missingCacheOutput.localFileWrites, false);
+        const dryRun = assertRuntimeAssetMaterializationDryRunPlan(body.runtimeAssetMaterializationDryRun, {
+            status: "degraded",
+            readiness: "degraded",
+            ready: false,
+        });
+        assert.ok(dryRun.sourcePreflight.missingAssetIds.includes("thumbnail-worker-main"));
+        assert.ok(dryRun.sourcePreflight.missingCacheOutputIds.includes("browser-profile-cache"));
+        assert.ok(dryRun.sourcePreflight.diagnosticCodes.includes("renderer_service_runtime_asset_missing_public_asset"));
+        assert.ok(dryRun.sourcePreflight.diagnosticCodes.includes("renderer_service_runtime_asset_missing_cache_asset"));
+        assert.ok(dryRun.sourcePreflight.diagnosticCodes.includes("renderer_service_runtime_asset_cache_output_unavailable"));
+        assert.equal(dryRun.copyPlan.find((entry) => entry.assetId === "thumbnail-worker-main").preflightReadiness, "blocked");
+        assert.equal(dryRun.cacheOutputPlan.find((entry) => entry.cacheOutputId === "browser-profile-cache").preflightReadiness, "blocked");
     } finally {
         await service.stop();
         await fixture.cleanup();
@@ -1901,6 +1978,12 @@ test("noop host includes the P26.22 runtime asset preflight read-only execution 
         });
         assert.equal(body.localFileWrites, false);
         assert.equal(execution.summary.ready, true);
+        const dryRun = assertRuntimeAssetMaterializationDryRunPlan(body.runtimeAssetMaterializationDryRun, {
+            status: "ready",
+            readiness: "ready",
+            ready: true,
+        });
+        assert.ok(dryRun.copyPlan.every((entry) => entry.preflightReadiness === "ready"));
         assert.equal(JSON.stringify(body).includes("public:thumbnail-worker-main"), false);
         assert.equal(JSON.stringify(body).includes("cache:thumbnail-worker-main"), false);
     } finally {
@@ -2087,6 +2170,41 @@ test("noop host rejects unsafe P26.22 runtime asset preflight execution metadata
         assert.equal(body.code, "renderer_service_response_invalid");
         assert.equal(body.field, "runtimeAssetMaterializationPreflight.execution.sideEffects.localFileWrites");
         assert.match(body.message, /runtimeAssetMaterializationPreflight\.execution\.sideEffects\.localFileWrites must match false/);
+    } finally {
+        await service.stop();
+        await fixture.cleanup();
+    }
+});
+
+test("noop host rejects unsafe P26.26 runtime asset materialization dry-run metadata", async () => {
+    const fixture = await createRuntimePreflightFixture();
+    const service = await serviceModule.startRendererService({
+        port: 0,
+        runtimeAssetPreflight: {
+            executeReadOnly: true,
+            workspaceRoot: fixture.workspaceRoot,
+            cacheRoot: fixture.cacheRoot,
+        },
+        thumbnailResponseOverride: (body) => ({
+            ...body,
+            runtimeAssetMaterializationDryRun: {
+                ...body.runtimeAssetMaterializationDryRun,
+                approvalGate: {
+                    ...body.runtimeAssetMaterializationDryRun.approvalGate,
+                    writesEnabled: true,
+                },
+            },
+        }),
+    });
+    try {
+        const response = await postValidFileThumbnail(service.host, service.port);
+
+        assert.equal(response.status, 500);
+        const body = await response.json();
+        assert.equal(body.status, "error");
+        assert.equal(body.code, "renderer_service_response_invalid");
+        assert.equal(body.field, "runtimeAssetMaterializationDryRun.approvalGate.writesEnabled");
+        assert.match(body.message, /runtimeAssetMaterializationDryRun\.approvalGate\.writesEnabled must match false/);
     } finally {
         await service.stop();
         await fixture.cleanup();

@@ -462,6 +462,15 @@ codes plus redacted next actions for missing public assets, missing cache
 copies, unavailable cache outputs, hash failures, and invalid operator
 configuration. CLI/MCP still only consume the renderer-service `/health`
 response and never expose workspace/cache roots or filesystem paths.
+P26.26 adds a metadata-only materialization dry-run on the same
+renderer-service-owned boundary. `/health` and `/thumbnail` now report
+source-preflight state, copy/cache-output plan counts, side-effect flags, and
+an approval-required gate derived from P26.25 diagnostics. Approval stays
+closed and writes stay disabled: no assets are copied, no browser is started,
+no runtime adapter is imported or loaded, no backend/source-data reads or
+network dispatch occur, no runtime execution is registered, and CLI/MCP
+summaries still omit roots, paths, hashes, tokens, source data, page data,
+artifacts, and media values.
 
 ## Test Strategy
 

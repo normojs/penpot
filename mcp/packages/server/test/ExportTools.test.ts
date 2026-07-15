@@ -7410,6 +7410,69 @@ test("RenderThumbnailTool execution opt-in posts to renderer-service and returns
                             },
                         },
                     },
+                    runtimeAssetMaterializationDryRun: {
+                        status: "planned-disabled",
+                        planVersion: "P26.26",
+                        owner: "renderer-service",
+                        mode: "metadata-only",
+                        sourcePreflight: {
+                            preflightVersion: "P26.21",
+                            executionVersion: "P26.22",
+                            diagnosticsVersion: "P26.25",
+                            status: "ready",
+                            readiness: "ready",
+                            ready: true,
+                            diagnosticCodes: [],
+                            missingAssetIds: [],
+                            missingCacheOutputIds: [],
+                        },
+                        prerequisites: [
+                            {
+                                id: "runtime-asset-preflight-executed",
+                                required: true,
+                                status: "satisfied",
+                                source: "runtimeAssetMaterializationPreflight.execution",
+                                diagnosticCodes: [],
+                                nextActions: [],
+                            },
+                            {
+                                id: "runtime-asset-preflight-ready",
+                                required: true,
+                                status: "satisfied",
+                                source: "runtimeAssetMaterializationPreflight.execution.diagnostics",
+                                diagnosticCodes: [],
+                                nextActions: [],
+                            },
+                            {
+                                id: "runtime-asset-materialization-approval",
+                                required: true,
+                                status: "approval-required",
+                                source: "runtimeAssetMaterializationDryRun.approvalGate",
+                                diagnosticCodes: ["renderer_service_runtime_asset_materialization_approval_required"],
+                                nextActions: ["Review the dry-run copy and cache-output plan before enabling runtime asset materialization."],
+                            },
+                        ],
+                        copyPlan: [{ assetId: "thumbnail-worker-main", preflightReadiness: "ready" }],
+                        cacheOutputPlan: [{ cacheOutputId: "runtime-asset-cache", preflightReadiness: "ready" }],
+                        approvalGate: {
+                            approvalRequired: true,
+                            approvalGranted: false,
+                            writesEnabled: false,
+                            currentBlockers: ["renderer_service_runtime_asset_materialization_approval_required"],
+                        },
+                        sideEffects: {
+                            browserProcessStarted: false,
+                            runtimeExecutionRegistered: false,
+                            runtimeAdapterImported: false,
+                            runtimeAssetsLoaded: false,
+                            assetManifestMaterialized: false,
+                            fileRead: false,
+                            hashComputed: false,
+                            networkDispatch: false,
+                            dispatch: false,
+                            localFileWrites: false,
+                        },
+                    },
                 }),
                 { status: 200, headers: { "content-type": "application/json; charset=utf-8" } }
             );
@@ -7480,6 +7543,18 @@ test("RenderThumbnailTool execution opt-in posts to renderer-service and returns
         assert.equal(body.data.healthPreflight.runtimeAssetPreflight.sideEffects.localFileWrites, false);
         assert.equal(body.data.healthPreflight.runtimeAssetPreflight.omitted.workspaceRoot, true);
         assert.equal(body.data.healthPreflight.runtimeAssetPreflight.omitted.sha256, true);
+        assert.equal(body.data.healthPreflight.runtimeAssetMaterializationDryRun.status, "planned-disabled");
+        assert.equal(body.data.healthPreflight.runtimeAssetMaterializationDryRun.planVersion, "P26.26");
+        assert.equal(body.data.healthPreflight.runtimeAssetMaterializationDryRun.readiness, "ready");
+        assert.equal(body.data.healthPreflight.runtimeAssetMaterializationDryRun.writesEnabled, false);
+        assert.equal(body.data.healthPreflight.runtimeAssetMaterializationDryRun.copyPlanCounts.ready, 1);
+        assert.ok(
+            body.data.healthPreflight.runtimeAssetMaterializationDryRun.diagnosticCodes.includes(
+                "renderer_service_runtime_asset_materialization_approval_required"
+            )
+        );
+        assert.equal(body.data.healthPreflight.runtimeAssetMaterializationDryRun.sideEffects.localFileWrites, false);
+        assert.equal(body.data.healthPreflight.runtimeAssetMaterializationDryRun.omitted.workspaceRoot, true);
         assert.equal(JSON.stringify(body).includes("/workspace/mcp-secret"), false);
         assert.equal(JSON.stringify(body).includes("abc123"), false);
         assert.equal(body.data.adapterSelection.selected, "renderer-service");

@@ -1168,6 +1168,28 @@ function getRendererServiceLifecyclePlan(args: string[], env: NodeJS.ProcessEnv)
             runtimeExecutionRegistered: false;
         };
     };
+    runtimeAssetMaterializationDryRun: {
+        status: "planned-disabled";
+        planVersion: "P26.26";
+        source: "renderer-service /health runtimeAssetMaterializationDryRun";
+        approvalRequired: true;
+        approvalGranted: false;
+        writesEnabled: false;
+        futureLocalFileWrites: true;
+        diagnosticsSurface: "healthPreflight.runtimeAssetMaterializationDryRun";
+        lifecyclePlanEffects: {
+            healthProbe: false;
+            fileRead: false;
+            hashComputed: false;
+            browserProcessStarted: false;
+            runtimeAdapterImported: false;
+            runtimeAssetsLoaded: false;
+            assetManifestMaterialized: false;
+            networkDispatch: false;
+            localFileWrites: false;
+            runtimeExecutionRegistered: false;
+        };
+    };
     backendRpcPlanning: {
         configured: boolean;
         baseUri: string | null;
@@ -1330,6 +1352,28 @@ function getRendererServiceLifecyclePlan(args: string[], env: NodeJS.ProcessEnv)
             diagnostics: runtimeAssetPreflightDiagnostics,
             nextActions: [...new Set(runtimeAssetPreflightDiagnostics.flatMap((entry) => entry.nextActions))],
             diagnosticsSurface: "healthPreflight.runtimeAssetPreflight",
+            lifecyclePlanEffects: {
+                healthProbe: false,
+                fileRead: false,
+                hashComputed: false,
+                browserProcessStarted: false,
+                runtimeAdapterImported: false,
+                runtimeAssetsLoaded: false,
+                assetManifestMaterialized: false,
+                networkDispatch: false,
+                localFileWrites: false,
+                runtimeExecutionRegistered: false,
+            },
+        },
+        runtimeAssetMaterializationDryRun: {
+            status: "planned-disabled",
+            planVersion: "P26.26",
+            source: "renderer-service /health runtimeAssetMaterializationDryRun",
+            approvalRequired: true,
+            approvalGranted: false,
+            writesEnabled: false,
+            futureLocalFileWrites: true,
+            diagnosticsSurface: "healthPreflight.runtimeAssetMaterializationDryRun",
             lifecyclePlanEffects: {
                 healthProbe: false,
                 fileRead: false,
@@ -5333,6 +5377,10 @@ async function handleRendererServiceStatus(args: string[], io: CliIO, env: NodeJ
         writeLine(
             io.stdout,
             `Runtime asset preflight: ${plan.runtimeAssetPreflight.executeReadOnly ? "read-only" : "disabled"}`
+        );
+        writeLine(
+            io.stdout,
+            `Runtime asset materialization dry-run: ${plan.runtimeAssetMaterializationDryRun.status}, approval required`
         );
         if (plan.runtimeAssetPreflight.diagnosticCodes.length > 0) {
             writeLine(io.stdout, `Runtime asset preflight diagnostics: ${plan.runtimeAssetPreflight.diagnosticCodes.join(", ")}`);

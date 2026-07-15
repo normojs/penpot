@@ -253,14 +253,18 @@ cache-output diagnostics, omitting local paths, hashes, source data, media
 values, and token values. Degraded summaries include stable `diagnosticCodes`,
 redacted `diagnostics`, and `nextActions` for missing public assets, missing
 cache assets, unavailable cache outputs, hash failures, or invalid operator
-configuration. Enable the read-only host preflight with
+configuration. The same JSON result also includes
+`healthPreflight.runtimeAssetMaterializationDryRun`, a metadata-only copy/cache
+plan with approval-required state and false write/browser/runtime side-effect
+flags. Enable the read-only host preflight with
 `PENPOT_RENDERER_SERVICE_RUNTIME_ASSET_PREFLIGHT=read-only`,
 `PENPOT_RENDERER_SERVICE_RUNTIME_ASSET_PREFLIGHT_WORKSPACE_ROOT=<absolute>`,
 and optionally
 `PENPOT_RENDERER_SERVICE_RUNTIME_ASSET_PREFLIGHT_CACHE_ROOT=<absolute>`;
 `renderer-service status/start` shows these settings plus configuration
-diagnostics without probing or reading files. Backend RPC execution and real
-scene rendering remain disabled.
+diagnostics and the approval-required materialization dry-run boundary without
+probing, reading files, or enabling cache writes. Backend RPC execution and
+real scene rendering remain disabled.
 
 ## File Commands
 

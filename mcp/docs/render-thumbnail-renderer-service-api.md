@@ -68,6 +68,14 @@ diagnostic codes and redacted next actions for missing public assets, missing
 cache copies, unavailable cache outputs, hash failures, and invalid operator
 configuration. CLI/MCP callers still only receive ids, counts, codes, and next
 actions, never workspace/cache roots or file paths.
+P26.26 adds `runtimeAssetMaterializationDryRun` to `/health` and `/thumbnail`
+responses. The plan consumes the P26.25 preflight diagnostics, reports
+metadata-only source-preflight, copy-plan, cache-output, and approval-gate
+state, and keeps approval required with writes disabled. It does not copy
+assets, start a browser, import or load the runtime adapter, read backend
+source data, dispatch network requests, register runtime execution, write
+local files, or expose roots, paths, hashes, token values, source-data/page,
+artifact, or media values through CLI/MCP summaries.
 P26.5 adds a token-safe `backendRpcClient` plan to renderer-service thumbnail
 responses so backend data/cache/persist endpoints are normalized for staged
 execution. That plan now feeds the executable file-thumbnail cache probe,

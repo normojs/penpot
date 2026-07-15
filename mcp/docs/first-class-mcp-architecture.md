@@ -4070,6 +4070,14 @@ runtime asset preflight surface. CLI/MCP health summaries now carry redacted
 next actions for missing public assets, missing cache copies, unavailable cache
 outputs, hash failures, and invalid operator configuration while continuing to
 omit workspace/cache roots and filesystem paths.
+P26.26 adds a first materialization dry-run and approval plan on top of those
+diagnostics. Renderer-service `/health` and `/thumbnail` expose
+`runtimeAssetMaterializationDryRun`; command-runtime normalizes it into
+CLI/MCP health preflight summaries with copy/cache-output counts,
+approval-required state, side-effect flags, and omitted-field markers. The
+gate remains closed: no asset copying, browser startup, runtime adapter
+import/loading, backend/source-data reads, network dispatch, local writes,
+runtime registration, or value exposure is enabled.
 
 ### 8.6 Advanced Tools
 

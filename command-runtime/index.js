@@ -14316,6 +14316,7 @@ export function createRenderThumbnailRendererServiceHealthPreflight(options = EM
             ],
         },
         runtimeAssetPreflight: normalizeRendererServiceRuntimeAssetPreflightDiagnostic(null),
+        runtimeAssetMaterializationDryRun: normalizeRendererServiceRuntimeAssetMaterializationDryRunDiagnostic(null),
     };
 }
 
@@ -14670,6 +14671,130 @@ function normalizeRendererServiceRuntimeAssetPreflightDiagnostic(body) {
     };
 }
 
+function normalizeRendererServiceRuntimeAssetMaterializationDryRunDiagnostic(body) {
+    const bodyRecord = asRecord(body);
+    const plan = asRecord(bodyRecord.runtimeAssetMaterializationDryRun);
+    const sourcePreflight = asRecord(plan.sourcePreflight);
+    const copyPlan = normalizeRecordArray(plan.copyPlan);
+    const cacheOutputPlan = normalizeRecordArray(plan.cacheOutputPlan);
+    const prerequisites = normalizeRecordArray(plan.prerequisites);
+    const approvalGate = asRecord(plan.approvalGate);
+    const sideEffects = asRecord(plan.sideEffects);
+    const omitted = {
+        workspaceRoot: true,
+        cacheRoot: true,
+        publicPaths: true,
+        cachePaths: true,
+        sha256: true,
+        tokenValues: true,
+        sourceDataValues: true,
+        pageValues: true,
+        artifactValues: true,
+        mediaValues: true,
+    };
+    const baseSideEffects = {
+        browserProcessStarted: false,
+        runtimeExecutionRegistered: false,
+        runtimeAdapterImported: false,
+        runtimeAssetsLoaded: false,
+        assetManifestMaterialized: false,
+        fileRead: false,
+        hashComputed: false,
+        networkDispatch: false,
+        dispatch: false,
+        localFileWrites: false,
+    };
+
+    if (!body || !plan || Object.keys(plan).length === 0) {
+        return {
+            status: "not-reported",
+            planVersion: null,
+            mode: null,
+            readiness: "not-reported",
+            ready: false,
+            approvalRequired: true,
+            approvalGranted: false,
+            writesEnabled: false,
+            sourcePreflight: {
+                status: "not-reported",
+                readiness: "not-reported",
+                ready: false,
+            },
+            copyPlanCounts: {
+                total: 0,
+                ready: 0,
+                blocked: 0,
+                unknown: 0,
+            },
+            cacheOutputPlanCounts: {
+                total: 0,
+                ready: 0,
+                blocked: 0,
+                unknown: 0,
+            },
+            diagnosticCodes: [],
+            nextActions: [],
+            sideEffects: baseSideEffects,
+            omitted,
+        };
+    }
+
+    const readiness = normalizeOptionalString(sourcePreflight.readiness);
+    const normalizedReadiness = readiness === "ready" || readiness === "degraded" || readiness === "not-checked" ? readiness : "unknown";
+    const diagnosticCodes = uniqueStrings([
+        ...normalizeStringArray(sourcePreflight.diagnosticCodes),
+        ...normalizeStringArray(approvalGate.currentBlockers),
+    ]);
+    const nextActions = uniqueStrings(prerequisites.flatMap((entry) => normalizeStringArray(entry.nextActions)));
+    const copyReadiness = copyPlan.map((entry) => normalizeOptionalString(entry.preflightReadiness));
+    const cacheOutputReadiness = cacheOutputPlan.map((entry) => normalizeOptionalString(entry.preflightReadiness));
+
+    return {
+        status: normalizeOptionalString(plan.status) === "planned-disabled" && normalizeOptionalString(plan.planVersion) === "P26.26"
+            ? "planned-disabled"
+            : "invalid",
+        planVersion: normalizeOptionalString(plan.planVersion),
+        mode: normalizeOptionalString(plan.mode),
+        readiness: normalizedReadiness,
+        ready: sourcePreflight.ready === true,
+        approvalRequired: approvalGate.approvalRequired !== false,
+        approvalGranted: approvalGate.approvalGranted === true,
+        writesEnabled: approvalGate.writesEnabled === true,
+        sourcePreflight: {
+            status: normalizeOptionalString(sourcePreflight.status) ?? "unknown",
+            readiness: normalizedReadiness,
+            ready: sourcePreflight.ready === true,
+        },
+        copyPlanCounts: {
+            total: copyPlan.length,
+            ready: copyReadiness.filter((entry) => entry === "ready").length,
+            blocked: copyReadiness.filter((entry) => entry === "blocked").length,
+            unknown: copyReadiness.filter((entry) => entry === "unknown").length,
+        },
+        cacheOutputPlanCounts: {
+            total: cacheOutputPlan.length,
+            ready: cacheOutputReadiness.filter((entry) => entry === "ready").length,
+            blocked: cacheOutputReadiness.filter((entry) => entry === "blocked").length,
+            unknown: cacheOutputReadiness.filter((entry) => entry === "unknown").length,
+        },
+        diagnosticCodes,
+        nextActions,
+        sideEffects: {
+            browserProcessStarted: sideEffects.browserProcessStarted === true,
+            runtimeExecutionRegistered: sideEffects.runtimeExecutionRegistered === true,
+            runtimeAdapterImported: sideEffects.runtimeAdapterImported === true,
+            runtimeAssetsLoaded: sideEffects.runtimeAssetsLoaded === true,
+            assetManifestMaterialized: sideEffects.assetManifestMaterialized === true,
+            fileRead: sideEffects.fileRead === true,
+            hashComputed: sideEffects.hashComputed === true,
+            networkDispatch: sideEffects.networkDispatch === true,
+            dispatch: sideEffects.dispatch === true,
+            localFileWrites: sideEffects.localFileWrites === true,
+        },
+        omitted,
+    };
+}
+
 function normalizeStringArray(value) {
     return Array.isArray(value) ? value.filter((entry) => typeof entry === "string") : [];
 }
@@ -14847,6 +14972,7 @@ export async function executeRenderThumbnailRendererServiceHealthPreflight(plan,
             networkProbe: true,
             reason: "renderer-service health preflight succeeded",
             runtimeAssetPreflight: normalizeRendererServiceRuntimeAssetPreflightDiagnostic(bodyRecord),
+            runtimeAssetMaterializationDryRun: normalizeRendererServiceRuntimeAssetMaterializationDryRunDiagnostic(bodyRecord),
             response: {
                 status: httpStatus,
                 contentType,

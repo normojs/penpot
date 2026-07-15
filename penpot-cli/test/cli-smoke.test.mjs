@@ -7130,6 +7130,28 @@ test("renderer-service status reports a no-spawn lifecycle plan without probing"
                 runtimeExecutionRegistered: false,
             },
         });
+        assert.deepEqual(body.data.lifecycle.runtimeAssetMaterializationDryRun, {
+            status: "planned-disabled",
+            planVersion: "P26.26",
+            source: "renderer-service /health runtimeAssetMaterializationDryRun",
+            approvalRequired: true,
+            approvalGranted: false,
+            writesEnabled: false,
+            futureLocalFileWrites: true,
+            diagnosticsSurface: "healthPreflight.runtimeAssetMaterializationDryRun",
+            lifecyclePlanEffects: {
+                healthProbe: false,
+                fileRead: false,
+                hashComputed: false,
+                browserProcessStarted: false,
+                runtimeAdapterImported: false,
+                runtimeAssetsLoaded: false,
+                assetManifestMaterialized: false,
+                networkDispatch: false,
+                localFileWrites: false,
+                runtimeExecutionRegistered: false,
+            },
+        });
         assert.equal(body.data.lifecycle.artifactWrites, false);
         assert.match(body.data.lifecycle.startCommand, /PENPOT_RENDERER_SERVICE_PORT=6072/);
         assert.match(body.data.lifecycle.startCommand, /PENPOT_RENDERER_SERVICE_BACKEND_URI=https:\/\/penpot\.example\.test/);
@@ -7198,6 +7220,9 @@ test("renderer-service start keeps startup manual and does not spawn a process",
     assert.equal(body.error.data.lifecycle.runtimeAssetPreflight.cacheRoot.value, "/Volumes/fushilu/.caches/penpot/renderer-service");
     assert.deepEqual(body.error.data.lifecycle.runtimeAssetPreflight.diagnosticCodes, []);
     assert.equal(body.error.data.lifecycle.runtimeAssetPreflight.lifecyclePlanEffects.fileRead, false);
+    assert.equal(body.error.data.lifecycle.runtimeAssetMaterializationDryRun.planVersion, "P26.26");
+    assert.equal(body.error.data.lifecycle.runtimeAssetMaterializationDryRun.writesEnabled, false);
+    assert.equal(body.error.data.lifecycle.runtimeAssetMaterializationDryRun.lifecyclePlanEffects.localFileWrites, false);
     assert.equal(body.error.data.lifecycle.backendRpcPlanning.configured, false);
     assert.match(body.error.actions[0], /PENPOT_RENDERER_SERVICE_PORT=6073/);
 });
@@ -9801,6 +9826,64 @@ test("render thumbnail execution opt-in posts to renderer-service and returns re
                             },
                         },
                     },
+                    runtimeAssetMaterializationDryRun: {
+                        status: "planned-disabled",
+                        planVersion: "P26.26",
+                        owner: "renderer-service",
+                        mode: "metadata-only",
+                        sourcePreflight: {
+                            preflightVersion: "P26.21",
+                            executionVersion: "P26.22",
+                            diagnosticsVersion: "P26.25",
+                            status: "degraded",
+                            readiness: "degraded",
+                            ready: false,
+                            diagnosticCodes: ["renderer_service_runtime_asset_missing_public_asset"],
+                            missingAssetIds: ["thumbnail-worker-main"],
+                            missingCacheOutputIds: [],
+                        },
+                        prerequisites: [
+                            {
+                                id: "runtime-asset-preflight-ready",
+                                required: true,
+                                status: "blocked",
+                                source: "runtimeAssetMaterializationPreflight.execution.diagnostics",
+                                diagnosticCodes: ["renderer_service_runtime_asset_missing_public_asset"],
+                                nextActions: ["Build or restore the frontend public runtime assets, then rerun renderer-service /health."],
+                            },
+                            {
+                                id: "runtime-asset-materialization-approval",
+                                required: true,
+                                status: "approval-required",
+                                source: "runtimeAssetMaterializationDryRun.approvalGate",
+                                diagnosticCodes: ["renderer_service_runtime_asset_materialization_approval_required"],
+                                nextActions: ["Review the dry-run copy and cache-output plan before enabling runtime asset materialization."],
+                            },
+                        ],
+                        copyPlan: [{ assetId: "thumbnail-worker-main", preflightReadiness: "blocked" }],
+                        cacheOutputPlan: [{ cacheOutputId: "runtime-asset-cache", preflightReadiness: "ready" }],
+                        approvalGate: {
+                            approvalRequired: true,
+                            approvalGranted: false,
+                            writesEnabled: false,
+                            currentBlockers: [
+                                "renderer_service_runtime_asset_missing_public_asset",
+                                "renderer_service_runtime_asset_materialization_approval_required",
+                            ],
+                        },
+                        sideEffects: {
+                            browserProcessStarted: false,
+                            runtimeExecutionRegistered: false,
+                            runtimeAdapterImported: false,
+                            runtimeAssetsLoaded: false,
+                            assetManifestMaterialized: false,
+                            fileRead: false,
+                            hashComputed: false,
+                            networkDispatch: false,
+                            dispatch: false,
+                            localFileWrites: false,
+                        },
+                    },
                 }),
                 { status: 200, headers: { "content-type": "application/json; charset=utf-8" } }
             );
@@ -9875,6 +9958,21 @@ test("render thumbnail execution opt-in posts to renderer-service and returns re
         assert.ok(
             body.data.healthPreflight.runtimeAssetPreflight.nextActions.some((entry) =>
                 entry.includes("PENPOT_RENDERER_SERVICE_RUNTIME_ASSET_PREFLIGHT_WORKSPACE_ROOT")
+            )
+        );
+        assert.equal(body.data.healthPreflight.runtimeAssetMaterializationDryRun.status, "planned-disabled");
+        assert.equal(body.data.healthPreflight.runtimeAssetMaterializationDryRun.planVersion, "P26.26");
+        assert.equal(body.data.healthPreflight.runtimeAssetMaterializationDryRun.readiness, "degraded");
+        assert.equal(body.data.healthPreflight.runtimeAssetMaterializationDryRun.writesEnabled, false);
+        assert.equal(body.data.healthPreflight.runtimeAssetMaterializationDryRun.copyPlanCounts.blocked, 1);
+        assert.ok(
+            body.data.healthPreflight.runtimeAssetMaterializationDryRun.diagnosticCodes.includes(
+                "renderer_service_runtime_asset_materialization_approval_required"
+            )
+        );
+        assert.ok(
+            body.data.healthPreflight.runtimeAssetMaterializationDryRun.nextActions.some((entry) =>
+                entry.includes("dry-run copy")
             )
         );
         assert.equal(body.data.healthPreflight.runtimeAssetPreflight.sideEffects.fileRead, true);

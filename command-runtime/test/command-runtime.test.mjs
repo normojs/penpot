@@ -10478,6 +10478,36 @@ test("render.thumbnail renderer-service API fixtures define planning requests wi
     assert.equal(fixtures.bundledRuntimeBridge.assetMaterializationPreflight.operatorConfiguration.lifecyclePlanEffects.localFileWrites, false);
     assert.ok(fixtures.registrationGates.allTargets.includes("thumbnail-renderer-service-implementation"));
     assert.ok(fixtures.registrationGates.frame.includes("tagged-frame-cache-probe"));
+    assert.equal(fixtures.bundledRuntimeBridge.assetMaterializationPreflight.materializationDryRun.status, "planned-disabled");
+    assert.equal(fixtures.bundledRuntimeBridge.assetMaterializationPreflight.materializationDryRun.planVersion, "P26.26");
+    assert.equal(
+        fixtures.bundledRuntimeBridge.assetMaterializationPreflight.materializationDryRun.source,
+        "runtimeAssetMaterializationPreflight"
+    );
+    assert.equal(fixtures.bundledRuntimeBridge.assetMaterializationPreflight.materializationDryRun.mode, "metadata-only");
+    assert.ok(
+        fixtures.bundledRuntimeBridge.assetMaterializationPreflight.materializationDryRun.reportedFields.includes("approvalGate")
+    );
+    assert.equal(
+        fixtures.bundledRuntimeBridge.assetMaterializationPreflight.materializationDryRun.approvalGate.approvalRequired,
+        true
+    );
+    assert.equal(
+        fixtures.bundledRuntimeBridge.assetMaterializationPreflight.materializationDryRun.approvalGate.writesEnabled,
+        false
+    );
+    assert.equal(
+        fixtures.bundledRuntimeBridge.assetMaterializationPreflight.materializationDryRun.copyPlan.localFileWrites,
+        false
+    );
+    assert.equal(
+        fixtures.bundledRuntimeBridge.assetMaterializationPreflight.materializationDryRun.cacheOutputPlan.futureLocalFileWrites,
+        true
+    );
+    assert.equal(fixtures.bundledRuntimeBridge.assetMaterializationPreflight.materializationDryRun.noNewDispatch.localFileWrites, false);
+    assert.ok(
+        fixtures.bundledRuntimeBridge.assetMaterializationPreflight.materializationDryRun.omittedFields.includes("workspaceRoot")
+    );
 
     for (const fixture of fixtures.cases) {
         await t.test(fixture.id, () => {
@@ -12563,6 +12593,10 @@ test("render.thumbnail renderer-service health preflight and client harness stay
     assert.deepEqual(healthPreflight.runtimeAssetPreflight.diagnosticCodes, []);
     assert.deepEqual(healthPreflight.runtimeAssetPreflight.diagnostics, []);
     assert.deepEqual(healthPreflight.runtimeAssetPreflight.nextActions, []);
+    assert.equal(healthPreflight.runtimeAssetMaterializationDryRun.status, "not-reported");
+    assert.equal(healthPreflight.runtimeAssetMaterializationDryRun.planVersion, null);
+    assert.equal(healthPreflight.runtimeAssetMaterializationDryRun.writesEnabled, false);
+    assert.deepEqual(healthPreflight.runtimeAssetMaterializationDryRun.diagnosticCodes, []);
     assert.equal(healthPreflight.runtimeAssetPreflight.omitted.workspaceRoot, true);
     assert.equal(healthPreflight.runtimeAssetPreflight.omitted.sha256, true);
     assert.ok(healthPreflight.failureModes.some((entry) => entry.code === "renderer_service_preflight_disabled"));
@@ -12652,6 +12686,78 @@ test("render.thumbnail renderer-service health preflight executes only GET healt
                             },
                         },
                     },
+                    runtimeAssetMaterializationDryRun: {
+                        status: "planned-disabled",
+                        planVersion: "P26.26",
+                        owner: "renderer-service",
+                        mode: "metadata-only",
+                        sourcePreflight: {
+                            preflightVersion: "P26.21",
+                            executionVersion: "P26.22",
+                            diagnosticsVersion: "P26.25",
+                            status: "degraded",
+                            readiness: "degraded",
+                            ready: false,
+                            diagnosticCodes: [
+                                "renderer_service_runtime_asset_missing_public_asset",
+                                "renderer_service_runtime_asset_cache_output_unavailable",
+                            ],
+                            missingAssetIds: ["render-wasm-loader"],
+                            missingCacheOutputIds: ["runtime-asset-cache"],
+                        },
+                        prerequisites: [
+                            {
+                                id: "runtime-asset-preflight-executed",
+                                required: true,
+                                status: "satisfied",
+                                source: "runtimeAssetMaterializationPreflight.execution",
+                                diagnosticCodes: [],
+                                nextActions: [],
+                            },
+                            {
+                                id: "runtime-asset-preflight-ready",
+                                required: true,
+                                status: "blocked",
+                                source: "runtimeAssetMaterializationPreflight.execution.diagnostics",
+                                diagnosticCodes: ["renderer_service_runtime_asset_missing_public_asset"],
+                                nextActions: ["Build or restore the frontend public runtime assets, then rerun renderer-service /health."],
+                            },
+                            {
+                                id: "runtime-asset-materialization-approval",
+                                required: true,
+                                status: "approval-required",
+                                source: "runtimeAssetMaterializationDryRun.approvalGate",
+                                diagnosticCodes: ["renderer_service_runtime_asset_materialization_approval_required"],
+                                nextActions: ["Review the dry-run copy and cache-output plan before enabling runtime asset materialization."],
+                            },
+                        ],
+                        copyPlan: [
+                            { assetId: "thumbnail-worker-main", preflightReadiness: "ready" },
+                            { assetId: "render-wasm-loader", preflightReadiness: "blocked" },
+                        ],
+                        cacheOutputPlan: [{ cacheOutputId: "runtime-asset-cache", preflightReadiness: "blocked" }],
+                        approvalGate: {
+                            approvalRequired: true,
+                            approvalGranted: false,
+                            writesEnabled: false,
+                            currentBlockers: [
+                                "renderer_service_runtime_asset_missing_public_asset",
+                                "renderer_service_runtime_asset_materialization_approval_required",
+                            ],
+                        },
+                        sideEffects: {
+                            browserProcessStarted: false,
+                            runtimeExecutionRegistered: false,
+                            runtimeAdapterImported: false,
+                            runtimeAssetsLoaded: false,
+                            assetManifestMaterialized: false,
+                            fileRead: false,
+                            hashComputed: false,
+                            networkDispatch: false,
+                            dispatch: false,
+                            localFileWrites: false,
+                        },
+                    },
                 }),
                 { status: 200, headers: { "content-type": "application/json; charset=utf-8" } }
             );
@@ -12686,6 +12792,32 @@ test("render.thumbnail renderer-service health preflight executes only GET healt
     assert.equal(healthPreflight.runtimeAssetPreflight.diagnostics[1].cacheOutputId, "runtime-asset-cache");
     assert.ok(healthPreflight.runtimeAssetPreflight.nextActions.some((entry) => entry.includes("workspace root")));
     assert.ok(healthPreflight.runtimeAssetPreflight.nextActions.some((entry) => entry.includes("cache root")));
+    assert.equal(healthPreflight.runtimeAssetMaterializationDryRun.status, "planned-disabled");
+    assert.equal(healthPreflight.runtimeAssetMaterializationDryRun.planVersion, "P26.26");
+    assert.equal(healthPreflight.runtimeAssetMaterializationDryRun.readiness, "degraded");
+    assert.equal(healthPreflight.runtimeAssetMaterializationDryRun.approvalRequired, true);
+    assert.equal(healthPreflight.runtimeAssetMaterializationDryRun.approvalGranted, false);
+    assert.equal(healthPreflight.runtimeAssetMaterializationDryRun.writesEnabled, false);
+    assert.deepEqual(healthPreflight.runtimeAssetMaterializationDryRun.copyPlanCounts, {
+        total: 2,
+        ready: 1,
+        blocked: 1,
+        unknown: 0,
+    });
+    assert.deepEqual(healthPreflight.runtimeAssetMaterializationDryRun.cacheOutputPlanCounts, {
+        total: 1,
+        ready: 0,
+        blocked: 1,
+        unknown: 0,
+    });
+    assert.ok(
+        healthPreflight.runtimeAssetMaterializationDryRun.diagnosticCodes.includes(
+            "renderer_service_runtime_asset_materialization_approval_required"
+        )
+    );
+    assert.ok(healthPreflight.runtimeAssetMaterializationDryRun.nextActions.some((entry) => entry.includes("dry-run copy")));
+    assert.equal(healthPreflight.runtimeAssetMaterializationDryRun.sideEffects.localFileWrites, false);
+    assert.equal(healthPreflight.runtimeAssetMaterializationDryRun.omitted.workspaceRoot, true);
     assert.equal(healthPreflight.runtimeAssetPreflight.assetCounts.total, 2);
     assert.equal(healthPreflight.runtimeAssetPreflight.assetCounts.ready, 1);
     assert.equal(healthPreflight.runtimeAssetPreflight.assetCounts.missing, 1);

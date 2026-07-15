@@ -1605,6 +1605,60 @@ export interface RenderThumbnailRendererServiceRuntimeAssetPreflightDiagnostic {
     };
 }
 
+export interface RenderThumbnailRendererServiceRuntimeAssetMaterializationDryRun {
+    status: "not-reported" | "planned-disabled" | "invalid";
+    planVersion: "P26.26" | null;
+    mode: string | null;
+    readiness: "not-reported" | "not-checked" | "ready" | "degraded" | "unknown";
+    ready: boolean;
+    approvalRequired: boolean;
+    approvalGranted: boolean;
+    writesEnabled: boolean;
+    sourcePreflight: {
+        status: "not-reported" | "not-executed" | "ready" | "degraded" | "unknown";
+        readiness: "not-reported" | "not-checked" | "ready" | "degraded" | "unknown";
+        ready: boolean;
+    };
+    copyPlanCounts: {
+        total: number;
+        ready: number;
+        blocked: number;
+        unknown: number;
+    };
+    cacheOutputPlanCounts: {
+        total: number;
+        ready: number;
+        blocked: number;
+        unknown: number;
+    };
+    diagnosticCodes: string[];
+    nextActions: string[];
+    sideEffects: {
+        browserProcessStarted: boolean;
+        runtimeExecutionRegistered: boolean;
+        runtimeAdapterImported: boolean;
+        runtimeAssetsLoaded: boolean;
+        assetManifestMaterialized: boolean;
+        fileRead: boolean;
+        hashComputed: boolean;
+        networkDispatch: boolean;
+        dispatch: boolean;
+        localFileWrites: boolean;
+    };
+    omitted: {
+        workspaceRoot: true;
+        cacheRoot: true;
+        publicPaths: true;
+        cachePaths: true;
+        sha256: true;
+        tokenValues: true;
+        sourceDataValues: true;
+        pageValues: true;
+        artifactValues: true;
+        mediaValues: true;
+    };
+}
+
 export interface RenderThumbnailRendererServiceHealthPreflight {
     status: "planned-disabled" | "ready" | "skipped" | "not-configured" | "ok" | "unavailable" | "invalid";
     dispatch: boolean;
@@ -1626,6 +1680,7 @@ export interface RenderThumbnailRendererServiceHealthPreflight {
         requiredFields: string[];
     };
     runtimeAssetPreflight: RenderThumbnailRendererServiceRuntimeAssetPreflightDiagnostic;
+    runtimeAssetMaterializationDryRun: RenderThumbnailRendererServiceRuntimeAssetMaterializationDryRun;
     response?: {
         status: number | null;
         contentType: string | null;
