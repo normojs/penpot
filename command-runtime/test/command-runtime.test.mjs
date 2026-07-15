@@ -10320,11 +10320,19 @@ test("render.thumbnail renderer-service API fixtures define planning requests wi
     assert.equal(fixtures.bundledRuntimeBridge.noOpGuarantees.runtimeExecutionRegistered, false);
     assert.equal(fixtures.bundledRuntimeBridge.noOpGuarantees.runtimeAdapterImported, false);
     assert.equal(fixtures.bundledRuntimeBridge.noOpGuarantees.runtimeAssetsLoaded, false);
+    assert.equal(fixtures.bundledRuntimeBridge.noOpGuarantees.assetExistenceChecked, false);
+    assert.equal(fixtures.bundledRuntimeBridge.noOpGuarantees.assetHashesComputed, false);
+    assert.equal(fixtures.bundledRuntimeBridge.noOpGuarantees.cacheOutputsChecked, false);
+    assert.equal(fixtures.bundledRuntimeBridge.noOpGuarantees.materializationApproved, false);
+    assert.equal(fixtures.bundledRuntimeBridge.noOpGuarantees.browserLifecycleValidated, false);
+    assert.equal(fixtures.bundledRuntimeBridge.noOpGuarantees.fileRead, false);
+    assert.equal(fixtures.bundledRuntimeBridge.noOpGuarantees.hashComputed, false);
     assert.equal(fixtures.bundledRuntimeBridge.noOpGuarantees.pageValuesIncluded, false);
     assert.equal(fixtures.bundledRuntimeBridge.noOpGuarantees.mediaValuesIncluded, false);
     assert.equal(fixtures.bundledRuntimeBridge.noOpGuarantees.tokenValuesIncluded, false);
     assert.ok(fixtures.bundledRuntimeBridge.blockedAlternatives.some((entry) => entry.id === "direct-node-render-wasm"));
     assert.ok(fixtures.bundledRuntimeBridge.requiredBeforeImplementation.some((entry) => entry.includes("pixel/resource tests")));
+    assert.ok(fixtures.bundledRuntimeBridge.requiredBeforeImplementation.some((entry) => entry.includes("existence/hash readiness")));
     assert.equal(fixtures.bundledRuntimeBridge.assetManifest.status, "planned-disabled");
     assert.equal(fixtures.bundledRuntimeBridge.assetManifest.manifestVersion, "P26.20");
     assert.equal(fixtures.bundledRuntimeBridge.assetManifest.owner, "renderer-service");
@@ -10347,6 +10355,35 @@ test("render.thumbnail renderer-service API fixtures define planning requests wi
     assert.ok(fixtures.bundledRuntimeBridge.assetManifest.assets.every((asset) => asset.localFileWrites === false));
     assert.ok(fixtures.bundledRuntimeBridge.assetManifest.cacheOutputs.every((entry) => entry.materialized === false));
     assert.ok(fixtures.bundledRuntimeBridge.assetManifest.validation.noDispatchTests.includes("runtime-asset-manifest-response-validator"));
+    assert.equal(fixtures.bundledRuntimeBridge.assetMaterializationPreflight.status, "planned-disabled");
+    assert.equal(fixtures.bundledRuntimeBridge.assetMaterializationPreflight.preflightVersion, "P26.21");
+    assert.equal(fixtures.bundledRuntimeBridge.assetMaterializationPreflight.owner, "renderer-service");
+    assert.equal(fixtures.bundledRuntimeBridge.assetMaterializationPreflight.mode, "read-only-metadata");
+    assert.equal(fixtures.bundledRuntimeBridge.assetMaterializationPreflight.readiness, "not-checked");
+    assert.deepEqual(
+        fixtures.bundledRuntimeBridge.assetMaterializationPreflight.sourceManifest.assetIds,
+        fixtures.bundledRuntimeBridge.assetManifest.validation.requiredAssetIds
+    );
+    assert.deepEqual(
+        fixtures.bundledRuntimeBridge.assetMaterializationPreflight.sourceManifest.cacheOutputIds,
+        fixtures.bundledRuntimeBridge.assetManifest.cacheOutputs.map((entry) => entry.id)
+    );
+    assert.deepEqual(
+        fixtures.bundledRuntimeBridge.assetMaterializationPreflight.checks.map((check) => check.assetId),
+        fixtures.bundledRuntimeBridge.assetManifest.assets.map((asset) => asset.id)
+    );
+    assert.ok(fixtures.bundledRuntimeBridge.assetMaterializationPreflight.checks.every((check) => check.readiness === "not-checked"));
+    assert.ok(fixtures.bundledRuntimeBridge.assetMaterializationPreflight.checks.every((check) => check.exists === null));
+    assert.ok(fixtures.bundledRuntimeBridge.assetMaterializationPreflight.checks.every((check) => check.fileRead === false));
+    assert.ok(fixtures.bundledRuntimeBridge.assetMaterializationPreflight.cacheOutputChecks.every((check) => check.readiness === "not-checked"));
+    assert.ok(fixtures.bundledRuntimeBridge.assetMaterializationPreflight.cacheOutputChecks.every((check) => check.exists === null));
+    assert.ok(fixtures.bundledRuntimeBridge.assetMaterializationPreflight.failureTaxonomy.some((entry) => entry.code === "renderer_service_runtime_asset_hash_mismatch"));
+    assert.equal(fixtures.bundledRuntimeBridge.assetMaterializationPreflight.gates.assetExistenceChecked, false);
+    assert.equal(fixtures.bundledRuntimeBridge.assetMaterializationPreflight.gates.assetHashesComputed, false);
+    assert.equal(fixtures.bundledRuntimeBridge.assetMaterializationPreflight.gates.cacheOutputsChecked, false);
+    assert.equal(fixtures.bundledRuntimeBridge.assetMaterializationPreflight.gates.runtimeRegistration, false);
+    assert.equal(fixtures.bundledRuntimeBridge.assetMaterializationPreflight.noOpGuarantees.fileRead, false);
+    assert.equal(fixtures.bundledRuntimeBridge.assetMaterializationPreflight.noOpGuarantees.hashComputed, false);
     assert.ok(fixtures.registrationGates.allTargets.includes("thumbnail-renderer-service-implementation"));
     assert.ok(fixtures.registrationGates.frame.includes("tagged-frame-cache-probe"));
 

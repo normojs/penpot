@@ -4040,6 +4040,10 @@ renderer-service health/thumbnail metadata, listing the planned frontend
 worker, render-wasm, rasterizer, and cache-output paths while keeping browser
 startup, asset materialization, local writes, runtime import, and runtime
 registration disabled.
+P26.21 adds a metadata-only materialization preflight plan over that manifest:
+asset existence, cache-output, hash readiness, and failure taxonomy are
+visible to MCP/CLI planning, but no file reads, hash computation, browser
+startup, adapter import, local writes, or runtime registration are enabled.
 
 ### 8.6 Advanced Tools
 

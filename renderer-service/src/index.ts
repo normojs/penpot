@@ -255,6 +255,107 @@ export const bundledRuntimeBridgeAssetManifest = {
     },
 } as const;
 
+export const bundledRuntimeAssetMaterializationPreflight = {
+    status: "planned-disabled",
+    preflightVersion: "P26.21",
+    owner: "renderer-service",
+    mode: "read-only-metadata",
+    readiness: "not-checked",
+    sourceManifest: {
+        manifestVersion: bundledRuntimeBridgeAssetManifest.manifestVersion,
+        status: bundledRuntimeBridgeAssetManifest.status,
+        assetIds: bundledRuntimeBridgeAssetManifest.validation.requiredAssetIds,
+        cacheOutputIds: bundledRuntimeBridgeAssetManifest.cacheOutputs.map((entry) => entry.id),
+    },
+    checks: bundledRuntimeBridgeAssetManifest.assets.map((asset) => ({
+        id: `${asset.id}-materialization-readiness`,
+        assetId: asset.id,
+        kind: asset.kind,
+        publicPath: asset.publicPath,
+        cachePath: asset.cachePath,
+        required: asset.required,
+        readiness: "not-checked",
+        plannedChecks: ["public-asset-exists", "cache-asset-exists", "sha256-ready"],
+        exists: null,
+        cacheOutputExists: null,
+        sha256: null,
+        byteLength: null,
+        fileRead: false,
+        hashComputed: false,
+        dispatch: false,
+        localFileWrites: false,
+    })),
+    cacheOutputChecks: bundledRuntimeBridgeAssetManifest.cacheOutputs.map((entry) => ({
+        id: `${entry.id}-readiness`,
+        cacheOutputId: entry.id,
+        path: entry.path,
+        readiness: "not-checked",
+        exists: null,
+        writable: null,
+        fileRead: false,
+        localFileWrites: false,
+    })),
+    failureTaxonomy: [
+        {
+            code: "renderer_service_runtime_asset_preflight_disabled",
+            stage: "preflight-gate",
+            retryable: false,
+            dispatch: false,
+        },
+        {
+            code: "renderer_service_runtime_asset_missing",
+            stage: "asset-existence",
+            retryable: true,
+            dispatch: false,
+        },
+        {
+            code: "renderer_service_runtime_asset_hash_unavailable",
+            stage: "asset-hash",
+            retryable: true,
+            dispatch: false,
+        },
+        {
+            code: "renderer_service_runtime_asset_hash_mismatch",
+            stage: "asset-hash",
+            retryable: false,
+            dispatch: false,
+        },
+        {
+            code: "renderer_service_runtime_asset_cache_output_unavailable",
+            stage: "cache-output",
+            retryable: true,
+            dispatch: false,
+        },
+    ],
+    gates: {
+        assetExistenceChecked: false,
+        assetHashesComputed: false,
+        cacheOutputsChecked: false,
+        materializationApproved: false,
+        browserLifecycleValidated: false,
+        runtimeRegistration: false,
+    },
+    sideEffects: {
+        browserProcessStarted: false,
+        runtimeExecutionRegistered: false,
+        runtimeAdapterImported: false,
+        runtimeAssetsLoaded: false,
+        assetManifestMaterialized: false,
+        fileRead: false,
+        hashComputed: false,
+        networkDispatch: false,
+        dispatch: false,
+        localFileWrites: false,
+    },
+    redaction: {
+        sourceDataValuesIncluded: false,
+        pageValuesIncluded: false,
+        artifactValuesIncluded: false,
+        mediaValuesIncluded: false,
+        tokenValuesIncluded: false,
+    },
+} as const;
+
 export const healthResponse = {
     status: "ok",
     renderer: "penpot-thumbnail-renderer",
@@ -277,10 +378,12 @@ export const healthResponse = {
         "thumbnail.render.runtime-adapter",
         "thumbnail.render.runtime-module",
         "thumbnail.render.runtime-asset-manifest",
+        "thumbnail.render.runtime-asset-preflight",
         "thumbnail.backend-rpc.file-thumbnail-persist",
         "thumbnail.backend-rpc.frame-thumbnail-persist",
     ],
     runtimeAssetManifest: bundledRuntimeBridgeAssetManifest,
+    runtimeAssetMaterializationPreflight: bundledRuntimeAssetMaterializationPreflight,
 } as const;
 
 export const noopThumbnailResponse = {
@@ -302,6 +405,7 @@ export const noopThumbnailResponse = {
     dispatch: true,
     localFileWrites: false,
     runtimeAssetManifest: bundledRuntimeBridgeAssetManifest,
+    runtimeAssetMaterializationPreflight: bundledRuntimeAssetMaterializationPreflight,
 } as const;
 
 const MAX_REQUEST_BODY_BYTES = 1024 * 1024;
@@ -2375,6 +2479,139 @@ function validateRuntimeAssetManifestResponse(actual: unknown, field: string): v
     }
 }
 
+function validateRuntimeAssetMaterializationPreflightCheckResponse(
+    actual: unknown,
+    expected: (typeof bundledRuntimeAssetMaterializationPreflight.checks)[number],
+    field: string
+): void {
+    const record = responseRecord(actual, field);
+    requireResponseEqual(record.id, expected.id, `${field}.id`);
+    requireResponseEqual(record.assetId, expected.assetId, `${field}.assetId`);
+    requireResponseEqual(record.kind, expected.kind, `${field}.kind`);
+    requireResponseEqual(record.publicPath, expected.publicPath, `${field}.publicPath`);
+    requireResponseEqual(record.cachePath, expected.cachePath, `${field}.cachePath`);
+    requireResponseEqual(responseBoolean(record, "required", `${field}.required`), expected.required, `${field}.required`);
+    requireResponseEqual(record.readiness, "not-checked", `${field}.readiness`);
+    requireResponseArrayEqual(responseStringArray(record, "plannedChecks", `${field}.plannedChecks`), [...expected.plannedChecks], `${field}.plannedChecks`);
+    requireResponseEqual(record.exists ?? null, null, `${field}.exists`);
+    requireResponseEqual(record.cacheOutputExists ?? null, null, `${field}.cacheOutputExists`);
+    requireResponseEqual(record.sha256 ?? null, null, `${field}.sha256`);
+    requireResponseEqual(record.byteLength ?? null, null, `${field}.byteLength`);
+    requireResponseEqual(record.fileRead, false, `${field}.fileRead`);
+    requireResponseEqual(record.hashComputed, false, `${field}.hashComputed`);
+    requireResponseEqual(record.dispatch, false, `${field}.dispatch`);
+    requireResponseEqual(record.localFileWrites, false, `${field}.localFileWrites`);
+}
+
+function validateRuntimeAssetMaterializationPreflightCacheOutputResponse(
+    actual: unknown,
+    expected: (typeof bundledRuntimeAssetMaterializationPreflight.cacheOutputChecks)[number],
+    field: string
+): void {
+    const record = responseRecord(actual, field);
+    requireResponseEqual(record.id, expected.id, `${field}.id`);
+    requireResponseEqual(record.cacheOutputId, expected.cacheOutputId, `${field}.cacheOutputId`);
+    requireResponseEqual(record.path, expected.path, `${field}.path`);
+    requireResponseEqual(record.readiness, "not-checked", `${field}.readiness`);
+    requireResponseEqual(record.exists ?? null, null, `${field}.exists`);
+    requireResponseEqual(record.writable ?? null, null, `${field}.writable`);
+    requireResponseEqual(record.fileRead, false, `${field}.fileRead`);
+    requireResponseEqual(record.localFileWrites, false, `${field}.localFileWrites`);
+}
+
+function validateRuntimeAssetMaterializationPreflightResponse(actual: unknown, field: string): void {
+    const record = responseRecord(actual, field);
+    requireResponseEqual(record.status, bundledRuntimeAssetMaterializationPreflight.status, `${field}.status`);
+    requireResponseEqual(record.preflightVersion, bundledRuntimeAssetMaterializationPreflight.preflightVersion, `${field}.preflightVersion`);
+    requireResponseEqual(record.owner, bundledRuntimeAssetMaterializationPreflight.owner, `${field}.owner`);
+    requireResponseEqual(record.mode, bundledRuntimeAssetMaterializationPreflight.mode, `${field}.mode`);
+    requireResponseEqual(record.readiness, bundledRuntimeAssetMaterializationPreflight.readiness, `${field}.readiness`);
+
+    const sourceManifest = responseRecord(record.sourceManifest, `${field}.sourceManifest`);
+    requireResponseEqual(sourceManifest.manifestVersion, bundledRuntimeAssetMaterializationPreflight.sourceManifest.manifestVersion, `${field}.sourceManifest.manifestVersion`);
+    requireResponseEqual(sourceManifest.status, bundledRuntimeAssetMaterializationPreflight.sourceManifest.status, `${field}.sourceManifest.status`);
+    requireResponseArrayEqual(
+        responseStringArray(sourceManifest, "assetIds", `${field}.sourceManifest.assetIds`),
+        [...bundledRuntimeAssetMaterializationPreflight.sourceManifest.assetIds],
+        `${field}.sourceManifest.assetIds`
+    );
+    requireResponseArrayEqual(
+        responseStringArray(sourceManifest, "cacheOutputIds", `${field}.sourceManifest.cacheOutputIds`),
+        [...bundledRuntimeAssetMaterializationPreflight.sourceManifest.cacheOutputIds],
+        `${field}.sourceManifest.cacheOutputIds`
+    );
+
+    const checks = responseRecordArray(record.checks, `${field}.checks`);
+    requireResponseEqual(checks.length, bundledRuntimeAssetMaterializationPreflight.checks.length, `${field}.checks.length`);
+    for (let index = 0; index < bundledRuntimeAssetMaterializationPreflight.checks.length; index += 1) {
+        validateRuntimeAssetMaterializationPreflightCheckResponse(
+            checks[index],
+            bundledRuntimeAssetMaterializationPreflight.checks[index],
+            `${field}.checks.${index}`
+        );
+    }
+
+    const cacheOutputChecks = responseRecordArray(record.cacheOutputChecks, `${field}.cacheOutputChecks`);
+    requireResponseEqual(cacheOutputChecks.length, bundledRuntimeAssetMaterializationPreflight.cacheOutputChecks.length, `${field}.cacheOutputChecks.length`);
+    for (let index = 0; index < bundledRuntimeAssetMaterializationPreflight.cacheOutputChecks.length; index += 1) {
+        validateRuntimeAssetMaterializationPreflightCacheOutputResponse(
+            cacheOutputChecks[index],
+            bundledRuntimeAssetMaterializationPreflight.cacheOutputChecks[index],
+            `${field}.cacheOutputChecks.${index}`
+        );
+    }
+
+    const failureTaxonomy = responseRecordArray(record.failureTaxonomy, `${field}.failureTaxonomy`);
+    requireResponseEqual(failureTaxonomy.length, bundledRuntimeAssetMaterializationPreflight.failureTaxonomy.length, `${field}.failureTaxonomy.length`);
+    for (let index = 0; index < bundledRuntimeAssetMaterializationPreflight.failureTaxonomy.length; index += 1) {
+        const expected = bundledRuntimeAssetMaterializationPreflight.failureTaxonomy[index];
+        const failure = responseRecord(failureTaxonomy[index], `${field}.failureTaxonomy.${index}`);
+        requireResponseEqual(failure.code, expected.code, `${field}.failureTaxonomy.${index}.code`);
+        requireResponseEqual(failure.stage, expected.stage, `${field}.failureTaxonomy.${index}.stage`);
+        requireResponseEqual(failure.retryable, expected.retryable, `${field}.failureTaxonomy.${index}.retryable`);
+        requireResponseEqual(failure.dispatch, expected.dispatch, `${field}.failureTaxonomy.${index}.dispatch`);
+    }
+
+    const gates = responseRecord(record.gates, `${field}.gates`);
+    for (const property of [
+        "assetExistenceChecked",
+        "assetHashesComputed",
+        "cacheOutputsChecked",
+        "materializationApproved",
+        "browserLifecycleValidated",
+        "runtimeRegistration",
+    ]) {
+        requireResponseEqual(gates[property], false, `${field}.gates.${property}`);
+    }
+
+    const sideEffects = responseRecord(record.sideEffects, `${field}.sideEffects`);
+    for (const property of [
+        "browserProcessStarted",
+        "runtimeExecutionRegistered",
+        "runtimeAdapterImported",
+        "runtimeAssetsLoaded",
+        "assetManifestMaterialized",
+        "fileRead",
+        "hashComputed",
+        "networkDispatch",
+        "dispatch",
+        "localFileWrites",
+    ]) {
+        requireResponseEqual(sideEffects[property], false, `${field}.sideEffects.${property}`);
+    }
+
+    const redaction = responseRecord(record.redaction, `${field}.redaction`);
+    for (const property of [
+        "sourceDataValuesIncluded",
+        "pageValuesIncluded",
+        "artifactValuesIncluded",
+        "mediaValuesIncluded",
+        "tokenValuesIncluded",
+    ]) {
+        requireResponseEqual(redaction[property], false, `${field}.redaction.${property}`);
+    }
+}
+
 function validateBackendRpcRequestEnvelopeResponse(actual: unknown, expected: BackendRpcRequestEnvelopeSummary, field: string): void {
     const record = responseRecord(actual, field);
     rejectResponseValueFields(record, field);
@@ -2593,6 +2830,10 @@ function validateThumbnailResponseContract(
     requireResponseEqual(record.dispatch, true, "dispatch");
     requireResponseEqual(record.localFileWrites, false, "localFileWrites");
     validateRuntimeAssetManifestResponse(record.runtimeAssetManifest, "runtimeAssetManifest");
+    validateRuntimeAssetMaterializationPreflightResponse(
+        record.runtimeAssetMaterializationPreflight,
+        "runtimeAssetMaterializationPreflight"
+    );
 
     validateThumbnailResourceResponse(responseRecord(record.resource, "resource"));
     validateThumbnailCacheResponse(responseRecord(record.cache, "cache"), summary, cacheProbeExecution);

@@ -53,6 +53,52 @@ function assertRuntimeAssetManifestScaffold(manifest) {
     assert.ok(manifest.validation.noDispatchTests.includes("runtime-asset-manifest-response-validator"));
 }
 
+function assertRuntimeAssetMaterializationPreflightScaffold(preflight) {
+    assert.deepEqual(preflight, serviceModule.bundledRuntimeAssetMaterializationPreflight);
+    assert.equal(preflight.status, "planned-disabled");
+    assert.equal(preflight.preflightVersion, "P26.21");
+    assert.equal(preflight.owner, "renderer-service");
+    assert.equal(preflight.mode, "read-only-metadata");
+    assert.equal(preflight.readiness, "not-checked");
+    assert.equal(preflight.sourceManifest.manifestVersion, "P26.20");
+    assert.deepEqual(preflight.sourceManifest.assetIds, serviceModule.bundledRuntimeBridgeAssetManifest.validation.requiredAssetIds);
+    assert.deepEqual(
+        preflight.checks.map((check) => check.assetId),
+        serviceModule.bundledRuntimeBridgeAssetManifest.assets.map((asset) => asset.id)
+    );
+    assert.ok(preflight.checks.every((check) => check.readiness === "not-checked"));
+    assert.ok(preflight.checks.every((check) => check.exists === null));
+    assert.ok(preflight.checks.every((check) => check.cacheOutputExists === null));
+    assert.ok(preflight.checks.every((check) => check.sha256 === null));
+    assert.ok(preflight.checks.every((check) => check.byteLength === null));
+    assert.ok(preflight.checks.every((check) => check.fileRead === false));
+    assert.ok(preflight.checks.every((check) => check.hashComputed === false));
+    assert.ok(preflight.checks.every((check) => check.dispatch === false));
+    assert.ok(preflight.checks.every((check) => check.localFileWrites === false));
+    assert.ok(preflight.cacheOutputChecks.every((check) => check.readiness === "not-checked"));
+    assert.ok(preflight.cacheOutputChecks.every((check) => check.exists === null));
+    assert.ok(preflight.cacheOutputChecks.every((check) => check.writable === null));
+    assert.ok(preflight.failureTaxonomy.some((entry) => entry.code === "renderer_service_runtime_asset_missing"));
+    assert.ok(preflight.failureTaxonomy.every((entry) => entry.dispatch === false));
+    assert.equal(preflight.gates.assetExistenceChecked, false);
+    assert.equal(preflight.gates.assetHashesComputed, false);
+    assert.equal(preflight.gates.cacheOutputsChecked, false);
+    assert.equal(preflight.gates.materializationApproved, false);
+    assert.equal(preflight.gates.browserLifecycleValidated, false);
+    assert.equal(preflight.gates.runtimeRegistration, false);
+    assert.equal(preflight.sideEffects.browserProcessStarted, false);
+    assert.equal(preflight.sideEffects.runtimeAdapterImported, false);
+    assert.equal(preflight.sideEffects.runtimeAssetsLoaded, false);
+    assert.equal(preflight.sideEffects.fileRead, false);
+    assert.equal(preflight.sideEffects.hashComputed, false);
+    assert.equal(preflight.sideEffects.localFileWrites, false);
+    assert.equal(preflight.redaction.sourceDataValuesIncluded, false);
+    assert.equal(preflight.redaction.pageValuesIncluded, false);
+    assert.equal(preflight.redaction.artifactValuesIncluded, false);
+    assert.equal(preflight.redaction.mediaValuesIncluded, false);
+    assert.equal(preflight.redaction.tokenValuesIncluded, false);
+}
+
 async function withService(run) {
     const service = await serviceModule.startRendererService({ port: 0 });
     try {
@@ -303,7 +349,9 @@ test("noop host exposes the P25.24 health contract", async () => {
         assert.deepEqual(body, serviceModule.healthResponse);
         assert.ok(serviceModule.healthResponse.capabilities.includes("thumbnail.backend-rpc.frame-thumbnail-persist"));
         assert.ok(serviceModule.healthResponse.capabilities.includes("thumbnail.render.runtime-asset-manifest"));
+        assert.ok(serviceModule.healthResponse.capabilities.includes("thumbnail.render.runtime-asset-preflight"));
         assertRuntimeAssetManifestScaffold(body.runtimeAssetManifest);
+        assertRuntimeAssetMaterializationPreflightScaffold(body.runtimeAssetMaterializationPreflight);
     });
 });
 
@@ -1072,6 +1120,7 @@ test("noop host returns a normalized PNG thumbnail resource", async () => {
         });
         assert.equal(body.localFileWrites, false);
         assertRuntimeAssetManifestScaffold(body.runtimeAssetManifest);
+        assertRuntimeAssetMaterializationPreflightScaffold(body.runtimeAssetMaterializationPreflight);
 
         const resource = await fetch(body.resource.downloadUri);
         assert.equal(resource.status, 200);
@@ -1634,6 +1683,43 @@ test("noop host validates generated runtime asset manifest before returning it",
         assert.equal(body.code, "renderer_service_response_invalid");
         assert.equal(body.field, "runtimeAssetManifest.sideEffects.browserProcessStarted");
         assert.match(body.message, /runtimeAssetManifest\.sideEffects\.browserProcessStarted must match false/);
+    } finally {
+        await service.stop();
+    }
+});
+
+test("noop host validates generated runtime asset materialization preflight before returning it", async () => {
+    const service = await serviceModule.startRendererService({
+        port: 0,
+        thumbnailResponseOverride: (body) => ({
+            ...body,
+            runtimeAssetMaterializationPreflight: {
+                ...body.runtimeAssetMaterializationPreflight,
+                gates: {
+                    ...body.runtimeAssetMaterializationPreflight.gates,
+                    assetExistenceChecked: true,
+                },
+                checks: body.runtimeAssetMaterializationPreflight.checks.map((check, index) =>
+                    index === 0
+                        ? {
+                              ...check,
+                              exists: true,
+                              fileRead: true,
+                          }
+                        : check
+                ),
+            },
+        }),
+    });
+    try {
+        const response = await postValidFileThumbnail(service.host, service.port);
+
+        assert.equal(response.status, 500);
+        const body = await response.json();
+        assert.equal(body.status, "error");
+        assert.equal(body.code, "renderer_service_response_invalid");
+        assert.equal(body.field, "runtimeAssetMaterializationPreflight.checks.0.exists");
+        assert.match(body.message, /runtimeAssetMaterializationPreflight\.checks\.0\.exists must match null/);
     } finally {
         await service.stop();
     }

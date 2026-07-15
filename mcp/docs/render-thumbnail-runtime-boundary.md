@@ -433,6 +433,11 @@ records the expected frontend worker, render-wasm loader/binary, rasterizer
 fallback assets, cache output paths, and validation metadata while keeping
 browser startup, runtime execution, asset materialization, local file writes,
 and runtime registration disabled.
+P26.21 adds the materialization preflight boundary for that manifest. It
+records future existence, cache-output, and SHA-256 readiness checks plus
+failure codes, but it still reports `not-checked` and keeps file reads, hash
+computation, browser startup, adapter imports, local writes, and runtime
+registration disabled.
 
 ## Test Strategy
 

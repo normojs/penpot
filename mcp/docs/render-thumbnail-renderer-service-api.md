@@ -33,6 +33,11 @@ output paths, and validation metadata while preserving false browser startup,
 runtime import, runtime asset loading, asset materialization, network dispatch,
 local file write, source-data/page/artifact/media/token exposure, and runtime
 registration flags.
+P26.21 defines the next bundled runtime asset materialization preflight
+boundary: responses now also publish a read-only readiness plan for future
+asset-existence, cache-output, and hash checks, but all readiness values stay
+`not-checked` and no file reads, hash computation, or browser lifecycle work
+is performed yet.
 P26.5 adds a token-safe `backendRpcClient` plan to renderer-service thumbnail
 responses so backend data/cache/persist endpoints are normalized for staged
 execution. That plan now feeds the executable file-thumbnail cache probe,
@@ -550,6 +555,9 @@ P26.20 completes the first prerequisite as a metadata scaffold: the service
 publishes the manifest and validates it in responses, but it still does not
 copy assets, compute hashes, check file existence, import the bundled adapter,
 or start a browser.
+P26.21 keeps the same boundary read-only while adding the next preflight
+status layer for existence/hash readiness, cache-output readiness, and
+failure taxonomy metadata.
 
 The P25.77 revocation appeal resolution enforcement evidence attestation
 notarization certification endorsement countersignature verification revocation
