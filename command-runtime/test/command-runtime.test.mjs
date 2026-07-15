@@ -10406,6 +10406,19 @@ test("render.thumbnail renderer-service API fixtures define planning requests wi
     assert.equal(fixtures.bundledRuntimeBridge.assetMaterializationPreflight.readOnlyExecution.blockedAlways.runtimeAssetsLoaded, false);
     assert.equal(fixtures.bundledRuntimeBridge.assetMaterializationPreflight.readOnlyExecution.blockedAlways.localFileWrites, false);
     assert.equal(fixtures.bundledRuntimeBridge.assetMaterializationPreflight.readOnlyExecution.blockedAlways.sourceDataValuesIncluded, false);
+    assert.equal(fixtures.bundledRuntimeBridge.assetMaterializationPreflight.cliMcpDiagnostics.status, "planned");
+    assert.equal(fixtures.bundledRuntimeBridge.assetMaterializationPreflight.cliMcpDiagnostics.diagnosticsVersion, "P26.23");
+    assert.equal(fixtures.bundledRuntimeBridge.assetMaterializationPreflight.cliMcpDiagnostics.source, "renderer-service healthPreflight.runtimeAssetPreflight");
+    assert.ok(fixtures.bundledRuntimeBridge.assetMaterializationPreflight.cliMcpDiagnostics.exposedIn.includes("penpot-cli render thumbnail JSON result"));
+    assert.ok(fixtures.bundledRuntimeBridge.assetMaterializationPreflight.cliMcpDiagnostics.exposedIn.includes("MCP render.thumbnail result"));
+    assert.deepEqual(fixtures.bundledRuntimeBridge.assetMaterializationPreflight.cliMcpDiagnostics.reportedStates, ["not-executed", "executed", "invalid"]);
+    assert.ok(fixtures.bundledRuntimeBridge.assetMaterializationPreflight.cliMcpDiagnostics.reportedReadiness.includes("degraded"));
+    assert.ok(fixtures.bundledRuntimeBridge.assetMaterializationPreflight.cliMcpDiagnostics.reportedFields.includes("missingAssetIds"));
+    assert.ok(fixtures.bundledRuntimeBridge.assetMaterializationPreflight.cliMcpDiagnostics.omittedFields.includes("workspaceRoot"));
+    assert.ok(fixtures.bundledRuntimeBridge.assetMaterializationPreflight.cliMcpDiagnostics.omittedFields.includes("sha256"));
+    assert.equal(fixtures.bundledRuntimeBridge.assetMaterializationPreflight.cliMcpDiagnostics.noNewDispatch.browserProcessStarted, false);
+    assert.equal(fixtures.bundledRuntimeBridge.assetMaterializationPreflight.cliMcpDiagnostics.noNewDispatch.runtimeAdapterImported, false);
+    assert.equal(fixtures.bundledRuntimeBridge.assetMaterializationPreflight.cliMcpDiagnostics.noNewDispatch.localFileWrites, false);
     assert.ok(fixtures.registrationGates.allTargets.includes("thumbnail-renderer-service-implementation"));
     assert.ok(fixtures.registrationGates.frame.includes("tagged-frame-cache-probe"));
 
@@ -12487,6 +12500,10 @@ test("render.thumbnail renderer-service health preflight and client harness stay
     assert.equal(healthPreflight.endpoint, "http://127.0.0.1:6070/health");
     assert.equal(healthPreflight.timeoutMs, 4100);
     assert.equal(healthPreflight.headers["x-penpot-preflight"], "renderer-service-health");
+    assert.equal(healthPreflight.runtimeAssetPreflight.status, "not-executed");
+    assert.equal(healthPreflight.runtimeAssetPreflight.readiness, "not-reported");
+    assert.equal(healthPreflight.runtimeAssetPreflight.omitted.workspaceRoot, true);
+    assert.equal(healthPreflight.runtimeAssetPreflight.omitted.sha256, true);
     assert.ok(healthPreflight.failureModes.some((entry) => entry.code === "renderer_service_preflight_disabled"));
     assert.equal(harness.status, "planned-disabled");
     assert.equal(harness.dispatch, false);
@@ -12515,6 +12532,65 @@ test("render.thumbnail renderer-service health preflight executes only GET healt
                     runtimeRegistration: false,
                     dispatch: false,
                     capabilities: ["health", "thumbnail.render.noop"],
+                    runtimeAssetMaterializationPreflight: {
+                        sourceManifest: {
+                            assetIds: ["thumbnail-worker-main", "render-wasm-loader"],
+                            cacheOutputIds: ["runtime-asset-cache"],
+                        },
+                        execution: {
+                            status: "executed",
+                            executionVersion: "P26.22",
+                            mode: "read-only",
+                            readiness: "degraded",
+                            workspaceRoot: "/workspace/secret",
+                            cacheRoot: "/cache/secret",
+                            checks: [
+                                {
+                                    assetId: "thumbnail-worker-main",
+                                    readiness: "ready",
+                                    sha256: "abc123",
+                                    publicPath: "frontend/resources/public/js/worker/main.js",
+                                },
+                                {
+                                    assetId: "render-wasm-loader",
+                                    readiness: "missing",
+                                    cachePath: "/cache/render-wasm.js",
+                                },
+                            ],
+                            cacheOutputChecks: [
+                                {
+                                    cacheOutputId: "runtime-asset-cache",
+                                    readiness: "missing",
+                                },
+                            ],
+                            summary: {
+                                ready: false,
+                                readyAssetIds: ["thumbnail-worker-main"],
+                                missingAssetIds: ["render-wasm-loader"],
+                                readyCacheOutputIds: [],
+                                missingCacheOutputIds: ["runtime-asset-cache"],
+                            },
+                            sideEffects: {
+                                browserProcessStarted: false,
+                                runtimeExecutionRegistered: false,
+                                runtimeAdapterImported: false,
+                                runtimeAssetsLoaded: false,
+                                assetManifestMaterialized: false,
+                                fileRead: true,
+                                hashComputed: true,
+                                networkDispatch: false,
+                                dispatch: false,
+                                localFileWrites: false,
+                            },
+                            redaction: {
+                                sourceDataValuesIncluded: false,
+                                pageValuesIncluded: false,
+                                artifactValuesIncluded: false,
+                                mediaValuesIncluded: false,
+                                tokenValuesIncluded: false,
+                            },
+                        },
+                    },
                 }),
                 { status: 200, headers: { "content-type": "application/json; charset=utf-8" } }
             );
@@ -12532,6 +12608,30 @@ test("render.thumbnail renderer-service health preflight executes only GET healt
     assert.equal(healthPreflight.response.body.runtimeRegistration, false);
     assert.equal(healthPreflight.response.body.dispatch, false);
     assert.ok(healthPreflight.response.body.capabilities.includes("thumbnail.render.noop"));
+    assert.equal(healthPreflight.runtimeAssetPreflight.status, "executed");
+    assert.equal(healthPreflight.runtimeAssetPreflight.executionVersion, "P26.22");
+    assert.equal(healthPreflight.runtimeAssetPreflight.mode, "read-only");
+    assert.equal(healthPreflight.runtimeAssetPreflight.readiness, "degraded");
+    assert.equal(healthPreflight.runtimeAssetPreflight.ready, false);
+    assert.deepEqual(healthPreflight.runtimeAssetPreflight.readyAssetIds, ["thumbnail-worker-main"]);
+    assert.deepEqual(healthPreflight.runtimeAssetPreflight.missingAssetIds, ["render-wasm-loader"]);
+    assert.deepEqual(healthPreflight.runtimeAssetPreflight.missingCacheOutputIds, ["runtime-asset-cache"]);
+    assert.equal(healthPreflight.runtimeAssetPreflight.assetCounts.total, 2);
+    assert.equal(healthPreflight.runtimeAssetPreflight.assetCounts.ready, 1);
+    assert.equal(healthPreflight.runtimeAssetPreflight.assetCounts.missing, 1);
+    assert.equal(healthPreflight.runtimeAssetPreflight.cacheOutputCounts.total, 1);
+    assert.equal(healthPreflight.runtimeAssetPreflight.sideEffects.fileRead, true);
+    assert.equal(healthPreflight.runtimeAssetPreflight.sideEffects.hashComputed, true);
+    assert.equal(healthPreflight.runtimeAssetPreflight.sideEffects.browserProcessStarted, false);
+    assert.equal(healthPreflight.runtimeAssetPreflight.sideEffects.runtimeAdapterImported, false);
+    assert.equal(healthPreflight.runtimeAssetPreflight.sideEffects.localFileWrites, false);
+    assert.equal(healthPreflight.runtimeAssetPreflight.redaction.sourceDataValuesIncluded, false);
+    assert.equal(healthPreflight.runtimeAssetPreflight.redaction.tokenValuesIncluded, false);
+    assert.equal(healthPreflight.runtimeAssetPreflight.omitted.workspaceRoot, true);
+    assert.equal(healthPreflight.runtimeAssetPreflight.omitted.cachePaths, true);
+    assert.equal(healthPreflight.runtimeAssetPreflight.omitted.sha256, true);
+    assert.equal(JSON.stringify(healthPreflight.runtimeAssetPreflight).includes("/workspace/secret"), false);
+    assert.equal(JSON.stringify(healthPreflight.runtimeAssetPreflight).includes("abc123"), false);
 });
 
 test("render.thumbnail renderer-service health preflight normalizes unavailable health responses", async () => {

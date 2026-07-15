@@ -9671,6 +9671,48 @@ test("render thumbnail execution opt-in posts to renderer-service and returns re
                     runtimeRegistration: true,
                     dispatch: true,
                     capabilities: ["health", "thumbnail.render"],
+                    runtimeAssetMaterializationPreflight: {
+                        sourceManifest: {
+                            assetIds: ["thumbnail-worker-main"],
+                            cacheOutputIds: ["runtime-asset-cache"],
+                        },
+                        execution: {
+                            status: "executed",
+                            executionVersion: "P26.22",
+                            mode: "read-only",
+                            readiness: "degraded",
+                            workspaceRoot: "/workspace/cli-secret",
+                            cacheRoot: "/cache/cli-secret",
+                            checks: [{ assetId: "thumbnail-worker-main", readiness: "missing", sha256: "abc123" }],
+                            cacheOutputChecks: [{ cacheOutputId: "runtime-asset-cache", readiness: "ready" }],
+                            summary: {
+                                ready: false,
+                                readyAssetIds: [],
+                                missingAssetIds: ["thumbnail-worker-main"],
+                                readyCacheOutputIds: ["runtime-asset-cache"],
+                                missingCacheOutputIds: [],
+                            },
+                            sideEffects: {
+                                browserProcessStarted: false,
+                                runtimeExecutionRegistered: false,
+                                runtimeAdapterImported: false,
+                                runtimeAssetsLoaded: false,
+                                assetManifestMaterialized: false,
+                                fileRead: true,
+                                hashComputed: true,
+                                networkDispatch: false,
+                                dispatch: false,
+                                localFileWrites: false,
+                            },
+                            redaction: {
+                                sourceDataValuesIncluded: false,
+                                pageValuesIncluded: false,
+                                artifactValuesIncluded: false,
+                                mediaValuesIncluded: false,
+                                tokenValuesIncluded: false,
+                            },
+                        },
+                    },
                 }),
                 { status: 200, headers: { "content-type": "application/json; charset=utf-8" } }
             );
@@ -9731,6 +9773,20 @@ test("render thumbnail execution opt-in posts to renderer-service and returns re
         assert.deepEqual(body.data.serviceResponse.auth, fixture.expectedResponse.auth);
         assert.equal(result.stdout.includes("cli-secret-token"), false);
         assert.equal(body.data.healthPreflight.status, "ok");
+        assert.equal(body.data.healthPreflight.runtimeAssetPreflight.status, "executed");
+        assert.equal(body.data.healthPreflight.runtimeAssetPreflight.executionVersion, "P26.22");
+        assert.equal(body.data.healthPreflight.runtimeAssetPreflight.readiness, "degraded");
+        assert.equal(body.data.healthPreflight.runtimeAssetPreflight.ready, false);
+        assert.deepEqual(body.data.healthPreflight.runtimeAssetPreflight.missingAssetIds, ["thumbnail-worker-main"]);
+        assert.deepEqual(body.data.healthPreflight.runtimeAssetPreflight.readyCacheOutputIds, ["runtime-asset-cache"]);
+        assert.equal(body.data.healthPreflight.runtimeAssetPreflight.sideEffects.fileRead, true);
+        assert.equal(body.data.healthPreflight.runtimeAssetPreflight.sideEffects.hashComputed, true);
+        assert.equal(body.data.healthPreflight.runtimeAssetPreflight.sideEffects.localFileWrites, false);
+        assert.equal(body.data.healthPreflight.runtimeAssetPreflight.redaction.sourceDataValuesIncluded, false);
+        assert.equal(body.data.healthPreflight.runtimeAssetPreflight.omitted.workspaceRoot, true);
+        assert.equal(body.data.healthPreflight.runtimeAssetPreflight.omitted.sha256, true);
+        assert.equal(result.stdout.includes("/workspace/cli-secret"), false);
+        assert.equal(result.stdout.includes("abc123"), false);
     } finally {
         globalThis.fetch = originalFetch;
     }

@@ -1530,6 +1530,60 @@ export interface RenderThumbnailRendererServiceExecutionGate {
     };
 }
 
+export interface RenderThumbnailRendererServiceRuntimeAssetPreflightDiagnostic {
+    status: "not-executed" | "executed" | "invalid";
+    executionVersion: string | null;
+    mode: string | null;
+    readiness: "not-reported" | "ready" | "degraded" | "unknown";
+    ready: boolean;
+    checked: boolean;
+    assetCounts: {
+        total: number;
+        ready: number;
+        missing: number;
+    };
+    cacheOutputCounts: {
+        total: number;
+        ready: number;
+        missing: number;
+    };
+    readyAssetIds: string[];
+    missingAssetIds: string[];
+    readyCacheOutputIds: string[];
+    missingCacheOutputIds: string[];
+    sideEffects: {
+        browserProcessStarted: boolean;
+        runtimeExecutionRegistered: boolean;
+        runtimeAdapterImported: boolean;
+        runtimeAssetsLoaded: boolean;
+        assetManifestMaterialized: boolean;
+        fileRead: boolean;
+        hashComputed: boolean;
+        networkDispatch: boolean;
+        dispatch: boolean;
+        localFileWrites: boolean;
+    };
+    redaction: {
+        sourceDataValuesIncluded: boolean;
+        pageValuesIncluded: boolean;
+        artifactValuesIncluded: boolean;
+        mediaValuesIncluded: boolean;
+        tokenValuesIncluded: boolean;
+    };
+    omitted: {
+        workspaceRoot: true;
+        cacheRoot: true;
+        publicPaths: true;
+        cachePaths: true;
+        sha256: true;
+        tokenValues: true;
+        sourceDataValues: true;
+        pageValues: true;
+        artifactValues: true;
+        mediaValues: true;
+    };
+}
+
 export interface RenderThumbnailRendererServiceHealthPreflight {
     status: "planned-disabled" | "ready" | "skipped" | "not-configured" | "ok" | "unavailable" | "invalid";
     dispatch: boolean;
@@ -1550,6 +1604,7 @@ export interface RenderThumbnailRendererServiceHealthPreflight {
         bodyStatus: "ok";
         requiredFields: string[];
     };
+    runtimeAssetPreflight: RenderThumbnailRendererServiceRuntimeAssetPreflightDiagnostic;
     response?: {
         status: number | null;
         contentType: string | null;

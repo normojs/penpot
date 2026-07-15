@@ -304,8 +304,13 @@ hosts can now execute a read-only preflight slice over configured absolute
 workspace/cache roots, reporting ready/degraded asset/cache/hash readiness
 without browser startup, runtime import, runtime asset loading, asset copying,
 local writes, network dispatch, runtime registration, or value exposure.
-Current active work moves to P26.23 to surface that diagnostic state through
-CLI/MCP planning without enabling browser-backed materialization.
+P26.23 is complete: CLI and MCP `render.thumbnail` execution results now
+include a redacted `healthPreflight.runtimeAssetPreflight` diagnostic summary
+for renderer-service health preflight readiness, exposing ready/degraded counts
+and ids while omitting roots, paths, hashes, token values, and source-data/page/
+artifact/media values. Current active work moves to P26.24 to add an operator
+configuration surface for enabling that renderer-service read-only preflight in
+manual host runs.
 P25.7 is complete: thumbnail renderer-service API fixtures now define
 future file refresh, file reuse, tagged frame refresh, auth forwarding,
 resource URI normalization, and MCP/CLI test expectations. P25.8 is complete:
@@ -961,7 +966,8 @@ process boundary before MCP or CLI execution is enabled.
 | P26.20 | done | Materialize bundled runtime bridge asset manifest scaffold | `renderer-service`, `frontend`, `render-wasm`, `command-runtime`, `mcp/docs`, `todo.md`, `CHANGES.md` | Completed 2026-07-16; renderer-service now exposes a validated `runtimeAssetManifest` in health and thumbnail responses with expected frontend worker, render-wasm loader/binary, rasterizer fallback, cache output paths, and no-dispatch validation metadata, and command-runtime fixtures assert the metadata-only contract | Prepares bundled runtime packaging while keeping browser startup, actual render-wasm execution, runtime import, asset materialization, local file writes, source-data/page/artifact/media/token exposure, and runtime registration disabled |
 | P26.21 | done | Define bundled runtime asset materialization preflight boundary | `renderer-service`, `command-runtime`, `mcp/docs`, `todo.md`, `CHANGES.md` | Completed 2026-07-16; renderer-service now exposes a read-only `runtimeAssetMaterializationPreflight` over the P26.20 manifest with future existence/hash/cache-output readiness checks, failure taxonomy, and hard-disabled file-read/hash/browser/runtime registration flags, and command-runtime fixtures assert the metadata-only contract | Prepares reviewed asset packaging without starting browsers, importing runtime adapters, writing local files, exposing source-data/page/artifact/media/token values, or enabling runtime registration |
 | P26.22 | done | Exercise bundled runtime asset materialization preflight execution slice | `renderer-service`, `command-runtime`, `mcp/docs`, `todo.md`, `CHANGES.md` | Completed 2026-07-16; explicitly configured renderer-service hosts now attach a P26.22 read-only execution object to health and thumbnail responses, reporting ready/degraded asset existence, cache-asset existence, cache-output writability, byte-length, and SHA-256 readiness from configured absolute workspace/cache roots | Proves execution gating without starting browsers, importing runtime adapters, loading runtime assets, writing local files, dispatching network requests, registering runtime execution, or exposing source-data/page/artifact/media/token values |
-| P26.23 | pending | Add bundled runtime asset preflight CLI/MCP diagnostics surface | `command-runtime`, `penpot-cli`, `mcp`, `mcp/docs`, `todo.md`, `CHANGES.md` | Surface renderer-service `runtimeAssetMaterializationPreflight.execution` in explicit health/preflight diagnostic results so CLI/MCP users can distinguish ready versus degraded asset/cache/hash states before thumbnail rendering | Keeps browser startup, runtime adapter import, runtime asset loading, asset copying, local writes, backend/source-data reads, runtime registration, and value exposure disabled |
+| P26.23 | done | Add bundled runtime asset preflight CLI/MCP diagnostics surface | `command-runtime`, `penpot-cli`, `mcp`, `mcp/docs`, `todo.md`, `CHANGES.md` | Completed 2026-07-16; command-runtime now normalizes renderer-service health preflight `runtimeAssetMaterializationPreflight.execution` into a redacted `healthPreflight.runtimeAssetPreflight` summary, and CLI/MCP execution tests prove ready/degraded diagnostics are returned without leaking roots, paths, hashes, tokens, source data, page data, artifact data, or media values | Keeps browser startup, runtime adapter import, runtime asset loading, asset copying, local writes, backend/source-data reads, runtime registration, and value exposure disabled |
+| P26.24 | pending | Add renderer-service runtime asset preflight operator configuration | `renderer-service`, `penpot-cli`, `mcp/docs`, `todo.md`, `CHANGES.md` | Add explicit manual-host environment/configuration inputs for `runtimeAssetPreflight.executeReadOnly`, `workspaceRoot`, and cache root so operators can enable P26.22 readiness checks in real local runs and see them through the P26.23 CLI/MCP diagnostics surface | Keeps browser startup, runtime adapter import, runtime asset loading, asset copying, backend/source-data reads, network dispatch, local writes beyond existing CLI output downloads, runtime registration, and value exposure disabled |
 
 P26.1 is complete: `@penpot/renderer-service` is a private pnpm workspace
 package with a real no-op HTTP lifecycle. Its TypeScript output is written to
@@ -1146,9 +1152,12 @@ no hashes are computed, and runtime registration remains disabled. P26.22 is
 complete: this implementation slice adds an explicit read-only execution
 object for configured renderer-service hosts, proving ready/degraded asset
 existence, cache-output, byte-length, and SHA-256 reporting while keeping
-browser-backed materialization disabled. P26.23 is pending to expose that
-diagnostic state through CLI/MCP planning surfaces before any bundled browser
-runtime execution is enabled.
+browser-backed materialization disabled. P26.23 is complete: CLI/MCP execution
+results now expose a redacted health preflight runtime asset diagnostic summary
+with ready/degraded counts and ids, while omitting roots, paths, hashes, token
+values, and source-data/page/artifact/media values. P26.24 is pending to expose
+explicit operator configuration for enabling the read-only renderer-service
+preflight in manual host runs.
 
 ## Maintenance: Build Cache Hygiene
 

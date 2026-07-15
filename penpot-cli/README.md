@@ -246,7 +246,12 @@ pnpm --filter @penpot/renderer-service start:noop
 
 After starting the host, stop it with `Ctrl-C` or `SIGTERM`. The host returns a
 validated fixture PNG resource for explicitly opted-in `render thumbnail`
-requests; backend RPC execution and real scene rendering remain disabled.
+requests. When the host reports a bundled runtime asset preflight execution,
+`render thumbnail --format json` includes a redacted
+`healthPreflight.runtimeAssetPreflight` summary with ready/degraded asset and
+cache-output diagnostics, omitting local paths, hashes, source data, media
+values, and token values. Backend RPC execution and real scene rendering remain
+disabled.
 
 ## File Commands
 

@@ -446,6 +446,11 @@ and cache roots. Browser-backed materialization remains blocked: no browser is
 started, no runtime adapter is imported or loaded, no assets are copied, no
 network dispatch occurs, no local files are written, no runtime is registered,
 and no source-data/page/artifact/media/token values are returned.
+P26.23 exposes only a redacted summary of that preflight through CLI/MCP health
+preflight results. The summary includes readiness, counts, ready/missing ids,
+side-effect flags, and redaction flags, while omitting configured roots,
+public/cache paths, SHA-256 values, token values, and source-data/page/artifact/
+media values. CLI/MCP do not perform their own filesystem reads or hashes.
 
 ## Test Strategy
 

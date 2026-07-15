@@ -7368,6 +7368,48 @@ test("RenderThumbnailTool execution opt-in posts to renderer-service and returns
                     runtimeRegistration: true,
                     dispatch: true,
                     capabilities: ["health", "thumbnail.render"],
+                    runtimeAssetMaterializationPreflight: {
+                        sourceManifest: {
+                            assetIds: ["thumbnail-worker-main"],
+                            cacheOutputIds: ["runtime-asset-cache"],
+                        },
+                        execution: {
+                            status: "executed",
+                            executionVersion: "P26.22",
+                            mode: "read-only",
+                            readiness: "ready",
+                            workspaceRoot: "/workspace/mcp-secret",
+                            cacheRoot: "/cache/mcp-secret",
+                            checks: [{ assetId: "thumbnail-worker-main", readiness: "ready", sha256: "abc123" }],
+                            cacheOutputChecks: [{ cacheOutputId: "runtime-asset-cache", readiness: "ready" }],
+                            summary: {
+                                ready: true,
+                                readyAssetIds: ["thumbnail-worker-main"],
+                                missingAssetIds: [],
+                                readyCacheOutputIds: ["runtime-asset-cache"],
+                                missingCacheOutputIds: [],
+                            },
+                            sideEffects: {
+                                browserProcessStarted: false,
+                                runtimeExecutionRegistered: false,
+                                runtimeAdapterImported: false,
+                                runtimeAssetsLoaded: false,
+                                assetManifestMaterialized: false,
+                                fileRead: true,
+                                hashComputed: true,
+                                networkDispatch: false,
+                                dispatch: false,
+                                localFileWrites: false,
+                            },
+                            redaction: {
+                                sourceDataValuesIncluded: false,
+                                pageValuesIncluded: false,
+                                artifactValuesIncluded: false,
+                                mediaValuesIncluded: false,
+                                tokenValuesIncluded: false,
+                            },
+                        },
+                    },
                 }),
                 { status: 200, headers: { "content-type": "application/json; charset=utf-8" } }
             );
@@ -7423,6 +7465,19 @@ test("RenderThumbnailTool execution opt-in posts to renderer-service and returns
         assert.deepEqual(body.data.serviceResponse.auth, fixture.expectedResponse.auth);
         assert.equal(JSON.stringify(body).includes("token-1"), false);
         assert.equal(body.data.healthPreflight.status, "ok");
+        assert.equal(body.data.healthPreflight.runtimeAssetPreflight.status, "executed");
+        assert.equal(body.data.healthPreflight.runtimeAssetPreflight.executionVersion, "P26.22");
+        assert.equal(body.data.healthPreflight.runtimeAssetPreflight.readiness, "ready");
+        assert.equal(body.data.healthPreflight.runtimeAssetPreflight.ready, true);
+        assert.deepEqual(body.data.healthPreflight.runtimeAssetPreflight.readyAssetIds, ["thumbnail-worker-main"]);
+        assert.deepEqual(body.data.healthPreflight.runtimeAssetPreflight.readyCacheOutputIds, ["runtime-asset-cache"]);
+        assert.equal(body.data.healthPreflight.runtimeAssetPreflight.sideEffects.fileRead, true);
+        assert.equal(body.data.healthPreflight.runtimeAssetPreflight.sideEffects.hashComputed, true);
+        assert.equal(body.data.healthPreflight.runtimeAssetPreflight.sideEffects.localFileWrites, false);
+        assert.equal(body.data.healthPreflight.runtimeAssetPreflight.omitted.workspaceRoot, true);
+        assert.equal(body.data.healthPreflight.runtimeAssetPreflight.omitted.sha256, true);
+        assert.equal(JSON.stringify(body).includes("/workspace/mcp-secret"), false);
+        assert.equal(JSON.stringify(body).includes("abc123"), false);
         assert.equal(body.data.adapterSelection.selected, "renderer-service");
     } finally {
         globalThis.fetch = originalFetch;

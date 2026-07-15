@@ -14315,7 +14315,140 @@ export function createRenderThumbnailRendererServiceHealthPreflight(options = EM
                 "unhealthy and malformed responses normalize structured preflight errors",
             ],
         },
+        runtimeAssetPreflight: normalizeRendererServiceRuntimeAssetPreflightDiagnostic(null),
     };
+}
+
+function normalizeRendererServiceRuntimeAssetPreflightDiagnostic(body) {
+    const bodyRecord = asRecord(body);
+    const preflight = asRecord(bodyRecord.runtimeAssetMaterializationPreflight);
+    const sourceManifest = asRecord(preflight.sourceManifest);
+    const execution = preflight.execution;
+    const assetIds = normalizeStringArray(sourceManifest.assetIds);
+    const cacheOutputIds = normalizeStringArray(sourceManifest.cacheOutputIds);
+    const baseSideEffects = {
+        browserProcessStarted: false,
+        runtimeExecutionRegistered: false,
+        runtimeAdapterImported: false,
+        runtimeAssetsLoaded: false,
+        assetManifestMaterialized: false,
+        fileRead: false,
+        hashComputed: false,
+        networkDispatch: false,
+        dispatch: false,
+        localFileWrites: false,
+    };
+    const baseRedaction = {
+        sourceDataValuesIncluded: false,
+        pageValuesIncluded: false,
+        artifactValuesIncluded: false,
+        mediaValuesIncluded: false,
+        tokenValuesIncluded: false,
+    };
+    const omitted = {
+        workspaceRoot: true,
+        cacheRoot: true,
+        publicPaths: true,
+        cachePaths: true,
+        sha256: true,
+        tokenValues: true,
+        sourceDataValues: true,
+        pageValues: true,
+        artifactValues: true,
+        mediaValues: true,
+    };
+
+    if (!execution || typeof execution !== "object" || Array.isArray(execution)) {
+        return {
+            status: "not-executed",
+            executionVersion: null,
+            mode: null,
+            readiness: "not-reported",
+            ready: false,
+            checked: false,
+            assetCounts: {
+                total: assetIds.length,
+                ready: 0,
+                missing: 0,
+            },
+            cacheOutputCounts: {
+                total: cacheOutputIds.length,
+                ready: 0,
+                missing: 0,
+            },
+            readyAssetIds: [],
+            missingAssetIds: [],
+            readyCacheOutputIds: [],
+            missingCacheOutputIds: [],
+            sideEffects: baseSideEffects,
+            redaction: baseRedaction,
+            omitted,
+        };
+    }
+
+    const executionRecord = asRecord(execution);
+    const summary = asRecord(executionRecord.summary);
+    const checks = normalizeRecordArray(executionRecord.checks);
+    const cacheOutputChecks = normalizeRecordArray(executionRecord.cacheOutputChecks);
+    const readyAssetIds = normalizeStringArray(summary.readyAssetIds);
+    const missingAssetIds = normalizeStringArray(summary.missingAssetIds);
+    const readyCacheOutputIds = normalizeStringArray(summary.readyCacheOutputIds);
+    const missingCacheOutputIds = normalizeStringArray(summary.missingCacheOutputIds);
+    const sideEffects = asRecord(executionRecord.sideEffects);
+    const redaction = asRecord(executionRecord.redaction);
+    const readiness = normalizeOptionalString(executionRecord.readiness);
+    const validReadiness = readiness === "ready" || readiness === "degraded";
+
+    return {
+        status: normalizeOptionalString(executionRecord.status) === "executed" && validReadiness ? "executed" : "invalid",
+        executionVersion: normalizeOptionalString(executionRecord.executionVersion),
+        mode: normalizeOptionalString(executionRecord.mode),
+        readiness: validReadiness ? readiness : "unknown",
+        ready: typeof summary.ready === "boolean" ? summary.ready : readiness === "ready",
+        checked: true,
+        assetCounts: {
+            total: checks.length || assetIds.length,
+            ready: readyAssetIds.length,
+            missing: missingAssetIds.length,
+        },
+        cacheOutputCounts: {
+            total: cacheOutputChecks.length || cacheOutputIds.length,
+            ready: readyCacheOutputIds.length,
+            missing: missingCacheOutputIds.length,
+        },
+        readyAssetIds,
+        missingAssetIds,
+        readyCacheOutputIds,
+        missingCacheOutputIds,
+        sideEffects: {
+            browserProcessStarted: sideEffects.browserProcessStarted === true,
+            runtimeExecutionRegistered: sideEffects.runtimeExecutionRegistered === true,
+            runtimeAdapterImported: sideEffects.runtimeAdapterImported === true,
+            runtimeAssetsLoaded: sideEffects.runtimeAssetsLoaded === true,
+            assetManifestMaterialized: sideEffects.assetManifestMaterialized === true,
+            fileRead: sideEffects.fileRead === true,
+            hashComputed: sideEffects.hashComputed === true,
+            networkDispatch: sideEffects.networkDispatch === true,
+            dispatch: sideEffects.dispatch === true,
+            localFileWrites: sideEffects.localFileWrites === true,
+        },
+        redaction: {
+            sourceDataValuesIncluded: redaction.sourceDataValuesIncluded === true,
+            pageValuesIncluded: redaction.pageValuesIncluded === true,
+            artifactValuesIncluded: redaction.artifactValuesIncluded === true,
+            mediaValuesIncluded: redaction.mediaValuesIncluded === true,
+            tokenValuesIncluded: redaction.tokenValuesIncluded === true,
+        },
+        omitted,
+    };
+}
+
+function normalizeStringArray(value) {
+    return Array.isArray(value) ? value.filter((entry) => typeof entry === "string") : [];
+}
+
+function normalizeRecordArray(value) {
+    return Array.isArray(value) ? value.filter((entry) => entry && typeof entry === "object" && !Array.isArray(entry)) : [];
 }
 
 export async function executeRenderThumbnailRendererServiceHealthPreflight(plan, options = EMPTY_OBJECT) {
@@ -14486,6 +14619,7 @@ export async function executeRenderThumbnailRendererServiceHealthPreflight(plan,
             dispatch: true,
             networkProbe: true,
             reason: "renderer-service health preflight succeeded",
+            runtimeAssetPreflight: normalizeRendererServiceRuntimeAssetPreflightDiagnostic(bodyRecord),
             response: {
                 status: httpStatus,
                 contentType,

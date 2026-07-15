@@ -4051,6 +4051,14 @@ with absolute workspace/cache roots, MCP/CLI-visible service metadata can show
 runtime adapter import, runtime asset loading, asset copying, network dispatch,
 local writes, runtime registration, or source-data/page/artifact/media/token
 value exposure. The default contract remains `execution:null`.
+P26.23 routes that diagnostic through the shared command-runtime health
+preflight result returned by `penpot-cli render thumbnail --format json` and
+MCP `render.thumbnail`. The exposed summary reports status, readiness, counts,
+ready/missing ids, side-effect flags, and redaction flags, while omitting
+workspace/cache roots, public/cache paths, SHA-256 values, token values, and
+source-data/page/artifact/media values. CLI/MCP remain consumers of the
+renderer-service `/health` response and do not perform runtime filesystem
+reads or hashes themselves.
 
 ### 8.6 Advanced Tools
 

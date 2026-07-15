@@ -47,6 +47,13 @@ The default response still carries `execution:null`; the execution slice never
 starts a browser, imports or loads the bundled runtime adapter, materializes
 assets, dispatches network requests, writes local files, registers runtime
 execution, or exposes source-data/page/artifact/media/token values.
+P26.23 surfaces that health preflight state through the shared command-runtime
+diagnostic summary used by `penpot-cli` and MCP `render.thumbnail` execution
+results. The summary reports whether the preflight was not executed, executed,
+or invalid; includes ready/degraded readiness, counts, ready/missing asset and
+cache-output ids, side-effect flags, and redaction flags; and deliberately
+omits workspace/cache roots, public/cache paths, SHA-256 values, token values,
+and source-data/page/artifact/media values.
 P26.5 adds a token-safe `backendRpcClient` plan to renderer-service thumbnail
 responses so backend data/cache/persist endpoints are normalized for staged
 execution. That plan now feeds the executable file-thumbnail cache probe,
@@ -572,6 +579,10 @@ execution object is diagnostic only: it may stat cache/public paths and read
 public asset bytes to compute SHA-256, but it still leaves bundled browser
 materialization, adapter imports, runtime loading, local writes, network
 dispatch, and runtime registration disabled.
+P26.23 keeps execution ownership unchanged and only normalizes the health
+preflight diagnostic for CLI/MCP callers. CLI/MCP do not read runtime files or
+hash bytes themselves; they consume the renderer-service `/health` response and
+return a redacted `healthPreflight.runtimeAssetPreflight` summary.
 
 The P25.77 revocation appeal resolution enforcement evidence attestation
 notarization certification endorsement countersignature verification revocation
