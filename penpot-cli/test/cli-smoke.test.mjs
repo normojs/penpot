@@ -32,6 +32,8 @@ const renderThumbnailRendererServiceFixtures = JSON.parse(
     readFileSync(new URL("../../mcp/docs/render-thumbnail-renderer-service-fixtures.json", import.meta.url), "utf8")
 );
 const bundledSceneBridgeContractFixture = renderThumbnailRendererServiceFixtures.bundledRuntimeBridge.bundledSceneBridgeContract;
+const bundledSceneBridgeAdapterModuleFixture =
+    renderThumbnailRendererServiceFixtures.bundledRuntimeBridge.bundledSceneBridgeAdapterModule;
 
 function getRenderThumbnailRendererServiceFixture(id) {
     const fixture = renderThumbnailRendererServiceFixtures.cases.find((entry) => entry.id === id);
@@ -10087,8 +10089,14 @@ test("render thumbnail execution opt-in posts to renderer-service and returns re
                     mode: "service",
                     runtimeRegistration: true,
                     dispatch: true,
-                    capabilities: ["health", "thumbnail.render", "thumbnail.render.bundled-scene-bridge-contract"],
+                    capabilities: [
+                        "health",
+                        "thumbnail.render",
+                        "thumbnail.render.bundled-scene-bridge-contract",
+                        "thumbnail.render.bundled-scene-bridge-adapter-module",
+                    ],
                     bundledSceneBridgeContract: bundledSceneBridgeContractFixture,
+                    bundledSceneBridgeAdapterModule: bundledSceneBridgeAdapterModuleFixture,
                     browserFixtureRuntime: {
                         status: "started",
                         diagnosticsVersion: "P26.31",
@@ -10602,6 +10610,21 @@ test("render thumbnail execution opt-in posts to renderer-service and returns re
         assert.deepEqual(body.data.healthPreflight.bundledSceneBridgeContract.diagnosticCodes, [
             "renderer_service_bundled_scene_bridge_contract_defined",
         ]);
+        assert.equal(body.data.healthPreflight.bundledSceneBridgeAdapterModule.status, "planned-disabled");
+        assert.equal(body.data.healthPreflight.bundledSceneBridgeAdapterModule.readinessVersion, "P26.33");
+        assert.equal(body.data.healthPreflight.bundledSceneBridgeAdapterModule.module, "./bundled-scene-bridge-runtime.js");
+        assert.equal(body.data.healthPreflight.bundledSceneBridgeAdapterModule.moduleDefined, true);
+        assert.equal(body.data.healthPreflight.bundledSceneBridgeAdapterModule.moduleImported, false);
+        assert.equal(body.data.healthPreflight.bundledSceneBridgeAdapterModule.factoryInvoked, false);
+        assert.equal(body.data.healthPreflight.bundledSceneBridgeAdapterModule.runtimeRegistration, false);
+        assert.equal(body.data.healthPreflight.bundledSceneBridgeAdapterModule.browserProcessStarted, false);
+        assert.equal(body.data.healthPreflight.bundledSceneBridgeAdapterModule.localFileWrites, false);
+        assert.deepEqual(body.data.healthPreflight.bundledSceneBridgeAdapterModule.diagnosticCodes, [
+            "renderer_service_bundled_scene_bridge_adapter_module_defined_disabled",
+        ]);
+        assert.equal(body.data.healthPreflight.bundledSceneBridgeAdapterModule.sideEffects.runtimeAdapterImported, false);
+        assert.equal(body.data.healthPreflight.bundledSceneBridgeAdapterModule.redaction.pathValuesIncluded, false);
+        assert.equal(body.data.healthPreflight.bundledSceneBridgeAdapterModule.omitted.modulePath, true);
         assert.equal(body.data.healthPreflight.runtimeAssetPreflight.status, "executed");
         assert.equal(body.data.healthPreflight.runtimeAssetPreflight.diagnosticsVersion, "P26.25");
         assert.equal(body.data.healthPreflight.runtimeAssetPreflight.executionVersion, "P26.22");

@@ -4,6 +4,7 @@
 
 ### :sparkles: New features & Enhancements
 
+- Add a disabled `bundled-scene-bridge-runtime.js` module boundary to renderer-service with `bundledSceneBridgeAdapterModule` health/thumbnail diagnostics, while keeping default import, factory invocation, runtime registration, browser startup, asset loading, backend/source-data reads, writes, and value exposure disabled.
 - Enable explicitly gated `render.thumbnail` renderer-service execution from MCP and `penpot-cli`, with health preflight, POST dispatch, normalized PNG resource metadata, and optional CLI `--output` downloads from the renderer-service resource URL.
 - Add renderer-service backend RPC client planning metadata for thumbnail responses, normalizing future backend data/persist endpoints while keeping backend reads, writes, and network dispatch disabled.
 - Add renderer-service backend RPC request-envelope planning metadata for future GET query and POST JSON body wiring, without exposing request/media/token values or enabling dispatch.

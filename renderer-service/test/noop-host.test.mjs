@@ -6,6 +6,7 @@ import test from "node:test";
 import { pathToFileURL } from "node:url";
 
 const buildPath = "/Volumes/fushilu/.caches/penpot/renderer-service/index.js";
+const bundledSceneBridgeRuntimeBuildPath = join(dirname(buildPath), "bundled-scene-bridge-runtime.js");
 const serviceModule = await import(`${pathToFileURL(buildPath).href}?test=${Date.now()}`);
 const pngFixture = Buffer.from(
     "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==",
@@ -795,6 +796,38 @@ function assertBundledSceneBridgeContract(contract) {
     return contract;
 }
 
+function assertBundledSceneBridgeAdapterModule(readiness) {
+    assert.deepEqual(readiness, serviceModule.bundledSceneBridgeAdapterModule);
+    assert.equal(readiness.status, "planned-disabled");
+    assert.equal(readiness.readinessVersion, "P26.33");
+    assert.equal(readiness.owner, "renderer-service");
+    assert.equal(readiness.mode, "disabled-module-boundary");
+    assert.equal(readiness.module, "./bundled-scene-bridge-runtime.js");
+    assert.equal(readiness.exportName, "createBundledSceneBridgeRendererRuntime");
+    assert.equal(readiness.defaultServiceImport, false);
+    assert.equal(readiness.moduleDefined, true);
+    assert.equal(readiness.moduleImported, false);
+    assert.equal(readiness.factoryInvoked, false);
+    assert.equal(readiness.runtimeRegistration, false);
+    assert.equal(readiness.runtimeExecutionRegistered, false);
+    assert.equal(readiness.browserProcessStarted, false);
+    assert.equal(readiness.runtimeAssetsLoaded, false);
+    assert.equal(readiness.localFileWrites, false);
+    assert.deepEqual(readiness.diagnosticCodes, [
+        "renderer_service_bundled_scene_bridge_adapter_module_defined_disabled",
+    ]);
+    assert.equal(readiness.sideEffects.runtimeAdapterImported, false);
+    assert.equal(readiness.sideEffects.runtimeFactoryInvoked, false);
+    assert.equal(readiness.sideEffects.localFileWrites, false);
+    assert.equal(readiness.redaction.pathValuesIncluded, false);
+    assert.equal(readiness.redaction.sourceDataValuesIncluded, false);
+    assert.equal(readiness.omitted.modulePath, true);
+    assert.equal(readiness.omitted.sourceData, true);
+    assert.equal(readiness.omitted.tokenValues, true);
+    assert.equal(readiness.execution, null);
+    return readiness;
+}
+
 function persistedThumbnailResponse(id = "persisted-thumbnail-png") {
     return new Response(
         JSON.stringify({
@@ -821,6 +854,7 @@ test("noop host exposes the P25.24 health contract", async () => {
         assert.ok(serviceModule.healthResponse.capabilities.includes("thumbnail.render.runtime-asset-materialization-dry-run"));
         assert.ok(serviceModule.healthResponse.capabilities.includes("thumbnail.render.runtime-asset-materialization-approval-scaffold"));
         assert.ok(serviceModule.healthResponse.capabilities.includes("thumbnail.render.bundled-scene-bridge-contract"));
+        assert.ok(serviceModule.healthResponse.capabilities.includes("thumbnail.render.bundled-scene-bridge-adapter-module"));
         assert.deepEqual(body.browserFixtureRuntime, serviceModule.defaultBrowserFixtureRuntimeLifecycle);
         assertBrowserFixtureRuntimeLifecycle(body.browserFixtureRuntime);
         assertRuntimeAssetManifestScaffold(body.runtimeAssetManifest);
@@ -828,7 +862,35 @@ test("noop host exposes the P25.24 health contract", async () => {
         assertRuntimeAssetMaterializationDryRunPlan(body.runtimeAssetMaterializationDryRun);
         assertRuntimeAssetMaterializationApprovalPlan(body.runtimeAssetMaterializationApproval);
         assertBundledSceneBridgeContract(body.bundledSceneBridgeContract);
+        assertBundledSceneBridgeAdapterModule(body.bundledSceneBridgeAdapterModule);
     });
+});
+
+test("noop host exposes the disabled P26.33 bundled scene bridge adapter module boundary", async () => {
+    const adapterModule = await import(`${pathToFileURL(bundledSceneBridgeRuntimeBuildPath).href}?test=${Date.now()}`);
+
+    assert.equal(typeof adapterModule.createBundledSceneBridgeRendererRuntime, "function");
+    assert.equal(adapterModule.bundledSceneBridgeAdapterModuleBoundary.status, "planned-disabled");
+    assert.equal(adapterModule.bundledSceneBridgeAdapterModuleBoundary.readinessVersion, "P26.33");
+    assert.equal(adapterModule.bundledSceneBridgeAdapterModuleBoundary.defaultServiceImport, false);
+    assert.equal(adapterModule.bundledSceneBridgeAdapterModuleBoundary.runtimeRegistration, false);
+    assert.equal(adapterModule.bundledSceneBridgeAdapterModuleBoundary.browserProcessStarted, false);
+    assert.equal(adapterModule.bundledSceneBridgeAdapterModuleBoundary.runtimeAssetsLoaded, false);
+    assert.equal(adapterModule.bundledSceneBridgeAdapterModuleBoundary.localFileWrites, false);
+    assert.equal(adapterModule.bundledSceneBridgeAdapterModuleBoundary.valuesIncluded, false);
+
+    const runtime = await adapterModule.createBundledSceneBridgeRendererRuntime();
+    assert.equal(typeof runtime.renderThumbnail, "function");
+    assert.equal(typeof runtime.close, "function");
+    await assert.rejects(
+        () => runtime.renderThumbnail(browserFixtureRuntimeInput()),
+        (error) => {
+            assert.equal(error.code, "renderer_service_bundled_scene_bridge_runtime_disabled");
+            assert.match(error.message, /disabled/);
+            return true;
+        }
+    );
+    await runtime.close();
 });
 
 test("noop host executes the P26.22 runtime asset preflight read-only ready slice", async () => {
@@ -2939,6 +3001,36 @@ test("noop host rejects unsafe P26.32 bundled scene bridge contract metadata", a
     } finally {
         await service.stop();
         await fixture.cleanup();
+    }
+});
+
+test("noop host rejects unsafe P26.33 bundled scene bridge adapter module readiness", async () => {
+    const service = await serviceModule.startRendererService({
+        port: 0,
+        thumbnailResponseOverride: (body) => ({
+            ...body,
+            bundledSceneBridgeAdapterModule: {
+                ...body.bundledSceneBridgeAdapterModule,
+                moduleImported: true,
+                factoryInvoked: true,
+                sideEffects: {
+                    ...body.bundledSceneBridgeAdapterModule.sideEffects,
+                    runtimeAdapterImported: true,
+                },
+            },
+        }),
+    });
+    try {
+        const response = await postValidFileThumbnail(service.host, service.port);
+
+        assert.equal(response.status, 500);
+        const body = await response.json();
+        assert.equal(body.status, "error");
+        assert.equal(body.code, "renderer_service_response_invalid");
+        assert.equal(body.field, "bundledSceneBridgeAdapterModule.moduleImported");
+        assert.match(body.message, /bundledSceneBridgeAdapterModule\.moduleImported must match false/);
+    } finally {
+        await service.stop();
     }
 });
 

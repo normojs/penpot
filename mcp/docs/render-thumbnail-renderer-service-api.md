@@ -132,6 +132,15 @@ imported, runtime execution is not registered, no browser is started, no
 runtime assets are loaded or materialized, no files are written, and paths,
 hashes, source data, page data, artifact bytes, media bytes, and token values
 stay omitted.
+P26.33 adds the disabled service-owned adapter module boundary. The compiled
+renderer-service package now contains `bundled-scene-bridge-runtime.js` with a
+`createBundledSceneBridgeRendererRuntime` export, but default service paths do
+not import the module, invoke the factory, register the runtime, start a
+browser, load assets, read backend/source data, write files, or expose paths,
+hashes, source/page data, artifact/media bytes, or tokens. `/health` and
+`/thumbnail` expose this as `bundledSceneBridgeAdapterModule`, and
+command-runtime carries it to CLI/MCP as
+`healthPreflight.bundledSceneBridgeAdapterModule`.
 P26.5 adds a token-safe `backendRpcClient` plan to renderer-service thumbnail
 responses so backend data/cache/persist endpoints are normalized for staged
 execution. That plan now feeds the executable file-thumbnail cache probe,

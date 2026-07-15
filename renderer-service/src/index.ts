@@ -1434,6 +1434,89 @@ export const bundledSceneBridgeContract = {
     execution: null,
 } as const;
 
+export const bundledSceneBridgeAdapterModule = {
+    status: "planned-disabled",
+    readinessVersion: "P26.33",
+    owner: "renderer-service",
+    mode: "disabled-module-boundary",
+    module: "./bundled-scene-bridge-runtime.js",
+    moduleType: "service-owned-es-module",
+    exportName: "createBundledSceneBridgeRendererRuntime",
+    factorySignature: "(options) => Promise<RendererRuntimeOptions>",
+    implements: "RendererRuntimeOptions.renderThumbnail",
+    lifecycleHook: "close",
+    defaultServiceImport: false,
+    moduleDefined: true,
+    moduleImported: false,
+    factoryInvoked: false,
+    runtimeRegistration: false,
+    runtimeExecutionRegistered: false,
+    browserProcessStarted: false,
+    browserPageCreated: false,
+    runtimeAssetsLoaded: false,
+    assetMaterializationWritesEnabled: false,
+    backendRpcReads: false,
+    sourceDataReads: false,
+    networkDispatch: false,
+    dispatch: false,
+    localFileWrites: false,
+    valuesIncluded: false,
+    diagnostics: [
+        {
+            code: "renderer_service_bundled_scene_bridge_adapter_module_defined_disabled",
+            severity: "info",
+            message: "The bundled scene bridge adapter module boundary exists, but default service import, factory invocation, and runtime registration remain disabled.",
+            nextActions: [
+                "Add an explicit renderer-service import and registration gate before invoking the adapter factory.",
+                "Add browser lifecycle, pixel, and resource normalization tests before enabling real scene rendering.",
+            ],
+        },
+    ],
+    diagnosticCodes: ["renderer_service_bundled_scene_bridge_adapter_module_defined_disabled"],
+    nextActions: [
+        "Wire the adapter through an explicit renderer-service opt-in gate in a later task.",
+        "Keep default MCP/CLI rendering on the existing renderer-service execution path until the adapter passes browser and pixel tests.",
+    ],
+    sideEffects: {
+        browserProcessStarted: false,
+        browserPageCreated: false,
+        runtimeExecutionRegistered: false,
+        runtimeAdapterImported: false,
+        runtimeFactoryInvoked: false,
+        runtimeAssetsLoaded: false,
+        assetManifestMaterialized: false,
+        backendRpcReads: false,
+        sourceDataReads: false,
+        networkDispatch: false,
+        dispatch: false,
+        localFileWrites: false,
+    },
+    redaction: {
+        pathValuesIncluded: false,
+        sourceDataValuesIncluded: false,
+        pageValuesIncluded: false,
+        artifactValuesIncluded: false,
+        mediaValuesIncluded: false,
+        tokenValuesIncluded: false,
+    },
+    omitted: {
+        workspaceRoot: true,
+        cacheRoot: true,
+        modulePath: true,
+        publicPaths: true,
+        cachePaths: true,
+        sha256: true,
+        playwrightBrowserPath: true,
+        runtimeModulePath: true,
+        sourceData: true,
+        pageData: true,
+        artifactBytes: true,
+        mediaBytes: true,
+        tokenValues: true,
+    },
+    execution: null,
+} as const;
+
 function defaultBrowserFixtureRuntimeLifecycleDiagnostics(
     runtimeSource: RendererRuntimeSource,
     {
@@ -1545,6 +1628,7 @@ export const healthResponse = {
         "thumbnail.render.runtime-asset-materialization-dry-run",
         "thumbnail.render.runtime-asset-materialization-approval-scaffold",
         "thumbnail.render.bundled-scene-bridge-contract",
+        "thumbnail.render.bundled-scene-bridge-adapter-module",
         "thumbnail.backend-rpc.file-thumbnail-persist",
         "thumbnail.backend-rpc.frame-thumbnail-persist",
     ],
@@ -1553,6 +1637,7 @@ export const healthResponse = {
     runtimeAssetMaterializationDryRun: bundledRuntimeAssetMaterializationDryRunPlan,
     runtimeAssetMaterializationApproval: bundledRuntimeAssetMaterializationApprovalPlan,
     bundledSceneBridgeContract,
+    bundledSceneBridgeAdapterModule,
     browserFixtureRuntime: defaultBrowserFixtureRuntimeLifecycle,
 } as const;
 
@@ -1579,6 +1664,7 @@ export const noopThumbnailResponse = {
     runtimeAssetMaterializationDryRun: bundledRuntimeAssetMaterializationDryRunPlan,
     runtimeAssetMaterializationApproval: bundledRuntimeAssetMaterializationApprovalPlan,
     bundledSceneBridgeContract,
+    bundledSceneBridgeAdapterModule,
     browserFixtureRuntime: defaultBrowserFixtureRuntimeLifecycle,
 } as const;
 
@@ -4376,6 +4462,106 @@ function validateBundledSceneBridgeContractResponse(actual: unknown, field: stri
     requireResponseEqual(record.execution ?? null, null, `${field}.execution`);
 }
 
+function validateBundledSceneBridgeAdapterModuleResponse(actual: unknown, field: string): void {
+    const record = responseRecord(actual, field);
+    requireResponseEqual(record.status, bundledSceneBridgeAdapterModule.status, `${field}.status`);
+    requireResponseEqual(record.readinessVersion, bundledSceneBridgeAdapterModule.readinessVersion, `${field}.readinessVersion`);
+    requireResponseEqual(record.owner, bundledSceneBridgeAdapterModule.owner, `${field}.owner`);
+    requireResponseEqual(record.mode, bundledSceneBridgeAdapterModule.mode, `${field}.mode`);
+    requireResponseEqual(record.module, bundledSceneBridgeAdapterModule.module, `${field}.module`);
+    requireResponseEqual(record.moduleType, bundledSceneBridgeAdapterModule.moduleType, `${field}.moduleType`);
+    requireResponseEqual(record.exportName, bundledSceneBridgeAdapterModule.exportName, `${field}.exportName`);
+    requireResponseEqual(record.factorySignature, bundledSceneBridgeAdapterModule.factorySignature, `${field}.factorySignature`);
+    requireResponseEqual(record.implements, bundledSceneBridgeAdapterModule.implements, `${field}.implements`);
+    requireResponseEqual(record.lifecycleHook, bundledSceneBridgeAdapterModule.lifecycleHook, `${field}.lifecycleHook`);
+    requireResponseEqual(record.defaultServiceImport, false, `${field}.defaultServiceImport`);
+    requireResponseEqual(record.moduleDefined, true, `${field}.moduleDefined`);
+
+    for (const property of [
+        "moduleImported",
+        "factoryInvoked",
+        "runtimeRegistration",
+        "runtimeExecutionRegistered",
+        "browserProcessStarted",
+        "browserPageCreated",
+        "runtimeAssetsLoaded",
+        "assetMaterializationWritesEnabled",
+        "backendRpcReads",
+        "sourceDataReads",
+        "networkDispatch",
+        "dispatch",
+        "localFileWrites",
+        "valuesIncluded",
+    ]) {
+        requireResponseEqual(record[property], false, `${field}.${property}`);
+    }
+
+    const diagnostics = responseRecordArray(record.diagnostics, `${field}.diagnostics`);
+    requireResponseEqual(diagnostics.length, bundledSceneBridgeAdapterModule.diagnostics.length, `${field}.diagnostics.length`);
+    requireResponseEqual(diagnostics[0].code, bundledSceneBridgeAdapterModule.diagnostics[0].code, `${field}.diagnostics.0.code`);
+    requireResponseEqual(diagnostics[0].severity, bundledSceneBridgeAdapterModule.diagnostics[0].severity, `${field}.diagnostics.0.severity`);
+    requireResponseArrayEqual(
+        responseStringArray(record, "diagnosticCodes", `${field}.diagnosticCodes`),
+        [...bundledSceneBridgeAdapterModule.diagnosticCodes],
+        `${field}.diagnosticCodes`
+    );
+    requireResponseArrayEqual(
+        responseStringArray(record, "nextActions", `${field}.nextActions`),
+        [...bundledSceneBridgeAdapterModule.nextActions],
+        `${field}.nextActions`
+    );
+
+    const sideEffects = responseRecord(record.sideEffects, `${field}.sideEffects`);
+    for (const property of [
+        "browserProcessStarted",
+        "browserPageCreated",
+        "runtimeExecutionRegistered",
+        "runtimeAdapterImported",
+        "runtimeFactoryInvoked",
+        "runtimeAssetsLoaded",
+        "assetManifestMaterialized",
+        "backendRpcReads",
+        "sourceDataReads",
+        "networkDispatch",
+        "dispatch",
+        "localFileWrites",
+    ]) {
+        requireResponseEqual(sideEffects[property], false, `${field}.sideEffects.${property}`);
+    }
+
+    const redaction = responseRecord(record.redaction, `${field}.redaction`);
+    for (const property of [
+        "pathValuesIncluded",
+        "sourceDataValuesIncluded",
+        "pageValuesIncluded",
+        "artifactValuesIncluded",
+        "mediaValuesIncluded",
+        "tokenValuesIncluded",
+    ]) {
+        requireResponseEqual(redaction[property], false, `${field}.redaction.${property}`);
+    }
+
+    const omitted = responseRecord(record.omitted, `${field}.omitted`);
+    for (const property of [
+        "workspaceRoot",
+        "cacheRoot",
+        "modulePath",
+        "publicPaths",
+        "cachePaths",
+        "sha256",
+        "playwrightBrowserPath",
+        "runtimeModulePath",
+        "sourceData",
+        "pageData",
+        "artifactBytes",
+        "mediaBytes",
+        "tokenValues",
+    ]) {
+        requireResponseEqual(omitted[property], true, `${field}.omitted.${property}`);
+    }
+    requireResponseEqual(record.execution ?? null, null, `${field}.execution`);
+}
+
 function validateRuntimeAssetMaterializationPreflightCheckResponse(
     actual: unknown,
     expected: (typeof bundledRuntimeAssetMaterializationPreflight.checks)[number],
@@ -5308,6 +5494,7 @@ function validateThumbnailResponseContract(
         "runtimeAssetMaterializationApproval"
     );
     validateBundledSceneBridgeContractResponse(record.bundledSceneBridgeContract, "bundledSceneBridgeContract");
+    validateBundledSceneBridgeAdapterModuleResponse(record.bundledSceneBridgeAdapterModule, "bundledSceneBridgeAdapterModule");
     validateBrowserFixtureRuntimeLifecycleResponse(record.browserFixtureRuntime, "browserFixtureRuntime");
 
     validateThumbnailResourceResponse(responseRecord(record.resource, "resource"));

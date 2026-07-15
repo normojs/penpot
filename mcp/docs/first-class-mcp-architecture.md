@@ -4127,6 +4127,13 @@ as `healthPreflight.bundledSceneBridgeContract` and rejects unsafe contract
 metadata. No adapter import, browser startup, asset materialization, runtime
 registration, local write, or source/page/artifact/media/token value exposure
 is enabled by this step.
+P26.33 adds the disabled adapter module boundary behind that contract.
+Renderer-service now ships a `bundled-scene-bridge-runtime.js` module exporting
+`createBundledSceneBridgeRendererRuntime`, but the default runtime does not
+import or register it. Health and thumbnail responses expose
+`bundledSceneBridgeAdapterModule` so MCP and CLI can see the boundary is
+defined while browser startup, asset loading, backend/source-data reads, local
+writes, runtime registration, and value exposure stay disabled.
 
 ### 8.6 Advanced Tools
 

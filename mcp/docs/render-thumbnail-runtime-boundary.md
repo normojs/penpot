@@ -521,6 +521,13 @@ the same redacted contract and mark unsafe payloads invalid. The bridge remains
 metadata-only: no adapter import, runtime registration, browser startup,
 asset loading/materialization, backend/source-data reads, local writes, or
 value exposure is enabled.
+P26.33 adds the disabled adapter module boundary itself. Renderer-service now
+ships a `bundled-scene-bridge-runtime.js` module exporting
+`createBundledSceneBridgeRendererRuntime`, but default service paths do not
+import it or register it. Health and thumbnail responses expose the module as
+`bundledSceneBridgeAdapterModule`, marking the boundary as defined while
+keeping browser startup, asset loading, backend/source-data reads, local
+writes, runtime registration, and value exposure disabled.
 
 ## Test Strategy
 

@@ -14319,6 +14319,7 @@ export function createRenderThumbnailRendererServiceHealthPreflight(options = EM
         runtimeAssetMaterializationDryRun: normalizeRendererServiceRuntimeAssetMaterializationDryRunDiagnostic(null),
         runtimeAssetMaterializationApproval: normalizeRendererServiceRuntimeAssetMaterializationApprovalDiagnostic(null),
         bundledSceneBridgeContract: normalizeRendererServiceBundledSceneBridgeContractDiagnostic(null),
+        bundledSceneBridgeAdapterModule: normalizeRendererServiceBundledSceneBridgeAdapterModuleDiagnostic(null),
         browserFixtureRuntime: normalizeRendererServiceBrowserFixtureRuntimeDiagnostic(null),
     };
 }
@@ -14792,6 +14793,188 @@ function normalizeRendererServiceBundledSceneBridgeContractDiagnostic(body) {
         omitted: {
             workspaceRoot: omitted.workspaceRoot !== false,
             cacheRoot: omitted.cacheRoot !== false,
+            publicPaths: omitted.publicPaths !== false,
+            cachePaths: omitted.cachePaths !== false,
+            sha256: omitted.sha256 !== false,
+            playwrightBrowserPath: omitted.playwrightBrowserPath !== false,
+            runtimeModulePath: omitted.runtimeModulePath !== false,
+            sourceData: omitted.sourceData !== false,
+            pageData: omitted.pageData !== false,
+            artifactBytes: omitted.artifactBytes !== false,
+            mediaBytes: omitted.mediaBytes !== false,
+            tokenValues: omitted.tokenValues !== false,
+        },
+        execution: null,
+    };
+}
+
+function normalizeRendererServiceBundledSceneBridgeAdapterModuleDiagnostic(body) {
+    const bodyRecord = asRecord(body);
+    const present = Object.prototype.hasOwnProperty.call(bodyRecord, "bundledSceneBridgeAdapterModule");
+    const summary = asRecord(bodyRecord.bundledSceneBridgeAdapterModule);
+    const sideEffects = asRecord(summary.sideEffects);
+    const redaction = asRecord(summary.redaction);
+    const omitted = asRecord(summary.omitted);
+    const diagnostics = normalizeDiagnosticRecordArray(summary.diagnostics).map((entry) => ({
+        code: normalizeOptionalString(entry.code) ?? "renderer_service_bundled_scene_bridge_adapter_module_diagnostic_unknown",
+        severity: normalizeOptionalString(entry.severity),
+        message: normalizeOptionalString(entry.message),
+        nextActions: normalizeDiagnosticStringArray(entry.nextActions),
+    }));
+    const diagnosticCodes = normalizeDiagnosticStringArray(summary.diagnosticCodes);
+    const nextActions = normalizeDiagnosticStringArray(summary.nextActions);
+    const allFalse = (record, fields) => fields.every((field) => record[field] === false);
+    const allTrue = (record, fields) => fields.every((field) => record[field] === true);
+    const topLevelFalseFields = [
+        "moduleImported",
+        "factoryInvoked",
+        "runtimeRegistration",
+        "runtimeExecutionRegistered",
+        "browserProcessStarted",
+        "browserPageCreated",
+        "runtimeAssetsLoaded",
+        "assetMaterializationWritesEnabled",
+        "backendRpcReads",
+        "sourceDataReads",
+        "networkDispatch",
+        "dispatch",
+        "localFileWrites",
+        "valuesIncluded",
+    ];
+    const sideEffectFields = [
+        "browserProcessStarted",
+        "browserPageCreated",
+        "runtimeExecutionRegistered",
+        "runtimeAdapterImported",
+        "runtimeFactoryInvoked",
+        "runtimeAssetsLoaded",
+        "assetManifestMaterialized",
+        "backendRpcReads",
+        "sourceDataReads",
+        "networkDispatch",
+        "dispatch",
+        "localFileWrites",
+    ];
+    const redactionFields = [
+        "pathValuesIncluded",
+        "sourceDataValuesIncluded",
+        "pageValuesIncluded",
+        "artifactValuesIncluded",
+        "mediaValuesIncluded",
+        "tokenValuesIncluded",
+    ];
+    const omittedFields = [
+        "workspaceRoot",
+        "cacheRoot",
+        "modulePath",
+        "publicPaths",
+        "cachePaths",
+        "sha256",
+        "playwrightBrowserPath",
+        "runtimeModulePath",
+        "sourceData",
+        "pageData",
+        "artifactBytes",
+        "mediaBytes",
+        "tokenValues",
+    ];
+    const invalidShape =
+        present &&
+        (normalizeOptionalString(summary.status) !== "planned-disabled" ||
+            normalizeOptionalString(summary.readinessVersion) !== "P26.33" ||
+            normalizeOptionalString(summary.owner) !== "renderer-service" ||
+            normalizeOptionalString(summary.mode) !== "disabled-module-boundary" ||
+            normalizeOptionalString(summary.module) !== "./bundled-scene-bridge-runtime.js" ||
+            normalizeOptionalString(summary.moduleType) !== "service-owned-es-module" ||
+            normalizeOptionalString(summary.exportName) !== "createBundledSceneBridgeRendererRuntime" ||
+            normalizeOptionalString(summary.factorySignature) !== "(options) => Promise<RendererRuntimeOptions>" ||
+            normalizeOptionalString(summary.implements) !== "RendererRuntimeOptions.renderThumbnail" ||
+            normalizeOptionalString(summary.lifecycleHook) !== "close" ||
+            summary.defaultServiceImport !== false ||
+            summary.moduleDefined !== true ||
+            !allFalse(summary, topLevelFalseFields) ||
+            !diagnosticCodes.includes("renderer_service_bundled_scene_bridge_adapter_module_defined_disabled") ||
+            !diagnostics.some((entry) => entry.code === "renderer_service_bundled_scene_bridge_adapter_module_defined_disabled") ||
+            nextActions.length === 0 ||
+            !allFalse(sideEffects, sideEffectFields) ||
+            !allFalse(redaction, redactionFields) ||
+            !allTrue(omitted, omittedFields) ||
+            summary.execution !== null);
+    const unsafeDisclosure =
+        present &&
+        (summary.defaultServiceImport === true ||
+            topLevelFalseFields.some((field) => summary[field] === true) ||
+            !allFalse(sideEffects, sideEffectFields) ||
+            !allFalse(redaction, redactionFields) ||
+            !allTrue(omitted, omittedFields));
+    const invalid = present && (invalidShape || unsafeDisclosure);
+    const normalizedDiagnosticCodes = invalid
+        ? uniqueStrings(["renderer_service_bundled_scene_bridge_adapter_module_invalid", ...diagnosticCodes])
+        : diagnosticCodes;
+    const normalizedNextActions = invalid
+        ? uniqueStrings([
+              "Inspect renderer-service /health bundledSceneBridgeAdapterModule before trusting adapter module readiness.",
+              ...nextActions,
+          ])
+        : nextActions;
+
+    return {
+        status: invalid ? "invalid" : present ? "planned-disabled" : "not-reported",
+        readinessVersion: present ? normalizeOptionalString(summary.readinessVersion) : null,
+        checked: Boolean(body),
+        owner: normalizeOptionalString(summary.owner),
+        mode: normalizeOptionalString(summary.mode),
+        module: normalizeOptionalString(summary.module),
+        moduleType: normalizeOptionalString(summary.moduleType),
+        exportName: normalizeOptionalString(summary.exportName),
+        factorySignature: normalizeOptionalString(summary.factorySignature),
+        implements: normalizeOptionalString(summary.implements),
+        lifecycleHook: normalizeOptionalString(summary.lifecycleHook),
+        defaultServiceImport: summary.defaultServiceImport === true,
+        moduleDefined: summary.moduleDefined === true,
+        moduleImported: summary.moduleImported === true,
+        factoryInvoked: summary.factoryInvoked === true,
+        runtimeRegistration: summary.runtimeRegistration === true,
+        runtimeExecutionRegistered: summary.runtimeExecutionRegistered === true,
+        browserProcessStarted: summary.browserProcessStarted === true,
+        browserPageCreated: summary.browserPageCreated === true,
+        runtimeAssetsLoaded: summary.runtimeAssetsLoaded === true,
+        assetMaterializationWritesEnabled: summary.assetMaterializationWritesEnabled === true,
+        backendRpcReads: summary.backendRpcReads === true,
+        sourceDataReads: summary.sourceDataReads === true,
+        networkDispatch: summary.networkDispatch === true,
+        dispatch: summary.dispatch === true,
+        localFileWrites: summary.localFileWrites === true,
+        valuesIncluded: summary.valuesIncluded === true,
+        diagnostics,
+        diagnosticCodes: normalizedDiagnosticCodes,
+        nextActions: normalizedNextActions,
+        sideEffects: {
+            browserProcessStarted: sideEffects.browserProcessStarted === true,
+            browserPageCreated: sideEffects.browserPageCreated === true,
+            runtimeExecutionRegistered: sideEffects.runtimeExecutionRegistered === true,
+            runtimeAdapterImported: sideEffects.runtimeAdapterImported === true,
+            runtimeFactoryInvoked: sideEffects.runtimeFactoryInvoked === true,
+            runtimeAssetsLoaded: sideEffects.runtimeAssetsLoaded === true,
+            assetManifestMaterialized: sideEffects.assetManifestMaterialized === true,
+            backendRpcReads: sideEffects.backendRpcReads === true,
+            sourceDataReads: sideEffects.sourceDataReads === true,
+            networkDispatch: sideEffects.networkDispatch === true,
+            dispatch: sideEffects.dispatch === true,
+            localFileWrites: sideEffects.localFileWrites === true,
+        },
+        redaction: {
+            pathValuesIncluded: redaction.pathValuesIncluded === true,
+            sourceDataValuesIncluded: redaction.sourceDataValuesIncluded === true,
+            pageValuesIncluded: redaction.pageValuesIncluded === true,
+            artifactValuesIncluded: redaction.artifactValuesIncluded === true,
+            mediaValuesIncluded: redaction.mediaValuesIncluded === true,
+            tokenValuesIncluded: redaction.tokenValuesIncluded === true,
+        },
+        omitted: {
+            workspaceRoot: omitted.workspaceRoot !== false,
+            cacheRoot: omitted.cacheRoot !== false,
+            modulePath: omitted.modulePath !== false,
             publicPaths: omitted.publicPaths !== false,
             cachePaths: omitted.cachePaths !== false,
             sha256: omitted.sha256 !== false,
@@ -15800,6 +15983,7 @@ export async function executeRenderThumbnailRendererServiceHealthPreflight(plan,
             runtimeAssetMaterializationDryRun: normalizeRendererServiceRuntimeAssetMaterializationDryRunDiagnostic(bodyRecord),
             runtimeAssetMaterializationApproval: normalizeRendererServiceRuntimeAssetMaterializationApprovalDiagnostic(bodyRecord),
             bundledSceneBridgeContract: normalizeRendererServiceBundledSceneBridgeContractDiagnostic(bodyRecord),
+            bundledSceneBridgeAdapterModule: normalizeRendererServiceBundledSceneBridgeAdapterModuleDiagnostic(bodyRecord),
             browserFixtureRuntime: normalizeRendererServiceBrowserFixtureRuntimeDiagnostic(bodyRecord),
             response: {
                 status: httpStatus,
