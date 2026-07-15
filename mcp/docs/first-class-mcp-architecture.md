@@ -4117,6 +4117,16 @@ probing the host or starting browsers. The surface omits Playwright paths,
 runtime module paths, workspace/cache roots, source/page data, artifact/media
 bytes, and token values. Default MCP/CLI rendering, asset materialization
 writes, and the real bundled render-wasm/frontend bridge remain gated.
+P26.32 turns the next bridge step into an explicit contract. Renderer-service
+health/thumbnail responses now include a metadata-only
+`bundledSceneBridgeContract` that names the future
+`createBundledSceneBridgeRendererRuntime` adapter module, asset prerequisites,
+browser page handoff, render input/output shape, diagnostics, and test matrix.
+Command-runtime carries that summary to MCP and `penpot-cli render thumbnail`
+as `healthPreflight.bundledSceneBridgeContract` and rejects unsafe contract
+metadata. No adapter import, browser startup, asset materialization, runtime
+registration, local write, or source/page/artifact/media/token value exposure
+is enabled by this step.
 
 ### 8.6 Advanced Tools
 

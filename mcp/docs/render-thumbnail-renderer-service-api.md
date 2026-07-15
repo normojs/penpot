@@ -120,6 +120,18 @@ contract deliberately omits Playwright paths, runtime module paths, workspace
 roots, cache roots, source data, page data, artifact bytes, media bytes, token
 values, and any real scene payload; it also does not enable default MCP/CLI
 rendering or the P26.19 real render-wasm/frontend bridge.
+P26.32 adds a metadata-only `bundledSceneBridgeContract` object to `/health`
+and `/thumbnail`. The object defines the future
+`createBundledSceneBridgeRendererRuntime` adapter module, runtime asset
+prerequisites, browser page handoff, render input sections, PNG output shape,
+diagnostic codes, next actions, blocked alternatives, and test matrix.
+Command-runtime normalizes it into CLI/MCP
+`healthPreflight.bundledSceneBridgeContract` and treats malformed or unsafe
+payloads as invalid. The contract remains planned-disabled: the module is not
+imported, runtime execution is not registered, no browser is started, no
+runtime assets are loaded or materialized, no files are written, and paths,
+hashes, source data, page data, artifact bytes, media bytes, and token values
+stay omitted.
 P26.5 adds a token-safe `backendRpcClient` plan to renderer-service thumbnail
 responses so backend data/cache/persist endpoints are normalized for staged
 execution. That plan now feeds the executable file-thumbnail cache probe,

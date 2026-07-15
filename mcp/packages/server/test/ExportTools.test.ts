@@ -10,6 +10,7 @@ import { ExportFileTool, RenderPreviewTool, RenderThumbnailTool } from "../src/t
 const renderThumbnailRendererServiceFixtures = JSON.parse(
     readFileSync(new URL("../../../docs/render-thumbnail-renderer-service-fixtures.json", import.meta.url), "utf8")
 );
+const bundledSceneBridgeContractFixture = renderThumbnailRendererServiceFixtures.bundledRuntimeBridge.bundledSceneBridgeContract;
 
 function getRenderThumbnailRendererServiceFixture(id: string): any {
     const fixture = renderThumbnailRendererServiceFixtures.cases.find((entry: any) => entry.id === id);
@@ -7477,7 +7478,8 @@ test("RenderThumbnailTool execution opt-in posts to renderer-service and returns
                     mode: "service",
                     runtimeRegistration: true,
                     dispatch: true,
-                    capabilities: ["health", "thumbnail.render"],
+                    capabilities: ["health", "thumbnail.render", "thumbnail.render.bundled-scene-bridge-contract"],
+                    bundledSceneBridgeContract: bundledSceneBridgeContractFixture,
                     browserFixtureRuntime: {
                         status: "started",
                         diagnosticsVersion: "P26.31",
@@ -7862,6 +7864,17 @@ test("RenderThumbnailTool execution opt-in posts to renderer-service and returns
         assert.equal(body.data.healthPreflight.browserFixtureRuntime.sideEffects.runtimeAdapterImported, true);
         assert.equal(body.data.healthPreflight.browserFixtureRuntime.redaction.pathValuesIncluded, false);
         assert.equal(body.data.healthPreflight.browserFixtureRuntime.omitted.playwrightBrowserPath, true);
+        assert.equal(body.data.healthPreflight.bundledSceneBridgeContract.status, "planned-disabled");
+        assert.equal(body.data.healthPreflight.bundledSceneBridgeContract.contractVersion, "P26.32");
+        assert.equal(body.data.healthPreflight.bundledSceneBridgeContract.adapterModule.moduleImported, false);
+        assert.equal(body.data.healthPreflight.bundledSceneBridgeContract.adapterModule.runtimeRegistration, false);
+        assert.equal(body.data.healthPreflight.bundledSceneBridgeContract.assetPrerequisites.preflightRequired, true);
+        assert.equal(body.data.healthPreflight.bundledSceneBridgeContract.browserPageHandoff.activeEditorTabRequired, false);
+        assert.equal(body.data.healthPreflight.bundledSceneBridgeContract.renderInputContract.sourceDataValuesIncluded, false);
+        assert.equal(body.data.healthPreflight.bundledSceneBridgeContract.renderOutputContract.artifactBytesIncluded, false);
+        assert.deepEqual(body.data.healthPreflight.bundledSceneBridgeContract.diagnosticCodes, [
+            "renderer_service_bundled_scene_bridge_contract_defined",
+        ]);
         assert.equal(body.data.healthPreflight.runtimeAssetPreflight.status, "executed");
         assert.equal(body.data.healthPreflight.runtimeAssetPreflight.diagnosticsVersion, "P26.25");
         assert.equal(body.data.healthPreflight.runtimeAssetPreflight.executionVersion, "P26.22");

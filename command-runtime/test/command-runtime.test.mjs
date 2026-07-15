@@ -10330,6 +10330,23 @@ test("render.thumbnail renderer-service API fixtures define planning requests wi
     assert.equal(fixtures.bundledRuntimeBridge.noOpGuarantees.pageValuesIncluded, false);
     assert.equal(fixtures.bundledRuntimeBridge.noOpGuarantees.mediaValuesIncluded, false);
     assert.equal(fixtures.bundledRuntimeBridge.noOpGuarantees.tokenValuesIncluded, false);
+    assert.equal(fixtures.bundledRuntimeBridge.bundledSceneBridgeContract.status, "planned-disabled");
+    assert.equal(fixtures.bundledRuntimeBridge.bundledSceneBridgeContract.contractVersion, "P26.32");
+    assert.equal(fixtures.bundledRuntimeBridge.bundledSceneBridgeContract.owner, "renderer-service");
+    assert.equal(fixtures.bundledRuntimeBridge.bundledSceneBridgeContract.mode, "metadata-only");
+    assert.equal(fixtures.bundledRuntimeBridge.bundledSceneBridgeContract.adapterModule.exportName, "createBundledSceneBridgeRendererRuntime");
+    assert.equal(fixtures.bundledRuntimeBridge.bundledSceneBridgeContract.adapterModule.moduleImported, false);
+    assert.equal(fixtures.bundledRuntimeBridge.bundledSceneBridgeContract.adapterModule.runtimeRegistration, false);
+    assert.deepEqual(
+        fixtures.bundledRuntimeBridge.bundledSceneBridgeContract.renderInputContract.targetKinds,
+        ["file", "frame"]
+    );
+    assert.equal(fixtures.bundledRuntimeBridge.bundledSceneBridgeContract.renderOutputContract.nonEmptyPngRequired, true);
+    assert.equal(fixtures.bundledRuntimeBridge.bundledSceneBridgeContract.renderOutputContract.artifactBytesIncluded, false);
+    assert.equal(fixtures.bundledRuntimeBridge.bundledSceneBridgeContract.sideEffects.localFileWrites, false);
+    assert.equal(fixtures.bundledRuntimeBridge.bundledSceneBridgeContract.redaction.sourceDataValuesIncluded, false);
+    assert.equal(fixtures.bundledRuntimeBridge.bundledSceneBridgeContract.omitted.tokenValues, true);
+    assert.equal(fixtures.bundledRuntimeBridge.bundledSceneBridgeContract.execution, null);
     assert.ok(fixtures.bundledRuntimeBridge.blockedAlternatives.some((entry) => entry.id === "direct-node-render-wasm"));
     assert.ok(fixtures.bundledRuntimeBridge.requiredBeforeImplementation.some((entry) => entry.includes("pixel/resource tests")));
     assert.ok(fixtures.bundledRuntimeBridge.requiredBeforeImplementation.some((entry) => entry.includes("existence/hash readiness")));
@@ -12670,6 +12687,15 @@ test("render.thumbnail renderer-service health preflight and client harness stay
     assert.equal(healthPreflight.runtimeAssetMaterializationApproval.readinessVerdict.computed, false);
     assert.equal(healthPreflight.runtimeAssetMaterializationApproval.readinessVerdict.writesEnabled, false);
     assert.deepEqual(healthPreflight.runtimeAssetMaterializationApproval.readinessVerdict.blockerCodes, []);
+    assert.equal(healthPreflight.bundledSceneBridgeContract.status, "not-reported");
+    assert.equal(healthPreflight.bundledSceneBridgeContract.contractVersion, null);
+    assert.equal(healthPreflight.bundledSceneBridgeContract.checked, false);
+    assert.equal(healthPreflight.bundledSceneBridgeContract.adapterModule.moduleImported, false);
+    assert.equal(healthPreflight.bundledSceneBridgeContract.sideEffects.runtimeExecutionRegistered, false);
+    assert.equal(healthPreflight.bundledSceneBridgeContract.sideEffects.localFileWrites, false);
+    assert.equal(healthPreflight.bundledSceneBridgeContract.redaction.sourceDataValuesIncluded, false);
+    assert.equal(healthPreflight.bundledSceneBridgeContract.omitted.workspaceRoot, true);
+    assert.equal(healthPreflight.bundledSceneBridgeContract.omitted.tokenValues, true);
     assert.equal(healthPreflight.runtimeAssetPreflight.omitted.workspaceRoot, true);
     assert.equal(healthPreflight.runtimeAssetPreflight.omitted.sha256, true);
     assert.ok(healthPreflight.failureModes.some((entry) => entry.code === "renderer_service_preflight_disabled"));
@@ -12699,7 +12725,9 @@ test("render.thumbnail renderer-service health preflight executes only GET healt
                     mode: "noop",
                     runtimeRegistration: false,
                     dispatch: false,
-                    capabilities: ["health", "thumbnail.render.noop"],
+                    capabilities: ["health", "thumbnail.render.noop", "thumbnail.render.bundled-scene-bridge-contract"],
+                    bundledSceneBridgeContract:
+                        renderThumbnailRendererServiceFixtures.bundledRuntimeBridge.bundledSceneBridgeContract,
                     browserFixtureRuntime: {
                         status: "started",
                         diagnosticsVersion: "P26.31",
@@ -13199,6 +13227,33 @@ test("render.thumbnail renderer-service health preflight executes only GET healt
     assert.equal(healthPreflight.browserFixtureRuntime.redaction.pathValuesIncluded, false);
     assert.equal(healthPreflight.browserFixtureRuntime.omitted.playwrightBrowserPath, true);
     assert.equal(healthPreflight.browserFixtureRuntime.omitted.artifactBytes, true);
+    assert.equal(healthPreflight.bundledSceneBridgeContract.status, "planned-disabled");
+    assert.equal(healthPreflight.bundledSceneBridgeContract.contractVersion, "P26.32");
+    assert.equal(healthPreflight.bundledSceneBridgeContract.checked, true);
+    assert.equal(healthPreflight.bundledSceneBridgeContract.bridge, "browser-backed-service-adapter");
+    assert.equal(healthPreflight.bundledSceneBridgeContract.runtime, "render-wasm-worker");
+    assert.equal(healthPreflight.bundledSceneBridgeContract.adapterModule.exportName, "createBundledSceneBridgeRendererRuntime");
+    assert.equal(healthPreflight.bundledSceneBridgeContract.adapterModule.moduleImported, false);
+    assert.equal(healthPreflight.bundledSceneBridgeContract.adapterModule.runtimeRegistration, false);
+    assert.equal(healthPreflight.bundledSceneBridgeContract.assetPrerequisites.preflightRequired, true);
+    assert.equal(healthPreflight.bundledSceneBridgeContract.assetPrerequisites.materializationWritesEnabled, false);
+    assert.ok(healthPreflight.bundledSceneBridgeContract.assetPrerequisites.requiredAssetIds.includes("render-wasm-binary"));
+    assert.ok(healthPreflight.bundledSceneBridgeContract.assetPrerequisites.requiredCacheOutputIds.includes("runtime-adapter-cache"));
+    assert.equal(healthPreflight.bundledSceneBridgeContract.browserPageHandoff.activeEditorTabRequired, false);
+    assert.equal(healthPreflight.bundledSceneBridgeContract.browserPageHandoff.browserProcessStarted, false);
+    assert.deepEqual(healthPreflight.bundledSceneBridgeContract.renderInputContract.targetKinds, ["file", "frame"]);
+    assert.equal(healthPreflight.bundledSceneBridgeContract.renderInputContract.sourceDataValuesIncluded, false);
+    assert.equal(healthPreflight.bundledSceneBridgeContract.renderOutputContract.artifactBytesIncluded, false);
+    assert.equal(healthPreflight.bundledSceneBridgeContract.renderOutputContract.localFileWrites, false);
+    assert.deepEqual(healthPreflight.bundledSceneBridgeContract.diagnosticCodes, [
+        "renderer_service_bundled_scene_bridge_contract_defined",
+    ]);
+    assert.ok(healthPreflight.bundledSceneBridgeContract.testMatrix.some((entry) => entry.id === "render-input-output-validation"));
+    assert.equal(healthPreflight.bundledSceneBridgeContract.sideEffects.runtimeAdapterImported, false);
+    assert.equal(healthPreflight.bundledSceneBridgeContract.redaction.pathValuesIncluded, false);
+    assert.equal(healthPreflight.bundledSceneBridgeContract.omitted.sha256, true);
+    assert.equal(JSON.stringify(healthPreflight.bundledSceneBridgeContract).includes("/workspace/secret"), false);
+    assert.equal(JSON.stringify(healthPreflight.bundledSceneBridgeContract).includes("abc123"), false);
     assert.equal(healthPreflight.runtimeAssetPreflight.status, "executed");
     assert.equal(healthPreflight.runtimeAssetPreflight.diagnosticsVersion, "P26.25");
     assert.equal(healthPreflight.runtimeAssetPreflight.executionVersion, "P26.22");
@@ -13363,7 +13418,7 @@ test("render.thumbnail renderer-service health preflight normalizes invalid runt
                     mode: "noop",
                     runtimeRegistration: false,
                     dispatch: false,
-                    capabilities: ["health", "thumbnail.render.noop"],
+                    capabilities: ["health", "thumbnail.render.noop", "thumbnail.render.bundled-scene-bridge-contract"],
                     runtimeAssetMaterializationPreflight: {
                         sourceManifest: {
                             assetIds: ["thumbnail-worker-main"],
@@ -13496,6 +13551,69 @@ test("render.thumbnail renderer-service health preflight rejects unsafe browser 
     assert.equal(healthPreflight.browserFixtureRuntime.redaction.sourceDataValuesIncluded, true);
     assert.equal(healthPreflight.browserFixtureRuntime.omitted.sourceData, false);
     assert.ok(healthPreflight.browserFixtureRuntime.nextActions.some((entry) => entry.includes("browserFixtureRuntime diagnostics")));
+});
+
+test("render.thumbnail renderer-service health preflight rejects unsafe bundled scene bridge contract metadata", async () => {
+    const plan = createRenderThumbnailRendererServicePlan({
+        fileId: "file-1",
+        endpoint: "http://127.0.0.1:6070/thumbnail",
+        optInConfiguration: {
+            entrypoint: "cli",
+            cliFlagValue: "renderer-service",
+        },
+    });
+    const safeContract = renderThumbnailRendererServiceFixtures.bundledRuntimeBridge.bundledSceneBridgeContract;
+    const unsafeContract = {
+        ...safeContract,
+        adapterModule: {
+            ...safeContract.adapterModule,
+            moduleImported: true,
+            runtimeRegistration: true,
+        },
+        renderInputContract: {
+            ...safeContract.renderInputContract,
+            sourceDataValuesIncluded: true,
+        },
+        sideEffects: {
+            ...safeContract.sideEffects,
+            runtimeExecutionRegistered: true,
+            localFileWrites: true,
+        },
+        omitted: {
+            ...safeContract.omitted,
+            sourceData: false,
+        },
+    };
+    const healthPreflight = await executeRenderThumbnailRendererServiceHealthPreflight(plan, {
+        fetch: async () =>
+            new Response(
+                JSON.stringify({
+                    status: "ok",
+                    renderer: "penpot-thumbnail-renderer",
+                    mode: "noop",
+                    runtimeRegistration: false,
+                    dispatch: false,
+                    capabilities: ["health", "thumbnail.render.noop", "thumbnail.render.bundled-scene-bridge-contract"],
+                    bundledSceneBridgeContract: unsafeContract,
+                }),
+                { status: 200, headers: { "content-type": "application/json; charset=utf-8" } }
+            ),
+    });
+
+    assert.equal(healthPreflight.status, "ok");
+    assert.equal(healthPreflight.bundledSceneBridgeContract.status, "invalid");
+    assert.equal(healthPreflight.bundledSceneBridgeContract.adapterModule.moduleImported, true);
+    assert.equal(healthPreflight.bundledSceneBridgeContract.adapterModule.runtimeRegistration, true);
+    assert.equal(healthPreflight.bundledSceneBridgeContract.renderInputContract.sourceDataValuesIncluded, true);
+    assert.equal(healthPreflight.bundledSceneBridgeContract.sideEffects.runtimeExecutionRegistered, true);
+    assert.equal(healthPreflight.bundledSceneBridgeContract.sideEffects.localFileWrites, true);
+    assert.equal(healthPreflight.bundledSceneBridgeContract.omitted.sourceData, false);
+    assert.ok(
+        healthPreflight.bundledSceneBridgeContract.diagnosticCodes.includes(
+            "renderer_service_bundled_scene_bridge_contract_invalid"
+        )
+    );
+    assert.ok(healthPreflight.bundledSceneBridgeContract.nextActions.some((entry) => entry.includes("bundledSceneBridgeContract")));
 });
 
 test("render.thumbnail renderer-service health preflight normalizes unavailable health responses", async () => {

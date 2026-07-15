@@ -512,6 +512,15 @@ configuration state. The surface is metadata-only: paths, roots, source data,
 page data, artifact bytes, media bytes, and token values stay omitted, while
 default MCP/CLI rendering, asset materialization writes, and real scene bridge
 registration remain gated.
+P26.32 defines the first stable contract for that real scene bridge without
+implementing it. Renderer-service now publishes
+`bundledSceneBridgeContract`, describing the future service-owned browser
+adapter module, asset prerequisites, headless page handoff, render input/output
+shape, diagnostics, and test matrix. CLI/MCP health preflight summaries expose
+the same redacted contract and mark unsafe payloads invalid. The bridge remains
+metadata-only: no adapter import, runtime registration, browser startup,
+asset loading/materialization, backend/source-data reads, local writes, or
+value exposure is enabled.
 
 ## Test Strategy
 

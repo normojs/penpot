@@ -1257,6 +1257,183 @@ export const bundledRuntimeAssetMaterializationApprovalPlan = runtimeAssetMateri
     bundledRuntimeAssetMaterializationDryRunPlan
 );
 
+export const bundledSceneBridgeContract = {
+    status: "planned-disabled",
+    contractVersion: "P26.32",
+    owner: "renderer-service",
+    mode: "metadata-only",
+    bridge: "browser-backed-service-adapter",
+    runtime: "render-wasm-worker",
+    fallback: "frontend-rasterizer",
+    adapterModule: {
+        status: "planned-disabled",
+        moduleType: "service-owned-es-module",
+        exportName: "createBundledSceneBridgeRendererRuntime",
+        factorySignature: "(options) => Promise<RendererRuntimeOptions>",
+        implements: "RendererRuntimeOptions.renderThumbnail",
+        lifecycleHook: "close",
+        moduleImported: false,
+        runtimeRegistration: false,
+        valuesIncluded: false,
+    },
+    assetPrerequisites: {
+        manifestVersion: bundledRuntimeBridgeAssetManifest.manifestVersion,
+        preflightVersion: bundledRuntimeAssetMaterializationPreflight.preflightVersion,
+        preflightExecutionVersion: "P26.22",
+        materializationDryRunVersion: bundledRuntimeAssetMaterializationDryRunPlan.planVersion,
+        materializationApprovalVersion: bundledRuntimeAssetMaterializationApprovalPlan.planVersion,
+        requiredAssetIds: bundledRuntimeBridgeAssetManifest.validation.requiredAssetIds,
+        requiredCacheOutputIds: bundledRuntimeBridgeAssetManifest.cacheOutputs.map((entry) => entry.id),
+        preflightRequired: true,
+        approvalRequired: true,
+        materializationApproved: false,
+        materializationWritesEnabled: false,
+        assetExistenceChecked: false,
+        assetHashesComputed: false,
+        cacheOutputsChecked: false,
+        assetValuesIncluded: false,
+    },
+    browserPageHandoff: {
+        owner: "renderer-service",
+        engine: "chromium",
+        headless: true,
+        activeEditorTabRequired: false,
+        pageReusePolicy: "single-page-serial-queue",
+        sourceDataTransfer: "renderer-service-internal-redacted",
+        browserProcessStarted: false,
+        pageCreated: false,
+        pageValuesIncluded: false,
+        playwrightPathIncluded: false,
+    },
+    renderInputContract: {
+        type: "RendererRuntimeRenderInput",
+        targetKinds: ["file", "frame"],
+        requiredSections: ["target", "artifact", "cache", "render", "sourceData"],
+        renderRuntime: "render-wasm-worker",
+        renderFallback: "frontend-rasterizer",
+        sourceDataValuesIncluded: false,
+        pageValuesIncluded: false,
+        artifactValuesIncluded: false,
+        mediaValuesIncluded: false,
+        tokenValuesIncluded: false,
+    },
+    renderOutputContract: {
+        type: "RendererRuntimeRenderResult",
+        artifactFormat: "png",
+        artifactMimeType: "image/png",
+        allowedRuntimes: ["render-wasm-worker", "frontend-rasterizer"],
+        nonEmptyPngRequired: true,
+        artifactByteLengthIncluded: false,
+        artifactBytesIncluded: false,
+        localFileWrites: false,
+        resourceValuesIncluded: false,
+        mediaValuesIncluded: false,
+    },
+    diagnostics: [
+        {
+            code: "renderer_service_bundled_scene_bridge_contract_defined",
+            severity: "info",
+            message: "The bundled scene bridge adapter contract is documented and validated, but runtime registration remains disabled.",
+            nextActions: ["Implement the bundled scene bridge adapter in a later task behind the existing renderer-service opt-in gate."],
+        },
+    ],
+    diagnosticCodes: ["renderer_service_bundled_scene_bridge_contract_defined"],
+    nextActions: [
+        "Implement the service-owned bundled scene bridge adapter after asset materialization approval is reviewed.",
+        "Keep default MCP/CLI rendering disabled until the adapter passes browser lifecycle and pixel/resource tests.",
+    ],
+    blockedAlternatives: [
+        {
+            id: "direct-node-render-wasm",
+            selected: false,
+            reason: "the current Emscripten/WebGL bridge is coupled to browser canvas APIs and frontend globals",
+        },
+        {
+            id: "active-frontend-session-bridge",
+            selected: false,
+            reason: "global MCP and CLI thumbnail execution must not require an open editor tab",
+        },
+        {
+            id: "exporter-preview-reuse",
+            selected: false,
+            reason: "exporter preview paths do not own dashboard thumbnail cache probes, source-data reads, or persistence",
+        },
+    ],
+    executionSequence: [
+        "load bundled browser adapter once per renderer-service process",
+        "create or reuse a headless browser page with packaged thumbnail bridge assets",
+        "send source data to the bridge only inside the service process",
+        "render via render-wasm worker path when available",
+        "fallback to frontend rasterizer-compatible SVG path when render-wasm cannot initialize",
+        "return PNG bytes in memory to the existing persist stage",
+    ],
+    testMatrix: [
+        {
+            id: "contract-surfaced-health-thumbnail",
+            required: true,
+            status: "planned",
+            dispatch: false,
+        },
+        {
+            id: "adapter-module-contract-validation",
+            required: true,
+            status: "planned",
+            dispatch: false,
+        },
+        {
+            id: "asset-prerequisite-gates",
+            required: true,
+            status: "planned",
+            dispatch: false,
+        },
+        {
+            id: "browser-page-handoff-redaction",
+            required: true,
+            status: "planned",
+            dispatch: false,
+        },
+        {
+            id: "render-input-output-validation",
+            required: true,
+            status: "planned",
+            dispatch: false,
+        },
+    ],
+    sideEffects: {
+        browserProcessStarted: false,
+        runtimeExecutionRegistered: false,
+        runtimeAdapterImported: false,
+        runtimeAssetsLoaded: false,
+        assetManifestMaterialized: false,
+        networkDispatch: false,
+        dispatch: false,
+        localFileWrites: false,
+    },
+    redaction: {
+        sourceDataValuesIncluded: false,
+        pageValuesIncluded: false,
+        artifactValuesIncluded: false,
+        mediaValuesIncluded: false,
+        tokenValuesIncluded: false,
+        pathValuesIncluded: false,
+    },
+    omitted: {
+        workspaceRoot: true,
+        cacheRoot: true,
+        publicPaths: true,
+        cachePaths: true,
+        sha256: true,
+        playwrightBrowserPath: true,
+        runtimeModulePath: true,
+        sourceData: true,
+        pageData: true,
+        artifactBytes: true,
+        mediaBytes: true,
+        tokenValues: true,
+    },
+    execution: null,
+} as const;
+
 function defaultBrowserFixtureRuntimeLifecycleDiagnostics(
     runtimeSource: RendererRuntimeSource,
     {
@@ -1367,6 +1544,7 @@ export const healthResponse = {
         "thumbnail.render.runtime-asset-preflight",
         "thumbnail.render.runtime-asset-materialization-dry-run",
         "thumbnail.render.runtime-asset-materialization-approval-scaffold",
+        "thumbnail.render.bundled-scene-bridge-contract",
         "thumbnail.backend-rpc.file-thumbnail-persist",
         "thumbnail.backend-rpc.frame-thumbnail-persist",
     ],
@@ -1374,6 +1552,7 @@ export const healthResponse = {
     runtimeAssetMaterializationPreflight: bundledRuntimeAssetMaterializationPreflight,
     runtimeAssetMaterializationDryRun: bundledRuntimeAssetMaterializationDryRunPlan,
     runtimeAssetMaterializationApproval: bundledRuntimeAssetMaterializationApprovalPlan,
+    bundledSceneBridgeContract,
     browserFixtureRuntime: defaultBrowserFixtureRuntimeLifecycle,
 } as const;
 
@@ -1399,6 +1578,7 @@ export const noopThumbnailResponse = {
     runtimeAssetMaterializationPreflight: bundledRuntimeAssetMaterializationPreflight,
     runtimeAssetMaterializationDryRun: bundledRuntimeAssetMaterializationDryRunPlan,
     runtimeAssetMaterializationApproval: bundledRuntimeAssetMaterializationApprovalPlan,
+    bundledSceneBridgeContract,
     browserFixtureRuntime: defaultBrowserFixtureRuntimeLifecycle,
 } as const;
 
@@ -4014,6 +4194,188 @@ function validateRuntimeAssetManifestResponse(actual: unknown, field: string): v
     }
 }
 
+function validateBundledSceneBridgeContractResponse(actual: unknown, field: string): void {
+    const record = responseRecord(actual, field);
+    requireResponseEqual(record.status, bundledSceneBridgeContract.status, `${field}.status`);
+    requireResponseEqual(record.contractVersion, bundledSceneBridgeContract.contractVersion, `${field}.contractVersion`);
+    requireResponseEqual(record.owner, bundledSceneBridgeContract.owner, `${field}.owner`);
+    requireResponseEqual(record.mode, bundledSceneBridgeContract.mode, `${field}.mode`);
+    requireResponseEqual(record.bridge, bundledSceneBridgeContract.bridge, `${field}.bridge`);
+    requireResponseEqual(record.runtime, bundledSceneBridgeContract.runtime, `${field}.runtime`);
+    requireResponseEqual(record.fallback, bundledSceneBridgeContract.fallback, `${field}.fallback`);
+
+    const adapterModule = responseRecord(record.adapterModule, `${field}.adapterModule`);
+    requireResponseEqual(adapterModule.status, bundledSceneBridgeContract.adapterModule.status, `${field}.adapterModule.status`);
+    requireResponseEqual(adapterModule.moduleType, bundledSceneBridgeContract.adapterModule.moduleType, `${field}.adapterModule.moduleType`);
+    requireResponseEqual(adapterModule.exportName, bundledSceneBridgeContract.adapterModule.exportName, `${field}.adapterModule.exportName`);
+    requireResponseEqual(adapterModule.factorySignature, bundledSceneBridgeContract.adapterModule.factorySignature, `${field}.adapterModule.factorySignature`);
+    requireResponseEqual(adapterModule.implements, bundledSceneBridgeContract.adapterModule.implements, `${field}.adapterModule.implements`);
+    requireResponseEqual(adapterModule.lifecycleHook, bundledSceneBridgeContract.adapterModule.lifecycleHook, `${field}.adapterModule.lifecycleHook`);
+    requireResponseEqual(adapterModule.moduleImported, false, `${field}.adapterModule.moduleImported`);
+    requireResponseEqual(adapterModule.runtimeRegistration, false, `${field}.adapterModule.runtimeRegistration`);
+    requireResponseEqual(adapterModule.valuesIncluded, false, `${field}.adapterModule.valuesIncluded`);
+
+    const assetPrerequisites = responseRecord(record.assetPrerequisites, `${field}.assetPrerequisites`);
+    requireResponseEqual(assetPrerequisites.manifestVersion, bundledSceneBridgeContract.assetPrerequisites.manifestVersion, `${field}.assetPrerequisites.manifestVersion`);
+    requireResponseEqual(assetPrerequisites.preflightVersion, bundledSceneBridgeContract.assetPrerequisites.preflightVersion, `${field}.assetPrerequisites.preflightVersion`);
+    requireResponseEqual(assetPrerequisites.preflightExecutionVersion, "P26.22", `${field}.assetPrerequisites.preflightExecutionVersion`);
+    requireResponseEqual(assetPrerequisites.materializationDryRunVersion, "P26.26", `${field}.assetPrerequisites.materializationDryRunVersion`);
+    requireResponseEqual(assetPrerequisites.materializationApprovalVersion, "P26.27", `${field}.assetPrerequisites.materializationApprovalVersion`);
+    requireResponseArrayEqual(
+        responseStringArray(assetPrerequisites, "requiredAssetIds", `${field}.assetPrerequisites.requiredAssetIds`),
+        [...bundledSceneBridgeContract.assetPrerequisites.requiredAssetIds],
+        `${field}.assetPrerequisites.requiredAssetIds`
+    );
+    requireResponseArrayEqual(
+        responseStringArray(assetPrerequisites, "requiredCacheOutputIds", `${field}.assetPrerequisites.requiredCacheOutputIds`),
+        [...bundledSceneBridgeContract.assetPrerequisites.requiredCacheOutputIds],
+        `${field}.assetPrerequisites.requiredCacheOutputIds`
+    );
+    for (const property of [
+        "preflightRequired",
+        "approvalRequired",
+    ]) {
+        requireResponseEqual(assetPrerequisites[property], true, `${field}.assetPrerequisites.${property}`);
+    }
+    for (const property of [
+        "materializationApproved",
+        "materializationWritesEnabled",
+        "assetExistenceChecked",
+        "assetHashesComputed",
+        "cacheOutputsChecked",
+        "assetValuesIncluded",
+    ]) {
+        requireResponseEqual(assetPrerequisites[property], false, `${field}.assetPrerequisites.${property}`);
+    }
+
+    const browserPageHandoff = responseRecord(record.browserPageHandoff, `${field}.browserPageHandoff`);
+    requireResponseEqual(browserPageHandoff.owner, "renderer-service", `${field}.browserPageHandoff.owner`);
+    requireResponseEqual(browserPageHandoff.engine, "chromium", `${field}.browserPageHandoff.engine`);
+    requireResponseEqual(browserPageHandoff.headless, true, `${field}.browserPageHandoff.headless`);
+    requireResponseEqual(browserPageHandoff.activeEditorTabRequired, false, `${field}.browserPageHandoff.activeEditorTabRequired`);
+    requireResponseEqual(browserPageHandoff.pageReusePolicy, "single-page-serial-queue", `${field}.browserPageHandoff.pageReusePolicy`);
+    requireResponseEqual(browserPageHandoff.sourceDataTransfer, "renderer-service-internal-redacted", `${field}.browserPageHandoff.sourceDataTransfer`);
+    for (const property of ["browserProcessStarted", "pageCreated", "pageValuesIncluded", "playwrightPathIncluded"]) {
+        requireResponseEqual(browserPageHandoff[property], false, `${field}.browserPageHandoff.${property}`);
+    }
+
+    const renderInputContract = responseRecord(record.renderInputContract, `${field}.renderInputContract`);
+    requireResponseEqual(renderInputContract.type, "RendererRuntimeRenderInput", `${field}.renderInputContract.type`);
+    requireResponseArrayEqual(responseStringArray(renderInputContract, "targetKinds", `${field}.renderInputContract.targetKinds`), ["file", "frame"], `${field}.renderInputContract.targetKinds`);
+    requireResponseArrayEqual(
+        responseStringArray(renderInputContract, "requiredSections", `${field}.renderInputContract.requiredSections`),
+        ["target", "artifact", "cache", "render", "sourceData"],
+        `${field}.renderInputContract.requiredSections`
+    );
+    requireResponseEqual(renderInputContract.renderRuntime, "render-wasm-worker", `${field}.renderInputContract.renderRuntime`);
+    requireResponseEqual(renderInputContract.renderFallback, "frontend-rasterizer", `${field}.renderInputContract.renderFallback`);
+    for (const property of [
+        "sourceDataValuesIncluded",
+        "pageValuesIncluded",
+        "artifactValuesIncluded",
+        "mediaValuesIncluded",
+        "tokenValuesIncluded",
+    ]) {
+        requireResponseEqual(renderInputContract[property], false, `${field}.renderInputContract.${property}`);
+    }
+
+    const renderOutputContract = responseRecord(record.renderOutputContract, `${field}.renderOutputContract`);
+    requireResponseEqual(renderOutputContract.type, "RendererRuntimeRenderResult", `${field}.renderOutputContract.type`);
+    requireResponseEqual(renderOutputContract.artifactFormat, "png", `${field}.renderOutputContract.artifactFormat`);
+    requireResponseEqual(renderOutputContract.artifactMimeType, "image/png", `${field}.renderOutputContract.artifactMimeType`);
+    requireResponseArrayEqual(
+        responseStringArray(renderOutputContract, "allowedRuntimes", `${field}.renderOutputContract.allowedRuntimes`),
+        ["render-wasm-worker", "frontend-rasterizer"],
+        `${field}.renderOutputContract.allowedRuntimes`
+    );
+    requireResponseEqual(renderOutputContract.nonEmptyPngRequired, true, `${field}.renderOutputContract.nonEmptyPngRequired`);
+    for (const property of [
+        "artifactByteLengthIncluded",
+        "artifactBytesIncluded",
+        "localFileWrites",
+        "resourceValuesIncluded",
+        "mediaValuesIncluded",
+    ]) {
+        requireResponseEqual(renderOutputContract[property], false, `${field}.renderOutputContract.${property}`);
+    }
+
+    requireResponseArrayEqual(
+        responseStringArray(record, "diagnosticCodes", `${field}.diagnosticCodes`),
+        [...bundledSceneBridgeContract.diagnosticCodes],
+        `${field}.diagnosticCodes`
+    );
+    const diagnostics = responseRecordArray(record.diagnostics, `${field}.diagnostics`);
+    requireResponseEqual(diagnostics.length, bundledSceneBridgeContract.diagnostics.length, `${field}.diagnostics.length`);
+    requireResponseEqual(diagnostics[0].code, bundledSceneBridgeContract.diagnostics[0].code, `${field}.diagnostics.0.code`);
+    requireResponseEqual(diagnostics[0].severity, bundledSceneBridgeContract.diagnostics[0].severity, `${field}.diagnostics.0.severity`);
+    requireResponseArrayEqual(responseStringArray(record, "nextActions", `${field}.nextActions`), [...bundledSceneBridgeContract.nextActions], `${field}.nextActions`);
+
+    const blockedAlternatives = responseRecordArray(record.blockedAlternatives, `${field}.blockedAlternatives`);
+    requireResponseArrayEqual(
+        blockedAlternatives.map((entry) => String(entry.id)),
+        bundledSceneBridgeContract.blockedAlternatives.map((entry) => entry.id),
+        `${field}.blockedAlternatives.ids`
+    );
+    requireResponseArrayEqual(responseStringArray(record, "executionSequence", `${field}.executionSequence`), [...bundledSceneBridgeContract.executionSequence], `${field}.executionSequence`);
+
+    const testMatrix = responseRecordArray(record.testMatrix, `${field}.testMatrix`);
+    requireResponseArrayEqual(
+        testMatrix.map((entry) => String(entry.id)),
+        bundledSceneBridgeContract.testMatrix.map((entry) => entry.id),
+        `${field}.testMatrix.ids`
+    );
+    for (let index = 0; index < testMatrix.length; index += 1) {
+        requireResponseEqual(testMatrix[index].required, true, `${field}.testMatrix.${index}.required`);
+        requireResponseEqual(testMatrix[index].status, "planned", `${field}.testMatrix.${index}.status`);
+        requireResponseEqual(testMatrix[index].dispatch, false, `${field}.testMatrix.${index}.dispatch`);
+    }
+
+    const sideEffects = responseRecord(record.sideEffects, `${field}.sideEffects`);
+    for (const property of [
+        "browserProcessStarted",
+        "runtimeExecutionRegistered",
+        "runtimeAdapterImported",
+        "runtimeAssetsLoaded",
+        "assetManifestMaterialized",
+        "networkDispatch",
+        "dispatch",
+        "localFileWrites",
+    ]) {
+        requireResponseEqual(sideEffects[property], false, `${field}.sideEffects.${property}`);
+    }
+
+    const redaction = responseRecord(record.redaction, `${field}.redaction`);
+    for (const property of [
+        "sourceDataValuesIncluded",
+        "pageValuesIncluded",
+        "artifactValuesIncluded",
+        "mediaValuesIncluded",
+        "tokenValuesIncluded",
+        "pathValuesIncluded",
+    ]) {
+        requireResponseEqual(redaction[property], false, `${field}.redaction.${property}`);
+    }
+
+    const omitted = responseRecord(record.omitted, `${field}.omitted`);
+    for (const property of [
+        "workspaceRoot",
+        "cacheRoot",
+        "publicPaths",
+        "cachePaths",
+        "sha256",
+        "playwrightBrowserPath",
+        "runtimeModulePath",
+        "sourceData",
+        "pageData",
+        "artifactBytes",
+        "mediaBytes",
+        "tokenValues",
+    ]) {
+        requireResponseEqual(omitted[property], true, `${field}.omitted.${property}`);
+    }
+    requireResponseEqual(record.execution ?? null, null, `${field}.execution`);
+}
+
 function validateRuntimeAssetMaterializationPreflightCheckResponse(
     actual: unknown,
     expected: (typeof bundledRuntimeAssetMaterializationPreflight.checks)[number],
@@ -4945,6 +5307,7 @@ function validateThumbnailResponseContract(
         record.runtimeAssetMaterializationApproval,
         "runtimeAssetMaterializationApproval"
     );
+    validateBundledSceneBridgeContractResponse(record.bundledSceneBridgeContract, "bundledSceneBridgeContract");
     validateBrowserFixtureRuntimeLifecycleResponse(record.browserFixtureRuntime, "browserFixtureRuntime");
 
     validateThumbnailResourceResponse(responseRecord(record.resource, "resource"));

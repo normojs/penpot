@@ -754,6 +754,47 @@ function backendRpcPersistOutput(
     };
 }
 
+function assertBundledSceneBridgeContract(contract) {
+    assert.deepEqual(contract, serviceModule.bundledSceneBridgeContract);
+    assert.equal(contract.status, "planned-disabled");
+    assert.equal(contract.contractVersion, "P26.32");
+    assert.equal(contract.owner, "renderer-service");
+    assert.equal(contract.mode, "metadata-only");
+    assert.equal(contract.bridge, "browser-backed-service-adapter");
+    assert.equal(contract.runtime, "render-wasm-worker");
+    assert.equal(contract.fallback, "frontend-rasterizer");
+    assert.equal(contract.adapterModule.exportName, "createBundledSceneBridgeRendererRuntime");
+    assert.equal(contract.adapterModule.moduleImported, false);
+    assert.equal(contract.adapterModule.runtimeRegistration, false);
+    assert.equal(contract.adapterModule.valuesIncluded, false);
+    assert.deepEqual(contract.assetPrerequisites.requiredAssetIds, serviceModule.bundledRuntimeBridgeAssetManifest.validation.requiredAssetIds);
+    assert.deepEqual(
+        contract.assetPrerequisites.requiredCacheOutputIds,
+        serviceModule.bundledRuntimeBridgeAssetManifest.cacheOutputs.map((entry) => entry.id)
+    );
+    assert.equal(contract.assetPrerequisites.preflightRequired, true);
+    assert.equal(contract.assetPrerequisites.approvalRequired, true);
+    assert.equal(contract.assetPrerequisites.materializationWritesEnabled, false);
+    assert.equal(contract.browserPageHandoff.activeEditorTabRequired, false);
+    assert.equal(contract.browserPageHandoff.browserProcessStarted, false);
+    assert.deepEqual(contract.renderInputContract.targetKinds, ["file", "frame"]);
+    assert.equal(contract.renderInputContract.sourceDataValuesIncluded, false);
+    assert.deepEqual(contract.renderOutputContract.allowedRuntimes, ["render-wasm-worker", "frontend-rasterizer"]);
+    assert.equal(contract.renderOutputContract.nonEmptyPngRequired, true);
+    assert.equal(contract.renderOutputContract.artifactBytesIncluded, false);
+    assert.deepEqual(contract.diagnosticCodes, ["renderer_service_bundled_scene_bridge_contract_defined"]);
+    assert.ok(contract.testMatrix.some((entry) => entry.id === "render-input-output-validation" && entry.dispatch === false));
+    assert.equal(contract.sideEffects.browserProcessStarted, false);
+    assert.equal(contract.sideEffects.runtimeAdapterImported, false);
+    assert.equal(contract.sideEffects.localFileWrites, false);
+    assert.equal(contract.redaction.pathValuesIncluded, false);
+    assert.equal(contract.omitted.workspaceRoot, true);
+    assert.equal(contract.omitted.sha256, true);
+    assert.equal(contract.omitted.tokenValues, true);
+    assert.equal(contract.execution, null);
+    return contract;
+}
+
 function persistedThumbnailResponse(id = "persisted-thumbnail-png") {
     return new Response(
         JSON.stringify({
@@ -779,12 +820,14 @@ test("noop host exposes the P25.24 health contract", async () => {
         assert.ok(serviceModule.healthResponse.capabilities.includes("thumbnail.render.runtime-asset-preflight"));
         assert.ok(serviceModule.healthResponse.capabilities.includes("thumbnail.render.runtime-asset-materialization-dry-run"));
         assert.ok(serviceModule.healthResponse.capabilities.includes("thumbnail.render.runtime-asset-materialization-approval-scaffold"));
+        assert.ok(serviceModule.healthResponse.capabilities.includes("thumbnail.render.bundled-scene-bridge-contract"));
         assert.deepEqual(body.browserFixtureRuntime, serviceModule.defaultBrowserFixtureRuntimeLifecycle);
         assertBrowserFixtureRuntimeLifecycle(body.browserFixtureRuntime);
         assertRuntimeAssetManifestScaffold(body.runtimeAssetManifest);
         assertRuntimeAssetMaterializationPreflightScaffold(body.runtimeAssetMaterializationPreflight);
         assertRuntimeAssetMaterializationDryRunPlan(body.runtimeAssetMaterializationDryRun);
         assertRuntimeAssetMaterializationApprovalPlan(body.runtimeAssetMaterializationApproval);
+        assertBundledSceneBridgeContract(body.bundledSceneBridgeContract);
     });
 });
 
@@ -2858,6 +2901,41 @@ test("noop host rejects unsafe P26.27 runtime asset materialization approval sca
         assert.equal(body.code, "renderer_service_response_invalid");
         assert.equal(body.field, "runtimeAssetMaterializationApproval.approvalGate.approvalTokenAccepted");
         assert.match(body.message, /runtimeAssetMaterializationApproval\.approvalGate\.approvalTokenAccepted must match false/);
+    } finally {
+        await service.stop();
+        await fixture.cleanup();
+    }
+});
+
+test("noop host rejects unsafe P26.32 bundled scene bridge contract metadata", async () => {
+    const fixture = await createRuntimePreflightFixture();
+    const service = await serviceModule.startRendererService({
+        port: 0,
+        runtimeAssetPreflight: {
+            executeReadOnly: true,
+            workspaceRoot: fixture.workspaceRoot,
+            cacheRoot: fixture.cacheRoot,
+        },
+        thumbnailResponseOverride: (body) => ({
+            ...body,
+            bundledSceneBridgeContract: {
+                ...body.bundledSceneBridgeContract,
+                adapterModule: {
+                    ...body.bundledSceneBridgeContract.adapterModule,
+                    moduleImported: true,
+                },
+            },
+        }),
+    });
+    try {
+        const response = await postValidFileThumbnail(service.host, service.port);
+
+        assert.equal(response.status, 500);
+        const body = await response.json();
+        assert.equal(body.status, "error");
+        assert.equal(body.code, "renderer_service_response_invalid");
+        assert.equal(body.field, "bundledSceneBridgeContract.adapterModule.moduleImported");
+        assert.match(body.message, /bundledSceneBridgeContract\.adapterModule\.moduleImported must match false/);
     } finally {
         await service.stop();
         await fixture.cleanup();
