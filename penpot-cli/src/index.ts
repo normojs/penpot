@@ -1237,6 +1237,69 @@ function getRendererServiceLifecyclePlan(args: string[], env: NodeJS.ProcessEnv)
             nextActions: string[];
         }>;
         nextActions: string[];
+        readinessVerdict: {
+            status: "blocked";
+            verdictVersion: "P26.29";
+            computed: true;
+            trusted: false;
+            approvalReady: false;
+            materializationReady: false;
+            approvalGranted: false;
+            writesEnabled: false;
+            inputs: {
+                sourceDryRun: {
+                    status: "planned-disabled";
+                    planVersion: "P26.26";
+                    readiness: "not-checked";
+                    ready: false;
+                    blockerCodes: string[];
+                };
+                approvalConfiguration: {
+                    configured: boolean;
+                    unsupportedConfiguration: boolean;
+                    unsupportedDiagnosticCodes: string[];
+                    valuesIncluded: false;
+                };
+                approvalGate: {
+                    status: "closed";
+                    blockerCodes: string[];
+                    approvalRequired: true;
+                    approvalGranted: false;
+                    writesEnabled: false;
+                };
+            };
+            checks: Array<{
+                id:
+                    | "runtime-asset-materialization-dry-run-ready"
+                    | "runtime-asset-materialization-approval-required"
+                    | "runtime-asset-materialization-approval-configuration-supported"
+                    | "runtime-asset-materialization-approval-scaffold-enabled"
+                    | "runtime-asset-materialization-approval-token-validation-enabled";
+                required: true;
+                status: "passed" | "blocked";
+                diagnosticCodes: string[];
+            }>;
+            blockerCodes: string[];
+            nextActions: string[];
+            sideEffects: {
+                approvalTokenRead: false;
+                approvalTokenAccepted: false;
+                approvalTokenConsumed: false;
+                auditRecordWritten: false;
+                localFileWrites: false;
+                networkDispatch: false;
+                dispatch: false;
+                runtimeExecutionRegistered: false;
+            };
+            omitted: {
+                approvalTokenValues: true;
+                approvalAuditPaths: true;
+                approvalScopeHashes: true;
+                workspaceRoot: true;
+                cacheRoot: true;
+                sha256: true;
+            };
+        };
         diagnosticsSurface: "healthPreflight.runtimeAssetMaterializationApproval";
         lifecyclePlanEffects: {
             healthProbe: false;
@@ -1420,6 +1483,24 @@ function getRendererServiceLifecyclePlan(args: string[], env: NodeJS.ProcessEnv)
         runtimeAssetMaterializationApprovalModeConfigured ||
         runtimeAssetMaterializationApprovalTokenConfigured ||
         runtimeAssetMaterializationApprovalAuditConfigured;
+    const runtimeAssetMaterializationApprovalDiagnosticCodes = runtimeAssetMaterializationApprovalDiagnostics.map((entry) => entry.code);
+    const runtimeAssetMaterializationApprovalSourceDryRunBlockers = [
+        "renderer_service_runtime_asset_materialization_preflight_required",
+        "renderer_service_runtime_asset_materialization_approval_required",
+    ];
+    const runtimeAssetMaterializationApprovalVerdictBlockers = [
+        ...runtimeAssetMaterializationApprovalSourceDryRunBlockers,
+        ...runtimeAssetMaterializationApprovalDiagnosticCodes,
+        "renderer_service_runtime_asset_materialization_approval_scaffold_disabled",
+        "renderer_service_runtime_asset_materialization_approval_token_disabled",
+    ];
+    const runtimeAssetMaterializationApprovalVerdictNextActions = [
+        ...new Set([
+            ...runtimeAssetMaterializationApprovalDiagnostics.flatMap((entry) => entry.nextActions),
+            "Run renderer-service /health with runtime asset preflight enabled before trusting an approval readiness verdict.",
+            "Keep runtime asset materialization disabled until the approval scaffold, token validation, and audit persistence are implemented.",
+        ]),
+    ];
     const startEnv = [
         ...(host === DEFAULT_RENDERER_SERVICE_HOST && port === DEFAULT_RENDERER_SERVICE_PORT
             ? []
@@ -1548,9 +1629,93 @@ function getRendererServiceLifecyclePlan(args: string[], env: NodeJS.ProcessEnv)
             auditValueRead: false,
             tokenValuesIncluded: false,
             auditValuesIncluded: false,
-            diagnosticCodes: runtimeAssetMaterializationApprovalDiagnostics.map((entry) => entry.code),
+            diagnosticCodes: runtimeAssetMaterializationApprovalDiagnosticCodes,
             diagnostics: runtimeAssetMaterializationApprovalDiagnostics,
             nextActions: [...new Set(runtimeAssetMaterializationApprovalDiagnostics.flatMap((entry) => entry.nextActions))],
+            readinessVerdict: {
+                status: "blocked",
+                verdictVersion: "P26.29",
+                computed: true,
+                trusted: false,
+                approvalReady: false,
+                materializationReady: false,
+                approvalGranted: false,
+                writesEnabled: false,
+                inputs: {
+                    sourceDryRun: {
+                        status: "planned-disabled",
+                        planVersion: "P26.26",
+                        readiness: "not-checked",
+                        ready: false,
+                        blockerCodes: runtimeAssetMaterializationApprovalSourceDryRunBlockers,
+                    },
+                    approvalConfiguration: {
+                        configured: runtimeAssetMaterializationApprovalConfigured,
+                        unsupportedConfiguration: runtimeAssetMaterializationApprovalDiagnosticCodes.length > 0,
+                        unsupportedDiagnosticCodes: runtimeAssetMaterializationApprovalDiagnosticCodes,
+                        valuesIncluded: false,
+                    },
+                    approvalGate: {
+                        status: "closed",
+                        blockerCodes: runtimeAssetMaterializationApprovalVerdictBlockers,
+                        approvalRequired: true,
+                        approvalGranted: false,
+                        writesEnabled: false,
+                    },
+                },
+                checks: [
+                    {
+                        id: "runtime-asset-materialization-dry-run-ready",
+                        required: true,
+                        status: "blocked",
+                        diagnosticCodes: ["renderer_service_runtime_asset_materialization_preflight_required"],
+                    },
+                    {
+                        id: "runtime-asset-materialization-approval-required",
+                        required: true,
+                        status: "blocked",
+                        diagnosticCodes: ["renderer_service_runtime_asset_materialization_approval_required"],
+                    },
+                    {
+                        id: "runtime-asset-materialization-approval-configuration-supported",
+                        required: true,
+                        status: runtimeAssetMaterializationApprovalDiagnosticCodes.length === 0 ? "passed" : "blocked",
+                        diagnosticCodes: runtimeAssetMaterializationApprovalDiagnosticCodes,
+                    },
+                    {
+                        id: "runtime-asset-materialization-approval-scaffold-enabled",
+                        required: true,
+                        status: "blocked",
+                        diagnosticCodes: ["renderer_service_runtime_asset_materialization_approval_scaffold_disabled"],
+                    },
+                    {
+                        id: "runtime-asset-materialization-approval-token-validation-enabled",
+                        required: true,
+                        status: "blocked",
+                        diagnosticCodes: ["renderer_service_runtime_asset_materialization_approval_token_disabled"],
+                    },
+                ],
+                blockerCodes: runtimeAssetMaterializationApprovalVerdictBlockers,
+                nextActions: runtimeAssetMaterializationApprovalVerdictNextActions,
+                sideEffects: {
+                    approvalTokenRead: false,
+                    approvalTokenAccepted: false,
+                    approvalTokenConsumed: false,
+                    auditRecordWritten: false,
+                    localFileWrites: false,
+                    networkDispatch: false,
+                    dispatch: false,
+                    runtimeExecutionRegistered: false,
+                },
+                omitted: {
+                    approvalTokenValues: true,
+                    approvalAuditPaths: true,
+                    approvalScopeHashes: true,
+                    workspaceRoot: true,
+                    cacheRoot: true,
+                    sha256: true,
+                },
+            },
             diagnosticsSurface: "healthPreflight.runtimeAssetMaterializationApproval",
             lifecyclePlanEffects: {
                 healthProbe: false,

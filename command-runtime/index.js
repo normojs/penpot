@@ -14806,6 +14806,135 @@ function normalizePlanCounts(value) {
     };
 }
 
+function normalizeRendererServiceRuntimeAssetMaterializationApprovalReadinessVerdict(value) {
+    const verdict = asRecord(value);
+    const baseSideEffects = {
+        approvalTokenRead: false,
+        approvalTokenAccepted: false,
+        approvalTokenConsumed: false,
+        auditRecordWritten: false,
+        localFileWrites: false,
+        networkDispatch: false,
+        dispatch: false,
+        runtimeExecutionRegistered: false,
+    };
+    const omitted = {
+        approvalTokenValues: true,
+        approvalAuditPaths: true,
+        approvalScopeHashes: true,
+        workspaceRoot: true,
+        cacheRoot: true,
+        sha256: true,
+    };
+
+    if (Object.keys(verdict).length === 0) {
+        return {
+            status: "not-reported",
+            verdictVersion: null,
+            computed: false,
+            trusted: false,
+            approvalReady: false,
+            materializationReady: false,
+            approvalGranted: false,
+            writesEnabled: false,
+            inputs: {
+                sourceDryRun: {
+                    status: "not-reported",
+                    planVersion: null,
+                    readiness: "not-reported",
+                    ready: false,
+                    copyPlanCounts: normalizePlanCounts(null),
+                    cacheOutputPlanCounts: normalizePlanCounts(null),
+                    blockerCodes: [],
+                },
+                approvalConfiguration: {
+                    configured: false,
+                    unsupportedConfiguration: false,
+                    unsupportedDiagnosticCodes: [],
+                    valuesIncluded: false,
+                },
+                approvalGate: {
+                    status: "closed",
+                    blockerCodes: [],
+                    approvalRequired: true,
+                    approvalGranted: false,
+                    writesEnabled: false,
+                },
+            },
+            checks: [],
+            blockerCodes: [],
+            nextActions: [],
+            sideEffects: baseSideEffects,
+            omitted,
+        };
+    }
+
+    const inputs = asRecord(verdict.inputs);
+    const sourceDryRun = asRecord(inputs.sourceDryRun);
+    const approvalConfiguration = asRecord(inputs.approvalConfiguration);
+    const approvalGate = asRecord(inputs.approvalGate);
+    const sideEffects = asRecord(verdict.sideEffects);
+    const sourceReadiness = normalizeOptionalString(sourceDryRun.readiness);
+    const normalizedSourceReadiness =
+        sourceReadiness === "not-checked" || sourceReadiness === "ready" || sourceReadiness === "degraded"
+            ? sourceReadiness
+            : "unknown";
+
+    return {
+        status: normalizeOptionalString(verdict.status) ?? "unknown",
+        verdictVersion: normalizeOptionalString(verdict.verdictVersion),
+        computed: verdict.computed === true,
+        trusted: verdict.trusted === true,
+        approvalReady: verdict.approvalReady === true,
+        materializationReady: verdict.materializationReady === true,
+        approvalGranted: verdict.approvalGranted === true,
+        writesEnabled: verdict.writesEnabled === true,
+        inputs: {
+            sourceDryRun: {
+                status: normalizeOptionalString(sourceDryRun.status) ?? "unknown",
+                planVersion: normalizeOptionalString(sourceDryRun.planVersion),
+                readiness: normalizedSourceReadiness,
+                ready: sourceDryRun.ready === true,
+                copyPlanCounts: normalizePlanCounts(sourceDryRun.copyPlanCounts),
+                cacheOutputPlanCounts: normalizePlanCounts(sourceDryRun.cacheOutputPlanCounts),
+                blockerCodes: normalizeStringArray(sourceDryRun.blockerCodes),
+            },
+            approvalConfiguration: {
+                configured: approvalConfiguration.configured === true,
+                unsupportedConfiguration: approvalConfiguration.unsupportedConfiguration === true,
+                unsupportedDiagnosticCodes: normalizeStringArray(approvalConfiguration.unsupportedDiagnosticCodes),
+                valuesIncluded: approvalConfiguration.valuesIncluded === true,
+            },
+            approvalGate: {
+                status: normalizeOptionalString(approvalGate.status) ?? "unknown",
+                blockerCodes: normalizeStringArray(approvalGate.blockerCodes),
+                approvalRequired: approvalGate.approvalRequired !== false,
+                approvalGranted: approvalGate.approvalGranted === true,
+                writesEnabled: approvalGate.writesEnabled === true,
+            },
+        },
+        checks: normalizeRecordArray(verdict.checks).map((check) => ({
+            id: normalizeOptionalString(check.id) ?? "unknown",
+            required: check.required === true,
+            status: normalizeOptionalString(check.status) ?? "unknown",
+            diagnosticCodes: normalizeStringArray(check.diagnosticCodes),
+        })),
+        blockerCodes: normalizeStringArray(verdict.blockerCodes),
+        nextActions: normalizeStringArray(verdict.nextActions),
+        sideEffects: {
+            approvalTokenRead: sideEffects.approvalTokenRead === true,
+            approvalTokenAccepted: sideEffects.approvalTokenAccepted === true,
+            approvalTokenConsumed: sideEffects.approvalTokenConsumed === true,
+            auditRecordWritten: sideEffects.auditRecordWritten === true,
+            localFileWrites: sideEffects.localFileWrites === true,
+            networkDispatch: sideEffects.networkDispatch === true,
+            dispatch: sideEffects.dispatch === true,
+            runtimeExecutionRegistered: sideEffects.runtimeExecutionRegistered === true,
+        },
+        omitted,
+    };
+}
+
 function normalizeRendererServiceRuntimeAssetMaterializationApprovalDiagnostic(body) {
     const bodyRecord = asRecord(body);
     const plan = asRecord(bodyRecord.runtimeAssetMaterializationApproval);
@@ -14908,6 +15037,7 @@ function normalizeRendererServiceRuntimeAssetMaterializationApprovalDiagnostic(b
             diagnostics: [],
             diagnosticCodes: [],
             nextActions: [],
+            readinessVerdict: normalizeRendererServiceRuntimeAssetMaterializationApprovalReadinessVerdict(null),
             sideEffects: baseSideEffects,
             omitted,
         };
@@ -14983,6 +15113,7 @@ function normalizeRendererServiceRuntimeAssetMaterializationApprovalDiagnostic(b
         diagnostics,
         diagnosticCodes,
         nextActions,
+        readinessVerdict: normalizeRendererServiceRuntimeAssetMaterializationApprovalReadinessVerdict(plan.readinessVerdict),
         sideEffects: {
             browserProcessStarted: sideEffects.browserProcessStarted === true,
             runtimeExecutionRegistered: sideEffects.runtimeExecutionRegistered === true,

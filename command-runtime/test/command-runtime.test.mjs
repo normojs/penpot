@@ -12665,6 +12665,11 @@ test("render.thumbnail renderer-service health preflight and client harness stay
     assert.equal(healthPreflight.runtimeAssetMaterializationApproval.writesEnabled, false);
     assert.deepEqual(healthPreflight.runtimeAssetMaterializationApproval.diagnostics, []);
     assert.deepEqual(healthPreflight.runtimeAssetMaterializationApproval.diagnosticCodes, []);
+    assert.equal(healthPreflight.runtimeAssetMaterializationApproval.readinessVerdict.status, "not-reported");
+    assert.equal(healthPreflight.runtimeAssetMaterializationApproval.readinessVerdict.verdictVersion, null);
+    assert.equal(healthPreflight.runtimeAssetMaterializationApproval.readinessVerdict.computed, false);
+    assert.equal(healthPreflight.runtimeAssetMaterializationApproval.readinessVerdict.writesEnabled, false);
+    assert.deepEqual(healthPreflight.runtimeAssetMaterializationApproval.readinessVerdict.blockerCodes, []);
     assert.equal(healthPreflight.runtimeAssetPreflight.omitted.workspaceRoot, true);
     assert.equal(healthPreflight.runtimeAssetPreflight.omitted.sha256, true);
     assert.ok(healthPreflight.failureModes.some((entry) => entry.code === "renderer_service_preflight_disabled"));
@@ -12954,6 +12959,124 @@ test("render.thumbnail renderer-service health preflight executes only GET healt
                             "Leave PENPOT_RENDERER_SERVICE_RUNTIME_ASSET_MATERIALIZATION_APPROVAL_TOKEN unset until approval token validation is implemented.",
                             "Leave PENPOT_RENDERER_SERVICE_RUNTIME_ASSET_MATERIALIZATION_APPROVAL_AUDIT_DIR unset until approval audit persistence is implemented.",
                         ],
+                        readinessVerdict: {
+                            status: "blocked",
+                            verdictVersion: "P26.29",
+                            owner: "renderer-service",
+                            mode: "metadata-only",
+                            computed: true,
+                            trusted: false,
+                            approvalReady: false,
+                            materializationReady: false,
+                            approvalGranted: false,
+                            writesEnabled: false,
+                            inputs: {
+                                sourceDryRun: {
+                                    planVersion: "P26.26",
+                                    status: "planned-disabled",
+                                    readiness: "degraded",
+                                    ready: false,
+                                    copyPlanCounts: { total: 2, ready: 1, blocked: 1, unknown: 0 },
+                                    cacheOutputPlanCounts: { total: 1, ready: 0, blocked: 1, unknown: 0 },
+                                    blockerCodes: [
+                                        "renderer_service_runtime_asset_missing_public_asset",
+                                        "renderer_service_runtime_asset_materialization_approval_required",
+                                    ],
+                                },
+                                approvalConfiguration: {
+                                    configured: true,
+                                    unsupportedConfiguration: true,
+                                    unsupportedDiagnosticCodes: [
+                                        "renderer_service_runtime_asset_materialization_approval_configuration_unsupported",
+                                        "renderer_service_runtime_asset_materialization_approval_token_unsupported",
+                                        "renderer_service_runtime_asset_materialization_approval_audit_unsupported",
+                                    ],
+                                    valuesIncluded: false,
+                                },
+                                approvalGate: {
+                                    status: "closed",
+                                    blockerCodes: [
+                                        "renderer_service_runtime_asset_missing_public_asset",
+                                        "renderer_service_runtime_asset_materialization_approval_required",
+                                        "renderer_service_runtime_asset_materialization_approval_configuration_unsupported",
+                                        "renderer_service_runtime_asset_materialization_approval_token_unsupported",
+                                        "renderer_service_runtime_asset_materialization_approval_audit_unsupported",
+                                        "renderer_service_runtime_asset_materialization_approval_scaffold_disabled",
+                                        "renderer_service_runtime_asset_materialization_approval_token_disabled",
+                                    ],
+                                    approvalRequired: true,
+                                    approvalGranted: false,
+                                    writesEnabled: false,
+                                },
+                            },
+                            checks: [
+                                {
+                                    id: "runtime-asset-materialization-dry-run-ready",
+                                    required: true,
+                                    status: "blocked",
+                                    diagnosticCodes: ["renderer_service_runtime_asset_missing_public_asset"],
+                                },
+                                {
+                                    id: "runtime-asset-materialization-approval-required",
+                                    required: true,
+                                    status: "blocked",
+                                    diagnosticCodes: ["renderer_service_runtime_asset_materialization_approval_required"],
+                                },
+                                {
+                                    id: "runtime-asset-materialization-approval-configuration-supported",
+                                    required: true,
+                                    status: "blocked",
+                                    diagnosticCodes: [
+                                        "renderer_service_runtime_asset_materialization_approval_configuration_unsupported",
+                                        "renderer_service_runtime_asset_materialization_approval_token_unsupported",
+                                        "renderer_service_runtime_asset_materialization_approval_audit_unsupported",
+                                    ],
+                                },
+                                {
+                                    id: "runtime-asset-materialization-approval-scaffold-enabled",
+                                    required: true,
+                                    status: "blocked",
+                                    diagnosticCodes: ["renderer_service_runtime_asset_materialization_approval_scaffold_disabled"],
+                                },
+                                {
+                                    id: "runtime-asset-materialization-approval-token-validation-enabled",
+                                    required: true,
+                                    status: "blocked",
+                                    diagnosticCodes: ["renderer_service_runtime_asset_materialization_approval_token_disabled"],
+                                },
+                            ],
+                            blockerCodes: [
+                                "renderer_service_runtime_asset_missing_public_asset",
+                                "renderer_service_runtime_asset_materialization_approval_required",
+                                "renderer_service_runtime_asset_materialization_approval_configuration_unsupported",
+                                "renderer_service_runtime_asset_materialization_approval_token_unsupported",
+                                "renderer_service_runtime_asset_materialization_approval_audit_unsupported",
+                                "renderer_service_runtime_asset_materialization_approval_scaffold_disabled",
+                                "renderer_service_runtime_asset_materialization_approval_token_disabled",
+                            ],
+                            nextActions: [
+                                "Resolve runtime asset materialization dry-run blockers before trusting an approval readiness verdict.",
+                                "Keep runtime asset materialization disabled until the approval scaffold, token validation, and audit persistence are implemented.",
+                            ],
+                            sideEffects: {
+                                approvalTokenRead: false,
+                                approvalTokenAccepted: false,
+                                approvalTokenConsumed: false,
+                                auditRecordWritten: false,
+                                localFileWrites: false,
+                                networkDispatch: false,
+                                dispatch: false,
+                                runtimeExecutionRegistered: false,
+                            },
+                            omitted: {
+                                approvalTokenValues: true,
+                                approvalAuditPaths: true,
+                                approvalScopeHashes: true,
+                                workspaceRoot: true,
+                                cacheRoot: true,
+                                sha256: true,
+                            },
+                        },
                         sideEffects: {
                             browserProcessStarted: false,
                             runtimeExecutionRegistered: false,
@@ -13080,6 +13203,38 @@ test("render.thumbnail renderer-service health preflight executes only GET healt
             entry.includes("PENPOT_RENDERER_SERVICE_RUNTIME_ASSET_MATERIALIZATION_APPROVAL_TOKEN")
         )
     );
+    assert.equal(healthPreflight.runtimeAssetMaterializationApproval.readinessVerdict.status, "blocked");
+    assert.equal(healthPreflight.runtimeAssetMaterializationApproval.readinessVerdict.verdictVersion, "P26.29");
+    assert.equal(healthPreflight.runtimeAssetMaterializationApproval.readinessVerdict.computed, true);
+    assert.equal(healthPreflight.runtimeAssetMaterializationApproval.readinessVerdict.trusted, false);
+    assert.equal(healthPreflight.runtimeAssetMaterializationApproval.readinessVerdict.approvalReady, false);
+    assert.equal(healthPreflight.runtimeAssetMaterializationApproval.readinessVerdict.materializationReady, false);
+    assert.equal(healthPreflight.runtimeAssetMaterializationApproval.readinessVerdict.writesEnabled, false);
+    assert.equal(
+        healthPreflight.runtimeAssetMaterializationApproval.readinessVerdict.inputs.sourceDryRun.copyPlanCounts.blocked,
+        1
+    );
+    assert.deepEqual(
+        healthPreflight.runtimeAssetMaterializationApproval.readinessVerdict.inputs.approvalConfiguration.unsupportedDiagnosticCodes,
+        [
+            "renderer_service_runtime_asset_materialization_approval_configuration_unsupported",
+            "renderer_service_runtime_asset_materialization_approval_token_unsupported",
+            "renderer_service_runtime_asset_materialization_approval_audit_unsupported",
+        ]
+    );
+    assert.ok(
+        healthPreflight.runtimeAssetMaterializationApproval.readinessVerdict.checks.some(
+            (entry) => entry.id === "runtime-asset-materialization-approval-token-validation-enabled" && entry.status === "blocked"
+        )
+    );
+    assert.ok(
+        healthPreflight.runtimeAssetMaterializationApproval.readinessVerdict.blockerCodes.includes(
+            "renderer_service_runtime_asset_materialization_approval_scaffold_disabled"
+        )
+    );
+    assert.equal(healthPreflight.runtimeAssetMaterializationApproval.readinessVerdict.sideEffects.approvalTokenRead, false);
+    assert.equal(healthPreflight.runtimeAssetMaterializationApproval.readinessVerdict.sideEffects.auditRecordWritten, false);
+    assert.equal(healthPreflight.runtimeAssetMaterializationApproval.readinessVerdict.omitted.approvalAuditPaths, true);
     assert.equal(healthPreflight.runtimeAssetMaterializationApproval.sideEffects.approvalTokenRead, false);
     assert.equal(healthPreflight.runtimeAssetMaterializationApproval.sideEffects.auditRecordWritten, false);
     assert.equal(healthPreflight.runtimeAssetMaterializationApproval.omitted.approvalTokenValues, true);

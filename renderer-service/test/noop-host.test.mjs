@@ -222,6 +222,67 @@ function assertRuntimeAssetMaterializationApprovalPlan(
     assert.ok(plan.diagnostics.every((diagnostic) => diagnostic.severity === "unsupported"));
     assert.ok(plan.diagnostics.every((diagnostic) => diagnostic.valueRead === false));
     assert.ok(plan.diagnostics.every((diagnostic) => diagnostic.valuesIncluded === false));
+    assert.equal(plan.readinessVerdict.status, "blocked");
+    assert.equal(plan.readinessVerdict.verdictVersion, "P26.29");
+    assert.equal(plan.readinessVerdict.owner, "renderer-service");
+    assert.equal(plan.readinessVerdict.mode, "metadata-only");
+    assert.equal(plan.readinessVerdict.computed, true);
+    assert.equal(plan.readinessVerdict.trusted, false);
+    assert.equal(plan.readinessVerdict.approvalReady, false);
+    assert.equal(plan.readinessVerdict.materializationReady, false);
+    assert.equal(plan.readinessVerdict.approvalGranted, false);
+    assert.equal(plan.readinessVerdict.writesEnabled, false);
+    assert.equal(plan.readinessVerdict.inputs.sourceDryRun.readiness, readiness);
+    assert.equal(plan.readinessVerdict.inputs.sourceDryRun.ready, ready);
+    assert.deepEqual(plan.readinessVerdict.inputs.sourceDryRun.blockerCodes, plan.sourceDryRun.diagnosticCodes);
+    assert.equal(plan.readinessVerdict.inputs.approvalConfiguration.configured, configured);
+    assert.equal(plan.readinessVerdict.inputs.approvalConfiguration.unsupportedConfiguration, expectedDiagnosticCodes.length > 0);
+    assert.deepEqual(plan.readinessVerdict.inputs.approvalConfiguration.unsupportedDiagnosticCodes, expectedDiagnosticCodes);
+    assert.equal(plan.readinessVerdict.inputs.approvalConfiguration.valuesIncluded, false);
+    assert.equal(plan.readinessVerdict.inputs.approvalGate.status, "closed");
+    assert.equal(plan.readinessVerdict.inputs.approvalGate.approvalRequired, true);
+    assert.equal(plan.readinessVerdict.inputs.approvalGate.approvalGranted, false);
+    assert.equal(plan.readinessVerdict.inputs.approvalGate.writesEnabled, false);
+    assert.deepEqual(plan.readinessVerdict.inputs.approvalGate.blockerCodes, plan.diagnosticCodes);
+    const dryRunReadyCheck = plan.readinessVerdict.checks.find((entry) => entry.id === "runtime-asset-materialization-dry-run-ready");
+    const dryRunReady =
+        ready &&
+        readiness === "ready" &&
+        plan.sourceDryRun.copyPlanCounts.blocked === 0 &&
+        plan.sourceDryRun.copyPlanCounts.unknown === 0 &&
+        plan.sourceDryRun.cacheOutputPlanCounts.blocked === 0 &&
+        plan.sourceDryRun.cacheOutputPlanCounts.unknown === 0;
+    assert.equal(dryRunReadyCheck.status, dryRunReady ? "passed" : "blocked");
+    const configurationCheck = plan.readinessVerdict.checks.find(
+        (entry) => entry.id === "runtime-asset-materialization-approval-configuration-supported"
+    );
+    assert.equal(configurationCheck.status, expectedDiagnosticCodes.length === 0 ? "passed" : "blocked");
+    assert.ok(
+        plan.readinessVerdict.checks.some(
+            (entry) =>
+                entry.id === "runtime-asset-materialization-approval-required" &&
+                entry.status === "blocked" &&
+                entry.diagnosticCodes.includes("renderer_service_runtime_asset_materialization_approval_required")
+        )
+    );
+    assert.ok(plan.readinessVerdict.blockerCodes.includes("renderer_service_runtime_asset_materialization_approval_required"));
+    assert.ok(plan.readinessVerdict.blockerCodes.includes("renderer_service_runtime_asset_materialization_approval_scaffold_disabled"));
+    assert.ok(plan.readinessVerdict.blockerCodes.includes("renderer_service_runtime_asset_materialization_approval_token_disabled"));
+    assert.equal(plan.readinessVerdict.nextActions.length > 0, true);
+    assert.equal(plan.readinessVerdict.sideEffects.approvalTokenRead, false);
+    assert.equal(plan.readinessVerdict.sideEffects.approvalTokenAccepted, false);
+    assert.equal(plan.readinessVerdict.sideEffects.approvalTokenConsumed, false);
+    assert.equal(plan.readinessVerdict.sideEffects.auditRecordWritten, false);
+    assert.equal(plan.readinessVerdict.sideEffects.localFileWrites, false);
+    assert.equal(plan.readinessVerdict.sideEffects.networkDispatch, false);
+    assert.equal(plan.readinessVerdict.sideEffects.dispatch, false);
+    assert.equal(plan.readinessVerdict.sideEffects.runtimeExecutionRegistered, false);
+    assert.equal(plan.readinessVerdict.omitted.approvalTokenValues, true);
+    assert.equal(plan.readinessVerdict.omitted.approvalAuditPaths, true);
+    assert.equal(plan.readinessVerdict.omitted.approvalScopeHashes, true);
+    assert.equal(plan.readinessVerdict.omitted.workspaceRoot, true);
+    assert.equal(plan.readinessVerdict.omitted.cacheRoot, true);
+    assert.equal(plan.readinessVerdict.omitted.sha256, true);
     assert.equal(plan.audit.status, "planned-disabled");
     assert.equal(plan.audit.auditTrailEnabled, false);
     assert.equal(plan.audit.auditRecordPrepared, false);

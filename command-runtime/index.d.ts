@@ -1726,6 +1726,76 @@ export interface RenderThumbnailRendererServiceRuntimeAssetMaterializationApprov
     }>;
     diagnosticCodes: string[];
     nextActions: string[];
+    readinessVerdict: {
+        status: string;
+        verdictVersion: "P26.29" | null;
+        computed: boolean;
+        trusted: boolean;
+        approvalReady: boolean;
+        materializationReady: boolean;
+        approvalGranted: boolean;
+        writesEnabled: boolean;
+        inputs: {
+            sourceDryRun: {
+                status: string;
+                planVersion: "P26.26" | null;
+                readiness: "not-reported" | "not-checked" | "ready" | "degraded" | "unknown";
+                ready: boolean;
+                copyPlanCounts: {
+                    total: number;
+                    ready: number;
+                    blocked: number;
+                    unknown: number;
+                };
+                cacheOutputPlanCounts: {
+                    total: number;
+                    ready: number;
+                    blocked: number;
+                    unknown: number;
+                };
+                blockerCodes: string[];
+            };
+            approvalConfiguration: {
+                configured: boolean;
+                unsupportedConfiguration: boolean;
+                unsupportedDiagnosticCodes: string[];
+                valuesIncluded: boolean;
+            };
+            approvalGate: {
+                status: string;
+                blockerCodes: string[];
+                approvalRequired: boolean;
+                approvalGranted: boolean;
+                writesEnabled: boolean;
+            };
+        };
+        checks: Array<{
+            id: string;
+            required: boolean;
+            status: string;
+            diagnosticCodes: string[];
+        }>;
+        blockerCodes: string[];
+        nextActions: string[];
+        sideEffects: {
+            approvalTokenRead: boolean;
+            approvalTokenAccepted: boolean;
+            approvalTokenConsumed: boolean;
+            auditRecordWritten: boolean;
+            localFileWrites: boolean;
+            networkDispatch: boolean;
+            dispatch: boolean;
+            runtimeExecutionRegistered: boolean;
+        };
+        omitted: {
+            approvalTokenValues: true;
+            approvalAuditPaths: true;
+            approvalScopeHashes: true;
+            workspaceRoot: true;
+            cacheRoot: true;
+            sha256: true;
+        };
+    };
     sideEffects: {
         browserProcessStarted: boolean;
         runtimeExecutionRegistered: boolean;

@@ -261,7 +261,11 @@ approval token/config/audit scaffold with token acceptance, audit writes, and
 cache writes all false. If the future approval mode, token, or audit env vars
 are present, status/health output reports redacted P26.28 unsupported
 configuration diagnostics with configured booleans only; token and audit values
-are not read or included. Enable the read-only host preflight with
+are not read or included. The approval summary also includes
+`readinessVerdict`, a P26.29 computed metadata-only verdict with blocked
+checks, blocker codes, next actions, and false token/audit/write/dispatch
+side-effect flags; it never trusts approvals or enables materialization. Enable
+the read-only host preflight with
 `PENPOT_RENDERER_SERVICE_RUNTIME_ASSET_PREFLIGHT=read-only`,
 `PENPOT_RENDERER_SERVICE_RUNTIME_ASSET_PREFLIGHT_WORKSPACE_ROOT=<absolute>`,
 and optionally

@@ -91,6 +91,14 @@ preflight summaries report configured booleans plus unsupported diagnostic
 codes and next actions. The values are not read or echoed, approval tokens are
 not accepted or consumed, audit paths are omitted, and all writes remain
 disabled.
+P26.29 adds `runtimeAssetMaterializationApproval.readinessVerdict`, a
+metadata-only approval readiness verdict computed from the P26.26 dry-run
+summary and P26.28 unsupported-configuration diagnostics. The verdict reports
+blocked checks, blocker codes, next actions, and omitted-field markers through
+renderer-service, CLI, and MCP health summaries, but it remains untrusted and
+does not read or accept tokens, consume approvals, write audit records,
+materialize assets, write cache files, start browsers, register runtime
+execution, or dispatch network/backend requests.
 P26.5 adds a token-safe `backendRpcClient` plan to renderer-service thumbnail
 responses so backend data/cache/persist endpoints are normalized for staged
 execution. That plan now feeds the executable file-thumbnail cache probe,

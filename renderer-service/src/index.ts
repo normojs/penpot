@@ -475,6 +475,74 @@ type RuntimeAssetMaterializationPlanCounts = {
     unknown: number;
 };
 
+type RuntimeAssetMaterializationApprovalReadinessVerdict = {
+    status: "blocked";
+    verdictVersion: "P26.29";
+    owner: "renderer-service";
+    mode: "metadata-only";
+    computed: true;
+    trusted: false;
+    approvalReady: false;
+    materializationReady: false;
+    approvalGranted: false;
+    writesEnabled: false;
+    inputs: {
+        sourceDryRun: {
+            planVersion: "P26.26" | null;
+            status: "planned-disabled" | "invalid";
+            readiness: "not-checked" | "ready" | "degraded" | "unknown";
+            ready: boolean;
+            copyPlanCounts: RuntimeAssetMaterializationPlanCounts;
+            cacheOutputPlanCounts: RuntimeAssetMaterializationPlanCounts;
+            blockerCodes: string[];
+        };
+        approvalConfiguration: {
+            configured: boolean;
+            unsupportedConfiguration: boolean;
+            unsupportedDiagnosticCodes: string[];
+            valuesIncluded: false;
+        };
+        approvalGate: {
+            status: "closed";
+            blockerCodes: string[];
+            approvalRequired: true;
+            approvalGranted: false;
+            writesEnabled: false;
+        };
+    };
+    checks: Array<{
+        id:
+            | "runtime-asset-materialization-dry-run-ready"
+            | "runtime-asset-materialization-approval-required"
+            | "runtime-asset-materialization-approval-configuration-supported"
+            | "runtime-asset-materialization-approval-scaffold-enabled"
+            | "runtime-asset-materialization-approval-token-validation-enabled";
+        required: true;
+        status: "passed" | "blocked";
+        diagnosticCodes: string[];
+    }>;
+    blockerCodes: string[];
+    nextActions: string[];
+    sideEffects: {
+        approvalTokenRead: false;
+        approvalTokenAccepted: false;
+        approvalTokenConsumed: false;
+        auditRecordWritten: false;
+        localFileWrites: false;
+        networkDispatch: false;
+        dispatch: false;
+        runtimeExecutionRegistered: false;
+    };
+    omitted: {
+        approvalTokenValues: true;
+        approvalAuditPaths: true;
+        approvalScopeHashes: true;
+        workspaceRoot: true;
+        cacheRoot: true;
+        sha256: true;
+    };
+};
+
 type RuntimeAssetMaterializationApprovalPlan = {
     status: "planned-disabled";
     planVersion: "P26.27";
@@ -544,6 +612,7 @@ type RuntimeAssetMaterializationApprovalPlan = {
     }>;
     diagnosticCodes: string[];
     nextActions: string[];
+    readinessVerdict: RuntimeAssetMaterializationApprovalReadinessVerdict;
     audit: {
         status: "planned-disabled";
         auditTrailEnabled: false;
@@ -818,6 +887,132 @@ function runtimeAssetMaterializationApprovalDiagnostics(
     return diagnostics;
 }
 
+function runtimeAssetMaterializationApprovalReadinessVerdict({
+    sourceDryRun,
+    configurationConfigured,
+    configurationDiagnosticCodes,
+    diagnosticCodes,
+    approvalDisabledCode,
+    approvalTokenDisabledCode,
+    nextActions,
+}: {
+    sourceDryRun: RuntimeAssetMaterializationApprovalPlan["sourceDryRun"];
+    configurationConfigured: boolean;
+    configurationDiagnosticCodes: string[];
+    diagnosticCodes: string[];
+    approvalDisabledCode: string;
+    approvalTokenDisabledCode: string;
+    nextActions: string[];
+}): RuntimeAssetMaterializationApprovalReadinessVerdict {
+    const dryRunReadinessBlockers = sourceDryRun.diagnosticCodes.filter(
+        (code) => code !== "renderer_service_runtime_asset_materialization_approval_required"
+    );
+    const dryRunReady =
+        sourceDryRun.ready === true &&
+        sourceDryRun.readiness === "ready" &&
+        sourceDryRun.copyPlanCounts.blocked === 0 &&
+        sourceDryRun.copyPlanCounts.unknown === 0 &&
+        sourceDryRun.cacheOutputPlanCounts.blocked === 0 &&
+        sourceDryRun.cacheOutputPlanCounts.unknown === 0 &&
+        dryRunReadinessBlockers.length === 0;
+    const checks: RuntimeAssetMaterializationApprovalReadinessVerdict["checks"] = [
+        {
+            id: "runtime-asset-materialization-dry-run-ready",
+            required: true,
+            status: dryRunReady ? "passed" : "blocked",
+            diagnosticCodes: dryRunReady ? [] : dryRunReadinessBlockers,
+        },
+        {
+            id: "runtime-asset-materialization-approval-required",
+            required: true,
+            status: "blocked",
+            diagnosticCodes: ["renderer_service_runtime_asset_materialization_approval_required"],
+        },
+        {
+            id: "runtime-asset-materialization-approval-configuration-supported",
+            required: true,
+            status: configurationDiagnosticCodes.length === 0 ? "passed" : "blocked",
+            diagnosticCodes: configurationDiagnosticCodes,
+        },
+        {
+            id: "runtime-asset-materialization-approval-scaffold-enabled",
+            required: true,
+            status: "blocked",
+            diagnosticCodes: [approvalDisabledCode],
+        },
+        {
+            id: "runtime-asset-materialization-approval-token-validation-enabled",
+            required: true,
+            status: "blocked",
+            diagnosticCodes: [approvalTokenDisabledCode],
+        },
+    ];
+    const blockerCodes = uniqueStrings(checks.flatMap((check) => (check.status === "blocked" ? check.diagnosticCodes : [])));
+    const verdictNextActions = uniqueStrings([
+        ...nextActions,
+        ...(dryRunReady
+            ? []
+            : [
+                  "Resolve runtime asset materialization dry-run blockers before trusting an approval readiness verdict.",
+                  "Rerun renderer-service /health after the runtime asset preflight and dry-run are ready.",
+              ]),
+        "Keep runtime asset materialization disabled until the approval scaffold, token validation, and audit persistence are implemented.",
+    ]);
+
+    return {
+        status: "blocked",
+        verdictVersion: "P26.29",
+        owner: "renderer-service",
+        mode: "metadata-only",
+        computed: true,
+        trusted: false,
+        approvalReady: false,
+        materializationReady: false,
+        approvalGranted: false,
+        writesEnabled: false,
+        inputs: {
+            sourceDryRun: {
+                ...sourceDryRun,
+                blockerCodes: sourceDryRun.diagnosticCodes,
+            },
+            approvalConfiguration: {
+                configured: configurationConfigured,
+                unsupportedConfiguration: configurationDiagnosticCodes.length > 0,
+                unsupportedDiagnosticCodes: configurationDiagnosticCodes,
+                valuesIncluded: false,
+            },
+            approvalGate: {
+                status: "closed",
+                blockerCodes: diagnosticCodes,
+                approvalRequired: true,
+                approvalGranted: false,
+                writesEnabled: false,
+            },
+        },
+        checks,
+        blockerCodes,
+        nextActions: verdictNextActions,
+        sideEffects: {
+            approvalTokenRead: false,
+            approvalTokenAccepted: false,
+            approvalTokenConsumed: false,
+            auditRecordWritten: false,
+            localFileWrites: false,
+            networkDispatch: false,
+            dispatch: false,
+            runtimeExecutionRegistered: false,
+        },
+        omitted: {
+            approvalTokenValues: true,
+            approvalAuditPaths: true,
+            approvalScopeHashes: true,
+            workspaceRoot: true,
+            cacheRoot: true,
+            sha256: true,
+        },
+    };
+}
+
 function runtimeAssetMaterializationApprovalPlan(
     dryRun: Record<string, unknown>,
     options: RendererRuntimeAssetMaterializationApprovalOptions | undefined = undefined
@@ -850,6 +1045,18 @@ function runtimeAssetMaterializationApprovalPlan(
     ]);
     const blockers = diagnosticCodes;
     const nextActions = uniqueStrings(diagnostics.flatMap((diagnostic) => diagnostic.nextActions));
+    const sourceDryRunSummary: RuntimeAssetMaterializationApprovalPlan["sourceDryRun"] = {
+        planVersion: dryRun.planVersion === "P26.26" ? "P26.26" : null,
+        status: dryRun.status === "planned-disabled" && dryRun.planVersion === "P26.26" ? "planned-disabled" : "invalid",
+        readiness,
+        ready: sourcePreflight.ready === true,
+        approvalRequired: approvalGate.approvalRequired !== false,
+        approvalGranted: approvalGate.approvalGranted === true,
+        writesEnabled: approvalGate.writesEnabled === true,
+        copyPlanCounts: runtimeAssetPlanCounts(copyPlan),
+        cacheOutputPlanCounts: runtimeAssetPlanCounts(cacheOutputPlan),
+        diagnosticCodes: sourceDiagnosticCodes,
+    };
 
     return {
         status: "planned-disabled",
@@ -857,18 +1064,7 @@ function runtimeAssetMaterializationApprovalPlan(
         diagnosticsVersion: "P26.28",
         owner: "renderer-service",
         mode: "metadata-only",
-        sourceDryRun: {
-            planVersion: dryRun.planVersion === "P26.26" ? "P26.26" : null,
-            status: dryRun.status === "planned-disabled" && dryRun.planVersion === "P26.26" ? "planned-disabled" : "invalid",
-            readiness,
-            ready: sourcePreflight.ready === true,
-            approvalRequired: approvalGate.approvalRequired !== false,
-            approvalGranted: approvalGate.approvalGranted === true,
-            writesEnabled: approvalGate.writesEnabled === true,
-            copyPlanCounts: runtimeAssetPlanCounts(copyPlan),
-            cacheOutputPlanCounts: runtimeAssetPlanCounts(cacheOutputPlan),
-            diagnosticCodes: sourceDiagnosticCodes,
-        },
+        sourceDryRun: sourceDryRunSummary,
         configuration: {
             status: "planned-disabled",
             configured: configurationConfigured,
@@ -915,6 +1111,15 @@ function runtimeAssetMaterializationApprovalPlan(
         diagnostics,
         diagnosticCodes,
         nextActions,
+        readinessVerdict: runtimeAssetMaterializationApprovalReadinessVerdict({
+            sourceDryRun: sourceDryRunSummary,
+            configurationConfigured,
+            configurationDiagnosticCodes,
+            diagnosticCodes,
+            approvalDisabledCode,
+            approvalTokenDisabledCode,
+            nextActions,
+        }),
         audit: {
             status: "planned-disabled",
             auditTrailEnabled: false,
@@ -3959,6 +4164,88 @@ function validateRuntimeAssetMaterializationApprovalResponse(actual: unknown, fi
         requireResponseEqual(responseStringArray(diagnostic, "nextActions", `${field}.diagnostics.${index}.nextActions`).length > 0, true, `${field}.diagnostics.${index}.nextActions`);
     }
     requireResponseEqual(diagnostics.length === 0, nextActions.length === 0, `${field}.nextActions`);
+
+    const readinessVerdict = responseRecord(record.readinessVerdict, `${field}.readinessVerdict`);
+    requireResponseEqual(readinessVerdict.status, "blocked", `${field}.readinessVerdict.status`);
+    requireResponseEqual(readinessVerdict.verdictVersion, "P26.29", `${field}.readinessVerdict.verdictVersion`);
+    requireResponseEqual(readinessVerdict.owner, "renderer-service", `${field}.readinessVerdict.owner`);
+    requireResponseEqual(readinessVerdict.mode, "metadata-only", `${field}.readinessVerdict.mode`);
+    requireResponseEqual(readinessVerdict.computed, true, `${field}.readinessVerdict.computed`);
+    for (const property of ["trusted", "approvalReady", "materializationReady", "approvalGranted", "writesEnabled"]) {
+        requireResponseEqual(readinessVerdict[property], false, `${field}.readinessVerdict.${property}`);
+    }
+    const verdictInputs = responseRecord(readinessVerdict.inputs, `${field}.readinessVerdict.inputs`);
+    const verdictSourceDryRun = responseRecord(verdictInputs.sourceDryRun, `${field}.readinessVerdict.inputs.sourceDryRun`);
+    requireResponseEqual(verdictSourceDryRun.planVersion, sourceDryRun.planVersion, `${field}.readinessVerdict.inputs.sourceDryRun.planVersion`);
+    requireResponseEqual(verdictSourceDryRun.status, sourceDryRun.status, `${field}.readinessVerdict.inputs.sourceDryRun.status`);
+    requireResponseEqual(verdictSourceDryRun.readiness, sourceDryRun.readiness, `${field}.readinessVerdict.inputs.sourceDryRun.readiness`);
+    requireResponseEqual(verdictSourceDryRun.ready, sourceDryRun.ready, `${field}.readinessVerdict.inputs.sourceDryRun.ready`);
+    requireResponseArrayEqual(
+        responseStringArray(verdictSourceDryRun, "blockerCodes", `${field}.readinessVerdict.inputs.sourceDryRun.blockerCodes`),
+        responseStringArray(sourceDryRun, "diagnosticCodes", `${field}.sourceDryRun.diagnosticCodes`),
+        `${field}.readinessVerdict.inputs.sourceDryRun.blockerCodes`
+    );
+    const verdictApprovalConfiguration = responseRecord(
+        verdictInputs.approvalConfiguration,
+        `${field}.readinessVerdict.inputs.approvalConfiguration`
+    );
+    requireResponseEqual(verdictApprovalConfiguration.configured, configurationConfigured, `${field}.readinessVerdict.inputs.approvalConfiguration.configured`);
+    requireResponseEqual(verdictApprovalConfiguration.valuesIncluded, false, `${field}.readinessVerdict.inputs.approvalConfiguration.valuesIncluded`);
+    requireResponseArrayEqual(
+        responseStringArray(
+            verdictApprovalConfiguration,
+            "unsupportedDiagnosticCodes",
+            `${field}.readinessVerdict.inputs.approvalConfiguration.unsupportedDiagnosticCodes`
+        ),
+        diagnostics.map((diagnostic) => String(diagnostic.code)),
+        `${field}.readinessVerdict.inputs.approvalConfiguration.unsupportedDiagnosticCodes`
+    );
+    requireResponseEqual(
+        verdictApprovalConfiguration.unsupportedConfiguration,
+        diagnostics.length > 0,
+        `${field}.readinessVerdict.inputs.approvalConfiguration.unsupportedConfiguration`
+    );
+    const verdictApprovalGate = responseRecord(verdictInputs.approvalGate, `${field}.readinessVerdict.inputs.approvalGate`);
+    requireResponseEqual(verdictApprovalGate.status, "closed", `${field}.readinessVerdict.inputs.approvalGate.status`);
+    requireResponseEqual(verdictApprovalGate.approvalRequired, true, `${field}.readinessVerdict.inputs.approvalGate.approvalRequired`);
+    requireResponseEqual(verdictApprovalGate.approvalGranted, false, `${field}.readinessVerdict.inputs.approvalGate.approvalGranted`);
+    requireResponseEqual(verdictApprovalGate.writesEnabled, false, `${field}.readinessVerdict.inputs.approvalGate.writesEnabled`);
+    requireResponseArrayEqual(
+        responseStringArray(verdictApprovalGate, "blockerCodes", `${field}.readinessVerdict.inputs.approvalGate.blockerCodes`),
+        diagnosticCodes,
+        `${field}.readinessVerdict.inputs.approvalGate.blockerCodes`
+    );
+    const verdictChecks = responseRecordArray(readinessVerdict.checks, `${field}.readinessVerdict.checks`);
+    requireResponseEqual(verdictChecks.length, 5, `${field}.readinessVerdict.checks.length`);
+    const verdictBlockerCodes = responseStringArray(readinessVerdict, "blockerCodes", `${field}.readinessVerdict.blockerCodes`);
+    requireResponseArrayEqual(
+        verdictBlockerCodes,
+        uniqueStrings(verdictChecks.flatMap((check) => (check.status === "blocked" ? responseStringArray(check, "diagnosticCodes", `${field}.readinessVerdict.checks.diagnosticCodes`) : []))),
+        `${field}.readinessVerdict.blockerCodes`
+    );
+    for (const [index, check] of verdictChecks.entries()) {
+        requireResponseEqual(check.required, true, `${field}.readinessVerdict.checks.${index}.required`);
+        requireResponseEqual(["passed", "blocked"].includes(String(check.status)), true, `${field}.readinessVerdict.checks.${index}.status`);
+        responseStringArray(check, "diagnosticCodes", `${field}.readinessVerdict.checks.${index}.diagnosticCodes`);
+    }
+    requireResponseEqual(responseStringArray(readinessVerdict, "nextActions", `${field}.readinessVerdict.nextActions`).length > 0, true, `${field}.readinessVerdict.nextActions`);
+    const verdictSideEffects = responseRecord(readinessVerdict.sideEffects, `${field}.readinessVerdict.sideEffects`);
+    for (const property of [
+        "approvalTokenRead",
+        "approvalTokenAccepted",
+        "approvalTokenConsumed",
+        "auditRecordWritten",
+        "localFileWrites",
+        "networkDispatch",
+        "dispatch",
+        "runtimeExecutionRegistered",
+    ]) {
+        requireResponseEqual(verdictSideEffects[property], false, `${field}.readinessVerdict.sideEffects.${property}`);
+    }
+    const verdictOmitted = responseRecord(readinessVerdict.omitted, `${field}.readinessVerdict.omitted`);
+    for (const property of ["approvalTokenValues", "approvalAuditPaths", "approvalScopeHashes", "workspaceRoot", "cacheRoot", "sha256"]) {
+        requireResponseEqual(verdictOmitted[property], true, `${field}.readinessVerdict.omitted.${property}`);
+    }
 
     const audit = responseRecord(record.audit, `${field}.audit`);
     requireResponseEqual(audit.status, "planned-disabled", `${field}.audit.status`);

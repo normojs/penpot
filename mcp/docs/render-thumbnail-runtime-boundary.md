@@ -485,6 +485,14 @@ renderer-service health/thumbnail payloads and CLI/MCP summaries report only
 configured booleans, diagnostic codes, and next actions. They still do not read
 token or audit values, accept or consume approval tokens, prepare/write audit
 records, materialize cache assets, or enable browser/runtime/backend dispatch.
+P26.29 adds a computed metadata-only approval readiness verdict on the same
+closed gate. `runtimeAssetMaterializationApproval.readinessVerdict` combines
+the dry-run readiness and unsupported approval configuration diagnostics into
+blocked checks, blocker codes, and next actions for renderer-service, CLI, and
+MCP callers. The verdict is explicitly untrusted and cannot grant approval:
+token reads, token acceptance/consumption, audit writes, cache writes,
+materialization, runtime registration, and network/backend dispatch remain
+disabled.
 
 ## Test Strategy
 

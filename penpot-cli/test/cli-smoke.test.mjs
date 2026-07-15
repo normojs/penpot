@@ -7177,6 +7177,106 @@ test("renderer-service status reports a no-spawn lifecycle plan without probing"
             diagnosticCodes: [],
             diagnostics: [],
             nextActions: [],
+            readinessVerdict: {
+                status: "blocked",
+                verdictVersion: "P26.29",
+                computed: true,
+                trusted: false,
+                approvalReady: false,
+                materializationReady: false,
+                approvalGranted: false,
+                writesEnabled: false,
+                inputs: {
+                    sourceDryRun: {
+                        status: "planned-disabled",
+                        planVersion: "P26.26",
+                        readiness: "not-checked",
+                        ready: false,
+                        blockerCodes: [
+                            "renderer_service_runtime_asset_materialization_preflight_required",
+                            "renderer_service_runtime_asset_materialization_approval_required",
+                        ],
+                    },
+                    approvalConfiguration: {
+                        configured: false,
+                        unsupportedConfiguration: false,
+                        unsupportedDiagnosticCodes: [],
+                        valuesIncluded: false,
+                    },
+                    approvalGate: {
+                        status: "closed",
+                        blockerCodes: [
+                            "renderer_service_runtime_asset_materialization_preflight_required",
+                            "renderer_service_runtime_asset_materialization_approval_required",
+                            "renderer_service_runtime_asset_materialization_approval_scaffold_disabled",
+                            "renderer_service_runtime_asset_materialization_approval_token_disabled",
+                        ],
+                        approvalRequired: true,
+                        approvalGranted: false,
+                        writesEnabled: false,
+                    },
+                },
+                checks: [
+                    {
+                        id: "runtime-asset-materialization-dry-run-ready",
+                        required: true,
+                        status: "blocked",
+                        diagnosticCodes: ["renderer_service_runtime_asset_materialization_preflight_required"],
+                    },
+                    {
+                        id: "runtime-asset-materialization-approval-required",
+                        required: true,
+                        status: "blocked",
+                        diagnosticCodes: ["renderer_service_runtime_asset_materialization_approval_required"],
+                    },
+                    {
+                        id: "runtime-asset-materialization-approval-configuration-supported",
+                        required: true,
+                        status: "passed",
+                        diagnosticCodes: [],
+                    },
+                    {
+                        id: "runtime-asset-materialization-approval-scaffold-enabled",
+                        required: true,
+                        status: "blocked",
+                        diagnosticCodes: ["renderer_service_runtime_asset_materialization_approval_scaffold_disabled"],
+                    },
+                    {
+                        id: "runtime-asset-materialization-approval-token-validation-enabled",
+                        required: true,
+                        status: "blocked",
+                        diagnosticCodes: ["renderer_service_runtime_asset_materialization_approval_token_disabled"],
+                    },
+                ],
+                blockerCodes: [
+                    "renderer_service_runtime_asset_materialization_preflight_required",
+                    "renderer_service_runtime_asset_materialization_approval_required",
+                    "renderer_service_runtime_asset_materialization_approval_scaffold_disabled",
+                    "renderer_service_runtime_asset_materialization_approval_token_disabled",
+                ],
+                nextActions: [
+                    "Run renderer-service /health with runtime asset preflight enabled before trusting an approval readiness verdict.",
+                    "Keep runtime asset materialization disabled until the approval scaffold, token validation, and audit persistence are implemented.",
+                ],
+                sideEffects: {
+                    approvalTokenRead: false,
+                    approvalTokenAccepted: false,
+                    approvalTokenConsumed: false,
+                    auditRecordWritten: false,
+                    localFileWrites: false,
+                    networkDispatch: false,
+                    dispatch: false,
+                    runtimeExecutionRegistered: false,
+                },
+                omitted: {
+                    approvalTokenValues: true,
+                    approvalAuditPaths: true,
+                    approvalScopeHashes: true,
+                    workspaceRoot: true,
+                    cacheRoot: true,
+                    sha256: true,
+                },
+            },
             diagnosticsSurface: "healthPreflight.runtimeAssetMaterializationApproval",
             lifecyclePlanEffects: {
                 healthProbe: false,
@@ -7288,6 +7388,21 @@ test("renderer-service status reports runtime asset materialization approval uns
             entry.includes("PENPOT_RENDERER_SERVICE_RUNTIME_ASSET_MATERIALIZATION_APPROVAL_TOKEN")
         )
     );
+    assert.equal(approval.readinessVerdict.status, "blocked");
+    assert.equal(approval.readinessVerdict.verdictVersion, "P26.29");
+    assert.equal(approval.readinessVerdict.computed, true);
+    assert.equal(approval.readinessVerdict.trusted, false);
+    assert.equal(approval.readinessVerdict.writesEnabled, false);
+    assert.equal(approval.readinessVerdict.inputs.approvalConfiguration.unsupportedConfiguration, true);
+    assert.deepEqual(approval.readinessVerdict.inputs.approvalConfiguration.unsupportedDiagnosticCodes, approval.diagnosticCodes);
+    assert.ok(
+        approval.readinessVerdict.blockerCodes.includes(
+            "renderer_service_runtime_asset_materialization_approval_token_disabled"
+        )
+    );
+    assert.equal(approval.readinessVerdict.sideEffects.approvalTokenRead, false);
+    assert.equal(approval.readinessVerdict.sideEffects.auditRecordWritten, false);
+    assert.equal(approval.readinessVerdict.omitted.approvalAuditPaths, true);
     assert.equal(result.stdout.includes("secret-approval-token"), false);
     assert.equal(result.stdout.includes("/tmp/secret-approval-audit"), false);
     assert.equal(body.data.lifecycle.startCommand.includes("PENPOT_RENDERER_SERVICE_RUNTIME_ASSET_MATERIALIZATION_APPROVAL"), false);
@@ -10104,6 +10219,124 @@ test("render thumbnail execution opt-in posts to renderer-service and returns re
                             "Leave PENPOT_RENDERER_SERVICE_RUNTIME_ASSET_MATERIALIZATION_APPROVAL_TOKEN unset until approval token validation is implemented.",
                             "Leave PENPOT_RENDERER_SERVICE_RUNTIME_ASSET_MATERIALIZATION_APPROVAL_AUDIT_DIR unset until approval audit persistence is implemented.",
                         ],
+                        readinessVerdict: {
+                            status: "blocked",
+                            verdictVersion: "P26.29",
+                            owner: "renderer-service",
+                            mode: "metadata-only",
+                            computed: true,
+                            trusted: false,
+                            approvalReady: false,
+                            materializationReady: false,
+                            approvalGranted: false,
+                            writesEnabled: false,
+                            inputs: {
+                                sourceDryRun: {
+                                    planVersion: "P26.26",
+                                    status: "planned-disabled",
+                                    readiness: "degraded",
+                                    ready: false,
+                                    copyPlanCounts: { total: 1, ready: 0, blocked: 1, unknown: 0 },
+                                    cacheOutputPlanCounts: { total: 1, ready: 1, blocked: 0, unknown: 0 },
+                                    blockerCodes: [
+                                        "renderer_service_runtime_asset_missing_public_asset",
+                                        "renderer_service_runtime_asset_materialization_approval_required",
+                                    ],
+                                },
+                                approvalConfiguration: {
+                                    configured: true,
+                                    unsupportedConfiguration: true,
+                                    unsupportedDiagnosticCodes: [
+                                        "renderer_service_runtime_asset_materialization_approval_configuration_unsupported",
+                                        "renderer_service_runtime_asset_materialization_approval_token_unsupported",
+                                        "renderer_service_runtime_asset_materialization_approval_audit_unsupported",
+                                    ],
+                                    valuesIncluded: false,
+                                },
+                                approvalGate: {
+                                    status: "closed",
+                                    blockerCodes: [
+                                        "renderer_service_runtime_asset_missing_public_asset",
+                                        "renderer_service_runtime_asset_materialization_approval_required",
+                                        "renderer_service_runtime_asset_materialization_approval_configuration_unsupported",
+                                        "renderer_service_runtime_asset_materialization_approval_token_unsupported",
+                                        "renderer_service_runtime_asset_materialization_approval_audit_unsupported",
+                                        "renderer_service_runtime_asset_materialization_approval_scaffold_disabled",
+                                        "renderer_service_runtime_asset_materialization_approval_token_disabled",
+                                    ],
+                                    approvalRequired: true,
+                                    approvalGranted: false,
+                                    writesEnabled: false,
+                                },
+                            },
+                            checks: [
+                                {
+                                    id: "runtime-asset-materialization-dry-run-ready",
+                                    required: true,
+                                    status: "blocked",
+                                    diagnosticCodes: ["renderer_service_runtime_asset_missing_public_asset"],
+                                },
+                                {
+                                    id: "runtime-asset-materialization-approval-required",
+                                    required: true,
+                                    status: "blocked",
+                                    diagnosticCodes: ["renderer_service_runtime_asset_materialization_approval_required"],
+                                },
+                                {
+                                    id: "runtime-asset-materialization-approval-configuration-supported",
+                                    required: true,
+                                    status: "blocked",
+                                    diagnosticCodes: [
+                                        "renderer_service_runtime_asset_materialization_approval_configuration_unsupported",
+                                        "renderer_service_runtime_asset_materialization_approval_token_unsupported",
+                                        "renderer_service_runtime_asset_materialization_approval_audit_unsupported",
+                                    ],
+                                },
+                                {
+                                    id: "runtime-asset-materialization-approval-scaffold-enabled",
+                                    required: true,
+                                    status: "blocked",
+                                    diagnosticCodes: ["renderer_service_runtime_asset_materialization_approval_scaffold_disabled"],
+                                },
+                                {
+                                    id: "runtime-asset-materialization-approval-token-validation-enabled",
+                                    required: true,
+                                    status: "blocked",
+                                    diagnosticCodes: ["renderer_service_runtime_asset_materialization_approval_token_disabled"],
+                                },
+                            ],
+                            blockerCodes: [
+                                "renderer_service_runtime_asset_missing_public_asset",
+                                "renderer_service_runtime_asset_materialization_approval_required",
+                                "renderer_service_runtime_asset_materialization_approval_configuration_unsupported",
+                                "renderer_service_runtime_asset_materialization_approval_token_unsupported",
+                                "renderer_service_runtime_asset_materialization_approval_audit_unsupported",
+                                "renderer_service_runtime_asset_materialization_approval_scaffold_disabled",
+                                "renderer_service_runtime_asset_materialization_approval_token_disabled",
+                            ],
+                            nextActions: [
+                                "Resolve runtime asset materialization dry-run blockers before trusting an approval readiness verdict.",
+                                "Keep runtime asset materialization disabled until the approval scaffold, token validation, and audit persistence are implemented.",
+                            ],
+                            sideEffects: {
+                                approvalTokenRead: false,
+                                approvalTokenAccepted: false,
+                                approvalTokenConsumed: false,
+                                auditRecordWritten: false,
+                                localFileWrites: false,
+                                networkDispatch: false,
+                                dispatch: false,
+                                runtimeExecutionRegistered: false,
+                            },
+                            omitted: {
+                                approvalTokenValues: true,
+                                approvalAuditPaths: true,
+                                approvalScopeHashes: true,
+                                workspaceRoot: true,
+                                cacheRoot: true,
+                                sha256: true,
+                            },
+                        },
                         sideEffects: {
                             browserProcessStarted: false,
                             runtimeExecutionRegistered: false,
@@ -10249,6 +10482,25 @@ test("render thumbnail execution opt-in posts to renderer-service and returns re
         assert.equal(body.data.healthPreflight.runtimeAssetMaterializationApproval.sideEffects.auditRecordWritten, false);
         assert.equal(body.data.healthPreflight.runtimeAssetMaterializationApproval.omitted.approvalTokenValues, true);
         assert.equal(body.data.healthPreflight.runtimeAssetMaterializationApproval.nextActions.length > 0, true);
+        assert.equal(body.data.healthPreflight.runtimeAssetMaterializationApproval.readinessVerdict.status, "blocked");
+        assert.equal(body.data.healthPreflight.runtimeAssetMaterializationApproval.readinessVerdict.verdictVersion, "P26.29");
+        assert.equal(body.data.healthPreflight.runtimeAssetMaterializationApproval.readinessVerdict.computed, true);
+        assert.equal(body.data.healthPreflight.runtimeAssetMaterializationApproval.readinessVerdict.inputs.sourceDryRun.readiness, "degraded");
+        assert.deepEqual(
+            body.data.healthPreflight.runtimeAssetMaterializationApproval.readinessVerdict.inputs.approvalConfiguration.unsupportedDiagnosticCodes,
+            [
+                "renderer_service_runtime_asset_materialization_approval_configuration_unsupported",
+                "renderer_service_runtime_asset_materialization_approval_token_unsupported",
+                "renderer_service_runtime_asset_materialization_approval_audit_unsupported",
+            ]
+        );
+        assert.ok(
+            body.data.healthPreflight.runtimeAssetMaterializationApproval.readinessVerdict.blockerCodes.includes(
+                "renderer_service_runtime_asset_materialization_approval_scaffold_disabled"
+            )
+        );
+        assert.equal(body.data.healthPreflight.runtimeAssetMaterializationApproval.readinessVerdict.sideEffects.approvalTokenRead, false);
+        assert.equal(body.data.healthPreflight.runtimeAssetMaterializationApproval.readinessVerdict.sideEffects.auditRecordWritten, false);
         assert.equal(result.stdout.includes("secret-approval-token"), false);
         assert.equal(result.stdout.includes("/tmp/secret-approval-audit"), false);
         assert.equal(body.data.healthPreflight.runtimeAssetPreflight.sideEffects.fileRead, true);

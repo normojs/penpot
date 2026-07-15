@@ -38,3 +38,11 @@ request renders through an adapter, the host can persist the PNG through the
 matching backend thumbnail RPC and return backend resource metadata. Manual
 hosts do not bundle a render-wasm bridge yet, so bundled real scene rendering
 remains disabled.
+
+`/health` and `/thumbnail` also expose the staged runtime asset materialization
+surfaces: read-only preflight summaries, metadata-only dry-run copy/cache
+plans, the disabled approval token/config/audit scaffold, and the P26.29
+`runtimeAssetMaterializationApproval.readinessVerdict`. That verdict is only a
+blocked readiness summary; it does not read or accept approval tokens, write
+audit records, materialize cache assets, start browsers, register runtime
+execution, or enable backend/network dispatch.

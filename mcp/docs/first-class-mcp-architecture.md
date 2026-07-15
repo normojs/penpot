@@ -4093,6 +4093,14 @@ mode/token/audit env vars, unsupported diagnostic codes, redacted diagnostics,
 and next actions. The values remain omitted: no approval token value is read,
 accepted, consumed, or exposed, no audit directory value is echoed, and no
 audit/cache/local writes or runtime/browser/backend dispatch are enabled.
+P26.29 adds `runtimeAssetMaterializationApproval.readinessVerdict`, a computed
+metadata-only verdict derived from the P26.26 dry-run blockers and P26.28
+unsupported-configuration diagnostics. Renderer-service, CLI, and MCP health
+summaries report blocked checks, blocker codes, next actions, and false
+side-effect flags while keeping the verdict untrusted: no approval token is
+read, accepted, consumed, or exposed, no audit record is written, no
+materialization/cache writes occur, and no runtime/browser/backend dispatch is
+enabled.
 
 ### 8.6 Advanced Tools
 
