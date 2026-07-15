@@ -565,6 +565,9 @@ test("noop host reads backend RPC planning base URI from environment", async () 
             PENPOT_RENDERER_SERVICE_PORT: "6074",
             PENPOT_RENDERER_SERVICE_BACKEND_URI: "https://penpot.example.test/",
             PENPOT_RENDERER_SERVICE_RUNTIME_MODULE: " /tmp/renderer-runtime.mjs ",
+            PENPOT_RENDERER_SERVICE_RUNTIME_ASSET_PREFLIGHT: "read-only",
+            PENPOT_RENDERER_SERVICE_RUNTIME_ASSET_PREFLIGHT_WORKSPACE_ROOT: "/Users/fushilu/workspace/revocloud/penpot",
+            PENPOT_RENDERER_SERVICE_RUNTIME_ASSET_PREFLIGHT_CACHE_ROOT: "/Volumes/fushilu/.caches/penpot/renderer-service",
         }),
         {
             host: "127.0.0.1",
@@ -573,6 +576,11 @@ test("noop host reads backend RPC planning base URI from environment", async () 
                 baseUri: "https://penpot.example.test",
             },
             rendererRuntimeModule: "/tmp/renderer-runtime.mjs",
+            runtimeAssetPreflight: {
+                executeReadOnly: true,
+                workspaceRoot: "/Users/fushilu/workspace/revocloud/penpot",
+                cacheRoot: "/Volumes/fushilu/.caches/penpot/renderer-service",
+            },
         }
     );
 
@@ -590,6 +598,62 @@ test("noop host reads backend RPC planning base URI from environment", async () 
         () => serviceModule.readRendererServiceOptionsFromEnv({ PENPOT_RENDERER_SERVICE_BACKEND_URI: "file:///tmp/backend" }),
         /backend RPC baseUri must be an absolute HTTP\(S\) URL/
     );
+    assert.throws(
+        () =>
+            serviceModule.readRendererServiceOptionsFromEnv({
+                PENPOT_RENDERER_SERVICE_RUNTIME_ASSET_PREFLIGHT: "true",
+                PENPOT_RENDERER_SERVICE_RUNTIME_ASSET_PREFLIGHT_WORKSPACE_ROOT: "/Users/fushilu/workspace/revocloud/penpot",
+            }),
+        /PENPOT_RENDERER_SERVICE_RUNTIME_ASSET_PREFLIGHT must be set to read-only/
+    );
+    assert.throws(
+        () =>
+            serviceModule.readRendererServiceOptionsFromEnv({
+                PENPOT_RENDERER_SERVICE_RUNTIME_ASSET_PREFLIGHT: "read-only",
+            }),
+        /runtime asset preflight root is required/
+    );
+    assert.throws(
+        () =>
+            serviceModule.readRendererServiceOptionsFromEnv({
+                PENPOT_RENDERER_SERVICE_RUNTIME_ASSET_PREFLIGHT: "read-only",
+                PENPOT_RENDERER_SERVICE_RUNTIME_ASSET_PREFLIGHT_WORKSPACE_ROOT: "relative-workspace",
+            }),
+        /runtime asset preflight root must be an absolute path/
+    );
+});
+
+test("noop host enables runtime asset preflight execution from environment", async () => {
+    const fixture = await createRuntimePreflightFixture();
+    const options = serviceModule.readRendererServiceOptionsFromEnv({
+        PENPOT_RENDERER_SERVICE_RUNTIME_ASSET_PREFLIGHT: "read-only",
+        PENPOT_RENDERER_SERVICE_RUNTIME_ASSET_PREFLIGHT_WORKSPACE_ROOT: fixture.workspaceRoot,
+        PENPOT_RENDERER_SERVICE_RUNTIME_ASSET_PREFLIGHT_CACHE_ROOT: fixture.cacheRoot,
+    });
+    assert.deepEqual(options.runtimeAssetPreflight, {
+        executeReadOnly: true,
+        workspaceRoot: fixture.workspaceRoot,
+        cacheRoot: fixture.cacheRoot,
+    });
+
+    const service = await serviceModule.startRendererService({
+        ...options,
+        port: 0,
+    });
+    try {
+        const response = await fetch(`http://${service.host}:${service.port}/health`);
+        assert.equal(response.status, 200);
+        const body = await response.json();
+        const execution = assertRuntimeAssetPreflightExecution(body.runtimeAssetMaterializationPreflight, {
+            workspaceRoot: fixture.workspaceRoot,
+            cacheRoot: fixture.cacheRoot,
+            readiness: "ready",
+        });
+        assert.equal(execution.summary.ready, true);
+    } finally {
+        await service.stop();
+        await fixture.cleanup();
+    }
 });
 
 test("noop host loads renderer runtime adapter modules from environment", async () => {

@@ -54,6 +54,15 @@ or invalid; includes ready/degraded readiness, counts, ready/missing asset and
 cache-output ids, side-effect flags, and redaction flags; and deliberately
 omits workspace/cache roots, public/cache paths, SHA-256 values, token values,
 and source-data/page/artifact/media values.
+P26.24 adds the manual host operator configuration for that preflight:
+`PENPOT_RENDERER_SERVICE_RUNTIME_ASSET_PREFLIGHT=read-only`,
+`PENPOT_RENDERER_SERVICE_RUNTIME_ASSET_PREFLIGHT_WORKSPACE_ROOT=<absolute>`,
+and optional
+`PENPOT_RENDERER_SERVICE_RUNTIME_ASSET_PREFLIGHT_CACHE_ROOT=<absolute>`.
+`penpot-cli renderer-service status/start` reports the configuration and
+manual start command without spawning the service, probing health, reading
+files, hashing bytes, importing the runtime adapter, writing local files, or
+registering runtime execution.
 P26.5 adds a token-safe `backendRpcClient` plan to renderer-service thumbnail
 responses so backend data/cache/persist endpoints are normalized for staged
 execution. That plan now feeds the executable file-thumbnail cache probe,
@@ -583,6 +592,10 @@ P26.23 keeps execution ownership unchanged and only normalizes the health
 preflight diagnostic for CLI/MCP callers. CLI/MCP do not read runtime files or
 hash bytes themselves; they consume the renderer-service `/health` response and
 return a redacted `healthPreflight.runtimeAssetPreflight` summary.
+P26.24 wires the operator configuration into real manual host startup while
+keeping lifecycle commands planning-only. The host validates the read-only mode
+and absolute roots before serving `/health`; cache root defaults to
+`/Volumes/fushilu/.caches/penpot/renderer-service` when omitted.
 
 The P25.77 revocation appeal resolution enforcement evidence attestation
 notarization certification endorsement countersignature verification revocation

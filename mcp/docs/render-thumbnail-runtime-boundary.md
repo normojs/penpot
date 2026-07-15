@@ -451,6 +451,12 @@ preflight results. The summary includes readiness, counts, ready/missing ids,
 side-effect flags, and redaction flags, while omitting configured roots,
 public/cache paths, SHA-256 values, token values, and source-data/page/artifact/
 media values. CLI/MCP do not perform their own filesystem reads or hashes.
+P26.24 adds the explicit manual-host configuration surface for enabling that
+read-only preflight. Operators set
+`PENPOT_RENDERER_SERVICE_RUNTIME_ASSET_PREFLIGHT=read-only` plus an absolute
+workspace root and optional absolute cache root; lifecycle commands only report
+the configuration and manual command, while the running renderer-service host
+owns the actual read-only checks.
 
 ## Test Strategy
 

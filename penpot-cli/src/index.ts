@@ -48,6 +48,9 @@ const DEFAULT_RENDERER_SERVICE_URI = "http://localhost:6070/thumbnail";
 const DEFAULT_RENDERER_SERVICE_HOST = "127.0.0.1";
 const DEFAULT_RENDERER_SERVICE_PORT = 6070;
 const RENDERER_SERVICE_BUILD_DIR = "/Volumes/fushilu/.caches/penpot/renderer-service";
+const RENDERER_SERVICE_RUNTIME_ASSET_PREFLIGHT_ENV = "PENPOT_RENDERER_SERVICE_RUNTIME_ASSET_PREFLIGHT";
+const RENDERER_SERVICE_RUNTIME_ASSET_PREFLIGHT_WORKSPACE_ROOT_ENV = "PENPOT_RENDERER_SERVICE_RUNTIME_ASSET_PREFLIGHT_WORKSPACE_ROOT";
+const RENDERER_SERVICE_RUNTIME_ASSET_PREFLIGHT_CACHE_ROOT_ENV = "PENPOT_RENDERER_SERVICE_RUNTIME_ASSET_PREFLIGHT_CACHE_ROOT";
 const DEFAULT_PLUGIN_PREVIEW_URI = "http://localhost:4400/manifest.json";
 
 const HELP_TEXT = `penpot-cli ${VERSION}
@@ -132,6 +135,9 @@ Environment:
   PENPOT_RENDERER_SERVICE_PORT  No-op host bind port, default 6070
   PENPOT_RENDERER_SERVICE_BACKEND_URI  Optional backend RPC base URI for disabled endpoint planning
   PENPOT_RENDERER_SERVICE_RUNTIME_MODULE  Optional local renderer runtime adapter module
+  PENPOT_RENDERER_SERVICE_RUNTIME_ASSET_PREFLIGHT  Set to read-only to enable runtime asset preflight
+  PENPOT_RENDERER_SERVICE_RUNTIME_ASSET_PREFLIGHT_WORKSPACE_ROOT  Absolute workspace root for read-only preflight
+  PENPOT_RENDERER_SERVICE_RUNTIME_ASSET_PREFLIGHT_CACHE_ROOT  Optional absolute cache root for read-only preflight
   PENPOT_BACKEND_URI           Fallback backend RPC base URI for disabled endpoint planning`;
 
 const FILE_HELP_TEXT = `penpot-cli file
@@ -1115,6 +1121,39 @@ function getRendererServiceLifecyclePlan(args: string[], env: NodeJS.ProcessEnv)
         moduleImport: false;
         renderDispatch: false;
     };
+    runtimeAssetPreflight: {
+        configured: boolean;
+        executeReadOnly: boolean;
+        value: string | null;
+        expectedValue: "read-only";
+        valid: boolean;
+        source: "PENPOT_RENDERER_SERVICE_RUNTIME_ASSET_PREFLIGHT" | null;
+        workspaceRoot: {
+            configured: boolean;
+            value: string | null;
+            source: "PENPOT_RENDERER_SERVICE_RUNTIME_ASSET_PREFLIGHT_WORKSPACE_ROOT" | null;
+            requiredWhenEnabled: true;
+        };
+        cacheRoot: {
+            configured: boolean;
+            value: string;
+            defaultValue: string;
+            source: "PENPOT_RENDERER_SERVICE_RUNTIME_ASSET_PREFLIGHT_CACHE_ROOT" | "default" | null;
+        };
+        diagnosticsSurface: "healthPreflight.runtimeAssetPreflight";
+        lifecyclePlanEffects: {
+            healthProbe: false;
+            fileRead: false;
+            hashComputed: false;
+            browserProcessStarted: false;
+            runtimeAdapterImported: false;
+            runtimeAssetsLoaded: false;
+            assetManifestMaterialized: false;
+            networkDispatch: false;
+            localFileWrites: false;
+            runtimeExecutionRegistered: false;
+        };
+    };
     backendRpcPlanning: {
         configured: boolean;
         baseUri: string | null;
@@ -1139,6 +1178,13 @@ function getRendererServiceLifecyclePlan(args: string[], env: NodeJS.ProcessEnv)
             ? "PENPOT_BACKEND_URI"
             : null;
     const rendererRuntimeModule = env.PENPOT_RENDERER_SERVICE_RUNTIME_MODULE?.trim() || null;
+    const runtimeAssetPreflightValue = env[RENDERER_SERVICE_RUNTIME_ASSET_PREFLIGHT_ENV]?.trim() || null;
+    const runtimeAssetPreflightWorkspaceRoot = env[RENDERER_SERVICE_RUNTIME_ASSET_PREFLIGHT_WORKSPACE_ROOT_ENV]?.trim() || null;
+    const runtimeAssetPreflightCacheRoot = env[RENDERER_SERVICE_RUNTIME_ASSET_PREFLIGHT_CACHE_ROOT_ENV]?.trim() || null;
+    const runtimeAssetPreflightConfigured = Boolean(runtimeAssetPreflightValue);
+    const runtimeAssetPreflightValid = !runtimeAssetPreflightValue || runtimeAssetPreflightValue === "read-only";
+    const runtimeAssetPreflightExecuteReadOnly = runtimeAssetPreflightValue === "read-only";
+    const runtimeAssetPreflightEffectiveCacheRoot = runtimeAssetPreflightCacheRoot || RENDERER_SERVICE_BUILD_DIR;
     const startEnv = [
         ...(host === DEFAULT_RENDERER_SERVICE_HOST && port === DEFAULT_RENDERER_SERVICE_PORT
             ? []
@@ -1148,6 +1194,15 @@ function getRendererServiceLifecyclePlan(args: string[], env: NodeJS.ProcessEnv)
               ]),
         ...(backendRpcBaseUri ? [shellEnvAssignment("PENPOT_RENDERER_SERVICE_BACKEND_URI", backendRpcBaseUri)] : []),
         ...(rendererRuntimeModule ? [shellEnvAssignment("PENPOT_RENDERER_SERVICE_RUNTIME_MODULE", rendererRuntimeModule)] : []),
+        ...(runtimeAssetPreflightValue
+            ? [shellEnvAssignment(RENDERER_SERVICE_RUNTIME_ASSET_PREFLIGHT_ENV, runtimeAssetPreflightValue)]
+            : []),
+        ...(runtimeAssetPreflightWorkspaceRoot
+            ? [shellEnvAssignment(RENDERER_SERVICE_RUNTIME_ASSET_PREFLIGHT_WORKSPACE_ROOT_ENV, runtimeAssetPreflightWorkspaceRoot)]
+            : []),
+        ...(runtimeAssetPreflightCacheRoot
+            ? [shellEnvAssignment(RENDERER_SERVICE_RUNTIME_ASSET_PREFLIGHT_CACHE_ROOT_ENV, runtimeAssetPreflightCacheRoot)]
+            : []),
     ];
     const startPrefix = startEnv.length ? `${startEnv.join(" ")} ` : "";
 
@@ -1170,6 +1225,45 @@ function getRendererServiceLifecyclePlan(args: string[], env: NodeJS.ProcessEnv)
             source: rendererRuntimeModule ? "PENPOT_RENDERER_SERVICE_RUNTIME_MODULE" : null,
             moduleImport: false,
             renderDispatch: false,
+        },
+        runtimeAssetPreflight: {
+            configured: runtimeAssetPreflightConfigured,
+            executeReadOnly: runtimeAssetPreflightExecuteReadOnly,
+            value: runtimeAssetPreflightValue,
+            expectedValue: "read-only",
+            valid: runtimeAssetPreflightValid,
+            source: runtimeAssetPreflightConfigured ? "PENPOT_RENDERER_SERVICE_RUNTIME_ASSET_PREFLIGHT" : null,
+            workspaceRoot: {
+                configured: Boolean(runtimeAssetPreflightWorkspaceRoot),
+                value: runtimeAssetPreflightWorkspaceRoot,
+                source: runtimeAssetPreflightWorkspaceRoot
+                    ? "PENPOT_RENDERER_SERVICE_RUNTIME_ASSET_PREFLIGHT_WORKSPACE_ROOT"
+                    : null,
+                requiredWhenEnabled: true,
+            },
+            cacheRoot: {
+                configured: Boolean(runtimeAssetPreflightCacheRoot),
+                value: runtimeAssetPreflightEffectiveCacheRoot,
+                defaultValue: RENDERER_SERVICE_BUILD_DIR,
+                source: runtimeAssetPreflightCacheRoot
+                    ? "PENPOT_RENDERER_SERVICE_RUNTIME_ASSET_PREFLIGHT_CACHE_ROOT"
+                    : runtimeAssetPreflightConfigured
+                        ? "default"
+                        : null,
+            },
+            diagnosticsSurface: "healthPreflight.runtimeAssetPreflight",
+            lifecyclePlanEffects: {
+                healthProbe: false,
+                fileRead: false,
+                hashComputed: false,
+                browserProcessStarted: false,
+                runtimeAdapterImported: false,
+                runtimeAssetsLoaded: false,
+                assetManifestMaterialized: false,
+                networkDispatch: false,
+                localFileWrites: false,
+                runtimeExecutionRegistered: false,
+            },
         },
         backendRpcPlanning: {
             configured: Boolean(backendRpcBaseUri),
@@ -5158,6 +5252,10 @@ async function handleRendererServiceStatus(args: string[], io: CliIO, env: NodeJ
         writeLine(io.stdout, `Health endpoint: ${plan.healthUri}`);
         writeLine(io.stdout, `Thumbnail endpoint: ${plan.thumbnailUri}`);
         writeLine(io.stdout, `Build cache: ${plan.buildDir}`);
+        writeLine(
+            io.stdout,
+            `Runtime asset preflight: ${plan.runtimeAssetPreflight.executeReadOnly ? "read-only" : "disabled"}`
+        );
         writeLine(io.stdout, `Start manually: ${plan.startCommand}`);
         writeLine(io.stdout, "No process was started, no health request was sent, and renderer dispatch remains disabled.");
     });

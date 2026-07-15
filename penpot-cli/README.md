@@ -250,8 +250,13 @@ requests. When the host reports a bundled runtime asset preflight execution,
 `render thumbnail --format json` includes a redacted
 `healthPreflight.runtimeAssetPreflight` summary with ready/degraded asset and
 cache-output diagnostics, omitting local paths, hashes, source data, media
-values, and token values. Backend RPC execution and real scene rendering remain
-disabled.
+values, and token values. Enable the read-only host preflight with
+`PENPOT_RENDERER_SERVICE_RUNTIME_ASSET_PREFLIGHT=read-only`,
+`PENPOT_RENDERER_SERVICE_RUNTIME_ASSET_PREFLIGHT_WORKSPACE_ROOT=<absolute>`,
+and optionally
+`PENPOT_RENDERER_SERVICE_RUNTIME_ASSET_PREFLIGHT_CACHE_ROOT=<absolute>`;
+`renderer-service status/start` shows these settings without probing or reading
+files. Backend RPC execution and real scene rendering remain disabled.
 
 ## File Commands
 

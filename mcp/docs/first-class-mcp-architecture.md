@@ -4059,6 +4059,12 @@ workspace/cache roots, public/cache paths, SHA-256 values, token values, and
 source-data/page/artifact/media values. CLI/MCP remain consumers of the
 renderer-service `/health` response and do not perform runtime filesystem
 reads or hashes themselves.
+P26.24 adds the operator surface for enabling the renderer-service read-only
+preflight in manual host runs. `penpot-cli renderer-service status/start`
+reports `PENPOT_RENDERER_SERVICE_RUNTIME_ASSET_PREFLIGHT=read-only`,
+workspace/cache root inputs, default cache root, and no-probe/no-read lifecycle
+effects; the running renderer-service validates the same env before returning
+P26.22 health diagnostics.
 
 ### 8.6 Advanced Tools
 

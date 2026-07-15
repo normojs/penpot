@@ -10,6 +10,9 @@ const DEFAULT_PORT = 6070;
 const BACKEND_RPC_BASE_URI_ENV = "PENPOT_RENDERER_SERVICE_BACKEND_URI";
 const BACKEND_RPC_BASE_URI_FALLBACK_ENV = "PENPOT_BACKEND_URI";
 const RENDERER_RUNTIME_MODULE_ENV = "PENPOT_RENDERER_SERVICE_RUNTIME_MODULE";
+const RUNTIME_ASSET_PREFLIGHT_ENV = "PENPOT_RENDERER_SERVICE_RUNTIME_ASSET_PREFLIGHT";
+const RUNTIME_ASSET_PREFLIGHT_WORKSPACE_ROOT_ENV = "PENPOT_RENDERER_SERVICE_RUNTIME_ASSET_PREFLIGHT_WORKSPACE_ROOT";
+const RUNTIME_ASSET_PREFLIGHT_CACHE_ROOT_ENV = "PENPOT_RENDERER_SERVICE_RUNTIME_ASSET_PREFLIGHT_CACHE_ROOT";
 const RENDERER_SERVICE_CACHE_ROOT = "/Volumes/fushilu/.caches/penpot/renderer-service";
 
 export type RendererBackendRpcClientOptions = {
@@ -3483,6 +3486,32 @@ function readPort(value: string | undefined): number {
     return port;
 }
 
+function readRuntimeAssetPreflightOptionsFromEnv(env: NodeJS.ProcessEnv): RendererRuntimeAssetPreflightOptions | undefined {
+    const value = optionalString(env[RUNTIME_ASSET_PREFLIGHT_ENV])?.trim();
+    if (!value) {
+        return undefined;
+    }
+    if (value !== "read-only") {
+        throw new Error(`${RUNTIME_ASSET_PREFLIGHT_ENV} must be set to read-only when configured.`);
+    }
+
+    const workspaceRoot = normalizeRuntimeAssetPreflightRoot(
+        env[RUNTIME_ASSET_PREFLIGHT_WORKSPACE_ROOT_ENV],
+        "runtimeAssetPreflight.workspaceRoot"
+    );
+    const cacheRoot = optionalString(env[RUNTIME_ASSET_PREFLIGHT_CACHE_ROOT_ENV])?.trim();
+
+    return {
+        executeReadOnly: true,
+        workspaceRoot,
+        ...(cacheRoot
+            ? {
+                  cacheRoot: normalizeRuntimeAssetPreflightRoot(cacheRoot, "runtimeAssetPreflight.cacheRoot"),
+              }
+            : {}),
+    };
+}
+
 export function readRendererServiceOptionsFromEnv(env: NodeJS.ProcessEnv = process.env): RendererServiceOptions {
     const backendBaseUriInput =
         optionalString(env[BACKEND_RPC_BASE_URI_ENV]) ?? optionalString(env[BACKEND_RPC_BASE_URI_FALLBACK_ENV]) ?? undefined;
@@ -3490,12 +3519,14 @@ export function readRendererServiceOptionsFromEnv(env: NodeJS.ProcessEnv = proce
         baseUri: backendBaseUriInput,
     });
     const rendererRuntimeModule = optionalString(env[RENDERER_RUNTIME_MODULE_ENV])?.trim();
+    const runtimeAssetPreflight = readRuntimeAssetPreflightOptionsFromEnv(env);
 
     return {
         host: env.PENPOT_RENDERER_SERVICE_HOST ?? DEFAULT_HOST,
         port: readPort(env.PENPOT_RENDERER_SERVICE_PORT),
         ...(backendBaseUri ? { backendRpc: { baseUri: backendBaseUri } } : {}),
         ...(rendererRuntimeModule ? { rendererRuntimeModule } : {}),
+        ...(runtimeAssetPreflight ? { runtimeAssetPreflight } : {}),
     };
 }
 

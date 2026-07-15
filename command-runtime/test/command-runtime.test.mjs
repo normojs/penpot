@@ -10419,6 +10419,34 @@ test("render.thumbnail renderer-service API fixtures define planning requests wi
     assert.equal(fixtures.bundledRuntimeBridge.assetMaterializationPreflight.cliMcpDiagnostics.noNewDispatch.browserProcessStarted, false);
     assert.equal(fixtures.bundledRuntimeBridge.assetMaterializationPreflight.cliMcpDiagnostics.noNewDispatch.runtimeAdapterImported, false);
     assert.equal(fixtures.bundledRuntimeBridge.assetMaterializationPreflight.cliMcpDiagnostics.noNewDispatch.localFileWrites, false);
+    assert.equal(fixtures.bundledRuntimeBridge.assetMaterializationPreflight.operatorConfiguration.status, "planned");
+    assert.equal(fixtures.bundledRuntimeBridge.assetMaterializationPreflight.operatorConfiguration.configurationVersion, "P26.24");
+    assert.equal(fixtures.bundledRuntimeBridge.assetMaterializationPreflight.operatorConfiguration.owner, "renderer-service manual host");
+    assert.ok(fixtures.bundledRuntimeBridge.assetMaterializationPreflight.operatorConfiguration.surfaces.includes("penpot-cli renderer-service status"));
+    assert.equal(
+        fixtures.bundledRuntimeBridge.assetMaterializationPreflight.operatorConfiguration.mode.env,
+        "PENPOT_RENDERER_SERVICE_RUNTIME_ASSET_PREFLIGHT"
+    );
+    assert.equal(fixtures.bundledRuntimeBridge.assetMaterializationPreflight.operatorConfiguration.mode.expectedValue, "read-only");
+    assert.equal(fixtures.bundledRuntimeBridge.assetMaterializationPreflight.operatorConfiguration.mode.defaultEnabled, false);
+    assert.equal(
+        fixtures.bundledRuntimeBridge.assetMaterializationPreflight.operatorConfiguration.workspaceRoot.env,
+        "PENPOT_RENDERER_SERVICE_RUNTIME_ASSET_PREFLIGHT_WORKSPACE_ROOT"
+    );
+    assert.equal(fixtures.bundledRuntimeBridge.assetMaterializationPreflight.operatorConfiguration.workspaceRoot.requiredWhenEnabled, true);
+    assert.equal(fixtures.bundledRuntimeBridge.assetMaterializationPreflight.operatorConfiguration.workspaceRoot.absolutePathRequired, true);
+    assert.equal(
+        fixtures.bundledRuntimeBridge.assetMaterializationPreflight.operatorConfiguration.cacheRoot.env,
+        "PENPOT_RENDERER_SERVICE_RUNTIME_ASSET_PREFLIGHT_CACHE_ROOT"
+    );
+    assert.equal(
+        fixtures.bundledRuntimeBridge.assetMaterializationPreflight.operatorConfiguration.cacheRoot.defaultValue,
+        "/Volumes/fushilu/.caches/penpot/renderer-service"
+    );
+    assert.equal(fixtures.bundledRuntimeBridge.assetMaterializationPreflight.operatorConfiguration.lifecyclePlanEffects.healthProbe, false);
+    assert.equal(fixtures.bundledRuntimeBridge.assetMaterializationPreflight.operatorConfiguration.lifecyclePlanEffects.fileRead, false);
+    assert.equal(fixtures.bundledRuntimeBridge.assetMaterializationPreflight.operatorConfiguration.lifecyclePlanEffects.hashComputed, false);
+    assert.equal(fixtures.bundledRuntimeBridge.assetMaterializationPreflight.operatorConfiguration.lifecyclePlanEffects.localFileWrites, false);
     assert.ok(fixtures.registrationGates.allTargets.includes("thumbnail-renderer-service-implementation"));
     assert.ok(fixtures.registrationGates.frame.includes("tagged-frame-cache-probe"));
 

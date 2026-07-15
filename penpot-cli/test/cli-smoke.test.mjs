@@ -7064,6 +7064,9 @@ test("renderer-service status reports a no-spawn lifecycle plan without probing"
         const result = await runCli(["renderer-service", "status", "--host", "127.0.0.1", "--port", "6072", "--format", "json"], {
             PENPOT_RENDERER_SERVICE_BACKEND_URI: "https://penpot.example.test/",
             PENPOT_RENDERER_SERVICE_RUNTIME_MODULE: "/tmp/penpot renderer runtime.mjs",
+            PENPOT_RENDERER_SERVICE_RUNTIME_ASSET_PREFLIGHT: "read-only",
+            PENPOT_RENDERER_SERVICE_RUNTIME_ASSET_PREFLIGHT_WORKSPACE_ROOT: "/Users/fushilu/workspace/revocloud/penpot",
+            PENPOT_RENDERER_SERVICE_RUNTIME_ASSET_PREFLIGHT_CACHE_ROOT: "/tmp/penpot renderer cache",
         });
         const body = parseJson(result.stdout);
 
@@ -7090,10 +7093,52 @@ test("renderer-service status reports a no-spawn lifecycle plan without probing"
             source: "PENPOT_RENDERER_SERVICE_BACKEND_URI",
             networkDispatch: false,
         });
+        assert.deepEqual(body.data.lifecycle.runtimeAssetPreflight, {
+            configured: true,
+            executeReadOnly: true,
+            value: "read-only",
+            expectedValue: "read-only",
+            valid: true,
+            source: "PENPOT_RENDERER_SERVICE_RUNTIME_ASSET_PREFLIGHT",
+            workspaceRoot: {
+                configured: true,
+                value: "/Users/fushilu/workspace/revocloud/penpot",
+                source: "PENPOT_RENDERER_SERVICE_RUNTIME_ASSET_PREFLIGHT_WORKSPACE_ROOT",
+                requiredWhenEnabled: true,
+            },
+            cacheRoot: {
+                configured: true,
+                value: "/tmp/penpot renderer cache",
+                defaultValue: "/Volumes/fushilu/.caches/penpot/renderer-service",
+                source: "PENPOT_RENDERER_SERVICE_RUNTIME_ASSET_PREFLIGHT_CACHE_ROOT",
+            },
+            diagnosticsSurface: "healthPreflight.runtimeAssetPreflight",
+            lifecyclePlanEffects: {
+                healthProbe: false,
+                fileRead: false,
+                hashComputed: false,
+                browserProcessStarted: false,
+                runtimeAdapterImported: false,
+                runtimeAssetsLoaded: false,
+                assetManifestMaterialized: false,
+                networkDispatch: false,
+                localFileWrites: false,
+                runtimeExecutionRegistered: false,
+            },
+        });
         assert.equal(body.data.lifecycle.artifactWrites, false);
         assert.match(body.data.lifecycle.startCommand, /PENPOT_RENDERER_SERVICE_PORT=6072/);
         assert.match(body.data.lifecycle.startCommand, /PENPOT_RENDERER_SERVICE_BACKEND_URI=https:\/\/penpot\.example\.test/);
         assert.match(body.data.lifecycle.startCommand, /PENPOT_RENDERER_SERVICE_RUNTIME_MODULE='\/tmp\/penpot renderer runtime\.mjs'/);
+        assert.match(body.data.lifecycle.startCommand, /PENPOT_RENDERER_SERVICE_RUNTIME_ASSET_PREFLIGHT=read-only/);
+        assert.match(
+            body.data.lifecycle.startCommand,
+            /PENPOT_RENDERER_SERVICE_RUNTIME_ASSET_PREFLIGHT_WORKSPACE_ROOT=\/Users\/fushilu\/workspace\/revocloud\/penpot/
+        );
+        assert.match(
+            body.data.lifecycle.startCommand,
+            /PENPOT_RENDERER_SERVICE_RUNTIME_ASSET_PREFLIGHT_CACHE_ROOT='\/tmp\/penpot renderer cache'/
+        );
     } finally {
         globalThis.fetch = originalFetch;
     }
@@ -7110,6 +7155,9 @@ test("renderer-service start keeps startup manual and does not spawn a process",
     assert.equal(body.error.data.lifecycle.healthProbe, false);
     assert.equal(body.error.data.lifecycle.rendererDispatch, false);
     assert.equal(body.error.data.lifecycle.rendererRuntime.configured, false);
+    assert.equal(body.error.data.lifecycle.runtimeAssetPreflight.configured, false);
+    assert.equal(body.error.data.lifecycle.runtimeAssetPreflight.cacheRoot.value, "/Volumes/fushilu/.caches/penpot/renderer-service");
+    assert.equal(body.error.data.lifecycle.runtimeAssetPreflight.lifecyclePlanEffects.fileRead, false);
     assert.equal(body.error.data.lifecycle.backendRpcPlanning.configured, false);
     assert.match(body.error.actions[0], /PENPOT_RENDERER_SERVICE_PORT=6073/);
 });
