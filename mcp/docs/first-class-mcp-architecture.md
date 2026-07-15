@@ -4031,8 +4031,10 @@ wiring, health preflight, cache probe, executable client, and tagged-frame
 capabilities are implemented. The later P26 renderer-service work now covers
 configured file reuse probes, file source-data reads, adapter rendering,
 file persistence, tagged-frame refresh source-data/render/persistence, and
-tagged-frame reuse probes while bundled real scene rendering remains a future
-bridge.
+tagged-frame reuse probes. P26.19 selects the future bundled real scene
+rendering bridge as a renderer-service-owned browser-backed adapter that
+packages frontend thumbnail worker, render-wasm, and rasterizer assets without
+requiring an active editor tab.
 
 ### 8.6 Advanced Tools
 

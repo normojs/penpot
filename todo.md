@@ -284,7 +284,11 @@ backend `get-file-object-thumbnail` before source-data reads, return cached
 resource metadata on hits, and continue through the existing frame
 source-data/read-render-persist path on misses. Current active work moves to
 P26.19 to define the bundled renderer runtime bridge beyond injected/manual
-adapters.
+adapters. P26.19 is complete: the selected path is a renderer-service-owned
+browser-backed adapter module that packages the frontend thumbnail worker,
+render-wasm assets, and rasterizer fallback without requiring an active editor
+tab or exposing source-data/page/artifact bytes. Current active work moves to
+P26.20 to materialize the bundled runtime bridge asset manifest scaffold.
 P25.7 is complete: thumbnail renderer-service API fixtures now define
 future file refresh, file reuse, tagged frame refresh, auth forwarding,
 resource URI normalization, and MCP/CLI test expectations. P25.8 is complete:
@@ -936,7 +940,8 @@ process boundary before MCP or CLI execution is enabled.
 | P26.16 | done | Execute tagged-frame source-data reads and adapter renders | `backend`, `renderer-service`, `command-runtime`, `mcp/docs`, `todo.md`, `CHANGES.md` | Completed 2026-07-14; added backend `get-file-frame-data-for-thumbnail`, renderer-service execution for configured frame refresh requests, frame-aware runtime adapter inputs, token-safe `renderInput`/`renderOutput` summaries, and CLI/MCP request fixtures that use GET instead of future-capability placeholders | Enables tagged-frame refresh rendering through injected/manual adapters while keeping tagged-frame cache probes, `create-file-object-thumbnail` persistence writes, bundled real scene rendering, local file writes, request/media/source-data/page/credential value exposure, and CLI process spawning disabled |
 | P26.17 | done | Persist rendered tagged-frame thumbnails through backend RPC | `renderer-service`, `command-runtime`, `mcp/docs`, `todo.md`, `CHANGES.md` | Completed 2026-07-14; after configured frame source-data reads and runtime adapter render success, the renderer-service posts PNG bytes as multipart `media` to backend `create-file-object-thumbnail` with file/object/tag identity, validates the backend `{id, uri}` response, returns persisted backend resource metadata, and marks `backendRpcClient.status:"persist-executed"` with frame-specific `persistOutput` redaction metadata | Enables tagged-frame refresh persistence while keeping tagged-frame cache probes, bundled real scene rendering, local file writes, request/media/source-data/page/credential value exposure, and CLI process spawning disabled |
 | P26.18 | done | Execute tagged-frame cache probes for reuse requests | `backend`, `renderer-service`, `command-runtime`, `mcp/docs`, `todo.md`, `CHANGES.md` | Completed 2026-07-15; added backend `get-file-object-thumbnail`, renderer-service execution for configured frame `reuse` cache probes, command-runtime frame reuse fixtures/capability checks, and hit/miss tests that return cached metadata or continue source-data/read-render-persist | Enables tagged-frame reuse short-circuiting while keeping bundled real scene rendering, local file writes, request/media/source-data/page/credential value exposure, and CLI process spawning disabled |
-| P26.19 | in_progress | Define bundled renderer runtime bridge path | `renderer-service`, `render-wasm`, `frontend`, `command-runtime`, `mcp/docs`, `todo.md`, `CHANGES.md` | Plan the first non-injected renderer runtime bridge for thumbnail scene rendering, including input ownership, render-wasm/frontend rasterizer boundary, build/runtime loading, and fixture evidence before implementation | Moves beyond manual runtime adapters while keeping local file writes, source-data/page/artifact byte exposure, and unreviewed runtime registration disabled |
+| P26.19 | done | Define bundled renderer runtime bridge path | `renderer-service`, `render-wasm`, `frontend`, `command-runtime`, `mcp/docs`, `todo.md`, `CHANGES.md` | Completed 2026-07-15; fixture-tested the selected browser-backed renderer-service adapter path, with render-wasm/frontend rasterizer asset ownership, blocked alternatives, redaction contract, implementation prerequisites, and no-op guarantees | Moves beyond manual runtime adapters while keeping browser startup, asset materialization, local file writes, source-data/page/artifact byte exposure, and unreviewed runtime registration disabled |
+| P26.20 | in_progress | Materialize bundled runtime bridge asset manifest scaffold | `renderer-service`, `frontend`, `render-wasm`, `command-runtime`, `mcp/docs`, `todo.md`, `CHANGES.md` | Add a renderer-service-visible asset manifest scaffold for the future browser-backed thumbnail bridge, including expected frontend worker/render-wasm/rasterizer assets, cache output paths, validation metadata, and no-dispatch tests | Prepares bundled runtime packaging while keeping browser startup, actual render-wasm execution, local file writes, source-data/page/artifact byte exposure, and runtime registration disabled |
 
 P26.1 is complete: `@penpot/renderer-service` is a private pnpm workspace
 package with a real no-op HTTP lifecycle. Its TypeScript output is written to
@@ -1098,12 +1103,22 @@ create-file-object-thumbnail` path. Verified with
 JDK 23 plus temporary localhost postgres/valkey test containers because the
 default compose `postgres` host EOFs from the macOS host.
 
-P26.19 is in progress: this planning slice will define the first bundled
-renderer runtime bridge after the manual/injected adapter path. The starting
-questions are whether the bridge should load render-wasm directly inside
-renderer-service, reuse frontend rasterizer code through a dedicated adapter
-module, or keep a two-step bridge that packages frontend/render-wasm assets
-without exposing source-data/page/artifact bytes in JSON.
+P26.19 is complete: the first bundled renderer runtime bridge is planned as a
+renderer-service-owned browser-backed adapter module exporting
+`renderThumbnail`. It packages the future frontend thumbnail worker bridge,
+render-wasm loader/binary assets, and frontend rasterizer fallback into the
+renderer-service runtime, does not require an active editor tab, and keeps
+source-data/page/artifact/media/token values out of JSON responses. Direct Node
+render-wasm execution, active frontend-session rendering, and exporter preview
+reuse remain blocked alternatives for this first bridge. Verified with
+`pnpm --filter @penpot/command-runtime test`.
+
+P26.20 is in progress: this implementation slice will materialize only the
+asset manifest scaffold for the future browser-backed bundled runtime bridge.
+The scaffold should list required frontend worker, render-wasm loader/binary,
+rasterizer fallback, and cache output paths, then prove through tests that no
+browser process starts, no source data is exposed, no local files are written,
+and runtime registration remains disabled.
 
 ## Maintenance: Build Cache Hygiene
 

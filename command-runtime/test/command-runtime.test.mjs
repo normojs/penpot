@@ -10310,6 +10310,16 @@ test("render.thumbnail renderer-service API fixtures define planning requests wi
     assert.equal(fixtures.runtimeRegistration.mcpToolRegistered, true);
     assert.equal(fixtures.runtimeRegistration.cliCommandRegistered, true);
     assert.equal(fixtures.runtimeRegistration.runtimeExecutionRegistered, false);
+    assert.equal(fixtures.bundledRuntimeBridge.status, "planned");
+    assert.equal(fixtures.bundledRuntimeBridge.bridgeVersion, "P26.19");
+    assert.equal(fixtures.bundledRuntimeBridge.selectedPath, "browser-backed-service-adapter");
+    assert.equal(fixtures.bundledRuntimeBridge.entrypoint, "renderer-service runtime adapter");
+    assert.equal(fixtures.bundledRuntimeBridge.browserRuntime.activeFrontendSessionRequired, false);
+    assert.equal(fixtures.bundledRuntimeBridge.redactionContract.sourceDataValuesIncluded, false);
+    assert.equal(fixtures.bundledRuntimeBridge.redactionContract.artifactValuesIncluded, false);
+    assert.equal(fixtures.bundledRuntimeBridge.noOpGuarantees.runtimeExecutionRegistered, false);
+    assert.ok(fixtures.bundledRuntimeBridge.blockedAlternatives.some((entry) => entry.id === "direct-node-render-wasm"));
+    assert.ok(fixtures.bundledRuntimeBridge.requiredBeforeImplementation.some((entry) => entry.includes("pixel/resource tests")));
     assert.ok(fixtures.registrationGates.allTargets.includes("thumbnail-renderer-service-implementation"));
     assert.ok(fixtures.registrationGates.frame.includes("tagged-frame-cache-probe"));
 

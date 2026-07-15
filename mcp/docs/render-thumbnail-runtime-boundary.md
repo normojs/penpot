@@ -408,18 +408,26 @@ and cache-hit/resource/media/token value flags false. Refresh responses keep
 `backendRpcClient.cacheProbe:null`. This makes cache-reuse semantics explicit
 without implementing cache reads or cached resource returns.
 
-P26.10 through P26.17 progressively execute the backend/render pipeline while
+P26.10 through P26.18 progressively execute the backend/render pipeline while
 preserving the same redaction boundary. Configured file reuse requests can
 probe `get-file-thumbnail`; file refresh requests and cache misses can read
 `get-file-data-for-thumbnail`; tagged-frame refresh requests can read
-`get-file-frame-data-for-thumbnail`; injected or manually registered runtime
-adapters can render PNG bytes; and successful file-target renders can persist
-through backend `create-file-thumbnail` while successful tagged-frame refresh
-renders can persist through backend `create-file-object-thumbnail`, both using
-multipart `media` uploads. The service returns persisted backend resource
-metadata with token-safe execution summaries, but tagged-frame cache probes,
-bundled real scene rendering, local file writes, source-data/page/media value
-exposure, and credential value exposure remain out of scope.
+`get-file-frame-data-for-thumbnail`; tagged-frame reuse requests can probe
+`get-file-object-thumbnail`; injected or manually registered runtime adapters
+can render PNG bytes; and successful file-target or tagged-frame cache-miss
+renders can persist through backend `create-file-thumbnail` or
+`create-file-object-thumbnail`, both using multipart `media` uploads. The
+service returns cached or persisted backend resource metadata with token-safe
+execution summaries, but bundled real scene rendering, local file writes,
+source-data/page/media value exposure, and credential value exposure remain out
+of scope.
+
+P26.19 selects the future bundled scene-rendering bridge: a renderer-service
+owned browser-backed adapter module that loads packaged frontend thumbnail
+worker, render-wasm, and rasterizer fallback assets without requiring an active
+editor tab. Direct Node render-wasm execution remains rejected for the first
+bridge because the current WebGL/Emscripten integration depends on browser
+canvas APIs and frontend globals.
 
 ## Test Strategy
 
