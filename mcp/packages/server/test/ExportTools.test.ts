@@ -15,6 +15,8 @@ const bundledSceneBridgeAdapterModuleFixture =
     renderThumbnailRendererServiceFixtures.bundledRuntimeBridge.bundledSceneBridgeAdapterModule;
 const bundledSceneBridgeImportGateFixture =
     renderThumbnailRendererServiceFixtures.bundledRuntimeBridge.bundledSceneBridgeImportGate;
+const bundledSceneBridgeFactoryShapePreflightFixture =
+    renderThumbnailRendererServiceFixtures.bundledRuntimeBridge.bundledSceneBridgeFactoryShapePreflight;
 
 function getRenderThumbnailRendererServiceFixture(id: string): any {
     const fixture = renderThumbnailRendererServiceFixtures.cases.find((entry: any) => entry.id === id);
@@ -7488,10 +7490,12 @@ test("RenderThumbnailTool execution opt-in posts to renderer-service and returns
                         "thumbnail.render.bundled-scene-bridge-contract",
                         "thumbnail.render.bundled-scene-bridge-adapter-module",
                         "thumbnail.render.bundled-scene-bridge-import-gate",
+                        "thumbnail.render.bundled-scene-bridge-factory-shape-preflight",
                     ],
                     bundledSceneBridgeContract: bundledSceneBridgeContractFixture,
                     bundledSceneBridgeAdapterModule: bundledSceneBridgeAdapterModuleFixture,
                     bundledSceneBridgeImportGate: bundledSceneBridgeImportGateFixture,
+                    bundledSceneBridgeFactoryShapePreflight: bundledSceneBridgeFactoryShapePreflightFixture,
                     browserFixtureRuntime: {
                         status: "started",
                         diagnosticsVersion: "P26.31",
@@ -7916,6 +7920,25 @@ test("RenderThumbnailTool execution opt-in posts to renderer-service and returns
         assert.equal(body.data.healthPreflight.bundledSceneBridgeImportGate.sideEffects.runtimeAdapterImported, false);
         assert.equal(body.data.healthPreflight.bundledSceneBridgeImportGate.redaction.modeValuesIncluded, false);
         assert.equal(body.data.healthPreflight.bundledSceneBridgeImportGate.omitted.configuredValue, true);
+        assert.equal(body.data.healthPreflight.bundledSceneBridgeFactoryShapePreflight.status, "planned-disabled");
+        assert.equal(body.data.healthPreflight.bundledSceneBridgeFactoryShapePreflight.preflightVersion, "P26.35");
+        assert.equal(body.data.healthPreflight.bundledSceneBridgeFactoryShapePreflight.source.importGateOpen, false);
+        assert.equal(body.data.healthPreflight.bundledSceneBridgeFactoryShapePreflight.moduleImport.importAttempted, false);
+        assert.equal(body.data.healthPreflight.bundledSceneBridgeFactoryShapePreflight.moduleImport.moduleImported, false);
+        assert.equal(body.data.healthPreflight.bundledSceneBridgeFactoryShapePreflight.factoryShape.shapeCheckAttempted, false);
+        assert.equal(body.data.healthPreflight.bundledSceneBridgeFactoryShapePreflight.factoryShape.factoryInvoked, false);
+        assert.equal(
+            body.data.healthPreflight.bundledSceneBridgeFactoryShapePreflight.runtimeOptionsShape.runtimeRegistration,
+            false
+        );
+        assert.deepEqual(body.data.healthPreflight.bundledSceneBridgeFactoryShapePreflight.diagnosticCodes, [
+            "renderer_service_bundled_scene_bridge_factory_shape_preflight_defined_disabled",
+        ]);
+        assert.equal(body.data.healthPreflight.bundledSceneBridgeFactoryShapePreflight.sideEffects.runtimeAdapterImported, false);
+        assert.equal(body.data.healthPreflight.bundledSceneBridgeFactoryShapePreflight.sideEffects.runtimeOptionsCreated, false);
+        assert.equal(body.data.healthPreflight.bundledSceneBridgeFactoryShapePreflight.redaction.moduleValuesIncluded, false);
+        assert.equal(body.data.healthPreflight.bundledSceneBridgeFactoryShapePreflight.omitted.moduleNamespace, true);
+        assert.equal(body.data.healthPreflight.bundledSceneBridgeFactoryShapePreflight.omitted.factoryValue, true);
         assert.equal(body.data.healthPreflight.runtimeAssetPreflight.status, "executed");
         assert.equal(body.data.healthPreflight.runtimeAssetPreflight.diagnosticsVersion, "P26.25");
         assert.equal(body.data.healthPreflight.runtimeAssetPreflight.executionVersion, "P26.22");

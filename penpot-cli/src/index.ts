@@ -1244,6 +1244,84 @@ function getRendererServiceLifecyclePlan(args: string[], env: NodeJS.ProcessEnv)
             tokenValues: true;
         };
     };
+    bundledSceneBridgeFactoryShapePreflight: {
+        status: "planned-disabled";
+        preflightVersion: "P26.35";
+        checked: false;
+        source: {
+            contractVersion: "P26.32";
+            adapterModuleReadinessVersion: "P26.33";
+            importGateVersion: "P26.34";
+            importGateRequired: true;
+            importGateOpen: false;
+            readiness: "blocked-until-import-gate-opens";
+        };
+        moduleImport: {
+            module: "./bundled-scene-bridge-runtime.js";
+            exportName: "createBundledSceneBridgeRendererRuntime";
+            importAttempted: false;
+            moduleImported: false;
+            namespaceInspected: false;
+        };
+        factoryShape: {
+            expectedType: "function";
+            shapeCheckAttempted: false;
+            factoryInvoked: false;
+        };
+        runtimeOptionsShape: {
+            requiredKeys: string[];
+            optionalKeys: string[];
+            runtimeOptionsCreated: false;
+            runtimeRegistration: false;
+            runtimeExecutionRegistered: false;
+        };
+        diagnosticsVersion: "P26.35";
+        diagnosticCodes: string[];
+        diagnostics: Array<{
+            code: "renderer_service_bundled_scene_bridge_factory_shape_preflight_defined_disabled";
+            severity: "info";
+            field: "factoryShape";
+            message: string;
+            nextActions: string[];
+        }>;
+        nextActions: string[];
+        diagnosticsSurface: "healthPreflight.bundledSceneBridgeFactoryShapePreflight";
+        lifecyclePlanEffects: {
+            healthProbe: false;
+            moduleImport: false;
+            namespaceInspection: false;
+            factoryShapeCheck: false;
+            factoryInvoked: false;
+            runtimeOptionsCreated: false;
+            browserProcessStarted: false;
+            runtimeAdapterImported: false;
+            runtimeAssetsLoaded: false;
+            assetManifestMaterialized: false;
+            renderDispatch: false;
+            networkDispatch: false;
+            localFileWrites: false;
+            runtimeExecutionRegistered: false;
+            sourceDataValuesIncluded: false;
+            pageValuesIncluded: false;
+            artifactValuesIncluded: false;
+            mediaValuesIncluded: false;
+            tokenValuesIncluded: false;
+            pathValuesIncluded: false;
+        };
+        omitted: {
+            moduleNamespace: true;
+            factoryValue: true;
+            runtimeOptionsValue: true;
+            modulePath: true;
+            workspaceRoot: true;
+            cacheRoot: true;
+            sourceData: true;
+            pageData: true;
+            artifactBytes: true;
+            mediaBytes: true;
+            tokenValues: true;
+        };
+    };
     runtimeAssetPreflight: {
         configured: boolean;
         executeReadOnly: boolean;
@@ -1847,6 +1925,92 @@ function getRendererServiceLifecyclePlan(args: string[], env: NodeJS.ProcessEnv)
             },
             omitted: {
                 configuredValue: true,
+                modulePath: true,
+                workspaceRoot: true,
+                cacheRoot: true,
+                sourceData: true,
+                pageData: true,
+                artifactBytes: true,
+                mediaBytes: true,
+                tokenValues: true,
+            },
+        },
+        bundledSceneBridgeFactoryShapePreflight: {
+            status: "planned-disabled",
+            preflightVersion: "P26.35",
+            checked: false,
+            source: {
+                contractVersion: "P26.32",
+                adapterModuleReadinessVersion: "P26.33",
+                importGateVersion: "P26.34",
+                importGateRequired: true,
+                importGateOpen: false,
+                readiness: "blocked-until-import-gate-opens",
+            },
+            moduleImport: {
+                module: "./bundled-scene-bridge-runtime.js",
+                exportName: "createBundledSceneBridgeRendererRuntime",
+                importAttempted: false,
+                moduleImported: false,
+                namespaceInspected: false,
+            },
+            factoryShape: {
+                expectedType: "function",
+                shapeCheckAttempted: false,
+                factoryInvoked: false,
+            },
+            runtimeOptionsShape: {
+                requiredKeys: ["renderThumbnail"],
+                optionalKeys: ["close"],
+                runtimeOptionsCreated: false,
+                runtimeRegistration: false,
+                runtimeExecutionRegistered: false,
+            },
+            diagnosticsVersion: "P26.35",
+            diagnosticCodes: ["renderer_service_bundled_scene_bridge_factory_shape_preflight_defined_disabled"],
+            diagnostics: [
+                {
+                    code: "renderer_service_bundled_scene_bridge_factory_shape_preflight_defined_disabled",
+                    severity: "info",
+                    field: "factoryShape",
+                    message: "Renderer-service bundled scene bridge factory-shape preflight is defined, but module import and factory invocation remain disabled.",
+                    nextActions: [
+                        "Keep the bundled scene bridge import gate closed until the future factory-shape preflight implementation is enabled.",
+                        "Run renderer-service health preflight after the executable import path is implemented.",
+                    ],
+                },
+            ],
+            nextActions: [
+                "Keep the bundled scene bridge import gate closed until the future factory-shape preflight implementation is enabled.",
+                "Run renderer-service health preflight after the executable import path is implemented.",
+            ],
+            diagnosticsSurface: "healthPreflight.bundledSceneBridgeFactoryShapePreflight",
+            lifecyclePlanEffects: {
+                healthProbe: false,
+                moduleImport: false,
+                namespaceInspection: false,
+                factoryShapeCheck: false,
+                factoryInvoked: false,
+                runtimeOptionsCreated: false,
+                browserProcessStarted: false,
+                runtimeAdapterImported: false,
+                runtimeAssetsLoaded: false,
+                assetManifestMaterialized: false,
+                renderDispatch: false,
+                networkDispatch: false,
+                localFileWrites: false,
+                runtimeExecutionRegistered: false,
+                sourceDataValuesIncluded: false,
+                pageValuesIncluded: false,
+                artifactValuesIncluded: false,
+                mediaValuesIncluded: false,
+                tokenValuesIncluded: false,
+                pathValuesIncluded: false,
+            },
+            omitted: {
+                moduleNamespace: true,
+                factoryValue: true,
+                runtimeOptionsValue: true,
                 modulePath: true,
                 workspaceRoot: true,
                 cacheRoot: true,
@@ -6046,6 +6210,10 @@ async function handleRendererServiceStatus(args: string[], io: CliIO, env: NodeJ
         );
         writeLine(
             io.stdout,
+            `Bundled scene bridge factory-shape preflight: ${plan.bundledSceneBridgeFactoryShapePreflight.status}`
+        );
+        writeLine(
+            io.stdout,
             `Runtime asset preflight: ${plan.runtimeAssetPreflight.executeReadOnly ? "read-only" : "disabled"}`
         );
         if (plan.browserFixtureRuntime.diagnosticCodes.length > 0) {
@@ -6062,6 +6230,16 @@ async function handleRendererServiceStatus(args: string[], io: CliIO, env: NodeJ
             );
             writeLine(io.stdout, "Import gate next actions:");
             for (const action of plan.bundledSceneBridgeImportGate.nextActions) {
+                writeLine(io.stdout, `- ${action}`);
+            }
+        }
+        if (plan.bundledSceneBridgeFactoryShapePreflight.diagnosticCodes.length > 0) {
+            writeLine(
+                io.stdout,
+                `Bundled scene bridge factory-shape preflight diagnostics: ${plan.bundledSceneBridgeFactoryShapePreflight.diagnosticCodes.join(", ")}`
+            );
+            writeLine(io.stdout, "Factory-shape preflight next actions:");
+            for (const action of plan.bundledSceneBridgeFactoryShapePreflight.nextActions) {
                 writeLine(io.stdout, `- ${action}`);
             }
         }

@@ -4145,6 +4145,16 @@ configuration and conflict diagnostics. The gate remains closed: module
 import, factory invocation, browser startup, asset loading, runtime
 registration, backend/source-data reads, local writes, and value exposure stay
 disabled.
+P26.35 adds the closed bundled scene bridge factory-shape preflight contract.
+Renderer-service exposes `bundledSceneBridgeFactoryShapePreflight`;
+command-runtime carries it into MCP and `penpot-cli render thumbnail` as
+`healthPreflight.bundledSceneBridgeFactoryShapePreflight`; and
+`penpot-cli renderer-service status/start` reports the no-probe closed
+preflight plan. The contract names the future import outcome taxonomy, factory
+export shape, factory option keys, and returned `RendererRuntimeOptions`
+shape, but module import, namespace inspection, factory invocation, runtime
+option creation, runtime registration, browser startup, asset loading,
+backend/source-data reads, local writes, and value exposure remain disabled.
 
 ### 8.6 Advanced Tools
 

@@ -151,6 +151,15 @@ and value exposure remain disabled. Invalid modes or conflicts with a manual
 runtime module, browser fixture runtime, or injected runtime are reported as
 redacted diagnostics and normalized by command-runtime as
 `healthPreflight.bundledSceneBridgeImportGate`.
+P26.35 adds the closed factory-shape preflight contract for the same adapter.
+Renderer-service reports it as `bundledSceneBridgeFactoryShapePreflight`, and
+command-runtime carries it to CLI/MCP as
+`healthPreflight.bundledSceneBridgeFactoryShapePreflight`. The preflight
+defines the future module import outcome taxonomy, expected factory export,
+factory option keys, and returned `RendererRuntimeOptions` shape, but remains
+closed: no module import, namespace inspection, factory invocation, runtime
+option creation, runtime registration, browser startup, asset loading,
+backend/source-data reads, local writes, or value exposure occurs.
 P26.5 adds a token-safe `backendRpcClient` plan to renderer-service thumbnail
 responses so backend data/cache/persist endpoints are normalized for staged
 execution. That plan now feeds the executable file-thumbnail cache probe,

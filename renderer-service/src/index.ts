@@ -1700,6 +1700,172 @@ function bundledSceneBridgeImportGateResponse(
 
 export const bundledSceneBridgeImportGate = bundledSceneBridgeImportGateResponse();
 
+export const bundledSceneBridgeFactoryShapePreflight = {
+    status: "planned-disabled",
+    preflightVersion: "P26.35",
+    owner: "renderer-service",
+    mode: "closed-factory-shape-preflight",
+    source: {
+        contractVersion: "P26.32",
+        adapterModuleReadinessVersion: "P26.33",
+        importGateVersion: "P26.34",
+        importGateRequired: true,
+        importGateOpen: false,
+        readiness: "blocked-until-import-gate-opens",
+    },
+    moduleImport: {
+        module: "./bundled-scene-bridge-runtime.js",
+        moduleType: "service-owned-es-module",
+        exportName: "createBundledSceneBridgeRendererRuntime",
+        importAttempted: false,
+        moduleImported: false,
+        namespaceInspected: false,
+        valuesIncluded: false,
+    },
+    factoryShape: {
+        expectedType: "function",
+        expectedSignature: "(options) => Promise<RendererRuntimeOptions>",
+        requiredOptionKeys: ["assetManifest", "runtimeAssetPreflight", "browser"],
+        factoryPresent: false,
+        shapeCheckAttempted: false,
+        callableChecked: false,
+        optionsShapeValidated: false,
+        promiseReturnValidated: false,
+        factoryInvoked: false,
+        valuesIncluded: false,
+    },
+    runtimeOptionsShape: {
+        expectedType: "RendererRuntimeOptions",
+        requiredKeys: ["renderThumbnail"],
+        optionalKeys: ["close"],
+        renderThumbnailExpectedType: "function",
+        closeExpectedType: "function",
+        runtimeOptionsCreated: false,
+        shapeCheckAttempted: false,
+        renderThumbnailChecked: false,
+        closeHookChecked: false,
+        runtimeRegistration: false,
+        runtimeExecutionRegistered: false,
+        valuesIncluded: false,
+    },
+    importOutcomeTaxonomy: [
+        {
+            code: "renderer_service_bundled_scene_bridge_factory_shape_import_disabled",
+            stage: "import",
+            severity: "blocked",
+            retryable: false,
+            dispatch: false,
+        },
+        {
+            code: "renderer_service_bundled_scene_bridge_factory_shape_export_missing",
+            stage: "namespace",
+            severity: "invalid",
+            retryable: false,
+            dispatch: false,
+        },
+        {
+            code: "renderer_service_bundled_scene_bridge_factory_shape_not_callable",
+            stage: "factory",
+            severity: "invalid",
+            retryable: false,
+            dispatch: false,
+        },
+        {
+            code: "renderer_service_bundled_scene_bridge_factory_shape_result_invalid",
+            stage: "runtime-options",
+            severity: "invalid",
+            retryable: false,
+            dispatch: false,
+        },
+    ],
+    diagnostics: [
+        {
+            code: "renderer_service_bundled_scene_bridge_factory_shape_preflight_defined_disabled",
+            severity: "info",
+            field: "factoryShape",
+            message: "The bundled scene bridge adapter factory-shape preflight is defined, but adapter import, factory invocation, and runtime option validation remain disabled.",
+            nextActions: [
+                "Open the explicit bundled scene bridge import gate in a later task before checking the adapter factory shape.",
+                "Keep default MCP/CLI rendering on the existing renderer-service path until factory shape, browser lifecycle, and pixel tests pass.",
+            ],
+        },
+    ],
+    diagnosticCodes: ["renderer_service_bundled_scene_bridge_factory_shape_preflight_defined_disabled"],
+    nextActions: [
+        "Implement the closed import preflight before loading the bundled scene bridge module.",
+        "Validate factory shape without exposing module paths, source data, page data, artifact bytes, media bytes, or tokens.",
+    ],
+    checks: [
+        {
+            id: "import-gate-open",
+            status: "blocked",
+            required: true,
+            dispatch: false,
+        },
+        {
+            id: "module-namespace-export",
+            status: "planned",
+            required: true,
+            dispatch: false,
+        },
+        {
+            id: "factory-callable-shape",
+            status: "planned",
+            required: true,
+            dispatch: false,
+        },
+        {
+            id: "runtime-options-shape",
+            status: "planned",
+            required: true,
+            dispatch: false,
+        },
+    ],
+    sideEffects: {
+        browserProcessStarted: false,
+        browserPageCreated: false,
+        runtimeExecutionRegistered: false,
+        runtimeAdapterImported: false,
+        runtimeFactoryInvoked: false,
+        runtimeOptionsCreated: false,
+        runtimeAssetsLoaded: false,
+        assetManifestMaterialized: false,
+        backendRpcReads: false,
+        sourceDataReads: false,
+        networkDispatch: false,
+        dispatch: false,
+        localFileWrites: false,
+    },
+    redaction: {
+        moduleValuesIncluded: false,
+        pathValuesIncluded: false,
+        sourceDataValuesIncluded: false,
+        pageValuesIncluded: false,
+        artifactValuesIncluded: false,
+        mediaValuesIncluded: false,
+        tokenValuesIncluded: false,
+    },
+    omitted: {
+        moduleNamespace: true,
+        factoryValue: true,
+        runtimeOptionsValue: true,
+        workspaceRoot: true,
+        cacheRoot: true,
+        modulePath: true,
+        publicPaths: true,
+        cachePaths: true,
+        sha256: true,
+        playwrightBrowserPath: true,
+        runtimeModulePath: true,
+        sourceData: true,
+        pageData: true,
+        artifactBytes: true,
+        mediaBytes: true,
+        tokenValues: true,
+    },
+    execution: null,
+} as const;
+
 function defaultBrowserFixtureRuntimeLifecycleDiagnostics(
     runtimeSource: RendererRuntimeSource,
     {
@@ -1813,6 +1979,7 @@ export const healthResponse = {
         "thumbnail.render.bundled-scene-bridge-contract",
         "thumbnail.render.bundled-scene-bridge-adapter-module",
         "thumbnail.render.bundled-scene-bridge-import-gate",
+        "thumbnail.render.bundled-scene-bridge-factory-shape-preflight",
         "thumbnail.backend-rpc.file-thumbnail-persist",
         "thumbnail.backend-rpc.frame-thumbnail-persist",
     ],
@@ -1823,6 +1990,7 @@ export const healthResponse = {
     bundledSceneBridgeContract,
     bundledSceneBridgeAdapterModule,
     bundledSceneBridgeImportGate,
+    bundledSceneBridgeFactoryShapePreflight,
     browserFixtureRuntime: defaultBrowserFixtureRuntimeLifecycle,
 } as const;
 
@@ -1851,6 +2019,7 @@ export const noopThumbnailResponse = {
     bundledSceneBridgeContract,
     bundledSceneBridgeAdapterModule,
     bundledSceneBridgeImportGate,
+    bundledSceneBridgeFactoryShapePreflight,
     browserFixtureRuntime: defaultBrowserFixtureRuntimeLifecycle,
 } as const;
 
@@ -4877,6 +5046,184 @@ function validateBundledSceneBridgeImportGateResponse(actual: unknown, field: st
     requireResponseEqual(record.execution ?? null, null, `${field}.execution`);
 }
 
+function validateBundledSceneBridgeFactoryShapePreflightResponse(actual: unknown, field: string): void {
+    const record = responseRecord(actual, field);
+    requireResponseEqual(record.status, bundledSceneBridgeFactoryShapePreflight.status, `${field}.status`);
+    requireResponseEqual(record.preflightVersion, bundledSceneBridgeFactoryShapePreflight.preflightVersion, `${field}.preflightVersion`);
+    requireResponseEqual(record.owner, bundledSceneBridgeFactoryShapePreflight.owner, `${field}.owner`);
+    requireResponseEqual(record.mode, bundledSceneBridgeFactoryShapePreflight.mode, `${field}.mode`);
+
+    const source = responseRecord(record.source, `${field}.source`);
+    requireResponseEqual(source.contractVersion, bundledSceneBridgeFactoryShapePreflight.source.contractVersion, `${field}.source.contractVersion`);
+    requireResponseEqual(
+        source.adapterModuleReadinessVersion,
+        bundledSceneBridgeFactoryShapePreflight.source.adapterModuleReadinessVersion,
+        `${field}.source.adapterModuleReadinessVersion`
+    );
+    requireResponseEqual(source.importGateVersion, bundledSceneBridgeFactoryShapePreflight.source.importGateVersion, `${field}.source.importGateVersion`);
+    requireResponseEqual(source.importGateRequired, true, `${field}.source.importGateRequired`);
+    requireResponseEqual(source.importGateOpen, false, `${field}.source.importGateOpen`);
+    requireResponseEqual(source.readiness, bundledSceneBridgeFactoryShapePreflight.source.readiness, `${field}.source.readiness`);
+
+    const moduleImport = responseRecord(record.moduleImport, `${field}.moduleImport`);
+    requireResponseEqual(moduleImport.module, bundledSceneBridgeFactoryShapePreflight.moduleImport.module, `${field}.moduleImport.module`);
+    requireResponseEqual(moduleImport.moduleType, bundledSceneBridgeFactoryShapePreflight.moduleImport.moduleType, `${field}.moduleImport.moduleType`);
+    requireResponseEqual(moduleImport.exportName, bundledSceneBridgeFactoryShapePreflight.moduleImport.exportName, `${field}.moduleImport.exportName`);
+    for (const property of ["importAttempted", "moduleImported", "namespaceInspected", "valuesIncluded"]) {
+        requireResponseEqual(moduleImport[property], false, `${field}.moduleImport.${property}`);
+    }
+
+    const factoryShape = responseRecord(record.factoryShape, `${field}.factoryShape`);
+    requireResponseEqual(factoryShape.expectedType, bundledSceneBridgeFactoryShapePreflight.factoryShape.expectedType, `${field}.factoryShape.expectedType`);
+    requireResponseEqual(
+        factoryShape.expectedSignature,
+        bundledSceneBridgeFactoryShapePreflight.factoryShape.expectedSignature,
+        `${field}.factoryShape.expectedSignature`
+    );
+    requireResponseArrayEqual(
+        responseStringArray(factoryShape, "requiredOptionKeys", `${field}.factoryShape.requiredOptionKeys`),
+        [...bundledSceneBridgeFactoryShapePreflight.factoryShape.requiredOptionKeys],
+        `${field}.factoryShape.requiredOptionKeys`
+    );
+    for (const property of [
+        "factoryPresent",
+        "shapeCheckAttempted",
+        "callableChecked",
+        "optionsShapeValidated",
+        "promiseReturnValidated",
+        "factoryInvoked",
+        "valuesIncluded",
+    ]) {
+        requireResponseEqual(factoryShape[property], false, `${field}.factoryShape.${property}`);
+    }
+
+    const runtimeOptionsShape = responseRecord(record.runtimeOptionsShape, `${field}.runtimeOptionsShape`);
+    requireResponseEqual(
+        runtimeOptionsShape.expectedType,
+        bundledSceneBridgeFactoryShapePreflight.runtimeOptionsShape.expectedType,
+        `${field}.runtimeOptionsShape.expectedType`
+    );
+    requireResponseArrayEqual(
+        responseStringArray(runtimeOptionsShape, "requiredKeys", `${field}.runtimeOptionsShape.requiredKeys`),
+        [...bundledSceneBridgeFactoryShapePreflight.runtimeOptionsShape.requiredKeys],
+        `${field}.runtimeOptionsShape.requiredKeys`
+    );
+    requireResponseArrayEqual(
+        responseStringArray(runtimeOptionsShape, "optionalKeys", `${field}.runtimeOptionsShape.optionalKeys`),
+        [...bundledSceneBridgeFactoryShapePreflight.runtimeOptionsShape.optionalKeys],
+        `${field}.runtimeOptionsShape.optionalKeys`
+    );
+    requireResponseEqual(
+        runtimeOptionsShape.renderThumbnailExpectedType,
+        bundledSceneBridgeFactoryShapePreflight.runtimeOptionsShape.renderThumbnailExpectedType,
+        `${field}.runtimeOptionsShape.renderThumbnailExpectedType`
+    );
+    requireResponseEqual(runtimeOptionsShape.closeExpectedType, bundledSceneBridgeFactoryShapePreflight.runtimeOptionsShape.closeExpectedType, `${field}.runtimeOptionsShape.closeExpectedType`);
+    for (const property of [
+        "runtimeOptionsCreated",
+        "shapeCheckAttempted",
+        "renderThumbnailChecked",
+        "closeHookChecked",
+        "runtimeRegistration",
+        "runtimeExecutionRegistered",
+        "valuesIncluded",
+    ]) {
+        requireResponseEqual(runtimeOptionsShape[property], false, `${field}.runtimeOptionsShape.${property}`);
+    }
+
+    const importOutcomeTaxonomy = responseRecordArray(record.importOutcomeTaxonomy, `${field}.importOutcomeTaxonomy`);
+    requireResponseArrayEqual(
+        importOutcomeTaxonomy.map((entry) => String(entry.code)),
+        bundledSceneBridgeFactoryShapePreflight.importOutcomeTaxonomy.map((entry) => entry.code),
+        `${field}.importOutcomeTaxonomy.codes`
+    );
+    for (const entry of importOutcomeTaxonomy) {
+        requireResponseEqual(entry.retryable, false, `${field}.importOutcomeTaxonomy.${String(entry.code)}.retryable`);
+        requireResponseEqual(entry.dispatch, false, `${field}.importOutcomeTaxonomy.${String(entry.code)}.dispatch`);
+    }
+
+    const diagnostics = responseRecordArray(record.diagnostics, `${field}.diagnostics`);
+    requireResponseEqual(diagnostics.length, bundledSceneBridgeFactoryShapePreflight.diagnostics.length, `${field}.diagnostics.length`);
+    requireResponseEqual(diagnostics[0].code, bundledSceneBridgeFactoryShapePreflight.diagnostics[0].code, `${field}.diagnostics.0.code`);
+    requireResponseEqual(diagnostics[0].severity, bundledSceneBridgeFactoryShapePreflight.diagnostics[0].severity, `${field}.diagnostics.0.severity`);
+    requireResponseArrayEqual(
+        responseStringArray(record, "diagnosticCodes", `${field}.diagnosticCodes`),
+        [...bundledSceneBridgeFactoryShapePreflight.diagnosticCodes],
+        `${field}.diagnosticCodes`
+    );
+    requireResponseArrayEqual(
+        responseStringArray(record, "nextActions", `${field}.nextActions`),
+        [...bundledSceneBridgeFactoryShapePreflight.nextActions],
+        `${field}.nextActions`
+    );
+
+    const checks = responseRecordArray(record.checks, `${field}.checks`);
+    requireResponseArrayEqual(
+        checks.map((entry) => String(entry.id)),
+        bundledSceneBridgeFactoryShapePreflight.checks.map((entry) => entry.id),
+        `${field}.checks.ids`
+    );
+    for (const check of checks) {
+        requireResponseEqual(check.required, true, `${field}.checks.${String(check.id)}.required`);
+        requireResponseEqual(check.dispatch, false, `${field}.checks.${String(check.id)}.dispatch`);
+    }
+
+    const sideEffects = responseRecord(record.sideEffects, `${field}.sideEffects`);
+    for (const property of [
+        "browserProcessStarted",
+        "browserPageCreated",
+        "runtimeExecutionRegistered",
+        "runtimeAdapterImported",
+        "runtimeFactoryInvoked",
+        "runtimeOptionsCreated",
+        "runtimeAssetsLoaded",
+        "assetManifestMaterialized",
+        "backendRpcReads",
+        "sourceDataReads",
+        "networkDispatch",
+        "dispatch",
+        "localFileWrites",
+    ]) {
+        requireResponseEqual(sideEffects[property], false, `${field}.sideEffects.${property}`);
+    }
+
+    const redaction = responseRecord(record.redaction, `${field}.redaction`);
+    for (const property of [
+        "moduleValuesIncluded",
+        "pathValuesIncluded",
+        "sourceDataValuesIncluded",
+        "pageValuesIncluded",
+        "artifactValuesIncluded",
+        "mediaValuesIncluded",
+        "tokenValuesIncluded",
+    ]) {
+        requireResponseEqual(redaction[property], false, `${field}.redaction.${property}`);
+    }
+
+    const omitted = responseRecord(record.omitted, `${field}.omitted`);
+    for (const property of [
+        "moduleNamespace",
+        "factoryValue",
+        "runtimeOptionsValue",
+        "workspaceRoot",
+        "cacheRoot",
+        "modulePath",
+        "publicPaths",
+        "cachePaths",
+        "sha256",
+        "playwrightBrowserPath",
+        "runtimeModulePath",
+        "sourceData",
+        "pageData",
+        "artifactBytes",
+        "mediaBytes",
+        "tokenValues",
+    ]) {
+        requireResponseEqual(omitted[property], true, `${field}.omitted.${property}`);
+    }
+    requireResponseEqual(record.execution ?? null, null, `${field}.execution`);
+}
+
 function validateRuntimeAssetMaterializationPreflightCheckResponse(
     actual: unknown,
     expected: (typeof bundledRuntimeAssetMaterializationPreflight.checks)[number],
@@ -5811,6 +6158,10 @@ function validateThumbnailResponseContract(
     validateBundledSceneBridgeContractResponse(record.bundledSceneBridgeContract, "bundledSceneBridgeContract");
     validateBundledSceneBridgeAdapterModuleResponse(record.bundledSceneBridgeAdapterModule, "bundledSceneBridgeAdapterModule");
     validateBundledSceneBridgeImportGateResponse(record.bundledSceneBridgeImportGate, "bundledSceneBridgeImportGate");
+    validateBundledSceneBridgeFactoryShapePreflightResponse(
+        record.bundledSceneBridgeFactoryShapePreflight,
+        "bundledSceneBridgeFactoryShapePreflight"
+    );
     validateBrowserFixtureRuntimeLifecycleResponse(record.browserFixtureRuntime, "browserFixtureRuntime");
 
     validateThumbnailResourceResponse(responseRecord(record.resource, "resource"));

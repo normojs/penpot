@@ -863,6 +863,61 @@ function assertBundledSceneBridgeImportGate(gate, { status = "planned-disabled",
     return gate;
 }
 
+function assertBundledSceneBridgeFactoryShapePreflight(preflight) {
+    assert.equal(preflight.status, "planned-disabled");
+    assert.equal(preflight.preflightVersion, "P26.35");
+    assert.equal(preflight.owner, "renderer-service");
+    assert.equal(preflight.mode, "closed-factory-shape-preflight");
+    assert.equal(preflight.source.contractVersion, "P26.32");
+    assert.equal(preflight.source.adapterModuleReadinessVersion, "P26.33");
+    assert.equal(preflight.source.importGateVersion, "P26.34");
+    assert.equal(preflight.source.importGateRequired, true);
+    assert.equal(preflight.source.importGateOpen, false);
+    assert.equal(preflight.moduleImport.module, "./bundled-scene-bridge-runtime.js");
+    assert.equal(preflight.moduleImport.exportName, "createBundledSceneBridgeRendererRuntime");
+    assert.equal(preflight.moduleImport.importAttempted, false);
+    assert.equal(preflight.moduleImport.moduleImported, false);
+    assert.equal(preflight.moduleImport.namespaceInspected, false);
+    assert.equal(preflight.factoryShape.expectedType, "function");
+    assert.equal(preflight.factoryShape.factoryPresent, false);
+    assert.equal(preflight.factoryShape.shapeCheckAttempted, false);
+    assert.equal(preflight.factoryShape.factoryInvoked, false);
+    assert.deepEqual(preflight.factoryShape.requiredOptionKeys, ["assetManifest", "runtimeAssetPreflight", "browser"]);
+    assert.deepEqual(preflight.runtimeOptionsShape.requiredKeys, ["renderThumbnail"]);
+    assert.deepEqual(preflight.runtimeOptionsShape.optionalKeys, ["close"]);
+    assert.equal(preflight.runtimeOptionsShape.runtimeOptionsCreated, false);
+    assert.equal(preflight.runtimeOptionsShape.renderThumbnailChecked, false);
+    assert.equal(preflight.runtimeOptionsShape.runtimeRegistration, false);
+    assert.deepEqual(
+        preflight.importOutcomeTaxonomy.map((entry) => entry.code),
+        [
+            "renderer_service_bundled_scene_bridge_factory_shape_import_disabled",
+            "renderer_service_bundled_scene_bridge_factory_shape_export_missing",
+            "renderer_service_bundled_scene_bridge_factory_shape_not_callable",
+            "renderer_service_bundled_scene_bridge_factory_shape_result_invalid",
+        ]
+    );
+    assert.deepEqual(preflight.diagnosticCodes, [
+        "renderer_service_bundled_scene_bridge_factory_shape_preflight_defined_disabled",
+    ]);
+    assert.equal(preflight.sideEffects.runtimeAdapterImported, false);
+    assert.equal(preflight.sideEffects.runtimeFactoryInvoked, false);
+    assert.equal(preflight.sideEffects.runtimeOptionsCreated, false);
+    assert.equal(preflight.sideEffects.browserProcessStarted, false);
+    assert.equal(preflight.sideEffects.localFileWrites, false);
+    assert.equal(preflight.redaction.moduleValuesIncluded, false);
+    assert.equal(preflight.redaction.pathValuesIncluded, false);
+    assert.equal(preflight.redaction.sourceDataValuesIncluded, false);
+    assert.equal(preflight.omitted.moduleNamespace, true);
+    assert.equal(preflight.omitted.factoryValue, true);
+    assert.equal(preflight.omitted.runtimeOptionsValue, true);
+    assert.equal(preflight.omitted.modulePath, true);
+    assert.equal(preflight.omitted.sourceData, true);
+    assert.equal(preflight.omitted.tokenValues, true);
+    assert.equal(preflight.execution, null);
+    return preflight;
+}
+
 function persistedThumbnailResponse(id = "persisted-thumbnail-png") {
     return new Response(
         JSON.stringify({
@@ -891,6 +946,7 @@ test("noop host exposes the P25.24 health contract", async () => {
         assert.ok(serviceModule.healthResponse.capabilities.includes("thumbnail.render.bundled-scene-bridge-contract"));
         assert.ok(serviceModule.healthResponse.capabilities.includes("thumbnail.render.bundled-scene-bridge-adapter-module"));
         assert.ok(serviceModule.healthResponse.capabilities.includes("thumbnail.render.bundled-scene-bridge-import-gate"));
+        assert.ok(serviceModule.healthResponse.capabilities.includes("thumbnail.render.bundled-scene-bridge-factory-shape-preflight"));
         assert.deepEqual(body.browserFixtureRuntime, serviceModule.defaultBrowserFixtureRuntimeLifecycle);
         assertBrowserFixtureRuntimeLifecycle(body.browserFixtureRuntime);
         assertRuntimeAssetManifestScaffold(body.runtimeAssetManifest);
@@ -901,6 +957,8 @@ test("noop host exposes the P25.24 health contract", async () => {
         assertBundledSceneBridgeAdapterModule(body.bundledSceneBridgeAdapterModule);
         assert.deepEqual(body.bundledSceneBridgeImportGate, serviceModule.bundledSceneBridgeImportGate);
         assertBundledSceneBridgeImportGate(body.bundledSceneBridgeImportGate);
+        assert.deepEqual(body.bundledSceneBridgeFactoryShapePreflight, serviceModule.bundledSceneBridgeFactoryShapePreflight);
+        assertBundledSceneBridgeFactoryShapePreflight(body.bundledSceneBridgeFactoryShapePreflight);
     });
 });
 
@@ -3160,6 +3218,42 @@ test("noop host rejects unsafe P26.34 bundled scene bridge import gate metadata"
         assert.equal(body.code, "renderer_service_response_invalid");
         assert.equal(body.field, "bundledSceneBridgeImportGate.gate.importAttempted");
         assert.match(body.message, /bundledSceneBridgeImportGate\.gate\.importAttempted must match false/);
+    } finally {
+        await service.stop();
+    }
+});
+
+test("noop host rejects unsafe P26.35 bundled scene bridge factory-shape preflight metadata", async () => {
+    const service = await serviceModule.startRendererService({
+        port: 0,
+        thumbnailResponseOverride: (body) => ({
+            ...body,
+            bundledSceneBridgeFactoryShapePreflight: {
+                ...body.bundledSceneBridgeFactoryShapePreflight,
+                moduleImport: {
+                    ...body.bundledSceneBridgeFactoryShapePreflight.moduleImport,
+                    importAttempted: true,
+                },
+                factoryShape: {
+                    ...body.bundledSceneBridgeFactoryShapePreflight.factoryShape,
+                    factoryInvoked: true,
+                },
+                sideEffects: {
+                    ...body.bundledSceneBridgeFactoryShapePreflight.sideEffects,
+                    runtimeAdapterImported: true,
+                },
+            },
+        }),
+    });
+    try {
+        const response = await postValidFileThumbnail(service.host, service.port);
+
+        assert.equal(response.status, 500);
+        const body = await response.json();
+        assert.equal(body.status, "error");
+        assert.equal(body.code, "renderer_service_response_invalid");
+        assert.equal(body.field, "bundledSceneBridgeFactoryShapePreflight.moduleImport.importAttempted");
+        assert.match(body.message, /bundledSceneBridgeFactoryShapePreflight\.moduleImport\.importAttempted must match false/);
     } finally {
         await service.stop();
     }

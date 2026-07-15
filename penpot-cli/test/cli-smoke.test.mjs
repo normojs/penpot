@@ -36,6 +36,8 @@ const bundledSceneBridgeAdapterModuleFixture =
     renderThumbnailRendererServiceFixtures.bundledRuntimeBridge.bundledSceneBridgeAdapterModule;
 const bundledSceneBridgeImportGateFixture =
     renderThumbnailRendererServiceFixtures.bundledRuntimeBridge.bundledSceneBridgeImportGate;
+const bundledSceneBridgeFactoryShapePreflightFixture =
+    renderThumbnailRendererServiceFixtures.bundledRuntimeBridge.bundledSceneBridgeFactoryShapePreflight;
 
 function getRenderThumbnailRendererServiceFixture(id) {
     const fixture = renderThumbnailRendererServiceFixtures.cases.find((entry) => entry.id === id);
@@ -7181,6 +7183,36 @@ test("renderer-service status reports a no-spawn lifecycle plan without probing"
                 tokenValues: true,
             },
         });
+        assert.equal(body.data.lifecycle.bundledSceneBridgeFactoryShapePreflight.status, "planned-disabled");
+        assert.equal(body.data.lifecycle.bundledSceneBridgeFactoryShapePreflight.preflightVersion, "P26.35");
+        assert.equal(body.data.lifecycle.bundledSceneBridgeFactoryShapePreflight.checked, false);
+        assert.equal(
+            body.data.lifecycle.bundledSceneBridgeFactoryShapePreflight.source.readiness,
+            "blocked-until-import-gate-opens"
+        );
+        assert.equal(body.data.lifecycle.bundledSceneBridgeFactoryShapePreflight.moduleImport.importAttempted, false);
+        assert.equal(body.data.lifecycle.bundledSceneBridgeFactoryShapePreflight.moduleImport.moduleImported, false);
+        assert.equal(body.data.lifecycle.bundledSceneBridgeFactoryShapePreflight.factoryShape.shapeCheckAttempted, false);
+        assert.equal(body.data.lifecycle.bundledSceneBridgeFactoryShapePreflight.factoryShape.factoryInvoked, false);
+        assert.deepEqual(body.data.lifecycle.bundledSceneBridgeFactoryShapePreflight.runtimeOptionsShape.requiredKeys, [
+            "renderThumbnail",
+        ]);
+        assert.equal(body.data.lifecycle.bundledSceneBridgeFactoryShapePreflight.runtimeOptionsShape.runtimeRegistration, false);
+        assert.deepEqual(body.data.lifecycle.bundledSceneBridgeFactoryShapePreflight.diagnosticCodes, [
+            "renderer_service_bundled_scene_bridge_factory_shape_preflight_defined_disabled",
+        ]);
+        assert.equal(
+            body.data.lifecycle.bundledSceneBridgeFactoryShapePreflight.diagnosticsSurface,
+            "healthPreflight.bundledSceneBridgeFactoryShapePreflight"
+        );
+        assert.equal(body.data.lifecycle.bundledSceneBridgeFactoryShapePreflight.lifecyclePlanEffects.moduleImport, false);
+        assert.equal(body.data.lifecycle.bundledSceneBridgeFactoryShapePreflight.lifecyclePlanEffects.factoryShapeCheck, false);
+        assert.equal(body.data.lifecycle.bundledSceneBridgeFactoryShapePreflight.lifecyclePlanEffects.factoryInvoked, false);
+        assert.equal(body.data.lifecycle.bundledSceneBridgeFactoryShapePreflight.lifecyclePlanEffects.runtimeOptionsCreated, false);
+        assert.equal(body.data.lifecycle.bundledSceneBridgeFactoryShapePreflight.lifecyclePlanEffects.renderDispatch, false);
+        assert.equal(body.data.lifecycle.bundledSceneBridgeFactoryShapePreflight.omitted.moduleNamespace, true);
+        assert.equal(body.data.lifecycle.bundledSceneBridgeFactoryShapePreflight.omitted.factoryValue, true);
+        assert.equal(body.data.lifecycle.bundledSceneBridgeFactoryShapePreflight.omitted.runtimeOptionsValue, true);
         assert.deepEqual(body.data.lifecycle.backendRpcPlanning, {
             configured: true,
             baseUri: "https://penpot.example.test",
@@ -10204,10 +10236,12 @@ test("render thumbnail execution opt-in posts to renderer-service and returns re
                         "thumbnail.render.bundled-scene-bridge-contract",
                         "thumbnail.render.bundled-scene-bridge-adapter-module",
                         "thumbnail.render.bundled-scene-bridge-import-gate",
+                        "thumbnail.render.bundled-scene-bridge-factory-shape-preflight",
                     ],
                     bundledSceneBridgeContract: bundledSceneBridgeContractFixture,
                     bundledSceneBridgeAdapterModule: bundledSceneBridgeAdapterModuleFixture,
                     bundledSceneBridgeImportGate: bundledSceneBridgeImportGateFixture,
+                    bundledSceneBridgeFactoryShapePreflight: bundledSceneBridgeFactoryShapePreflightFixture,
                     browserFixtureRuntime: {
                         status: "started",
                         diagnosticsVersion: "P26.31",
@@ -10750,6 +10784,25 @@ test("render thumbnail execution opt-in posts to renderer-service and returns re
         assert.equal(body.data.healthPreflight.bundledSceneBridgeImportGate.sideEffects.runtimeAdapterImported, false);
         assert.equal(body.data.healthPreflight.bundledSceneBridgeImportGate.redaction.modeValuesIncluded, false);
         assert.equal(body.data.healthPreflight.bundledSceneBridgeImportGate.omitted.configuredValue, true);
+        assert.equal(body.data.healthPreflight.bundledSceneBridgeFactoryShapePreflight.status, "planned-disabled");
+        assert.equal(body.data.healthPreflight.bundledSceneBridgeFactoryShapePreflight.preflightVersion, "P26.35");
+        assert.equal(body.data.healthPreflight.bundledSceneBridgeFactoryShapePreflight.source.importGateOpen, false);
+        assert.equal(body.data.healthPreflight.bundledSceneBridgeFactoryShapePreflight.moduleImport.importAttempted, false);
+        assert.equal(body.data.healthPreflight.bundledSceneBridgeFactoryShapePreflight.moduleImport.moduleImported, false);
+        assert.equal(body.data.healthPreflight.bundledSceneBridgeFactoryShapePreflight.factoryShape.shapeCheckAttempted, false);
+        assert.equal(body.data.healthPreflight.bundledSceneBridgeFactoryShapePreflight.factoryShape.factoryInvoked, false);
+        assert.equal(
+            body.data.healthPreflight.bundledSceneBridgeFactoryShapePreflight.runtimeOptionsShape.runtimeRegistration,
+            false
+        );
+        assert.deepEqual(body.data.healthPreflight.bundledSceneBridgeFactoryShapePreflight.diagnosticCodes, [
+            "renderer_service_bundled_scene_bridge_factory_shape_preflight_defined_disabled",
+        ]);
+        assert.equal(body.data.healthPreflight.bundledSceneBridgeFactoryShapePreflight.sideEffects.runtimeAdapterImported, false);
+        assert.equal(body.data.healthPreflight.bundledSceneBridgeFactoryShapePreflight.sideEffects.runtimeOptionsCreated, false);
+        assert.equal(body.data.healthPreflight.bundledSceneBridgeFactoryShapePreflight.redaction.moduleValuesIncluded, false);
+        assert.equal(body.data.healthPreflight.bundledSceneBridgeFactoryShapePreflight.omitted.moduleNamespace, true);
+        assert.equal(body.data.healthPreflight.bundledSceneBridgeFactoryShapePreflight.omitted.factoryValue, true);
         assert.equal(body.data.healthPreflight.runtimeAssetPreflight.status, "executed");
         assert.equal(body.data.healthPreflight.runtimeAssetPreflight.diagnosticsVersion, "P26.25");
         assert.equal(body.data.healthPreflight.runtimeAssetPreflight.executionVersion, "P26.22");

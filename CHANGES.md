@@ -4,6 +4,7 @@
 
 ### :sparkles: New features & Enhancements
 
+- Add a closed bundled scene bridge factory-shape preflight contract through renderer-service, command-runtime, CLI, and MCP health preflight, defining future adapter import outcome taxonomy and factory/runtime option shape checks while keeping module import, namespace inspection, factory invocation, runtime option creation, runtime registration, browser startup, asset loading, reads, writes, and value exposure disabled.
 - Add a disabled bundled scene bridge import gate via `PENPOT_RENDERER_SERVICE_BUNDLED_SCENE_BRIDGE_RUNTIME=import-gate`, reporting `bundledSceneBridgeImportGate` diagnostics through renderer-service, CLI, and MCP health preflight while keeping module import, factory invocation, runtime registration, browser startup, asset loading, reads, writes, and value exposure disabled.
 - Add a disabled `bundled-scene-bridge-runtime.js` module boundary to renderer-service with `bundledSceneBridgeAdapterModule` health/thumbnail diagnostics, while keeping default import, factory invocation, runtime registration, browser startup, asset loading, backend/source-data reads, writes, and value exposure disabled.
 - Enable explicitly gated `render.thumbnail` renderer-service execution from MCP and `penpot-cli`, with health preflight, POST dispatch, normalized PNG resource metadata, and optional CLI `--output` downloads from the renderer-service resource URL.

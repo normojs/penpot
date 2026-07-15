@@ -537,6 +537,15 @@ is still closed: no module import, factory invocation, runtime registration,
 browser startup, asset loading, backend/source-data reads, local writes, or
 value exposure occurs. Conflicts with manual runtime modules, browser fixture
 runtime, or injected runtimes are reported as redacted diagnostics.
+P26.35 defines the closed factory-shape preflight before the import path can
+execute. Renderer-service exposes `bundledSceneBridgeFactoryShapePreflight`,
+and CLI/MCP summaries expose
+`healthPreflight.bundledSceneBridgeFactoryShapePreflight`. The preflight
+records the future import outcome taxonomy plus expected factory and
+`RendererRuntimeOptions` shapes, but it does not import the module, inspect the
+namespace, invoke the factory, create runtime options, register execution,
+start browsers, load assets, read backend/source data, write files, or expose
+module/factory/runtime values.
 
 ## Test Strategy
 
