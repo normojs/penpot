@@ -17,6 +17,10 @@ The current host implements:
   `PENPOT_RENDERER_SERVICE_BROWSER_FIXTURE_RUNTIME=enabled`. This starts a
   Playwright Chromium instance, draws a fixture canvas PNG, and validates
   browser startup/reuse/shutdown without claiming real Penpot scene rendering.
+- Redacted `browserFixtureRuntime` diagnostics on `/health` and `/thumbnail`
+  that report configuration, startup, render counts, page reuse, PNG
+  validation, close state, side effects, and omitted-field markers without
+  exposing paths, source/page data, artifact/media bytes, or token values.
 - `GET /assets/by-id/noop-thumbnail-png`, serving the fixture PNG resource, and
   `GET /assets/by-id/{renderedMediaId}` for in-memory adapter artifacts.
 
@@ -48,6 +52,11 @@ P26.30 browser-backed fixture adapter instead of `PENPOT_RENDERER_SERVICE_RUNTIM
 the two runtime sources are mutually exclusive. Keep Playwright browser
 binaries under the shared cache, for example
 `PLAYWRIGHT_BROWSERS_PATH=/Volumes/fushilu/.caches/ms-playwright`.
+When enabled, `/health` and `/thumbnail` expose a redacted
+`browserFixtureRuntime` lifecycle summary for the fixture adapter. The summary
+is diagnostic metadata only and does not expose browser paths, runtime module
+paths, workspace/cache roots, source data, page data, artifact bytes, media
+bytes, or tokens.
 
 `/health` and `/thumbnail` also expose the staged runtime asset materialization
 surfaces: read-only preflight summaries, metadata-only dry-run copy/cache

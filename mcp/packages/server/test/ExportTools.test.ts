@@ -7478,6 +7478,71 @@ test("RenderThumbnailTool execution opt-in posts to renderer-service and returns
                     runtimeRegistration: true,
                     dispatch: true,
                     capabilities: ["health", "thumbnail.render"],
+                    browserFixtureRuntime: {
+                        status: "started",
+                        diagnosticsVersion: "P26.31",
+                        owner: "renderer-service",
+                        mode: "browser-fixture-lifecycle",
+                        runtimeSource: "browser-fixture",
+                        configured: true,
+                        enabled: true,
+                        runtimeModuleConfigured: false,
+                        injectedRuntimeConfigured: false,
+                        browser: {
+                            engine: "chromium",
+                            headless: true,
+                            processStarted: true,
+                            startupAttempted: true,
+                            startupSucceeded: true,
+                            closed: false,
+                            pathValuesIncluded: false,
+                        },
+                        lifecycle: {
+                            startupAttempted: true,
+                            startupSucceeded: true,
+                            startupFailed: false,
+                            renderAttempts: 2,
+                            renderSuccesses: 2,
+                            renderFailures: 0,
+                            lastRenderSucceeded: true,
+                            pageCreateCount: 1,
+                            pageReuseValidated: true,
+                            nonEmptyPngValidated: true,
+                            closeAttempted: false,
+                            closeSucceeded: false,
+                            closeFailed: false,
+                            artifactByteLengthIncluded: false,
+                        },
+                        sideEffects: {
+                            browserProcessStarted: true,
+                            runtimeExecutionRegistered: false,
+                            runtimeAdapterImported: true,
+                            runtimeAssetsLoaded: false,
+                            assetManifestMaterialized: false,
+                            networkDispatch: false,
+                            dispatch: false,
+                            localFileWrites: false,
+                        },
+                        redaction: {
+                            sourceDataValuesIncluded: false,
+                            pageValuesIncluded: false,
+                            artifactValuesIncluded: false,
+                            mediaValuesIncluded: false,
+                            tokenValuesIncluded: false,
+                            pathValuesIncluded: false,
+                        },
+                        omitted: {
+                            playwrightBrowserPath: true,
+                            runtimeModulePath: true,
+                            workspaceRoot: true,
+                            cacheRoot: true,
+                            sourceData: true,
+                            pageData: true,
+                            artifactBytes: true,
+                            mediaBytes: true,
+                            tokenValues: true,
+                        },
+                    },
                     runtimeAssetMaterializationPreflight: {
                         sourceManifest: {
                             assetIds: ["thumbnail-worker-main"],
@@ -7781,6 +7846,22 @@ test("RenderThumbnailTool execution opt-in posts to renderer-service and returns
         assert.deepEqual(body.data.serviceResponse.auth, fixture.expectedResponse.auth);
         assert.equal(JSON.stringify(body).includes("token-1"), false);
         assert.equal(body.data.healthPreflight.status, "ok");
+        assert.equal(body.data.healthPreflight.browserFixtureRuntime.status, "started");
+        assert.equal(body.data.healthPreflight.browserFixtureRuntime.diagnosticsVersion, "P26.31");
+        assert.equal(body.data.healthPreflight.browserFixtureRuntime.checked, true);
+        assert.equal(body.data.healthPreflight.browserFixtureRuntime.runtimeSource, "browser-fixture");
+        assert.equal(body.data.healthPreflight.browserFixtureRuntime.configured, true);
+        assert.equal(body.data.healthPreflight.browserFixtureRuntime.enabled, true);
+        assert.equal(body.data.healthPreflight.browserFixtureRuntime.browser.processStarted, true);
+        assert.equal(body.data.healthPreflight.browserFixtureRuntime.browser.pathValuesIncluded, false);
+        assert.equal(body.data.healthPreflight.browserFixtureRuntime.lifecycle.renderAttempts, 2);
+        assert.equal(body.data.healthPreflight.browserFixtureRuntime.lifecycle.pageCreateCount, 1);
+        assert.equal(body.data.healthPreflight.browserFixtureRuntime.lifecycle.pageReuseValidated, true);
+        assert.equal(body.data.healthPreflight.browserFixtureRuntime.lifecycle.nonEmptyPngValidated, true);
+        assert.equal(body.data.healthPreflight.browserFixtureRuntime.sideEffects.browserProcessStarted, true);
+        assert.equal(body.data.healthPreflight.browserFixtureRuntime.sideEffects.runtimeAdapterImported, true);
+        assert.equal(body.data.healthPreflight.browserFixtureRuntime.redaction.pathValuesIncluded, false);
+        assert.equal(body.data.healthPreflight.browserFixtureRuntime.omitted.playwrightBrowserPath, true);
         assert.equal(body.data.healthPreflight.runtimeAssetPreflight.status, "executed");
         assert.equal(body.data.healthPreflight.runtimeAssetPreflight.diagnosticsVersion, "P26.25");
         assert.equal(body.data.healthPreflight.runtimeAssetPreflight.executionVersion, "P26.22");

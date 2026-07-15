@@ -14318,6 +14318,175 @@ export function createRenderThumbnailRendererServiceHealthPreflight(options = EM
         runtimeAssetPreflight: normalizeRendererServiceRuntimeAssetPreflightDiagnostic(null),
         runtimeAssetMaterializationDryRun: normalizeRendererServiceRuntimeAssetMaterializationDryRunDiagnostic(null),
         runtimeAssetMaterializationApproval: normalizeRendererServiceRuntimeAssetMaterializationApprovalDiagnostic(null),
+        browserFixtureRuntime: normalizeRendererServiceBrowserFixtureRuntimeDiagnostic(null),
+    };
+}
+
+function normalizeDiagnosticNonNegativeInteger(value) {
+    return Number.isInteger(value) && value >= 0 ? value : 0;
+}
+
+function isDiagnosticNonNegativeInteger(value) {
+    return Number.isInteger(value) && value >= 0;
+}
+
+function normalizeRendererServiceBrowserFixtureRuntimeDiagnostic(body) {
+    const bodyRecord = asRecord(body);
+    const present = Object.prototype.hasOwnProperty.call(bodyRecord, "browserFixtureRuntime");
+    const summary = asRecord(bodyRecord.browserFixtureRuntime);
+    const browser = asRecord(summary.browser);
+    const lifecycle = asRecord(summary.lifecycle);
+    const sideEffects = asRecord(summary.sideEffects);
+    const redaction = asRecord(summary.redaction);
+    const omitted = asRecord(summary.omitted);
+    const statusValue = normalizeOptionalString(summary.status);
+    const status = ["not-configured", "started", "closed"].includes(statusValue) ? statusValue : present ? "invalid" : "not-reported";
+    const runtimeSourceValue = normalizeOptionalString(summary.runtimeSource);
+    const runtimeSource = ["none", "injected", "runtime-module", "browser-fixture"].includes(runtimeSourceValue)
+        ? runtimeSourceValue
+        : "unknown";
+    const renderAttempts = normalizeDiagnosticNonNegativeInteger(lifecycle.renderAttempts);
+    const renderSuccesses = normalizeDiagnosticNonNegativeInteger(lifecycle.renderSuccesses);
+    const renderFailures = normalizeDiagnosticNonNegativeInteger(lifecycle.renderFailures);
+    const lifecycleIntegerFields = ["renderAttempts", "renderSuccesses", "renderFailures", "pageCreateCount"];
+    const lifecycleBooleanOrNullValid = lifecycle.lastRenderSucceeded === null || typeof lifecycle.lastRenderSucceeded === "boolean";
+    const requiredBrowserBooleans = ["headless", "processStarted", "startupAttempted", "startupSucceeded", "closed", "pathValuesIncluded"];
+    const requiredLifecycleBooleans = [
+        "startupAttempted",
+        "startupSucceeded",
+        "startupFailed",
+        "pageReuseValidated",
+        "nonEmptyPngValidated",
+        "closeAttempted",
+        "closeSucceeded",
+        "closeFailed",
+        "artifactByteLengthIncluded",
+    ];
+    const requiredSideEffectBooleans = [
+        "browserProcessStarted",
+        "runtimeExecutionRegistered",
+        "runtimeAdapterImported",
+        "runtimeAssetsLoaded",
+        "assetManifestMaterialized",
+        "networkDispatch",
+        "dispatch",
+        "localFileWrites",
+    ];
+    const redactionFields = [
+        "sourceDataValuesIncluded",
+        "pageValuesIncluded",
+        "artifactValuesIncluded",
+        "mediaValuesIncluded",
+        "tokenValuesIncluded",
+        "pathValuesIncluded",
+    ];
+    const omittedFields = [
+        "playwrightBrowserPath",
+        "runtimeModulePath",
+        "workspaceRoot",
+        "cacheRoot",
+        "sourceData",
+        "pageData",
+        "artifactBytes",
+        "mediaBytes",
+        "tokenValues",
+    ];
+    const invalidShape =
+        present &&
+        (normalizeOptionalString(summary.owner) !== "renderer-service" ||
+            normalizeOptionalString(browser.engine) !== "chromium" ||
+            requiredBrowserBooleans.some((field) => typeof browser[field] !== "boolean") ||
+            lifecycleIntegerFields.some((field) => !isDiagnosticNonNegativeInteger(lifecycle[field])) ||
+            requiredLifecycleBooleans.some((field) => typeof lifecycle[field] !== "boolean") ||
+            !lifecycleBooleanOrNullValid ||
+            requiredSideEffectBooleans.some((field) => typeof sideEffects[field] !== "boolean"));
+    const unsafeDisclosure =
+        present &&
+        (browser.pathValuesIncluded === true ||
+            lifecycle.artifactByteLengthIncluded === true ||
+            sideEffects.runtimeExecutionRegistered === true ||
+            sideEffects.runtimeAssetsLoaded === true ||
+            sideEffects.assetManifestMaterialized === true ||
+            sideEffects.networkDispatch === true ||
+            sideEffects.dispatch === true ||
+            sideEffects.localFileWrites === true ||
+            redactionFields.some((field) => redaction[field] === true) ||
+            omittedFields.some((field) => omitted[field] === false));
+    const invalid =
+        present &&
+        (invalidShape ||
+            unsafeDisclosure ||
+            status === "invalid" ||
+            normalizeOptionalString(summary.diagnosticsVersion) !== "P26.31" ||
+            normalizeOptionalString(summary.mode) !== "browser-fixture-lifecycle" ||
+            renderAttempts !== renderSuccesses + renderFailures);
+    const diagnosticCodes = invalid ? ["renderer_service_browser_fixture_runtime_diagnostics_invalid"] : [];
+
+    return {
+        status: invalid ? "invalid" : status,
+        diagnosticsVersion: "P26.31",
+        checked: Boolean(body),
+        runtimeSource,
+        configured: summary.configured === true,
+        enabled: summary.enabled === true,
+        runtimeModuleConfigured: summary.runtimeModuleConfigured === true,
+        injectedRuntimeConfigured: summary.injectedRuntimeConfigured === true,
+        browser: {
+            engine: normalizeOptionalString(browser.engine) ?? null,
+            headless: browser.headless === true,
+            processStarted: browser.processStarted === true,
+            startupAttempted: browser.startupAttempted === true,
+            startupSucceeded: browser.startupSucceeded === true,
+            closed: browser.closed === true,
+            pathValuesIncluded: browser.pathValuesIncluded === true,
+        },
+        lifecycle: {
+            startupAttempted: lifecycle.startupAttempted === true,
+            startupSucceeded: lifecycle.startupSucceeded === true,
+            startupFailed: lifecycle.startupFailed === true,
+            renderAttempts,
+            renderSuccesses,
+            renderFailures,
+            lastRenderSucceeded: typeof lifecycle.lastRenderSucceeded === "boolean" ? lifecycle.lastRenderSucceeded : null,
+            pageCreateCount: normalizeDiagnosticNonNegativeInteger(lifecycle.pageCreateCount),
+            pageReuseValidated: lifecycle.pageReuseValidated === true,
+            nonEmptyPngValidated: lifecycle.nonEmptyPngValidated === true,
+            closeAttempted: lifecycle.closeAttempted === true,
+            closeSucceeded: lifecycle.closeSucceeded === true,
+            closeFailed: lifecycle.closeFailed === true,
+            artifactByteLengthIncluded: lifecycle.artifactByteLengthIncluded === true,
+        },
+        diagnosticCodes,
+        nextActions: invalid ? ["Inspect renderer-service /health browserFixtureRuntime diagnostics before trusting browser fixture lifecycle state."] : [],
+        sideEffects: {
+            browserProcessStarted: sideEffects.browserProcessStarted === true,
+            runtimeExecutionRegistered: sideEffects.runtimeExecutionRegistered === true,
+            runtimeAdapterImported: sideEffects.runtimeAdapterImported === true,
+            runtimeAssetsLoaded: sideEffects.runtimeAssetsLoaded === true,
+            assetManifestMaterialized: sideEffects.assetManifestMaterialized === true,
+            networkDispatch: sideEffects.networkDispatch === true,
+            dispatch: sideEffects.dispatch === true,
+            localFileWrites: sideEffects.localFileWrites === true,
+        },
+        redaction: {
+            sourceDataValuesIncluded: redaction.sourceDataValuesIncluded === true,
+            pageValuesIncluded: redaction.pageValuesIncluded === true,
+            artifactValuesIncluded: redaction.artifactValuesIncluded === true,
+            mediaValuesIncluded: redaction.mediaValuesIncluded === true,
+            tokenValuesIncluded: redaction.tokenValuesIncluded === true,
+            pathValuesIncluded: redaction.pathValuesIncluded === true,
+        },
+        omitted: {
+            playwrightBrowserPath: omitted.playwrightBrowserPath !== false,
+            runtimeModulePath: omitted.runtimeModulePath !== false,
+            workspaceRoot: omitted.workspaceRoot !== false,
+            cacheRoot: omitted.cacheRoot !== false,
+            sourceData: omitted.sourceData !== false,
+            pageData: omitted.pageData !== false,
+            artifactBytes: omitted.artifactBytes !== false,
+            mediaBytes: omitted.mediaBytes !== false,
+            tokenValues: omitted.tokenValues !== false,
+        },
     };
 }
 
@@ -15313,6 +15482,7 @@ export async function executeRenderThumbnailRendererServiceHealthPreflight(plan,
             runtimeAssetPreflight: normalizeRendererServiceRuntimeAssetPreflightDiagnostic(bodyRecord),
             runtimeAssetMaterializationDryRun: normalizeRendererServiceRuntimeAssetMaterializationDryRunDiagnostic(bodyRecord),
             runtimeAssetMaterializationApproval: normalizeRendererServiceRuntimeAssetMaterializationApprovalDiagnostic(bodyRecord),
+            browserFixtureRuntime: normalizeRendererServiceBrowserFixtureRuntimeDiagnostic(bodyRecord),
             response: {
                 status: httpStatus,
                 contentType,

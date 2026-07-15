@@ -48,6 +48,7 @@ const DEFAULT_RENDERER_SERVICE_URI = "http://localhost:6070/thumbnail";
 const DEFAULT_RENDERER_SERVICE_HOST = "127.0.0.1";
 const DEFAULT_RENDERER_SERVICE_PORT = 6070;
 const RENDERER_SERVICE_BUILD_DIR = "/Volumes/fushilu/.caches/penpot/renderer-service";
+const RENDERER_SERVICE_BROWSER_FIXTURE_RUNTIME_ENV = "PENPOT_RENDERER_SERVICE_BROWSER_FIXTURE_RUNTIME";
 const RENDERER_SERVICE_RUNTIME_ASSET_PREFLIGHT_ENV = "PENPOT_RENDERER_SERVICE_RUNTIME_ASSET_PREFLIGHT";
 const RENDERER_SERVICE_RUNTIME_ASSET_PREFLIGHT_WORKSPACE_ROOT_ENV = "PENPOT_RENDERER_SERVICE_RUNTIME_ASSET_PREFLIGHT_WORKSPACE_ROOT";
 const RENDERER_SERVICE_RUNTIME_ASSET_PREFLIGHT_CACHE_ROOT_ENV = "PENPOT_RENDERER_SERVICE_RUNTIME_ASSET_PREFLIGHT_CACHE_ROOT";
@@ -1131,6 +1132,56 @@ function getRendererServiceLifecyclePlan(args: string[], env: NodeJS.ProcessEnv)
         moduleImport: false;
         renderDispatch: false;
     };
+    browserFixtureRuntime: {
+        configured: boolean;
+        enabled: boolean;
+        value: string | null;
+        expectedValue: "enabled";
+        valid: boolean;
+        source: typeof RENDERER_SERVICE_BROWSER_FIXTURE_RUNTIME_ENV | null;
+        runtimeModuleConflict: boolean;
+        diagnosticsVersion: "P26.31";
+        diagnosticCodes: string[];
+        diagnostics: Array<{
+            code:
+                | "renderer_service_browser_fixture_runtime_configuration_invalid"
+                | "renderer_service_browser_fixture_runtime_module_conflict";
+            severity: "invalid";
+            field: "mode" | "runtimeModule";
+            message: string;
+            nextActions: string[];
+        }>;
+        nextActions: string[];
+        diagnosticsSurface: "healthPreflight.browserFixtureRuntime";
+        lifecyclePlanEffects: {
+            healthProbe: false;
+            browserProcessStarted: false;
+            runtimeAdapterImported: false;
+            runtimeAssetsLoaded: false;
+            assetManifestMaterialized: false;
+            renderDispatch: false;
+            networkDispatch: false;
+            localFileWrites: false;
+            runtimeExecutionRegistered: false;
+            sourceDataValuesIncluded: false;
+            pageValuesIncluded: false;
+            artifactValuesIncluded: false;
+            mediaValuesIncluded: false;
+            tokenValuesIncluded: false;
+            pathValuesIncluded: false;
+        };
+        omitted: {
+            playwrightBrowserPath: true;
+            runtimeModulePath: true;
+            workspaceRoot: true;
+            cacheRoot: true;
+            sourceData: true;
+            pageData: true;
+            artifactBytes: true;
+            mediaBytes: true;
+            tokenValues: true;
+        };
+    };
     runtimeAssetPreflight: {
         configured: boolean;
         executeReadOnly: boolean;
@@ -1342,6 +1393,42 @@ function getRendererServiceLifecyclePlan(args: string[], env: NodeJS.ProcessEnv)
             ? "PENPOT_BACKEND_URI"
             : null;
     const rendererRuntimeModule = env.PENPOT_RENDERER_SERVICE_RUNTIME_MODULE?.trim() || null;
+    const browserFixtureRuntimeValue = env[RENDERER_SERVICE_BROWSER_FIXTURE_RUNTIME_ENV]?.trim() || null;
+    const browserFixtureRuntimeConfigured = Boolean(browserFixtureRuntimeValue);
+    const browserFixtureRuntimeEnabled = browserFixtureRuntimeValue === "enabled";
+    const browserFixtureRuntimeDiagnostics: Array<{
+        code:
+            | "renderer_service_browser_fixture_runtime_configuration_invalid"
+            | "renderer_service_browser_fixture_runtime_module_conflict";
+        severity: "invalid";
+        field: "mode" | "runtimeModule";
+        message: string;
+        nextActions: string[];
+    }> = [];
+    if (browserFixtureRuntimeConfigured && !browserFixtureRuntimeEnabled) {
+        browserFixtureRuntimeDiagnostics.push({
+            code: "renderer_service_browser_fixture_runtime_configuration_invalid",
+            severity: "invalid",
+            field: "mode",
+            message: "Renderer-service browser fixture runtime mode must be enabled when configured.",
+            nextActions: [
+                `Set ${RENDERER_SERVICE_BROWSER_FIXTURE_RUNTIME_ENV}=enabled or leave it unset.`,
+                "Rerun penpot-cli renderer-service status after fixing the mode.",
+            ],
+        });
+    }
+    if (browserFixtureRuntimeEnabled && rendererRuntimeModule) {
+        browserFixtureRuntimeDiagnostics.push({
+            code: "renderer_service_browser_fixture_runtime_module_conflict",
+            severity: "invalid",
+            field: "runtimeModule",
+            message: "Renderer-service browser fixture runtime cannot be combined with PENPOT_RENDERER_SERVICE_RUNTIME_MODULE.",
+            nextActions: [
+                `Unset ${RENDERER_SERVICE_BROWSER_FIXTURE_RUNTIME_ENV} when using a manual runtime module.`,
+                "Use either the browser fixture runtime or PENPOT_RENDERER_SERVICE_RUNTIME_MODULE, not both.",
+            ],
+        });
+    }
     const runtimeAssetPreflightValue = env[RENDERER_SERVICE_RUNTIME_ASSET_PREFLIGHT_ENV]?.trim() || null;
     const runtimeAssetPreflightWorkspaceRoot = env[RENDERER_SERVICE_RUNTIME_ASSET_PREFLIGHT_WORKSPACE_ROOT_ENV]?.trim() || null;
     const runtimeAssetPreflightCacheRoot = env[RENDERER_SERVICE_RUNTIME_ASSET_PREFLIGHT_CACHE_ROOT_ENV]?.trim() || null;
@@ -1510,6 +1597,7 @@ function getRendererServiceLifecyclePlan(args: string[], env: NodeJS.ProcessEnv)
               ]),
         ...(backendRpcBaseUri ? [shellEnvAssignment("PENPOT_RENDERER_SERVICE_BACKEND_URI", backendRpcBaseUri)] : []),
         ...(rendererRuntimeModule ? [shellEnvAssignment("PENPOT_RENDERER_SERVICE_RUNTIME_MODULE", rendererRuntimeModule)] : []),
+        ...(browserFixtureRuntimeValue ? [shellEnvAssignment(RENDERER_SERVICE_BROWSER_FIXTURE_RUNTIME_ENV, browserFixtureRuntimeValue)] : []),
         ...(runtimeAssetPreflightValue
             ? [shellEnvAssignment(RENDERER_SERVICE_RUNTIME_ASSET_PREFLIGHT_ENV, runtimeAssetPreflightValue)]
             : []),
@@ -1541,6 +1629,48 @@ function getRendererServiceLifecyclePlan(args: string[], env: NodeJS.ProcessEnv)
             source: rendererRuntimeModule ? "PENPOT_RENDERER_SERVICE_RUNTIME_MODULE" : null,
             moduleImport: false,
             renderDispatch: false,
+        },
+        browserFixtureRuntime: {
+            configured: browserFixtureRuntimeConfigured,
+            enabled: browserFixtureRuntimeEnabled,
+            value: browserFixtureRuntimeValue,
+            expectedValue: "enabled",
+            valid: browserFixtureRuntimeDiagnostics.length === 0,
+            source: browserFixtureRuntimeConfigured ? RENDERER_SERVICE_BROWSER_FIXTURE_RUNTIME_ENV : null,
+            runtimeModuleConflict: browserFixtureRuntimeEnabled && Boolean(rendererRuntimeModule),
+            diagnosticsVersion: "P26.31",
+            diagnosticCodes: browserFixtureRuntimeDiagnostics.map((entry) => entry.code),
+            diagnostics: browserFixtureRuntimeDiagnostics,
+            nextActions: [...new Set(browserFixtureRuntimeDiagnostics.flatMap((entry) => entry.nextActions))],
+            diagnosticsSurface: "healthPreflight.browserFixtureRuntime",
+            lifecyclePlanEffects: {
+                healthProbe: false,
+                browserProcessStarted: false,
+                runtimeAdapterImported: false,
+                runtimeAssetsLoaded: false,
+                assetManifestMaterialized: false,
+                renderDispatch: false,
+                networkDispatch: false,
+                localFileWrites: false,
+                runtimeExecutionRegistered: false,
+                sourceDataValuesIncluded: false,
+                pageValuesIncluded: false,
+                artifactValuesIncluded: false,
+                mediaValuesIncluded: false,
+                tokenValuesIncluded: false,
+                pathValuesIncluded: false,
+            },
+            omitted: {
+                playwrightBrowserPath: true,
+                runtimeModulePath: true,
+                workspaceRoot: true,
+                cacheRoot: true,
+                sourceData: true,
+                pageData: true,
+                artifactBytes: true,
+                mediaBytes: true,
+                tokenValues: true,
+            },
         },
         runtimeAssetPreflight: {
             configured: runtimeAssetPreflightConfigured,
@@ -5723,8 +5853,19 @@ async function handleRendererServiceStatus(args: string[], io: CliIO, env: NodeJ
         writeLine(io.stdout, `Build cache: ${plan.buildDir}`);
         writeLine(
             io.stdout,
+            `Browser fixture runtime: ${plan.browserFixtureRuntime.enabled ? "enabled" : "disabled"}`
+        );
+        writeLine(
+            io.stdout,
             `Runtime asset preflight: ${plan.runtimeAssetPreflight.executeReadOnly ? "read-only" : "disabled"}`
         );
+        if (plan.browserFixtureRuntime.diagnosticCodes.length > 0) {
+            writeLine(io.stdout, `Browser fixture runtime diagnostics: ${plan.browserFixtureRuntime.diagnosticCodes.join(", ")}`);
+            writeLine(io.stdout, "Browser fixture next actions:");
+            for (const action of plan.browserFixtureRuntime.nextActions) {
+                writeLine(io.stdout, `- ${action}`);
+            }
+        }
         writeLine(
             io.stdout,
             `Runtime asset materialization dry-run: ${plan.runtimeAssetMaterializationDryRun.status}, approval required`

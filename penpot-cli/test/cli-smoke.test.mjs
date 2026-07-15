@@ -7087,6 +7087,48 @@ test("renderer-service status reports a no-spawn lifecycle plan without probing"
             moduleImport: false,
             renderDispatch: false,
         });
+        assert.deepEqual(body.data.lifecycle.browserFixtureRuntime, {
+            configured: false,
+            enabled: false,
+            value: null,
+            expectedValue: "enabled",
+            valid: true,
+            source: null,
+            runtimeModuleConflict: false,
+            diagnosticsVersion: "P26.31",
+            diagnosticCodes: [],
+            diagnostics: [],
+            nextActions: [],
+            diagnosticsSurface: "healthPreflight.browserFixtureRuntime",
+            lifecyclePlanEffects: {
+                healthProbe: false,
+                browserProcessStarted: false,
+                runtimeAdapterImported: false,
+                runtimeAssetsLoaded: false,
+                assetManifestMaterialized: false,
+                renderDispatch: false,
+                networkDispatch: false,
+                localFileWrites: false,
+                runtimeExecutionRegistered: false,
+                sourceDataValuesIncluded: false,
+                pageValuesIncluded: false,
+                artifactValuesIncluded: false,
+                mediaValuesIncluded: false,
+                tokenValuesIncluded: false,
+                pathValuesIncluded: false,
+            },
+            omitted: {
+                playwrightBrowserPath: true,
+                runtimeModulePath: true,
+                workspaceRoot: true,
+                cacheRoot: true,
+                sourceData: true,
+                pageData: true,
+                artifactBytes: true,
+                mediaBytes: true,
+                tokenValues: true,
+            },
+        });
         assert.deepEqual(body.data.lifecycle.backendRpcPlanning, {
             configured: true,
             baseUri: "https://penpot.example.test",
@@ -7406,6 +7448,59 @@ test("renderer-service status reports runtime asset materialization approval uns
     assert.equal(result.stdout.includes("secret-approval-token"), false);
     assert.equal(result.stdout.includes("/tmp/secret-approval-audit"), false);
     assert.equal(body.data.lifecycle.startCommand.includes("PENPOT_RENDERER_SERVICE_RUNTIME_ASSET_MATERIALIZATION_APPROVAL"), false);
+});
+
+test("renderer-service status reports browser fixture runtime lifecycle configuration", async () => {
+    const result = await runCli(["renderer-service", "status", "--format", "json"], {
+        PENPOT_RENDERER_SERVICE_BROWSER_FIXTURE_RUNTIME: "enabled",
+    });
+    const body = parseJson(result.stdout);
+
+    assert.equal(result.exitCode, 0);
+    const browserFixtureRuntime = body.data.lifecycle.browserFixtureRuntime;
+    assert.equal(browserFixtureRuntime.configured, true);
+    assert.equal(browserFixtureRuntime.enabled, true);
+    assert.equal(browserFixtureRuntime.value, "enabled");
+    assert.equal(browserFixtureRuntime.expectedValue, "enabled");
+    assert.equal(browserFixtureRuntime.valid, true);
+    assert.equal(browserFixtureRuntime.source, "PENPOT_RENDERER_SERVICE_BROWSER_FIXTURE_RUNTIME");
+    assert.equal(browserFixtureRuntime.runtimeModuleConflict, false);
+    assert.equal(browserFixtureRuntime.diagnosticsVersion, "P26.31");
+    assert.deepEqual(browserFixtureRuntime.diagnosticCodes, []);
+    assert.equal(browserFixtureRuntime.diagnosticsSurface, "healthPreflight.browserFixtureRuntime");
+    assert.equal(browserFixtureRuntime.lifecyclePlanEffects.healthProbe, false);
+    assert.equal(browserFixtureRuntime.lifecyclePlanEffects.browserProcessStarted, false);
+    assert.equal(browserFixtureRuntime.lifecyclePlanEffects.runtimeAdapterImported, false);
+    assert.equal(browserFixtureRuntime.lifecyclePlanEffects.renderDispatch, false);
+    assert.equal(browserFixtureRuntime.lifecyclePlanEffects.pathValuesIncluded, false);
+    assert.equal(browserFixtureRuntime.lifecyclePlanEffects.sourceDataValuesIncluded, false);
+    assert.equal(browserFixtureRuntime.omitted.playwrightBrowserPath, true);
+    assert.equal(browserFixtureRuntime.omitted.artifactBytes, true);
+    assert.match(body.data.lifecycle.startCommand, /PENPOT_RENDERER_SERVICE_BROWSER_FIXTURE_RUNTIME=enabled/);
+});
+
+test("renderer-service status reports browser fixture runtime configuration conflicts", async () => {
+    const result = await runCli(["renderer-service", "status", "--format", "json"], {
+        PENPOT_RENDERER_SERVICE_BROWSER_FIXTURE_RUNTIME: "enabled",
+        PENPOT_RENDERER_SERVICE_RUNTIME_MODULE: "/tmp/runtime.mjs",
+    });
+    const body = parseJson(result.stdout);
+
+    assert.equal(result.exitCode, 0);
+    const browserFixtureRuntime = body.data.lifecycle.browserFixtureRuntime;
+    assert.equal(browserFixtureRuntime.configured, true);
+    assert.equal(browserFixtureRuntime.enabled, true);
+    assert.equal(browserFixtureRuntime.valid, false);
+    assert.equal(browserFixtureRuntime.runtimeModuleConflict, true);
+    assert.deepEqual(browserFixtureRuntime.diagnosticCodes, [
+        "renderer_service_browser_fixture_runtime_module_conflict",
+    ]);
+    assert.equal(browserFixtureRuntime.diagnostics[0].field, "runtimeModule");
+    assert.ok(
+        browserFixtureRuntime.nextActions.some((entry) =>
+            entry.includes("PENPOT_RENDERER_SERVICE_BROWSER_FIXTURE_RUNTIME")
+        )
+    );
 });
 
 test("renderer-service start keeps startup manual and does not spawn a process", async () => {
@@ -9992,6 +10087,71 @@ test("render thumbnail execution opt-in posts to renderer-service and returns re
                     runtimeRegistration: true,
                     dispatch: true,
                     capabilities: ["health", "thumbnail.render"],
+                    browserFixtureRuntime: {
+                        status: "started",
+                        diagnosticsVersion: "P26.31",
+                        owner: "renderer-service",
+                        mode: "browser-fixture-lifecycle",
+                        runtimeSource: "browser-fixture",
+                        configured: true,
+                        enabled: true,
+                        runtimeModuleConfigured: false,
+                        injectedRuntimeConfigured: false,
+                        browser: {
+                            engine: "chromium",
+                            headless: true,
+                            processStarted: true,
+                            startupAttempted: true,
+                            startupSucceeded: true,
+                            closed: false,
+                            pathValuesIncluded: false,
+                        },
+                        lifecycle: {
+                            startupAttempted: true,
+                            startupSucceeded: true,
+                            startupFailed: false,
+                            renderAttempts: 1,
+                            renderSuccesses: 1,
+                            renderFailures: 0,
+                            lastRenderSucceeded: true,
+                            pageCreateCount: 1,
+                            pageReuseValidated: false,
+                            nonEmptyPngValidated: true,
+                            closeAttempted: false,
+                            closeSucceeded: false,
+                            closeFailed: false,
+                            artifactByteLengthIncluded: false,
+                        },
+                        sideEffects: {
+                            browserProcessStarted: true,
+                            runtimeExecutionRegistered: false,
+                            runtimeAdapterImported: true,
+                            runtimeAssetsLoaded: false,
+                            assetManifestMaterialized: false,
+                            networkDispatch: false,
+                            dispatch: false,
+                            localFileWrites: false,
+                        },
+                        redaction: {
+                            sourceDataValuesIncluded: false,
+                            pageValuesIncluded: false,
+                            artifactValuesIncluded: false,
+                            mediaValuesIncluded: false,
+                            tokenValuesIncluded: false,
+                            pathValuesIncluded: false,
+                        },
+                        omitted: {
+                            playwrightBrowserPath: true,
+                            runtimeModulePath: true,
+                            workspaceRoot: true,
+                            cacheRoot: true,
+                            sourceData: true,
+                            pageData: true,
+                            artifactBytes: true,
+                            mediaBytes: true,
+                            tokenValues: true,
+                        },
+                    },
                     runtimeAssetMaterializationPreflight: {
                         sourceManifest: {
                             assetIds: ["thumbnail-worker-main"],
@@ -10414,6 +10574,21 @@ test("render thumbnail execution opt-in posts to renderer-service and returns re
         assert.deepEqual(body.data.serviceResponse.auth, fixture.expectedResponse.auth);
         assert.equal(result.stdout.includes("cli-secret-token"), false);
         assert.equal(body.data.healthPreflight.status, "ok");
+        assert.equal(body.data.healthPreflight.browserFixtureRuntime.status, "started");
+        assert.equal(body.data.healthPreflight.browserFixtureRuntime.diagnosticsVersion, "P26.31");
+        assert.equal(body.data.healthPreflight.browserFixtureRuntime.checked, true);
+        assert.equal(body.data.healthPreflight.browserFixtureRuntime.runtimeSource, "browser-fixture");
+        assert.equal(body.data.healthPreflight.browserFixtureRuntime.configured, true);
+        assert.equal(body.data.healthPreflight.browserFixtureRuntime.browser.processStarted, true);
+        assert.equal(body.data.healthPreflight.browserFixtureRuntime.browser.pathValuesIncluded, false);
+        assert.equal(body.data.healthPreflight.browserFixtureRuntime.lifecycle.renderAttempts, 1);
+        assert.equal(body.data.healthPreflight.browserFixtureRuntime.lifecycle.nonEmptyPngValidated, true);
+        assert.equal(body.data.healthPreflight.browserFixtureRuntime.sideEffects.browserProcessStarted, true);
+        assert.equal(body.data.healthPreflight.browserFixtureRuntime.sideEffects.localFileWrites, false);
+        assert.equal(body.data.healthPreflight.browserFixtureRuntime.redaction.sourceDataValuesIncluded, false);
+        assert.equal(body.data.healthPreflight.browserFixtureRuntime.redaction.pathValuesIncluded, false);
+        assert.equal(body.data.healthPreflight.browserFixtureRuntime.omitted.playwrightBrowserPath, true);
+        assert.equal(body.data.healthPreflight.browserFixtureRuntime.omitted.artifactBytes, true);
         assert.equal(body.data.healthPreflight.runtimeAssetPreflight.status, "executed");
         assert.equal(body.data.healthPreflight.runtimeAssetPreflight.diagnosticsVersion, "P26.25");
         assert.equal(body.data.healthPreflight.runtimeAssetPreflight.executionVersion, "P26.22");

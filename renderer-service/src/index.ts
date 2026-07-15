@@ -76,9 +76,78 @@ export type RendererRuntimeRenderResult = {
     fallbackUsed?: boolean;
 };
 
+export type RendererRuntimeSource = "none" | "injected" | "runtime-module" | "browser-fixture";
+
+export type RendererBrowserFixtureRuntimeLifecycleDiagnostics = {
+    status: "not-configured" | "started" | "closed";
+    diagnosticsVersion: "P26.31";
+    owner: "renderer-service";
+    mode: "browser-fixture-lifecycle";
+    runtimeSource: RendererRuntimeSource;
+    configured: boolean;
+    enabled: boolean;
+    runtimeModuleConfigured: boolean;
+    injectedRuntimeConfigured: boolean;
+    browser: {
+        engine: "chromium";
+        headless: true;
+        processStarted: boolean;
+        startupAttempted: boolean;
+        startupSucceeded: boolean;
+        closed: boolean;
+        pathValuesIncluded: false;
+    };
+    lifecycle: {
+        startupAttempted: boolean;
+        startupSucceeded: boolean;
+        startupFailed: false;
+        renderAttempts: number;
+        renderSuccesses: number;
+        renderFailures: number;
+        lastRenderSucceeded: boolean | null;
+        pageCreateCount: number;
+        pageReuseValidated: boolean;
+        nonEmptyPngValidated: boolean;
+        closeAttempted: boolean;
+        closeSucceeded: boolean;
+        closeFailed: false;
+        artifactByteLengthIncluded: false;
+    };
+    sideEffects: {
+        browserProcessStarted: boolean;
+        runtimeExecutionRegistered: false;
+        runtimeAdapterImported: boolean;
+        runtimeAssetsLoaded: false;
+        assetManifestMaterialized: false;
+        networkDispatch: false;
+        dispatch: false;
+        localFileWrites: false;
+    };
+    redaction: {
+        sourceDataValuesIncluded: false;
+        pageValuesIncluded: false;
+        artifactValuesIncluded: false;
+        mediaValuesIncluded: false;
+        tokenValuesIncluded: false;
+        pathValuesIncluded: false;
+    };
+    omitted: {
+        playwrightBrowserPath: true;
+        runtimeModulePath: true;
+        workspaceRoot: true;
+        cacheRoot: true;
+        sourceData: true;
+        pageData: true;
+        artifactBytes: true;
+        mediaBytes: true;
+        tokenValues: true;
+    };
+};
+
 export type RendererRuntimeOptions = {
     renderThumbnail?: (input: RendererRuntimeRenderInput) => RendererRuntimeRenderResult | Promise<RendererRuntimeRenderResult>;
     close?: () => void | Promise<void>;
+    browserFixtureRuntimeLifecycle?: () => RendererBrowserFixtureRuntimeLifecycleDiagnostics;
 };
 
 export type RendererRuntimeAssetPreflightOptions = {
@@ -100,6 +169,7 @@ export type RendererServiceOptions = {
     renderer?: RendererRuntimeOptions;
     rendererRuntimeModule?: string;
     browserFixtureRuntime?: boolean;
+    rendererRuntimeSource?: RendererRuntimeSource;
     runtimeAssetPreflight?: RendererRuntimeAssetPreflightOptions;
     runtimeAssetMaterializationApproval?: RendererRuntimeAssetMaterializationApprovalOptions;
     thumbnailResponseOverride?: (response: Record<string, unknown>) => unknown;
@@ -1187,6 +1257,89 @@ export const bundledRuntimeAssetMaterializationApprovalPlan = runtimeAssetMateri
     bundledRuntimeAssetMaterializationDryRunPlan
 );
 
+function defaultBrowserFixtureRuntimeLifecycleDiagnostics(
+    runtimeSource: RendererRuntimeSource,
+    {
+        configured = false,
+        enabled = false,
+        runtimeModuleConfigured = false,
+        injectedRuntimeConfigured = false,
+    }: {
+        configured?: boolean;
+        enabled?: boolean;
+        runtimeModuleConfigured?: boolean;
+        injectedRuntimeConfigured?: boolean;
+    } = {}
+): RendererBrowserFixtureRuntimeLifecycleDiagnostics {
+    return {
+        status: "not-configured",
+        diagnosticsVersion: "P26.31",
+        owner: "renderer-service",
+        mode: "browser-fixture-lifecycle",
+        runtimeSource,
+        configured,
+        enabled,
+        runtimeModuleConfigured,
+        injectedRuntimeConfigured,
+        browser: {
+            engine: "chromium",
+            headless: true,
+            processStarted: false,
+            startupAttempted: false,
+            startupSucceeded: false,
+            closed: false,
+            pathValuesIncluded: false,
+        },
+        lifecycle: {
+            startupAttempted: false,
+            startupSucceeded: false,
+            startupFailed: false,
+            renderAttempts: 0,
+            renderSuccesses: 0,
+            renderFailures: 0,
+            lastRenderSucceeded: null,
+            pageCreateCount: 0,
+            pageReuseValidated: false,
+            nonEmptyPngValidated: false,
+            closeAttempted: false,
+            closeSucceeded: false,
+            closeFailed: false,
+            artifactByteLengthIncluded: false,
+        },
+        sideEffects: {
+            browserProcessStarted: false,
+            runtimeExecutionRegistered: false,
+            runtimeAdapterImported: false,
+            runtimeAssetsLoaded: false,
+            assetManifestMaterialized: false,
+            networkDispatch: false,
+            dispatch: false,
+            localFileWrites: false,
+        },
+        redaction: {
+            sourceDataValuesIncluded: false,
+            pageValuesIncluded: false,
+            artifactValuesIncluded: false,
+            mediaValuesIncluded: false,
+            tokenValuesIncluded: false,
+            pathValuesIncluded: false,
+        },
+        omitted: {
+            playwrightBrowserPath: true,
+            runtimeModulePath: true,
+            workspaceRoot: true,
+            cacheRoot: true,
+            sourceData: true,
+            pageData: true,
+            artifactBytes: true,
+            mediaBytes: true,
+            tokenValues: true,
+        },
+    };
+}
+
+export const defaultBrowserFixtureRuntimeLifecycle = defaultBrowserFixtureRuntimeLifecycleDiagnostics("none");
+
 export const healthResponse = {
     status: "ok",
     renderer: "penpot-thumbnail-renderer",
@@ -1209,6 +1362,7 @@ export const healthResponse = {
         "thumbnail.render.runtime-adapter",
         "thumbnail.render.runtime-module",
         "thumbnail.render.browser-fixture-runtime",
+        "thumbnail.render.browser-fixture-runtime-diagnostics",
         "thumbnail.render.runtime-asset-manifest",
         "thumbnail.render.runtime-asset-preflight",
         "thumbnail.render.runtime-asset-materialization-dry-run",
@@ -1220,6 +1374,7 @@ export const healthResponse = {
     runtimeAssetMaterializationPreflight: bundledRuntimeAssetMaterializationPreflight,
     runtimeAssetMaterializationDryRun: bundledRuntimeAssetMaterializationDryRunPlan,
     runtimeAssetMaterializationApproval: bundledRuntimeAssetMaterializationApprovalPlan,
+    browserFixtureRuntime: defaultBrowserFixtureRuntimeLifecycle,
 } as const;
 
 export const noopThumbnailResponse = {
@@ -1244,6 +1399,7 @@ export const noopThumbnailResponse = {
     runtimeAssetMaterializationPreflight: bundledRuntimeAssetMaterializationPreflight,
     runtimeAssetMaterializationDryRun: bundledRuntimeAssetMaterializationDryRunPlan,
     runtimeAssetMaterializationApproval: bundledRuntimeAssetMaterializationApprovalPlan,
+    browserFixtureRuntime: defaultBrowserFixtureRuntimeLifecycle,
 } as const;
 
 const MAX_REQUEST_BODY_BYTES = 1024 * 1024;
@@ -1577,7 +1733,14 @@ type RuntimeAssetPreflightExecution = {
 
 type RendererServiceRuntimeOptions = Pick<
     RendererServiceOptions,
-    "backendRpc" | "renderer" | "runtimeAssetPreflight" | "runtimeAssetMaterializationApproval" | "thumbnailResponseOverride"
+    | "backendRpc"
+    | "renderer"
+    | "rendererRuntimeModule"
+    | "browserFixtureRuntime"
+    | "rendererRuntimeSource"
+    | "runtimeAssetPreflight"
+    | "runtimeAssetMaterializationApproval"
+    | "thumbnailResponseOverride"
 > & {
     renderedAssets: RenderedAssetStore;
 };
@@ -1907,6 +2070,41 @@ function runtimeAssetMaterializationApprovalResponse(
     options: RendererRuntimeAssetMaterializationApprovalOptions | undefined
 ): RuntimeAssetMaterializationApprovalPlan {
     return runtimeAssetMaterializationApprovalPlan(dryRun, options);
+}
+
+function rendererRuntimeSourceForOptions(
+    options: Pick<RendererServiceOptions, "renderer" | "rendererRuntimeModule" | "browserFixtureRuntime" | "rendererRuntimeSource">
+): RendererRuntimeSource {
+    if (options.rendererRuntimeSource) {
+        return options.rendererRuntimeSource;
+    }
+    if (options.browserFixtureRuntime) {
+        return "browser-fixture";
+    }
+    if (options.renderer) {
+        return "injected";
+    }
+    if (options.rendererRuntimeModule) {
+        return "runtime-module";
+    }
+    return "none";
+}
+
+function browserFixtureRuntimeLifecycleResponse(
+    options: Pick<RendererServiceOptions, "renderer" | "rendererRuntimeModule" | "browserFixtureRuntime" | "rendererRuntimeSource">
+): RendererBrowserFixtureRuntimeLifecycleDiagnostics {
+    const runtimeSource = rendererRuntimeSourceForOptions(options);
+    const lifecycle = options.renderer?.browserFixtureRuntimeLifecycle?.();
+    if (lifecycle) {
+        return lifecycle;
+    }
+
+    return defaultBrowserFixtureRuntimeLifecycleDiagnostics(runtimeSource, {
+        configured: options.browserFixtureRuntime === true || runtimeSource === "browser-fixture",
+        enabled: runtimeSource === "browser-fixture",
+        runtimeModuleConfigured: Boolean(options.rendererRuntimeModule) || runtimeSource === "runtime-module",
+        injectedRuntimeConfigured: runtimeSource === "injected",
+    });
 }
 
 function normalizeRendererRuntimeModuleSpecifier(moduleSpecifier: string): string {
@@ -3380,7 +3578,8 @@ function thumbnailResponse(
     persistExecution: BackendRpcThumbnailPersistExecution,
     runtimeAssetPreflight: Record<string, unknown>,
     runtimeAssetMaterializationDryRun: Record<string, unknown>,
-    runtimeAssetMaterializationApproval: Record<string, unknown>
+    runtimeAssetMaterializationApproval: Record<string, unknown>,
+    browserFixtureRuntime: Record<string, unknown>
 ): Record<string, unknown> {
     const host = request.headers.host ?? `${DEFAULT_HOST}:${DEFAULT_PORT}`;
     const downloadUri = `http://${host}/assets/by-id/noop-thumbnail-png`;
@@ -3393,6 +3592,7 @@ function thumbnailResponse(
         runtimeAssetMaterializationPreflight: runtimeAssetPreflight,
         runtimeAssetMaterializationDryRun,
         runtimeAssetMaterializationApproval,
+        browserFixtureRuntime,
         request: summary,
         auth,
         backendRpcClient: summarizeBackendRpcClient(
@@ -3488,6 +3688,14 @@ function responseNonNegativeIntegerOrNull(record: Record<string, unknown>, prope
     }
     if (typeof value !== "number" || !Number.isInteger(value) || value < 0) {
         responseInvalid(`Renderer-service thumbnail response ${field} must be a non-negative integer or null.`, field);
+    }
+    return value;
+}
+
+function responseNonNegativeInteger(record: Record<string, unknown>, property: string, field: string): number {
+    const value = record[property];
+    if (typeof value !== "number" || !Number.isInteger(value) || value < 0) {
+        responseInvalid(`Renderer-service thumbnail response ${field} must be a non-negative integer.`, field);
     }
     return value;
 }
@@ -3613,6 +3821,88 @@ function validateTokenSafeAuthResponse(auth: Record<string, unknown>, expectedAu
 
 function validateThumbnailAuthResponse(auth: Record<string, unknown>, expectedAuth: AuthSummary): void {
     validateTokenSafeAuthResponse(auth, expectedAuth, "auth");
+}
+
+function validateBrowserFixtureRuntimeLifecycleResponse(actual: unknown, field: string): void {
+    const record = responseRecord(actual, field);
+    requireResponseEqual(["not-configured", "started", "closed"].includes(String(record.status)), true, `${field}.status`);
+    requireResponseEqual(record.diagnosticsVersion, "P26.31", `${field}.diagnosticsVersion`);
+    requireResponseEqual(record.owner, "renderer-service", `${field}.owner`);
+    requireResponseEqual(record.mode, "browser-fixture-lifecycle", `${field}.mode`);
+    requireResponseEqual(
+        ["none", "injected", "runtime-module", "browser-fixture"].includes(String(record.runtimeSource)),
+        true,
+        `${field}.runtimeSource`
+    );
+    const configured = responseBoolean(record, "configured", `${field}.configured`);
+    const enabled = responseBoolean(record, "enabled", `${field}.enabled`);
+    responseBoolean(record, "runtimeModuleConfigured", `${field}.runtimeModuleConfigured`);
+    responseBoolean(record, "injectedRuntimeConfigured", `${field}.injectedRuntimeConfigured`);
+    if (record.runtimeSource === "browser-fixture") {
+        requireResponseEqual(configured, true, `${field}.configured`);
+        requireResponseEqual(enabled, true, `${field}.enabled`);
+    }
+
+    const browser = responseRecord(record.browser, `${field}.browser`);
+    requireResponseEqual(browser.engine, "chromium", `${field}.browser.engine`);
+    requireResponseEqual(browser.headless, true, `${field}.browser.headless`);
+    const browserProcessStarted = responseBoolean(browser, "processStarted", `${field}.browser.processStarted`);
+    const startupAttempted = responseBoolean(browser, "startupAttempted", `${field}.browser.startupAttempted`);
+    const startupSucceeded = responseBoolean(browser, "startupSucceeded", `${field}.browser.startupSucceeded`);
+    responseBoolean(browser, "closed", `${field}.browser.closed`);
+    requireResponseEqual(browser.pathValuesIncluded, false, `${field}.browser.pathValuesIncluded`);
+
+    const lifecycle = responseRecord(record.lifecycle, `${field}.lifecycle`);
+    requireResponseEqual(responseBoolean(lifecycle, "startupAttempted", `${field}.lifecycle.startupAttempted`), startupAttempted, `${field}.lifecycle.startupAttempted`);
+    requireResponseEqual(responseBoolean(lifecycle, "startupSucceeded", `${field}.lifecycle.startupSucceeded`), startupSucceeded, `${field}.lifecycle.startupSucceeded`);
+    requireResponseEqual(lifecycle.startupFailed, false, `${field}.lifecycle.startupFailed`);
+    const renderAttempts = responseNonNegativeInteger(lifecycle, "renderAttempts", `${field}.lifecycle.renderAttempts`);
+    const renderSuccesses = responseNonNegativeInteger(lifecycle, "renderSuccesses", `${field}.lifecycle.renderSuccesses`);
+    const renderFailures = responseNonNegativeInteger(lifecycle, "renderFailures", `${field}.lifecycle.renderFailures`);
+    requireResponseEqual(renderAttempts, renderSuccesses + renderFailures, `${field}.lifecycle.renderAttempts`);
+    requireResponseEqual(lifecycle.lastRenderSucceeded === null || typeof lifecycle.lastRenderSucceeded === "boolean", true, `${field}.lifecycle.lastRenderSucceeded`);
+    responseNonNegativeInteger(lifecycle, "pageCreateCount", `${field}.lifecycle.pageCreateCount`);
+    responseBoolean(lifecycle, "pageReuseValidated", `${field}.lifecycle.pageReuseValidated`);
+    responseBoolean(lifecycle, "nonEmptyPngValidated", `${field}.lifecycle.nonEmptyPngValidated`);
+    responseBoolean(lifecycle, "closeAttempted", `${field}.lifecycle.closeAttempted`);
+    responseBoolean(lifecycle, "closeSucceeded", `${field}.lifecycle.closeSucceeded`);
+    requireResponseEqual(lifecycle.closeFailed, false, `${field}.lifecycle.closeFailed`);
+    requireResponseEqual(lifecycle.artifactByteLengthIncluded, false, `${field}.lifecycle.artifactByteLengthIncluded`);
+
+    const sideEffects = responseRecord(record.sideEffects, `${field}.sideEffects`);
+    requireResponseEqual(responseBoolean(sideEffects, "browserProcessStarted", `${field}.sideEffects.browserProcessStarted`), browserProcessStarted, `${field}.sideEffects.browserProcessStarted`);
+    requireResponseEqual(sideEffects.runtimeExecutionRegistered, false, `${field}.sideEffects.runtimeExecutionRegistered`);
+    responseBoolean(sideEffects, "runtimeAdapterImported", `${field}.sideEffects.runtimeAdapterImported`);
+    for (const property of ["runtimeAssetsLoaded", "assetManifestMaterialized", "networkDispatch", "dispatch", "localFileWrites"]) {
+        requireResponseEqual(sideEffects[property], false, `${field}.sideEffects.${property}`);
+    }
+
+    const redaction = responseRecord(record.redaction, `${field}.redaction`);
+    for (const property of [
+        "sourceDataValuesIncluded",
+        "pageValuesIncluded",
+        "artifactValuesIncluded",
+        "mediaValuesIncluded",
+        "tokenValuesIncluded",
+        "pathValuesIncluded",
+    ]) {
+        requireResponseEqual(redaction[property], false, `${field}.redaction.${property}`);
+    }
+
+    const omitted = responseRecord(record.omitted, `${field}.omitted`);
+    for (const property of [
+        "playwrightBrowserPath",
+        "runtimeModulePath",
+        "workspaceRoot",
+        "cacheRoot",
+        "sourceData",
+        "pageData",
+        "artifactBytes",
+        "mediaBytes",
+        "tokenValues",
+    ]) {
+        requireResponseEqual(omitted[property], true, `${field}.omitted.${property}`);
+    }
 }
 
 function validateRuntimeAssetManifestAssetResponse(
@@ -4655,6 +4945,7 @@ function validateThumbnailResponseContract(
         record.runtimeAssetMaterializationApproval,
         "runtimeAssetMaterializationApproval"
     );
+    validateBrowserFixtureRuntimeLifecycleResponse(record.browserFixtureRuntime, "browserFixtureRuntime");
 
     validateThumbnailResourceResponse(responseRecord(record.resource, "resource"));
     validateThumbnailCacheResponse(responseRecord(record.cache, "cache"), summary, cacheProbeExecution);
@@ -4711,11 +5002,13 @@ async function handleRequest(request: IncomingMessage, response: ServerResponse,
             runtimeAssetMaterializationDryRun,
             options.runtimeAssetMaterializationApproval
         );
+        const browserFixtureRuntime = browserFixtureRuntimeLifecycleResponse(options);
         sendJson(response, 200, {
             ...healthResponse,
             runtimeAssetMaterializationPreflight: runtimeAssetPreflight,
             runtimeAssetMaterializationDryRun,
             runtimeAssetMaterializationApproval,
+            browserFixtureRuntime,
         });
         return;
     }
@@ -4735,6 +5028,7 @@ async function handleRequest(request: IncomingMessage, response: ServerResponse,
                 runtimeAssetMaterializationDryRun,
                 options.runtimeAssetMaterializationApproval
             );
+            const browserFixtureRuntime = browserFixtureRuntimeLifecycleResponse(options);
             const generatedResponse = thumbnailResponse(
                 request,
                 summary,
@@ -4746,7 +5040,8 @@ async function handleRequest(request: IncomingMessage, response: ServerResponse,
                 persistExecution,
                 runtimeAssetPreflight,
                 runtimeAssetMaterializationDryRun,
-                runtimeAssetMaterializationApproval
+                runtimeAssetMaterializationApproval,
+                browserFixtureRuntime
             );
             const responseBody = options.thumbnailResponseOverride
                 ? options.thumbnailResponseOverride(generatedResponse)
@@ -4805,13 +5100,23 @@ async function handleRequest(request: IncomingMessage, response: ServerResponse,
 export function createRendererService(
     options: Pick<
         RendererServiceOptions,
-        "backendRpc" | "renderer" | "runtimeAssetPreflight" | "runtimeAssetMaterializationApproval" | "thumbnailResponseOverride"
+        | "backendRpc"
+        | "renderer"
+        | "rendererRuntimeModule"
+        | "browserFixtureRuntime"
+        | "rendererRuntimeSource"
+        | "runtimeAssetPreflight"
+        | "runtimeAssetMaterializationApproval"
+        | "thumbnailResponseOverride"
     > = {}
 ): Server {
     const renderedAssets: RenderedAssetStore = new Map();
     const runtimeOptions: RendererServiceRuntimeOptions = {
         backendRpc: options.backendRpc,
         renderer: options.renderer,
+        rendererRuntimeModule: options.rendererRuntimeModule,
+        browserFixtureRuntime: options.browserFixtureRuntime,
+        rendererRuntimeSource: options.rendererRuntimeSource ?? rendererRuntimeSourceForOptions(options),
         runtimeAssetPreflight: options.runtimeAssetPreflight,
         runtimeAssetMaterializationApproval: options.runtimeAssetMaterializationApproval,
         thumbnailResponseOverride: options.thumbnailResponseOverride,
@@ -4862,6 +5167,9 @@ export async function startRendererService(options: RendererServiceOptions = {})
     const server = createRendererService({
         backendRpc: options.backendRpc,
         renderer,
+        rendererRuntimeModule: options.rendererRuntimeModule,
+        browserFixtureRuntime: options.browserFixtureRuntime,
+        rendererRuntimeSource: rendererRuntimeSourceForOptions(options),
         runtimeAssetPreflight: options.runtimeAssetPreflight,
         runtimeAssetMaterializationApproval: options.runtimeAssetMaterializationApproval,
         thumbnailResponseOverride: options.thumbnailResponseOverride,

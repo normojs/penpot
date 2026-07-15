@@ -108,6 +108,18 @@ startup/reuse/shutdown and non-empty PNG bytes only; the P26.19 bundled
 render-wasm/frontend scene bridge, runtime asset materialization approval,
 asset copying, source-data/page/artifact/media/token value exposure, and
 default MCP/CLI execution remain gated.
+P26.31 adds a redacted `browserFixtureRuntime` diagnostic object to
+`/health` and `/thumbnail`. The object reports only lifecycle metadata:
+configuration state, runtime source, startup booleans, render attempt/success/
+failure counts, page reuse validation, non-empty PNG validation, close state,
+side-effect flags, and omitted-field markers. Command-runtime normalizes the
+same object into CLI/MCP `healthPreflight.browserFixtureRuntime`, and
+`penpot-cli renderer-service status/start` reports the no-probe configuration
+plan plus invalid-mode or runtime-module conflict diagnostics. The diagnostic
+contract deliberately omits Playwright paths, runtime module paths, workspace
+roots, cache roots, source data, page data, artifact bytes, media bytes, token
+values, and any real scene payload; it also does not enable default MCP/CLI
+rendering or the P26.19 real render-wasm/frontend bridge.
 P26.5 adds a token-safe `backendRpcClient` plan to renderer-service thumbnail
 responses so backend data/cache/persist endpoints are normalized for staged
 execution. That plan now feeds the executable file-thumbnail cache probe,

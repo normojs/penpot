@@ -12700,6 +12700,71 @@ test("render.thumbnail renderer-service health preflight executes only GET healt
                     runtimeRegistration: false,
                     dispatch: false,
                     capabilities: ["health", "thumbnail.render.noop"],
+                    browserFixtureRuntime: {
+                        status: "started",
+                        diagnosticsVersion: "P26.31",
+                        owner: "renderer-service",
+                        mode: "browser-fixture-lifecycle",
+                        runtimeSource: "browser-fixture",
+                        configured: true,
+                        enabled: true,
+                        runtimeModuleConfigured: false,
+                        injectedRuntimeConfigured: false,
+                        browser: {
+                            engine: "chromium",
+                            headless: true,
+                            processStarted: true,
+                            startupAttempted: true,
+                            startupSucceeded: true,
+                            closed: false,
+                            pathValuesIncluded: false,
+                        },
+                        lifecycle: {
+                            startupAttempted: true,
+                            startupSucceeded: true,
+                            startupFailed: false,
+                            renderAttempts: 2,
+                            renderSuccesses: 2,
+                            renderFailures: 0,
+                            lastRenderSucceeded: true,
+                            pageCreateCount: 1,
+                            pageReuseValidated: true,
+                            nonEmptyPngValidated: true,
+                            closeAttempted: false,
+                            closeSucceeded: false,
+                            closeFailed: false,
+                            artifactByteLengthIncluded: false,
+                        },
+                        sideEffects: {
+                            browserProcessStarted: true,
+                            runtimeExecutionRegistered: false,
+                            runtimeAdapterImported: true,
+                            runtimeAssetsLoaded: false,
+                            assetManifestMaterialized: false,
+                            networkDispatch: false,
+                            dispatch: false,
+                            localFileWrites: false,
+                        },
+                        redaction: {
+                            sourceDataValuesIncluded: false,
+                            pageValuesIncluded: false,
+                            artifactValuesIncluded: false,
+                            mediaValuesIncluded: false,
+                            tokenValuesIncluded: false,
+                            pathValuesIncluded: false,
+                        },
+                        omitted: {
+                            playwrightBrowserPath: true,
+                            runtimeModulePath: true,
+                            workspaceRoot: true,
+                            cacheRoot: true,
+                            sourceData: true,
+                            pageData: true,
+                            artifactBytes: true,
+                            mediaBytes: true,
+                            tokenValues: true,
+                        },
+                    },
                     runtimeAssetMaterializationPreflight: {
                         sourceManifest: {
                             assetIds: ["thumbnail-worker-main", "render-wasm-loader"],
@@ -13111,6 +13176,29 @@ test("render.thumbnail renderer-service health preflight executes only GET healt
     assert.equal(healthPreflight.response.body.runtimeRegistration, false);
     assert.equal(healthPreflight.response.body.dispatch, false);
     assert.ok(healthPreflight.response.body.capabilities.includes("thumbnail.render.noop"));
+    assert.equal(healthPreflight.browserFixtureRuntime.status, "started");
+    assert.equal(healthPreflight.browserFixtureRuntime.diagnosticsVersion, "P26.31");
+    assert.equal(healthPreflight.browserFixtureRuntime.checked, true);
+    assert.equal(healthPreflight.browserFixtureRuntime.runtimeSource, "browser-fixture");
+    assert.equal(healthPreflight.browserFixtureRuntime.configured, true);
+    assert.equal(healthPreflight.browserFixtureRuntime.enabled, true);
+    assert.equal(healthPreflight.browserFixtureRuntime.browser.engine, "chromium");
+    assert.equal(healthPreflight.browserFixtureRuntime.browser.processStarted, true);
+    assert.equal(healthPreflight.browserFixtureRuntime.browser.pathValuesIncluded, false);
+    assert.equal(healthPreflight.browserFixtureRuntime.lifecycle.renderAttempts, 2);
+    assert.equal(healthPreflight.browserFixtureRuntime.lifecycle.renderSuccesses, 2);
+    assert.equal(healthPreflight.browserFixtureRuntime.lifecycle.renderFailures, 0);
+    assert.equal(healthPreflight.browserFixtureRuntime.lifecycle.pageCreateCount, 1);
+    assert.equal(healthPreflight.browserFixtureRuntime.lifecycle.pageReuseValidated, true);
+    assert.equal(healthPreflight.browserFixtureRuntime.lifecycle.nonEmptyPngValidated, true);
+    assert.deepEqual(healthPreflight.browserFixtureRuntime.diagnosticCodes, []);
+    assert.equal(healthPreflight.browserFixtureRuntime.sideEffects.browserProcessStarted, true);
+    assert.equal(healthPreflight.browserFixtureRuntime.sideEffects.runtimeAdapterImported, true);
+    assert.equal(healthPreflight.browserFixtureRuntime.sideEffects.localFileWrites, false);
+    assert.equal(healthPreflight.browserFixtureRuntime.redaction.sourceDataValuesIncluded, false);
+    assert.equal(healthPreflight.browserFixtureRuntime.redaction.pathValuesIncluded, false);
+    assert.equal(healthPreflight.browserFixtureRuntime.omitted.playwrightBrowserPath, true);
+    assert.equal(healthPreflight.browserFixtureRuntime.omitted.artifactBytes, true);
     assert.equal(healthPreflight.runtimeAssetPreflight.status, "executed");
     assert.equal(healthPreflight.runtimeAssetPreflight.diagnosticsVersion, "P26.25");
     assert.equal(healthPreflight.runtimeAssetPreflight.executionVersion, "P26.22");
@@ -13306,6 +13394,108 @@ test("render.thumbnail renderer-service health preflight normalizes invalid runt
     ]);
     assert.equal(healthPreflight.runtimeAssetPreflight.diagnostics[0].severity, "invalid");
     assert.ok(healthPreflight.runtimeAssetPreflight.nextActions.some((entry) => entry.includes("PENPOT_RENDERER_SERVICE_RUNTIME_ASSET_PREFLIGHT=read-only")));
+});
+
+test("render.thumbnail renderer-service health preflight rejects unsafe browser fixture runtime diagnostics", async () => {
+    const plan = createRenderThumbnailRendererServicePlan({
+        fileId: "file-1",
+        endpoint: "http://127.0.0.1:6070/thumbnail",
+        optInConfiguration: {
+            entrypoint: "cli",
+            cliFlagValue: "renderer-service",
+        },
+    });
+    const healthPreflight = await executeRenderThumbnailRendererServiceHealthPreflight(plan, {
+        fetch: async () =>
+            new Response(
+                JSON.stringify({
+                    status: "ok",
+                    renderer: "penpot-thumbnail-renderer",
+                    mode: "noop",
+                    runtimeRegistration: false,
+                    dispatch: false,
+                    capabilities: ["health", "thumbnail.render.noop"],
+                    browserFixtureRuntime: {
+                        status: "started",
+                        diagnosticsVersion: "P26.31",
+                        owner: "renderer-service",
+                        mode: "browser-fixture-lifecycle",
+                        runtimeSource: "browser-fixture",
+                        configured: true,
+                        enabled: true,
+                        runtimeModuleConfigured: false,
+                        injectedRuntimeConfigured: false,
+                        browser: {
+                            engine: "chromium",
+                            headless: true,
+                            processStarted: true,
+                            startupAttempted: true,
+                            startupSucceeded: true,
+                            closed: false,
+                            pathValuesIncluded: true,
+                        },
+                        lifecycle: {
+                            startupAttempted: true,
+                            startupSucceeded: true,
+                            startupFailed: false,
+                            renderAttempts: 1,
+                            renderSuccesses: 1,
+                            renderFailures: 0,
+                            lastRenderSucceeded: true,
+                            pageCreateCount: 1,
+                            pageReuseValidated: false,
+                            nonEmptyPngValidated: true,
+                            closeAttempted: false,
+                            closeSucceeded: false,
+                            closeFailed: false,
+                            artifactByteLengthIncluded: true,
+                        },
+                        sideEffects: {
+                            browserProcessStarted: true,
+                            runtimeExecutionRegistered: false,
+                            runtimeAdapterImported: true,
+                            runtimeAssetsLoaded: false,
+                            assetManifestMaterialized: false,
+                            networkDispatch: false,
+                            dispatch: false,
+                            localFileWrites: true,
+                        },
+                        redaction: {
+                            sourceDataValuesIncluded: true,
+                            pageValuesIncluded: false,
+                            artifactValuesIncluded: false,
+                            mediaValuesIncluded: false,
+                            tokenValuesIncluded: false,
+                            pathValuesIncluded: true,
+                        },
+                        omitted: {
+                            playwrightBrowserPath: true,
+                            runtimeModulePath: true,
+                            workspaceRoot: true,
+                            cacheRoot: true,
+                            sourceData: false,
+                            pageData: true,
+                            artifactBytes: true,
+                            mediaBytes: true,
+                            tokenValues: true,
+                        },
+                    },
+                }),
+                { status: 200, headers: { "content-type": "application/json; charset=utf-8" } }
+            ),
+    });
+
+    assert.equal(healthPreflight.status, "ok");
+    assert.equal(healthPreflight.browserFixtureRuntime.status, "invalid");
+    assert.deepEqual(healthPreflight.browserFixtureRuntime.diagnosticCodes, [
+        "renderer_service_browser_fixture_runtime_diagnostics_invalid",
+    ]);
+    assert.equal(healthPreflight.browserFixtureRuntime.browser.pathValuesIncluded, true);
+    assert.equal(healthPreflight.browserFixtureRuntime.lifecycle.artifactByteLengthIncluded, true);
+    assert.equal(healthPreflight.browserFixtureRuntime.sideEffects.localFileWrites, true);
+    assert.equal(healthPreflight.browserFixtureRuntime.redaction.sourceDataValuesIncluded, true);
+    assert.equal(healthPreflight.browserFixtureRuntime.omitted.sourceData, false);
+    assert.ok(healthPreflight.browserFixtureRuntime.nextActions.some((entry) => entry.includes("browserFixtureRuntime diagnostics")));
 });
 
 test("render.thumbnail renderer-service health preflight normalizes unavailable health responses", async () => {

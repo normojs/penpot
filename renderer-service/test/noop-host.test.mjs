@@ -54,6 +54,71 @@ function browserFixtureRuntimeInput({ cachePolicy = "reuse" } = {}) {
     };
 }
 
+function assertBrowserFixtureRuntimeLifecycle(summary, {
+    status = "not-configured",
+    runtimeSource = "none",
+    configured = false,
+    enabled = false,
+    processStarted = false,
+    renderAttempts = 0,
+    renderSuccesses = 0,
+    pageCreateCount = 0,
+    pageReuseValidated = false,
+    nonEmptyPngValidated = false,
+    closeAttempted = false,
+    closeSucceeded = false,
+} = {}) {
+    assert.equal(summary.status, status);
+    assert.equal(summary.diagnosticsVersion, "P26.31");
+    assert.equal(summary.owner, "renderer-service");
+    assert.equal(summary.mode, "browser-fixture-lifecycle");
+    assert.equal(summary.runtimeSource, runtimeSource);
+    assert.equal(summary.configured, configured);
+    assert.equal(summary.enabled, enabled);
+    assert.equal(summary.browser.engine, "chromium");
+    assert.equal(summary.browser.headless, true);
+    assert.equal(summary.browser.processStarted, processStarted);
+    assert.equal(summary.browser.startupAttempted, processStarted);
+    assert.equal(summary.browser.startupSucceeded, processStarted);
+    assert.equal(summary.browser.pathValuesIncluded, false);
+    assert.equal(summary.lifecycle.startupAttempted, processStarted);
+    assert.equal(summary.lifecycle.startupSucceeded, processStarted);
+    assert.equal(summary.lifecycle.startupFailed, false);
+    assert.equal(summary.lifecycle.renderAttempts, renderAttempts);
+    assert.equal(summary.lifecycle.renderSuccesses, renderSuccesses);
+    assert.equal(summary.lifecycle.renderFailures, 0);
+    assert.equal(summary.lifecycle.pageCreateCount, pageCreateCount);
+    assert.equal(summary.lifecycle.pageReuseValidated, pageReuseValidated);
+    assert.equal(summary.lifecycle.nonEmptyPngValidated, nonEmptyPngValidated);
+    assert.equal(summary.lifecycle.closeAttempted, closeAttempted);
+    assert.equal(summary.lifecycle.closeSucceeded, closeSucceeded);
+    assert.equal(summary.lifecycle.closeFailed, false);
+    assert.equal(summary.lifecycle.artifactByteLengthIncluded, false);
+    assert.equal(summary.sideEffects.browserProcessStarted, processStarted);
+    assert.equal(summary.sideEffects.runtimeExecutionRegistered, false);
+    assert.equal(summary.sideEffects.runtimeAssetsLoaded, false);
+    assert.equal(summary.sideEffects.assetManifestMaterialized, false);
+    assert.equal(summary.sideEffects.networkDispatch, false);
+    assert.equal(summary.sideEffects.dispatch, false);
+    assert.equal(summary.sideEffects.localFileWrites, false);
+    assert.equal(summary.redaction.sourceDataValuesIncluded, false);
+    assert.equal(summary.redaction.pageValuesIncluded, false);
+    assert.equal(summary.redaction.artifactValuesIncluded, false);
+    assert.equal(summary.redaction.mediaValuesIncluded, false);
+    assert.equal(summary.redaction.tokenValuesIncluded, false);
+    assert.equal(summary.redaction.pathValuesIncluded, false);
+    assert.equal(summary.omitted.playwrightBrowserPath, true);
+    assert.equal(summary.omitted.runtimeModulePath, true);
+    assert.equal(summary.omitted.workspaceRoot, true);
+    assert.equal(summary.omitted.cacheRoot, true);
+    assert.equal(summary.omitted.sourceData, true);
+    assert.equal(summary.omitted.pageData, true);
+    assert.equal(summary.omitted.artifactBytes, true);
+    assert.equal(summary.omitted.mediaBytes, true);
+    assert.equal(summary.omitted.tokenValues, true);
+    return summary;
+}
+
 function assertRuntimeAssetManifestScaffold(manifest) {
     assert.deepEqual(manifest, serviceModule.bundledRuntimeBridgeAssetManifest);
     assert.equal(manifest.status, "planned-disabled");
@@ -709,10 +774,13 @@ test("noop host exposes the P25.24 health contract", async () => {
         assert.deepEqual(body, serviceModule.healthResponse);
         assert.ok(serviceModule.healthResponse.capabilities.includes("thumbnail.backend-rpc.frame-thumbnail-persist"));
         assert.ok(serviceModule.healthResponse.capabilities.includes("thumbnail.render.browser-fixture-runtime"));
+        assert.ok(serviceModule.healthResponse.capabilities.includes("thumbnail.render.browser-fixture-runtime-diagnostics"));
         assert.ok(serviceModule.healthResponse.capabilities.includes("thumbnail.render.runtime-asset-manifest"));
         assert.ok(serviceModule.healthResponse.capabilities.includes("thumbnail.render.runtime-asset-preflight"));
         assert.ok(serviceModule.healthResponse.capabilities.includes("thumbnail.render.runtime-asset-materialization-dry-run"));
         assert.ok(serviceModule.healthResponse.capabilities.includes("thumbnail.render.runtime-asset-materialization-approval-scaffold"));
+        assert.deepEqual(body.browserFixtureRuntime, serviceModule.defaultBrowserFixtureRuntimeLifecycle);
+        assertBrowserFixtureRuntimeLifecycle(body.browserFixtureRuntime);
         assertRuntimeAssetManifestScaffold(body.runtimeAssetManifest);
         assertRuntimeAssetMaterializationPreflightScaffold(body.runtimeAssetMaterializationPreflight);
         assertRuntimeAssetMaterializationDryRunPlan(body.runtimeAssetMaterializationDryRun);
@@ -1244,19 +1312,65 @@ export function close() {
 test("browser fixture runtime renders non-empty PNGs and closes", async () => {
     const runtime = await serviceModule.createBrowserFixtureRendererRuntime();
     try {
+        assertBrowserFixtureRuntimeLifecycle(runtime.browserFixtureRuntimeLifecycle(), {
+            status: "started",
+            runtimeSource: "browser-fixture",
+            configured: true,
+            enabled: true,
+            processStarted: true,
+        });
+
         const first = await runtime.renderThumbnail(browserFixtureRuntimeInput());
         const firstBytes = assertPngBytes(first.png);
         assert.equal(first.runtime, "frontend-rasterizer");
         assert.equal(first.fallbackUsed, true);
+        assertBrowserFixtureRuntimeLifecycle(runtime.browserFixtureRuntimeLifecycle(), {
+            status: "started",
+            runtimeSource: "browser-fixture",
+            configured: true,
+            enabled: true,
+            processStarted: true,
+            renderAttempts: 1,
+            renderSuccesses: 1,
+            pageCreateCount: 1,
+            nonEmptyPngValidated: true,
+        });
 
         const second = await runtime.renderThumbnail(browserFixtureRuntimeInput({ cachePolicy: "refresh" }));
         const secondBytes = assertPngBytes(second.png);
         assert.equal(second.runtime, "frontend-rasterizer");
         assert.equal(second.fallbackUsed, true);
         assert.notEqual(secondBytes.toString("base64"), firstBytes.toString("base64"));
+        assertBrowserFixtureRuntimeLifecycle(runtime.browserFixtureRuntimeLifecycle(), {
+            status: "started",
+            runtimeSource: "browser-fixture",
+            configured: true,
+            enabled: true,
+            processStarted: true,
+            renderAttempts: 2,
+            renderSuccesses: 2,
+            pageCreateCount: 1,
+            pageReuseValidated: true,
+            nonEmptyPngValidated: true,
+        });
     } finally {
         await runtime.close();
     }
+
+    assertBrowserFixtureRuntimeLifecycle(runtime.browserFixtureRuntimeLifecycle(), {
+        status: "closed",
+        runtimeSource: "browser-fixture",
+        configured: true,
+        enabled: true,
+        processStarted: true,
+        renderAttempts: 2,
+        renderSuccesses: 2,
+        pageCreateCount: 1,
+        pageReuseValidated: true,
+        nonEmptyPngValidated: true,
+        closeAttempted: true,
+        closeSucceeded: true,
+    });
 
     await assert.rejects(
         () => runtime.renderThumbnail(browserFixtureRuntimeInput()),
@@ -1307,7 +1421,20 @@ test("noop host renders through explicitly enabled browser fixture runtime", asy
     });
 
     try {
-        for (const mediaId of ["persisted-browser-fixture-thumbnail-1", "persisted-browser-fixture-thumbnail-2"]) {
+        const healthResponse = await fetch(`http://${service.host}:${service.port}/health`);
+        assert.equal(healthResponse.status, 200);
+        const healthBody = await healthResponse.json();
+        assertBrowserFixtureRuntimeLifecycle(healthBody.browserFixtureRuntime, {
+            status: "started",
+            runtimeSource: "browser-fixture",
+            configured: true,
+            enabled: true,
+            processStarted: true,
+        });
+
+        const expectedMediaIds = ["persisted-browser-fixture-thumbnail-1", "persisted-browser-fixture-thumbnail-2"];
+        for (let index = 0; index < expectedMediaIds.length; index += 1) {
+            const mediaId = expectedMediaIds[index];
             const response = await postValidFileThumbnail(service.host, service.port);
             assert.equal(response.status, 200);
             const body = await response.json();
@@ -1326,6 +1453,18 @@ test("noop host renders through explicitly enabled browser fixture runtime", asy
                 fallbackUsed: true,
             });
             assert.equal(body.resource.mediaId, mediaId);
+            assertBrowserFixtureRuntimeLifecycle(body.browserFixtureRuntime, {
+                status: "started",
+                runtimeSource: "browser-fixture",
+                configured: true,
+                enabled: true,
+                processStarted: true,
+                renderAttempts: index + 1,
+                renderSuccesses: index + 1,
+                pageCreateCount: 1,
+                pageReuseValidated: index > 0,
+                nonEmptyPngValidated: true,
+            });
             assert.equal(JSON.stringify(body).includes("page-secret"), false);
         }
         assert.equal(fetchCalls.length, 6);

@@ -235,10 +235,13 @@ endpoints plus the exact manual command to run. It also shows whether
 `PENPOT_RENDERER_SERVICE_BACKEND_URI` or `PENPOT_BACKEND_URI` will be used for
 disabled backend RPC endpoint planning, and whether
 `PENPOT_RENDERER_SERVICE_RUNTIME_MODULE` is configured for a local runtime
-adapter module. It does not create a process, make an HTTP request, import the
-module, or execute backend RPCs. `renderer-service start` deliberately returns
-the same command as a structured manual-start boundary; it does not spawn a
-child process:
+adapter module. It also reports the optional browser fixture runtime
+configuration from `PENPOT_RENDERER_SERVICE_BROWSER_FIXTURE_RUNTIME=enabled`,
+including invalid-mode and runtime-module conflict diagnostics. It does not
+create a process, make an HTTP request, import the module, start a browser, or
+execute backend RPCs. `renderer-service start` deliberately returns the same
+command as a structured manual-start boundary; it does not spawn a child
+process:
 
 ```bash
 pnpm --filter @penpot/renderer-service start:noop
@@ -254,6 +257,12 @@ values, and token values. Degraded summaries include stable `diagnosticCodes`,
 redacted `diagnostics`, and `nextActions` for missing public assets, missing
 cache assets, unavailable cache outputs, hash failures, or invalid operator
 configuration. The same JSON result also includes
+`healthPreflight.browserFixtureRuntime`, a redacted P26.31 lifecycle summary
+when the host reports the browser fixture adapter. It reports configuration,
+startup, render counts, page reuse, non-empty PNG validation, close state, and
+side-effect flags while omitting browser paths, runtime module paths,
+workspace/cache roots, source/page data, artifact/media bytes, and token
+values. It also includes
 `healthPreflight.runtimeAssetMaterializationDryRun`, a metadata-only copy/cache
 plan with approval-required state and false write/browser/runtime side-effect
 flags, plus `healthPreflight.runtimeAssetMaterializationApproval`, a disabled

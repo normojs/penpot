@@ -503,6 +503,15 @@ adapter cleanup hook. The manual module path keeps the same optional `close`
 hook. This slice does not materialize runtime assets, load packaged frontend
 worker/render-wasm bundles, expose source-data/page/artifact/media/token
 values, or enable default MCP/CLI execution.
+P26.31 surfaces that fixture lifecycle through redacted diagnostics. The
+renderer-service `/health` and `/thumbnail` responses expose
+`browserFixtureRuntime`, command-runtime normalizes it into
+`healthPreflight.browserFixtureRuntime` for CLI/MCP render thumbnail execution,
+and `penpot-cli renderer-service status/start` reports the no-probe
+configuration state. The surface is metadata-only: paths, roots, source data,
+page data, artifact bytes, media bytes, and token values stay omitted, while
+default MCP/CLI rendering, asset materialization writes, and real scene bridge
+registration remain gated.
 
 ## Test Strategy
 

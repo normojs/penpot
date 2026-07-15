@@ -97,12 +97,21 @@ export async function createBrowserFixtureRendererRuntime(): Promise<RendererRun
     let closed = false;
     let pagePromise: Promise<Page> | null = null;
     let renderQueue: Promise<void> = Promise.resolve();
+    let pageCreateCount = 0;
+    let renderAttempts = 0;
+    let renderSuccesses = 0;
+    let renderFailures = 0;
+    let lastRenderSucceeded: boolean | null = null;
+    let nonEmptyPngValidated = false;
+    let closeAttempted = false;
+    let closeSucceeded = false;
 
     const getPage = (): Promise<Page> => {
         if (closed) {
             throw new Error("Renderer-service browser fixture runtime is closed.");
         }
         if (!pagePromise) {
+            pageCreateCount += 1;
             pagePromise = browser.newPage().catch((error: unknown) => {
                 pagePromise = null;
                 throw error;
@@ -112,13 +121,23 @@ export async function createBrowserFixtureRendererRuntime(): Promise<RendererRun
     };
 
     const renderWithBrowser = async (input: RendererRuntimeRenderInput): Promise<RendererRuntimeRenderResult> => {
-        const page = await getPage();
-        const png = await drawFixturePng(page, input);
-        return {
-            png,
-            runtime: "frontend-rasterizer",
-            fallbackUsed: true,
-        };
+        renderAttempts += 1;
+        try {
+            const page = await getPage();
+            const png = await drawFixturePng(page, input);
+            nonEmptyPngValidated = png.byteLength > 8;
+            renderSuccesses += 1;
+            lastRenderSucceeded = true;
+            return {
+                png,
+                runtime: "frontend-rasterizer",
+                fallbackUsed: true,
+            };
+        } catch (error) {
+            renderFailures += 1;
+            lastRenderSucceeded = false;
+            throw error;
+        }
     };
 
     return {
@@ -134,6 +153,7 @@ export async function createBrowserFixtureRendererRuntime(): Promise<RendererRun
             return renderResult;
         },
         close: async () => {
+            closeAttempted = true;
             if (closed) {
                 return;
             }
@@ -143,6 +163,75 @@ export async function createBrowserFixtureRendererRuntime(): Promise<RendererRun
                 await page.close();
             }
             await browser.close();
+            closeSucceeded = true;
+        },
+        browserFixtureRuntimeLifecycle: () => {
+            const status = closed ? "closed" : "started";
+            return {
+                status,
+                diagnosticsVersion: "P26.31",
+                owner: "renderer-service",
+                mode: "browser-fixture-lifecycle",
+                runtimeSource: "browser-fixture",
+                configured: true,
+                enabled: true,
+                runtimeModuleConfigured: false,
+                injectedRuntimeConfigured: false,
+                browser: {
+                    engine: "chromium",
+                    headless: true,
+                    processStarted: true,
+                    startupAttempted: true,
+                    startupSucceeded: true,
+                    closed,
+                    pathValuesIncluded: false,
+                },
+                lifecycle: {
+                    startupAttempted: true,
+                    startupSucceeded: true,
+                    startupFailed: false,
+                    renderAttempts,
+                    renderSuccesses,
+                    renderFailures,
+                    lastRenderSucceeded,
+                    pageCreateCount,
+                    pageReuseValidated: renderSuccesses > 1 && pageCreateCount === 1,
+                    nonEmptyPngValidated,
+                    closeAttempted,
+                    closeSucceeded,
+                    closeFailed: false,
+                    artifactByteLengthIncluded: false,
+                },
+                sideEffects: {
+                    browserProcessStarted: true,
+                    runtimeExecutionRegistered: false,
+                    runtimeAdapterImported: true,
+                    runtimeAssetsLoaded: false,
+                    assetManifestMaterialized: false,
+                    networkDispatch: false,
+                    dispatch: false,
+                    localFileWrites: false,
+                },
+                redaction: {
+                    sourceDataValuesIncluded: false,
+                    pageValuesIncluded: false,
+                    artifactValuesIncluded: false,
+                    mediaValuesIncluded: false,
+                    tokenValuesIncluded: false,
+                    pathValuesIncluded: false,
+                },
+                omitted: {
+                    playwrightBrowserPath: true,
+                    runtimeModulePath: true,
+                    workspaceRoot: true,
+                    cacheRoot: true,
+                    sourceData: true,
+                    pageData: true,
+                    artifactBytes: true,
+                    mediaBytes: true,
+                    tokenValues: true,
+                },
+            };
         },
     };
 }

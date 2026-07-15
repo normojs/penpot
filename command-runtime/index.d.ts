@@ -1829,6 +1829,73 @@ export interface RenderThumbnailRendererServiceRuntimeAssetMaterializationApprov
     };
 }
 
+export interface RenderThumbnailRendererServiceBrowserFixtureRuntimeDiagnostic {
+    status: "not-reported" | "not-configured" | "started" | "closed" | "invalid";
+    diagnosticsVersion: "P26.31";
+    checked: boolean;
+    runtimeSource: "none" | "injected" | "runtime-module" | "browser-fixture" | "unknown";
+    configured: boolean;
+    enabled: boolean;
+    runtimeModuleConfigured: boolean;
+    injectedRuntimeConfigured: boolean;
+    browser: {
+        engine: string | null;
+        headless: boolean;
+        processStarted: boolean;
+        startupAttempted: boolean;
+        startupSucceeded: boolean;
+        closed: boolean;
+        pathValuesIncluded: boolean;
+    };
+    lifecycle: {
+        startupAttempted: boolean;
+        startupSucceeded: boolean;
+        startupFailed: boolean;
+        renderAttempts: number;
+        renderSuccesses: number;
+        renderFailures: number;
+        lastRenderSucceeded: boolean | null;
+        pageCreateCount: number;
+        pageReuseValidated: boolean;
+        nonEmptyPngValidated: boolean;
+        closeAttempted: boolean;
+        closeSucceeded: boolean;
+        closeFailed: boolean;
+        artifactByteLengthIncluded: boolean;
+    };
+    diagnosticCodes: string[];
+    nextActions: string[];
+    sideEffects: {
+        browserProcessStarted: boolean;
+        runtimeExecutionRegistered: boolean;
+        runtimeAdapterImported: boolean;
+        runtimeAssetsLoaded: boolean;
+        assetManifestMaterialized: boolean;
+        networkDispatch: boolean;
+        dispatch: boolean;
+        localFileWrites: boolean;
+    };
+    redaction: {
+        sourceDataValuesIncluded: boolean;
+        pageValuesIncluded: boolean;
+        artifactValuesIncluded: boolean;
+        mediaValuesIncluded: boolean;
+        tokenValuesIncluded: boolean;
+        pathValuesIncluded: boolean;
+    };
+    omitted: {
+        playwrightBrowserPath: boolean;
+        runtimeModulePath: boolean;
+        workspaceRoot: boolean;
+        cacheRoot: boolean;
+        sourceData: boolean;
+        pageData: boolean;
+        artifactBytes: boolean;
+        mediaBytes: boolean;
+        tokenValues: boolean;
+    };
+}
+
 export interface RenderThumbnailRendererServiceHealthPreflight {
     status: "planned-disabled" | "ready" | "skipped" | "not-configured" | "ok" | "unavailable" | "invalid";
     dispatch: boolean;
@@ -1852,6 +1919,7 @@ export interface RenderThumbnailRendererServiceHealthPreflight {
     runtimeAssetPreflight: RenderThumbnailRendererServiceRuntimeAssetPreflightDiagnostic;
     runtimeAssetMaterializationDryRun: RenderThumbnailRendererServiceRuntimeAssetMaterializationDryRun;
     runtimeAssetMaterializationApproval: RenderThumbnailRendererServiceRuntimeAssetMaterializationApproval;
+    browserFixtureRuntime: RenderThumbnailRendererServiceBrowserFixtureRuntimeDiagnostic;
     response?: {
         status: number | null;
         contentType: string | null;

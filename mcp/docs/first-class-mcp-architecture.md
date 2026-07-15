@@ -4101,6 +4101,22 @@ side-effect flags while keeping the verdict untrusted: no approval token is
 read, accepted, consumed, or exposed, no audit record is written, no
 materialization/cache writes occur, and no runtime/browser/backend dispatch is
 enabled.
+P26.30 adds an explicitly opted-in browser-backed fixture runtime for the
+renderer-service host. `PENPOT_RENDERER_SERVICE_BROWSER_FIXTURE_RUNTIME=enabled`
+starts a renderer-service-owned Playwright Chromium fixture adapter, draws a
+browser canvas PNG, validates non-empty output, reuses the browser page across
+renders, and closes through runtime cleanup hooks. This remains a lifecycle
+fixture and does not claim real Penpot scene rendering.
+P26.31 promotes the fixture lifecycle to a first-class redacted diagnostic
+surface. Renderer-service health/thumbnail responses include
+`browserFixtureRuntime`; command-runtime normalizes it into
+`healthPreflight.browserFixtureRuntime` for MCP and `penpot-cli render
+thumbnail`; and `penpot-cli renderer-service status/start` reports the
+configuration, valid mode, and runtime-module conflict diagnostics without
+probing the host or starting browsers. The surface omits Playwright paths,
+runtime module paths, workspace/cache roots, source/page data, artifact/media
+bytes, and token values. Default MCP/CLI rendering, asset materialization
+writes, and the real bundled render-wasm/frontend bridge remain gated.
 
 ### 8.6 Advanced Tools
 
