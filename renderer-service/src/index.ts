@@ -1866,6 +1866,364 @@ export const bundledSceneBridgeFactoryShapePreflight = {
     execution: null,
 } as const;
 
+const bundledSceneBridgeModuleNamespaceImportPreflightBase = {
+    status: "planned-disabled",
+    preflightVersion: "P26.36",
+    owner: "renderer-service",
+    mode: "gated-module-namespace-import-preflight",
+    source: {
+        contractVersion: "P26.32",
+        adapterModuleReadinessVersion: "P26.33",
+        importGateVersion: "P26.34",
+        factoryShapePreflightVersion: "P26.35",
+        importGateRequired: true,
+        importGateOpen: false,
+        readiness: "blocked-until-import-gate-opens",
+    },
+    moduleImport: {
+        module: "./bundled-scene-bridge-runtime.js",
+        moduleType: "service-owned-es-module",
+        exportName: "createBundledSceneBridgeRendererRuntime",
+        importAttempted: false,
+        moduleImported: false,
+        namespaceInspected: false,
+        importSucceeded: false,
+        valuesIncluded: false,
+    },
+    factoryShape: {
+        expectedType: "function",
+        expectedSignature: "(options) => Promise<RendererRuntimeOptions>",
+        factoryPresent: false,
+        callableChecked: false,
+        factoryCallable: false,
+        factoryInvoked: false,
+        valuesIncluded: false,
+    },
+    runtimeOptionsShape: {
+        runtimeOptionsCreated: false,
+        shapeCheckAttempted: false,
+        runtimeRegistration: false,
+        runtimeExecutionRegistered: false,
+        valuesIncluded: false,
+    },
+    importOutcomeTaxonomy: [
+        {
+            code: "renderer_service_bundled_scene_bridge_module_namespace_import_gate_closed",
+            stage: "gate",
+            severity: "blocked",
+            retryable: false,
+            dispatch: false,
+        },
+        {
+            code: "renderer_service_bundled_scene_bridge_module_namespace_import_failed",
+            stage: "import",
+            severity: "invalid",
+            retryable: true,
+            dispatch: false,
+        },
+        {
+            code: "renderer_service_bundled_scene_bridge_module_namespace_export_missing",
+            stage: "namespace",
+            severity: "invalid",
+            retryable: false,
+            dispatch: false,
+        },
+        {
+            code: "renderer_service_bundled_scene_bridge_module_namespace_export_not_callable",
+            stage: "factory",
+            severity: "invalid",
+            retryable: false,
+            dispatch: false,
+        },
+        {
+            code: "renderer_service_bundled_scene_bridge_module_namespace_import_ready",
+            stage: "namespace",
+            severity: "info",
+            retryable: false,
+            dispatch: false,
+        },
+    ],
+    diagnostics: [
+        {
+            code: "renderer_service_bundled_scene_bridge_module_namespace_import_gate_closed",
+            severity: "blocked",
+            field: "source.importGateOpen",
+            message: "The bundled scene bridge module namespace import preflight is defined, but the explicit import gate is not open.",
+            nextActions: [
+                `Set ${BUNDLED_SCENE_BRIDGE_RUNTIME_ENV}=${BUNDLED_SCENE_BRIDGE_RUNTIME_EXPECTED_VALUE} only when intentionally checking the bundled scene bridge module namespace.`,
+                "Keep factory invocation, runtime option creation, browser startup, and runtime registration disabled until later reviewed tasks.",
+            ],
+        },
+    ],
+    diagnosticCodes: ["renderer_service_bundled_scene_bridge_module_namespace_import_gate_closed"],
+    nextActions: [
+        `Set ${BUNDLED_SCENE_BRIDGE_RUNTIME_ENV}=${BUNDLED_SCENE_BRIDGE_RUNTIME_EXPECTED_VALUE} only when intentionally checking the bundled scene bridge module namespace.`,
+        "Keep factory invocation, runtime option creation, browser startup, and runtime registration disabled until later reviewed tasks.",
+    ],
+    checks: [
+        {
+            id: "import-gate-open",
+            status: "blocked",
+            required: true,
+            dispatch: false,
+        },
+        {
+            id: "module-namespace-import",
+            status: "planned",
+            required: true,
+            dispatch: false,
+        },
+        {
+            id: "module-namespace-export",
+            status: "planned",
+            required: true,
+            dispatch: false,
+        },
+        {
+            id: "factory-callable-shape",
+            status: "planned",
+            required: true,
+            dispatch: false,
+        },
+        {
+            id: "runtime-options-shape",
+            status: "blocked",
+            required: false,
+            dispatch: false,
+        },
+    ],
+    sideEffects: {
+        browserProcessStarted: false,
+        browserPageCreated: false,
+        runtimeExecutionRegistered: false,
+        runtimeAdapterImported: false,
+        runtimeFactoryInvoked: false,
+        runtimeOptionsCreated: false,
+        runtimeAssetsLoaded: false,
+        assetManifestMaterialized: false,
+        backendRpcReads: false,
+        sourceDataReads: false,
+        networkDispatch: false,
+        dispatch: false,
+        localFileWrites: false,
+    },
+    redaction: {
+        moduleValuesIncluded: false,
+        pathValuesIncluded: false,
+        sourceDataValuesIncluded: false,
+        pageValuesIncluded: false,
+        artifactValuesIncluded: false,
+        mediaValuesIncluded: false,
+        tokenValuesIncluded: false,
+    },
+    omitted: {
+        moduleNamespace: true,
+        factoryValue: true,
+        runtimeOptionsValue: true,
+        workspaceRoot: true,
+        cacheRoot: true,
+        modulePath: true,
+        publicPaths: true,
+        cachePaths: true,
+        sha256: true,
+        playwrightBrowserPath: true,
+        runtimeModulePath: true,
+        sourceData: true,
+        pageData: true,
+        artifactBytes: true,
+        mediaBytes: true,
+        tokenValues: true,
+    },
+    execution: null,
+} as const;
+
+export const bundledSceneBridgeModuleNamespaceImportPreflight = bundledSceneBridgeModuleNamespaceImportPreflightBase;
+
+function bundledSceneBridgeModuleNamespaceImportDiagnostic(
+    code: string,
+    severity: "info" | "blocked" | "invalid",
+    field: string,
+    message: string,
+    nextActions: string[]
+) {
+    return {
+        code,
+        severity,
+        field,
+        message,
+        nextActions,
+    };
+}
+
+async function bundledSceneBridgeModuleNamespaceImportPreflightResponse(
+    importGate: Record<string, unknown>
+): Promise<Record<string, unknown>> {
+    const configuration = isRecord(importGate.configuration) ? importGate.configuration : {};
+    const importGateAccepted = importGate.status === "configured-disabled" && configuration.accepted === true;
+    const importGateInvalid = importGate.status === "invalid";
+
+    if (!importGateAccepted) {
+        const diagnostic = importGateInvalid
+            ? bundledSceneBridgeModuleNamespaceImportDiagnostic(
+                  "renderer_service_bundled_scene_bridge_module_namespace_import_gate_invalid",
+                  "blocked",
+                  "source.importGateOpen",
+                  "The bundled scene bridge module namespace import preflight is blocked because the explicit import gate configuration is invalid.",
+                  [
+                      `Set ${BUNDLED_SCENE_BRIDGE_RUNTIME_ENV}=${BUNDLED_SCENE_BRIDGE_RUNTIME_EXPECTED_VALUE} or leave it unset.`,
+                      "Resolve import gate conflicts before attempting module namespace import preflight.",
+                  ]
+              )
+            : bundledSceneBridgeModuleNamespaceImportPreflightBase.diagnostics[0];
+        return {
+            ...bundledSceneBridgeModuleNamespaceImportPreflightBase,
+            status: importGateInvalid ? "blocked" : "planned-disabled",
+            diagnostics: [diagnostic],
+            diagnosticCodes: [diagnostic.code],
+            nextActions: diagnostic.nextActions,
+        };
+    }
+
+    try {
+        const namespace = await import("./bundled-scene-bridge-runtime.js");
+        const exportName = bundledSceneBridgeModuleNamespaceImportPreflightBase.moduleImport.exportName;
+        const factoryPresent = Object.prototype.hasOwnProperty.call(namespace, exportName);
+        const factoryCallable = typeof namespace[exportName as keyof typeof namespace] === "function";
+        const status = factoryPresent && factoryCallable ? "ready" : "invalid";
+        const diagnostic = factoryPresent
+            ? factoryCallable
+                ? bundledSceneBridgeModuleNamespaceImportDiagnostic(
+                      "renderer_service_bundled_scene_bridge_module_namespace_import_ready",
+                      "info",
+                      "factoryShape",
+                      "The bundled scene bridge module namespace was imported and the expected factory export is callable.",
+                      [
+                          "Keep factory invocation disabled until runtime options, browser lifecycle, and pixel assertions are reviewed.",
+                          "Proceed to the next gated task before registering the bundled scene bridge runtime.",
+                      ]
+                  )
+                : bundledSceneBridgeModuleNamespaceImportDiagnostic(
+                      "renderer_service_bundled_scene_bridge_module_namespace_export_not_callable",
+                      "invalid",
+                      "factoryShape.factoryCallable",
+                      "The bundled scene bridge module namespace was imported, but the expected factory export is not callable.",
+                      [
+                          "Fix the service-owned bundled scene bridge module export shape.",
+                          "Rerun renderer-service /health before enabling factory invocation.",
+                      ]
+                  )
+            : bundledSceneBridgeModuleNamespaceImportDiagnostic(
+                  "renderer_service_bundled_scene_bridge_module_namespace_export_missing",
+                  "invalid",
+                  "moduleImport.exportName",
+                  "The bundled scene bridge module namespace was imported, but the expected factory export is missing.",
+                  [
+                      "Restore the service-owned bundled scene bridge module factory export.",
+                      "Rerun renderer-service /health before enabling factory invocation.",
+                  ]
+              );
+
+        return {
+            ...bundledSceneBridgeModuleNamespaceImportPreflightBase,
+            status,
+            source: {
+                ...bundledSceneBridgeModuleNamespaceImportPreflightBase.source,
+                importGateOpen: true,
+                readiness: status === "ready" ? "namespace-import-ready" : "namespace-import-invalid",
+            },
+            moduleImport: {
+                ...bundledSceneBridgeModuleNamespaceImportPreflightBase.moduleImport,
+                importAttempted: true,
+                moduleImported: true,
+                namespaceInspected: true,
+                importSucceeded: true,
+            },
+            factoryShape: {
+                ...bundledSceneBridgeModuleNamespaceImportPreflightBase.factoryShape,
+                factoryPresent,
+                callableChecked: true,
+                factoryCallable,
+            },
+            diagnostics: [diagnostic],
+            diagnosticCodes: [diagnostic.code],
+            nextActions: diagnostic.nextActions,
+            checks: [
+                { id: "import-gate-open", status: "passed", required: true, dispatch: false },
+                { id: "module-namespace-import", status: "passed", required: true, dispatch: false },
+                { id: "module-namespace-export", status: factoryPresent ? "passed" : "failed", required: true, dispatch: false },
+                { id: "factory-callable-shape", status: factoryCallable ? "passed" : "failed", required: true, dispatch: false },
+                { id: "runtime-options-shape", status: "blocked", required: false, dispatch: false },
+            ],
+            sideEffects: {
+                ...bundledSceneBridgeModuleNamespaceImportPreflightBase.sideEffects,
+                runtimeAdapterImported: true,
+            },
+            execution: {
+                attempted: true,
+                succeeded: status === "ready",
+                outcome: status,
+                importGateAccepted: true,
+                moduleImported: true,
+                namespaceInspected: true,
+                factoryPresent,
+                factoryCallable,
+                factoryInvoked: false,
+                runtimeOptionsCreated: false,
+                runtimeRegistration: false,
+                valuesIncluded: false,
+            },
+        };
+    } catch {
+        const diagnostic = bundledSceneBridgeModuleNamespaceImportDiagnostic(
+            "renderer_service_bundled_scene_bridge_module_namespace_import_failed",
+            "invalid",
+            "moduleImport",
+            "The bundled scene bridge module namespace import failed before factory invocation.",
+            [
+                "Check that the renderer-service bundled scene bridge module is built with the service package.",
+                "Rerun renderer-service /health after rebuilding renderer-service.",
+            ]
+        );
+        return {
+            ...bundledSceneBridgeModuleNamespaceImportPreflightBase,
+            status: "invalid",
+            source: {
+                ...bundledSceneBridgeModuleNamespaceImportPreflightBase.source,
+                importGateOpen: true,
+                readiness: "namespace-import-invalid",
+            },
+            moduleImport: {
+                ...bundledSceneBridgeModuleNamespaceImportPreflightBase.moduleImport,
+                importAttempted: true,
+            },
+            diagnostics: [diagnostic],
+            diagnosticCodes: [diagnostic.code],
+            nextActions: diagnostic.nextActions,
+            checks: [
+                { id: "import-gate-open", status: "passed", required: true, dispatch: false },
+                { id: "module-namespace-import", status: "failed", required: true, dispatch: false },
+                { id: "module-namespace-export", status: "blocked", required: true, dispatch: false },
+                { id: "factory-callable-shape", status: "blocked", required: true, dispatch: false },
+                { id: "runtime-options-shape", status: "blocked", required: false, dispatch: false },
+            ],
+            execution: {
+                attempted: true,
+                succeeded: false,
+                outcome: "import-failed",
+                importGateAccepted: true,
+                moduleImported: false,
+                namespaceInspected: false,
+                factoryPresent: false,
+                factoryCallable: false,
+                factoryInvoked: false,
+                runtimeOptionsCreated: false,
+                runtimeRegistration: false,
+                valuesIncluded: false,
+            },
+        };
+    }
+}
+
 function defaultBrowserFixtureRuntimeLifecycleDiagnostics(
     runtimeSource: RendererRuntimeSource,
     {
@@ -1980,6 +2338,7 @@ export const healthResponse = {
         "thumbnail.render.bundled-scene-bridge-adapter-module",
         "thumbnail.render.bundled-scene-bridge-import-gate",
         "thumbnail.render.bundled-scene-bridge-factory-shape-preflight",
+        "thumbnail.render.bundled-scene-bridge-module-namespace-import-preflight",
         "thumbnail.backend-rpc.file-thumbnail-persist",
         "thumbnail.backend-rpc.frame-thumbnail-persist",
     ],
@@ -1991,6 +2350,7 @@ export const healthResponse = {
     bundledSceneBridgeAdapterModule,
     bundledSceneBridgeImportGate,
     bundledSceneBridgeFactoryShapePreflight,
+    bundledSceneBridgeModuleNamespaceImportPreflight,
     browserFixtureRuntime: defaultBrowserFixtureRuntimeLifecycle,
 } as const;
 
@@ -2020,6 +2380,7 @@ export const noopThumbnailResponse = {
     bundledSceneBridgeAdapterModule,
     bundledSceneBridgeImportGate,
     bundledSceneBridgeFactoryShapePreflight,
+    bundledSceneBridgeModuleNamespaceImportPreflight,
     browserFixtureRuntime: defaultBrowserFixtureRuntimeLifecycle,
 } as const;
 
@@ -4202,6 +4563,7 @@ function thumbnailResponse(
     runtimeAssetMaterializationDryRun: Record<string, unknown>,
     runtimeAssetMaterializationApproval: Record<string, unknown>,
     bundledSceneBridgeImportGate: Record<string, unknown>,
+    bundledSceneBridgeModuleNamespaceImportPreflight: Record<string, unknown>,
     browserFixtureRuntime: Record<string, unknown>
 ): Record<string, unknown> {
     const host = request.headers.host ?? `${DEFAULT_HOST}:${DEFAULT_PORT}`;
@@ -4216,6 +4578,7 @@ function thumbnailResponse(
         runtimeAssetMaterializationDryRun,
         runtimeAssetMaterializationApproval,
         bundledSceneBridgeImportGate,
+        bundledSceneBridgeModuleNamespaceImportPreflight,
         browserFixtureRuntime,
         request: summary,
         auth,
@@ -5224,6 +5587,182 @@ function validateBundledSceneBridgeFactoryShapePreflightResponse(actual: unknown
     requireResponseEqual(record.execution ?? null, null, `${field}.execution`);
 }
 
+function validateBundledSceneBridgeModuleNamespaceImportPreflightResponse(actual: unknown, field: string): void {
+    const record = responseRecord(actual, field);
+    const status = String(record.status);
+    if (!["planned-disabled", "blocked", "ready", "invalid"].includes(status)) {
+        responseInvalid(`${field}.status must be planned-disabled, blocked, ready, or invalid.`, `${field}.status`);
+    }
+    requireResponseEqual(record.preflightVersion, "P26.36", `${field}.preflightVersion`);
+    requireResponseEqual(record.owner, "renderer-service", `${field}.owner`);
+    requireResponseEqual(record.mode, "gated-module-namespace-import-preflight", `${field}.mode`);
+
+    const source = responseRecord(record.source, `${field}.source`);
+    requireResponseEqual(source.contractVersion, "P26.32", `${field}.source.contractVersion`);
+    requireResponseEqual(source.adapterModuleReadinessVersion, "P26.33", `${field}.source.adapterModuleReadinessVersion`);
+    requireResponseEqual(source.importGateVersion, "P26.34", `${field}.source.importGateVersion`);
+    requireResponseEqual(source.factoryShapePreflightVersion, "P26.35", `${field}.source.factoryShapePreflightVersion`);
+    requireResponseEqual(source.importGateRequired, true, `${field}.source.importGateRequired`);
+    requireResponseEqual(typeof source.importGateOpen, "boolean", `${field}.source.importGateOpen.type`);
+
+    const moduleImport = responseRecord(record.moduleImport, `${field}.moduleImport`);
+    requireResponseEqual(moduleImport.module, "./bundled-scene-bridge-runtime.js", `${field}.moduleImport.module`);
+    requireResponseEqual(moduleImport.moduleType, "service-owned-es-module", `${field}.moduleImport.moduleType`);
+    requireResponseEqual(moduleImport.exportName, "createBundledSceneBridgeRendererRuntime", `${field}.moduleImport.exportName`);
+    for (const property of ["importAttempted", "moduleImported", "namespaceInspected", "importSucceeded", "valuesIncluded"]) {
+        requireResponseEqual(typeof moduleImport[property], "boolean", `${field}.moduleImport.${property}.type`);
+    }
+    requireResponseEqual(moduleImport.valuesIncluded, false, `${field}.moduleImport.valuesIncluded`);
+    if (status === "planned-disabled" || status === "blocked") {
+        for (const property of ["importAttempted", "moduleImported", "namespaceInspected", "importSucceeded"]) {
+            requireResponseEqual(moduleImport[property], false, `${field}.moduleImport.${property}`);
+        }
+    }
+    if (status === "ready") {
+        requireResponseEqual(moduleImport.importAttempted, true, `${field}.moduleImport.importAttempted`);
+        requireResponseEqual(moduleImport.moduleImported, true, `${field}.moduleImport.moduleImported`);
+        requireResponseEqual(moduleImport.namespaceInspected, true, `${field}.moduleImport.namespaceInspected`);
+        requireResponseEqual(moduleImport.importSucceeded, true, `${field}.moduleImport.importSucceeded`);
+        requireResponseEqual(source.importGateOpen, true, `${field}.source.importGateOpen`);
+    }
+
+    const factoryShape = responseRecord(record.factoryShape, `${field}.factoryShape`);
+    requireResponseEqual(factoryShape.expectedType, "function", `${field}.factoryShape.expectedType`);
+    requireResponseEqual(factoryShape.expectedSignature, "(options) => Promise<RendererRuntimeOptions>", `${field}.factoryShape.expectedSignature`);
+    for (const property of ["factoryPresent", "callableChecked", "factoryCallable", "factoryInvoked", "valuesIncluded"]) {
+        requireResponseEqual(typeof factoryShape[property], "boolean", `${field}.factoryShape.${property}.type`);
+    }
+    requireResponseEqual(factoryShape.factoryInvoked, false, `${field}.factoryShape.factoryInvoked`);
+    requireResponseEqual(factoryShape.valuesIncluded, false, `${field}.factoryShape.valuesIncluded`);
+    if (status === "ready") {
+        requireResponseEqual(factoryShape.factoryPresent, true, `${field}.factoryShape.factoryPresent`);
+        requireResponseEqual(factoryShape.callableChecked, true, `${field}.factoryShape.callableChecked`);
+        requireResponseEqual(factoryShape.factoryCallable, true, `${field}.factoryShape.factoryCallable`);
+    }
+
+    const runtimeOptionsShape = responseRecord(record.runtimeOptionsShape, `${field}.runtimeOptionsShape`);
+    for (const property of [
+        "runtimeOptionsCreated",
+        "shapeCheckAttempted",
+        "runtimeRegistration",
+        "runtimeExecutionRegistered",
+        "valuesIncluded",
+    ]) {
+        requireResponseEqual(runtimeOptionsShape[property], false, `${field}.runtimeOptionsShape.${property}`);
+    }
+
+    const importOutcomeTaxonomy = responseRecordArray(record.importOutcomeTaxonomy, `${field}.importOutcomeTaxonomy`);
+    requireResponseArrayEqual(
+        importOutcomeTaxonomy.map((entry) => String(entry.code)),
+        bundledSceneBridgeModuleNamespaceImportPreflight.importOutcomeTaxonomy.map((entry) => entry.code),
+        `${field}.importOutcomeTaxonomy.codes`
+    );
+    for (const entry of importOutcomeTaxonomy) {
+        requireResponseEqual(entry.dispatch, false, `${field}.importOutcomeTaxonomy.${String(entry.code)}.dispatch`);
+    }
+
+    const diagnostics = responseRecordArray(record.diagnostics, `${field}.diagnostics`);
+    if (diagnostics.length === 0) {
+        responseInvalid(`${field}.diagnostics must include at least one entry.`, `${field}.diagnostics`);
+    }
+    const diagnosticCodes = responseStringArray(record, "diagnosticCodes", `${field}.diagnosticCodes`);
+    if (diagnosticCodes.length === 0) {
+        responseInvalid(`${field}.diagnosticCodes must include at least one code.`, `${field}.diagnosticCodes`);
+    }
+    for (const diagnostic of diagnostics) {
+        if (!diagnosticCodes.includes(String(diagnostic.code))) {
+            responseInvalid(`${field}.diagnostics code must be listed in diagnosticCodes.`, `${field}.diagnostics.code`);
+        }
+    }
+    requireResponseArrayEqual(
+        responseStringArray(record, "nextActions", `${field}.nextActions`),
+        [...new Set(diagnostics.flatMap((entry) => responseStringArray(entry, "nextActions", `${field}.diagnostics.nextActions`)))],
+        `${field}.nextActions`
+    );
+
+    const checks = responseRecordArray(record.checks, `${field}.checks`);
+    requireResponseArrayEqual(
+        checks.map((entry) => String(entry.id)),
+        bundledSceneBridgeModuleNamespaceImportPreflight.checks.map((entry) => entry.id),
+        `${field}.checks.ids`
+    );
+    for (const check of checks) {
+        requireResponseEqual(check.dispatch, false, `${field}.checks.${String(check.id)}.dispatch`);
+    }
+
+    const sideEffects = responseRecord(record.sideEffects, `${field}.sideEffects`);
+    for (const property of [
+        "browserProcessStarted",
+        "browserPageCreated",
+        "runtimeExecutionRegistered",
+        "runtimeFactoryInvoked",
+        "runtimeOptionsCreated",
+        "runtimeAssetsLoaded",
+        "assetManifestMaterialized",
+        "backendRpcReads",
+        "sourceDataReads",
+        "networkDispatch",
+        "dispatch",
+        "localFileWrites",
+    ]) {
+        requireResponseEqual(sideEffects[property], false, `${field}.sideEffects.${property}`);
+    }
+    requireResponseEqual(typeof sideEffects.runtimeAdapterImported, "boolean", `${field}.sideEffects.runtimeAdapterImported.type`);
+    if (status === "planned-disabled" || status === "blocked") {
+        requireResponseEqual(sideEffects.runtimeAdapterImported, false, `${field}.sideEffects.runtimeAdapterImported`);
+    }
+
+    const redaction = responseRecord(record.redaction, `${field}.redaction`);
+    for (const property of [
+        "moduleValuesIncluded",
+        "pathValuesIncluded",
+        "sourceDataValuesIncluded",
+        "pageValuesIncluded",
+        "artifactValuesIncluded",
+        "mediaValuesIncluded",
+        "tokenValuesIncluded",
+    ]) {
+        requireResponseEqual(redaction[property], false, `${field}.redaction.${property}`);
+    }
+
+    const omitted = responseRecord(record.omitted, `${field}.omitted`);
+    for (const property of [
+        "moduleNamespace",
+        "factoryValue",
+        "runtimeOptionsValue",
+        "workspaceRoot",
+        "cacheRoot",
+        "modulePath",
+        "publicPaths",
+        "cachePaths",
+        "sha256",
+        "playwrightBrowserPath",
+        "runtimeModulePath",
+        "sourceData",
+        "pageData",
+        "artifactBytes",
+        "mediaBytes",
+        "tokenValues",
+    ]) {
+        requireResponseEqual(omitted[property], true, `${field}.omitted.${property}`);
+    }
+
+    if (record.execution !== null) {
+        const execution = responseRecord(record.execution, `${field}.execution`);
+        requireResponseEqual(execution.attempted, true, `${field}.execution.attempted`);
+        requireResponseEqual(execution.importGateAccepted, true, `${field}.execution.importGateAccepted`);
+        requireResponseEqual(typeof execution.succeeded, "boolean", `${field}.execution.succeeded.type`);
+        requireResponseEqual(typeof execution.moduleImported, "boolean", `${field}.execution.moduleImported.type`);
+        requireResponseEqual(typeof execution.namespaceInspected, "boolean", `${field}.execution.namespaceInspected.type`);
+        requireResponseEqual(typeof execution.factoryPresent, "boolean", `${field}.execution.factoryPresent.type`);
+        requireResponseEqual(typeof execution.factoryCallable, "boolean", `${field}.execution.factoryCallable.type`);
+        requireResponseEqual(execution.factoryInvoked, false, `${field}.execution.factoryInvoked`);
+        requireResponseEqual(execution.runtimeOptionsCreated, false, `${field}.execution.runtimeOptionsCreated`);
+        requireResponseEqual(execution.runtimeRegistration, false, `${field}.execution.runtimeRegistration`);
+        requireResponseEqual(execution.valuesIncluded, false, `${field}.execution.valuesIncluded`);
+    }
+}
+
 function validateRuntimeAssetMaterializationPreflightCheckResponse(
     actual: unknown,
     expected: (typeof bundledRuntimeAssetMaterializationPreflight.checks)[number],
@@ -6162,6 +6701,10 @@ function validateThumbnailResponseContract(
         record.bundledSceneBridgeFactoryShapePreflight,
         "bundledSceneBridgeFactoryShapePreflight"
     );
+    validateBundledSceneBridgeModuleNamespaceImportPreflightResponse(
+        record.bundledSceneBridgeModuleNamespaceImportPreflight,
+        "bundledSceneBridgeModuleNamespaceImportPreflight"
+    );
     validateBrowserFixtureRuntimeLifecycleResponse(record.browserFixtureRuntime, "browserFixtureRuntime");
 
     validateThumbnailResourceResponse(responseRecord(record.resource, "resource"));
@@ -6221,12 +6764,14 @@ async function handleRequest(request: IncomingMessage, response: ServerResponse,
         );
         const browserFixtureRuntime = browserFixtureRuntimeLifecycleResponse(options);
         const importGate = bundledSceneBridgeImportGateResponse(options);
+        const moduleNamespaceImportPreflight = await bundledSceneBridgeModuleNamespaceImportPreflightResponse(importGate);
         sendJson(response, 200, {
             ...healthResponse,
             runtimeAssetMaterializationPreflight: runtimeAssetPreflight,
             runtimeAssetMaterializationDryRun,
             runtimeAssetMaterializationApproval,
             bundledSceneBridgeImportGate: importGate,
+            bundledSceneBridgeModuleNamespaceImportPreflight: moduleNamespaceImportPreflight,
             browserFixtureRuntime,
         });
         return;
@@ -6249,6 +6794,7 @@ async function handleRequest(request: IncomingMessage, response: ServerResponse,
             );
             const browserFixtureRuntime = browserFixtureRuntimeLifecycleResponse(options);
             const importGate = bundledSceneBridgeImportGateResponse(options);
+            const moduleNamespaceImportPreflight = await bundledSceneBridgeModuleNamespaceImportPreflightResponse(importGate);
             const generatedResponse = thumbnailResponse(
                 request,
                 summary,
@@ -6262,6 +6808,7 @@ async function handleRequest(request: IncomingMessage, response: ServerResponse,
                 runtimeAssetMaterializationDryRun,
                 runtimeAssetMaterializationApproval,
                 importGate,
+                moduleNamespaceImportPreflight,
                 browserFixtureRuntime
             );
             const responseBody = options.thumbnailResponseOverride

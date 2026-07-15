@@ -546,6 +546,14 @@ records the future import outcome taxonomy plus expected factory and
 namespace, invoke the factory, create runtime options, register execution,
 start browsers, load assets, read backend/source data, write files, or expose
 module/factory/runtime values.
+P26.36 executes the first explicitly gated bundled scene bridge module
+namespace import preflight. Renderer-service exposes
+`bundledSceneBridgeModuleNamespaceImportPreflight`, and CLI/MCP summaries
+expose `healthPreflight.bundledSceneBridgeModuleNamespaceImportPreflight`.
+Only the service-owned module namespace and target export callability are
+checked; factory invocation, runtime option creation, runtime registration,
+browser startup, asset loading, backend/source-data reads, local writes, and
+module/factory/runtime value exposure remain disabled.
 
 ## Test Strategy
 

@@ -160,6 +160,16 @@ factory option keys, and returned `RendererRuntimeOptions` shape, but remains
 closed: no module import, namespace inspection, factory invocation, runtime
 option creation, runtime registration, browser startup, asset loading,
 backend/source-data reads, local writes, or value exposure occurs.
+P26.36 now executes the explicitly gated module namespace import slice.
+Renderer-service reports it as
+`bundledSceneBridgeModuleNamespaceImportPreflight`, and command-runtime carries
+it to CLI/MCP as
+`healthPreflight.bundledSceneBridgeModuleNamespaceImportPreflight`. The
+preflight may import the bundled scene bridge module and inspect only the
+namespace/export shape when the import gate is explicitly open, but it still
+keeps factory invocation, runtime option creation, runtime registration,
+browser startup, asset loading, backend/source-data reads, local writes, and
+value exposure disabled.
 P26.5 adds a token-safe `backendRpcClient` plan to renderer-service thumbnail
 responses so backend data/cache/persist endpoints are normalized for staged
 execution. That plan now feeds the executable file-thumbnail cache probe,

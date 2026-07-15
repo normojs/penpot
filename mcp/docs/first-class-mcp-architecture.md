@@ -4155,6 +4155,17 @@ export shape, factory option keys, and returned `RendererRuntimeOptions`
 shape, but module import, namespace inspection, factory invocation, runtime
 option creation, runtime registration, browser startup, asset loading,
 backend/source-data reads, local writes, and value exposure remain disabled.
+P26.36 adds an explicitly gated bundled scene bridge module namespace import
+preflight. Renderer-service exposes
+`bundledSceneBridgeModuleNamespaceImportPreflight`; command-runtime carries it
+into MCP and `penpot-cli render thumbnail` as
+`healthPreflight.bundledSceneBridgeModuleNamespaceImportPreflight`; and
+`penpot-cli renderer-service status/start` reports the no-probe lifecycle
+guidance for executing the preflight through `/health`. When the import gate is
+open, renderer-service may import the service-owned bundled module and inspect
+only the target export shape; factory invocation, runtime option creation,
+runtime registration, browser startup, asset loading, backend/source-data
+reads, local writes, and value exposure remain disabled.
 
 ### 8.6 Advanced Tools
 

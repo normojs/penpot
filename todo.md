@@ -364,9 +364,15 @@ CLI/MCP health preflight summaries, and `penpot-cli renderer-service
 status/start` reports the closed no-probe preflight plan while module import,
 namespace inspection, factory invocation, runtime option creation, runtime
 registration, browser startup, asset loading, reads, writes, and value exposure
-remain disabled. Current active work is P26.36, next up, to implement a gated
-module namespace import preflight that still avoids factory invocation and
-runtime registration.
+remain disabled. P26.36 is complete: renderer-service now exposes
+`bundledSceneBridgeModuleNamespaceImportPreflight`, executes an explicitly
+gated service-owned module namespace import and export callability check through
+`/health` and `/thumbnail`, and command-runtime/CLI/MCP surface the redacted
+summary while factory invocation, runtime option creation, runtime
+registration, browser startup, asset loading, backend/source-data reads, local
+writes, and value exposure remain disabled. Current active work is P26.37, next
+up, to plan the guarded factory invocation preflight without registering or
+executing a runtime.
 P25.7 is complete: thumbnail renderer-service API fixtures now define
 future file refresh, file reuse, tagged frame refresh, auth forwarding,
 resource URI normalization, and MCP/CLI test expectations. P25.8 is complete:
@@ -1035,7 +1041,8 @@ process boundary before MCP or CLI execution is enabled.
 | P26.33 | done | Scaffold disabled bundled scene bridge adapter module boundary | `renderer-service`, `command-runtime`, `mcp/docs`, `todo.md`, `CHANGES.md` | Completed 2026-07-16; renderer-service now ships a disabled service-owned `createBundledSceneBridgeRendererRuntime` module stub, health/thumbnail responses expose `bundledSceneBridgeAdapterModule`, command-runtime normalizes it into CLI/MCP `healthPreflight.bundledSceneBridgeAdapterModule`, and tests prove default paths remain no-import/no-browser/no-dispatch while unsafe readiness metadata is rejected | Keeps real scene rendering, default MCP/CLI execution, browser startup, asset loading/materialization, backend/source-data reads, local writes, runtime registration, and value exposure gated |
 | P26.34 | done | Define explicit bundled scene bridge adapter import gate | `renderer-service`, `command-runtime`, `penpot-cli`, `mcp`, `mcp/docs`, `todo.md`, `CHANGES.md` | Completed 2026-07-16; renderer-service now exposes a disabled `bundledSceneBridgeImportGate` with redacted env/configuration/conflict diagnostics, command-runtime normalizes it into CLI/MCP health preflight summaries, `penpot-cli renderer-service status/start` reports safe lifecycle metadata, and tests reject unsafe import/factory/runtime/value flags | Keeps real scene rendering, browser startup, asset loading/materialization, backend/source-data reads, local writes, runtime registration, module import, factory invocation, and value exposure gated |
 | P26.35 | done | Define closed bundled scene bridge adapter factory-shape preflight | `renderer-service`, `command-runtime`, `penpot-cli`, `mcp`, `mcp/docs`, `todo.md`, `CHANGES.md` | Completed 2026-07-16; renderer-service now exposes `bundledSceneBridgeFactoryShapePreflight`, command-runtime normalizes it into CLI/MCP `healthPreflight.bundledSceneBridgeFactoryShapePreflight`, `penpot-cli renderer-service status/start` reports the no-probe closed preflight plan, and tests reject unsafe import/factory/runtime-option/value flags | Keeps real scene rendering, browser startup, asset loading/materialization, backend/source-data reads, local writes, runtime registration, namespace inspection, module import, factory invocation, runtime option creation, and value exposure gated |
-| P26.36 | todo | Execute gated bundled scene bridge module namespace import preflight | `renderer-service`, `command-runtime`, `penpot-cli`, `mcp`, `mcp/docs`, `todo.md`, `CHANGES.md` | Add an explicitly gated renderer-service preflight that may import the bundled scene bridge module and inspect only the namespace/export shape, reporting CLI/MCP diagnostics while still avoiding factory invocation, runtime option creation, runtime registration, browser startup, asset loading, backend/source-data reads, local writes, and value exposure | Keeps real scene rendering, browser startup, asset loading/materialization, backend/source-data reads, local writes, runtime registration, factory invocation, runtime option creation, and value exposure gated |
+| P26.36 | done | Execute gated bundled scene bridge module namespace import preflight | `renderer-service`, `command-runtime`, `penpot-cli`, `mcp`, `mcp/docs`, `todo.md`, `CHANGES.md` | Completed 2026-07-16; renderer-service now exposes `bundledSceneBridgeModuleNamespaceImportPreflight`, executes an explicitly gated service-owned module namespace import and export callability check through `/health` and `/thumbnail`, command-runtime normalizes the result into CLI/MCP `healthPreflight.bundledSceneBridgeModuleNamespaceImportPreflight`, and tests reject unsafe factory/runtime/value metadata | Keeps real scene rendering, browser startup, asset loading/materialization, backend/source-data reads, local writes, runtime registration, factory invocation, runtime option creation, and value exposure gated |
+| P26.37 | todo | Plan guarded bundled scene bridge factory invocation preflight | `renderer-service`, `command-runtime`, `penpot-cli`, `mcp`, `mcp/docs`, `todo.md`, `CHANGES.md` | Define the next explicitly gated preflight for invoking the bundled scene bridge factory only with inert/redacted option metadata after namespace import readiness is proven, including diagnostics and CLI/MCP summaries | Keeps runtime option registration, render dispatch, browser startup beyond the reviewed factory path, asset loading/materialization, backend/source-data reads, local writes, and value exposure gated |
 
 P26.1 is complete: `@penpot/renderer-service` is a private pnpm workspace
 package with a real no-op HTTP lifecycle. Its TypeScript output is written to
@@ -1259,9 +1266,11 @@ without importing the adapter module or exposing configured values. P26.35 is
 complete: the closed factory-shape preflight contract is now reported through
 renderer-service, CLI, and MCP diagnostics while adapter import, namespace
 inspection, factory invocation, runtime option creation, runtime registration,
-and value exposure remain disabled. P26.36 is next to add the explicit gated
-module namespace import preflight without invoking the factory or registering
-runtime execution.
+and value exposure remain disabled. P26.36 is complete: the explicit gated
+module namespace import preflight now imports the service-owned module and
+checks only the target export shape while factory invocation, runtime option
+creation, runtime registration, and value exposure remain disabled. P26.37 is
+next to plan the guarded factory invocation preflight.
 
 ## Maintenance: Build Cache Hygiene
 
