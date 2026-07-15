@@ -493,6 +493,16 @@ MCP callers. The verdict is explicitly untrusted and cannot grant approval:
 token reads, token acceptance/consumption, audit writes, cache writes,
 materialization, runtime registration, and network/backend dispatch remain
 disabled.
+P26.30 validates the first browser-backed runtime lifecycle slice without
+claiming real scene rendering. Operators can set
+`PENPOT_RENDERER_SERVICE_BROWSER_FIXTURE_RUNTIME=enabled` to start a
+renderer-service-owned Playwright Chromium fixture adapter that draws
+non-empty canvas PNG bytes through the existing `renderThumbnail` contract,
+reuses one page for sequential renders, and closes through the runtime
+adapter cleanup hook. The manual module path keeps the same optional `close`
+hook. This slice does not materialize runtime assets, load packaged frontend
+worker/render-wasm bundles, expose source-data/page/artifact/media/token
+values, or enable default MCP/CLI execution.
 
 ## Test Strategy
 
@@ -502,6 +512,9 @@ Before `render.thumbnail` becomes executable:
   command.
 - Add service API fixture tests for file targets, tagged frame targets, cache
   reuse, cache refresh, PNG dimensions, and resource normalization.
+- Keep renderer-service tests proving browser fixture opt-in, non-empty PNG
+  output, reuse, and `close` cleanup until the bundled scene bridge replaces
+  the fixture adapter.
 - Add MCP tests only after registration, covering auth propagation, adapter
   rejection, refresh/reuse behavior, resource metadata, and missing resource
   errors.

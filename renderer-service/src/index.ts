@@ -4,12 +4,16 @@ import { access, readFile, stat } from "node:fs/promises";
 import { createServer, type IncomingMessage, type Server, type ServerResponse } from "node:http";
 import { isAbsolute, resolve } from "node:path";
 import { pathToFileURL } from "node:url";
+import { createBrowserFixtureRendererRuntime } from "./browser-fixture-runtime.js";
+
+export { createBrowserFixtureRendererRuntime } from "./browser-fixture-runtime.js";
 
 const DEFAULT_HOST = "127.0.0.1";
 const DEFAULT_PORT = 6070;
 const BACKEND_RPC_BASE_URI_ENV = "PENPOT_RENDERER_SERVICE_BACKEND_URI";
 const BACKEND_RPC_BASE_URI_FALLBACK_ENV = "PENPOT_BACKEND_URI";
 const RENDERER_RUNTIME_MODULE_ENV = "PENPOT_RENDERER_SERVICE_RUNTIME_MODULE";
+const BROWSER_FIXTURE_RUNTIME_ENV = "PENPOT_RENDERER_SERVICE_BROWSER_FIXTURE_RUNTIME";
 const RUNTIME_ASSET_PREFLIGHT_ENV = "PENPOT_RENDERER_SERVICE_RUNTIME_ASSET_PREFLIGHT";
 const RUNTIME_ASSET_PREFLIGHT_WORKSPACE_ROOT_ENV = "PENPOT_RENDERER_SERVICE_RUNTIME_ASSET_PREFLIGHT_WORKSPACE_ROOT";
 const RUNTIME_ASSET_PREFLIGHT_CACHE_ROOT_ENV = "PENPOT_RENDERER_SERVICE_RUNTIME_ASSET_PREFLIGHT_CACHE_ROOT";
@@ -74,6 +78,7 @@ export type RendererRuntimeRenderResult = {
 
 export type RendererRuntimeOptions = {
     renderThumbnail?: (input: RendererRuntimeRenderInput) => RendererRuntimeRenderResult | Promise<RendererRuntimeRenderResult>;
+    close?: () => void | Promise<void>;
 };
 
 export type RendererRuntimeAssetPreflightOptions = {
@@ -94,6 +99,7 @@ export type RendererServiceOptions = {
     backendRpc?: RendererBackendRpcClientOptions;
     renderer?: RendererRuntimeOptions;
     rendererRuntimeModule?: string;
+    browserFixtureRuntime?: boolean;
     runtimeAssetPreflight?: RendererRuntimeAssetPreflightOptions;
     runtimeAssetMaterializationApproval?: RendererRuntimeAssetMaterializationApprovalOptions;
     thumbnailResponseOverride?: (response: Record<string, unknown>) => unknown;
@@ -1202,6 +1208,7 @@ export const healthResponse = {
         "thumbnail.backend-rpc.file-render-input-summary",
         "thumbnail.render.runtime-adapter",
         "thumbnail.render.runtime-module",
+        "thumbnail.render.browser-fixture-runtime",
         "thumbnail.render.runtime-asset-manifest",
         "thumbnail.render.runtime-asset-preflight",
         "thumbnail.render.runtime-asset-materialization-dry-run",
@@ -1979,6 +1986,11 @@ export async function loadRendererRuntimeAdapterModule(moduleSpecifier: string):
 
     return {
         renderThumbnail: renderThumbnail as RendererRuntimeOptions["renderThumbnail"],
+        ...(typeof candidate.close === "function"
+            ? {
+                  close: candidate.close as RendererRuntimeOptions["close"],
+              }
+            : {}),
     };
 }
 
@@ -4818,10 +4830,35 @@ export function createRendererService(
     });
 }
 
+async function resolveRendererRuntimeOptions(options: RendererServiceOptions): Promise<RendererRuntimeOptions | undefined> {
+    if (options.renderer) {
+        return options.renderer;
+    }
+    if (options.browserFixtureRuntime) {
+        return createBrowserFixtureRendererRuntime();
+    }
+    if (options.rendererRuntimeModule) {
+        return loadRendererRuntimeAdapterModule(options.rendererRuntimeModule);
+    }
+    return undefined;
+}
+
+function closeServer(server: Server): Promise<void> {
+    return new Promise<void>((resolve, reject) => {
+        server.close((error) => (error ? reject(error) : resolve()));
+    });
+}
+
+async function closeRendererRuntime(renderer: RendererRuntimeOptions | undefined): Promise<void> {
+    if (typeof renderer?.close === "function") {
+        await renderer.close();
+    }
+}
+
 export async function startRendererService(options: RendererServiceOptions = {}): Promise<StartedRendererService> {
     const host = options.host ?? DEFAULT_HOST;
     const port = options.port ?? DEFAULT_PORT;
-    const renderer = options.renderer ?? (options.rendererRuntimeModule ? await loadRendererRuntimeAdapterModule(options.rendererRuntimeModule) : undefined);
+    const renderer = await resolveRendererRuntimeOptions(options);
     const server = createRendererService({
         backendRpc: options.backendRpc,
         renderer,
@@ -4830,24 +4867,33 @@ export async function startRendererService(options: RendererServiceOptions = {})
         thumbnailResponseOverride: options.thumbnailResponseOverride,
     });
 
-    await new Promise<void>((resolve, reject) => {
-        const onError = (error: Error) => {
-            server.off("listening", onListening);
-            reject(error);
-        };
-        const onListening = () => {
-            server.off("error", onError);
-            resolve();
-        };
+    try {
+        await new Promise<void>((resolve, reject) => {
+            const onError = (error: Error) => {
+                server.off("listening", onListening);
+                reject(error);
+            };
+            const onListening = () => {
+                server.off("error", onError);
+                resolve();
+            };
 
-        server.once("error", onError);
-        server.once("listening", onListening);
-        server.listen(port, host);
-    });
+            server.once("error", onError);
+            server.once("listening", onListening);
+            server.listen(port, host);
+        });
+    } catch (error) {
+        await closeRendererRuntime(renderer);
+        throw error;
+    }
 
     const address = server.address();
     if (!address || typeof address === "string") {
-        await new Promise<void>((resolve, reject) => server.close((error) => (error ? reject(error) : resolve())));
+        try {
+            await closeServer(server);
+        } finally {
+            await closeRendererRuntime(renderer);
+        }
         throw new Error("Renderer service did not bind a TCP address.");
     }
 
@@ -4855,10 +4901,18 @@ export async function startRendererService(options: RendererServiceOptions = {})
         host,
         port: address.port,
         server,
-        stop: () =>
-            new Promise<void>((resolve, reject) => {
-                server.close((error) => (error ? reject(error) : resolve()));
-            }),
+        stop: async () => {
+            let serverError: unknown = null;
+            try {
+                await closeServer(server);
+            } catch (error) {
+                serverError = error;
+            }
+            await closeRendererRuntime(renderer);
+            if (serverError) {
+                throw serverError;
+            }
+        },
     };
 }
 
@@ -4917,6 +4971,17 @@ function readRuntimeAssetMaterializationApprovalOptionsFromEnv(
     return options.modeConfigured || options.approvalTokenConfigured || options.auditConfigured ? options : undefined;
 }
 
+function readBrowserFixtureRuntimeFromEnv(env: NodeJS.ProcessEnv): boolean {
+    const value = optionalString(env[BROWSER_FIXTURE_RUNTIME_ENV])?.trim();
+    if (!value) {
+        return false;
+    }
+    if (value !== "enabled") {
+        throw new Error(`${BROWSER_FIXTURE_RUNTIME_ENV} must be set to enabled when configured.`);
+    }
+    return true;
+}
+
 export function readRendererServiceOptionsFromEnv(env: NodeJS.ProcessEnv = process.env): RendererServiceOptions {
     const backendBaseUriInput =
         optionalString(env[BACKEND_RPC_BASE_URI_ENV]) ?? optionalString(env[BACKEND_RPC_BASE_URI_FALLBACK_ENV]) ?? undefined;
@@ -4924,6 +4989,10 @@ export function readRendererServiceOptionsFromEnv(env: NodeJS.ProcessEnv = proce
         baseUri: backendBaseUriInput,
     });
     const rendererRuntimeModule = optionalString(env[RENDERER_RUNTIME_MODULE_ENV])?.trim();
+    const browserFixtureRuntime = readBrowserFixtureRuntimeFromEnv(env);
+    if (rendererRuntimeModule && browserFixtureRuntime) {
+        throw new Error(`${BROWSER_FIXTURE_RUNTIME_ENV} cannot be combined with ${RENDERER_RUNTIME_MODULE_ENV}.`);
+    }
     const runtimeAssetPreflight = readRuntimeAssetPreflightOptionsFromEnv(env);
     const runtimeAssetMaterializationApproval = readRuntimeAssetMaterializationApprovalOptionsFromEnv(env);
 
@@ -4932,6 +5001,7 @@ export function readRendererServiceOptionsFromEnv(env: NodeJS.ProcessEnv = proce
         port: readPort(env.PENPOT_RENDERER_SERVICE_PORT),
         ...(backendBaseUri ? { backendRpc: { baseUri: backendBaseUri } } : {}),
         ...(rendererRuntimeModule ? { rendererRuntimeModule } : {}),
+        ...(browserFixtureRuntime ? { browserFixtureRuntime } : {}),
         ...(runtimeAssetPreflight ? { runtimeAssetPreflight } : {}),
         ...(runtimeAssetMaterializationApproval ? { runtimeAssetMaterializationApproval } : {}),
     };

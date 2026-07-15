@@ -99,6 +99,15 @@ renderer-service, CLI, and MCP health summaries, but it remains untrusted and
 does not read or accept tokens, consume approvals, write audit records,
 materialize assets, write cache files, start browsers, register runtime
 execution, or dispatch network/backend requests.
+P26.30 adds the first explicitly opted-in browser lifecycle slice through
+`PENPOT_RENDERER_SERVICE_BROWSER_FIXTURE_RUNTIME=enabled`. This loads a
+renderer-service-owned Playwright Chromium fixture adapter, draws a browser
+canvas PNG, reuses the adapter across renders, and closes it through the
+runtime adapter `close` hook when the service stops. This fixture proves
+startup/reuse/shutdown and non-empty PNG bytes only; the P26.19 bundled
+render-wasm/frontend scene bridge, runtime asset materialization approval,
+asset copying, source-data/page/artifact/media/token value exposure, and
+default MCP/CLI execution remain gated.
 P26.5 adds a token-safe `backendRpcClient` plan to renderer-service thumbnail
 responses so backend data/cache/persist endpoints are normalized for staged
 execution. That plan now feeds the executable file-thumbnail cache probe,
@@ -539,6 +548,8 @@ P26.14 adds manual runtime adapter module registration. When
 `file:` URL, startup imports that ES module and accepts a named
 `renderThumbnail`, default object `renderThumbnail`, or default function as the
 runtime adapter. Invalid or missing exports fail startup before the host binds.
+Runtime modules may also export an optional `close` function; the service calls
+it during shutdown so future browser/page pools can be released deterministically.
 `penpot-cli renderer-service status/start` reports the configured module path
 as no-import/no-dispatch lifecycle metadata; the CLI still does not spawn,
 probe, import, or render. This is a registration boundary only: bundled
@@ -632,6 +643,13 @@ P26.24 wires the operator configuration into real manual host startup while
 keeping lifecycle commands planning-only. The host validates the read-only mode
 and absolute roots before serving `/health`; cache root defaults to
 `/Volumes/fushilu/.caches/penpot/renderer-service` when omitted.
+P26.30 completes the first browser lifecycle prerequisite at fixture level. The
+explicit `PENPOT_RENDERER_SERVICE_BROWSER_FIXTURE_RUNTIME=enabled` path starts
+Playwright Chromium, renders a canvas PNG through the existing adapter contract,
+serializes reuse through one page, and closes the browser through the runtime
+cleanup hook. It deliberately does not load packaged frontend worker or
+render-wasm assets, and the `runtimeAssetManifest` side-effect flags still
+describe the planned bundled scene bridge rather than this opt-in fixture.
 P26.25 adds the stable degraded/invalid diagnostic codes and next-action
 guidance to the same `/health` summary while keeping all workspace/cache roots
 and filesystem paths redacted from CLI/MCP consumers.
@@ -1736,11 +1754,14 @@ gates remain before the renderer can be treated as fully implemented:
 - keep MCP `render.thumbnail` dry-run and `penpot-cli render thumbnail
   --dry-run` as request inspection paths
 - keep manual hosts no-op unless a renderer runtime adapter is explicitly
-  injected or configured through `PENPOT_RENDERER_SERVICE_RUNTIME_MODULE`
+  injected, configured through `PENPOT_RENDERER_SERVICE_RUNTIME_MODULE`, or the
+  browser fixture is explicitly enabled with
+  `PENPOT_RENDERER_SERVICE_BROWSER_FIXTURE_RUNTIME=enabled`
 - keep cache probe execution limited to configured file and tagged-frame reuse
   paths
 - implement the P26.19 browser-backed bundled render-wasm/frontend rasterizer
-  adapter before claiming real scene rendering
+  adapter before claiming real scene rendering; P26.30 validates fixture
+  browser lifecycle only
 - keep thumbnail persistence limited to configured refresh/cache-miss adapter
   render results
 - keep response normalization covered by fixtures before tagged-frame cache

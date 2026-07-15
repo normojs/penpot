@@ -334,7 +334,14 @@ P26.29 is complete: renderer-service, command-runtime, CLI, and MCP health
 summaries now expose a computed metadata-only approval readiness verdict from
 dry-run and unsupported-configuration diagnostics while approvals stay
 untrusted and all token reads, audit writes, materialization writes, and
-dispatch remain disabled.
+dispatch remain disabled. P26.30 is complete: renderer-service now has an
+explicitly opted-in browser-backed fixture runtime adapter via
+`PENPOT_RENDERER_SERVICE_BROWSER_FIXTURE_RUNTIME=enabled`, runtime adapter
+cleanup hooks, Playwright canvas PNG output, and startup/reuse/shutdown tests
+without claiming real Penpot scene rendering. Current active work moves to
+P26.31 to surface redacted browser fixture runtime lifecycle diagnostics
+through renderer-service health and CLI/MCP summaries before expanding toward
+the bundled scene bridge.
 P25.7 is complete: thumbnail renderer-service API fixtures now define
 future file refresh, file reuse, tagged frame refresh, auth forwarding,
 resource URI normalization, and MCP/CLI test expectations. P25.8 is complete:
@@ -997,6 +1004,8 @@ process boundary before MCP or CLI execution is enabled.
 | P26.27 | done | Add guarded runtime asset cache materialization approval scaffold | `renderer-service`, `command-runtime`, `penpot-cli`, `mcp/docs`, `todo.md`, `CHANGES.md` | Completed 2026-07-16; renderer-service health/thumbnail responses now expose `runtimeAssetMaterializationApproval` with future approval mode/token/audit env names, source dry-run readiness, audit metadata, and hard-disabled token/audit/write flags, while command-runtime, CLI, MCP tests, and docs assert the safe summary | Keeps actual asset copying, browser startup, runtime adapter import/loading, backend/source-data reads, network dispatch, local writes, runtime registration, token reads, token acceptance, token consumption, audit writes, and value exposure disabled |
 | P26.28 | done | Report unsupported runtime asset materialization approval configuration attempts | `renderer-service`, `command-runtime`, `penpot-cli`, `mcp/docs`, `todo.md`, `CHANGES.md` | Completed 2026-07-16; renderer-service now detects future approval mode/token/audit env presence without reading values, reports redacted P26.28 unsupported diagnostics in health/thumbnail responses, and command-runtime, `penpot-cli`, MCP tests, docs, and fixtures expose configured booleans, diagnostic codes, diagnostics, and next actions | Keeps actual asset copying, browser startup, runtime adapter import/loading, backend/source-data reads, network dispatch, local writes, runtime registration, token value reads, token acceptance, token consumption, audit writes, audit path exposure, and value exposure disabled |
 | P26.29 | done | Add runtime asset materialization approval readiness verdict | `renderer-service`, `command-runtime`, `penpot-cli`, `mcp/docs`, `todo.md`, `CHANGES.md` | Completed 2026-07-16; renderer-service health/thumbnail responses now include `runtimeAssetMaterializationApproval.readinessVerdict`, command-runtime normalizes it for CLI/MCP summaries, `penpot-cli renderer-service status` reports a no-probe lifecycle verdict, and MCP execution tests assert the live health verdict payload | Keeps actual asset copying, browser startup, runtime adapter import/loading, backend/source-data reads, network dispatch, local writes, runtime registration, token value reads, token acceptance, token consumption, audit writes, audit path exposure, and value exposure disabled |
+| P26.30 | done | Add browser-backed fixture runtime adapter lifecycle slice | `renderer-service`, `mcp/docs`, `todo.md`, `CHANGES.md` | Completed 2026-07-16; renderer-service now supports `PENPOT_RENDERER_SERVICE_BROWSER_FIXTURE_RUNTIME=enabled`, starts a Playwright Chromium fixture adapter, renders non-empty browser canvas PNGs through the existing runtime contract, reuses the adapter, and calls runtime `close` hooks on service shutdown | Keeps the real render-wasm/frontend scene bridge, asset materialization approval, MCP/CLI default execution, source-data/page/artifact/media/token value exposure, and unreviewed browser runtime registration gated |
+| P26.31 | pending | Surface browser fixture runtime lifecycle diagnostics | `renderer-service`, `command-runtime`, `penpot-cli`, `mcp`, `mcp/docs`, `todo.md`, `CHANGES.md` | Add redacted health/thumbnail/lifecycle summaries that report browser fixture runtime availability/configuration/startup state without exposing paths, source data, page data, artifact bytes, media bytes, or tokens, then normalize the summary through CLI/MCP status surfaces | Keeps the real render-wasm/frontend scene bridge, asset materialization approval, asset copying, default MCP/CLI rendering, and source-data/page/artifact/media/token value exposure gated |
 
 P26.1 is complete: `@penpot/renderer-service` is a private pnpm workspace
 package with a real no-op HTTP lifecycle. Its TypeScript output is written to
@@ -1202,7 +1211,11 @@ configuration attempts now report redacted diagnostics, configured booleans, and
 next actions without reading values. P26.29 is complete: the approval readiness
 verdict is now computed from dry-run and unsupported-configuration diagnostics
 and surfaced through renderer-service, CLI, and MCP summaries without trusting
-approvals or enabling writes.
+approvals or enabling writes. P26.30 is complete: the first explicitly opted-in
+browser-backed fixture runtime adapter now validates Playwright startup, reused
+browser PNG output, and cleanup hooks while leaving real scene rendering gated.
+P26.31 is pending to expose redacted browser fixture lifecycle diagnostics
+through renderer-service health and CLI/MCP summaries.
 
 ## Maintenance: Build Cache Hygiene
 

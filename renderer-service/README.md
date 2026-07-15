@@ -11,7 +11,12 @@ The current host implements:
 - Optional injected renderer runtime adapters for file thumbnail source-data
   reads. Adapter PNG bytes are stored only in memory and served by resource URL.
 - Optional local runtime adapter module loading via
-  `PENPOT_RENDERER_SERVICE_RUNTIME_MODULE`.
+  `PENPOT_RENDERER_SERVICE_RUNTIME_MODULE`; adapters may also export `close`
+  for service shutdown cleanup.
+- Optional browser-backed fixture runtime loading via
+  `PENPOT_RENDERER_SERVICE_BROWSER_FIXTURE_RUNTIME=enabled`. This starts a
+  Playwright Chromium instance, draws a fixture canvas PNG, and validates
+  browser startup/reuse/shutdown without claiming real Penpot scene rendering.
 - `GET /assets/by-id/noop-thumbnail-png`, serving the fixture PNG resource, and
   `GET /assets/by-id/{renderedMediaId}` for in-memory adapter artifacts.
 
@@ -38,6 +43,11 @@ request renders through an adapter, the host can persist the PNG through the
 matching backend thumbnail RPC and return backend resource metadata. Manual
 hosts do not bundle a render-wasm bridge yet, so bundled real scene rendering
 remains disabled.
+Set `PENPOT_RENDERER_SERVICE_BROWSER_FIXTURE_RUNTIME=enabled` to opt into the
+P26.30 browser-backed fixture adapter instead of `PENPOT_RENDERER_SERVICE_RUNTIME_MODULE`;
+the two runtime sources are mutually exclusive. Keep Playwright browser
+binaries under the shared cache, for example
+`PLAYWRIGHT_BROWSERS_PATH=/Volumes/fushilu/.caches/ms-playwright`.
 
 `/health` and `/thumbnail` also expose the staged runtime asset materialization
 surfaces: read-only preflight summaries, metadata-only dry-run copy/cache

@@ -11,6 +11,48 @@ const pngFixture = Buffer.from(
     "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==",
     "base64"
 );
+const pngSignature = "89504e470d0a1a0a";
+
+function assertPngBytes(value) {
+    const bytes = Buffer.from(value);
+    assert.ok(bytes.byteLength > 8);
+    assert.equal(bytes.subarray(0, 8).toString("hex"), pngSignature);
+    return bytes;
+}
+
+function browserFixtureRuntimeInput({ cachePolicy = "reuse" } = {}) {
+    return {
+        target: {
+            kind: "file",
+            fileId: "file-1",
+            revn: 1,
+        },
+        artifact: {
+            format: "png",
+            mimeType: "image/png",
+            width: 252,
+            height: 168,
+            extension: ".png",
+        },
+        cache: {
+            policy: cachePolicy,
+            scope: "file-thumbnail",
+            key: "file:file-1:revn:1",
+        },
+        render: {
+            runtime: "render-wasm-worker",
+            fallback: "frontend-rasterizer",
+        },
+        sourceData: {
+            fileId: "file-1",
+            revn: 1,
+            page: {
+                id: "page-secret",
+                objects: {},
+            },
+        },
+    };
+}
 
 function assertRuntimeAssetManifestScaffold(manifest) {
     assert.deepEqual(manifest, serviceModule.bundledRuntimeBridgeAssetManifest);
@@ -666,6 +708,7 @@ test("noop host exposes the P25.24 health contract", async () => {
         const body = await response.json();
         assert.deepEqual(body, serviceModule.healthResponse);
         assert.ok(serviceModule.healthResponse.capabilities.includes("thumbnail.backend-rpc.frame-thumbnail-persist"));
+        assert.ok(serviceModule.healthResponse.capabilities.includes("thumbnail.render.browser-fixture-runtime"));
         assert.ok(serviceModule.healthResponse.capabilities.includes("thumbnail.render.runtime-asset-manifest"));
         assert.ok(serviceModule.healthResponse.capabilities.includes("thumbnail.render.runtime-asset-preflight"));
         assert.ok(serviceModule.healthResponse.capabilities.includes("thumbnail.render.runtime-asset-materialization-dry-run"));
@@ -907,6 +950,17 @@ test("noop host reads backend RPC planning base URI from environment", async () 
 
     assert.deepEqual(
         serviceModule.readRendererServiceOptionsFromEnv({
+            PENPOT_RENDERER_SERVICE_BROWSER_FIXTURE_RUNTIME: " enabled ",
+        }),
+        {
+            host: "127.0.0.1",
+            port: 6070,
+            browserFixtureRuntime: true,
+        }
+    );
+
+    assert.deepEqual(
+        serviceModule.readRendererServiceOptionsFromEnv({
             PENPOT_RENDERER_SERVICE_BACKEND_URI: "",
             PENPOT_BACKEND_URI: "http://127.0.0.1:6060/",
         }).backendRpc,
@@ -918,6 +972,21 @@ test("noop host reads backend RPC planning base URI from environment", async () 
     assert.throws(
         () => serviceModule.readRendererServiceOptionsFromEnv({ PENPOT_RENDERER_SERVICE_BACKEND_URI: "file:///tmp/backend" }),
         /backend RPC baseUri must be an absolute HTTP\(S\) URL/
+    );
+    assert.throws(
+        () =>
+            serviceModule.readRendererServiceOptionsFromEnv({
+                PENPOT_RENDERER_SERVICE_BROWSER_FIXTURE_RUNTIME: "true",
+            }),
+        /PENPOT_RENDERER_SERVICE_BROWSER_FIXTURE_RUNTIME must be set to enabled/
+    );
+    assert.throws(
+        () =>
+            serviceModule.readRendererServiceOptionsFromEnv({
+                PENPOT_RENDERER_SERVICE_BROWSER_FIXTURE_RUNTIME: "enabled",
+                PENPOT_RENDERER_SERVICE_RUNTIME_MODULE: "/tmp/renderer-runtime.mjs",
+            }),
+        /PENPOT_RENDERER_SERVICE_BROWSER_FIXTURE_RUNTIME cannot be combined with PENPOT_RENDERER_SERVICE_RUNTIME_MODULE/
     );
     assert.throws(
         () =>
@@ -1132,6 +1201,136 @@ test("noop host rejects invalid renderer runtime adapter modules", async () => {
         );
     } finally {
         await rm(runtimeDir, { recursive: true, force: true });
+    }
+});
+
+test("noop host calls renderer runtime adapter close hooks on stop", async () => {
+    const runtimeDir = await mkdtemp(join(tmpdir(), "penpot-renderer-runtime-"));
+    const runtimeModulePath = join(runtimeDir, "runtime.mjs");
+    const runtimeModuleUrl = pathToFileURL(runtimeModulePath).href;
+    await writeFile(
+        runtimeModulePath,
+        `
+export let closeCount = 0;
+
+export async function renderThumbnail() {
+    throw new Error("render should not run in close hook test");
+}
+
+export function close() {
+    closeCount += 1;
+}
+`
+    );
+
+    let service = null;
+    try {
+        service = await serviceModule.startRendererService({
+            port: 0,
+            rendererRuntimeModule: runtimeModulePath,
+        });
+        await service.stop();
+        service = null;
+        const runtimeModule = await import(runtimeModuleUrl);
+        assert.equal(runtimeModule.closeCount, 1);
+    } finally {
+        if (service) {
+            await service.stop();
+        }
+        await rm(runtimeDir, { recursive: true, force: true });
+    }
+});
+
+test("browser fixture runtime renders non-empty PNGs and closes", async () => {
+    const runtime = await serviceModule.createBrowserFixtureRendererRuntime();
+    try {
+        const first = await runtime.renderThumbnail(browserFixtureRuntimeInput());
+        const firstBytes = assertPngBytes(first.png);
+        assert.equal(first.runtime, "frontend-rasterizer");
+        assert.equal(first.fallbackUsed, true);
+
+        const second = await runtime.renderThumbnail(browserFixtureRuntimeInput({ cachePolicy: "refresh" }));
+        const secondBytes = assertPngBytes(second.png);
+        assert.equal(second.runtime, "frontend-rasterizer");
+        assert.equal(second.fallbackUsed, true);
+        assert.notEqual(secondBytes.toString("base64"), firstBytes.toString("base64"));
+    } finally {
+        await runtime.close();
+    }
+
+    await assert.rejects(
+        () => runtime.renderThumbnail(browserFixtureRuntimeInput()),
+        /browser fixture runtime is closed/
+    );
+});
+
+test("noop host renders through explicitly enabled browser fixture runtime", async () => {
+    const options = serviceModule.readRendererServiceOptionsFromEnv({
+        PENPOT_RENDERER_SERVICE_BACKEND_URI: "https://penpot.example.test/",
+        PENPOT_RENDERER_SERVICE_BROWSER_FIXTURE_RUNTIME: "enabled",
+    });
+    assert.equal(options.browserFixtureRuntime, true);
+
+    const fetchCalls = [];
+    let persistCount = 0;
+    const service = await serviceModule.startRendererService({
+        ...options,
+        port: 0,
+        backendRpc: {
+            ...options.backendRpc,
+            fetch: async (url, init) => {
+                fetchCalls.push({ url: String(url), init });
+                if (String(url).includes("create-file-thumbnail")) {
+                    persistCount += 1;
+                    return persistedThumbnailResponse(`persisted-browser-fixture-thumbnail-${persistCount}`);
+                }
+                if (String(url).includes("get-file-data-for-thumbnail")) {
+                    return new Response(
+                        JSON.stringify({
+                            "file-id": "file-1",
+                            revn: 1,
+                            page: { id: "page-secret", objects: {} },
+                        }),
+                        { status: 200, headers: { "content-type": "application/json" } }
+                    );
+                }
+                return new Response(
+                    JSON.stringify({
+                        hit: false,
+                        "file-id": "file-1",
+                        revn: 1,
+                    }),
+                    { status: 200, headers: { "content-type": "application/json" } }
+                );
+            },
+        },
+    });
+
+    try {
+        for (const mediaId of ["persisted-browser-fixture-thumbnail-1", "persisted-browser-fixture-thumbnail-2"]) {
+            const response = await postValidFileThumbnail(service.host, service.port);
+            assert.equal(response.status, 200);
+            const body = await response.json();
+            const renderOutput = body.backendRpcClient.renderOutput;
+            const persistOutput = body.backendRpcClient.persistOutput;
+
+            assert.equal(body.backendRpcClient.status, "persist-executed");
+            assert.equal(body.backendRpcClient.pipeline.renderDispatch, true);
+            assert.equal(body.backendRpcClient.pipeline.persistWrite, true);
+            assert.equal(renderOutput.runtime, "frontend-rasterizer");
+            assert.equal(renderOutput.fallbackUsed, true);
+            assert.ok(renderOutput.artifactByteLength > 8);
+            assert.equal(persistOutput.artifactByteLength, renderOutput.artifactByteLength);
+            assert.deepEqual(body.renderer, {
+                runtime: "frontend-rasterizer",
+                fallbackUsed: true,
+            });
+            assert.equal(body.resource.mediaId, mediaId);
+            assert.equal(JSON.stringify(body).includes("page-secret"), false);
+        }
+        assert.equal(fetchCalls.length, 6);
+    } finally {
+        await service.stop();
     }
 });
 
