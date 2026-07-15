@@ -1,6 +1,8 @@
 import { createHash } from "node:crypto";
+import { constants as fsConstants } from "node:fs";
+import { access, readFile, stat } from "node:fs/promises";
 import { createServer, type IncomingMessage, type Server, type ServerResponse } from "node:http";
-import { isAbsolute } from "node:path";
+import { isAbsolute, resolve } from "node:path";
 import { pathToFileURL } from "node:url";
 
 const DEFAULT_HOST = "127.0.0.1";
@@ -68,12 +70,19 @@ export type RendererRuntimeOptions = {
     renderThumbnail?: (input: RendererRuntimeRenderInput) => RendererRuntimeRenderResult | Promise<RendererRuntimeRenderResult>;
 };
 
+export type RendererRuntimeAssetPreflightOptions = {
+    executeReadOnly?: boolean;
+    workspaceRoot?: string;
+    cacheRoot?: string;
+};
+
 export type RendererServiceOptions = {
     host?: string;
     port?: number;
     backendRpc?: RendererBackendRpcClientOptions;
     renderer?: RendererRuntimeOptions;
     rendererRuntimeModule?: string;
+    runtimeAssetPreflight?: RendererRuntimeAssetPreflightOptions;
     thumbnailResponseOverride?: (response: Record<string, unknown>) => unknown;
 };
 
@@ -354,6 +363,7 @@ export const bundledRuntimeAssetMaterializationPreflight = {
         mediaValuesIncluded: false,
         tokenValuesIncluded: false,
     },
+    execution: null,
 } as const;
 
 export const healthResponse = {
@@ -649,7 +659,73 @@ type RenderedAsset = {
 
 type RenderedAssetStore = Map<string, RenderedAsset>;
 
-type RendererServiceRuntimeOptions = Pick<RendererServiceOptions, "backendRpc" | "renderer" | "thumbnailResponseOverride"> & {
+type RuntimeAssetPreflightExecutionAssetCheck = {
+    id: string;
+    assetId: string;
+    kind: string;
+    publicPath: string;
+    cachePath: string;
+    required: boolean;
+    readiness: "ready" | "missing";
+    exists: boolean;
+    cacheOutputExists: boolean;
+    sha256: string | null;
+    byteLength: number | null;
+    fileRead: boolean;
+    hashComputed: boolean;
+    dispatch: false;
+    localFileWrites: false;
+};
+
+type RuntimeAssetPreflightExecutionCacheOutputCheck = {
+    id: string;
+    cacheOutputId: string;
+    path: string;
+    readiness: "ready" | "missing";
+    exists: boolean;
+    writable: boolean;
+    fileRead: false;
+    localFileWrites: false;
+};
+
+type RuntimeAssetPreflightExecution = {
+    status: "executed";
+    executionVersion: "P26.22";
+    mode: "read-only";
+    readiness: "ready" | "degraded";
+    workspaceRoot: string;
+    cacheRoot: string;
+    checks: RuntimeAssetPreflightExecutionAssetCheck[];
+    cacheOutputChecks: RuntimeAssetPreflightExecutionCacheOutputCheck[];
+    summary: {
+        ready: boolean;
+        readyAssetIds: string[];
+        missingAssetIds: string[];
+        readyCacheOutputIds: string[];
+        missingCacheOutputIds: string[];
+    };
+    sideEffects: {
+        browserProcessStarted: false;
+        runtimeExecutionRegistered: false;
+        runtimeAdapterImported: false;
+        runtimeAssetsLoaded: false;
+        assetManifestMaterialized: false;
+        fileRead: boolean;
+        hashComputed: boolean;
+        networkDispatch: false;
+        dispatch: false;
+        localFileWrites: false;
+    };
+    redaction: {
+        sourceDataValuesIncluded: false;
+        pageValuesIncluded: false;
+        artifactValuesIncluded: false;
+        mediaValuesIncluded: false;
+        tokenValuesIncluded: false;
+    };
+};
+
+type RendererServiceRuntimeOptions = Pick<RendererServiceOptions, "backendRpc" | "renderer" | "runtimeAssetPreflight" | "thumbnailResponseOverride"> & {
     renderedAssets: RenderedAssetStore;
 };
 
@@ -684,6 +760,187 @@ function rendererStartupError(message: string, code: string, field: string, caus
         retryable: false,
         ...(cause ? { cause } : {}),
     });
+}
+
+function normalizeRuntimeAssetPreflightRoot(value: string | undefined, field: string): string {
+    const root = optionalString(value);
+    if (!root) {
+        rendererStartupError("Renderer-service runtime asset preflight root is required.", "renderer_service_runtime_asset_preflight_root_required", field);
+    }
+    if (!isAbsolute(root)) {
+        rendererStartupError("Renderer-service runtime asset preflight root must be an absolute path.", "renderer_service_runtime_asset_preflight_root_invalid", field);
+    }
+    return root;
+}
+
+function remapRuntimeAssetCachePath(path: string, cacheRoot: string): string {
+    if (cacheRoot === RENDERER_SERVICE_CACHE_ROOT) {
+        return path;
+    }
+
+    const prefix = `${RENDERER_SERVICE_CACHE_ROOT}/`;
+    if (path === RENDERER_SERVICE_CACHE_ROOT) {
+        return cacheRoot;
+    }
+    if (path.startsWith(prefix)) {
+        return resolve(cacheRoot, path.slice(prefix.length));
+    }
+    return path;
+}
+
+async function filesystemEntryExists(path: string): Promise<boolean> {
+    try {
+        await stat(path);
+        return true;
+    } catch {
+        return false;
+    }
+}
+
+async function filesystemEntryWritable(path: string): Promise<boolean> {
+    try {
+        await access(path, fsConstants.W_OK);
+        return true;
+    } catch {
+        return false;
+    }
+}
+
+async function runtimeAssetHash(path: string, exists: boolean): Promise<{ sha256: string | null; byteLength: number | null; fileRead: boolean; hashComputed: boolean }> {
+    if (!exists) {
+        return {
+            sha256: null,
+            byteLength: null,
+            fileRead: false,
+            hashComputed: false,
+        };
+    }
+
+    try {
+        const bytes = await readFile(path);
+        return {
+            sha256: createHash("sha256").update(bytes).digest("hex"),
+            byteLength: bytes.byteLength,
+            fileRead: true,
+            hashComputed: true,
+        };
+    } catch {
+        return {
+            sha256: null,
+            byteLength: null,
+            fileRead: false,
+            hashComputed: false,
+        };
+    }
+}
+
+export async function executeRuntimeAssetMaterializationPreflight(
+    options: RendererRuntimeAssetPreflightOptions | undefined
+): Promise<RuntimeAssetPreflightExecution | null> {
+    if (options?.executeReadOnly !== true) {
+        return null;
+    }
+
+    const workspaceRoot = normalizeRuntimeAssetPreflightRoot(options.workspaceRoot, "runtimeAssetPreflight.workspaceRoot");
+    const cacheRoot = normalizeRuntimeAssetPreflightRoot(options.cacheRoot ?? RENDERER_SERVICE_CACHE_ROOT, "runtimeAssetPreflight.cacheRoot");
+
+    const checks: RuntimeAssetPreflightExecutionAssetCheck[] = [];
+    for (const plannedCheck of bundledRuntimeAssetMaterializationPreflight.checks) {
+        const resolvedPublicPath = isAbsolute(plannedCheck.publicPath) ? plannedCheck.publicPath : resolve(workspaceRoot, plannedCheck.publicPath);
+        const resolvedCachePath = remapRuntimeAssetCachePath(plannedCheck.cachePath, cacheRoot);
+        const exists = await filesystemEntryExists(resolvedPublicPath);
+        const cacheOutputExists = await filesystemEntryExists(resolvedCachePath);
+        const hash = await runtimeAssetHash(resolvedPublicPath, exists);
+        const readiness = exists && cacheOutputExists && hash.hashComputed ? "ready" : "missing";
+        checks.push({
+            id: plannedCheck.id,
+            assetId: plannedCheck.assetId,
+            kind: plannedCheck.kind,
+            publicPath: plannedCheck.publicPath,
+            cachePath: plannedCheck.cachePath,
+            required: plannedCheck.required,
+            readiness,
+            exists,
+            cacheOutputExists,
+            sha256: hash.sha256,
+            byteLength: hash.byteLength,
+            fileRead: hash.fileRead,
+            hashComputed: hash.hashComputed,
+            dispatch: false,
+            localFileWrites: false,
+        });
+    }
+
+    const cacheOutputChecks: RuntimeAssetPreflightExecutionCacheOutputCheck[] = [];
+    for (const entry of bundledRuntimeAssetMaterializationPreflight.cacheOutputChecks) {
+        const resolvedPath = remapRuntimeAssetCachePath(entry.path, cacheRoot);
+        const exists = await filesystemEntryExists(resolvedPath);
+        const writable = exists ? await filesystemEntryWritable(resolvedPath) : false;
+        cacheOutputChecks.push({
+            id: entry.id,
+            cacheOutputId: entry.cacheOutputId,
+            path: entry.path,
+            readiness: exists && writable ? "ready" : "missing",
+            exists,
+            writable,
+            fileRead: false,
+            localFileWrites: false,
+        });
+    }
+
+    const readyAssetIds = checks.filter((entry) => entry.readiness === "ready").map((entry) => entry.assetId);
+    const missingAssetIds = checks.filter((entry) => entry.readiness !== "ready").map((entry) => entry.assetId);
+    const readyCacheOutputIds = cacheOutputChecks.filter((entry) => entry.readiness === "ready").map((entry) => entry.cacheOutputId);
+    const missingCacheOutputIds = cacheOutputChecks.filter((entry) => entry.readiness !== "ready").map((entry) => entry.cacheOutputId);
+    const ready = missingAssetIds.length === 0 && missingCacheOutputIds.length === 0;
+    const fileRead = checks.some((entry) => entry.fileRead);
+    const hashComputed = checks.some((entry) => entry.hashComputed);
+
+    return {
+        status: "executed",
+        executionVersion: "P26.22",
+        mode: "read-only",
+        readiness: ready ? "ready" : "degraded",
+        workspaceRoot,
+        cacheRoot,
+        checks,
+        cacheOutputChecks,
+        summary: {
+            ready,
+            readyAssetIds,
+            missingAssetIds,
+            readyCacheOutputIds,
+            missingCacheOutputIds,
+        },
+        sideEffects: {
+            browserProcessStarted: false,
+            runtimeExecutionRegistered: false,
+            runtimeAdapterImported: false,
+            runtimeAssetsLoaded: false,
+            assetManifestMaterialized: false,
+            fileRead,
+            hashComputed,
+            networkDispatch: false,
+            dispatch: false,
+            localFileWrites: false,
+        },
+        redaction: {
+            sourceDataValuesIncluded: false,
+            pageValuesIncluded: false,
+            artifactValuesIncluded: false,
+            mediaValuesIncluded: false,
+            tokenValuesIncluded: false,
+        },
+    };
+}
+
+async function runtimeAssetMaterializationPreflightResponse(
+    options: RendererRuntimeAssetPreflightOptions | undefined
+): Promise<Record<string, unknown>> {
+    return {
+        ...bundledRuntimeAssetMaterializationPreflight,
+        execution: await executeRuntimeAssetMaterializationPreflight(options),
+    };
 }
 
 function normalizeRendererRuntimeModuleSpecifier(moduleSpecifier: string): string {
@@ -2149,7 +2406,8 @@ function thumbnailResponse(
     cacheProbeExecution: BackendRpcCacheProbeExecution,
     sourceDataReadExecution: BackendRpcSourceDataReadExecution,
     renderExecution: ThumbnailRenderExecution,
-    persistExecution: BackendRpcThumbnailPersistExecution
+    persistExecution: BackendRpcThumbnailPersistExecution,
+    runtimeAssetPreflight: Record<string, unknown>
 ): Record<string, unknown> {
     const host = request.headers.host ?? `${DEFAULT_HOST}:${DEFAULT_PORT}`;
     const downloadUri = `http://${host}/assets/by-id/noop-thumbnail-png`;
@@ -2159,6 +2417,7 @@ function thumbnailResponse(
 
     return {
         ...noopThumbnailResponse,
+        runtimeAssetMaterializationPreflight: runtimeAssetPreflight,
         request: summary,
         auth,
         backendRpcClient: summarizeBackendRpcClient(
@@ -2243,6 +2502,17 @@ function responseBoolean(record: Record<string, unknown>, property: string, fiel
     const value = record[property];
     if (typeof value !== "boolean") {
         responseInvalid(`Renderer-service thumbnail response ${field} must be a boolean.`, field);
+    }
+    return value;
+}
+
+function responseNonNegativeIntegerOrNull(record: Record<string, unknown>, property: string, field: string): number | null {
+    const value = record[property];
+    if (value === null) {
+        return null;
+    }
+    if (typeof value !== "number" || !Number.isInteger(value) || value < 0) {
+        responseInvalid(`Renderer-service thumbnail response ${field} must be a non-negative integer or null.`, field);
     }
     return value;
 }
@@ -2519,6 +2789,166 @@ function validateRuntimeAssetMaterializationPreflightCacheOutputResponse(
     requireResponseEqual(record.localFileWrites, false, `${field}.localFileWrites`);
 }
 
+function validateRuntimeAssetMaterializationPreflightExecutionCheckResponse(
+    actual: unknown,
+    expected: (typeof bundledRuntimeAssetMaterializationPreflight.checks)[number],
+    field: string
+): void {
+    const record = responseRecord(actual, field);
+    requireResponseEqual(record.id, expected.id, `${field}.id`);
+    requireResponseEqual(record.assetId, expected.assetId, `${field}.assetId`);
+    requireResponseEqual(record.kind, expected.kind, `${field}.kind`);
+    requireResponseEqual(record.publicPath, expected.publicPath, `${field}.publicPath`);
+    requireResponseEqual(record.cachePath, expected.cachePath, `${field}.cachePath`);
+    requireResponseEqual(responseBoolean(record, "required", `${field}.required`), expected.required, `${field}.required`);
+    requireResponseEqual(record.readiness === "ready" || record.readiness === "missing", true, `${field}.readiness`);
+    const exists = responseBoolean(record, "exists", `${field}.exists`);
+    const cacheOutputExists = responseBoolean(record, "cacheOutputExists", `${field}.cacheOutputExists`);
+
+    const sha256 = record.sha256;
+    if (sha256 !== null && (typeof sha256 !== "string" || !/^[a-f0-9]{64}$/.test(sha256))) {
+        responseInvalid(`Renderer-service thumbnail response ${field}.sha256 must be null or a 64-character lowercase hex string.`, `${field}.sha256`);
+    }
+    const byteLength = responseNonNegativeIntegerOrNull(record, "byteLength", `${field}.byteLength`);
+    const fileRead = responseBoolean(record, "fileRead", `${field}.fileRead`);
+    const hashComputed = responseBoolean(record, "hashComputed", `${field}.hashComputed`);
+    requireResponseEqual(fileRead, hashComputed, `${field}.fileRead`);
+    requireResponseEqual(sha256 !== null, hashComputed, `${field}.sha256`);
+    requireResponseEqual(byteLength !== null, hashComputed, `${field}.byteLength`);
+    if (!exists) {
+        requireResponseEqual(fileRead, false, `${field}.fileRead`);
+        requireResponseEqual(hashComputed, false, `${field}.hashComputed`);
+    }
+    requireResponseEqual(record.readiness, exists && cacheOutputExists && hashComputed ? "ready" : "missing", `${field}.readiness`);
+    requireResponseEqual(record.dispatch, false, `${field}.dispatch`);
+    requireResponseEqual(record.localFileWrites, false, `${field}.localFileWrites`);
+}
+
+function validateRuntimeAssetMaterializationPreflightExecutionCacheOutputResponse(
+    actual: unknown,
+    expected: (typeof bundledRuntimeAssetMaterializationPreflight.cacheOutputChecks)[number],
+    field: string
+): void {
+    const record = responseRecord(actual, field);
+    requireResponseEqual(record.id, expected.id, `${field}.id`);
+    requireResponseEqual(record.cacheOutputId, expected.cacheOutputId, `${field}.cacheOutputId`);
+    requireResponseEqual(record.path, expected.path, `${field}.path`);
+    requireResponseEqual(record.readiness === "ready" || record.readiness === "missing", true, `${field}.readiness`);
+    const exists = responseBoolean(record, "exists", `${field}.exists`);
+    const writable = responseBoolean(record, "writable", `${field}.writable`);
+    requireResponseEqual(record.readiness, exists && writable ? "ready" : "missing", `${field}.readiness`);
+    requireResponseEqual(record.fileRead, false, `${field}.fileRead`);
+    requireResponseEqual(record.localFileWrites, false, `${field}.localFileWrites`);
+}
+
+function validateRuntimeAssetMaterializationPreflightExecutionResponse(actual: unknown, field: string): void {
+    const record = responseRecord(actual, field);
+    requireResponseEqual(record.status, "executed", `${field}.status`);
+    requireResponseEqual(record.executionVersion, "P26.22", `${field}.executionVersion`);
+    requireResponseEqual(record.mode, "read-only", `${field}.mode`);
+    requireResponseEqual(record.readiness === "ready" || record.readiness === "degraded", true, `${field}.readiness`);
+
+    const workspaceRoot = responseString(record, "workspaceRoot", `${field}.workspaceRoot`);
+    const cacheRoot = responseString(record, "cacheRoot", `${field}.cacheRoot`);
+    requireResponseEqual(isAbsolute(workspaceRoot), true, `${field}.workspaceRoot`);
+    requireResponseEqual(isAbsolute(cacheRoot), true, `${field}.cacheRoot`);
+
+    const checks = responseRecordArray(record.checks, `${field}.checks`);
+    requireResponseEqual(checks.length, bundledRuntimeAssetMaterializationPreflight.checks.length, `${field}.checks.length`);
+    for (let index = 0; index < bundledRuntimeAssetMaterializationPreflight.checks.length; index += 1) {
+        validateRuntimeAssetMaterializationPreflightExecutionCheckResponse(
+            checks[index],
+            bundledRuntimeAssetMaterializationPreflight.checks[index],
+            `${field}.checks.${index}`
+        );
+    }
+
+    const cacheOutputChecks = responseRecordArray(record.cacheOutputChecks, `${field}.cacheOutputChecks`);
+    requireResponseEqual(cacheOutputChecks.length, bundledRuntimeAssetMaterializationPreflight.cacheOutputChecks.length, `${field}.cacheOutputChecks.length`);
+    for (let index = 0; index < bundledRuntimeAssetMaterializationPreflight.cacheOutputChecks.length; index += 1) {
+        validateRuntimeAssetMaterializationPreflightExecutionCacheOutputResponse(
+            cacheOutputChecks[index],
+            bundledRuntimeAssetMaterializationPreflight.cacheOutputChecks[index],
+            `${field}.cacheOutputChecks.${index}`
+        );
+    }
+
+    const expectedReadyAssetIds = checks
+        .map((entry, index) => ({ entry, index }))
+        .filter(({ entry }) => entry.readiness === "ready")
+        .map(({ index }) => bundledRuntimeAssetMaterializationPreflight.checks[index].assetId);
+    const expectedMissingAssetIds = checks
+        .map((entry, index) => ({ entry, index }))
+        .filter(({ entry }) => entry.readiness !== "ready")
+        .map(({ index }) => bundledRuntimeAssetMaterializationPreflight.checks[index].assetId);
+    const expectedReadyCacheOutputIds = cacheOutputChecks
+        .map((entry, index) => ({ entry, index }))
+        .filter(({ entry }) => entry.readiness === "ready")
+        .map(({ index }) => bundledRuntimeAssetMaterializationPreflight.cacheOutputChecks[index].cacheOutputId);
+    const expectedMissingCacheOutputIds = cacheOutputChecks
+        .map((entry, index) => ({ entry, index }))
+        .filter(({ entry }) => entry.readiness !== "ready")
+        .map(({ index }) => bundledRuntimeAssetMaterializationPreflight.cacheOutputChecks[index].cacheOutputId);
+    const executionReady = expectedMissingAssetIds.length === 0 && expectedMissingCacheOutputIds.length === 0;
+    requireResponseEqual(record.readiness, executionReady ? "ready" : "degraded", `${field}.readiness`);
+
+    const summary = responseRecord(record.summary, `${field}.summary`);
+    requireResponseEqual(responseBoolean(summary, "ready", `${field}.summary.ready`), executionReady, `${field}.summary.ready`);
+
+    const readyAssetIds = responseStringArray(summary, "readyAssetIds", `${field}.summary.readyAssetIds`);
+    const missingAssetIds = responseStringArray(summary, "missingAssetIds", `${field}.summary.missingAssetIds`);
+    const readyCacheOutputIds = responseStringArray(summary, "readyCacheOutputIds", `${field}.summary.readyCacheOutputIds`);
+    const missingCacheOutputIds = responseStringArray(summary, "missingCacheOutputIds", `${field}.summary.missingCacheOutputIds`);
+
+    requireResponseArrayEqual(
+        readyAssetIds,
+        expectedReadyAssetIds,
+        `${field}.summary.readyAssetIds`
+    );
+    requireResponseArrayEqual(
+        missingAssetIds,
+        expectedMissingAssetIds,
+        `${field}.summary.missingAssetIds`
+    );
+    requireResponseArrayEqual(
+        readyCacheOutputIds,
+        expectedReadyCacheOutputIds,
+        `${field}.summary.readyCacheOutputIds`
+    );
+    requireResponseArrayEqual(
+        missingCacheOutputIds,
+        expectedMissingCacheOutputIds,
+        `${field}.summary.missingCacheOutputIds`
+    );
+
+    const sideEffects = responseRecord(record.sideEffects, `${field}.sideEffects`);
+    for (const property of [
+        "browserProcessStarted",
+        "runtimeExecutionRegistered",
+        "runtimeAdapterImported",
+        "runtimeAssetsLoaded",
+        "assetManifestMaterialized",
+        "networkDispatch",
+        "dispatch",
+        "localFileWrites",
+    ]) {
+        requireResponseEqual(sideEffects[property], false, `${field}.sideEffects.${property}`);
+    }
+    requireResponseEqual(responseBoolean(sideEffects, "fileRead", `${field}.sideEffects.fileRead`), checks.some((entry) => entry.fileRead), `${field}.sideEffects.fileRead`);
+    requireResponseEqual(responseBoolean(sideEffects, "hashComputed", `${field}.sideEffects.hashComputed`), checks.some((entry) => entry.hashComputed), `${field}.sideEffects.hashComputed`);
+
+    const redaction = responseRecord(record.redaction, `${field}.redaction`);
+    for (const property of [
+        "sourceDataValuesIncluded",
+        "pageValuesIncluded",
+        "artifactValuesIncluded",
+        "mediaValuesIncluded",
+        "tokenValuesIncluded",
+    ]) {
+        requireResponseEqual(redaction[property], false, `${field}.redaction.${property}`);
+    }
+}
+
 function validateRuntimeAssetMaterializationPreflightResponse(actual: unknown, field: string): void {
     const record = responseRecord(actual, field);
     requireResponseEqual(record.status, bundledRuntimeAssetMaterializationPreflight.status, `${field}.status`);
@@ -2610,6 +3040,12 @@ function validateRuntimeAssetMaterializationPreflightResponse(actual: unknown, f
     ]) {
         requireResponseEqual(redaction[property], false, `${field}.redaction.${property}`);
     }
+
+    if (record.execution === null) {
+        return;
+    }
+
+    validateRuntimeAssetMaterializationPreflightExecutionResponse(record.execution, `${field}.execution`);
 }
 
 function validateBackendRpcRequestEnvelopeResponse(actual: unknown, expected: BackendRpcRequestEnvelopeSummary, field: string): void {
@@ -2884,7 +3320,11 @@ async function handleRequest(request: IncomingMessage, response: ServerResponse,
     const url = new URL(request.url ?? "/", "http://renderer-service.local");
 
     if (request.method === "GET" && url.pathname === "/health") {
-        sendJson(response, 200, healthResponse);
+        const runtimeAssetPreflight = await runtimeAssetMaterializationPreflightResponse(options.runtimeAssetPreflight);
+        sendJson(response, 200, {
+            ...healthResponse,
+            runtimeAssetMaterializationPreflight: runtimeAssetPreflight,
+        });
         return;
     }
 
@@ -2897,6 +3337,7 @@ async function handleRequest(request: IncomingMessage, response: ServerResponse,
             const sourceDataReadExecution = await executeThumbnailSourceDataRead(request, summary, options.backendRpc, cacheProbeExecution);
             const renderExecution = await executeThumbnailRender(summary, sourceDataReadExecution, options.renderer, options.renderedAssets);
             const persistExecution = await executeThumbnailPersist(request, summary, options.backendRpc, sourceDataReadExecution, renderExecution);
+            const runtimeAssetPreflight = await runtimeAssetMaterializationPreflightResponse(options.runtimeAssetPreflight);
             const generatedResponse = thumbnailResponse(
                 request,
                 summary,
@@ -2905,7 +3346,8 @@ async function handleRequest(request: IncomingMessage, response: ServerResponse,
                 cacheProbeExecution,
                 sourceDataReadExecution,
                 renderExecution,
-                persistExecution
+                persistExecution,
+                runtimeAssetPreflight
             );
             const responseBody = options.thumbnailResponseOverride
                 ? options.thumbnailResponseOverride(generatedResponse)
@@ -2961,11 +3403,14 @@ async function handleRequest(request: IncomingMessage, response: ServerResponse,
     });
 }
 
-export function createRendererService(options: Pick<RendererServiceOptions, "backendRpc" | "renderer" | "thumbnailResponseOverride"> = {}): Server {
+export function createRendererService(
+    options: Pick<RendererServiceOptions, "backendRpc" | "renderer" | "runtimeAssetPreflight" | "thumbnailResponseOverride"> = {}
+): Server {
     const renderedAssets: RenderedAssetStore = new Map();
     const runtimeOptions: RendererServiceRuntimeOptions = {
         backendRpc: options.backendRpc,
         renderer: options.renderer,
+        runtimeAssetPreflight: options.runtimeAssetPreflight,
         thumbnailResponseOverride: options.thumbnailResponseOverride,
         renderedAssets,
     };
@@ -2989,6 +3434,7 @@ export async function startRendererService(options: RendererServiceOptions = {})
     const server = createRendererService({
         backendRpc: options.backendRpc,
         renderer,
+        runtimeAssetPreflight: options.runtimeAssetPreflight,
         thumbnailResponseOverride: options.thumbnailResponseOverride,
     });
 

@@ -10360,6 +10360,7 @@ test("render.thumbnail renderer-service API fixtures define planning requests wi
     assert.equal(fixtures.bundledRuntimeBridge.assetMaterializationPreflight.owner, "renderer-service");
     assert.equal(fixtures.bundledRuntimeBridge.assetMaterializationPreflight.mode, "read-only-metadata");
     assert.equal(fixtures.bundledRuntimeBridge.assetMaterializationPreflight.readiness, "not-checked");
+    assert.equal(fixtures.bundledRuntimeBridge.assetMaterializationPreflight.execution, null);
     assert.deepEqual(
         fixtures.bundledRuntimeBridge.assetMaterializationPreflight.sourceManifest.assetIds,
         fixtures.bundledRuntimeBridge.assetManifest.validation.requiredAssetIds
@@ -10384,6 +10385,27 @@ test("render.thumbnail renderer-service API fixtures define planning requests wi
     assert.equal(fixtures.bundledRuntimeBridge.assetMaterializationPreflight.gates.runtimeRegistration, false);
     assert.equal(fixtures.bundledRuntimeBridge.assetMaterializationPreflight.noOpGuarantees.fileRead, false);
     assert.equal(fixtures.bundledRuntimeBridge.assetMaterializationPreflight.noOpGuarantees.hashComputed, false);
+    assert.equal(fixtures.bundledRuntimeBridge.assetMaterializationPreflight.readOnlyExecution.status, "planned");
+    assert.equal(fixtures.bundledRuntimeBridge.assetMaterializationPreflight.readOnlyExecution.executionVersion, "P26.22");
+    assert.equal(fixtures.bundledRuntimeBridge.assetMaterializationPreflight.readOnlyExecution.mode, "read-only");
+    assert.equal(fixtures.bundledRuntimeBridge.assetMaterializationPreflight.readOnlyExecution.optInRequired, true);
+    assert.equal(fixtures.bundledRuntimeBridge.assetMaterializationPreflight.readOnlyExecution.defaultExecution, null);
+    assert.deepEqual(fixtures.bundledRuntimeBridge.assetMaterializationPreflight.readOnlyExecution.readiness, ["ready", "degraded"]);
+    assert.deepEqual(
+        fixtures.bundledRuntimeBridge.assetMaterializationPreflight.readOnlyExecution.checks.assets,
+        ["public-asset-exists", "cache-asset-exists", "sha256-ready", "byte-length"]
+    );
+    assert.deepEqual(
+        fixtures.bundledRuntimeBridge.assetMaterializationPreflight.readOnlyExecution.checks.cacheOutputs,
+        ["cache-output-exists", "cache-output-writable"]
+    );
+    assert.equal(fixtures.bundledRuntimeBridge.assetMaterializationPreflight.readOnlyExecution.allowedWhenExplicitlyEnabled.fileRead, true);
+    assert.equal(fixtures.bundledRuntimeBridge.assetMaterializationPreflight.readOnlyExecution.allowedWhenExplicitlyEnabled.hashComputed, true);
+    assert.equal(fixtures.bundledRuntimeBridge.assetMaterializationPreflight.readOnlyExecution.blockedAlways.browserProcessStarted, false);
+    assert.equal(fixtures.bundledRuntimeBridge.assetMaterializationPreflight.readOnlyExecution.blockedAlways.runtimeAdapterImported, false);
+    assert.equal(fixtures.bundledRuntimeBridge.assetMaterializationPreflight.readOnlyExecution.blockedAlways.runtimeAssetsLoaded, false);
+    assert.equal(fixtures.bundledRuntimeBridge.assetMaterializationPreflight.readOnlyExecution.blockedAlways.localFileWrites, false);
+    assert.equal(fixtures.bundledRuntimeBridge.assetMaterializationPreflight.readOnlyExecution.blockedAlways.sourceDataValuesIncluded, false);
     assert.ok(fixtures.registrationGates.allTargets.includes("thumbnail-renderer-service-implementation"));
     assert.ok(fixtures.registrationGates.frame.includes("tagged-frame-cache-probe"));
 

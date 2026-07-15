@@ -4044,6 +4044,13 @@ P26.21 adds a metadata-only materialization preflight plan over that manifest:
 asset existence, cache-output, hash readiness, and failure taxonomy are
 visible to MCP/CLI planning, but no file reads, hash computation, browser
 startup, adapter import, local writes, or runtime registration are enabled.
+P26.22 turns that plan into an explicit renderer-service read-only diagnostic
+slice. When a service operator enables `runtimeAssetPreflight.executeReadOnly`
+with absolute workspace/cache roots, MCP/CLI-visible service metadata can show
+`ready` or `degraded` asset/cache/hash readiness without browser startup,
+runtime adapter import, runtime asset loading, asset copying, network dispatch,
+local writes, runtime registration, or source-data/page/artifact/media/token
+value exposure. The default contract remains `execution:null`.
 
 ### 8.6 Advanced Tools
 

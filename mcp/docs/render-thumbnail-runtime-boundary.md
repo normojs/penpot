@@ -438,6 +438,14 @@ records future existence, cache-output, and SHA-256 readiness checks plus
 failure codes, but it still reports `not-checked` and keeps file reads, hash
 computation, browser startup, adapter imports, local writes, and runtime
 registration disabled.
+P26.22 exercises the next preflight slice behind an explicit renderer-service
+option. The service can report `ready` or `degraded` by checking public asset
+paths, cache asset paths, cache-output writability, byte length, and SHA-256
+hashes, using only stat/read operations against configured absolute workspace
+and cache roots. Browser-backed materialization remains blocked: no browser is
+started, no runtime adapter is imported or loaded, no assets are copied, no
+network dispatch occurs, no local files are written, no runtime is registered,
+and no source-data/page/artifact/media/token values are returned.
 
 ## Test Strategy
 

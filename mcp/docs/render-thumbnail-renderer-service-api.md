@@ -38,6 +38,15 @@ boundary: responses now also publish a read-only readiness plan for future
 asset-existence, cache-output, and hash checks, but all readiness values stay
 `not-checked` and no file reads, hash computation, or browser lifecycle work
 is performed yet.
+P26.22 adds an explicit renderer-service-only read-only execution slice for
+that preflight. When `runtimeAssetPreflight.executeReadOnly` is enabled with
+absolute workspace/cache roots, `GET /health` and `POST /thumbnail` report
+`ready` or `degraded` execution metadata from public asset existence, cache
+asset existence, cache-output writability, byte length, and SHA-256 checks.
+The default response still carries `execution:null`; the execution slice never
+starts a browser, imports or loads the bundled runtime adapter, materializes
+assets, dispatches network requests, writes local files, registers runtime
+execution, or exposes source-data/page/artifact/media/token values.
 P26.5 adds a token-safe `backendRpcClient` plan to renderer-service thumbnail
 responses so backend data/cache/persist endpoints are normalized for staged
 execution. That plan now feeds the executable file-thumbnail cache probe,
@@ -558,6 +567,11 @@ or start a browser.
 P26.21 keeps the same boundary read-only while adding the next preflight
 status layer for existence/hash readiness, cache-output readiness, and
 failure taxonomy metadata.
+P26.22 exercises that status layer behind an explicit service option. The
+execution object is diagnostic only: it may stat cache/public paths and read
+public asset bytes to compute SHA-256, but it still leaves bundled browser
+materialization, adapter imports, runtime loading, local writes, network
+dispatch, and runtime registration disabled.
 
 The P25.77 revocation appeal resolution enforcement evidence attestation
 notarization certification endorsement countersignature verification revocation
