@@ -14319,6 +14319,214 @@ export function createRenderThumbnailRendererServiceHealthPreflight(options = EM
     };
 }
 
+const RUNTIME_ASSET_PREFLIGHT_DIAGNOSTIC_CODES = new Set([
+    "renderer_service_runtime_asset_missing_public_asset",
+    "renderer_service_runtime_asset_missing_cache_asset",
+    "renderer_service_runtime_asset_hash_unavailable",
+    "renderer_service_runtime_asset_cache_output_unavailable",
+    "renderer_service_runtime_asset_preflight_configuration_invalid",
+]);
+
+const RUNTIME_ASSET_PREFLIGHT_REMEDIATION = {
+    renderer_service_runtime_asset_missing_public_asset: [
+        "Set PENPOT_RENDERER_SERVICE_RUNTIME_ASSET_PREFLIGHT_WORKSPACE_ROOT to the Penpot workspace root.",
+        "Build or restore the frontend public runtime assets, then rerun renderer-service /health.",
+    ],
+    renderer_service_runtime_asset_missing_cache_asset: [
+        "Set PENPOT_RENDERER_SERVICE_RUNTIME_ASSET_PREFLIGHT_CACHE_ROOT to a writable renderer-service cache root.",
+        "Materialize the renderer-service runtime asset cache, then rerun renderer-service /health.",
+    ],
+    renderer_service_runtime_asset_hash_unavailable: [
+        "Ensure the renderer-service process can read the public runtime asset.",
+        "Rerun renderer-service /health after fixing local file permissions.",
+    ],
+    renderer_service_runtime_asset_cache_output_unavailable: [
+        "Create or repair the configured renderer-service runtime cache output.",
+        "Ensure the renderer-service process can write to the configured cache root.",
+    ],
+    renderer_service_runtime_asset_preflight_configuration_invalid: [
+        "Set PENPOT_RENDERER_SERVICE_RUNTIME_ASSET_PREFLIGHT=read-only.",
+        "Set PENPOT_RENDERER_SERVICE_RUNTIME_ASSET_PREFLIGHT_WORKSPACE_ROOT to an absolute Penpot workspace path.",
+        "Restart renderer-service and rerun the health preflight.",
+    ],
+};
+
+function uniqueStrings(values) {
+    return [...new Set(values.filter((entry) => typeof entry === "string" && entry.trim()))];
+}
+
+function runtimeAssetPreflightIssue({ code, severity = "degraded", assetId = null, cacheOutputId = null, message, retryable = true, nextActions }) {
+    return {
+        code,
+        severity,
+        assetId,
+        cacheOutputId,
+        message,
+        retryable,
+        nextActions: uniqueStrings(nextActions?.length ? nextActions : RUNTIME_ASSET_PREFLIGHT_REMEDIATION[code] ?? []),
+    };
+}
+
+function runtimeAssetPreflightIssueKey(issue) {
+    return `${issue.code}:${issue.assetId ?? ""}:${issue.cacheOutputId ?? ""}`;
+}
+
+function pushRuntimeAssetPreflightIssue(issues, issue) {
+    if (!RUNTIME_ASSET_PREFLIGHT_DIAGNOSTIC_CODES.has(issue.code)) {
+        return;
+    }
+    if (!issues.some((entry) => runtimeAssetPreflightIssueKey(entry) === runtimeAssetPreflightIssueKey(issue))) {
+        issues.push(issue);
+    }
+}
+
+function runtimeAssetPreflightIssueMessage(code, assetId, cacheOutputId) {
+    switch (code) {
+        case "renderer_service_runtime_asset_missing_public_asset":
+            return `Runtime asset public file is missing for ${assetId ?? "a required asset"}.`;
+        case "renderer_service_runtime_asset_missing_cache_asset":
+            return `Runtime asset cache copy is missing for ${assetId ?? "a required asset"}.`;
+        case "renderer_service_runtime_asset_hash_unavailable":
+            return `Runtime asset hash could not be computed for ${assetId ?? "a required asset"}.`;
+        case "renderer_service_runtime_asset_cache_output_unavailable":
+            return `Runtime asset cache output is unavailable for ${cacheOutputId ?? "a required cache output"}.`;
+        case "renderer_service_runtime_asset_preflight_configuration_invalid":
+            return "Runtime asset preflight metadata is invalid or the renderer-service host has invalid preflight configuration.";
+        default:
+            return "Runtime asset preflight requires operator attention.";
+    }
+}
+
+function normalizeProvidedRuntimeAssetPreflightIssues(value) {
+    const issues = [];
+    for (const entry of normalizeRecordArray(value)) {
+        const code = normalizeOptionalString(entry.code);
+        if (!RUNTIME_ASSET_PREFLIGHT_DIAGNOSTIC_CODES.has(code)) {
+            continue;
+        }
+        const assetId = normalizeOptionalString(entry.assetId);
+        const cacheOutputId = normalizeOptionalString(entry.cacheOutputId);
+        pushRuntimeAssetPreflightIssue(
+            issues,
+            runtimeAssetPreflightIssue({
+                code,
+                severity: normalizeOptionalString(entry.severity) === "invalid" ? "invalid" : "degraded",
+                assetId,
+                cacheOutputId,
+                message: normalizeOptionalString(entry.message) ?? runtimeAssetPreflightIssueMessage(code, assetId, cacheOutputId),
+                retryable: entry.retryable !== false,
+                nextActions: normalizeStringArray(entry.nextActions),
+            })
+        );
+    }
+    return issues;
+}
+
+function deriveRuntimeAssetPreflightIssues({ status, readiness, executionRecord, checks, cacheOutputChecks, missingAssetIds, missingCacheOutputIds }) {
+    const issues = normalizeProvidedRuntimeAssetPreflightIssues(executionRecord.diagnostics);
+
+    if (status === "invalid") {
+        pushRuntimeAssetPreflightIssue(
+            issues,
+            runtimeAssetPreflightIssue({
+                code: "renderer_service_runtime_asset_preflight_configuration_invalid",
+                severity: "invalid",
+                message: runtimeAssetPreflightIssueMessage("renderer_service_runtime_asset_preflight_configuration_invalid"),
+                retryable: false,
+                nextActions: RUNTIME_ASSET_PREFLIGHT_REMEDIATION.renderer_service_runtime_asset_preflight_configuration_invalid,
+            })
+        );
+    }
+
+    if (readiness !== "degraded") {
+        return issues;
+    }
+
+    for (const check of checks) {
+        const assetId = normalizeOptionalString(check.assetId);
+        if (!assetId) {
+            continue;
+        }
+        if (check.exists === false) {
+            pushRuntimeAssetPreflightIssue(
+                issues,
+                runtimeAssetPreflightIssue({
+                    code: "renderer_service_runtime_asset_missing_public_asset",
+                    assetId,
+                    message: runtimeAssetPreflightIssueMessage("renderer_service_runtime_asset_missing_public_asset", assetId),
+                    nextActions: RUNTIME_ASSET_PREFLIGHT_REMEDIATION.renderer_service_runtime_asset_missing_public_asset,
+                })
+            );
+        } else if (check.hashComputed === false && normalizeOptionalString(check.readiness) === "missing") {
+            pushRuntimeAssetPreflightIssue(
+                issues,
+                runtimeAssetPreflightIssue({
+                    code: "renderer_service_runtime_asset_hash_unavailable",
+                    assetId,
+                    message: runtimeAssetPreflightIssueMessage("renderer_service_runtime_asset_hash_unavailable", assetId),
+                    nextActions: RUNTIME_ASSET_PREFLIGHT_REMEDIATION.renderer_service_runtime_asset_hash_unavailable,
+                })
+            );
+        }
+
+        if (check.exists === true && check.cacheOutputExists === false) {
+            pushRuntimeAssetPreflightIssue(
+                issues,
+                runtimeAssetPreflightIssue({
+                    code: "renderer_service_runtime_asset_missing_cache_asset",
+                    assetId,
+                    message: runtimeAssetPreflightIssueMessage("renderer_service_runtime_asset_missing_cache_asset", assetId),
+                    nextActions: RUNTIME_ASSET_PREFLIGHT_REMEDIATION.renderer_service_runtime_asset_missing_cache_asset,
+                })
+            );
+        }
+    }
+
+    for (const assetId of missingAssetIds) {
+        pushRuntimeAssetPreflightIssue(
+            issues,
+            runtimeAssetPreflightIssue({
+                code: "renderer_service_runtime_asset_missing_public_asset",
+                assetId,
+                message: runtimeAssetPreflightIssueMessage("renderer_service_runtime_asset_missing_public_asset", assetId),
+                nextActions: RUNTIME_ASSET_PREFLIGHT_REMEDIATION.renderer_service_runtime_asset_missing_public_asset,
+            })
+        );
+    }
+
+    for (const check of cacheOutputChecks) {
+        const cacheOutputId = normalizeOptionalString(check.cacheOutputId);
+        if (!cacheOutputId) {
+            continue;
+        }
+        if (normalizeOptionalString(check.readiness) === "missing" || check.exists === false || check.writable === false) {
+            pushRuntimeAssetPreflightIssue(
+                issues,
+                runtimeAssetPreflightIssue({
+                    code: "renderer_service_runtime_asset_cache_output_unavailable",
+                    cacheOutputId,
+                    message: runtimeAssetPreflightIssueMessage("renderer_service_runtime_asset_cache_output_unavailable", null, cacheOutputId),
+                    nextActions: RUNTIME_ASSET_PREFLIGHT_REMEDIATION.renderer_service_runtime_asset_cache_output_unavailable,
+                })
+            );
+        }
+    }
+
+    for (const cacheOutputId of missingCacheOutputIds) {
+        pushRuntimeAssetPreflightIssue(
+            issues,
+            runtimeAssetPreflightIssue({
+                code: "renderer_service_runtime_asset_cache_output_unavailable",
+                cacheOutputId,
+                message: runtimeAssetPreflightIssueMessage("renderer_service_runtime_asset_cache_output_unavailable", null, cacheOutputId),
+                nextActions: RUNTIME_ASSET_PREFLIGHT_REMEDIATION.renderer_service_runtime_asset_cache_output_unavailable,
+            })
+        );
+    }
+
+    return issues;
+}
+
 function normalizeRendererServiceRuntimeAssetPreflightDiagnostic(body) {
     const bodyRecord = asRecord(body);
     const preflight = asRecord(bodyRecord.runtimeAssetMaterializationPreflight);
@@ -14361,6 +14569,7 @@ function normalizeRendererServiceRuntimeAssetPreflightDiagnostic(body) {
     if (!execution || typeof execution !== "object" || Array.isArray(execution)) {
         return {
             status: "not-executed",
+            diagnosticsVersion: "P26.25",
             executionVersion: null,
             mode: null,
             readiness: "not-reported",
@@ -14380,6 +14589,9 @@ function normalizeRendererServiceRuntimeAssetPreflightDiagnostic(body) {
             missingAssetIds: [],
             readyCacheOutputIds: [],
             missingCacheOutputIds: [],
+            diagnosticCodes: [],
+            diagnostics: [],
+            nextActions: [],
             sideEffects: baseSideEffects,
             redaction: baseRedaction,
             omitted,
@@ -14398,12 +14610,24 @@ function normalizeRendererServiceRuntimeAssetPreflightDiagnostic(body) {
     const redaction = asRecord(executionRecord.redaction);
     const readiness = normalizeOptionalString(executionRecord.readiness);
     const validReadiness = readiness === "ready" || readiness === "degraded";
+    const status = normalizeOptionalString(executionRecord.status) === "executed" && validReadiness ? "executed" : "invalid";
+    const normalizedReadiness = validReadiness ? readiness : "unknown";
+    const diagnostics = deriveRuntimeAssetPreflightIssues({
+        status,
+        readiness: normalizedReadiness,
+        executionRecord,
+        checks,
+        cacheOutputChecks,
+        missingAssetIds,
+        missingCacheOutputIds,
+    });
 
     return {
-        status: normalizeOptionalString(executionRecord.status) === "executed" && validReadiness ? "executed" : "invalid",
+        status,
+        diagnosticsVersion: "P26.25",
         executionVersion: normalizeOptionalString(executionRecord.executionVersion),
         mode: normalizeOptionalString(executionRecord.mode),
-        readiness: validReadiness ? readiness : "unknown",
+        readiness: normalizedReadiness,
         ready: typeof summary.ready === "boolean" ? summary.ready : readiness === "ready",
         checked: true,
         assetCounts: {
@@ -14420,6 +14644,9 @@ function normalizeRendererServiceRuntimeAssetPreflightDiagnostic(body) {
         missingAssetIds,
         readyCacheOutputIds,
         missingCacheOutputIds,
+        diagnosticCodes: uniqueStrings(diagnostics.map((entry) => entry.code)),
+        diagnostics,
+        nextActions: uniqueStrings(diagnostics.flatMap((entry) => entry.nextActions)),
         sideEffects: {
             browserProcessStarted: sideEffects.browserProcessStarted === true,
             runtimeExecutionRegistered: sideEffects.runtimeExecutionRegistered === true,

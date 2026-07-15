@@ -7112,6 +7112,10 @@ test("renderer-service status reports a no-spawn lifecycle plan without probing"
                 defaultValue: "/Volumes/fushilu/.caches/penpot/renderer-service",
                 source: "PENPOT_RENDERER_SERVICE_RUNTIME_ASSET_PREFLIGHT_CACHE_ROOT",
             },
+            diagnosticsVersion: "P26.25",
+            diagnosticCodes: [],
+            diagnostics: [],
+            nextActions: [],
             diagnosticsSurface: "healthPreflight.runtimeAssetPreflight",
             lifecyclePlanEffects: {
                 healthProbe: false,
@@ -7144,6 +7148,41 @@ test("renderer-service status reports a no-spawn lifecycle plan without probing"
     }
 });
 
+test("renderer-service status reports runtime asset preflight configuration diagnostics", async () => {
+    const result = await runCli(["renderer-service", "status", "--format", "json"], {
+        PENPOT_RENDERER_SERVICE_RUNTIME_ASSET_PREFLIGHT: "enabled",
+        PENPOT_RENDERER_SERVICE_RUNTIME_ASSET_PREFLIGHT_WORKSPACE_ROOT: "relative-workspace",
+        PENPOT_RENDERER_SERVICE_RUNTIME_ASSET_PREFLIGHT_CACHE_ROOT: "relative-cache",
+    });
+    const body = parseJson(result.stdout);
+
+    assert.equal(result.exitCode, 0);
+    assert.equal(body.status, "ok");
+    assert.equal(body.data.lifecycle.healthProbe, false);
+    assert.equal(body.data.lifecycle.runtimeAssetPreflight.configured, true);
+    assert.equal(body.data.lifecycle.runtimeAssetPreflight.executeReadOnly, false);
+    assert.equal(body.data.lifecycle.runtimeAssetPreflight.valid, false);
+    assert.equal(body.data.lifecycle.runtimeAssetPreflight.diagnosticsVersion, "P26.25");
+    assert.deepEqual(body.data.lifecycle.runtimeAssetPreflight.diagnosticCodes, [
+        "renderer_service_runtime_asset_preflight_configuration_invalid",
+        "renderer_service_runtime_asset_preflight_workspace_root_invalid",
+        "renderer_service_runtime_asset_preflight_cache_root_invalid",
+    ]);
+    assert.deepEqual(
+        body.data.lifecycle.runtimeAssetPreflight.diagnostics.map((entry) => entry.field),
+        ["mode", "workspaceRoot", "cacheRoot"]
+    );
+    assert.ok(
+        body.data.lifecycle.runtimeAssetPreflight.nextActions.some((entry) =>
+            entry.includes("PENPOT_RENDERER_SERVICE_RUNTIME_ASSET_PREFLIGHT=read-only")
+        )
+    );
+    assert.match(
+        body.data.lifecycle.startCommand,
+        /PENPOT_RENDERER_SERVICE_RUNTIME_ASSET_PREFLIGHT_WORKSPACE_ROOT=relative-workspace/
+    );
+});
+
 test("renderer-service start keeps startup manual and does not spawn a process", async () => {
     const result = await runCli(["renderer-service", "start", "--port", "6073", "--format", "json"]);
     const body = parseJson(result.stdout);
@@ -7157,6 +7196,7 @@ test("renderer-service start keeps startup manual and does not spawn a process",
     assert.equal(body.error.data.lifecycle.rendererRuntime.configured, false);
     assert.equal(body.error.data.lifecycle.runtimeAssetPreflight.configured, false);
     assert.equal(body.error.data.lifecycle.runtimeAssetPreflight.cacheRoot.value, "/Volumes/fushilu/.caches/penpot/renderer-service");
+    assert.deepEqual(body.error.data.lifecycle.runtimeAssetPreflight.diagnosticCodes, []);
     assert.equal(body.error.data.lifecycle.runtimeAssetPreflight.lifecyclePlanEffects.fileRead, false);
     assert.equal(body.error.data.lifecycle.backendRpcPlanning.configured, false);
     assert.match(body.error.actions[0], /PENPOT_RENDERER_SERVICE_PORT=6073/);
@@ -9822,11 +9862,21 @@ test("render thumbnail execution opt-in posts to renderer-service and returns re
         assert.equal(result.stdout.includes("cli-secret-token"), false);
         assert.equal(body.data.healthPreflight.status, "ok");
         assert.equal(body.data.healthPreflight.runtimeAssetPreflight.status, "executed");
+        assert.equal(body.data.healthPreflight.runtimeAssetPreflight.diagnosticsVersion, "P26.25");
         assert.equal(body.data.healthPreflight.runtimeAssetPreflight.executionVersion, "P26.22");
         assert.equal(body.data.healthPreflight.runtimeAssetPreflight.readiness, "degraded");
         assert.equal(body.data.healthPreflight.runtimeAssetPreflight.ready, false);
         assert.deepEqual(body.data.healthPreflight.runtimeAssetPreflight.missingAssetIds, ["thumbnail-worker-main"]);
         assert.deepEqual(body.data.healthPreflight.runtimeAssetPreflight.readyCacheOutputIds, ["runtime-asset-cache"]);
+        assert.deepEqual(body.data.healthPreflight.runtimeAssetPreflight.diagnosticCodes, [
+            "renderer_service_runtime_asset_missing_public_asset",
+        ]);
+        assert.equal(body.data.healthPreflight.runtimeAssetPreflight.diagnostics[0].assetId, "thumbnail-worker-main");
+        assert.ok(
+            body.data.healthPreflight.runtimeAssetPreflight.nextActions.some((entry) =>
+                entry.includes("PENPOT_RENDERER_SERVICE_RUNTIME_ASSET_PREFLIGHT_WORKSPACE_ROOT")
+            )
+        );
         assert.equal(body.data.healthPreflight.runtimeAssetPreflight.sideEffects.fileRead, true);
         assert.equal(body.data.healthPreflight.runtimeAssetPreflight.sideEffects.hashComputed, true);
         assert.equal(body.data.healthPreflight.runtimeAssetPreflight.sideEffects.localFileWrites, false);

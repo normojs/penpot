@@ -10414,11 +10414,26 @@ test("render.thumbnail renderer-service API fixtures define planning requests wi
     assert.deepEqual(fixtures.bundledRuntimeBridge.assetMaterializationPreflight.cliMcpDiagnostics.reportedStates, ["not-executed", "executed", "invalid"]);
     assert.ok(fixtures.bundledRuntimeBridge.assetMaterializationPreflight.cliMcpDiagnostics.reportedReadiness.includes("degraded"));
     assert.ok(fixtures.bundledRuntimeBridge.assetMaterializationPreflight.cliMcpDiagnostics.reportedFields.includes("missingAssetIds"));
+    assert.ok(fixtures.bundledRuntimeBridge.assetMaterializationPreflight.cliMcpDiagnostics.reportedFields.includes("diagnosticCodes"));
+    assert.ok(fixtures.bundledRuntimeBridge.assetMaterializationPreflight.cliMcpDiagnostics.reportedFields.includes("diagnosticsVersion"));
+    assert.ok(fixtures.bundledRuntimeBridge.assetMaterializationPreflight.cliMcpDiagnostics.reportedFields.includes("diagnostics"));
+    assert.ok(fixtures.bundledRuntimeBridge.assetMaterializationPreflight.cliMcpDiagnostics.reportedFields.includes("nextActions"));
     assert.ok(fixtures.bundledRuntimeBridge.assetMaterializationPreflight.cliMcpDiagnostics.omittedFields.includes("workspaceRoot"));
     assert.ok(fixtures.bundledRuntimeBridge.assetMaterializationPreflight.cliMcpDiagnostics.omittedFields.includes("sha256"));
     assert.equal(fixtures.bundledRuntimeBridge.assetMaterializationPreflight.cliMcpDiagnostics.noNewDispatch.browserProcessStarted, false);
     assert.equal(fixtures.bundledRuntimeBridge.assetMaterializationPreflight.cliMcpDiagnostics.noNewDispatch.runtimeAdapterImported, false);
     assert.equal(fixtures.bundledRuntimeBridge.assetMaterializationPreflight.cliMcpDiagnostics.noNewDispatch.localFileWrites, false);
+    assert.equal(fixtures.bundledRuntimeBridge.assetMaterializationPreflight.degradedDiagnostics.status, "planned");
+    assert.equal(fixtures.bundledRuntimeBridge.assetMaterializationPreflight.degradedDiagnostics.diagnosticsVersion, "P26.25");
+    assert.deepEqual(fixtures.bundledRuntimeBridge.assetMaterializationPreflight.degradedDiagnostics.codes, [
+        "renderer_service_runtime_asset_missing_public_asset",
+        "renderer_service_runtime_asset_missing_cache_asset",
+        "renderer_service_runtime_asset_hash_unavailable",
+        "renderer_service_runtime_asset_cache_output_unavailable",
+        "renderer_service_runtime_asset_preflight_configuration_invalid",
+    ]);
+    assert.ok(fixtures.bundledRuntimeBridge.assetMaterializationPreflight.degradedDiagnostics.reportedFields.includes("diagnostics"));
+    assert.ok(fixtures.bundledRuntimeBridge.assetMaterializationPreflight.degradedDiagnostics.nextActions.some((entry) => entry.includes("workspace root")));
     assert.equal(fixtures.bundledRuntimeBridge.assetMaterializationPreflight.operatorConfiguration.status, "planned");
     assert.equal(fixtures.bundledRuntimeBridge.assetMaterializationPreflight.operatorConfiguration.configurationVersion, "P26.24");
     assert.equal(fixtures.bundledRuntimeBridge.assetMaterializationPreflight.operatorConfiguration.owner, "renderer-service manual host");
@@ -10442,6 +10457,20 @@ test("render.thumbnail renderer-service API fixtures define planning requests wi
     assert.equal(
         fixtures.bundledRuntimeBridge.assetMaterializationPreflight.operatorConfiguration.cacheRoot.defaultValue,
         "/Volumes/fushilu/.caches/penpot/renderer-service"
+    );
+    assert.equal(
+        fixtures.bundledRuntimeBridge.assetMaterializationPreflight.operatorConfiguration.invalidConfigurationDiagnostics.diagnosticsVersion,
+        "P26.25"
+    );
+    assert.ok(
+        fixtures.bundledRuntimeBridge.assetMaterializationPreflight.operatorConfiguration.invalidConfigurationDiagnostics.codes.includes(
+            "renderer_service_runtime_asset_preflight_workspace_root_invalid"
+        )
+    );
+    assert.ok(
+        fixtures.bundledRuntimeBridge.assetMaterializationPreflight.operatorConfiguration.invalidConfigurationDiagnostics.nextActions.some((entry) =>
+            entry.includes("renderer-service status")
+        )
     );
     assert.equal(fixtures.bundledRuntimeBridge.assetMaterializationPreflight.operatorConfiguration.lifecyclePlanEffects.healthProbe, false);
     assert.equal(fixtures.bundledRuntimeBridge.assetMaterializationPreflight.operatorConfiguration.lifecyclePlanEffects.fileRead, false);
@@ -12529,7 +12558,11 @@ test("render.thumbnail renderer-service health preflight and client harness stay
     assert.equal(healthPreflight.timeoutMs, 4100);
     assert.equal(healthPreflight.headers["x-penpot-preflight"], "renderer-service-health");
     assert.equal(healthPreflight.runtimeAssetPreflight.status, "not-executed");
+    assert.equal(healthPreflight.runtimeAssetPreflight.diagnosticsVersion, "P26.25");
     assert.equal(healthPreflight.runtimeAssetPreflight.readiness, "not-reported");
+    assert.deepEqual(healthPreflight.runtimeAssetPreflight.diagnosticCodes, []);
+    assert.deepEqual(healthPreflight.runtimeAssetPreflight.diagnostics, []);
+    assert.deepEqual(healthPreflight.runtimeAssetPreflight.nextActions, []);
     assert.equal(healthPreflight.runtimeAssetPreflight.omitted.workspaceRoot, true);
     assert.equal(healthPreflight.runtimeAssetPreflight.omitted.sha256, true);
     assert.ok(healthPreflight.failureModes.some((entry) => entry.code === "renderer_service_preflight_disabled"));
@@ -12637,6 +12670,7 @@ test("render.thumbnail renderer-service health preflight executes only GET healt
     assert.equal(healthPreflight.response.body.dispatch, false);
     assert.ok(healthPreflight.response.body.capabilities.includes("thumbnail.render.noop"));
     assert.equal(healthPreflight.runtimeAssetPreflight.status, "executed");
+    assert.equal(healthPreflight.runtimeAssetPreflight.diagnosticsVersion, "P26.25");
     assert.equal(healthPreflight.runtimeAssetPreflight.executionVersion, "P26.22");
     assert.equal(healthPreflight.runtimeAssetPreflight.mode, "read-only");
     assert.equal(healthPreflight.runtimeAssetPreflight.readiness, "degraded");
@@ -12644,6 +12678,14 @@ test("render.thumbnail renderer-service health preflight executes only GET healt
     assert.deepEqual(healthPreflight.runtimeAssetPreflight.readyAssetIds, ["thumbnail-worker-main"]);
     assert.deepEqual(healthPreflight.runtimeAssetPreflight.missingAssetIds, ["render-wasm-loader"]);
     assert.deepEqual(healthPreflight.runtimeAssetPreflight.missingCacheOutputIds, ["runtime-asset-cache"]);
+    assert.deepEqual(healthPreflight.runtimeAssetPreflight.diagnosticCodes, [
+        "renderer_service_runtime_asset_missing_public_asset",
+        "renderer_service_runtime_asset_cache_output_unavailable",
+    ]);
+    assert.equal(healthPreflight.runtimeAssetPreflight.diagnostics[0].assetId, "render-wasm-loader");
+    assert.equal(healthPreflight.runtimeAssetPreflight.diagnostics[1].cacheOutputId, "runtime-asset-cache");
+    assert.ok(healthPreflight.runtimeAssetPreflight.nextActions.some((entry) => entry.includes("workspace root")));
+    assert.ok(healthPreflight.runtimeAssetPreflight.nextActions.some((entry) => entry.includes("cache root")));
     assert.equal(healthPreflight.runtimeAssetPreflight.assetCounts.total, 2);
     assert.equal(healthPreflight.runtimeAssetPreflight.assetCounts.ready, 1);
     assert.equal(healthPreflight.runtimeAssetPreflight.assetCounts.missing, 1);
@@ -12660,6 +12702,57 @@ test("render.thumbnail renderer-service health preflight executes only GET healt
     assert.equal(healthPreflight.runtimeAssetPreflight.omitted.sha256, true);
     assert.equal(JSON.stringify(healthPreflight.runtimeAssetPreflight).includes("/workspace/secret"), false);
     assert.equal(JSON.stringify(healthPreflight.runtimeAssetPreflight).includes("abc123"), false);
+});
+
+test("render.thumbnail renderer-service health preflight normalizes invalid runtime asset preflight metadata", async () => {
+    const plan = createRenderThumbnailRendererServicePlan({
+        fileId: "file-1",
+        endpoint: "http://127.0.0.1:6070/thumbnail",
+        optInConfiguration: {
+            entrypoint: "cli",
+            cliFlagValue: "renderer-service",
+        },
+    });
+    const healthPreflight = await executeRenderThumbnailRendererServiceHealthPreflight(plan, {
+        fetch: async () =>
+            new Response(
+                JSON.stringify({
+                    status: "ok",
+                    renderer: "penpot-thumbnail-renderer",
+                    mode: "noop",
+                    runtimeRegistration: false,
+                    dispatch: false,
+                    capabilities: ["health", "thumbnail.render.noop"],
+                    runtimeAssetMaterializationPreflight: {
+                        sourceManifest: {
+                            assetIds: ["thumbnail-worker-main"],
+                            cacheOutputIds: ["runtime-asset-cache"],
+                        },
+                        execution: {
+                            status: "executed",
+                            executionVersion: "P26.22",
+                            mode: "write-enabled",
+                            readiness: "confused",
+                            summary: {},
+                            checks: [],
+                            cacheOutputChecks: [],
+                            sideEffects: {},
+                            redaction: {},
+                        },
+                    },
+                }),
+                { status: 200, headers: { "content-type": "application/json; charset=utf-8" } }
+            ),
+    });
+
+    assert.equal(healthPreflight.status, "ok");
+    assert.equal(healthPreflight.runtimeAssetPreflight.status, "invalid");
+    assert.equal(healthPreflight.runtimeAssetPreflight.readiness, "unknown");
+    assert.deepEqual(healthPreflight.runtimeAssetPreflight.diagnosticCodes, [
+        "renderer_service_runtime_asset_preflight_configuration_invalid",
+    ]);
+    assert.equal(healthPreflight.runtimeAssetPreflight.diagnostics[0].severity, "invalid");
+    assert.ok(healthPreflight.runtimeAssetPreflight.nextActions.some((entry) => entry.includes("PENPOT_RENDERER_SERVICE_RUNTIME_ASSET_PREFLIGHT=read-only")));
 });
 
 test("render.thumbnail renderer-service health preflight normalizes unavailable health responses", async () => {

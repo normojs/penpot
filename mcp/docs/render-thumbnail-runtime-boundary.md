@@ -457,6 +457,11 @@ read-only preflight. Operators set
 workspace root and optional absolute cache root; lifecycle commands only report
 the configuration and manual command, while the running renderer-service host
 owns the actual read-only checks.
+P26.25 keeps the same boundary but adds stable degraded and invalid diagnostic
+codes plus redacted next actions for missing public assets, missing cache
+copies, unavailable cache outputs, hash failures, and invalid operator
+configuration. CLI/MCP still only consume the renderer-service `/health`
+response and never expose workspace/cache roots or filesystem paths.
 
 ## Test Strategy
 

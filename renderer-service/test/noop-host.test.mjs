@@ -115,11 +115,12 @@ async function writeRuntimePreflightFile(path, bytes) {
     await writeFile(path, bytes);
 }
 
-async function createRuntimePreflightFixture({ missingAssetIds = [], missingCacheOutputIds = [] } = {}) {
+async function createRuntimePreflightFixture({ missingAssetIds = [], missingCacheAssetIds = [], missingCacheOutputIds = [] } = {}) {
     const root = await mkdtemp(join(tmpdir(), "penpot-runtime-preflight-"));
     const workspaceRoot = join(root, "workspace");
     const cacheRoot = join(root, "cache");
     const missingAssets = new Set(missingAssetIds);
+    const missingCacheAssets = new Set(missingCacheAssetIds);
     const missingCacheOutputs = new Set(missingCacheOutputIds);
 
     await mkdir(workspaceRoot, { recursive: true });
@@ -130,6 +131,9 @@ async function createRuntimePreflightFixture({ missingAssetIds = [], missingCach
             continue;
         }
         await writeRuntimePreflightFile(join(workspaceRoot, asset.publicPath), `public:${asset.id}`);
+        if (missingCacheAssets.has(asset.id)) {
+            continue;
+        }
         await writeRuntimePreflightFile(remapRuntimeAssetCachePath(asset.cachePath, cacheRoot), `cache:${asset.id}`);
     }
 
@@ -163,6 +167,7 @@ function assertRuntimeAssetPreflightExecution(preflight, { workspaceRoot, cacheR
     assert.equal(execution.status, "executed");
     assert.equal(execution.executionVersion, "P26.22");
     assert.equal(execution.mode, "read-only");
+    assert.equal(execution.diagnosticsVersion, "P26.25");
     assert.equal(execution.readiness, readiness);
     assert.equal(execution.workspaceRoot, workspaceRoot);
     assert.equal(execution.cacheRoot, cacheRoot);
@@ -187,6 +192,10 @@ function assertRuntimeAssetPreflightExecution(preflight, { workspaceRoot, cacheR
     assert.equal(execution.redaction.artifactValuesIncluded, false);
     assert.equal(execution.redaction.mediaValuesIncluded, false);
     assert.equal(execution.redaction.tokenValuesIncluded, false);
+    assert.ok(Array.isArray(execution.diagnostics));
+    assert.ok(Array.isArray(execution.nextActions));
+    assert.equal(execution.nextActions.some((entry) => entry.includes(workspaceRoot)), false);
+    assert.equal(execution.nextActions.some((entry) => entry.includes(cacheRoot)), false);
     return execution;
 }
 
@@ -477,6 +486,8 @@ test("noop host executes the P26.22 runtime asset preflight read-only ready slic
             serviceModule.bundledRuntimeBridgeAssetManifest.cacheOutputs.map((entry) => entry.id)
         );
         assert.deepEqual(execution.summary.missingCacheOutputIds, []);
+        assert.deepEqual(execution.diagnostics, []);
+        assert.deepEqual(execution.nextActions, []);
         assert.ok(execution.checks.every((check) => check.readiness === "ready"));
         assert.ok(execution.checks.every((check) => check.exists === true));
         assert.ok(execution.checks.every((check) => check.cacheOutputExists === true));
@@ -502,6 +513,7 @@ test("noop host executes the P26.22 runtime asset preflight read-only ready slic
 test("noop host reports degraded P26.22 runtime asset preflight readiness", async () => {
     const fixture = await createRuntimePreflightFixture({
         missingAssetIds: ["thumbnail-worker-main"],
+        missingCacheAssetIds: ["render-wasm-loader"],
         missingCacheOutputIds: ["browser-profile-cache"],
     });
     const service = await serviceModule.startRendererService({
@@ -524,7 +536,27 @@ test("noop host reports degraded P26.22 runtime asset preflight readiness", asyn
         });
         assert.equal(execution.summary.ready, false);
         assert.ok(execution.summary.missingAssetIds.includes("thumbnail-worker-main"));
+        assert.ok(execution.summary.missingAssetIds.includes("render-wasm-loader"));
         assert.ok(execution.summary.missingCacheOutputIds.includes("browser-profile-cache"));
+        assert.deepEqual(
+            execution.diagnostics.map((diagnostic) => diagnostic.code),
+            [
+                "renderer_service_runtime_asset_missing_public_asset",
+                "renderer_service_runtime_asset_missing_cache_asset",
+                "renderer_service_runtime_asset_cache_output_unavailable",
+            ]
+        );
+        assert.deepEqual(
+            execution.diagnostics.map((diagnostic) => diagnostic.severity),
+            ["degraded", "degraded", "degraded"]
+        );
+        assert.equal(execution.diagnostics[0].assetId, "thumbnail-worker-main");
+        assert.equal(execution.diagnostics[1].assetId, "render-wasm-loader");
+        assert.equal(execution.diagnostics[2].cacheOutputId, "browser-profile-cache");
+        assert.equal(JSON.stringify(execution.diagnostics).includes(fixture.workspaceRoot), false);
+        assert.equal(JSON.stringify(execution.diagnostics).includes(fixture.cacheRoot), false);
+        assert.ok(execution.nextActions.some((entry) => entry.includes("PENPOT_RENDERER_SERVICE_RUNTIME_ASSET_PREFLIGHT_WORKSPACE_ROOT")));
+        assert.ok(execution.nextActions.some((entry) => entry.includes("PENPOT_RENDERER_SERVICE_RUNTIME_ASSET_PREFLIGHT_CACHE_ROOT")));
 
         const missingAsset = execution.checks.find((check) => check.assetId === "thumbnail-worker-main");
         assert.equal(missingAsset.readiness, "missing");
@@ -535,7 +567,13 @@ test("noop host reports degraded P26.22 runtime asset preflight readiness", asyn
         assert.equal(missingAsset.fileRead, false);
         assert.equal(missingAsset.hashComputed, false);
 
-        const readyAsset = execution.checks.find((check) => check.assetId === "render-wasm-loader");
+        const missingCacheAsset = execution.checks.find((check) => check.assetId === "render-wasm-loader");
+        assert.equal(missingCacheAsset.readiness, "missing");
+        assert.equal(missingCacheAsset.exists, true);
+        assert.equal(missingCacheAsset.cacheOutputExists, false);
+        assert.match(missingCacheAsset.sha256, /^[a-f0-9]{64}$/);
+
+        const readyAsset = execution.checks.find((check) => check.assetId === "render-wasm-binary");
         assert.equal(readyAsset.readiness, "ready");
         assert.equal(readyAsset.exists, true);
         assert.equal(readyAsset.cacheOutputExists, true);

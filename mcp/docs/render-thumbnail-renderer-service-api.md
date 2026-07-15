@@ -63,6 +63,11 @@ and optional
 manual start command without spawning the service, probing health, reading
 files, hashing bytes, importing the runtime adapter, writing local files, or
 registering runtime execution.
+P26.25 keeps the same host boundary but extends the health summary with stable
+diagnostic codes and redacted next actions for missing public assets, missing
+cache copies, unavailable cache outputs, hash failures, and invalid operator
+configuration. CLI/MCP callers still only receive ids, counts, codes, and next
+actions, never workspace/cache roots or file paths.
 P26.5 adds a token-safe `backendRpcClient` plan to renderer-service thumbnail
 responses so backend data/cache/persist endpoints are normalized for staged
 execution. That plan now feeds the executable file-thumbnail cache probe,
@@ -596,6 +601,9 @@ P26.24 wires the operator configuration into real manual host startup while
 keeping lifecycle commands planning-only. The host validates the read-only mode
 and absolute roots before serving `/health`; cache root defaults to
 `/Volumes/fushilu/.caches/penpot/renderer-service` when omitted.
+P26.25 adds the stable degraded/invalid diagnostic codes and next-action
+guidance to the same `/health` summary while keeping all workspace/cache roots
+and filesystem paths redacted from CLI/MCP consumers.
 
 The P25.77 revocation appeal resolution enforcement evidence attestation
 notarization certification endorsement countersignature verification revocation

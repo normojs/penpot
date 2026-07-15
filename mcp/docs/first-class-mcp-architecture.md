@@ -4065,6 +4065,11 @@ reports `PENPOT_RENDERER_SERVICE_RUNTIME_ASSET_PREFLIGHT=read-only`,
 workspace/cache root inputs, default cache root, and no-probe/no-read lifecycle
 effects; the running renderer-service validates the same env before returning
 P26.22 health diagnostics.
+P26.25 adds the stable degraded and invalid diagnostic codes for the same
+runtime asset preflight surface. CLI/MCP health summaries now carry redacted
+next actions for missing public assets, missing cache copies, unavailable cache
+outputs, hash failures, and invalid operator configuration while continuing to
+omit workspace/cache roots and filesystem paths.
 
 ### 8.6 Advanced Tools
 

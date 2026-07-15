@@ -691,15 +691,37 @@ type RuntimeAssetPreflightExecutionCacheOutputCheck = {
     localFileWrites: false;
 };
 
+type RuntimeAssetPreflightExecutionDiagnosticCode =
+    | "renderer_service_runtime_asset_missing_public_asset"
+    | "renderer_service_runtime_asset_missing_cache_asset"
+    | "renderer_service_runtime_asset_hash_unavailable"
+    | "renderer_service_runtime_asset_cache_output_unavailable";
+
+type RuntimeAssetPreflightExecutionDiagnostic = {
+    code: RuntimeAssetPreflightExecutionDiagnosticCode;
+    severity: "degraded";
+    category: "public-asset" | "cache-asset" | "asset-hash" | "cache-output";
+    assetId: string | null;
+    cacheOutputId: string | null;
+    retryable: boolean;
+    message: string;
+    nextActions: string[];
+    dispatch: false;
+    localFileWrites: false;
+};
+
 type RuntimeAssetPreflightExecution = {
     status: "executed";
     executionVersion: "P26.22";
     mode: "read-only";
+    diagnosticsVersion: "P26.25";
     readiness: "ready" | "degraded";
     workspaceRoot: string;
     cacheRoot: string;
     checks: RuntimeAssetPreflightExecutionAssetCheck[];
     cacheOutputChecks: RuntimeAssetPreflightExecutionCacheOutputCheck[];
+    diagnostics: RuntimeAssetPreflightExecutionDiagnostic[];
+    nextActions: string[];
     summary: {
         ready: boolean;
         readyAssetIds: string[];
@@ -837,6 +859,103 @@ async function runtimeAssetHash(path: string, exists: boolean): Promise<{ sha256
     }
 }
 
+function uniqueStrings(values: string[]): string[] {
+    return [...new Set(values)];
+}
+
+function runtimeAssetPreflightDiagnostic(
+    diagnostic: Omit<RuntimeAssetPreflightExecutionDiagnostic, "dispatch" | "localFileWrites">
+): RuntimeAssetPreflightExecutionDiagnostic {
+    return {
+        ...diagnostic,
+        dispatch: false,
+        localFileWrites: false,
+    };
+}
+
+function runtimeAssetPreflightDiagnostics(
+    checks: RuntimeAssetPreflightExecutionAssetCheck[],
+    cacheOutputChecks: RuntimeAssetPreflightExecutionCacheOutputCheck[]
+): RuntimeAssetPreflightExecutionDiagnostic[] {
+    const diagnostics: RuntimeAssetPreflightExecutionDiagnostic[] = [];
+
+    for (const check of checks) {
+        if (!check.exists) {
+            diagnostics.push(
+                runtimeAssetPreflightDiagnostic({
+                    code: "renderer_service_runtime_asset_missing_public_asset",
+                    severity: "degraded",
+                    category: "public-asset",
+                    assetId: check.assetId,
+                    cacheOutputId: null,
+                    retryable: true,
+                    message: `Runtime asset public file is missing for ${check.assetId}.`,
+                    nextActions: [
+                        `Set ${RUNTIME_ASSET_PREFLIGHT_WORKSPACE_ROOT_ENV} to the Penpot workspace root before starting renderer-service.`,
+                        "Build or restore the frontend public runtime assets, then rerun renderer-service /health.",
+                    ],
+                })
+            );
+        } else if (!check.hashComputed) {
+            diagnostics.push(
+                runtimeAssetPreflightDiagnostic({
+                    code: "renderer_service_runtime_asset_hash_unavailable",
+                    severity: "degraded",
+                    category: "asset-hash",
+                    assetId: check.assetId,
+                    cacheOutputId: null,
+                    retryable: true,
+                    message: `Runtime asset hash could not be computed for ${check.assetId}.`,
+                    nextActions: [
+                        "Ensure the renderer-service process can read the public runtime asset.",
+                        "Rerun renderer-service /health after fixing local file permissions.",
+                    ],
+                })
+            );
+        }
+
+        if (check.exists && !check.cacheOutputExists) {
+            diagnostics.push(
+                runtimeAssetPreflightDiagnostic({
+                    code: "renderer_service_runtime_asset_missing_cache_asset",
+                    severity: "degraded",
+                    category: "cache-asset",
+                    assetId: check.assetId,
+                    cacheOutputId: null,
+                    retryable: true,
+                    message: `Runtime asset cache copy is missing for ${check.assetId}.`,
+                    nextActions: [
+                        `Set ${RUNTIME_ASSET_PREFLIGHT_CACHE_ROOT_ENV} to a writable renderer-service cache root.`,
+                        "Materialize the renderer-service runtime asset cache, then rerun renderer-service /health.",
+                    ],
+                })
+            );
+        }
+    }
+
+    for (const check of cacheOutputChecks) {
+        if (check.readiness !== "ready") {
+            diagnostics.push(
+                runtimeAssetPreflightDiagnostic({
+                    code: "renderer_service_runtime_asset_cache_output_unavailable",
+                    severity: "degraded",
+                    category: "cache-output",
+                    assetId: null,
+                    cacheOutputId: check.cacheOutputId,
+                    retryable: true,
+                    message: `Runtime asset cache output is unavailable for ${check.cacheOutputId}.`,
+                    nextActions: [
+                        `Create or repair the cache output under ${RUNTIME_ASSET_PREFLIGHT_CACHE_ROOT_ENV}.`,
+                        "Ensure the renderer-service process can write to the configured cache root.",
+                    ],
+                })
+            );
+        }
+    }
+
+    return diagnostics;
+}
+
 export async function executeRuntimeAssetMaterializationPreflight(
     options: RendererRuntimeAssetPreflightOptions | undefined
 ): Promise<RuntimeAssetPreflightExecution | null> {
@@ -898,16 +1017,21 @@ export async function executeRuntimeAssetMaterializationPreflight(
     const ready = missingAssetIds.length === 0 && missingCacheOutputIds.length === 0;
     const fileRead = checks.some((entry) => entry.fileRead);
     const hashComputed = checks.some((entry) => entry.hashComputed);
+    const diagnostics = runtimeAssetPreflightDiagnostics(checks, cacheOutputChecks);
+    const nextActions = uniqueStrings(diagnostics.flatMap((diagnostic) => diagnostic.nextActions));
 
     return {
         status: "executed",
         executionVersion: "P26.22",
         mode: "read-only",
+        diagnosticsVersion: "P26.25",
         readiness: ready ? "ready" : "degraded",
         workspaceRoot,
         cacheRoot,
         checks,
         cacheOutputChecks,
+        diagnostics,
+        nextActions,
         summary: {
             ready,
             readyAssetIds,
@@ -2844,11 +2968,39 @@ function validateRuntimeAssetMaterializationPreflightExecutionCacheOutputRespons
     requireResponseEqual(record.localFileWrites, false, `${field}.localFileWrites`);
 }
 
+function validateRuntimeAssetMaterializationPreflightExecutionDiagnosticResponse(actual: unknown, field: string): void {
+    const record = responseRecord(actual, field);
+    requireResponseEqual(
+        [
+            "renderer_service_runtime_asset_missing_public_asset",
+            "renderer_service_runtime_asset_missing_cache_asset",
+            "renderer_service_runtime_asset_hash_unavailable",
+            "renderer_service_runtime_asset_cache_output_unavailable",
+        ].includes(String(record.code)),
+        true,
+        `${field}.code`
+    );
+    requireResponseEqual(record.severity, "degraded", `${field}.severity`);
+    requireResponseEqual(
+        ["public-asset", "cache-asset", "asset-hash", "cache-output"].includes(String(record.category)),
+        true,
+        `${field}.category`
+    );
+    requireResponseEqual(typeof record.assetId === "string" || record.assetId === null, true, `${field}.assetId`);
+    requireResponseEqual(typeof record.cacheOutputId === "string" || record.cacheOutputId === null, true, `${field}.cacheOutputId`);
+    requireResponseEqual(responseBoolean(record, "retryable", `${field}.retryable`), true, `${field}.retryable`);
+    responseString(record, "message", `${field}.message`);
+    requireResponseEqual(responseStringArray(record, "nextActions", `${field}.nextActions`).length > 0, true, `${field}.nextActions`);
+    requireResponseEqual(record.dispatch, false, `${field}.dispatch`);
+    requireResponseEqual(record.localFileWrites, false, `${field}.localFileWrites`);
+}
+
 function validateRuntimeAssetMaterializationPreflightExecutionResponse(actual: unknown, field: string): void {
     const record = responseRecord(actual, field);
     requireResponseEqual(record.status, "executed", `${field}.status`);
     requireResponseEqual(record.executionVersion, "P26.22", `${field}.executionVersion`);
     requireResponseEqual(record.mode, "read-only", `${field}.mode`);
+    requireResponseEqual(record.diagnosticsVersion, "P26.25", `${field}.diagnosticsVersion`);
     requireResponseEqual(record.readiness === "ready" || record.readiness === "degraded", true, `${field}.readiness`);
 
     const workspaceRoot = responseString(record, "workspaceRoot", `${field}.workspaceRoot`);
@@ -2894,6 +3046,14 @@ function validateRuntimeAssetMaterializationPreflightExecutionResponse(actual: u
         .map(({ index }) => bundledRuntimeAssetMaterializationPreflight.cacheOutputChecks[index].cacheOutputId);
     const executionReady = expectedMissingAssetIds.length === 0 && expectedMissingCacheOutputIds.length === 0;
     requireResponseEqual(record.readiness, executionReady ? "ready" : "degraded", `${field}.readiness`);
+
+    const diagnostics = responseRecordArray(record.diagnostics, `${field}.diagnostics`);
+    for (let index = 0; index < diagnostics.length; index += 1) {
+        validateRuntimeAssetMaterializationPreflightExecutionDiagnosticResponse(diagnostics[index], `${field}.diagnostics.${index}`);
+    }
+    const nextActions = responseStringArray(record, "nextActions", `${field}.nextActions`);
+    requireResponseEqual(diagnostics.length === 0, executionReady, `${field}.diagnostics`);
+    requireResponseEqual(nextActions.length === 0, executionReady, `${field}.nextActions`);
 
     const summary = responseRecord(record.summary, `${field}.summary`);
     requireResponseEqual(responseBoolean(summary, "ready", `${field}.summary.ready`), executionReady, `${field}.summary.ready`);

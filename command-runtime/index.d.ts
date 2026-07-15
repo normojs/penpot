@@ -1530,8 +1530,26 @@ export interface RenderThumbnailRendererServiceExecutionGate {
     };
 }
 
+export type RenderThumbnailRendererServiceRuntimeAssetPreflightDiagnosticCode =
+    | "renderer_service_runtime_asset_missing_public_asset"
+    | "renderer_service_runtime_asset_missing_cache_asset"
+    | "renderer_service_runtime_asset_hash_unavailable"
+    | "renderer_service_runtime_asset_cache_output_unavailable"
+    | "renderer_service_runtime_asset_preflight_configuration_invalid";
+
+export interface RenderThumbnailRendererServiceRuntimeAssetPreflightIssue {
+    code: RenderThumbnailRendererServiceRuntimeAssetPreflightDiagnosticCode;
+    severity: "degraded" | "invalid";
+    assetId: string | null;
+    cacheOutputId: string | null;
+    message: string;
+    retryable: boolean;
+    nextActions: string[];
+}
+
 export interface RenderThumbnailRendererServiceRuntimeAssetPreflightDiagnostic {
     status: "not-executed" | "executed" | "invalid";
+    diagnosticsVersion: "P26.25";
     executionVersion: string | null;
     mode: string | null;
     readiness: "not-reported" | "ready" | "degraded" | "unknown";
@@ -1551,6 +1569,9 @@ export interface RenderThumbnailRendererServiceRuntimeAssetPreflightDiagnostic {
     missingAssetIds: string[];
     readyCacheOutputIds: string[];
     missingCacheOutputIds: string[];
+    diagnosticCodes: RenderThumbnailRendererServiceRuntimeAssetPreflightDiagnosticCode[];
+    diagnostics: RenderThumbnailRendererServiceRuntimeAssetPreflightIssue[];
+    nextActions: string[];
     sideEffects: {
         browserProcessStarted: boolean;
         runtimeExecutionRegistered: boolean;

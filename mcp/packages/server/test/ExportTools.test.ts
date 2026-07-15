@@ -7466,11 +7466,15 @@ test("RenderThumbnailTool execution opt-in posts to renderer-service and returns
         assert.equal(JSON.stringify(body).includes("token-1"), false);
         assert.equal(body.data.healthPreflight.status, "ok");
         assert.equal(body.data.healthPreflight.runtimeAssetPreflight.status, "executed");
+        assert.equal(body.data.healthPreflight.runtimeAssetPreflight.diagnosticsVersion, "P26.25");
         assert.equal(body.data.healthPreflight.runtimeAssetPreflight.executionVersion, "P26.22");
         assert.equal(body.data.healthPreflight.runtimeAssetPreflight.readiness, "ready");
         assert.equal(body.data.healthPreflight.runtimeAssetPreflight.ready, true);
         assert.deepEqual(body.data.healthPreflight.runtimeAssetPreflight.readyAssetIds, ["thumbnail-worker-main"]);
         assert.deepEqual(body.data.healthPreflight.runtimeAssetPreflight.readyCacheOutputIds, ["runtime-asset-cache"]);
+        assert.deepEqual(body.data.healthPreflight.runtimeAssetPreflight.diagnosticCodes, []);
+        assert.deepEqual(body.data.healthPreflight.runtimeAssetPreflight.diagnostics, []);
+        assert.deepEqual(body.data.healthPreflight.runtimeAssetPreflight.nextActions, []);
         assert.equal(body.data.healthPreflight.runtimeAssetPreflight.sideEffects.fileRead, true);
         assert.equal(body.data.healthPreflight.runtimeAssetPreflight.sideEffects.hashComputed, true);
         assert.equal(body.data.healthPreflight.runtimeAssetPreflight.sideEffects.localFileWrites, false);

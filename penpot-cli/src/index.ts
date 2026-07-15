@@ -4,7 +4,7 @@ import { spawn } from "node:child_process";
 import { constants } from "node:fs";
 import { access, mkdir, readFile, readdir, stat, writeFile } from "node:fs/promises";
 import { createConnection } from "node:net";
-import { basename, delimiter, dirname, extname, join, resolve } from "node:path";
+import { basename, delimiter, dirname, extname, isAbsolute, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import {
     AdapterSelectionReasonCodes,
@@ -1140,6 +1140,20 @@ function getRendererServiceLifecyclePlan(args: string[], env: NodeJS.ProcessEnv)
             defaultValue: string;
             source: "PENPOT_RENDERER_SERVICE_RUNTIME_ASSET_PREFLIGHT_CACHE_ROOT" | "default" | null;
         };
+        diagnosticsVersion: "P26.25";
+        diagnosticCodes: string[];
+        diagnostics: Array<{
+            code:
+                | "renderer_service_runtime_asset_preflight_configuration_invalid"
+                | "renderer_service_runtime_asset_preflight_workspace_root_missing"
+                | "renderer_service_runtime_asset_preflight_workspace_root_invalid"
+                | "renderer_service_runtime_asset_preflight_cache_root_invalid";
+            severity: "invalid";
+            field: "mode" | "workspaceRoot" | "cacheRoot";
+            message: string;
+            nextActions: string[];
+        }>;
+        nextActions: string[];
         diagnosticsSurface: "healthPreflight.runtimeAssetPreflight";
         lifecyclePlanEffects: {
             healthProbe: false;
@@ -1181,10 +1195,70 @@ function getRendererServiceLifecyclePlan(args: string[], env: NodeJS.ProcessEnv)
     const runtimeAssetPreflightValue = env[RENDERER_SERVICE_RUNTIME_ASSET_PREFLIGHT_ENV]?.trim() || null;
     const runtimeAssetPreflightWorkspaceRoot = env[RENDERER_SERVICE_RUNTIME_ASSET_PREFLIGHT_WORKSPACE_ROOT_ENV]?.trim() || null;
     const runtimeAssetPreflightCacheRoot = env[RENDERER_SERVICE_RUNTIME_ASSET_PREFLIGHT_CACHE_ROOT_ENV]?.trim() || null;
-    const runtimeAssetPreflightConfigured = Boolean(runtimeAssetPreflightValue);
-    const runtimeAssetPreflightValid = !runtimeAssetPreflightValue || runtimeAssetPreflightValue === "read-only";
+    const runtimeAssetPreflightConfigured = Boolean(
+        runtimeAssetPreflightValue || runtimeAssetPreflightWorkspaceRoot || runtimeAssetPreflightCacheRoot
+    );
     const runtimeAssetPreflightExecuteReadOnly = runtimeAssetPreflightValue === "read-only";
     const runtimeAssetPreflightEffectiveCacheRoot = runtimeAssetPreflightCacheRoot || RENDERER_SERVICE_BUILD_DIR;
+    const runtimeAssetPreflightDiagnostics: Array<{
+        code:
+            | "renderer_service_runtime_asset_preflight_configuration_invalid"
+            | "renderer_service_runtime_asset_preflight_workspace_root_missing"
+            | "renderer_service_runtime_asset_preflight_workspace_root_invalid"
+            | "renderer_service_runtime_asset_preflight_cache_root_invalid";
+        severity: "invalid";
+        field: "mode" | "workspaceRoot" | "cacheRoot";
+        message: string;
+        nextActions: string[];
+    }> = [];
+    if (runtimeAssetPreflightConfigured && runtimeAssetPreflightValue !== "read-only") {
+        runtimeAssetPreflightDiagnostics.push({
+            code: "renderer_service_runtime_asset_preflight_configuration_invalid",
+            severity: "invalid",
+            field: "mode",
+            message: "Renderer-service runtime asset preflight mode must be read-only.",
+            nextActions: [
+                "Set PENPOT_RENDERER_SERVICE_RUNTIME_ASSET_PREFLIGHT=read-only.",
+                "Rerun penpot-cli renderer-service status after fixing the mode.",
+            ],
+        });
+    }
+    if (runtimeAssetPreflightExecuteReadOnly && !runtimeAssetPreflightWorkspaceRoot) {
+        runtimeAssetPreflightDiagnostics.push({
+            code: "renderer_service_runtime_asset_preflight_workspace_root_missing",
+            severity: "invalid",
+            field: "workspaceRoot",
+            message: "Renderer-service runtime asset preflight requires an absolute workspace root.",
+            nextActions: [
+                "Set PENPOT_RENDERER_SERVICE_RUNTIME_ASSET_PREFLIGHT_WORKSPACE_ROOT to the Penpot workspace root.",
+                "Restart renderer-service and rerun the health preflight.",
+            ],
+        });
+    }
+    if (runtimeAssetPreflightWorkspaceRoot && !isAbsolute(runtimeAssetPreflightWorkspaceRoot)) {
+        runtimeAssetPreflightDiagnostics.push({
+            code: "renderer_service_runtime_asset_preflight_workspace_root_invalid",
+            severity: "invalid",
+            field: "workspaceRoot",
+            message: "Renderer-service runtime asset preflight workspace root must be an absolute path.",
+            nextActions: [
+                "Set PENPOT_RENDERER_SERVICE_RUNTIME_ASSET_PREFLIGHT_WORKSPACE_ROOT to an absolute Penpot workspace root.",
+                "Restart renderer-service and rerun the health preflight.",
+            ],
+        });
+    }
+    if (runtimeAssetPreflightCacheRoot && !isAbsolute(runtimeAssetPreflightCacheRoot)) {
+        runtimeAssetPreflightDiagnostics.push({
+            code: "renderer_service_runtime_asset_preflight_cache_root_invalid",
+            severity: "invalid",
+            field: "cacheRoot",
+            message: "Renderer-service runtime asset preflight cache root must be an absolute path.",
+            nextActions: [
+                "Set PENPOT_RENDERER_SERVICE_RUNTIME_ASSET_PREFLIGHT_CACHE_ROOT to an absolute writable cache path.",
+                "Restart renderer-service and rerun the health preflight.",
+            ],
+        });
+    }
     const startEnv = [
         ...(host === DEFAULT_RENDERER_SERVICE_HOST && port === DEFAULT_RENDERER_SERVICE_PORT
             ? []
@@ -1231,7 +1305,7 @@ function getRendererServiceLifecyclePlan(args: string[], env: NodeJS.ProcessEnv)
             executeReadOnly: runtimeAssetPreflightExecuteReadOnly,
             value: runtimeAssetPreflightValue,
             expectedValue: "read-only",
-            valid: runtimeAssetPreflightValid,
+            valid: runtimeAssetPreflightDiagnostics.length === 0,
             source: runtimeAssetPreflightConfigured ? "PENPOT_RENDERER_SERVICE_RUNTIME_ASSET_PREFLIGHT" : null,
             workspaceRoot: {
                 configured: Boolean(runtimeAssetPreflightWorkspaceRoot),
@@ -1251,6 +1325,10 @@ function getRendererServiceLifecyclePlan(args: string[], env: NodeJS.ProcessEnv)
                         ? "default"
                         : null,
             },
+            diagnosticsVersion: "P26.25",
+            diagnosticCodes: runtimeAssetPreflightDiagnostics.map((entry) => entry.code),
+            diagnostics: runtimeAssetPreflightDiagnostics,
+            nextActions: [...new Set(runtimeAssetPreflightDiagnostics.flatMap((entry) => entry.nextActions))],
             diagnosticsSurface: "healthPreflight.runtimeAssetPreflight",
             lifecyclePlanEffects: {
                 healthProbe: false,
@@ -5256,6 +5334,13 @@ async function handleRendererServiceStatus(args: string[], io: CliIO, env: NodeJ
             io.stdout,
             `Runtime asset preflight: ${plan.runtimeAssetPreflight.executeReadOnly ? "read-only" : "disabled"}`
         );
+        if (plan.runtimeAssetPreflight.diagnosticCodes.length > 0) {
+            writeLine(io.stdout, `Runtime asset preflight diagnostics: ${plan.runtimeAssetPreflight.diagnosticCodes.join(", ")}`);
+            writeLine(io.stdout, "Next actions:");
+            for (const action of plan.runtimeAssetPreflight.nextActions) {
+                writeLine(io.stdout, `- ${action}`);
+            }
+        }
         writeLine(io.stdout, `Start manually: ${plan.startCommand}`);
         writeLine(io.stdout, "No process was started, no health request was sent, and renderer dispatch remains disabled.");
     });
@@ -5285,6 +5370,7 @@ async function handleRendererServiceStart(args: string[], io: CliIO, env: NodeJS
             `Run: ${plan.startCommand}`,
             "Stop the host with Ctrl-C or SIGTERM.",
             "MCP and CLI render.thumbnail execution still requires explicit renderer-service opt-in after the host starts.",
+            ...plan.runtimeAssetPreflight.nextActions,
         ],
         {
             lifecycle: plan,
