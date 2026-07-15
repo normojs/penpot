@@ -49,6 +49,8 @@ const DEFAULT_RENDERER_SERVICE_HOST = "127.0.0.1";
 const DEFAULT_RENDERER_SERVICE_PORT = 6070;
 const RENDERER_SERVICE_BUILD_DIR = "/Volumes/fushilu/.caches/penpot/renderer-service";
 const RENDERER_SERVICE_BROWSER_FIXTURE_RUNTIME_ENV = "PENPOT_RENDERER_SERVICE_BROWSER_FIXTURE_RUNTIME";
+const RENDERER_SERVICE_BUNDLED_SCENE_BRIDGE_RUNTIME_ENV = "PENPOT_RENDERER_SERVICE_BUNDLED_SCENE_BRIDGE_RUNTIME";
+const RENDERER_SERVICE_BUNDLED_SCENE_BRIDGE_RUNTIME_EXPECTED_VALUE = "import-gate";
 const RENDERER_SERVICE_RUNTIME_ASSET_PREFLIGHT_ENV = "PENPOT_RENDERER_SERVICE_RUNTIME_ASSET_PREFLIGHT";
 const RENDERER_SERVICE_RUNTIME_ASSET_PREFLIGHT_WORKSPACE_ROOT_ENV = "PENPOT_RENDERER_SERVICE_RUNTIME_ASSET_PREFLIGHT_WORKSPACE_ROOT";
 const RENDERER_SERVICE_RUNTIME_ASSET_PREFLIGHT_CACHE_ROOT_ENV = "PENPOT_RENDERER_SERVICE_RUNTIME_ASSET_PREFLIGHT_CACHE_ROOT";
@@ -142,6 +144,7 @@ Environment:
   PENPOT_RENDERER_SERVICE_PORT  No-op host bind port, default 6070
   PENPOT_RENDERER_SERVICE_BACKEND_URI  Optional backend RPC base URI for disabled endpoint planning
   PENPOT_RENDERER_SERVICE_RUNTIME_MODULE  Optional local renderer runtime adapter module
+  PENPOT_RENDERER_SERVICE_BUNDLED_SCENE_BRIDGE_RUNTIME  Optional future bundled scene bridge import gate
   PENPOT_RENDERER_SERVICE_RUNTIME_ASSET_PREFLIGHT  Set to read-only to enable runtime asset preflight
   PENPOT_RENDERER_SERVICE_RUNTIME_ASSET_PREFLIGHT_WORKSPACE_ROOT  Absolute workspace root for read-only preflight
   PENPOT_RENDERER_SERVICE_RUNTIME_ASSET_PREFLIGHT_CACHE_ROOT  Optional absolute cache root for read-only preflight
@@ -1182,6 +1185,65 @@ function getRendererServiceLifecyclePlan(args: string[], env: NodeJS.ProcessEnv)
             tokenValues: true;
         };
     };
+    bundledSceneBridgeImportGate: {
+        status: "planned-disabled" | "configured-disabled" | "invalid";
+        gateVersion: "P26.34";
+        configured: boolean;
+        requested: boolean;
+        value: string | null;
+        expectedValue: typeof RENDERER_SERVICE_BUNDLED_SCENE_BRIDGE_RUNTIME_EXPECTED_VALUE;
+        valid: boolean;
+        source: typeof RENDERER_SERVICE_BUNDLED_SCENE_BRIDGE_RUNTIME_ENV | null;
+        runtimeModuleConflict: boolean;
+        browserFixtureRuntimeConflict: boolean;
+        diagnosticsVersion: "P26.34";
+        diagnosticCodes: string[];
+        diagnostics: Array<{
+            code:
+                | "renderer_service_bundled_scene_bridge_import_gate_configuration_invalid"
+                | "renderer_service_bundled_scene_bridge_import_gate_runtime_module_conflict"
+                | "renderer_service_bundled_scene_bridge_import_gate_browser_fixture_conflict";
+            severity: "invalid";
+            field: "mode" | "runtimeModule" | "browserFixtureRuntime";
+            env: string;
+            valueRead: false;
+            valuesIncluded: false;
+            message: string;
+            nextActions: string[];
+        }>;
+        nextActions: string[];
+        diagnosticsSurface: "healthPreflight.bundledSceneBridgeImportGate";
+        lifecyclePlanEffects: {
+            healthProbe: false;
+            moduleImport: false;
+            factoryInvoked: false;
+            browserProcessStarted: false;
+            runtimeAdapterImported: false;
+            runtimeAssetsLoaded: false;
+            assetManifestMaterialized: false;
+            renderDispatch: false;
+            networkDispatch: false;
+            localFileWrites: false;
+            runtimeExecutionRegistered: false;
+            sourceDataValuesIncluded: false;
+            pageValuesIncluded: false;
+            artifactValuesIncluded: false;
+            mediaValuesIncluded: false;
+            tokenValuesIncluded: false;
+            pathValuesIncluded: false;
+        };
+        omitted: {
+            configuredValue: true;
+            modulePath: true;
+            workspaceRoot: true;
+            cacheRoot: true;
+            sourceData: true;
+            pageData: true;
+            artifactBytes: true;
+            mediaBytes: true;
+            tokenValues: true;
+        };
+    };
     runtimeAssetPreflight: {
         configured: boolean;
         executeReadOnly: boolean;
@@ -1429,6 +1491,70 @@ function getRendererServiceLifecyclePlan(args: string[], env: NodeJS.ProcessEnv)
             ],
         });
     }
+    const bundledSceneBridgeImportGateConfigured = hasEnvKey(env, RENDERER_SERVICE_BUNDLED_SCENE_BRIDGE_RUNTIME_ENV);
+    const bundledSceneBridgeImportGateValue = bundledSceneBridgeImportGateConfigured
+        ? (env[RENDERER_SERVICE_BUNDLED_SCENE_BRIDGE_RUNTIME_ENV] ?? "").trim()
+        : null;
+    const bundledSceneBridgeImportGateRequested =
+        bundledSceneBridgeImportGateValue === RENDERER_SERVICE_BUNDLED_SCENE_BRIDGE_RUNTIME_EXPECTED_VALUE;
+    const bundledSceneBridgeImportGateDiagnostics: Array<{
+        code:
+            | "renderer_service_bundled_scene_bridge_import_gate_configuration_invalid"
+            | "renderer_service_bundled_scene_bridge_import_gate_runtime_module_conflict"
+            | "renderer_service_bundled_scene_bridge_import_gate_browser_fixture_conflict";
+        severity: "invalid";
+        field: "mode" | "runtimeModule" | "browserFixtureRuntime";
+        env: string;
+        valueRead: false;
+        valuesIncluded: false;
+        message: string;
+        nextActions: string[];
+    }> = [];
+    if (bundledSceneBridgeImportGateConfigured && !bundledSceneBridgeImportGateRequested) {
+        bundledSceneBridgeImportGateDiagnostics.push({
+            code: "renderer_service_bundled_scene_bridge_import_gate_configuration_invalid",
+            severity: "invalid",
+            field: "mode",
+            env: RENDERER_SERVICE_BUNDLED_SCENE_BRIDGE_RUNTIME_ENV,
+            valueRead: false,
+            valuesIncluded: false,
+            message: "Renderer-service bundled scene bridge runtime mode must be import-gate when configured.",
+            nextActions: [
+                `Set ${RENDERER_SERVICE_BUNDLED_SCENE_BRIDGE_RUNTIME_ENV}=${RENDERER_SERVICE_BUNDLED_SCENE_BRIDGE_RUNTIME_EXPECTED_VALUE} or leave it unset.`,
+                "Rerun penpot-cli renderer-service status after fixing the mode.",
+            ],
+        });
+    }
+    if (bundledSceneBridgeImportGateConfigured && rendererRuntimeModule) {
+        bundledSceneBridgeImportGateDiagnostics.push({
+            code: "renderer_service_bundled_scene_bridge_import_gate_runtime_module_conflict",
+            severity: "invalid",
+            field: "runtimeModule",
+            env: "PENPOT_RENDERER_SERVICE_RUNTIME_MODULE",
+            valueRead: false,
+            valuesIncluded: false,
+            message: "Renderer-service bundled scene bridge import gate cannot be combined with a manual runtime module.",
+            nextActions: [
+                `Unset ${RENDERER_SERVICE_BUNDLED_SCENE_BRIDGE_RUNTIME_ENV} when using PENPOT_RENDERER_SERVICE_RUNTIME_MODULE.`,
+                "Use only one renderer runtime selection mechanism for a renderer-service process.",
+            ],
+        });
+    }
+    if (bundledSceneBridgeImportGateConfigured && browserFixtureRuntimeEnabled) {
+        bundledSceneBridgeImportGateDiagnostics.push({
+            code: "renderer_service_bundled_scene_bridge_import_gate_browser_fixture_conflict",
+            severity: "invalid",
+            field: "browserFixtureRuntime",
+            env: RENDERER_SERVICE_BROWSER_FIXTURE_RUNTIME_ENV,
+            valueRead: false,
+            valuesIncluded: false,
+            message: "Renderer-service bundled scene bridge import gate cannot be combined with the browser fixture runtime.",
+            nextActions: [
+                `Unset ${RENDERER_SERVICE_BUNDLED_SCENE_BRIDGE_RUNTIME_ENV} when using ${RENDERER_SERVICE_BROWSER_FIXTURE_RUNTIME_ENV}.`,
+                "Keep fixture lifecycle validation separate from the future bundled scene bridge import gate.",
+            ],
+        });
+    }
     const runtimeAssetPreflightValue = env[RENDERER_SERVICE_RUNTIME_ASSET_PREFLIGHT_ENV]?.trim() || null;
     const runtimeAssetPreflightWorkspaceRoot = env[RENDERER_SERVICE_RUNTIME_ASSET_PREFLIGHT_WORKSPACE_ROOT_ENV]?.trim() || null;
     const runtimeAssetPreflightCacheRoot = env[RENDERER_SERVICE_RUNTIME_ASSET_PREFLIGHT_CACHE_ROOT_ENV]?.trim() || null;
@@ -1598,6 +1724,14 @@ function getRendererServiceLifecyclePlan(args: string[], env: NodeJS.ProcessEnv)
         ...(backendRpcBaseUri ? [shellEnvAssignment("PENPOT_RENDERER_SERVICE_BACKEND_URI", backendRpcBaseUri)] : []),
         ...(rendererRuntimeModule ? [shellEnvAssignment("PENPOT_RENDERER_SERVICE_RUNTIME_MODULE", rendererRuntimeModule)] : []),
         ...(browserFixtureRuntimeValue ? [shellEnvAssignment(RENDERER_SERVICE_BROWSER_FIXTURE_RUNTIME_ENV, browserFixtureRuntimeValue)] : []),
+        ...(bundledSceneBridgeImportGateConfigured
+            ? [
+                  shellEnvAssignment(
+                      RENDERER_SERVICE_BUNDLED_SCENE_BRIDGE_RUNTIME_ENV,
+                      bundledSceneBridgeImportGateValue ?? ""
+                  ),
+              ]
+            : []),
         ...(runtimeAssetPreflightValue
             ? [shellEnvAssignment(RENDERER_SERVICE_RUNTIME_ASSET_PREFLIGHT_ENV, runtimeAssetPreflightValue)]
             : []),
@@ -1663,6 +1797,57 @@ function getRendererServiceLifecyclePlan(args: string[], env: NodeJS.ProcessEnv)
             omitted: {
                 playwrightBrowserPath: true,
                 runtimeModulePath: true,
+                workspaceRoot: true,
+                cacheRoot: true,
+                sourceData: true,
+                pageData: true,
+                artifactBytes: true,
+                mediaBytes: true,
+                tokenValues: true,
+            },
+        },
+        bundledSceneBridgeImportGate: {
+            status: bundledSceneBridgeImportGateDiagnostics.length > 0
+                ? "invalid"
+                : bundledSceneBridgeImportGateConfigured
+                  ? "configured-disabled"
+                  : "planned-disabled",
+            gateVersion: "P26.34",
+            configured: bundledSceneBridgeImportGateConfigured,
+            requested: bundledSceneBridgeImportGateRequested,
+            value: null,
+            expectedValue: RENDERER_SERVICE_BUNDLED_SCENE_BRIDGE_RUNTIME_EXPECTED_VALUE,
+            valid: bundledSceneBridgeImportGateDiagnostics.length === 0,
+            source: bundledSceneBridgeImportGateConfigured ? RENDERER_SERVICE_BUNDLED_SCENE_BRIDGE_RUNTIME_ENV : null,
+            runtimeModuleConflict: bundledSceneBridgeImportGateConfigured && Boolean(rendererRuntimeModule),
+            browserFixtureRuntimeConflict: bundledSceneBridgeImportGateConfigured && browserFixtureRuntimeEnabled,
+            diagnosticsVersion: "P26.34",
+            diagnosticCodes: bundledSceneBridgeImportGateDiagnostics.map((entry) => entry.code),
+            diagnostics: bundledSceneBridgeImportGateDiagnostics,
+            nextActions: [...new Set(bundledSceneBridgeImportGateDiagnostics.flatMap((entry) => entry.nextActions))],
+            diagnosticsSurface: "healthPreflight.bundledSceneBridgeImportGate",
+            lifecyclePlanEffects: {
+                healthProbe: false,
+                moduleImport: false,
+                factoryInvoked: false,
+                browserProcessStarted: false,
+                runtimeAdapterImported: false,
+                runtimeAssetsLoaded: false,
+                assetManifestMaterialized: false,
+                renderDispatch: false,
+                networkDispatch: false,
+                localFileWrites: false,
+                runtimeExecutionRegistered: false,
+                sourceDataValuesIncluded: false,
+                pageValuesIncluded: false,
+                artifactValuesIncluded: false,
+                mediaValuesIncluded: false,
+                tokenValuesIncluded: false,
+                pathValuesIncluded: false,
+            },
+            omitted: {
+                configuredValue: true,
+                modulePath: true,
                 workspaceRoot: true,
                 cacheRoot: true,
                 sourceData: true,
@@ -5857,12 +6042,26 @@ async function handleRendererServiceStatus(args: string[], io: CliIO, env: NodeJ
         );
         writeLine(
             io.stdout,
+            `Bundled scene bridge import gate: ${plan.bundledSceneBridgeImportGate.configured ? plan.bundledSceneBridgeImportGate.status : "disabled"}`
+        );
+        writeLine(
+            io.stdout,
             `Runtime asset preflight: ${plan.runtimeAssetPreflight.executeReadOnly ? "read-only" : "disabled"}`
         );
         if (plan.browserFixtureRuntime.diagnosticCodes.length > 0) {
             writeLine(io.stdout, `Browser fixture runtime diagnostics: ${plan.browserFixtureRuntime.diagnosticCodes.join(", ")}`);
             writeLine(io.stdout, "Browser fixture next actions:");
             for (const action of plan.browserFixtureRuntime.nextActions) {
+                writeLine(io.stdout, `- ${action}`);
+            }
+        }
+        if (plan.bundledSceneBridgeImportGate.diagnosticCodes.length > 0) {
+            writeLine(
+                io.stdout,
+                `Bundled scene bridge import gate diagnostics: ${plan.bundledSceneBridgeImportGate.diagnosticCodes.join(", ")}`
+            );
+            writeLine(io.stdout, "Import gate next actions:");
+            for (const action of plan.bundledSceneBridgeImportGate.nextActions) {
                 writeLine(io.stdout, `- ${action}`);
             }
         }

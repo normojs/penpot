@@ -353,8 +353,14 @@ disabled `bundled-scene-bridge-runtime.js` module boundary, surfaces
 `bundledSceneBridgeAdapterModule` readiness through health/thumbnail and
 CLI/MCP health preflight summaries, and tests prove default paths still do not
 import, invoke, register, start browsers, load assets, read source data, write
-files, or expose values. Next planned work is P26.34 to define the explicit
-adapter import/registration gate before any real scene rendering is enabled.
+files, or expose values. P26.34 is complete: renderer-service now defines the
+explicit disabled bundled scene bridge import gate, surfaces redacted
+configuration/conflict diagnostics through CLI/MCP health preflight summaries,
+and validates that module import, factory invocation, runtime registration,
+browser startup, asset loading, reads, writes, and value exposure remain
+disabled. Current active work is P26.35, next up, to define a closed adapter
+factory-shape preflight/readiness contract before any executable import path is
+enabled.
 P25.7 is complete: thumbnail renderer-service API fixtures now define
 future file refresh, file reuse, tagged frame refresh, auth forwarding,
 resource URI normalization, and MCP/CLI test expectations. P25.8 is complete:
@@ -1021,7 +1027,8 @@ process boundary before MCP or CLI execution is enabled.
 | P26.31 | done | Surface browser fixture runtime lifecycle diagnostics | `renderer-service`, `command-runtime`, `penpot-cli`, `mcp`, `mcp/docs`, `todo.md`, `CHANGES.md` | Completed 2026-07-16; renderer-service now exposes redacted `browserFixtureRuntime` lifecycle diagnostics in `/health` and `/thumbnail`, command-runtime normalizes the summary into CLI/MCP `healthPreflight.browserFixtureRuntime`, and `penpot-cli renderer-service status/start` reports fixture runtime configuration/conflict diagnostics without probing or starting browsers | Keeps the real render-wasm/frontend scene bridge, asset materialization approval, asset copying, default MCP/CLI rendering, and source-data/page/artifact/media/token value exposure gated |
 | P26.32 | done | Define bundled scene bridge adapter contract | `renderer-service`, `command-runtime`, `penpot-cli`, `mcp`, `mcp/docs`, `todo.md`, `CHANGES.md` | Completed 2026-07-16; renderer-service health/thumbnail responses now expose metadata-only `bundledSceneBridgeContract`, command-runtime normalizes it into CLI/MCP `healthPreflight.bundledSceneBridgeContract`, fixtures document the P26.32 adapter module/prerequisite/page-handoff/render I/O/test matrix contract, and tests reject unsafe contract metadata | Keeps default MCP/CLI rendering, adapter module import, browser startup, asset materialization writes, source-data/page/artifact/media/token value exposure, unreviewed runtime registration, and CLI process spawning gated |
 | P26.33 | done | Scaffold disabled bundled scene bridge adapter module boundary | `renderer-service`, `command-runtime`, `mcp/docs`, `todo.md`, `CHANGES.md` | Completed 2026-07-16; renderer-service now ships a disabled service-owned `createBundledSceneBridgeRendererRuntime` module stub, health/thumbnail responses expose `bundledSceneBridgeAdapterModule`, command-runtime normalizes it into CLI/MCP `healthPreflight.bundledSceneBridgeAdapterModule`, and tests prove default paths remain no-import/no-browser/no-dispatch while unsafe readiness metadata is rejected | Keeps real scene rendering, default MCP/CLI execution, browser startup, asset loading/materialization, backend/source-data reads, local writes, runtime registration, and value exposure gated |
-| P26.34 | todo | Define explicit bundled scene bridge adapter import gate | `renderer-service`, `command-runtime`, `penpot-cli`, `mcp`, `mcp/docs`, `todo.md`, `CHANGES.md` | Add the next disabled planning slice for an explicit renderer-service opt-in gate that may import the bundled scene bridge adapter in a later executable step, including conflict diagnostics and CLI/MCP preflight reporting, without invoking the factory or registering render execution | Keeps real scene rendering, browser startup, asset loading/materialization, backend/source-data reads, local writes, runtime registration, and value exposure gated |
+| P26.34 | done | Define explicit bundled scene bridge adapter import gate | `renderer-service`, `command-runtime`, `penpot-cli`, `mcp`, `mcp/docs`, `todo.md`, `CHANGES.md` | Completed 2026-07-16; renderer-service now exposes a disabled `bundledSceneBridgeImportGate` with redacted env/configuration/conflict diagnostics, command-runtime normalizes it into CLI/MCP health preflight summaries, `penpot-cli renderer-service status/start` reports safe lifecycle metadata, and tests reject unsafe import/factory/runtime/value flags | Keeps real scene rendering, browser startup, asset loading/materialization, backend/source-data reads, local writes, runtime registration, module import, factory invocation, and value exposure gated |
+| P26.35 | todo | Define closed bundled scene bridge adapter factory-shape preflight | `renderer-service`, `command-runtime`, `penpot-cli`, `mcp`, `mcp/docs`, `todo.md`, `CHANGES.md` | Add the next disabled readiness contract for the future adapter factory shape and import outcome taxonomy, reporting CLI/MCP preflight diagnostics while keeping the import gate closed and without loading the adapter module or invoking the factory | Keeps real scene rendering, browser startup, asset loading/materialization, backend/source-data reads, local writes, runtime registration, module import, factory invocation, and value exposure gated |
 
 P26.1 is complete: `@penpot/renderer-service` is a private pnpm workspace
 package with a real no-op HTTP lifecycle. Its TypeScript output is written to
@@ -1239,8 +1246,11 @@ renderer-service, command-runtime, CLI/MCP tests, and docs without importing or
 registering it. P26.33 is complete: the disabled adapter module boundary is
 now scaffolded, reported through redacted readiness diagnostics, and validated
 without enabling default import, factory invocation, runtime registration, or
-real scene rendering. P26.34 is next to define the explicit import/registration
-gate before the adapter can be wired into execution.
+real scene rendering. P26.34 is complete: the explicit disabled import gate is
+now reported through renderer-service, CLI, and MCP preflight diagnostics
+without importing the adapter module or exposing configured values. P26.35 is
+next to define the closed factory-shape readiness contract before executable
+adapter import work begins.
 
 ## Maintenance: Build Cache Hygiene
 

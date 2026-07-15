@@ -2033,6 +2033,92 @@ export interface RenderThumbnailRendererServiceBundledSceneBridgeAdapterModuleDi
     execution: null;
 }
 
+export interface RenderThumbnailRendererServiceBundledSceneBridgeImportGateDiagnostic {
+    status: "not-reported" | "planned-disabled" | "configured-disabled" | "invalid";
+    gateVersion: "P26.34" | null;
+    checked: boolean;
+    owner: "renderer-service" | null;
+    mode: "explicit-import-gate" | null;
+    env: string | null;
+    expectedValue: string | null;
+    configured: boolean;
+    requested: boolean;
+    valid: boolean;
+    configuration: {
+        configured: boolean;
+        expectedValue: string | null;
+        valueRead: boolean;
+        valuesIncluded: boolean;
+        accepted: boolean;
+    };
+    conflicts: {
+        runtimeModule: boolean;
+        browserFixtureRuntime: boolean;
+        injectedRuntime: boolean;
+    };
+    gate: {
+        importRequiresExplicitConfig: boolean;
+        importEnabled: boolean;
+        importAttempted: boolean;
+        moduleImported: boolean;
+        factoryInvoked: boolean;
+        runtimeRegistration: boolean;
+        runtimeExecutionRegistered: boolean;
+    };
+    diagnostics: Array<{
+        code: string;
+        severity: string | null;
+        field: string | null;
+        env: string | null;
+        valueRead: boolean;
+        valuesIncluded: boolean;
+        message: string | null;
+        nextActions: string[];
+    }>;
+    diagnosticCodes: string[];
+    nextActions: string[];
+    sideEffects: {
+        browserProcessStarted: boolean;
+        browserPageCreated: boolean;
+        runtimeExecutionRegistered: boolean;
+        runtimeAdapterImported: boolean;
+        runtimeFactoryInvoked: boolean;
+        runtimeAssetsLoaded: boolean;
+        assetManifestMaterialized: boolean;
+        backendRpcReads: boolean;
+        sourceDataReads: boolean;
+        networkDispatch: boolean;
+        dispatch: boolean;
+        localFileWrites: boolean;
+    };
+    redaction: {
+        modeValuesIncluded: boolean;
+        pathValuesIncluded: boolean;
+        sourceDataValuesIncluded: boolean;
+        pageValuesIncluded: boolean;
+        artifactValuesIncluded: boolean;
+        mediaValuesIncluded: boolean;
+        tokenValuesIncluded: boolean;
+    };
+    omitted: {
+        configuredValue: boolean;
+        workspaceRoot: boolean;
+        cacheRoot: boolean;
+        modulePath: boolean;
+        publicPaths: boolean;
+        cachePaths: boolean;
+        sha256: boolean;
+        playwrightBrowserPath: boolean;
+        runtimeModulePath: boolean;
+        sourceData: boolean;
+        pageData: boolean;
+        artifactBytes: boolean;
+        mediaBytes: boolean;
+        tokenValues: boolean;
+    };
+    execution: null;
+}
+
 export interface RenderThumbnailRendererServiceBrowserFixtureRuntimeDiagnostic {
     status: "not-reported" | "not-configured" | "started" | "closed" | "invalid";
     diagnosticsVersion: "P26.31";
@@ -2125,6 +2211,7 @@ export interface RenderThumbnailRendererServiceHealthPreflight {
     runtimeAssetMaterializationApproval: RenderThumbnailRendererServiceRuntimeAssetMaterializationApproval;
     bundledSceneBridgeContract: RenderThumbnailRendererServiceBundledSceneBridgeContractDiagnostic;
     bundledSceneBridgeAdapterModule: RenderThumbnailRendererServiceBundledSceneBridgeAdapterModuleDiagnostic;
+    bundledSceneBridgeImportGate: RenderThumbnailRendererServiceBundledSceneBridgeImportGateDiagnostic;
     browserFixtureRuntime: RenderThumbnailRendererServiceBrowserFixtureRuntimeDiagnostic;
     response?: {
         status: number | null;

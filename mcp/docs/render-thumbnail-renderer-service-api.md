@@ -141,6 +141,16 @@ hashes, source/page data, artifact/media bytes, or tokens. `/health` and
 `/thumbnail` expose this as `bundledSceneBridgeAdapterModule`, and
 command-runtime carries it to CLI/MCP as
 `healthPreflight.bundledSceneBridgeAdapterModule`.
+P26.34 defines the explicit import gate for that adapter. Operators may set
+`PENPOT_RENDERER_SERVICE_BUNDLED_SCENE_BRIDGE_RUNTIME=import-gate` to make the
+future import request visible, but the gate remains disabled:
+`bundledSceneBridgeImportGate` reports `configured-disabled`, module import is
+not attempted, the factory is not invoked, runtime registration remains false,
+and browser startup, asset loading, backend/source-data reads, local writes,
+and value exposure remain disabled. Invalid modes or conflicts with a manual
+runtime module, browser fixture runtime, or injected runtime are reported as
+redacted diagnostics and normalized by command-runtime as
+`healthPreflight.bundledSceneBridgeImportGate`.
 P26.5 adds a token-safe `backendRpcClient` plan to renderer-service thumbnail
 responses so backend data/cache/persist endpoints are normalized for staged
 execution. That plan now feeds the executable file-thumbnail cache probe,

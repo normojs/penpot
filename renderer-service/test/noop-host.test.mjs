@@ -828,6 +828,41 @@ function assertBundledSceneBridgeAdapterModule(readiness) {
     return readiness;
 }
 
+function assertBundledSceneBridgeImportGate(gate, { status = "planned-disabled", configured = false, requested = false } = {}) {
+    assert.equal(gate.status, status);
+    assert.equal(gate.gateVersion, "P26.34");
+    assert.equal(gate.owner, "renderer-service");
+    assert.equal(gate.mode, "explicit-import-gate");
+    assert.equal(gate.env, "PENPOT_RENDERER_SERVICE_BUNDLED_SCENE_BRIDGE_RUNTIME");
+    assert.equal(gate.expectedValue, "import-gate");
+    assert.equal(gate.configured, configured);
+    assert.equal(gate.requested, requested);
+    assert.equal(gate.configuration.valueRead, false);
+    assert.equal(gate.configuration.valuesIncluded, false);
+    assert.equal(gate.conflicts.runtimeModule, false);
+    assert.equal(gate.conflicts.browserFixtureRuntime, false);
+    assert.equal(gate.gate.importRequiresExplicitConfig, true);
+    assert.equal(gate.gate.importEnabled, false);
+    assert.equal(gate.gate.importAttempted, false);
+    assert.equal(gate.gate.moduleImported, false);
+    assert.equal(gate.gate.factoryInvoked, false);
+    assert.equal(gate.gate.runtimeRegistration, false);
+    assert.equal(gate.gate.runtimeExecutionRegistered, false);
+    assert.equal(gate.sideEffects.runtimeAdapterImported, false);
+    assert.equal(gate.sideEffects.runtimeFactoryInvoked, false);
+    assert.equal(gate.sideEffects.browserProcessStarted, false);
+    assert.equal(gate.sideEffects.localFileWrites, false);
+    assert.equal(gate.redaction.modeValuesIncluded, false);
+    assert.equal(gate.redaction.pathValuesIncluded, false);
+    assert.equal(gate.redaction.sourceDataValuesIncluded, false);
+    assert.equal(gate.omitted.configuredValue, true);
+    assert.equal(gate.omitted.modulePath, true);
+    assert.equal(gate.omitted.sourceData, true);
+    assert.equal(gate.omitted.tokenValues, true);
+    assert.equal(gate.execution, null);
+    return gate;
+}
+
 function persistedThumbnailResponse(id = "persisted-thumbnail-png") {
     return new Response(
         JSON.stringify({
@@ -855,6 +890,7 @@ test("noop host exposes the P25.24 health contract", async () => {
         assert.ok(serviceModule.healthResponse.capabilities.includes("thumbnail.render.runtime-asset-materialization-approval-scaffold"));
         assert.ok(serviceModule.healthResponse.capabilities.includes("thumbnail.render.bundled-scene-bridge-contract"));
         assert.ok(serviceModule.healthResponse.capabilities.includes("thumbnail.render.bundled-scene-bridge-adapter-module"));
+        assert.ok(serviceModule.healthResponse.capabilities.includes("thumbnail.render.bundled-scene-bridge-import-gate"));
         assert.deepEqual(body.browserFixtureRuntime, serviceModule.defaultBrowserFixtureRuntimeLifecycle);
         assertBrowserFixtureRuntimeLifecycle(body.browserFixtureRuntime);
         assertRuntimeAssetManifestScaffold(body.runtimeAssetManifest);
@@ -863,7 +899,70 @@ test("noop host exposes the P25.24 health contract", async () => {
         assertRuntimeAssetMaterializationApprovalPlan(body.runtimeAssetMaterializationApproval);
         assertBundledSceneBridgeContract(body.bundledSceneBridgeContract);
         assertBundledSceneBridgeAdapterModule(body.bundledSceneBridgeAdapterModule);
+        assert.deepEqual(body.bundledSceneBridgeImportGate, serviceModule.bundledSceneBridgeImportGate);
+        assertBundledSceneBridgeImportGate(body.bundledSceneBridgeImportGate);
     });
+});
+
+test("noop host reports configured P26.34 bundled scene bridge import gate without importing the adapter", async () => {
+    const service = await serviceModule.startRendererService({
+        port: 0,
+        bundledSceneBridgeImportGate: {
+            configured: true,
+            value: "import-gate",
+        },
+    });
+    try {
+        const response = await fetch(`http://${service.host}:${service.port}/health`);
+
+        assert.equal(response.status, 200);
+        const body = await response.json();
+        const gate = assertBundledSceneBridgeImportGate(body.bundledSceneBridgeImportGate, {
+            status: "configured-disabled",
+            configured: true,
+            requested: true,
+        });
+        assert.equal(gate.valid, true);
+        assert.equal(gate.configuration.accepted, true);
+        assert.deepEqual(gate.diagnosticCodes, [
+            "renderer_service_bundled_scene_bridge_import_gate_defined_disabled",
+        ]);
+    } finally {
+        await service.stop();
+    }
+});
+
+test("noop host reports invalid P26.34 bundled scene bridge import gate diagnostics", async () => {
+    const service = await serviceModule.startRendererService({
+        port: 0,
+        bundledSceneBridgeImportGate: {
+            configured: true,
+            value: "enabled",
+        },
+    });
+    try {
+        const response = await fetch(`http://${service.host}:${service.port}/health`);
+
+        assert.equal(response.status, 200);
+        const body = await response.json();
+        const gate = body.bundledSceneBridgeImportGate;
+        assert.equal(gate.status, "invalid");
+        assert.equal(gate.configured, true);
+        assert.equal(gate.requested, false);
+        assert.equal(gate.valid, false);
+        assert.equal(gate.configuration.valueRead, false);
+        assert.equal(gate.configuration.valuesIncluded, false);
+        assert.deepEqual(gate.diagnosticCodes, [
+            "renderer_service_bundled_scene_bridge_import_gate_configuration_invalid",
+        ]);
+        assert.equal(gate.diagnostics[0].field, "mode");
+        assert.equal(gate.diagnostics[0].valueRead, false);
+        assert.equal(gate.diagnostics[0].valuesIncluded, false);
+        assert.equal(gate.omitted.configuredValue, true);
+        assert.equal(JSON.stringify(gate).includes("enabled"), false);
+    } finally {
+        await service.stop();
+    }
 });
 
 test("noop host exposes the disabled P26.33 bundled scene bridge adapter module boundary", async () => {
@@ -3029,6 +3128,38 @@ test("noop host rejects unsafe P26.33 bundled scene bridge adapter module readin
         assert.equal(body.code, "renderer_service_response_invalid");
         assert.equal(body.field, "bundledSceneBridgeAdapterModule.moduleImported");
         assert.match(body.message, /bundledSceneBridgeAdapterModule\.moduleImported must match false/);
+    } finally {
+        await service.stop();
+    }
+});
+
+test("noop host rejects unsafe P26.34 bundled scene bridge import gate metadata", async () => {
+    const service = await serviceModule.startRendererService({
+        port: 0,
+        thumbnailResponseOverride: (body) => ({
+            ...body,
+            bundledSceneBridgeImportGate: {
+                ...body.bundledSceneBridgeImportGate,
+                gate: {
+                    ...body.bundledSceneBridgeImportGate.gate,
+                    importAttempted: true,
+                },
+                sideEffects: {
+                    ...body.bundledSceneBridgeImportGate.sideEffects,
+                    runtimeAdapterImported: true,
+                },
+            },
+        }),
+    });
+    try {
+        const response = await postValidFileThumbnail(service.host, service.port);
+
+        assert.equal(response.status, 500);
+        const body = await response.json();
+        assert.equal(body.status, "error");
+        assert.equal(body.code, "renderer_service_response_invalid");
+        assert.equal(body.field, "bundledSceneBridgeImportGate.gate.importAttempted");
+        assert.match(body.message, /bundledSceneBridgeImportGate\.gate\.importAttempted must match false/);
     } finally {
         await service.stop();
     }

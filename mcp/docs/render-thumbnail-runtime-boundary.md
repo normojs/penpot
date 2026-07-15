@@ -528,6 +528,15 @@ import it or register it. Health and thumbnail responses expose the module as
 `bundledSceneBridgeAdapterModule`, marking the boundary as defined while
 keeping browser startup, asset loading, backend/source-data reads, local
 writes, runtime registration, and value exposure disabled.
+P26.34 defines the explicit import gate before any adapter import is allowed.
+The gate is configured with
+`PENPOT_RENDERER_SERVICE_BUNDLED_SCENE_BRIDGE_RUNTIME=import-gate` and appears
+as `bundledSceneBridgeImportGate` in renderer-service responses plus
+`healthPreflight.bundledSceneBridgeImportGate` in CLI/MCP summaries. The gate
+is still closed: no module import, factory invocation, runtime registration,
+browser startup, asset loading, backend/source-data reads, local writes, or
+value exposure occurs. Conflicts with manual runtime modules, browser fixture
+runtime, or injected runtimes are reported as redacted diagnostics.
 
 ## Test Strategy
 

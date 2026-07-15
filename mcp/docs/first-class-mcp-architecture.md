@@ -4134,6 +4134,17 @@ import or register it. Health and thumbnail responses expose
 `bundledSceneBridgeAdapterModule` so MCP and CLI can see the boundary is
 defined while browser startup, asset loading, backend/source-data reads, local
 writes, runtime registration, and value exposure stay disabled.
+P26.34 adds the explicit bundled scene bridge import gate. Operators can
+request the future path with
+`PENPOT_RENDERER_SERVICE_BUNDLED_SCENE_BRIDGE_RUNTIME=import-gate`, and
+renderer-service reports the request as `bundledSceneBridgeImportGate`.
+Command-runtime carries the same redacted state to MCP and `penpot-cli render
+thumbnail` as `healthPreflight.bundledSceneBridgeImportGate`, while
+`penpot-cli renderer-service status/start` exposes the no-probe lifecycle
+configuration and conflict diagnostics. The gate remains closed: module
+import, factory invocation, browser startup, asset loading, runtime
+registration, backend/source-data reads, local writes, and value exposure stay
+disabled.
 
 ### 8.6 Advanced Tools
 
