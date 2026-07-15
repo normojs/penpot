@@ -842,7 +842,7 @@ export function createRenderThumbnailRendererServicePlan(options = EMPTY_OBJECT)
     const dataRequest = frameTarget
         ? {
               command: "get-file-frame-data-for-thumbnail",
-              status: "required-future-capability",
+              method: "GET",
               request: {
                   "file-id": contract.target.fileId,
                   "page-id": contract.target.pageId,
@@ -861,8 +861,6 @@ export function createRenderThumbnailRendererServicePlan(options = EMPTY_OBJECT)
                 ? "tagged-frame-cache-probe"
                 : "file-thumbnail-cache-probe"
             : null,
-        frameTarget ? "frame-source-data-provider" : null,
-        frameTarget ? "tagged-frame-resource-normalizer" : null,
     ].filter(Boolean);
     const optInConfiguration = createRenderThumbnailRendererServiceOptInConfiguration(options.optInConfiguration);
     const executionGate = createRenderThumbnailRendererServiceExecutionGate({
@@ -13933,7 +13931,7 @@ export function createRenderThumbnailRendererServiceIntegrationFixtureHarness(op
                 target: "frame",
                 cachePolicy: "refresh",
                 expectedPersistCommand: "create-file-object-thumbnail",
-                requires: ["frame-source-data-provider", "tagged-frame-resource-normalizer"],
+                requires: [],
             },
         },
     };

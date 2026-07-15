@@ -9,6 +9,7 @@
    [app.binfile.common :as bfc]
    [app.common.data :as d]
    [app.common.data.macros :as dm]
+   [app.common.exceptions :as ex]
    [app.common.features :as cfeat]
    [app.common.files.helpers :as cfh]
    [app.common.geom.shapes :as gsh]
@@ -94,6 +95,29 @@
 
 ;; We need to improve how we set frame for thumbnail in order to avoid
 ;; loading all pages into memory for find the frame set for thumbnail.
+
+(defn- filter-objects-for-thumbnail
+  [objects frame-id]
+  (d/index-by :id (cfh/get-children-with-self objects frame-id)))
+
+(defn get-file-frame-data-for-thumbnail
+  [{:keys [data]} page-id object-id]
+  (let [page  (dm/get-in data [:pages-index page-id])
+        page  (cond-> page (pmap/pointer-map? page) deref)
+        frame (dm/get-in page [:objects object-id])]
+    (when-not (some? page)
+      (ex/raise :type :not-found
+                :code :object-not-found
+                :hint "thumbnail page not found"))
+
+    (when-not (cfh/frame-shape? frame)
+      (ex/raise :type :not-found
+                :code :object-not-found
+                :hint "thumbnail frame not found"))
+
+    (-> page
+        (assoc :thumbnail-frame-id object-id)
+        (update :objects filter-objects-for-thumbnail object-id))))
 
 (defn get-file-data-for-thumbnail
   [{:keys [::db/conn] :as cfg} {:keys [data id] :as file} strip-frames-with-thumbnails]
@@ -217,6 +241,50 @@
                     :revn (:revn file)
                     :page (get-file-data-for-thumbnail cfg file strip-frames-with-thumbnails)}))))
 
+;; --- COMMAND QUERY: get-file-frame-data-for-thumbnail
+
+(def ^:private
+  schema:get-file-frame-data-for-thumbnail
+  [:map {:title "get-file-frame-data-for-thumbnail"}
+   [:file-id ::sm/uuid]
+   [:page-id ::sm/uuid]
+   [:object-id ::sm/uuid]])
+
+(def ^:private
+  schema:partial-frame-file
+  [:map {:title "PartialFrameFile"}
+   [:file-id ::sm/uuid]
+   [:revn {:min 0} ::sm/int]
+   [:page-id ::sm/uuid]
+   [:object-id ::sm/uuid]
+   [:page [:map-of :keyword ::sm/any]]])
+
+(sv/defmethod ::get-file-frame-data-for-thumbnail
+  "Retrieves explicit frame data for generate a tagged frame thumbnail."
+  {::doc/added "2.9"
+   ::doc/module :files
+   ::sm/params schema:get-file-frame-data-for-thumbnail
+   ::sm/result schema:partial-frame-file}
+  [cfg {:keys [::rpc/profile-id file-id page-id object-id]}]
+  (db/run! cfg (fn [{:keys [::db/conn] :as cfg}]
+                 (files/check-read-permissions! conn profile-id file-id)
+                 (let [team (teams/get-team conn
+                                            :profile-id profile-id
+                                            :file-id file-id)
+                       file (bfc/get-file cfg file-id
+                                          :include-deleted? true
+                                          :realize? true
+                                          :read-only? true)]
+
+                   (-> (cfeat/get-team-enabled-features cf/flags team)
+                       (cfeat/check-file-features! (:features file)))
+
+                   {:file-id file-id
+                    :revn (:revn file)
+                    :page-id page-id
+                    :object-id object-id
+                    :page (get-file-frame-data-for-thumbnail file page-id object-id)}))))
+
 ;; --- COMMAND QUERY: get-file-thumbnail
 
 (def ^:private
@@ -330,7 +398,9 @@
 
   (db/run! cfg files/check-edition-permissions! profile-id file-id)
   (when-let [file (files/get-minimal-file cfg file-id {::db/check-deleted false})]
-    (create-file-object-thumbnail! cfg file object-id media (or tag "frame"))))
+    (let [thumb (create-file-object-thumbnail! cfg file object-id media (or tag "frame"))]
+      {:uri (files/resolve-public-uri (:media-id thumb))
+       :id (:media-id thumb)})))
 
 ;; --- MUTATION COMMAND: delete-file-object-thumbnail
 

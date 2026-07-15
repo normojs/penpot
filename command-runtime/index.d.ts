@@ -741,7 +741,7 @@ export interface RenderThumbnailRendererServicePlan {
                   }
                 | {
                       command: "get-file-frame-data-for-thumbnail";
-                      status: "required-future-capability";
+                      method: "GET";
                       request: {
                           "file-id": string | null;
                           "page-id": string | null;

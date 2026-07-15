@@ -10311,8 +10311,7 @@ test("render.thumbnail renderer-service API fixtures define planning requests wi
     assert.equal(fixtures.runtimeRegistration.cliCommandRegistered, true);
     assert.equal(fixtures.runtimeRegistration.runtimeExecutionRegistered, false);
     assert.ok(fixtures.registrationGates.allTargets.includes("thumbnail-renderer-service-implementation"));
-    assert.ok(fixtures.registrationGates.frame.includes("frame-source-data-provider"));
-    assert.ok(fixtures.registrationGates.frame.includes("tagged-frame-resource-normalizer"));
+    assert.ok(fixtures.registrationGates.frame.includes("tagged-frame-cache-probe"));
 
     for (const fixture of fixtures.cases) {
         await t.test(fixture.id, () => {
@@ -10345,7 +10344,7 @@ test("render.thumbnail renderer-service API fixtures define planning requests wi
                     fixture.serviceRequest.target.objectKey,
                     `${contract.target.fileId}/${contract.target.pageId}/${contract.target.objectId}/${contract.target.tag}`
                 );
-                assert.ok(fixture.requiredCapabilities.includes("frame-source-data-provider"));
+                assert.deepEqual(fixture.requiredCapabilities, []);
             }
             assert.equal(fixture.expectedResponse.status, "ok");
             assert.match(fixture.expectedResponse.resource.resourceUri, /^\/assets\/by-id\//);
@@ -11677,13 +11676,12 @@ test("render.thumbnail renderer-service plan exposes dry-run client request whil
     assert.equal(plan.artifact.height, 200);
     assert.equal(plan.cache.key, "file-1/page-1/frame-1/component");
     assert.equal(plan.serviceRequest.backendRpc.data.command, "get-file-frame-data-for-thumbnail");
-    assert.equal(plan.serviceRequest.backendRpc.data.status, "required-future-capability");
+    assert.equal(plan.serviceRequest.backendRpc.data.method, "GET");
     assert.equal(plan.serviceRequest.backendRpc.persist.command, "create-file-object-thumbnail");
     assert.equal(plan.serviceRequest.render.required, true);
     assert.deepEqual(plan.requires, []);
     assert.ok(plan.requiredCapabilities.includes("thumbnail-renderer-service-implementation"));
-    assert.ok(plan.requiredCapabilities.includes("frame-source-data-provider"));
-    assert.ok(plan.requiredCapabilities.includes("tagged-frame-resource-normalizer"));
+    assert.ok(!plan.requiredCapabilities.includes("tagged-frame-resource-normalizer"));
     assert.equal(plan.diagnostics.adapterBoundary, "renderer-service-dry-run");
     assert.equal(plan.diagnostics.runtimeExecutionRegistered, true);
     assert.equal(plan.diagnostics.availabilityProbe, "metadata-only");

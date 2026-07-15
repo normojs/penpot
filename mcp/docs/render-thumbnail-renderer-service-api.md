@@ -9,16 +9,21 @@ only when the renderer-service endpoint and explicit `renderer-service` opt-in
 are configured; dry-run planning remains network-free. CLI `--output` downloads
 the normalized `downloadUri`, while MCP returns resource metadata only. The
 later slices add backend cache probe execution, source-data reads, source-data
-render input summaries, and an injectable renderer runtime adapter on the
-gated file-thumbnail path; thumbnail persistence writes remain disabled and
-manual hosts without a renderer adapter keep the no-op PNG path. P26.14 adds
-an explicit local runtime module registration boundary for manual hosts via
-`PENPOT_RENDERER_SERVICE_RUNTIME_MODULE`.
+render input summaries, an injectable renderer runtime adapter, manual runtime
+module registration, configured file-thumbnail persistence, tagged-frame
+refresh source-data reads, adapter renders, and tagged-frame refresh
+persistence. P26.14 adds an explicit local runtime module registration
+boundary for manual hosts via `PENPOT_RENDERER_SERVICE_RUNTIME_MODULE`, P26.15
+persists successful file runtime adapter renders through backend
+`create-file-thumbnail`, P26.16 executes tagged-frame refresh source-data reads
+through `get-file-frame-data-for-thumbnail`, and P26.17 persists successful
+tagged-frame adapter renders through backend `create-file-object-thumbnail`.
 P26.5 adds a token-safe `backendRpcClient` plan to renderer-service thumbnail
 responses so backend data/cache/persist endpoints are normalized for staged
 execution. That plan now feeds the executable file-thumbnail cache probe,
-source-data read path, and injected renderer runtime adapter boundary, while
-persistence writes remain disabled.
+source-data read path, injected renderer runtime adapter boundary,
+file-thumbnail persistence path, and the tagged-frame refresh source-data,
+render, and persistence path.
 P26.6 extends each planned backend RPC entry with a disabled request envelope
 that fixes the future GET query and POST JSON body key shapes without exposing
 request values, media values, token values, or enabling network dispatch.
@@ -33,13 +38,14 @@ P26.9 adds a disabled `backendRpcClient.cacheProbe` plan for reuse requests,
 recording the future cache lookup strategy, identity keys, hit/miss shape, and
 false cache-read/network-dispatch/value flags without reading caches or
 returning cached resources.
-P26.12 adds `backendRpcClient.renderInput` after successful configured
-file-thumbnail source-data reads. The summary records the render handoff
-envelope with cache/artifact/runtime metadata and hard false source-data,
-page, artifact, media, and token value flags; cache hits, unconfigured
-requests, and tagged-frame requests keep `renderInput:null`.
-P26.13 adds an explicit renderer runtime adapter execution boundary after
-successful configured file-thumbnail source-data reads. Injected adapters
+P26.12/P26.16 add `backendRpcClient.renderInput` after successful configured
+file-thumbnail or tagged-frame refresh source-data reads. The summary records
+the render handoff envelope with cache/artifact/runtime metadata and hard false
+source-data, page, artifact, media, and token value flags; cache hits,
+unconfigured requests, and tagged-frame reuse requests keep `renderInput:null`.
+P26.13/P26.16 add an explicit renderer runtime adapter execution boundary
+after successful configured file-thumbnail or tagged-frame refresh source-data
+reads. Injected adapters
 receive validated source data internally and return PNG bytes that are stored
 only in memory and served by resource URL. Responses mark
 `backendRpcClient.pipeline.renderDispatch:true`,
@@ -59,9 +65,10 @@ first executable slice. The renderer-service package, health/no-op host, MCP
 tool path, and `penpot-cli render thumbnail` path are materialized and
 registered. Execution remains explicit and narrow: callers must provide a
 renderer-service endpoint and set the `renderer-service` opt-in, dry runs stay
-network-free, the renderer service returns fixture PNG resource metadata, and
-no backend thumbnail RPC persistence is attempted by this slice. Earlier P25
-metadata remains useful as audit history for the gates that led to this
+network-free, and manual hosts without an adapter keep the fixture PNG path.
+Later P26 slices execute backend cache reads, source-data reads, adapter
+rendering, and thumbnail persistence behind the same explicit gate. Earlier
+P25 metadata remains useful as audit history for the gates that led to this
 execution boundary.
 
 Historical status: P25.64 API fixtures, MCP/CLI dry-run/client boundaries,
@@ -321,8 +328,8 @@ token-free. The renderer-service no-op host returns only auth presence metadata
 P25.151 validates backend RPC intent metadata before no-op rendering. Requests
 must include `backendRpc.data` matching the target kind
 (`get-file-data-for-thumbnail` with `GET` for file thumbnails, or
-`get-file-frame-data-for-thumbnail` with `required-future-capability` status for
-frame thumbnails). Refresh requests must provide `backendRpc.persist`, reuse
+`get-file-frame-data-for-thumbnail` with `GET` for frame thumbnails). Refresh
+requests must provide `backendRpc.persist`, reuse
 requests must provide `backendRpc.cacheMissPersist`, and those persist entries
 must target `create-file-thumbnail` or `create-file-object-thumbnail` with
 `POST` as appropriate. The service echoes only command/method/request-presence
@@ -458,6 +465,41 @@ render-wasm/frontend rasterizer scene rendering, tagged-frame source-data
 reads, thumbnail persistence writes, local file writes, source-data/page
 values, artifact byte exposure, media values, and credential values remain
 disabled or redacted.
+
+P26.15 executes file-thumbnail persistence after a configured file source-data
+read and runtime adapter render succeed. The service sends backend
+`create-file-thumbnail` as a multipart upload with `file-id` and `revn` in the
+query and rendered PNG bytes in the `media` form field, validates the backend
+`{id, uri}` response, returns that backend resource metadata, and marks
+`backendRpcClient.status:"persist-executed"`. `backendRpcClient.persistOutput`
+records endpoint/command/stage metadata while keeping request values, media
+bytes, resource values, source-data/page values, and credentials redacted.
+Cache hits, manual hosts without an adapter, unconfigured requests, and
+tagged-frame requests stay out of this file-target persistence slice; P26.17
+adds the matching tagged-frame refresh persistence path.
+
+P26.16 executes tagged-frame refresh source-data reads and adapter renders.
+The backend exposes `get-file-frame-data-for-thumbnail` for a specific
+file/page/object frame, and renderer-service frame refresh requests now use a
+normal GET `backendRpc.data` entry instead of the earlier
+`required-future-capability` placeholder. The service validates the returned
+file/revision/page/object identity and frame object internally, passes a frame
+target plus redacted source-data envelope to `renderThumbnail`, returns adapter
+PNG bytes from an in-memory `/assets/by-id/{mediaId}` URL, and records
+`backendRpcClient.renderInput`/`renderOutput` metadata. Tagged-frame cache
+probes and persistence remain separate gates; request values, source-data/page
+values, media bytes, artifact bytes in JSON, and credentials remain redacted.
+
+P26.17 executes tagged-frame refresh persistence after a configured frame
+source-data read and runtime adapter render succeed. The service sends backend
+`create-file-object-thumbnail` as a multipart upload with `file-id`,
+`object-id`, and `tag` in the query and rendered PNG bytes in the `media` form
+field, validates the backend `{id, uri}` response, returns persisted backend
+resource metadata, and records target-specific `persistOutput` metadata with
+`identityKeys:["file-id","object-id","tag"]`. Tagged-frame cache probes,
+bundled real scene rendering, local file writes, request values, source-data
+and page values, media bytes in JSON, and credentials remain disabled or
+redacted.
 
 The P25.77 revocation appeal resolution enforcement evidence attestation
 notarization certification endorsement countersignature verification revocation
@@ -1382,11 +1424,11 @@ Successful response:
         "dispatch": false,
         "requestEnvelope": {
           "status": "planned-disabled",
-          "transport": "penpot-rpc-json",
+          "transport": "penpot-rpc-multipart",
           "method": "POST",
           "requestKeys": ["file-id", "media", "revn"],
-          "queryKeys": [],
-          "bodyKeys": ["file-id", "media", "revn"],
+          "queryKeys": ["file-id", "revn"],
+          "bodyKeys": ["media"],
           "requestValuesIncluded": false,
           "mediaValuesIncluded": false,
           "tokenValuesIncluded": false,
@@ -1442,7 +1484,8 @@ Successful response:
       "tokenValuesIncluded": false
     },
     "renderInput": null,
-    "renderOutput": null
+    "renderOutput": null,
+    "persistOutput": null
   }
 }
 ```
@@ -1504,6 +1547,35 @@ shape:
 }
 ```
 
+After P26.15 persists a rendered file thumbnail, the pipeline records
+`status:"persist-executed"`, `persistWrite:true`, and
+`backendRpcClient.persistOutput` has this metadata-only shape:
+
+```json
+{
+  "status": "persisted",
+  "condition": "after-render",
+  "entry": "persist",
+  "command": "create-file-thumbnail",
+  "endpoint": "https://penpot.example.test/api/main/methods/create-file-thumbnail?_fmt=json",
+  "targetKind": "file",
+  "identityKeys": ["file-id", "revn"],
+  "revisionSource": "backend-source-data",
+  "requestRevision": "matched",
+  "artifactFormat": "png",
+  "artifactMimeType": "image/png",
+  "artifactByteLength": 68,
+  "resourceFrom": "backend-create-file-thumbnail",
+  "persistWrite": true,
+  "localFileWrites": false,
+  "requestValuesIncluded": false,
+  "resourceValuesIncluded": false,
+  "mediaValuesIncluded": false,
+  "artifactValuesIncluded": false,
+  "tokenValuesIncluded": false
+}
+```
+
 MCP must return resource metadata only; it must not write files on the MCP
 server filesystem. CLI should return the same metadata, and a future
 `--output` flag may download the PNG resource locally.
@@ -1518,15 +1590,13 @@ gates remain before the renderer can be treated as fully implemented:
 - keep manual hosts no-op unless a renderer runtime adapter is explicitly
   injected or configured through `PENPOT_RENDERER_SERVICE_RUNTIME_MODULE`
 - keep file thumbnail cache probe execution limited to file reuse while
-  tagged-frame source-data loading remains pending
+  tagged-frame cache probing remains pending
 - replace the injected test adapter with a bundled render-wasm/frontend
   rasterizer runtime bridge before claiming real scene rendering
-- add thumbnail persistence writes only after rendered PNG bytes can be mapped
-  to backend `media` upload payloads safely
-- add or expose explicit frame source-data loading for tagged frame targets
-- normalize tagged frame media ids to resource URIs
-- keep response normalization covered by fixtures before persistence writes or
-  bundled runtime registration expand
+- keep thumbnail persistence limited to configured refresh/cache-miss adapter
+  render results
+- keep response normalization covered by fixtures before tagged-frame cache
+  probes or bundled runtime registration expand
 - extend MCP tests from dry-run/unavailable planning into auth forwarding,
   resource metadata, and renderer-service error responses
 - add CLI smoke tests for dry-run, execution metadata, `--output`, and missing

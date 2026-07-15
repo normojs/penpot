@@ -28,10 +28,13 @@ The host defaults to `127.0.0.1:6070`. Set
 `PENPOT_RENDERER_SERVICE_HOST` and `PENPOT_RENDERER_SERVICE_PORT` to override
 the bind address. Set `PENPOT_RENDERER_SERVICE_BACKEND_URI`, or
 `PENPOT_BACKEND_URI` as a fallback, to expose backend RPC endpoint planning
-metadata in thumbnail responses. File-target cache probes and source-data reads
-run only on the gated thumbnail path. Set
+metadata in thumbnail responses. File-target cache probes, file source-data
+reads, and tagged-frame refresh source-data reads run only on the gated
+thumbnail path. Set
 `PENPOT_RENDERER_SERVICE_RUNTIME_MODULE` to an absolute local path or `file:`
 URL for an ES module that exports `renderThumbnail`; default manual hosts keep
-the fixture PNG path. Manual hosts do not bundle a render-wasm bridge yet, so
-tagged-frame source-data reads, thumbnail persistence, and bundled real scene
-rendering remain disabled.
+the fixture PNG path. When a configured file-target or tagged-frame refresh
+request renders through an adapter, the host can persist the PNG through the
+matching backend thumbnail RPC and return backend resource metadata. Manual
+hosts do not bundle a render-wasm bridge yet, so bundled real scene rendering
+remains disabled.

@@ -400,7 +400,11 @@
                              (assoc :size 7923))))
           out  (th/command! data)]
       (t/is (nil? (:error out)))
-      (t/is (map? (:result out))))
+      (t/is (map? (:result out)))
+      (let [media-id (get-in out [:result :id])]
+        (t/is (uuid? media-id))
+        (t/is (= (clojure.core/str (cf/get :public-uri) "/assets/by-id/" media-id)
+                 (get-in out [:result :uri])))))
 
     (let [data (update data :media
                        (fn [media]
@@ -409,4 +413,8 @@
                              (assoc :size 312043))))
           out  (th/command! data)]
       (t/is (nil? (:error out)))
-      (t/is (map? (:result out))))))
+      (t/is (map? (:result out)))
+      (let [media-id (get-in out [:result :id])]
+        (t/is (uuid? media-id))
+        (t/is (= (clojure.core/str (cf/get :public-uri) "/assets/by-id/" media-id)
+                 (get-in out [:result :uri])))))))

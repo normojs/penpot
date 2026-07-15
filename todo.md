@@ -265,7 +265,21 @@ configured local ES module runtime adapter from
 reports no-import/no-dispatch module metadata. Bundled render-wasm/frontend
 rasterizer scene rendering, thumbnail persistence, tagged-frame source-data,
 local file writes, source-data/page value exposure, artifact byte exposure,
-media value exposure, and credential value exposure remain disabled.
+media value exposure, and credential value exposure remain disabled. P26.15 is
+complete: configured file-target refreshes and reuse cache misses now POST
+runtime PNG bytes to backend `create-file-thumbnail` after render, return the
+persisted backend resource URI, and expose token-safe `backendRpcClient`
+`persist-executed`/`persistOutput` metadata while keeping media bytes,
+request values, source data, and credentials redacted. P26.16 is complete:
+configured tagged-frame refreshes now call backend
+`get-file-frame-data-for-thumbnail`, pass validated frame target/source-data to
+the runtime adapter, and return adapter PNGs from in-memory resource URLs.
+P26.17 is complete: configured tagged-frame refresh renders now POST runtime
+PNG bytes to backend `create-file-object-thumbnail`, return persisted backend
+resource metadata, and expose target-specific token-safe
+`backendRpcClient.persistOutput` metadata while keeping frame cache probes,
+media bytes, request values, source data, and credentials disabled or
+redacted.
 P25.7 is complete: thumbnail renderer-service API fixtures now define
 future file refresh, file reuse, tagged frame refresh, auth forwarding,
 resource URI normalization, and MCP/CLI test expectations. P25.8 is complete:
@@ -913,6 +927,9 @@ process boundary before MCP or CLI execution is enabled.
 | P26.12 | done | Add source-data render input summary before no-op rendering | `renderer-service`, `mcp/docs`, `todo.md`, `CHANGES.md` | Completed 2026-07-14; source-data-read file thumbnail responses now include token-safe `backendRpcClient.renderInput` metadata, cache hits keep `renderInput:null`, and response validation rejects leaked render input values | Prepares the renderer execution handoff without rendering scene data, persisting thumbnails, exposing source-data/page/artifact/media/credential values, or enabling tagged-frame source-data reads |
 | P26.13 | done | Execute injected renderer runtime adapter after file source-data reads | `renderer-service`, `mcp/docs`, `todo.md`, `CHANGES.md` | Completed 2026-07-14; renderer-service tests inject a runtime adapter that receives validated file source data internally, returns PNG bytes served from an in-memory resource URL, marks render dispatch executed, and keeps cache-hit short-circuiting intact | Enables the render stage boundary without thumbnail persistence, tagged-frame source-data reads, local file writes, source-data/page/artifact/media/credential value exposure, or a bundled render-wasm bridge |
 | P26.14 | done | Add manual runtime adapter module registration | `renderer-service`, `penpot-cli`, `mcp/docs`, `todo.md`, `CHANGES.md` | Completed 2026-07-14; manual renderer-service startup can import an explicit local ES module from `PENPOT_RENDERER_SERVICE_RUNTIME_MODULE`, CLI lifecycle plans expose the configured module path without importing or dispatching, and tests cover module execution plus invalid export rejection | Opens a manual registration path for future render-wasm/frontend bridges without bundled real scene rendering, thumbnail persistence, tagged-frame source-data reads, local file writes, source-data/page/artifact/media/credential value exposure, or CLI process spawning |
+| P26.15 | done | Persist rendered file thumbnails through backend RPC | `renderer-service`, `mcp/docs`, `todo.md`, `CHANGES.md` | Completed 2026-07-14; after configured file source-data reads and runtime adapter render success, the renderer-service posts PNG bytes as multipart `media` to backend `create-file-thumbnail`, validates the backend `{id, uri}` response, returns the persisted resource metadata, and marks `backendRpcClient.status:"persist-executed"` with `persistOutput` redaction metadata | Enables file-thumbnail persistence while keeping tagged-frame source-data/persistence, bundled real scene rendering, local file writes, request/media/source-data/page/credential value exposure, and CLI process spawning disabled |
+| P26.16 | done | Execute tagged-frame source-data reads and adapter renders | `backend`, `renderer-service`, `command-runtime`, `mcp/docs`, `todo.md`, `CHANGES.md` | Completed 2026-07-14; added backend `get-file-frame-data-for-thumbnail`, renderer-service execution for configured frame refresh requests, frame-aware runtime adapter inputs, token-safe `renderInput`/`renderOutput` summaries, and CLI/MCP request fixtures that use GET instead of future-capability placeholders | Enables tagged-frame refresh rendering through injected/manual adapters while keeping tagged-frame cache probes, `create-file-object-thumbnail` persistence writes, bundled real scene rendering, local file writes, request/media/source-data/page/credential value exposure, and CLI process spawning disabled |
+| P26.17 | done | Persist rendered tagged-frame thumbnails through backend RPC | `renderer-service`, `command-runtime`, `mcp/docs`, `todo.md`, `CHANGES.md` | Completed 2026-07-14; after configured frame source-data reads and runtime adapter render success, the renderer-service posts PNG bytes as multipart `media` to backend `create-file-object-thumbnail` with file/object/tag identity, validates the backend `{id, uri}` response, returns persisted backend resource metadata, and marks `backendRpcClient.status:"persist-executed"` with frame-specific `persistOutput` redaction metadata | Enables tagged-frame refresh persistence while keeping tagged-frame cache probes, bundled real scene rendering, local file writes, request/media/source-data/page/credential value exposure, and CLI process spawning disabled |
 
 P26.1 is complete: `@penpot/renderer-service` is a private pnpm workspace
 package with a real no-op HTTP lifecycle. Its TypeScript output is written to
@@ -994,24 +1011,26 @@ checks file read permissions and returns token-safe cache metadata for
 `(file-id, revn)` hits. The renderer-service calls that RPC only when a backend
 planning URI is configured and the request is a file-target `reuse` request;
 cache hits return normalized resource metadata, and cache misses continue the
-existing no-op render response. Tagged-frame cache probes, source-data reads,
-real scene rendering, thumbnail persistence, and credential/media value
-exposure remain out of scope.
+existing no-op render response. Tagged-frame cache probes remain out of scope;
+tagged-frame refresh source-data/render execution is added later by P26.16.
+Real bundled scene rendering, thumbnail persistence for tagged frames, and
+credential/media value exposure remain out of scope.
 
 P26.11 is complete: this slice executes the first backend source-data read for
 file thumbnail requests that still need rendering. Refresh requests read
 `get-file-data-for-thumbnail` after request validation; reuse requests read it
 only after the configured cache probe misses. Cache hits remain short-circuited,
-tagged-frame source-data loading remains a future capability, and the response
-exposes only execution metadata, not page/source-data, credential, media, or
-rendered artifact values.
+and the response exposes only execution metadata, not page/source-data,
+credential, media, or rendered artifact values. Tagged-frame refresh
+source-data loading remains out of this slice and is added later by P26.16.
 
 P26.12 is complete: this slice adds a renderer-service render input summary
 after successful file thumbnail source-data reads. The summary identifies the
 validated file/revision/cache/artifact envelope that future rendering will
-consume, remains absent for cache hits and unconfigured/tagged-frame requests,
-and keeps real render dispatch, thumbnail persistence, page/source-data,
-artifact bytes, media values, and credential values disabled.
+consume, remains absent for cache hits, unconfigured requests, and
+tagged-frame requests until P26.16, and keeps real render dispatch, thumbnail
+persistence, page/source-data, artifact bytes, media values, and credential
+values disabled.
 
 P26.13 is complete: this slice adds a renderer-service runtime adapter hook
 after successful file thumbnail source-data reads. The adapter is injected by
@@ -1019,8 +1038,9 @@ tests/future hosts, receives validated source-data internally, returns PNG
 bytes that the service stores only in memory and serves by resource URL, and
 updates response pipeline metadata to prove the render stage executed. The
 default manual host remains no-op unless an adapter is configured; persistence,
-tagged-frame source-data reads, local file writes, source-data/page values,
-artifact bytes in JSON, media values, and credential values stay disabled.
+tagged-frame source-data/render execution, local file writes, source-data/page
+values, artifact bytes in JSON, media values, and credential values stay
+disabled until later slices.
 
 P26.14 is complete: this slice adds explicit manual runtime adapter module
 registration. `PENPOT_RENDERER_SERVICE_RUNTIME_MODULE` accepts an absolute
@@ -1029,8 +1049,35 @@ manual host imports it at startup and then reuses the P26.13 adapter execution
 and response validation path. `penpot-cli renderer-service status/start`
 reports the configured module as no-import/no-dispatch lifecycle metadata.
 Bundled render-wasm/frontend rasterizer scene rendering, thumbnail persistence,
-tagged-frame source-data reads, local file writes, source-data/page values,
-artifact bytes in JSON, media values, and credential values stay disabled.
+tagged-frame persistence, local file writes, source-data/page values, artifact
+bytes in JSON, media values, and credential values stay disabled.
+
+P26.15 is complete: this slice persists rendered file thumbnails after the
+runtime adapter returns PNG bytes. The renderer-service posts a multipart
+`media` upload to backend `create-file-thumbnail`, validates the backend
+`{id, uri}` resource response, returns that persisted resource metadata, and
+marks the backend pipeline `persist-executed` with a token-safe
+`backendRpcClient.persistOutput` summary. Tagged-frame source-data and
+persistence, bundled real scene rendering, local file writes,
+request/media/source-data/page values, artifact bytes in JSON, and credential
+values stay disabled or redacted.
+
+P26.16 is complete: this slice adds configured tagged-frame source-data reads
+and adapter rendering. The backend exposes `get-file-frame-data-for-thumbnail`
+for a specific file/page/object frame, renderer-service validates the returned
+frame source-data internally, passes a frame target to the runtime adapter, and
+returns adapter PNG bytes from an in-memory resource URL with token-safe
+`renderInput`/`renderOutput` metadata.
+
+P26.17 is complete: this slice persists rendered tagged-frame refresh
+thumbnails after the runtime adapter returns PNG bytes. The renderer-service
+posts a multipart `media` upload to backend `create-file-object-thumbnail`
+with `file-id`, object key, and tag identity, validates the backend `{id, uri}`
+resource response, returns persisted backend resource metadata, and records
+frame-specific `backendRpcClient.persistOutput` metadata. Tagged-frame cache
+probes, bundled real scene rendering, local file writes,
+request/media/source-data/page values, artifact bytes in JSON, and credentials
+stay disabled or redacted.
 
 ## Maintenance: Build Cache Hygiene
 

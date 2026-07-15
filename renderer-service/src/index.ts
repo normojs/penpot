@@ -15,11 +15,21 @@ export type RendererBackendRpcClientOptions = {
 };
 
 export type RendererRuntimeRenderInput = {
-    target: {
-        kind: "file";
-        fileId: string;
-        revn: number | null;
-    };
+    target:
+        | {
+              kind: "file";
+              fileId: string;
+              revn: number | null;
+          }
+        | {
+              kind: "frame";
+              fileId: string;
+              pageId: string;
+              objectId: string;
+              objectKey: string;
+              tag: string;
+              revn: null;
+          };
     artifact: {
         format: "png";
         mimeType: "image/png";
@@ -29,7 +39,7 @@ export type RendererRuntimeRenderInput = {
     };
     cache: {
         policy: "reuse" | "refresh";
-        scope: "file-thumbnail";
+        scope: "file-thumbnail" | "file-object-thumbnail";
         key: string;
     };
     render: {
@@ -39,6 +49,10 @@ export type RendererRuntimeRenderInput = {
     sourceData: {
         fileId: string;
         revn: number;
+        pageId?: string;
+        objectId?: string;
+        objectKey?: string;
+        tag?: string;
         page: Record<string, unknown>;
     };
 };
@@ -85,9 +99,12 @@ export const healthResponse = {
         "thumbnail.backend-rpc.pipeline-plan",
         "thumbnail.backend-rpc.file-cache-probe",
         "thumbnail.backend-rpc.file-source-data-read",
+        "thumbnail.backend-rpc.frame-source-data-read",
         "thumbnail.backend-rpc.file-render-input-summary",
         "thumbnail.render.runtime-adapter",
         "thumbnail.render.runtime-module",
+        "thumbnail.backend-rpc.file-thumbnail-persist",
+        "thumbnail.backend-rpc.frame-thumbnail-persist",
     ],
 } as const;
 
@@ -156,7 +173,7 @@ type BackendRpcSummary = {
 
 type BackendRpcRequestEnvelopeSummary = {
     status: "planned-disabled";
-    transport: "penpot-rpc-json";
+    transport: "penpot-rpc-json" | "penpot-rpc-multipart";
     method: string | null;
     requestKeys: string[];
     queryKeys: string[];
@@ -206,7 +223,7 @@ type BackendRpcPipelineStageSummary = {
 };
 
 type BackendRpcPipelineSummary = {
-    status: "planned-disabled" | "cache-probe-executed" | "source-data-read-executed" | "render-executed";
+    status: "planned-disabled" | "cache-probe-executed" | "source-data-read-executed" | "render-executed" | "persist-executed";
     cachePolicy: ThumbnailRequestSummary["cachePolicy"];
     cacheHitShortCircuit: boolean;
     orderedStages: BackendRpcPipelineStageSummary[];
@@ -214,7 +231,7 @@ type BackendRpcPipelineSummary = {
     cacheRead: boolean;
     dataRead: boolean;
     renderDispatch: boolean;
-    persistWrite: false;
+    persistWrite: boolean;
     sourceDataValuesIncluded: false;
     artifactValuesIncluded: false;
     tokenValuesIncluded: false;
@@ -225,10 +242,10 @@ type BackendRpcRenderInputSummary = {
     condition: "after-source-data-read";
     sourceDataRead: true;
     sourceDataEndpoint: string;
-    targetKind: "file";
-    identityKeys: ["file-id", "revn"];
+    targetKind: ThumbnailRequestSummary["targetKind"];
+    identityKeys: ["file-id", "revn"] | ["file-id", "page-id", "object-id"];
     revisionSource: "backend-source-data";
-    requestRevision: "matched" | "not-provided";
+    requestRevision: "matched" | "not-provided" | "resolved";
     revisionValueIncluded: false;
     cachePolicy: ThumbnailRequestSummary["cachePolicy"];
     cacheScope: ThumbnailRequestSummary["cacheScope"];
@@ -264,14 +281,37 @@ type BackendRpcRenderOutputSummary = {
     tokenValuesIncluded: false;
 };
 
+type BackendRpcPersistOutputSummary = {
+    status: "persisted";
+    condition: "after-render";
+    entry: "persist" | "cacheMissPersist";
+    command: "create-file-thumbnail" | "create-file-object-thumbnail";
+    endpoint: string;
+    targetKind: ThumbnailRequestSummary["targetKind"];
+    identityKeys: ["file-id", "revn"] | ["file-id", "object-id", "tag"];
+    revisionSource: "backend-source-data";
+    requestRevision: "matched" | "resolved";
+    artifactFormat: "png";
+    artifactMimeType: "image/png";
+    artifactByteLength: number;
+    resourceFrom: "backend-create-file-thumbnail" | "backend-create-file-object-thumbnail";
+    persistWrite: true;
+    localFileWrites: false;
+    requestValuesIncluded: false;
+    resourceValuesIncluded: false;
+    mediaValuesIncluded: false;
+    artifactValuesIncluded: false;
+    tokenValuesIncluded: false;
+};
+
 type BackendRpcClientSummary = {
-    status: "not-configured" | "configured-disabled" | "cache-probe-executed" | "source-data-read-executed" | "render-executed";
+    status: "not-configured" | "configured-disabled" | "cache-probe-executed" | "source-data-read-executed" | "render-executed" | "persist-executed";
     baseUriConfigured: boolean;
     baseUri: string | null;
     networkDispatch: boolean;
     cacheRead: boolean;
     dataRead: boolean;
-    persistWrite: false;
+    persistWrite: boolean;
     authForwarding: AuthSummary;
     entries: {
         data: BackendRpcClientEntrySummary;
@@ -282,6 +322,7 @@ type BackendRpcClientSummary = {
     pipeline: BackendRpcPipelineSummary;
     renderInput: BackendRpcRenderInputSummary | null;
     renderOutput: BackendRpcRenderOutputSummary | null;
+    persistOutput: BackendRpcPersistOutputSummary | null;
 };
 
 type BackendRpcCacheProbeExecution = {
@@ -306,6 +347,18 @@ type ThumbnailRenderExecution = {
     resourceUri: string | null;
     runtime: NonNullable<RendererRuntimeRenderResult["runtime"]> | null;
     fallbackUsed: boolean;
+    artifactByteLength: number | null;
+    bytes: Buffer | null;
+};
+
+type BackendRpcThumbnailPersistExecution = {
+    executed: boolean;
+    endpoint: string | null;
+    entry: "persist" | "cacheMissPersist" | null;
+    command: "create-file-thumbnail" | "create-file-object-thumbnail" | null;
+    mediaId: string | null;
+    resourceUri: string | null;
+    downloadUri: string | null;
     artifactByteLength: number | null;
 };
 
@@ -689,14 +742,7 @@ function validateThumbnailRequest(body: unknown): ThumbnailRequestSummary {
     const data = requireRecord(backendRpc.data, "backendRpc.data", "renderer_service_backend_rpc_data_invalid");
     const expectedDataCommand = targetKind === "file" ? "get-file-data-for-thumbnail" : "get-file-frame-data-for-thumbnail";
     requireBackendRpcCommand(data, "backendRpc.data", expectedDataCommand, "renderer_service_backend_rpc_data_command_invalid");
-    if (targetKind === "file") {
-        requireBackendRpcMethod(data, "backendRpc.data", "GET", "renderer_service_backend_rpc_data_method_invalid");
-    } else if (data.status !== "required-future-capability") {
-        throw Object.assign(new Error("Renderer-service thumbnail request backendRpc.data.status must be required-future-capability for frame thumbnails."), {
-            code: "renderer_service_backend_rpc_data_status_invalid",
-            status: 400,
-        });
-    }
+    requireBackendRpcMethod(data, "backendRpc.data", "GET", "renderer_service_backend_rpc_data_method_invalid");
     if (!isRecord(data.request)) {
         throw Object.assign(new Error("Renderer-service thumbnail request backendRpc.data.request must be a JSON object."), {
             code: "renderer_service_backend_rpc_data_request_invalid",
@@ -882,12 +928,32 @@ function cacheProbeNotExecuted(baseUri: string | null): BackendRpcCacheProbeExec
     };
 }
 
-function sourceDataReadNotExecuted(baseUri: string | null): BackendRpcSourceDataReadExecution {
+function sourceDataReadCommand(summary: ThumbnailRequestSummary): "get-file-data-for-thumbnail" | "get-file-frame-data-for-thumbnail" {
+    return summary.targetKind === "file" ? "get-file-data-for-thumbnail" : "get-file-frame-data-for-thumbnail";
+}
+
+function sourceDataReadNotExecuted(baseUri: string | null, summary: ThumbnailRequestSummary): BackendRpcSourceDataReadExecution {
     return {
         executed: false,
-        endpoint: backendRpcEndpoint(baseUri, "get-file-data-for-thumbnail"),
+        endpoint: backendRpcEndpoint(baseUri, sourceDataReadCommand(summary)),
         revn: null,
         sourceData: null,
+    };
+}
+
+function thumbnailPersistNotExecuted(
+    baseUri: string | null,
+    command: "create-file-thumbnail" | "create-file-object-thumbnail" | null = "create-file-thumbnail"
+): BackendRpcThumbnailPersistExecution {
+    return {
+        executed: false,
+        endpoint: command ? backendRpcEndpoint(baseUri, command) : null,
+        entry: null,
+        command,
+        mediaId: null,
+        resourceUri: null,
+        downloadUri: null,
+        artifactByteLength: null,
     };
 }
 
@@ -1012,7 +1078,7 @@ function parseBackendFileThumbnailCacheProbe(
     };
 }
 
-function parseBackendFileThumbnailSourceDataRead(
+function parseBackendThumbnailSourceDataRead(
     data: unknown,
     summary: ThumbnailRequestSummary,
     endpoint: string
@@ -1033,9 +1099,28 @@ function parseBackendFileThumbnailSourceDataRead(
     if (summary.revn !== null && revn !== summary.revn) {
         backendRpcError("Renderer-service backend source-data response revision does not match the request.", "renderer_service_backend_source_data_response_invalid", 502, true, "backendRpcClient.entries.data.response.revn");
     }
+    if (summary.targetKind === "frame") {
+        const pageId = backendResponseString(data, "pageId", "page-id");
+        if (pageId !== summary.pageId) {
+            backendRpcError("Renderer-service backend source-data response page id does not match the request.", "renderer_service_backend_source_data_response_invalid", 502, true, "backendRpcClient.entries.data.response.page-id");
+        }
+        const objectId = backendResponseString(data, "objectId", "object-id");
+        if (objectId !== summary.objectId) {
+            backendRpcError("Renderer-service backend source-data response object id does not match the request.", "renderer_service_backend_source_data_response_invalid", 502, true, "backendRpcClient.entries.data.response.object-id");
+        }
+    }
     const page = data.page;
     if (!isRecord(page)) {
         backendRpcError("Renderer-service backend source-data response page must be a JSON object.", "renderer_service_backend_source_data_response_invalid", 502, true, "backendRpcClient.entries.data.response.page");
+    }
+    if (summary.targetKind === "frame") {
+        const objects = page.objects;
+        if (!isRecord(objects)) {
+            backendRpcError("Renderer-service backend frame source-data response page.objects must be a JSON object.", "renderer_service_backend_source_data_response_invalid", 502, true, "backendRpcClient.entries.data.response.page.objects");
+        }
+        if (!summary.objectId || !isRecord(objects[summary.objectId])) {
+            backendRpcError("Renderer-service backend frame source-data response must include the requested frame object.", "renderer_service_backend_source_data_response_invalid", 502, true, "backendRpcClient.entries.data.response.page.objects.object-id");
+        }
     }
 
     return {
@@ -1045,8 +1130,60 @@ function parseBackendFileThumbnailSourceDataRead(
         sourceData: {
             fileId: summary.fileId,
             revn,
+            ...(summary.targetKind === "frame"
+                ? {
+                      pageId: summary.pageId ?? undefined,
+                      objectId: summary.objectId ?? undefined,
+                      objectKey: summary.objectKey ?? undefined,
+                      tag: summary.tag ?? undefined,
+                  }
+                : {}),
             page,
         },
+    };
+}
+
+function parseBackendThumbnailPersist(
+    data: unknown,
+    endpoint: string,
+    entry: "persist" | "cacheMissPersist",
+    command: "create-file-thumbnail" | "create-file-object-thumbnail",
+    artifactByteLength: number
+): BackendRpcThumbnailPersistExecution {
+    if (!isRecord(data)) {
+        backendRpcError("Renderer-service backend thumbnail persist response must be a JSON object.", "renderer_service_backend_thumbnail_persist_response_invalid", 502, true, "backendRpcClient.persistOutput.response");
+    }
+
+    const mediaId = backendResponseString(data, "mediaId", "id", "media-id");
+    const uri = backendResponseString(data, "uri");
+    if (!mediaId || !uri) {
+        backendRpcError("Renderer-service backend thumbnail persist response must include id and uri.", "renderer_service_backend_thumbnail_persist_response_invalid", 502, true, "backendRpcClient.persistOutput.response.resource");
+    }
+
+    let parsedUri: URL;
+    try {
+        parsedUri = new URL(uri);
+    } catch {
+        backendRpcError("Renderer-service backend thumbnail persist uri must be an absolute HTTP(S) URL.", "renderer_service_backend_thumbnail_persist_response_invalid", 502, true, "backendRpcClient.persistOutput.response.uri");
+    }
+    if (parsedUri.protocol !== "http:" && parsedUri.protocol !== "https:") {
+        backendRpcError("Renderer-service backend thumbnail persist uri must be an absolute HTTP(S) URL.", "renderer_service_backend_thumbnail_persist_response_invalid", 502, true, "backendRpcClient.persistOutput.response.uri");
+    }
+
+    const resourceUri = `/assets/by-id/${mediaId}`;
+    if (parsedUri.pathname !== resourceUri) {
+        backendRpcError("Renderer-service backend thumbnail persist uri must point to /assets/by-id/{mediaId}.", "renderer_service_backend_thumbnail_persist_response_invalid", 502, true, "backendRpcClient.persistOutput.response.uri");
+    }
+
+    return {
+        executed: true,
+        endpoint,
+        entry,
+        command,
+        mediaId,
+        resourceUri,
+        downloadUri: parsedUri.toString(),
+        artifactByteLength,
     };
 }
 
@@ -1094,23 +1231,24 @@ async function executeFileThumbnailCacheProbe(
     return parseBackendFileThumbnailCacheProbe(parseBackendJson(text, "backendRpcClient.cacheProbe.response"), summary, endpoint);
 }
 
-async function executeFileThumbnailSourceDataRead(
+async function executeThumbnailSourceDataRead(
     request: IncomingMessage,
     summary: ThumbnailRequestSummary,
     options: RendererBackendRpcClientOptions | undefined,
     cacheProbeExecution: BackendRpcCacheProbeExecution
 ): Promise<BackendRpcSourceDataReadExecution> {
     const baseUri = normalizeBackendRpcBaseUri(options);
-    const endpoint = backendRpcEndpoint(baseUri, "get-file-data-for-thumbnail");
+    const endpoint = backendRpcEndpoint(baseUri, sourceDataReadCommand(summary));
     const cacheHit = cacheProbeExecution.executed && cacheProbeExecution.hit === true;
     const shouldRead =
         Boolean(baseUri && endpoint) &&
-        summary.targetKind === "file" &&
         !cacheHit &&
-        (summary.cachePolicy === "refresh" || (summary.cachePolicy === "reuse" && cacheProbeExecution.executed && cacheProbeExecution.hit === false));
+        (summary.targetKind === "frame"
+            ? summary.cachePolicy === "refresh"
+            : summary.cachePolicy === "refresh" || (summary.cachePolicy === "reuse" && cacheProbeExecution.executed && cacheProbeExecution.hit === false));
 
     if (!shouldRead || !endpoint) {
-        return sourceDataReadNotExecuted(baseUri);
+        return sourceDataReadNotExecuted(baseUri, summary);
     }
 
     const fetchImpl = options?.fetch ?? globalThis.fetch;
@@ -1120,7 +1258,12 @@ async function executeFileThumbnailSourceDataRead(
 
     const url = new URL(endpoint);
     url.searchParams.set("file-id", summary.fileId);
-    url.searchParams.set("strip-frames-with-thumbnails", "false");
+    if (summary.targetKind === "file") {
+        url.searchParams.set("strip-frames-with-thumbnails", "false");
+    } else {
+        url.searchParams.set("page-id", summary.pageId ?? "");
+        url.searchParams.set("object-id", summary.objectId ?? "");
+    }
 
     let response: Response;
     try {
@@ -1143,7 +1286,7 @@ async function executeFileThumbnailSourceDataRead(
         );
     }
 
-    return parseBackendFileThumbnailSourceDataRead(
+    return parseBackendThumbnailSourceDataRead(
         parseBackendJson(
             text,
             "backendRpcClient.entries.data.response",
@@ -1163,6 +1306,7 @@ function renderNotExecuted(): ThumbnailRenderExecution {
         runtime: null,
         fallbackUsed: false,
         artifactByteLength: null,
+        bytes: null,
     };
 }
 
@@ -1199,7 +1343,7 @@ async function executeThumbnailRender(
     renderer: RendererRuntimeOptions | undefined,
     renderedAssets: RenderedAssetStore
 ): Promise<ThumbnailRenderExecution> {
-    if (!sourceDataReadExecution.executed || summary.targetKind !== "file" || !sourceDataReadExecution.sourceData) {
+    if (!sourceDataReadExecution.executed || !sourceDataReadExecution.sourceData) {
         return renderNotExecuted();
     }
 
@@ -1210,11 +1354,22 @@ async function executeThumbnailRender(
     let result: RendererRuntimeRenderResult;
     try {
         result = await renderer.renderThumbnail({
-            target: {
-                kind: "file",
-                fileId: summary.fileId,
-                revn: summary.revn,
-            },
+            target:
+                summary.targetKind === "file"
+                    ? {
+                          kind: "file",
+                          fileId: summary.fileId,
+                          revn: summary.revn,
+                      }
+                    : {
+                          kind: "frame",
+                          fileId: summary.fileId,
+                          pageId: summary.pageId ?? "",
+                          objectId: summary.objectId ?? "",
+                          objectKey: summary.objectKey ?? "",
+                          tag: summary.tag ?? "frame",
+                          revn: null,
+                      },
             artifact: {
                 format: "png",
                 mimeType: "image/png",
@@ -1224,7 +1379,7 @@ async function executeThumbnailRender(
             },
             cache: {
                 policy: summary.cachePolicy,
-                scope: "file-thumbnail",
+                scope: summary.cacheScope,
                 key: summary.cacheKey,
             },
             render: {
@@ -1262,7 +1417,93 @@ async function executeThumbnailRender(
         runtime,
         fallbackUsed: result.fallbackUsed === true,
         artifactByteLength: bytes.byteLength,
+        bytes,
     };
+}
+
+async function executeThumbnailPersist(
+    request: IncomingMessage,
+    summary: ThumbnailRequestSummary,
+    options: RendererBackendRpcClientOptions | undefined,
+    sourceDataReadExecution: BackendRpcSourceDataReadExecution,
+    renderExecution: ThumbnailRenderExecution
+): Promise<BackendRpcThumbnailPersistExecution> {
+    const baseUri = normalizeBackendRpcBaseUri(options);
+    const activePersistEntry = summary.cachePolicy === "refresh" ? "persist" : "cacheMissPersist";
+    const activePersistSummary = summary.cachePolicy === "refresh" ? summary.backendRpc.persist : summary.backendRpc.cacheMissPersist;
+    const expectedCommand = summary.targetKind === "file" ? "create-file-thumbnail" : "create-file-object-thumbnail";
+    const command = activePersistSummary?.command === expectedCommand ? expectedCommand : null;
+    const endpoint = command ? backendRpcEndpoint(baseUri, command) : null;
+
+    const shouldPersist =
+        Boolean(baseUri && endpoint) &&
+        sourceDataReadExecution.executed &&
+        sourceDataReadExecution.revn !== null &&
+        renderExecution.executed &&
+        renderExecution.bytes !== null &&
+        renderExecution.artifactByteLength !== null;
+
+    if (!shouldPersist || !endpoint || !command || !renderExecution.bytes || renderExecution.artifactByteLength === null) {
+        return thumbnailPersistNotExecuted(baseUri, command);
+    }
+
+    const fetchImpl = options?.fetch ?? globalThis.fetch;
+    if (typeof fetchImpl !== "function") {
+        backendRpcError("Renderer-service backend thumbnail persist requires a fetch implementation.", "renderer_service_backend_thumbnail_persist_unavailable", 500, true, "backendRpcClient.persistOutput.fetch");
+    }
+
+    const url = new URL(endpoint);
+    url.searchParams.set("file-id", summary.fileId);
+    if (summary.targetKind === "file") {
+        url.searchParams.set("revn", String(sourceDataReadExecution.revn));
+    } else {
+        url.searchParams.set("object-id", summary.objectKey ?? "");
+        url.searchParams.set("tag", summary.tag ?? "frame");
+    }
+
+    const mediaBytes = new Uint8Array(renderExecution.bytes.byteLength);
+    mediaBytes.set(renderExecution.bytes);
+    const formData = new FormData();
+    const filename =
+        summary.targetKind === "file"
+            ? `thumbnail-${summary.fileId}-${sourceDataReadExecution.revn}.png`
+            : `thumbnail-${summary.fileId}-${summary.pageId}-${summary.objectId}-${summary.tag ?? "frame"}.png`;
+    formData.append("media", new Blob([mediaBytes.buffer], { type: "image/png" }), filename);
+
+    let response: Response;
+    try {
+        response = await fetchImpl(url, {
+            method: "POST",
+            headers: backendRpcAuthHeaders(request),
+            body: formData,
+        });
+    } catch {
+        backendRpcError("Renderer-service backend thumbnail persist could not reach the Penpot backend.", "renderer_service_backend_thumbnail_persist_unavailable", 502, true, "backendRpcClient.persistOutput");
+    }
+
+    const text = await response.text();
+    if (!response.ok) {
+        backendRpcError(
+            `Renderer-service backend thumbnail persist failed with HTTP ${response.status}.`,
+            "renderer_service_backend_thumbnail_persist_failed",
+            response.status,
+            response.status === 429 || response.status >= 500,
+            "backendRpcClient.persistOutput"
+        );
+    }
+
+    return parseBackendThumbnailPersist(
+        parseBackendJson(
+            text,
+            "backendRpcClient.persistOutput.response",
+            "Renderer-service backend thumbnail persist response JSON is invalid.",
+            "renderer_service_backend_thumbnail_persist_response_invalid"
+        ),
+        endpoint,
+        activePersistEntry,
+        command,
+        renderExecution.artifactByteLength
+    );
 }
 
 function backendRpcCanonicalRequestKeys(command: string): string[] {
@@ -1284,13 +1525,22 @@ function backendRpcCanonicalRequestKeys(command: string): string[] {
 
 function backendRpcRequestEnvelope(entry: BackendRpcEntrySummary): BackendRpcRequestEnvelopeSummary {
     const requestKeys = entry.requestPresent ? backendRpcCanonicalRequestKeys(entry.command) : [];
+    const multipartPost = entry.command === "create-file-thumbnail" || entry.command === "create-file-object-thumbnail";
+    const queryKeys = multipartPost
+        ? entry.command === "create-file-thumbnail"
+            ? ["file-id", "revn"]
+            : ["file-id", "object-id", "tag"]
+        : entry.method === "GET"
+          ? requestKeys
+          : [];
+    const bodyKeys = multipartPost ? ["media"] : entry.method === "POST" ? requestKeys : [];
     return {
         status: "planned-disabled",
-        transport: "penpot-rpc-json",
+        transport: multipartPost ? "penpot-rpc-multipart" : "penpot-rpc-json",
         method: entry.method,
         requestKeys,
-        queryKeys: entry.method === "GET" ? requestKeys : [],
-        bodyKeys: entry.method === "POST" ? requestKeys : [],
+        queryKeys,
+        bodyKeys,
         requestValuesIncluded: false,
         mediaValuesIncluded: false,
         tokenValuesIncluded: false,
@@ -1364,15 +1614,17 @@ function summarizeBackendRpcPipeline(
     summary: ThumbnailRequestSummary,
     cacheProbeExecution: BackendRpcCacheProbeExecution,
     sourceDataReadExecution: BackendRpcSourceDataReadExecution,
-    renderExecution: ThumbnailRenderExecution
+    renderExecution: ThumbnailRenderExecution,
+    persistExecution: BackendRpcThumbnailPersistExecution
 ): BackendRpcPipelineSummary {
     const cacheMissCondition = summary.cachePolicy === "reuse" ? "on-cache-miss" : "always";
     const persistEntry = summary.cachePolicy === "refresh" ? "persist" : "cacheMissPersist";
     const persistSummary = summary.cachePolicy === "refresh" ? summary.backendRpc.persist : summary.backendRpc.cacheMissPersist;
     const orderedStages: BackendRpcPipelineStageSummary[] = [];
     const cacheProbeExecuted = cacheProbeExecution.executed && summary.targetKind === "file";
-    const sourceDataReadExecuted = sourceDataReadExecution.executed && summary.targetKind === "file";
-    const renderExecuted = renderExecution.executed && summary.targetKind === "file";
+    const sourceDataReadExecuted = sourceDataReadExecution.executed;
+    const renderExecuted = renderExecution.executed;
+    const persistExecuted = persistExecution.executed;
 
     if (summary.cachePolicy === "reuse") {
         orderedStages.push(
@@ -1409,19 +1661,29 @@ function summarizeBackendRpcPipeline(
             command: persistSummary?.command ?? null,
             cacheProbe: null,
             runtime: null,
+            status: persistExecuted ? "executed" : "planned-disabled",
+            dispatch: persistExecuted,
         })
     );
 
     return {
-        status: renderExecuted ? "render-executed" : sourceDataReadExecuted ? "source-data-read-executed" : cacheProbeExecuted ? "cache-probe-executed" : "planned-disabled",
+        status: persistExecuted
+            ? "persist-executed"
+            : renderExecuted
+              ? "render-executed"
+              : sourceDataReadExecuted
+                ? "source-data-read-executed"
+                : cacheProbeExecuted
+                  ? "cache-probe-executed"
+                  : "planned-disabled",
         cachePolicy: summary.cachePolicy,
         cacheHitShortCircuit: summary.cachePolicy === "reuse",
         orderedStages,
-        networkDispatch: cacheProbeExecuted || sourceDataReadExecuted,
+        networkDispatch: cacheProbeExecuted || sourceDataReadExecuted || persistExecuted,
         cacheRead: cacheProbeExecuted,
         dataRead: sourceDataReadExecuted,
         renderDispatch: renderExecuted,
-        persistWrite: false,
+        persistWrite: persistExecuted,
         sourceDataValuesIncluded: false,
         artifactValuesIncluded: false,
         tokenValuesIncluded: false,
@@ -1433,7 +1695,7 @@ function summarizeBackendRpcRenderInput(
     sourceDataReadExecution: BackendRpcSourceDataReadExecution,
     renderExecution: ThumbnailRenderExecution
 ): BackendRpcRenderInputSummary | null {
-    if (!sourceDataReadExecution.executed || summary.targetKind !== "file" || !sourceDataReadExecution.endpoint) {
+    if (!sourceDataReadExecution.executed || !sourceDataReadExecution.endpoint) {
         return null;
     }
 
@@ -1442,10 +1704,10 @@ function summarizeBackendRpcRenderInput(
         condition: "after-source-data-read",
         sourceDataRead: true,
         sourceDataEndpoint: sourceDataReadExecution.endpoint,
-        targetKind: "file",
-        identityKeys: ["file-id", "revn"],
+        targetKind: summary.targetKind,
+        identityKeys: summary.targetKind === "file" ? ["file-id", "revn"] : ["file-id", "page-id", "object-id"],
         revisionSource: "backend-source-data",
-        requestRevision: summary.revn === null ? "not-provided" : "matched",
+        requestRevision: summary.targetKind === "frame" ? "resolved" : summary.revn === null ? "not-provided" : "matched",
         revisionValueIncluded: false,
         cachePolicy: summary.cachePolicy,
         cacheScope: summary.cacheScope,
@@ -1488,26 +1750,78 @@ function summarizeBackendRpcRenderOutput(renderExecution: ThumbnailRenderExecuti
     };
 }
 
+function summarizeBackendRpcPersistOutput(
+    summary: ThumbnailRequestSummary,
+    sourceDataReadExecution: BackendRpcSourceDataReadExecution,
+    persistExecution: BackendRpcThumbnailPersistExecution
+): BackendRpcPersistOutputSummary | null {
+    if (
+        !persistExecution.executed ||
+        !persistExecution.endpoint ||
+        !persistExecution.entry ||
+        (persistExecution.command !== "create-file-thumbnail" && persistExecution.command !== "create-file-object-thumbnail") ||
+        persistExecution.artifactByteLength === null
+    ) {
+        return null;
+    }
+
+    const isFramePersist = persistExecution.command === "create-file-object-thumbnail";
+    return {
+        status: "persisted",
+        condition: "after-render",
+        entry: persistExecution.entry,
+        command: persistExecution.command,
+        endpoint: persistExecution.endpoint,
+        targetKind: summary.targetKind,
+        identityKeys: isFramePersist ? ["file-id", "object-id", "tag"] : ["file-id", "revn"],
+        revisionSource: "backend-source-data",
+        requestRevision: summary.targetKind === "file" && summary.revn !== null ? "matched" : "resolved",
+        artifactFormat: "png",
+        artifactMimeType: "image/png",
+        artifactByteLength: persistExecution.artifactByteLength,
+        resourceFrom: isFramePersist ? "backend-create-file-object-thumbnail" : "backend-create-file-thumbnail",
+        persistWrite: true,
+        localFileWrites: false,
+        requestValuesIncluded: false,
+        resourceValuesIncluded: false,
+        mediaValuesIncluded: false,
+        artifactValuesIncluded: false,
+        tokenValuesIncluded: false,
+    };
+}
+
 function summarizeBackendRpcClient(
     summary: ThumbnailRequestSummary,
     auth: AuthSummary,
     options: RendererBackendRpcClientOptions | undefined,
     cacheProbeExecution: BackendRpcCacheProbeExecution,
     sourceDataReadExecution: BackendRpcSourceDataReadExecution,
-    renderExecution: ThumbnailRenderExecution
+    renderExecution: ThumbnailRenderExecution,
+    persistExecution: BackendRpcThumbnailPersistExecution
 ): BackendRpcClientSummary {
     const baseUri = normalizeBackendRpcBaseUri(options);
     const cacheProbeExecuted = cacheProbeExecution.executed && summary.targetKind === "file";
-    const sourceDataReadExecuted = sourceDataReadExecution.executed && summary.targetKind === "file";
-    const renderExecuted = renderExecution.executed && summary.targetKind === "file";
+    const sourceDataReadExecuted = sourceDataReadExecution.executed;
+    const renderExecuted = renderExecution.executed;
+    const persistExecuted = persistExecution.executed;
     return {
-        status: renderExecuted ? "render-executed" : sourceDataReadExecuted ? "source-data-read-executed" : cacheProbeExecuted ? "cache-probe-executed" : baseUri ? "configured-disabled" : "not-configured",
+        status: persistExecuted
+            ? "persist-executed"
+            : renderExecuted
+              ? "render-executed"
+              : sourceDataReadExecuted
+                ? "source-data-read-executed"
+                : cacheProbeExecuted
+                  ? "cache-probe-executed"
+                  : baseUri
+                    ? "configured-disabled"
+                    : "not-configured",
         baseUriConfigured: Boolean(baseUri),
         baseUri,
-        networkDispatch: cacheProbeExecuted || sourceDataReadExecuted,
+        networkDispatch: cacheProbeExecuted || sourceDataReadExecuted || persistExecuted,
         cacheRead: cacheProbeExecuted,
         dataRead: sourceDataReadExecuted,
-        persistWrite: false,
+        persistWrite: persistExecuted,
         authForwarding: auth,
         entries: {
             data: backendRpcClientEntry(summary.backendRpc.data, baseUri) as BackendRpcClientEntrySummary,
@@ -1515,9 +1829,10 @@ function summarizeBackendRpcClient(
             cacheMissPersist: backendRpcClientEntry(summary.backendRpc.cacheMissPersist, baseUri),
         },
         cacheProbe: summarizeBackendRpcCacheProbe(summary, baseUri, cacheProbeExecution),
-        pipeline: summarizeBackendRpcPipeline(summary, cacheProbeExecution, sourceDataReadExecution, renderExecution),
+        pipeline: summarizeBackendRpcPipeline(summary, cacheProbeExecution, sourceDataReadExecution, renderExecution, persistExecution),
         renderInput: summarizeBackendRpcRenderInput(summary, sourceDataReadExecution, renderExecution),
         renderOutput: summarizeBackendRpcRenderOutput(renderExecution),
+        persistOutput: summarizeBackendRpcPersistOutput(summary, sourceDataReadExecution, persistExecution),
     };
 }
 
@@ -1528,18 +1843,28 @@ function thumbnailResponse(
     options: Pick<RendererServiceOptions, "backendRpc">,
     cacheProbeExecution: BackendRpcCacheProbeExecution,
     sourceDataReadExecution: BackendRpcSourceDataReadExecution,
-    renderExecution: ThumbnailRenderExecution
+    renderExecution: ThumbnailRenderExecution,
+    persistExecution: BackendRpcThumbnailPersistExecution
 ): Record<string, unknown> {
     const host = request.headers.host ?? `${DEFAULT_HOST}:${DEFAULT_PORT}`;
     const downloadUri = `http://${host}/assets/by-id/noop-thumbnail-png`;
     const cacheHit = cacheProbeExecution.executed && cacheProbeExecution.hit === true;
+    const persisted = persistExecution.executed && persistExecution.mediaId && persistExecution.resourceUri && persistExecution.downloadUri;
     const rendered = renderExecution.executed && renderExecution.mediaId && renderExecution.resourceUri;
 
     return {
         ...noopThumbnailResponse,
         request: summary,
         auth,
-        backendRpcClient: summarizeBackendRpcClient(summary, auth, options.backendRpc, cacheProbeExecution, sourceDataReadExecution, renderExecution),
+        backendRpcClient: summarizeBackendRpcClient(
+            summary,
+            auth,
+            options.backendRpc,
+            cacheProbeExecution,
+            sourceDataReadExecution,
+            renderExecution,
+            persistExecution
+        ),
         cache: {
             ...noopThumbnailResponse.cache,
             outcome: cacheHit ? "hit" : noopThumbnailResponse.cache.outcome,
@@ -1567,7 +1892,13 @@ function thumbnailResponse(
                       resourceUri: cacheProbeExecution.resourceUri,
                       downloadUri: cacheProbeExecution.downloadUri,
                   }
-                : rendered
+                : persisted
+                  ? {
+                        mediaId: persistExecution.mediaId,
+                        resourceUri: persistExecution.resourceUri,
+                        downloadUri: persistExecution.downloadUri,
+                    }
+                  : rendered
                   ? {
                         mediaId: renderExecution.mediaId,
                         resourceUri: renderExecution.resourceUri,
@@ -1772,7 +2103,7 @@ function validateBackendRpcPipelineResponse(actual: unknown, expected: BackendRp
     requireResponseEqual(record.cacheRead, expected.cacheRead, "backendRpcClient.pipeline.cacheRead");
     requireResponseEqual(record.dataRead, expected.dataRead, "backendRpcClient.pipeline.dataRead");
     requireResponseEqual(record.renderDispatch, expected.renderDispatch, "backendRpcClient.pipeline.renderDispatch");
-    requireResponseEqual(record.persistWrite, false, "backendRpcClient.pipeline.persistWrite");
+    requireResponseEqual(record.persistWrite, expected.persistWrite, "backendRpcClient.pipeline.persistWrite");
     requireResponseEqual(record.sourceDataValuesIncluded, false, "backendRpcClient.pipeline.sourceDataValuesIncluded");
     requireResponseEqual(record.artifactValuesIncluded, false, "backendRpcClient.pipeline.artifactValuesIncluded");
     requireResponseEqual(record.tokenValuesIncluded, false, "backendRpcClient.pipeline.tokenValuesIncluded");
@@ -1842,6 +2173,36 @@ function validateBackendRpcRenderOutputResponse(actual: unknown, expected: Backe
     requireResponseEqual(record.tokenValuesIncluded, false, "backendRpcClient.renderOutput.tokenValuesIncluded");
 }
 
+function validateBackendRpcPersistOutputResponse(actual: unknown, expected: BackendRpcPersistOutputSummary | null): void {
+    if (expected === null) {
+        requireResponseEqual(actual ?? null, null, "backendRpcClient.persistOutput");
+        return;
+    }
+
+    const record = responseRecord(actual, "backendRpcClient.persistOutput");
+    rejectResponseValueFields(record, "backendRpcClient.persistOutput");
+    requireResponseEqual(record.status, expected.status, "backendRpcClient.persistOutput.status");
+    requireResponseEqual(record.condition, expected.condition, "backendRpcClient.persistOutput.condition");
+    requireResponseEqual(record.entry, expected.entry, "backendRpcClient.persistOutput.entry");
+    requireResponseEqual(record.command, expected.command, "backendRpcClient.persistOutput.command");
+    requireResponseEqual(record.endpoint, expected.endpoint, "backendRpcClient.persistOutput.endpoint");
+    requireResponseEqual(record.targetKind, expected.targetKind, "backendRpcClient.persistOutput.targetKind");
+    requireResponseArrayEqual(responseStringArray(record, "identityKeys", "backendRpcClient.persistOutput.identityKeys"), expected.identityKeys, "backendRpcClient.persistOutput.identityKeys");
+    requireResponseEqual(record.revisionSource, expected.revisionSource, "backendRpcClient.persistOutput.revisionSource");
+    requireResponseEqual(record.requestRevision, expected.requestRevision, "backendRpcClient.persistOutput.requestRevision");
+    requireResponseEqual(record.artifactFormat, expected.artifactFormat, "backendRpcClient.persistOutput.artifactFormat");
+    requireResponseEqual(record.artifactMimeType, expected.artifactMimeType, "backendRpcClient.persistOutput.artifactMimeType");
+    requireResponseEqual(record.artifactByteLength, expected.artifactByteLength, "backendRpcClient.persistOutput.artifactByteLength");
+    requireResponseEqual(record.resourceFrom, expected.resourceFrom, "backendRpcClient.persistOutput.resourceFrom");
+    requireResponseEqual(record.persistWrite, true, "backendRpcClient.persistOutput.persistWrite");
+    requireResponseEqual(record.localFileWrites, false, "backendRpcClient.persistOutput.localFileWrites");
+    requireResponseEqual(record.requestValuesIncluded, false, "backendRpcClient.persistOutput.requestValuesIncluded");
+    requireResponseEqual(record.resourceValuesIncluded, false, "backendRpcClient.persistOutput.resourceValuesIncluded");
+    requireResponseEqual(record.mediaValuesIncluded, false, "backendRpcClient.persistOutput.mediaValuesIncluded");
+    requireResponseEqual(record.artifactValuesIncluded, false, "backendRpcClient.persistOutput.artifactValuesIncluded");
+    requireResponseEqual(record.tokenValuesIncluded, false, "backendRpcClient.persistOutput.tokenValuesIncluded");
+}
+
 function validateBackendRpcCacheProbeResponse(actual: unknown, expected: BackendRpcCacheProbeSummary | null): void {
     if (expected === null) {
         requireResponseEqual(actual ?? null, null, "backendRpcClient.cacheProbe");
@@ -1892,7 +2253,7 @@ function validateThumbnailBackendRpcClientResponse(client: Record<string, unknow
     requireResponseEqual(client.networkDispatch, expected.networkDispatch, "backendRpcClient.networkDispatch");
     requireResponseEqual(client.cacheRead, expected.cacheRead, "backendRpcClient.cacheRead");
     requireResponseEqual(client.dataRead, expected.dataRead, "backendRpcClient.dataRead");
-    requireResponseEqual(client.persistWrite, false, "backendRpcClient.persistWrite");
+    requireResponseEqual(client.persistWrite, expected.persistWrite, "backendRpcClient.persistWrite");
     validateTokenSafeAuthResponse(responseRecord(client.authForwarding, "backendRpcClient.authForwarding"), expected.authForwarding, "backendRpcClient.authForwarding");
 
     const entries = responseRecord(client.entries, "backendRpcClient.entries");
@@ -1903,6 +2264,7 @@ function validateThumbnailBackendRpcClientResponse(client: Record<string, unknow
     validateBackendRpcPipelineResponse(client.pipeline, expected.pipeline);
     validateBackendRpcRenderInputResponse(client.renderInput, expected.renderInput);
     validateBackendRpcRenderOutputResponse(client.renderOutput, expected.renderOutput);
+    validateBackendRpcPersistOutputResponse(client.persistOutput, expected.persistOutput);
 }
 
 function validateThumbnailResponseContract(
@@ -1912,7 +2274,8 @@ function validateThumbnailResponseContract(
     options: Pick<RendererServiceOptions, "backendRpc">,
     cacheProbeExecution: BackendRpcCacheProbeExecution,
     sourceDataReadExecution: BackendRpcSourceDataReadExecution,
-    renderExecution: ThumbnailRenderExecution
+    renderExecution: ThumbnailRenderExecution,
+    persistExecution: BackendRpcThumbnailPersistExecution
 ): Record<string, unknown> {
     const record = responseRecord(response, "response");
     requireResponseEqual(record.status, "ok", "status");
@@ -1926,7 +2289,15 @@ function validateThumbnailResponseContract(
     validateThumbnailAuthResponse(responseRecord(record.auth, "auth"), expectedAuth);
     validateThumbnailBackendRpcClientResponse(
         responseRecord(record.backendRpcClient, "backendRpcClient"),
-        summarizeBackendRpcClient(summary, expectedAuth, options.backendRpc, cacheProbeExecution, sourceDataReadExecution, renderExecution)
+        summarizeBackendRpcClient(
+            summary,
+            expectedAuth,
+            options.backendRpc,
+            cacheProbeExecution,
+            sourceDataReadExecution,
+            renderExecution,
+            persistExecution
+        )
     );
     requireResponseJsonEqual(record.request, summary, "request");
 
@@ -1971,13 +2342,36 @@ async function handleRequest(request: IncomingMessage, response: ServerResponse,
             const summary = validateThumbnailRequest(body);
             const auth = summarizeAuthHeaders(request);
             const cacheProbeExecution = await executeFileThumbnailCacheProbe(request, summary, options.backendRpc);
-            const sourceDataReadExecution = await executeFileThumbnailSourceDataRead(request, summary, options.backendRpc, cacheProbeExecution);
+            const sourceDataReadExecution = await executeThumbnailSourceDataRead(request, summary, options.backendRpc, cacheProbeExecution);
             const renderExecution = await executeThumbnailRender(summary, sourceDataReadExecution, options.renderer, options.renderedAssets);
-            const generatedResponse = thumbnailResponse(request, summary, auth, options, cacheProbeExecution, sourceDataReadExecution, renderExecution);
+            const persistExecution = await executeThumbnailPersist(request, summary, options.backendRpc, sourceDataReadExecution, renderExecution);
+            const generatedResponse = thumbnailResponse(
+                request,
+                summary,
+                auth,
+                options,
+                cacheProbeExecution,
+                sourceDataReadExecution,
+                renderExecution,
+                persistExecution
+            );
             const responseBody = options.thumbnailResponseOverride
                 ? options.thumbnailResponseOverride(generatedResponse)
                 : generatedResponse;
-            sendJson(response, 200, validateThumbnailResponseContract(responseBody, summary, auth, options, cacheProbeExecution, sourceDataReadExecution, renderExecution));
+            sendJson(
+                response,
+                200,
+                validateThumbnailResponseContract(
+                    responseBody,
+                    summary,
+                    auth,
+                    options,
+                    cacheProbeExecution,
+                    sourceDataReadExecution,
+                    renderExecution,
+                    persistExecution
+                )
+            );
         } catch (error) {
             const status = isRecord(error) && typeof error.status === "number" ? error.status : 400;
             sendJson(response, status, rendererErrorBody(error));

@@ -331,10 +331,10 @@ CLI should return the same resource metadata. A future `--output` option may
 download the PNG locally, mirroring the split already used by `export.file`:
 MCP reports resources, while CLI may write files on explicit request.
 
-File thumbnails can use the `create-file-thumbnail` `{:uri, :id}` response as
-the resource source. Tagged frame thumbnails are not ready for registration
-until the service or backend normalizes the `create-file-object-thumbnail`
-result into equivalent downloadable resource metadata.
+File thumbnails use the `create-file-thumbnail` `{:uri, :id}` response as the
+resource source. Tagged frame thumbnails use the matching
+`create-file-object-thumbnail` response and normalize its media id/URI into
+the same downloadable resource metadata shape.
 
 ## Cache Refresh
 
@@ -370,10 +370,11 @@ a backend base URI, then derives Penpot RPC endpoints using the existing
 and persistence commands. The field also echoes caller-session auth presence
 without credential values.
 
-This is still non-executing metadata. The plan must keep `dispatch:false`,
-`networkDispatch:false`, `cacheRead:false`, `dataRead:false`, and
-`persistWrite:false` until cache probing, source-data reads, rendering, and
-thumbnail persistence are implemented and tested as separate runtime slices.
+P26.5 initially exposed this as non-executing metadata. Current renderer-service
+requests may execute supported cache probing, source-data reads, runtime
+adapter rendering, and backend persistence only through the separately gated
+slices below; disabled or inapplicable stages still keep their dispatch and
+value exposure flags false.
 
 P26.6 extends each planned backend RPC entry with a disabled request envelope.
 The envelope fixes the Penpot RPC JSON transport, HTTP method, canonical request
@@ -383,20 +384,21 @@ keys, GET query keys, and POST JSON body keys while keeping
 construction for a later execution slice without exposing backend request
 values or enabling network dispatch.
 
-P26.7 adds a disabled ordered pipeline plan to the same response. Reuse
-requests plan a `cache-probe` stage followed by `source-data-read`, `render`,
-and `thumbnail-persist` stages that run only on cache miss; refresh requests
-plan source-data, render, and persist stages unconditionally. The pipeline
-keeps `cacheRead:false`, `dataRead:false`, `renderDispatch:false`,
-`persistWrite:false`, `networkDispatch:false`, and value-redaction flags false
-until each runtime stage is implemented and tested as an execution slice.
+P26.7 adds an ordered pipeline plan to the same response. Reuse requests plan a
+`cache-probe` stage followed by `source-data-read`, `render`, and
+`thumbnail-persist` stages that run only on cache miss; refresh requests plan
+source-data, render, and persist stages unconditionally. Stages that are not
+executed for a request keep their execution flags false, and all
+value-redaction flags remain false even when the file-target pipeline reaches
+P26.15 persistence.
 
-P26.8 exposes this planning boundary through manual host configuration.
+P26.8 exposes this backend URI boundary through manual host configuration.
 `PENPOT_RENDERER_SERVICE_BACKEND_URI`, with `PENPOT_BACKEND_URI` as a fallback,
-sets only the backend RPC base URI used to derive disabled endpoint metadata.
-Invalid non-HTTP(S) values fail before the host starts. The environment setting
-does not enable cache probes, backend source-data reads, render dispatch,
-thumbnail persistence, or backend network dispatch.
+sets the backend RPC base URI used to derive endpoint metadata. Invalid
+non-HTTP(S) values fail before the host starts. The environment setting alone
+does not enable rendering or persistence; file-target execution also requires
+the request path, cache/source-data preconditions, and a configured runtime
+adapter where rendering is needed.
 
 P26.9 adds a disabled cache-probe plan to reuse renderer-service responses.
 The plan records the future cache lookup strategy, canonical request keys,
@@ -405,6 +407,19 @@ while keeping `cacheRead:false`, `networkDispatch:false`, `dispatch:false`,
 and cache-hit/resource/media/token value flags false. Refresh responses keep
 `backendRpcClient.cacheProbe:null`. This makes cache-reuse semantics explicit
 without implementing cache reads or cached resource returns.
+
+P26.10 through P26.17 progressively execute the backend/render pipeline while
+preserving the same redaction boundary. Configured file reuse requests can
+probe `get-file-thumbnail`; file refresh requests and cache misses can read
+`get-file-data-for-thumbnail`; tagged-frame refresh requests can read
+`get-file-frame-data-for-thumbnail`; injected or manually registered runtime
+adapters can render PNG bytes; and successful file-target renders can persist
+through backend `create-file-thumbnail` while successful tagged-frame refresh
+renders can persist through backend `create-file-object-thumbnail`, both using
+multipart `media` uploads. The service returns persisted backend resource
+metadata with token-safe execution summaries, but tagged-frame cache probes,
+bundled real scene rendering, local file writes, source-data/page/media value
+exposure, and credential value exposure remain out of scope.
 
 ## Test Strategy
 
@@ -752,4 +767,4 @@ plus `packageMaterializationApprovalAuditEndorsementPolicy.endorsementPolicySele
 but execution still returns
 `renderer_service_unavailable` until explicit opt-in, config surfaces, renderer
 service, integration tests, health preflight, file cache probe, tagged-frame
-source-data provider, and tagged-frame resource normalizer exist.
+cache probe, and renderer runtime bridge exist.
