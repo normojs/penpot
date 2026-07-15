@@ -10318,8 +10318,35 @@ test("render.thumbnail renderer-service API fixtures define planning requests wi
     assert.equal(fixtures.bundledRuntimeBridge.redactionContract.sourceDataValuesIncluded, false);
     assert.equal(fixtures.bundledRuntimeBridge.redactionContract.artifactValuesIncluded, false);
     assert.equal(fixtures.bundledRuntimeBridge.noOpGuarantees.runtimeExecutionRegistered, false);
+    assert.equal(fixtures.bundledRuntimeBridge.noOpGuarantees.runtimeAdapterImported, false);
+    assert.equal(fixtures.bundledRuntimeBridge.noOpGuarantees.runtimeAssetsLoaded, false);
+    assert.equal(fixtures.bundledRuntimeBridge.noOpGuarantees.pageValuesIncluded, false);
+    assert.equal(fixtures.bundledRuntimeBridge.noOpGuarantees.mediaValuesIncluded, false);
+    assert.equal(fixtures.bundledRuntimeBridge.noOpGuarantees.tokenValuesIncluded, false);
     assert.ok(fixtures.bundledRuntimeBridge.blockedAlternatives.some((entry) => entry.id === "direct-node-render-wasm"));
     assert.ok(fixtures.bundledRuntimeBridge.requiredBeforeImplementation.some((entry) => entry.includes("pixel/resource tests")));
+    assert.equal(fixtures.bundledRuntimeBridge.assetManifest.status, "planned-disabled");
+    assert.equal(fixtures.bundledRuntimeBridge.assetManifest.manifestVersion, "P26.20");
+    assert.equal(fixtures.bundledRuntimeBridge.assetManifest.owner, "renderer-service");
+    assert.equal(fixtures.bundledRuntimeBridge.assetManifest.bridge, "browser-backed-service-adapter");
+    assert.equal(fixtures.bundledRuntimeBridge.assetManifest.roots.cacheRoot, "/Volumes/fushilu/.caches/penpot/renderer-service");
+    assert.deepEqual(
+        fixtures.bundledRuntimeBridge.assetManifest.assets.map((asset) => asset.id),
+        [
+            "thumbnail-worker-main",
+            "thumbnail-worker-render-wasm-glue",
+            "render-wasm-loader",
+            "render-wasm-binary",
+            "rasterizer-bundle",
+            "rasterizer-html",
+        ]
+    );
+    assert.ok(fixtures.bundledRuntimeBridge.assetManifest.assets.every((asset) => asset.required === true));
+    assert.ok(fixtures.bundledRuntimeBridge.assetManifest.assets.every((asset) => asset.materialized === false));
+    assert.ok(fixtures.bundledRuntimeBridge.assetManifest.assets.every((asset) => asset.existsChecked === false));
+    assert.ok(fixtures.bundledRuntimeBridge.assetManifest.assets.every((asset) => asset.localFileWrites === false));
+    assert.ok(fixtures.bundledRuntimeBridge.assetManifest.cacheOutputs.every((entry) => entry.materialized === false));
+    assert.ok(fixtures.bundledRuntimeBridge.assetManifest.validation.noDispatchTests.includes("runtime-asset-manifest-response-validator"));
     assert.ok(fixtures.registrationGates.allTargets.includes("thumbnail-renderer-service-implementation"));
     assert.ok(fixtures.registrationGates.frame.includes("tagged-frame-cache-probe"));
 

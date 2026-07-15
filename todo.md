@@ -289,6 +289,13 @@ browser-backed adapter module that packages the frontend thumbnail worker,
 render-wasm assets, and rasterizer fallback without requiring an active editor
 tab or exposing source-data/page/artifact bytes. Current active work moves to
 P26.20 to materialize the bundled runtime bridge asset manifest scaffold.
+P26.20 is complete: renderer-service health and thumbnail responses now expose
+a validated P26.20 runtime asset manifest listing the planned frontend worker,
+render-wasm loader/binary, rasterizer fallback, and cache-output paths while
+keeping browser startup, runtime import, asset materialization, local writes,
+value exposure, and runtime registration disabled. Current active work moves
+to P26.21 to define the next asset materialization preflight boundary before
+any browser-backed execution is enabled.
 P25.7 is complete: thumbnail renderer-service API fixtures now define
 future file refresh, file reuse, tagged frame refresh, auth forwarding,
 resource URI normalization, and MCP/CLI test expectations. P25.8 is complete:
@@ -941,7 +948,8 @@ process boundary before MCP or CLI execution is enabled.
 | P26.17 | done | Persist rendered tagged-frame thumbnails through backend RPC | `renderer-service`, `command-runtime`, `mcp/docs`, `todo.md`, `CHANGES.md` | Completed 2026-07-14; after configured frame source-data reads and runtime adapter render success, the renderer-service posts PNG bytes as multipart `media` to backend `create-file-object-thumbnail` with file/object/tag identity, validates the backend `{id, uri}` response, returns persisted backend resource metadata, and marks `backendRpcClient.status:"persist-executed"` with frame-specific `persistOutput` redaction metadata | Enables tagged-frame refresh persistence while keeping tagged-frame cache probes, bundled real scene rendering, local file writes, request/media/source-data/page/credential value exposure, and CLI process spawning disabled |
 | P26.18 | done | Execute tagged-frame cache probes for reuse requests | `backend`, `renderer-service`, `command-runtime`, `mcp/docs`, `todo.md`, `CHANGES.md` | Completed 2026-07-15; added backend `get-file-object-thumbnail`, renderer-service execution for configured frame `reuse` cache probes, command-runtime frame reuse fixtures/capability checks, and hit/miss tests that return cached metadata or continue source-data/read-render-persist | Enables tagged-frame reuse short-circuiting while keeping bundled real scene rendering, local file writes, request/media/source-data/page/credential value exposure, and CLI process spawning disabled |
 | P26.19 | done | Define bundled renderer runtime bridge path | `renderer-service`, `render-wasm`, `frontend`, `command-runtime`, `mcp/docs`, `todo.md`, `CHANGES.md` | Completed 2026-07-15; fixture-tested the selected browser-backed renderer-service adapter path, with render-wasm/frontend rasterizer asset ownership, blocked alternatives, redaction contract, implementation prerequisites, and no-op guarantees | Moves beyond manual runtime adapters while keeping browser startup, asset materialization, local file writes, source-data/page/artifact byte exposure, and unreviewed runtime registration disabled |
-| P26.20 | in_progress | Materialize bundled runtime bridge asset manifest scaffold | `renderer-service`, `frontend`, `render-wasm`, `command-runtime`, `mcp/docs`, `todo.md`, `CHANGES.md` | Add a renderer-service-visible asset manifest scaffold for the future browser-backed thumbnail bridge, including expected frontend worker/render-wasm/rasterizer assets, cache output paths, validation metadata, and no-dispatch tests | Prepares bundled runtime packaging while keeping browser startup, actual render-wasm execution, local file writes, source-data/page/artifact byte exposure, and runtime registration disabled |
+| P26.20 | done | Materialize bundled runtime bridge asset manifest scaffold | `renderer-service`, `frontend`, `render-wasm`, `command-runtime`, `mcp/docs`, `todo.md`, `CHANGES.md` | Completed 2026-07-16; renderer-service now exposes a validated `runtimeAssetManifest` in health and thumbnail responses with expected frontend worker, render-wasm loader/binary, rasterizer fallback, cache output paths, and no-dispatch validation metadata, and command-runtime fixtures assert the metadata-only contract | Prepares bundled runtime packaging while keeping browser startup, actual render-wasm execution, runtime import, asset materialization, local file writes, source-data/page/artifact/media/token exposure, and runtime registration disabled |
+| P26.21 | pending | Define bundled runtime asset materialization preflight boundary | `renderer-service`, `command-runtime`, `mcp/docs`, `todo.md`, `CHANGES.md` | Plan and fixture-test the next read-only preflight over the P26.20 asset manifest, including asset existence/hash readiness states and failure taxonomy, before enabling any bundled browser adapter | Prepares reviewed asset packaging without starting browsers, importing runtime adapters, writing local files, exposing source-data/page/artifact/media/token values, or enabling runtime registration |
 
 P26.1 is complete: `@penpot/renderer-service` is a private pnpm workspace
 package with a real no-op HTTP lifecycle. Its TypeScript output is written to
@@ -1113,12 +1121,13 @@ render-wasm execution, active frontend-session rendering, and exporter preview
 reuse remain blocked alternatives for this first bridge. Verified with
 `pnpm --filter @penpot/command-runtime test`.
 
-P26.20 is in progress: this implementation slice will materialize only the
-asset manifest scaffold for the future browser-backed bundled runtime bridge.
-The scaffold should list required frontend worker, render-wasm loader/binary,
-rasterizer fallback, and cache output paths, then prove through tests that no
-browser process starts, no source data is exposed, no local files are written,
-and runtime registration remains disabled.
+P26.20 is complete: this implementation slice materialized only the asset
+manifest scaffold for the future browser-backed bundled runtime bridge. The
+scaffold lists required frontend worker, render-wasm loader/binary, rasterizer
+fallback, and cache output paths, and tests prove that no browser process
+starts, no source data is exposed, no local files are written, and runtime
+registration remains disabled. P26.21 is pending to define the next
+materialization preflight boundary before any bundled browser adapter executes.
 
 ## Maintenance: Build Cache Hygiene
 

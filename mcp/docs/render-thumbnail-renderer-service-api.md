@@ -26,6 +26,13 @@ P26.19 selects the first bundled runtime bridge path: a renderer-service-owned
 browser-backed adapter module that packages the frontend thumbnail worker,
 render-wasm assets, and rasterizer fallback without requiring an active editor
 tab or exposing source-data/page/artifact bytes in JSON.
+P26.20 adds the renderer-service-visible bundled runtime asset manifest
+scaffold. `GET /health` and `POST /thumbnail` responses now expose the planned
+frontend worker, render-wasm loader/binary, rasterizer fallback assets, cache
+output paths, and validation metadata while preserving false browser startup,
+runtime import, runtime asset loading, asset materialization, network dispatch,
+local file write, source-data/page/artifact/media/token exposure, and runtime
+registration flags.
 P26.5 adds a token-safe `backendRpcClient` plan to renderer-service thumbnail
 responses so backend data/cache/persist endpoints are normalized for staged
 execution. That plan now feeds the executable file-thumbnail cache probe,
@@ -539,6 +546,10 @@ browser runtime lifecycle tests for startup, reuse, timeout, crash recovery,
 and shutdown; pixel/resource tests proving returned PNG bytes are non-empty;
 and continued gating behind the existing renderer-service opt-in, health
 preflight, and runtime registration checks.
+P26.20 completes the first prerequisite as a metadata scaffold: the service
+publishes the manifest and validates it in responses, but it still does not
+copy assets, compute hashes, check file existence, import the bundled adapter,
+or start a browser.
 
 The P25.77 revocation appeal resolution enforcement evidence attestation
 notarization certification endorsement countersignature verification revocation
@@ -1255,6 +1266,12 @@ while the adapter owns the thumbnail worker/rasterizer calls. The adapter API
 continues to be the existing `renderThumbnail(input)` runtime module contract
 so P26.13/P26.14 injected modules and future bundled modules share the same
 redaction and persistence boundary.
+P26.20 turns the packaged asset manifest into explicit service metadata with
+planned frontend worker, render-wasm, rasterizer, and cache-output entries.
+Every entry remains `materialized:false`, `existsChecked:false`, and
+`localFileWrites:false`; future browser-backed execution must first replace
+those metadata-only guarantees with reviewed materialization and lifecycle
+tests.
 
 The backend remains the authority for:
 

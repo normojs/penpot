@@ -12,6 +12,47 @@ const pngFixture = Buffer.from(
     "base64"
 );
 
+function assertRuntimeAssetManifestScaffold(manifest) {
+    assert.deepEqual(manifest, serviceModule.bundledRuntimeBridgeAssetManifest);
+    assert.equal(manifest.status, "planned-disabled");
+    assert.equal(manifest.manifestVersion, "P26.20");
+    assert.equal(manifest.owner, "renderer-service");
+    assert.equal(manifest.bridge, "browser-backed-service-adapter");
+    assert.equal(manifest.roots.cacheRoot, "/Volumes/fushilu/.caches/penpot/renderer-service");
+    assert.deepEqual(
+        manifest.assets.map((asset) => asset.id),
+        [
+            "thumbnail-worker-main",
+            "thumbnail-worker-render-wasm-glue",
+            "render-wasm-loader",
+            "render-wasm-binary",
+            "rasterizer-bundle",
+            "rasterizer-html",
+        ]
+    );
+    assert.ok(manifest.assets.every((asset) => asset.required === true));
+    assert.ok(manifest.assets.every((asset) => asset.materialized === false));
+    assert.ok(manifest.assets.every((asset) => asset.existsChecked === false));
+    assert.ok(manifest.assets.every((asset) => asset.dispatch === false));
+    assert.ok(manifest.assets.every((asset) => asset.localFileWrites === false));
+    assert.ok(manifest.cacheOutputs.every((entry) => entry.path.startsWith("/Volumes/fushilu/.caches/penpot/renderer-service")));
+    assert.ok(manifest.cacheOutputs.every((entry) => entry.materialized === false));
+    assert.equal(manifest.sideEffects.browserProcessStarted, false);
+    assert.equal(manifest.sideEffects.runtimeExecutionRegistered, false);
+    assert.equal(manifest.sideEffects.runtimeAdapterImported, false);
+    assert.equal(manifest.sideEffects.runtimeAssetsLoaded, false);
+    assert.equal(manifest.sideEffects.assetManifestMaterialized, false);
+    assert.equal(manifest.sideEffects.networkDispatch, false);
+    assert.equal(manifest.sideEffects.dispatch, false);
+    assert.equal(manifest.sideEffects.localFileWrites, false);
+    assert.equal(manifest.redaction.sourceDataValuesIncluded, false);
+    assert.equal(manifest.redaction.pageValuesIncluded, false);
+    assert.equal(manifest.redaction.artifactValuesIncluded, false);
+    assert.equal(manifest.redaction.mediaValuesIncluded, false);
+    assert.equal(manifest.redaction.tokenValuesIncluded, false);
+    assert.ok(manifest.validation.noDispatchTests.includes("runtime-asset-manifest-response-validator"));
+}
+
 async function withService(run) {
     const service = await serviceModule.startRendererService({ port: 0 });
     try {
@@ -258,8 +299,11 @@ test("noop host exposes the P25.24 health contract", async () => {
 
         assert.equal(response.status, 200);
         assert.equal(response.headers.get("content-type"), "application/json; charset=utf-8");
-        assert.deepEqual(await response.json(), serviceModule.healthResponse);
+        const body = await response.json();
+        assert.deepEqual(body, serviceModule.healthResponse);
         assert.ok(serviceModule.healthResponse.capabilities.includes("thumbnail.backend-rpc.frame-thumbnail-persist"));
+        assert.ok(serviceModule.healthResponse.capabilities.includes("thumbnail.render.runtime-asset-manifest"));
+        assertRuntimeAssetManifestScaffold(body.runtimeAssetManifest);
     });
 });
 
@@ -1027,6 +1071,7 @@ test("noop host returns a normalized PNG thumbnail resource", async () => {
             },
         });
         assert.equal(body.localFileWrites, false);
+        assertRuntimeAssetManifestScaffold(body.runtimeAssetManifest);
 
         const resource = await fetch(body.resource.downloadUri);
         assert.equal(resource.status, 200);
@@ -1561,6 +1606,34 @@ test("noop host validates generated response auth summary before returning it", 
         assert.equal(body.code, "renderer_service_response_invalid");
         assert.equal(body.field, "auth.tokenValuesIncluded");
         assert.equal(JSON.stringify(body).includes("service-secret-token"), false);
+    } finally {
+        await service.stop();
+    }
+});
+
+test("noop host validates generated runtime asset manifest before returning it", async () => {
+    const service = await serviceModule.startRendererService({
+        port: 0,
+        thumbnailResponseOverride: (body) => ({
+            ...body,
+            runtimeAssetManifest: {
+                ...body.runtimeAssetManifest,
+                sideEffects: {
+                    ...body.runtimeAssetManifest.sideEffects,
+                    browserProcessStarted: true,
+                },
+            },
+        }),
+    });
+    try {
+        const response = await postValidFileThumbnail(service.host, service.port);
+
+        assert.equal(response.status, 500);
+        const body = await response.json();
+        assert.equal(body.status, "error");
+        assert.equal(body.code, "renderer_service_response_invalid");
+        assert.equal(body.field, "runtimeAssetManifest.sideEffects.browserProcessStarted");
+        assert.match(body.message, /runtimeAssetManifest\.sideEffects\.browserProcessStarted must match false/);
     } finally {
         await service.stop();
     }

@@ -4035,6 +4035,11 @@ tagged-frame reuse probes. P26.19 selects the future bundled real scene
 rendering bridge as a renderer-service-owned browser-backed adapter that
 packages frontend thumbnail worker, render-wasm, and rasterizer assets without
 requiring an active editor tab.
+P26.20 exposes the bundled bridge asset manifest scaffold through
+renderer-service health/thumbnail metadata, listing the planned frontend
+worker, render-wasm, rasterizer, and cache-output paths while keeping browser
+startup, asset materialization, local writes, runtime import, and runtime
+registration disabled.
 
 ### 8.6 Advanced Tools
 

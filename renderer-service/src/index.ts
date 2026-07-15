@@ -8,6 +8,7 @@ const DEFAULT_PORT = 6070;
 const BACKEND_RPC_BASE_URI_ENV = "PENPOT_RENDERER_SERVICE_BACKEND_URI";
 const BACKEND_RPC_BASE_URI_FALLBACK_ENV = "PENPOT_BACKEND_URI";
 const RENDERER_RUNTIME_MODULE_ENV = "PENPOT_RENDERER_SERVICE_RUNTIME_MODULE";
+const RENDERER_SERVICE_CACHE_ROOT = "/Volumes/fushilu/.caches/penpot/renderer-service";
 
 export type RendererBackendRpcClientOptions = {
     baseUri?: string;
@@ -83,6 +84,177 @@ export type StartedRendererService = {
     stop: () => Promise<void>;
 };
 
+export const bundledRuntimeBridgeAssetManifest = {
+    status: "planned-disabled",
+    manifestVersion: "P26.20",
+    owner: "renderer-service",
+    bridge: "browser-backed-service-adapter",
+    runtime: "render-wasm-worker",
+    fallback: "frontend-rasterizer",
+    roots: {
+        frontendPublicJs: "frontend/resources/public/js",
+        frontendWorkerJs: "frontend/resources/public/js/worker",
+        cacheRoot: RENDERER_SERVICE_CACHE_ROOT,
+    },
+    assets: [
+        {
+            id: "thumbnail-worker-main",
+            kind: "frontend-worker-bundle",
+            role: "thumbnail worker command bridge",
+            sourcePath: "frontend/src/app/worker/thumbnails.cljs",
+            publicPath: "frontend/resources/public/js/worker/main.js",
+            cachePath: `${RENDERER_SERVICE_CACHE_ROOT}/runtime-assets/worker/main.js`,
+            required: true,
+            materialized: false,
+            existsChecked: false,
+            loaded: false,
+            byteHash: null,
+            dispatch: false,
+            localFileWrites: false,
+        },
+        {
+            id: "thumbnail-worker-render-wasm-glue",
+            kind: "render-wasm-worker-glue",
+            role: "worker importScripts render-wasm glue",
+            sourcePath: "render-wasm/_build_env",
+            publicPath: "frontend/resources/public/js/worker/render.js",
+            cachePath: `${RENDERER_SERVICE_CACHE_ROOT}/runtime-assets/worker/render.js`,
+            required: true,
+            materialized: false,
+            existsChecked: false,
+            loaded: false,
+            byteHash: null,
+            dispatch: false,
+            localFileWrites: false,
+        },
+        {
+            id: "render-wasm-loader",
+            kind: "render-wasm-js-loader",
+            role: "Emscripten render-wasm module loader",
+            sourcePath: "render-wasm/_build_env",
+            publicPath: "frontend/resources/public/js/render-wasm.js",
+            cachePath: `${RENDERER_SERVICE_CACHE_ROOT}/runtime-assets/render-wasm.js`,
+            required: true,
+            materialized: false,
+            existsChecked: false,
+            loaded: false,
+            byteHash: null,
+            dispatch: false,
+            localFileWrites: false,
+        },
+        {
+            id: "render-wasm-binary",
+            kind: "render-wasm-binary",
+            role: "render-wasm WebAssembly binary",
+            sourcePath: "render-wasm/_build_env",
+            publicPath: "frontend/resources/public/js/render-wasm.wasm",
+            cachePath: `${RENDERER_SERVICE_CACHE_ROOT}/runtime-assets/render-wasm.wasm`,
+            required: true,
+            materialized: false,
+            existsChecked: false,
+            loaded: false,
+            byteHash: null,
+            dispatch: false,
+            localFileWrites: false,
+        },
+        {
+            id: "rasterizer-bundle",
+            kind: "frontend-rasterizer-bundle",
+            role: "SVG rasterizer fallback bundle",
+            sourcePath: "frontend/src/app/rasterizer.cljs",
+            publicPath: "frontend/resources/public/js/rasterizer.js",
+            cachePath: `${RENDERER_SERVICE_CACHE_ROOT}/runtime-assets/rasterizer.js`,
+            required: true,
+            materialized: false,
+            existsChecked: false,
+            loaded: false,
+            byteHash: null,
+            dispatch: false,
+            localFileWrites: false,
+        },
+        {
+            id: "rasterizer-html",
+            kind: "frontend-rasterizer-html",
+            role: "SVG rasterizer fallback document",
+            sourcePath: "frontend/resources/templates/rasterizer.mustache",
+            publicPath: "frontend/resources/public/rasterizer.html",
+            cachePath: `${RENDERER_SERVICE_CACHE_ROOT}/runtime-assets/rasterizer.html`,
+            required: true,
+            materialized: false,
+            existsChecked: false,
+            loaded: false,
+            byteHash: null,
+            dispatch: false,
+            localFileWrites: false,
+        },
+    ],
+    cacheOutputs: [
+        {
+            id: "runtime-asset-cache",
+            path: `${RENDERER_SERVICE_CACHE_ROOT}/runtime-assets`,
+            purpose: "future packaged frontend/render-wasm runtime assets",
+            materialized: false,
+            existsChecked: false,
+            localFileWrites: false,
+        },
+        {
+            id: "browser-profile-cache",
+            path: `${RENDERER_SERVICE_CACHE_ROOT}/browser-profile`,
+            purpose: "future isolated headless browser profile",
+            materialized: false,
+            existsChecked: false,
+            localFileWrites: false,
+        },
+        {
+            id: "runtime-adapter-cache",
+            path: `${RENDERER_SERVICE_CACHE_ROOT}/bundled-runtime-adapter.mjs`,
+            purpose: "future service-owned browser-backed adapter module",
+            materialized: false,
+            existsChecked: false,
+            localFileWrites: false,
+        },
+    ],
+    validation: {
+        status: "metadata-only",
+        requiredAssetIds: [
+            "thumbnail-worker-main",
+            "thumbnail-worker-render-wasm-glue",
+            "render-wasm-loader",
+            "render-wasm-binary",
+            "rasterizer-bundle",
+            "rasterizer-html",
+        ],
+        noDispatchTests: [
+            "health-runtime-asset-manifest-no-browser-start",
+            "thumbnail-runtime-asset-manifest-no-dispatch",
+            "runtime-asset-manifest-response-validator",
+        ],
+        blockedUntil: [
+            "browser lifecycle tests",
+            "asset materialization checks",
+            "pixel/resource assertions",
+            "explicit runtime registration gate",
+        ],
+    },
+    sideEffects: {
+        browserProcessStarted: false,
+        runtimeExecutionRegistered: false,
+        runtimeAdapterImported: false,
+        runtimeAssetsLoaded: false,
+        assetManifestMaterialized: false,
+        networkDispatch: false,
+        dispatch: false,
+        localFileWrites: false,
+    },
+    redaction: {
+        sourceDataValuesIncluded: false,
+        pageValuesIncluded: false,
+        artifactValuesIncluded: false,
+        mediaValuesIncluded: false,
+        tokenValuesIncluded: false,
+    },
+} as const;
+
 export const healthResponse = {
     status: "ok",
     renderer: "penpot-thumbnail-renderer",
@@ -104,9 +276,11 @@ export const healthResponse = {
         "thumbnail.backend-rpc.file-render-input-summary",
         "thumbnail.render.runtime-adapter",
         "thumbnail.render.runtime-module",
+        "thumbnail.render.runtime-asset-manifest",
         "thumbnail.backend-rpc.file-thumbnail-persist",
         "thumbnail.backend-rpc.frame-thumbnail-persist",
     ],
+    runtimeAssetManifest: bundledRuntimeBridgeAssetManifest,
 } as const;
 
 export const noopThumbnailResponse = {
@@ -127,6 +301,7 @@ export const noopThumbnailResponse = {
     runtimeRegistration: false,
     dispatch: true,
     localFileWrites: false,
+    runtimeAssetManifest: bundledRuntimeBridgeAssetManifest,
 } as const;
 
 const MAX_REQUEST_BODY_BYTES = 1024 * 1024;
@@ -2091,6 +2266,115 @@ function validateThumbnailAuthResponse(auth: Record<string, unknown>, expectedAu
     validateTokenSafeAuthResponse(auth, expectedAuth, "auth");
 }
 
+function validateRuntimeAssetManifestAssetResponse(
+    actual: unknown,
+    expected: (typeof bundledRuntimeBridgeAssetManifest.assets)[number],
+    field: string
+): void {
+    const record = responseRecord(actual, field);
+    requireResponseEqual(record.id, expected.id, `${field}.id`);
+    requireResponseEqual(record.kind, expected.kind, `${field}.kind`);
+    requireResponseEqual(record.role, expected.role, `${field}.role`);
+    requireResponseEqual(record.sourcePath, expected.sourcePath, `${field}.sourcePath`);
+    requireResponseEqual(record.publicPath, expected.publicPath, `${field}.publicPath`);
+    requireResponseEqual(record.cachePath, expected.cachePath, `${field}.cachePath`);
+    requireResponseEqual(responseBoolean(record, "required", `${field}.required`), expected.required, `${field}.required`);
+    requireResponseEqual(record.materialized, false, `${field}.materialized`);
+    requireResponseEqual(record.existsChecked, false, `${field}.existsChecked`);
+    requireResponseEqual(record.loaded, false, `${field}.loaded`);
+    requireResponseEqual(record.byteHash ?? null, null, `${field}.byteHash`);
+    requireResponseEqual(record.dispatch, false, `${field}.dispatch`);
+    requireResponseEqual(record.localFileWrites, false, `${field}.localFileWrites`);
+}
+
+function validateRuntimeAssetManifestCacheOutputResponse(
+    actual: unknown,
+    expected: (typeof bundledRuntimeBridgeAssetManifest.cacheOutputs)[number],
+    field: string
+): void {
+    const record = responseRecord(actual, field);
+    requireResponseEqual(record.id, expected.id, `${field}.id`);
+    requireResponseEqual(record.path, expected.path, `${field}.path`);
+    requireResponseEqual(record.purpose, expected.purpose, `${field}.purpose`);
+    requireResponseEqual(record.materialized, false, `${field}.materialized`);
+    requireResponseEqual(record.existsChecked, false, `${field}.existsChecked`);
+    requireResponseEqual(record.localFileWrites, false, `${field}.localFileWrites`);
+}
+
+function validateRuntimeAssetManifestResponse(actual: unknown, field: string): void {
+    const record = responseRecord(actual, field);
+    requireResponseEqual(record.status, bundledRuntimeBridgeAssetManifest.status, `${field}.status`);
+    requireResponseEqual(record.manifestVersion, bundledRuntimeBridgeAssetManifest.manifestVersion, `${field}.manifestVersion`);
+    requireResponseEqual(record.owner, bundledRuntimeBridgeAssetManifest.owner, `${field}.owner`);
+    requireResponseEqual(record.bridge, bundledRuntimeBridgeAssetManifest.bridge, `${field}.bridge`);
+    requireResponseEqual(record.runtime, bundledRuntimeBridgeAssetManifest.runtime, `${field}.runtime`);
+    requireResponseEqual(record.fallback, bundledRuntimeBridgeAssetManifest.fallback, `${field}.fallback`);
+
+    const roots = responseRecord(record.roots, `${field}.roots`);
+    requireResponseEqual(roots.frontendPublicJs, bundledRuntimeBridgeAssetManifest.roots.frontendPublicJs, `${field}.roots.frontendPublicJs`);
+    requireResponseEqual(roots.frontendWorkerJs, bundledRuntimeBridgeAssetManifest.roots.frontendWorkerJs, `${field}.roots.frontendWorkerJs`);
+    requireResponseEqual(roots.cacheRoot, bundledRuntimeBridgeAssetManifest.roots.cacheRoot, `${field}.roots.cacheRoot`);
+
+    const assets = responseRecordArray(record.assets, `${field}.assets`);
+    requireResponseEqual(assets.length, bundledRuntimeBridgeAssetManifest.assets.length, `${field}.assets.length`);
+    for (let index = 0; index < bundledRuntimeBridgeAssetManifest.assets.length; index += 1) {
+        validateRuntimeAssetManifestAssetResponse(assets[index], bundledRuntimeBridgeAssetManifest.assets[index], `${field}.assets.${index}`);
+    }
+
+    const cacheOutputs = responseRecordArray(record.cacheOutputs, `${field}.cacheOutputs`);
+    requireResponseEqual(cacheOutputs.length, bundledRuntimeBridgeAssetManifest.cacheOutputs.length, `${field}.cacheOutputs.length`);
+    for (let index = 0; index < bundledRuntimeBridgeAssetManifest.cacheOutputs.length; index += 1) {
+        validateRuntimeAssetManifestCacheOutputResponse(
+            cacheOutputs[index],
+            bundledRuntimeBridgeAssetManifest.cacheOutputs[index],
+            `${field}.cacheOutputs.${index}`
+        );
+    }
+
+    const validation = responseRecord(record.validation, `${field}.validation`);
+    requireResponseEqual(validation.status, bundledRuntimeBridgeAssetManifest.validation.status, `${field}.validation.status`);
+    requireResponseArrayEqual(
+        responseStringArray(validation, "requiredAssetIds", `${field}.validation.requiredAssetIds`),
+        [...bundledRuntimeBridgeAssetManifest.validation.requiredAssetIds],
+        `${field}.validation.requiredAssetIds`
+    );
+    requireResponseArrayEqual(
+        responseStringArray(validation, "noDispatchTests", `${field}.validation.noDispatchTests`),
+        [...bundledRuntimeBridgeAssetManifest.validation.noDispatchTests],
+        `${field}.validation.noDispatchTests`
+    );
+    requireResponseArrayEqual(
+        responseStringArray(validation, "blockedUntil", `${field}.validation.blockedUntil`),
+        [...bundledRuntimeBridgeAssetManifest.validation.blockedUntil],
+        `${field}.validation.blockedUntil`
+    );
+
+    const sideEffects = responseRecord(record.sideEffects, `${field}.sideEffects`);
+    for (const property of [
+        "browserProcessStarted",
+        "runtimeExecutionRegistered",
+        "runtimeAdapterImported",
+        "runtimeAssetsLoaded",
+        "assetManifestMaterialized",
+        "networkDispatch",
+        "dispatch",
+        "localFileWrites",
+    ]) {
+        requireResponseEqual(sideEffects[property], false, `${field}.sideEffects.${property}`);
+    }
+
+    const redaction = responseRecord(record.redaction, `${field}.redaction`);
+    for (const property of [
+        "sourceDataValuesIncluded",
+        "pageValuesIncluded",
+        "artifactValuesIncluded",
+        "mediaValuesIncluded",
+        "tokenValuesIncluded",
+    ]) {
+        requireResponseEqual(redaction[property], false, `${field}.redaction.${property}`);
+    }
+}
+
 function validateBackendRpcRequestEnvelopeResponse(actual: unknown, expected: BackendRpcRequestEnvelopeSummary, field: string): void {
     const record = responseRecord(actual, field);
     rejectResponseValueFields(record, field);
@@ -2308,6 +2592,7 @@ function validateThumbnailResponseContract(
     requireResponseEqual(record.runtimeRegistration, false, "runtimeRegistration");
     requireResponseEqual(record.dispatch, true, "dispatch");
     requireResponseEqual(record.localFileWrites, false, "localFileWrites");
+    validateRuntimeAssetManifestResponse(record.runtimeAssetManifest, "runtimeAssetManifest");
 
     validateThumbnailResourceResponse(responseRecord(record.resource, "resource"));
     validateThumbnailCacheResponse(responseRecord(record.cache, "cache"), summary, cacheProbeExecution);

@@ -27,6 +27,7 @@
 - Persist renderer-service tagged-frame refresh PNGs through backend `create-file-object-thumbnail` after runtime adapter success, returning backend resource metadata with target-specific token-safe `persistOutput` summaries.
 - Execute renderer-service tagged-frame reuse cache probes through backend `get-file-object-thumbnail`, returning cached resource metadata on hits and continuing source-data/render/persist on misses.
 - Document and fixture-test the P26.19 bundled renderer runtime bridge plan, selecting a renderer-service-owned browser-backed adapter over direct Node WASM or active frontend-session rendering.
+- Add the P26.20 bundled renderer runtime asset manifest scaffold to renderer-service health and thumbnail responses, listing planned frontend worker, render-wasm, rasterizer, and cache-output paths while validating no browser startup, runtime import, asset materialization, local file writes, value exposure, or runtime registration.
 - Validate renderer-service thumbnail identity consistency across target ids/revisions, cache keys, backend data requests, and persist requests before no-op rendering.
 - Validate generated renderer-service thumbnail response metadata before returning success, rejecting malformed resource/cache/renderer/request/auth summaries with `renderer_service_response_invalid`.
 - Forward caller-session auth headers for executable `render.thumbnail` renderer-service dispatch from MCP and `penpot-cli`, while exposing only token-safe auth presence metadata in service results.

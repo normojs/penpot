@@ -428,6 +428,11 @@ worker, render-wasm, and rasterizer fallback assets without requiring an active
 editor tab. Direct Node render-wasm execution remains rejected for the first
 bridge because the current WebGL/Emscripten integration depends on browser
 canvas APIs and frontend globals.
+P26.20 materializes the bridge asset manifest scaffold itself: the service now
+records the expected frontend worker, render-wasm loader/binary, rasterizer
+fallback assets, cache output paths, and validation metadata while keeping
+browser startup, runtime execution, asset materialization, local file writes,
+and runtime registration disabled.
 
 ## Test Strategy
 
