@@ -4086,6 +4086,13 @@ side-effect flags. It still does not read tokens, accept approvals, write audit
 records, materialize assets, start browsers, import/load runtime assets,
 dispatch backend or network requests, register runtime execution, or expose
 token/audit/root/path values.
+P26.28 reports unsupported approval configuration attempts as first-class
+diagnostics. Renderer-service, command-runtime, `penpot-cli`, and MCP summaries
+now expose `diagnosticsVersion: "P26.28"`, configured booleans for the future
+mode/token/audit env vars, unsupported diagnostic codes, redacted diagnostics,
+and next actions. The values remain omitted: no approval token value is read,
+accepted, consumed, or exposed, no audit directory value is echoed, and no
+audit/cache/local writes or runtime/browser/backend dispatch are enabled.
 
 ### 8.6 Advanced Tools
 

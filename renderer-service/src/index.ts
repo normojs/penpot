@@ -82,6 +82,12 @@ export type RendererRuntimeAssetPreflightOptions = {
     cacheRoot?: string;
 };
 
+export type RendererRuntimeAssetMaterializationApprovalOptions = {
+    modeConfigured?: boolean;
+    approvalTokenConfigured?: boolean;
+    auditConfigured?: boolean;
+};
+
 export type RendererServiceOptions = {
     host?: string;
     port?: number;
@@ -89,6 +95,7 @@ export type RendererServiceOptions = {
     renderer?: RendererRuntimeOptions;
     rendererRuntimeModule?: string;
     runtimeAssetPreflight?: RendererRuntimeAssetPreflightOptions;
+    runtimeAssetMaterializationApproval?: RendererRuntimeAssetMaterializationApprovalOptions;
     thumbnailResponseOverride?: (response: Record<string, unknown>) => unknown;
 };
 
@@ -471,6 +478,7 @@ type RuntimeAssetMaterializationPlanCounts = {
 type RuntimeAssetMaterializationApprovalPlan = {
     status: "planned-disabled";
     planVersion: "P26.27";
+    diagnosticsVersion: "P26.28";
     owner: "renderer-service";
     mode: "metadata-only";
     sourceDryRun: {
@@ -487,16 +495,18 @@ type RuntimeAssetMaterializationApprovalPlan = {
     };
     configuration: {
         status: "planned-disabled";
+        configured: boolean;
+        valuesIncluded: false;
         mode: {
             env: typeof RUNTIME_ASSET_MATERIALIZATION_APPROVAL_ENV;
             expectedValue: "approved";
-            configured: false;
+            configured: boolean;
             valueRead: false;
         };
         approvalToken: {
             env: typeof RUNTIME_ASSET_MATERIALIZATION_APPROVAL_TOKEN_ENV;
             requiredWhenEnabled: true;
-            configured: false;
+            configured: boolean;
             valueRead: false;
             accepted: false;
             consumed: false;
@@ -505,7 +515,7 @@ type RuntimeAssetMaterializationApprovalPlan = {
         audit: {
             env: typeof RUNTIME_ASSET_MATERIALIZATION_APPROVAL_AUDIT_DIR_ENV;
             requiredWhenEnabled: true;
-            configured: false;
+            configured: boolean;
             valueRead: false;
             recordWrites: false;
             valuesIncluded: false;
@@ -515,13 +525,25 @@ type RuntimeAssetMaterializationApprovalPlan = {
         status: "closed";
         approvalRequired: true;
         approvalGranted: false;
-        approvalTokenConfigured: false;
+        approvalTokenConfigured: boolean;
         approvalTokenAccepted: false;
         approvalTokenConsumed: false;
         writesEnabled: false;
         currentBlockers: string[];
         opensWhen: string[];
     };
+    diagnostics: Array<{
+        code: string;
+        severity: "unsupported";
+        field: "mode" | "approvalToken" | "audit";
+        env: string;
+        valueRead: false;
+        valuesIncluded: false;
+        message: string;
+        nextActions: string[];
+    }>;
+    diagnosticCodes: string[];
+    nextActions: string[];
     audit: {
         status: "planned-disabled";
         auditTrailEnabled: false;
@@ -744,7 +766,62 @@ function runtimeAssetPlanCounts(entries: Record<string, unknown>[]): RuntimeAsse
     };
 }
 
-function runtimeAssetMaterializationApprovalPlan(dryRun: Record<string, unknown>): RuntimeAssetMaterializationApprovalPlan {
+function runtimeAssetMaterializationApprovalDiagnostics(
+    options: RendererRuntimeAssetMaterializationApprovalOptions | undefined
+): RuntimeAssetMaterializationApprovalPlan["diagnostics"] {
+    const diagnostics: RuntimeAssetMaterializationApprovalPlan["diagnostics"] = [];
+    if (options?.modeConfigured === true) {
+        diagnostics.push({
+            code: "renderer_service_runtime_asset_materialization_approval_configuration_unsupported",
+            severity: "unsupported",
+            field: "mode",
+            env: RUNTIME_ASSET_MATERIALIZATION_APPROVAL_ENV,
+            valueRead: false,
+            valuesIncluded: false,
+            message: "Runtime asset materialization approval mode is configured, but the approval gate is not implemented yet.",
+            nextActions: [
+                `Leave ${RUNTIME_ASSET_MATERIALIZATION_APPROVAL_ENV} unset until the future approval gate is implemented.`,
+                "Use runtime asset materialization dry-run diagnostics to review readiness without enabling writes.",
+            ],
+        });
+    }
+    if (options?.approvalTokenConfigured === true) {
+        diagnostics.push({
+            code: "renderer_service_runtime_asset_materialization_approval_token_unsupported",
+            severity: "unsupported",
+            field: "approvalToken",
+            env: RUNTIME_ASSET_MATERIALIZATION_APPROVAL_TOKEN_ENV,
+            valueRead: false,
+            valuesIncluded: false,
+            message: "Runtime asset materialization approval token is configured, but token validation is not implemented yet.",
+            nextActions: [
+                `Leave ${RUNTIME_ASSET_MATERIALIZATION_APPROVAL_TOKEN_ENV} unset until approval token validation is implemented.`,
+                "Do not rely on approval token configuration to enable runtime asset materialization writes.",
+            ],
+        });
+    }
+    if (options?.auditConfigured === true) {
+        diagnostics.push({
+            code: "renderer_service_runtime_asset_materialization_approval_audit_unsupported",
+            severity: "unsupported",
+            field: "audit",
+            env: RUNTIME_ASSET_MATERIALIZATION_APPROVAL_AUDIT_DIR_ENV,
+            valueRead: false,
+            valuesIncluded: false,
+            message: "Runtime asset materialization approval audit storage is configured, but audit writes are not implemented yet.",
+            nextActions: [
+                `Leave ${RUNTIME_ASSET_MATERIALIZATION_APPROVAL_AUDIT_DIR_ENV} unset until approval audit persistence is implemented.`,
+                "Keep materialization disabled until approval audit storage is explicitly enabled by a future task.",
+            ],
+        });
+    }
+    return diagnostics;
+}
+
+function runtimeAssetMaterializationApprovalPlan(
+    dryRun: Record<string, unknown>,
+    options: RendererRuntimeAssetMaterializationApprovalOptions | undefined = undefined
+): RuntimeAssetMaterializationApprovalPlan {
     const sourcePreflight = isRecord(dryRun.sourcePreflight) ? dryRun.sourcePreflight : {};
     const approvalGate = isRecord(dryRun.approvalGate) ? dryRun.approvalGate : {};
     const copyPlan = Array.isArray(dryRun.copyPlan) ? dryRun.copyPlan.filter((entry): entry is Record<string, unknown> => isRecord(entry)) : [];
@@ -757,15 +834,27 @@ function runtimeAssetMaterializationApprovalPlan(dryRun: Record<string, unknown>
             : "unknown";
     const approvalDisabledCode = "renderer_service_runtime_asset_materialization_approval_scaffold_disabled";
     const approvalTokenDisabledCode = "renderer_service_runtime_asset_materialization_approval_token_disabled";
-    const diagnosticCodes = uniqueStrings([
+    const diagnostics = runtimeAssetMaterializationApprovalDiagnostics(options);
+    const configurationConfigured =
+        options?.modeConfigured === true || options?.approvalTokenConfigured === true || options?.auditConfigured === true;
+    const configurationDiagnosticCodes = diagnostics.map((diagnostic) => diagnostic.code);
+    const sourceDiagnosticCodes = uniqueStrings([
         ...unknownStringArray(sourcePreflight.diagnosticCodes),
         ...unknownStringArray(approvalGate.currentBlockers),
     ]);
-    const blockers = uniqueStrings([...diagnosticCodes, approvalDisabledCode, approvalTokenDisabledCode]);
+    const diagnosticCodes = uniqueStrings([
+        ...sourceDiagnosticCodes,
+        ...configurationDiagnosticCodes,
+        approvalDisabledCode,
+        approvalTokenDisabledCode,
+    ]);
+    const blockers = diagnosticCodes;
+    const nextActions = uniqueStrings(diagnostics.flatMap((diagnostic) => diagnostic.nextActions));
 
     return {
         status: "planned-disabled",
         planVersion: "P26.27",
+        diagnosticsVersion: "P26.28",
         owner: "renderer-service",
         mode: "metadata-only",
         sourceDryRun: {
@@ -778,20 +867,22 @@ function runtimeAssetMaterializationApprovalPlan(dryRun: Record<string, unknown>
             writesEnabled: approvalGate.writesEnabled === true,
             copyPlanCounts: runtimeAssetPlanCounts(copyPlan),
             cacheOutputPlanCounts: runtimeAssetPlanCounts(cacheOutputPlan),
-            diagnosticCodes,
+            diagnosticCodes: sourceDiagnosticCodes,
         },
         configuration: {
             status: "planned-disabled",
+            configured: configurationConfigured,
+            valuesIncluded: false,
             mode: {
                 env: RUNTIME_ASSET_MATERIALIZATION_APPROVAL_ENV,
                 expectedValue: "approved",
-                configured: false,
+                configured: options?.modeConfigured === true,
                 valueRead: false,
             },
             approvalToken: {
                 env: RUNTIME_ASSET_MATERIALIZATION_APPROVAL_TOKEN_ENV,
                 requiredWhenEnabled: true,
-                configured: false,
+                configured: options?.approvalTokenConfigured === true,
                 valueRead: false,
                 accepted: false,
                 consumed: false,
@@ -800,7 +891,7 @@ function runtimeAssetMaterializationApprovalPlan(dryRun: Record<string, unknown>
             audit: {
                 env: RUNTIME_ASSET_MATERIALIZATION_APPROVAL_AUDIT_DIR_ENV,
                 requiredWhenEnabled: true,
-                configured: false,
+                configured: options?.auditConfigured === true,
                 valueRead: false,
                 recordWrites: false,
                 valuesIncluded: false,
@@ -810,7 +901,7 @@ function runtimeAssetMaterializationApprovalPlan(dryRun: Record<string, unknown>
             status: "closed",
             approvalRequired: true,
             approvalGranted: false,
-            approvalTokenConfigured: false,
+            approvalTokenConfigured: options?.approvalTokenConfigured === true,
             approvalTokenAccepted: false,
             approvalTokenConsumed: false,
             writesEnabled: false,
@@ -821,6 +912,9 @@ function runtimeAssetMaterializationApprovalPlan(dryRun: Record<string, unknown>
                 "future approval token validation and audit persistence are implemented",
             ],
         },
+        diagnostics,
+        diagnosticCodes,
+        nextActions,
         audit: {
             status: "planned-disabled",
             auditTrailEnabled: false,
@@ -1269,7 +1363,10 @@ type RuntimeAssetPreflightExecution = {
     };
 };
 
-type RendererServiceRuntimeOptions = Pick<RendererServiceOptions, "backendRpc" | "renderer" | "runtimeAssetPreflight" | "thumbnailResponseOverride"> & {
+type RendererServiceRuntimeOptions = Pick<
+    RendererServiceOptions,
+    "backendRpc" | "renderer" | "runtimeAssetPreflight" | "runtimeAssetMaterializationApproval" | "thumbnailResponseOverride"
+> & {
     renderedAssets: RenderedAssetStore;
 };
 
@@ -1594,9 +1691,10 @@ function runtimeAssetMaterializationDryRunResponse(preflight: Record<string, unk
 }
 
 function runtimeAssetMaterializationApprovalResponse(
-    dryRun: Record<string, unknown>
+    dryRun: Record<string, unknown>,
+    options: RendererRuntimeAssetMaterializationApprovalOptions | undefined
 ): RuntimeAssetMaterializationApprovalPlan {
-    return runtimeAssetMaterializationApprovalPlan(dryRun);
+    return runtimeAssetMaterializationApprovalPlan(dryRun, options);
 }
 
 function normalizeRendererRuntimeModuleSpecifier(moduleSpecifier: string): string {
@@ -3777,6 +3875,7 @@ function validateRuntimeAssetMaterializationApprovalResponse(actual: unknown, fi
     const record = responseRecord(actual, field);
     requireResponseEqual(record.status, "planned-disabled", `${field}.status`);
     requireResponseEqual(record.planVersion, "P26.27", `${field}.planVersion`);
+    requireResponseEqual(record.diagnosticsVersion, "P26.28", `${field}.diagnosticsVersion`);
     requireResponseEqual(record.owner, "renderer-service", `${field}.owner`);
     requireResponseEqual(record.mode, "metadata-only", `${field}.mode`);
 
@@ -3806,21 +3905,26 @@ function validateRuntimeAssetMaterializationApprovalResponse(actual: unknown, fi
 
     const configuration = responseRecord(record.configuration, `${field}.configuration`);
     requireResponseEqual(configuration.status, "planned-disabled", `${field}.configuration.status`);
+    const configurationConfigured = responseBoolean(configuration, "configured", `${field}.configuration.configured`);
+    requireResponseEqual(configuration.valuesIncluded, false, `${field}.configuration.valuesIncluded`);
     const mode = responseRecord(configuration.mode, `${field}.configuration.mode`);
     requireResponseEqual(mode.env, RUNTIME_ASSET_MATERIALIZATION_APPROVAL_ENV, `${field}.configuration.mode.env`);
     requireResponseEqual(mode.expectedValue, "approved", `${field}.configuration.mode.expectedValue`);
-    requireResponseEqual(mode.configured, false, `${field}.configuration.mode.configured`);
+    const modeConfigured = responseBoolean(mode, "configured", `${field}.configuration.mode.configured`);
     requireResponseEqual(mode.valueRead, false, `${field}.configuration.mode.valueRead`);
     const approvalToken = responseRecord(configuration.approvalToken, `${field}.configuration.approvalToken`);
     requireResponseEqual(approvalToken.env, RUNTIME_ASSET_MATERIALIZATION_APPROVAL_TOKEN_ENV, `${field}.configuration.approvalToken.env`);
     requireResponseEqual(approvalToken.requiredWhenEnabled, true, `${field}.configuration.approvalToken.requiredWhenEnabled`);
-    for (const property of ["configured", "valueRead", "accepted", "consumed", "valuesIncluded"]) {
+    const approvalTokenConfigured = responseBoolean(approvalToken, "configured", `${field}.configuration.approvalToken.configured`);
+    for (const property of ["valueRead", "accepted", "consumed", "valuesIncluded"]) {
         requireResponseEqual(approvalToken[property], false, `${field}.configuration.approvalToken.${property}`);
     }
     const auditConfig = responseRecord(configuration.audit, `${field}.configuration.audit`);
     requireResponseEqual(auditConfig.env, RUNTIME_ASSET_MATERIALIZATION_APPROVAL_AUDIT_DIR_ENV, `${field}.configuration.audit.env`);
     requireResponseEqual(auditConfig.requiredWhenEnabled, true, `${field}.configuration.audit.requiredWhenEnabled`);
-    for (const property of ["configured", "valueRead", "recordWrites", "valuesIncluded"]) {
+    const auditConfigured = responseBoolean(auditConfig, "configured", `${field}.configuration.audit.configured`);
+    requireResponseEqual(configurationConfigured, modeConfigured || approvalTokenConfigured || auditConfigured, `${field}.configuration.configured`);
+    for (const property of ["valueRead", "recordWrites", "valuesIncluded"]) {
         requireResponseEqual(auditConfig[property], false, `${field}.configuration.audit.${property}`);
     }
 
@@ -3828,12 +3932,33 @@ function validateRuntimeAssetMaterializationApprovalResponse(actual: unknown, fi
     requireResponseEqual(approvalGate.status, "closed", `${field}.approvalGate.status`);
     requireResponseEqual(approvalGate.approvalRequired, true, `${field}.approvalGate.approvalRequired`);
     requireResponseEqual(approvalGate.approvalGranted, false, `${field}.approvalGate.approvalGranted`);
-    requireResponseEqual(approvalGate.approvalTokenConfigured, false, `${field}.approvalGate.approvalTokenConfigured`);
+    requireResponseEqual(approvalGate.approvalTokenConfigured, approvalTokenConfigured, `${field}.approvalGate.approvalTokenConfigured`);
     requireResponseEqual(approvalGate.approvalTokenAccepted, false, `${field}.approvalGate.approvalTokenAccepted`);
     requireResponseEqual(approvalGate.approvalTokenConsumed, false, `${field}.approvalGate.approvalTokenConsumed`);
     requireResponseEqual(approvalGate.writesEnabled, false, `${field}.approvalGate.writesEnabled`);
     requireResponseEqual(responseStringArray(approvalGate, "currentBlockers", `${field}.approvalGate.currentBlockers`).length >= 1, true, `${field}.approvalGate.currentBlockers`);
     requireResponseEqual(responseStringArray(approvalGate, "opensWhen", `${field}.approvalGate.opensWhen`).length >= 1, true, `${field}.approvalGate.opensWhen`);
+
+    const diagnostics = responseRecordArray(record.diagnostics, `${field}.diagnostics`);
+    const diagnosticCodes = responseStringArray(record, "diagnosticCodes", `${field}.diagnosticCodes`);
+    const nextActions = responseStringArray(record, "nextActions", `${field}.nextActions`);
+    requireResponseArrayEqual(
+        diagnosticCodes,
+        uniqueStrings([...responseStringArray(sourceDryRun, "diagnosticCodes", `${field}.sourceDryRun.diagnosticCodes`), ...responseStringArray(approvalGate, "currentBlockers", `${field}.approvalGate.currentBlockers`)]),
+        `${field}.diagnosticCodes`
+    );
+    for (const [index, diagnostic] of diagnostics.entries()) {
+        requireResponseEqual(typeof diagnostic.code === "string" && diagnostic.code.length > 0, true, `${field}.diagnostics.${index}.code`);
+        requireResponseEqual(diagnosticCodes.includes(String(diagnostic.code)), true, `${field}.diagnostics.${index}.code`);
+        requireResponseEqual(diagnostic.severity, "unsupported", `${field}.diagnostics.${index}.severity`);
+        requireResponseEqual(["mode", "approvalToken", "audit"].includes(String(diagnostic.field)), true, `${field}.diagnostics.${index}.field`);
+        requireResponseEqual(typeof diagnostic.env === "string" && diagnostic.env.length > 0, true, `${field}.diagnostics.${index}.env`);
+        requireResponseEqual(diagnostic.valueRead, false, `${field}.diagnostics.${index}.valueRead`);
+        requireResponseEqual(diagnostic.valuesIncluded, false, `${field}.diagnostics.${index}.valuesIncluded`);
+        requireResponseEqual(typeof diagnostic.message === "string" && diagnostic.message.length > 0, true, `${field}.diagnostics.${index}.message`);
+        requireResponseEqual(responseStringArray(diagnostic, "nextActions", `${field}.diagnostics.${index}.nextActions`).length > 0, true, `${field}.diagnostics.${index}.nextActions`);
+    }
+    requireResponseEqual(diagnostics.length === 0, nextActions.length === 0, `${field}.nextActions`);
 
     const audit = responseRecord(record.audit, `${field}.audit`);
     requireResponseEqual(audit.status, "planned-disabled", `${field}.audit.status`);
@@ -4283,7 +4408,10 @@ async function handleRequest(request: IncomingMessage, response: ServerResponse,
     if (request.method === "GET" && url.pathname === "/health") {
         const runtimeAssetPreflight = await runtimeAssetMaterializationPreflightResponse(options.runtimeAssetPreflight);
         const runtimeAssetMaterializationDryRun = runtimeAssetMaterializationDryRunResponse(runtimeAssetPreflight);
-        const runtimeAssetMaterializationApproval = runtimeAssetMaterializationApprovalResponse(runtimeAssetMaterializationDryRun);
+        const runtimeAssetMaterializationApproval = runtimeAssetMaterializationApprovalResponse(
+            runtimeAssetMaterializationDryRun,
+            options.runtimeAssetMaterializationApproval
+        );
         sendJson(response, 200, {
             ...healthResponse,
             runtimeAssetMaterializationPreflight: runtimeAssetPreflight,
@@ -4304,7 +4432,10 @@ async function handleRequest(request: IncomingMessage, response: ServerResponse,
             const persistExecution = await executeThumbnailPersist(request, summary, options.backendRpc, sourceDataReadExecution, renderExecution);
             const runtimeAssetPreflight = await runtimeAssetMaterializationPreflightResponse(options.runtimeAssetPreflight);
             const runtimeAssetMaterializationDryRun = runtimeAssetMaterializationDryRunResponse(runtimeAssetPreflight);
-            const runtimeAssetMaterializationApproval = runtimeAssetMaterializationApprovalResponse(runtimeAssetMaterializationDryRun);
+            const runtimeAssetMaterializationApproval = runtimeAssetMaterializationApprovalResponse(
+                runtimeAssetMaterializationDryRun,
+                options.runtimeAssetMaterializationApproval
+            );
             const generatedResponse = thumbnailResponse(
                 request,
                 summary,
@@ -4373,13 +4504,17 @@ async function handleRequest(request: IncomingMessage, response: ServerResponse,
 }
 
 export function createRendererService(
-    options: Pick<RendererServiceOptions, "backendRpc" | "renderer" | "runtimeAssetPreflight" | "thumbnailResponseOverride"> = {}
+    options: Pick<
+        RendererServiceOptions,
+        "backendRpc" | "renderer" | "runtimeAssetPreflight" | "runtimeAssetMaterializationApproval" | "thumbnailResponseOverride"
+    > = {}
 ): Server {
     const renderedAssets: RenderedAssetStore = new Map();
     const runtimeOptions: RendererServiceRuntimeOptions = {
         backendRpc: options.backendRpc,
         renderer: options.renderer,
         runtimeAssetPreflight: options.runtimeAssetPreflight,
+        runtimeAssetMaterializationApproval: options.runtimeAssetMaterializationApproval,
         thumbnailResponseOverride: options.thumbnailResponseOverride,
         renderedAssets,
     };
@@ -4404,6 +4539,7 @@ export async function startRendererService(options: RendererServiceOptions = {})
         backendRpc: options.backendRpc,
         renderer,
         runtimeAssetPreflight: options.runtimeAssetPreflight,
+        runtimeAssetMaterializationApproval: options.runtimeAssetMaterializationApproval,
         thumbnailResponseOverride: options.thumbnailResponseOverride,
     });
 
@@ -4478,6 +4614,22 @@ function readRuntimeAssetPreflightOptionsFromEnv(env: NodeJS.ProcessEnv): Render
     };
 }
 
+function hasEnvKey(env: NodeJS.ProcessEnv, key: string): boolean {
+    return Object.prototype.hasOwnProperty.call(env, key);
+}
+
+function readRuntimeAssetMaterializationApprovalOptionsFromEnv(
+    env: NodeJS.ProcessEnv
+): RendererRuntimeAssetMaterializationApprovalOptions | undefined {
+    const options: RendererRuntimeAssetMaterializationApprovalOptions = {
+        modeConfigured: hasEnvKey(env, RUNTIME_ASSET_MATERIALIZATION_APPROVAL_ENV),
+        approvalTokenConfigured: hasEnvKey(env, RUNTIME_ASSET_MATERIALIZATION_APPROVAL_TOKEN_ENV),
+        auditConfigured: hasEnvKey(env, RUNTIME_ASSET_MATERIALIZATION_APPROVAL_AUDIT_DIR_ENV),
+    };
+
+    return options.modeConfigured || options.approvalTokenConfigured || options.auditConfigured ? options : undefined;
+}
+
 export function readRendererServiceOptionsFromEnv(env: NodeJS.ProcessEnv = process.env): RendererServiceOptions {
     const backendBaseUriInput =
         optionalString(env[BACKEND_RPC_BASE_URI_ENV]) ?? optionalString(env[BACKEND_RPC_BASE_URI_FALLBACK_ENV]) ?? undefined;
@@ -4486,6 +4638,7 @@ export function readRendererServiceOptionsFromEnv(env: NodeJS.ProcessEnv = proce
     });
     const rendererRuntimeModule = optionalString(env[RENDERER_RUNTIME_MODULE_ENV])?.trim();
     const runtimeAssetPreflight = readRuntimeAssetPreflightOptionsFromEnv(env);
+    const runtimeAssetMaterializationApproval = readRuntimeAssetMaterializationApprovalOptionsFromEnv(env);
 
     return {
         host: env.PENPOT_RENDERER_SERVICE_HOST ?? DEFAULT_HOST,
@@ -4493,6 +4646,7 @@ export function readRendererServiceOptionsFromEnv(env: NodeJS.ProcessEnv = proce
         ...(backendBaseUri ? { backendRpc: { baseUri: backendBaseUri } } : {}),
         ...(rendererRuntimeModule ? { rendererRuntimeModule } : {}),
         ...(runtimeAssetPreflight ? { runtimeAssetPreflight } : {}),
+        ...(runtimeAssetMaterializationApproval ? { runtimeAssetMaterializationApproval } : {}),
     };
 }
 

@@ -258,7 +258,10 @@ configuration. The same JSON result also includes
 plan with approval-required state and false write/browser/runtime side-effect
 flags, plus `healthPreflight.runtimeAssetMaterializationApproval`, a disabled
 approval token/config/audit scaffold with token acceptance, audit writes, and
-cache writes all false. Enable the read-only host preflight with
+cache writes all false. If the future approval mode, token, or audit env vars
+are present, status/health output reports redacted P26.28 unsupported
+configuration diagnostics with configured booleans only; token and audit values
+are not read or included. Enable the read-only host preflight with
 `PENPOT_RENDERER_SERVICE_RUNTIME_ASSET_PREFLIGHT=read-only`,
 `PENPOT_RENDERER_SERVICE_RUNTIME_ASSET_PREFLIGHT_WORKSPACE_ROOT=<absolute>`,
 and optionally

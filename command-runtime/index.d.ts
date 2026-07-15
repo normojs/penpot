@@ -1662,7 +1662,11 @@ export interface RenderThumbnailRendererServiceRuntimeAssetMaterializationDryRun
 export interface RenderThumbnailRendererServiceRuntimeAssetMaterializationApproval {
     status: "not-reported" | "planned-disabled" | "invalid";
     planVersion: "P26.27" | null;
+    diagnosticsVersion: "P26.28" | null;
     mode: string | null;
+    configurationConfigured: boolean;
+    modeConfigured: boolean;
+    auditConfigured: boolean;
     approvalRequired: boolean;
     approvalGranted: boolean;
     tokenConfigured: boolean;
@@ -1692,6 +1696,9 @@ export interface RenderThumbnailRendererServiceRuntimeAssetMaterializationApprov
         modeEnv: string | null;
         tokenEnv: string | null;
         auditEnv: string | null;
+        modeConfigured: boolean;
+        tokenConfigured: boolean;
+        auditConfigured: boolean;
         modeValueRead: boolean;
         tokenValueRead: boolean;
         auditValueRead: boolean;
@@ -1707,6 +1714,16 @@ export interface RenderThumbnailRendererServiceRuntimeAssetMaterializationApprov
         auditIntegrityChecked: boolean;
         auditValuesIncluded: boolean;
     };
+    diagnostics: Array<{
+        code: string;
+        severity: string | null;
+        field: string | null;
+        env: string | null;
+        message: string | null;
+        nextActions: string[];
+        valueRead: boolean;
+        valuesIncluded: boolean;
+    }>;
     diagnosticCodes: string[];
     nextActions: string[];
     sideEffects: {

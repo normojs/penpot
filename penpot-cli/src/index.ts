@@ -51,6 +51,12 @@ const RENDERER_SERVICE_BUILD_DIR = "/Volumes/fushilu/.caches/penpot/renderer-ser
 const RENDERER_SERVICE_RUNTIME_ASSET_PREFLIGHT_ENV = "PENPOT_RENDERER_SERVICE_RUNTIME_ASSET_PREFLIGHT";
 const RENDERER_SERVICE_RUNTIME_ASSET_PREFLIGHT_WORKSPACE_ROOT_ENV = "PENPOT_RENDERER_SERVICE_RUNTIME_ASSET_PREFLIGHT_WORKSPACE_ROOT";
 const RENDERER_SERVICE_RUNTIME_ASSET_PREFLIGHT_CACHE_ROOT_ENV = "PENPOT_RENDERER_SERVICE_RUNTIME_ASSET_PREFLIGHT_CACHE_ROOT";
+const RENDERER_SERVICE_RUNTIME_ASSET_MATERIALIZATION_APPROVAL_ENV =
+    "PENPOT_RENDERER_SERVICE_RUNTIME_ASSET_MATERIALIZATION_APPROVAL";
+const RENDERER_SERVICE_RUNTIME_ASSET_MATERIALIZATION_APPROVAL_TOKEN_ENV =
+    "PENPOT_RENDERER_SERVICE_RUNTIME_ASSET_MATERIALIZATION_APPROVAL_TOKEN";
+const RENDERER_SERVICE_RUNTIME_ASSET_MATERIALIZATION_APPROVAL_AUDIT_DIR_ENV =
+    "PENPOT_RENDERER_SERVICE_RUNTIME_ASSET_MATERIALIZATION_APPROVAL_AUDIT_DIR";
 const DEFAULT_PLUGIN_PREVIEW_URI = "http://localhost:4400/manifest.json";
 
 const HELP_TEXT = `penpot-cli ${VERSION}
@@ -1101,6 +1107,10 @@ function shellEnvAssignment(name: string, value: string): string {
     return `${name}='${value.replace(/'/g, "'\"'\"'")}'`;
 }
 
+function hasEnvKey(env: NodeJS.ProcessEnv, name: string): boolean {
+    return Object.prototype.hasOwnProperty.call(env, name);
+}
+
 function getRendererServiceLifecyclePlan(args: string[], env: NodeJS.ProcessEnv): {
     host: string;
     port: number | null;
@@ -1193,16 +1203,40 @@ function getRendererServiceLifecyclePlan(args: string[], env: NodeJS.ProcessEnv)
     runtimeAssetMaterializationApproval: {
         status: "planned-disabled";
         planVersion: "P26.27";
+        diagnosticsVersion: "P26.28";
         source: "renderer-service /health runtimeAssetMaterializationApproval";
+        configurationConfigured: boolean;
+        modeConfigured: boolean;
         approvalRequired: true;
         approvalGranted: false;
-        tokenConfigured: false;
+        tokenConfigured: boolean;
+        auditConfigured: boolean;
         tokenAccepted: false;
         tokenConsumed: false;
         writesEnabled: false;
-        modeEnv: "PENPOT_RENDERER_SERVICE_RUNTIME_ASSET_MATERIALIZATION_APPROVAL";
-        tokenEnv: "PENPOT_RENDERER_SERVICE_RUNTIME_ASSET_MATERIALIZATION_APPROVAL_TOKEN";
-        auditEnv: "PENPOT_RENDERER_SERVICE_RUNTIME_ASSET_MATERIALIZATION_APPROVAL_AUDIT_DIR";
+        modeEnv: typeof RENDERER_SERVICE_RUNTIME_ASSET_MATERIALIZATION_APPROVAL_ENV;
+        tokenEnv: typeof RENDERER_SERVICE_RUNTIME_ASSET_MATERIALIZATION_APPROVAL_TOKEN_ENV;
+        auditEnv: typeof RENDERER_SERVICE_RUNTIME_ASSET_MATERIALIZATION_APPROVAL_AUDIT_DIR_ENV;
+        modeValueRead: false;
+        tokenValueRead: false;
+        auditValueRead: false;
+        tokenValuesIncluded: false;
+        auditValuesIncluded: false;
+        diagnosticCodes: string[];
+        diagnostics: Array<{
+            code:
+                | "renderer_service_runtime_asset_materialization_approval_configuration_unsupported"
+                | "renderer_service_runtime_asset_materialization_approval_token_unsupported"
+                | "renderer_service_runtime_asset_materialization_approval_audit_unsupported";
+            severity: "unsupported";
+            field: "mode" | "approvalToken" | "audit";
+            env: string;
+            valueRead: false;
+            valuesIncluded: false;
+            message: string;
+            nextActions: string[];
+        }>;
+        nextActions: string[];
         diagnosticsSurface: "healthPreflight.runtimeAssetMaterializationApproval";
         lifecyclePlanEffects: {
             healthProbe: false;
@@ -1312,6 +1346,80 @@ function getRendererServiceLifecyclePlan(args: string[], env: NodeJS.ProcessEnv)
             ],
         });
     }
+    const runtimeAssetMaterializationApprovalModeConfigured = hasEnvKey(
+        env,
+        RENDERER_SERVICE_RUNTIME_ASSET_MATERIALIZATION_APPROVAL_ENV
+    );
+    const runtimeAssetMaterializationApprovalTokenConfigured = hasEnvKey(
+        env,
+        RENDERER_SERVICE_RUNTIME_ASSET_MATERIALIZATION_APPROVAL_TOKEN_ENV
+    );
+    const runtimeAssetMaterializationApprovalAuditConfigured = hasEnvKey(
+        env,
+        RENDERER_SERVICE_RUNTIME_ASSET_MATERIALIZATION_APPROVAL_AUDIT_DIR_ENV
+    );
+    const runtimeAssetMaterializationApprovalDiagnostics: Array<{
+        code:
+            | "renderer_service_runtime_asset_materialization_approval_configuration_unsupported"
+            | "renderer_service_runtime_asset_materialization_approval_token_unsupported"
+            | "renderer_service_runtime_asset_materialization_approval_audit_unsupported";
+        severity: "unsupported";
+        field: "mode" | "approvalToken" | "audit";
+        env: string;
+        valueRead: false;
+        valuesIncluded: false;
+        message: string;
+        nextActions: string[];
+    }> = [];
+    if (runtimeAssetMaterializationApprovalModeConfigured) {
+        runtimeAssetMaterializationApprovalDiagnostics.push({
+            code: "renderer_service_runtime_asset_materialization_approval_configuration_unsupported",
+            severity: "unsupported",
+            field: "mode",
+            env: RENDERER_SERVICE_RUNTIME_ASSET_MATERIALIZATION_APPROVAL_ENV,
+            valueRead: false,
+            valuesIncluded: false,
+            message: "Renderer-service runtime asset materialization approval mode is configured, but the approval gate is not implemented yet.",
+            nextActions: [
+                `Leave ${RENDERER_SERVICE_RUNTIME_ASSET_MATERIALIZATION_APPROVAL_ENV} unset until the future approval gate is implemented.`,
+                "Use renderer-service health preflight diagnostics to review dry-run readiness without enabling writes.",
+            ],
+        });
+    }
+    if (runtimeAssetMaterializationApprovalTokenConfigured) {
+        runtimeAssetMaterializationApprovalDiagnostics.push({
+            code: "renderer_service_runtime_asset_materialization_approval_token_unsupported",
+            severity: "unsupported",
+            field: "approvalToken",
+            env: RENDERER_SERVICE_RUNTIME_ASSET_MATERIALIZATION_APPROVAL_TOKEN_ENV,
+            valueRead: false,
+            valuesIncluded: false,
+            message: "Renderer-service runtime asset materialization approval token is configured, but token validation is not implemented yet.",
+            nextActions: [
+                `Leave ${RENDERER_SERVICE_RUNTIME_ASSET_MATERIALIZATION_APPROVAL_TOKEN_ENV} unset until approval token validation is implemented.`,
+                "Do not rely on approval token configuration to enable runtime asset materialization writes.",
+            ],
+        });
+    }
+    if (runtimeAssetMaterializationApprovalAuditConfigured) {
+        runtimeAssetMaterializationApprovalDiagnostics.push({
+            code: "renderer_service_runtime_asset_materialization_approval_audit_unsupported",
+            severity: "unsupported",
+            field: "audit",
+            env: RENDERER_SERVICE_RUNTIME_ASSET_MATERIALIZATION_APPROVAL_AUDIT_DIR_ENV,
+            valueRead: false,
+            valuesIncluded: false,
+            message: "Renderer-service runtime asset materialization approval audit storage is configured, but audit writes are not implemented yet.",
+            nextActions: [
+                `Leave ${RENDERER_SERVICE_RUNTIME_ASSET_MATERIALIZATION_APPROVAL_AUDIT_DIR_ENV} unset until approval audit persistence is implemented.`,
+                "Keep materialization disabled until approval audit storage is explicitly enabled by a future task.",
+            ],
+        });
+    }
+    const runtimeAssetMaterializationApprovalConfigured =
+        runtimeAssetMaterializationApprovalModeConfigured ||
+        runtimeAssetMaterializationApprovalTokenConfigured ||
+        runtimeAssetMaterializationApprovalAuditConfigured;
     const startEnv = [
         ...(host === DEFAULT_RENDERER_SERVICE_HOST && port === DEFAULT_RENDERER_SERVICE_PORT
             ? []
@@ -1421,16 +1529,28 @@ function getRendererServiceLifecyclePlan(args: string[], env: NodeJS.ProcessEnv)
         runtimeAssetMaterializationApproval: {
             status: "planned-disabled",
             planVersion: "P26.27",
+            diagnosticsVersion: "P26.28",
             source: "renderer-service /health runtimeAssetMaterializationApproval",
+            configurationConfigured: runtimeAssetMaterializationApprovalConfigured,
+            modeConfigured: runtimeAssetMaterializationApprovalModeConfigured,
             approvalRequired: true,
             approvalGranted: false,
-            tokenConfigured: false,
+            tokenConfigured: runtimeAssetMaterializationApprovalTokenConfigured,
+            auditConfigured: runtimeAssetMaterializationApprovalAuditConfigured,
             tokenAccepted: false,
             tokenConsumed: false,
             writesEnabled: false,
-            modeEnv: "PENPOT_RENDERER_SERVICE_RUNTIME_ASSET_MATERIALIZATION_APPROVAL",
-            tokenEnv: "PENPOT_RENDERER_SERVICE_RUNTIME_ASSET_MATERIALIZATION_APPROVAL_TOKEN",
-            auditEnv: "PENPOT_RENDERER_SERVICE_RUNTIME_ASSET_MATERIALIZATION_APPROVAL_AUDIT_DIR",
+            modeEnv: RENDERER_SERVICE_RUNTIME_ASSET_MATERIALIZATION_APPROVAL_ENV,
+            tokenEnv: RENDERER_SERVICE_RUNTIME_ASSET_MATERIALIZATION_APPROVAL_TOKEN_ENV,
+            auditEnv: RENDERER_SERVICE_RUNTIME_ASSET_MATERIALIZATION_APPROVAL_AUDIT_DIR_ENV,
+            modeValueRead: false,
+            tokenValueRead: false,
+            auditValueRead: false,
+            tokenValuesIncluded: false,
+            auditValuesIncluded: false,
+            diagnosticCodes: runtimeAssetMaterializationApprovalDiagnostics.map((entry) => entry.code),
+            diagnostics: runtimeAssetMaterializationApprovalDiagnostics,
+            nextActions: [...new Set(runtimeAssetMaterializationApprovalDiagnostics.flatMap((entry) => entry.nextActions))],
             diagnosticsSurface: "healthPreflight.runtimeAssetMaterializationApproval",
             lifecyclePlanEffects: {
                 healthProbe: false,
@@ -5448,6 +5568,16 @@ async function handleRendererServiceStatus(args: string[], io: CliIO, env: NodeJ
             io.stdout,
             `Runtime asset materialization approval: ${plan.runtimeAssetMaterializationApproval.status}, token disabled`
         );
+        if (plan.runtimeAssetMaterializationApproval.diagnosticCodes.length > 0) {
+            writeLine(
+                io.stdout,
+                `Runtime asset materialization approval diagnostics: ${plan.runtimeAssetMaterializationApproval.diagnosticCodes.join(", ")}`
+            );
+            writeLine(io.stdout, "Approval next actions:");
+            for (const action of plan.runtimeAssetMaterializationApproval.nextActions) {
+                writeLine(io.stdout, `- ${action}`);
+            }
+        }
         if (plan.runtimeAssetPreflight.diagnosticCodes.length > 0) {
             writeLine(io.stdout, `Runtime asset preflight diagnostics: ${plan.runtimeAssetPreflight.diagnosticCodes.join(", ")}`);
             writeLine(io.stdout, "Next actions:");

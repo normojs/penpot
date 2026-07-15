@@ -479,6 +479,12 @@ accept tokens, consume approvals, prepare or write audit records, enable local
 cache writes, start a browser, import/load runtime assets, dispatch backend or
 network requests, register runtime execution, or expose token/audit/root/path
 values to CLI/MCP summaries.
+P26.28 adds redacted unsupported-configuration diagnostics for that scaffold.
+If operators set the future approval mode, token, or audit env vars, the
+renderer-service health/thumbnail payloads and CLI/MCP summaries report only
+configured booleans, diagnostic codes, and next actions. They still do not read
+token or audit values, accept or consume approval tokens, prepare/write audit
+records, materialize cache assets, or enable browser/runtime/backend dispatch.
 
 ## Test Strategy
 

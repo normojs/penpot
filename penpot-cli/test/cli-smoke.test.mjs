@@ -7155,16 +7155,28 @@ test("renderer-service status reports a no-spawn lifecycle plan without probing"
         assert.deepEqual(body.data.lifecycle.runtimeAssetMaterializationApproval, {
             status: "planned-disabled",
             planVersion: "P26.27",
+            diagnosticsVersion: "P26.28",
             source: "renderer-service /health runtimeAssetMaterializationApproval",
+            configurationConfigured: false,
+            modeConfigured: false,
             approvalRequired: true,
             approvalGranted: false,
             tokenConfigured: false,
+            auditConfigured: false,
             tokenAccepted: false,
             tokenConsumed: false,
             writesEnabled: false,
             modeEnv: "PENPOT_RENDERER_SERVICE_RUNTIME_ASSET_MATERIALIZATION_APPROVAL",
             tokenEnv: "PENPOT_RENDERER_SERVICE_RUNTIME_ASSET_MATERIALIZATION_APPROVAL_TOKEN",
             auditEnv: "PENPOT_RENDERER_SERVICE_RUNTIME_ASSET_MATERIALIZATION_APPROVAL_AUDIT_DIR",
+            modeValueRead: false,
+            tokenValueRead: false,
+            auditValueRead: false,
+            tokenValuesIncluded: false,
+            auditValuesIncluded: false,
+            diagnosticCodes: [],
+            diagnostics: [],
+            nextActions: [],
             diagnosticsSurface: "healthPreflight.runtimeAssetMaterializationApproval",
             lifecyclePlanEffects: {
                 healthProbe: false,
@@ -7234,6 +7246,51 @@ test("renderer-service status reports runtime asset preflight configuration diag
         body.data.lifecycle.startCommand,
         /PENPOT_RENDERER_SERVICE_RUNTIME_ASSET_PREFLIGHT_WORKSPACE_ROOT=relative-workspace/
     );
+});
+
+test("renderer-service status reports runtime asset materialization approval unsupported configuration diagnostics", async () => {
+    const result = await runCli(["renderer-service", "status", "--format", "json"], {
+        PENPOT_RENDERER_SERVICE_RUNTIME_ASSET_MATERIALIZATION_APPROVAL: "approved",
+        PENPOT_RENDERER_SERVICE_RUNTIME_ASSET_MATERIALIZATION_APPROVAL_TOKEN: "secret-approval-token",
+        PENPOT_RENDERER_SERVICE_RUNTIME_ASSET_MATERIALIZATION_APPROVAL_AUDIT_DIR: "/tmp/secret-approval-audit",
+    });
+    const body = parseJson(result.stdout);
+    const approval = body.data.lifecycle.runtimeAssetMaterializationApproval;
+
+    assert.equal(result.exitCode, 0);
+    assert.equal(body.status, "ok");
+    assert.equal(approval.diagnosticsVersion, "P26.28");
+    assert.equal(approval.configurationConfigured, true);
+    assert.equal(approval.modeConfigured, true);
+    assert.equal(approval.tokenConfigured, true);
+    assert.equal(approval.auditConfigured, true);
+    assert.equal(approval.modeValueRead, false);
+    assert.equal(approval.tokenValueRead, false);
+    assert.equal(approval.auditValueRead, false);
+    assert.equal(approval.tokenValuesIncluded, false);
+    assert.equal(approval.auditValuesIncluded, false);
+    assert.equal(approval.tokenAccepted, false);
+    assert.equal(approval.tokenConsumed, false);
+    assert.equal(approval.writesEnabled, false);
+    assert.equal(approval.lifecyclePlanEffects.approvalTokenRead, false);
+    assert.equal(approval.lifecyclePlanEffects.auditRecordWritten, false);
+    assert.deepEqual(approval.diagnosticCodes, [
+        "renderer_service_runtime_asset_materialization_approval_configuration_unsupported",
+        "renderer_service_runtime_asset_materialization_approval_token_unsupported",
+        "renderer_service_runtime_asset_materialization_approval_audit_unsupported",
+    ]);
+    assert.deepEqual(
+        approval.diagnostics.map((entry) => entry.field),
+        ["mode", "approvalToken", "audit"]
+    );
+    assert.ok(
+        approval.nextActions.some((entry) =>
+            entry.includes("PENPOT_RENDERER_SERVICE_RUNTIME_ASSET_MATERIALIZATION_APPROVAL_TOKEN")
+        )
+    );
+    assert.equal(result.stdout.includes("secret-approval-token"), false);
+    assert.equal(result.stdout.includes("/tmp/secret-approval-audit"), false);
+    assert.equal(body.data.lifecycle.startCommand.includes("PENPOT_RENDERER_SERVICE_RUNTIME_ASSET_MATERIALIZATION_APPROVAL"), false);
 });
 
 test("renderer-service start keeps startup manual and does not spawn a process", async () => {
@@ -9923,6 +9980,7 @@ test("render thumbnail execution opt-in posts to renderer-service and returns re
                     runtimeAssetMaterializationApproval: {
                         status: "planned-disabled",
                         planVersion: "P26.27",
+                        diagnosticsVersion: "P26.28",
                         owner: "renderer-service",
                         mode: "metadata-only",
                         sourceDryRun: {
@@ -9942,16 +10000,18 @@ test("render thumbnail execution opt-in posts to renderer-service and returns re
                         },
                         configuration: {
                             status: "planned-disabled",
+                            configured: true,
+                            valuesIncluded: false,
                             mode: {
                                 env: "PENPOT_RENDERER_SERVICE_RUNTIME_ASSET_MATERIALIZATION_APPROVAL",
                                 expectedValue: "approved",
-                                configured: false,
+                                configured: true,
                                 valueRead: false,
                             },
                             approvalToken: {
                                 env: "PENPOT_RENDERER_SERVICE_RUNTIME_ASSET_MATERIALIZATION_APPROVAL_TOKEN",
                                 requiredWhenEnabled: true,
-                                configured: false,
+                                configured: true,
                                 valueRead: false,
                                 accepted: false,
                                 consumed: false,
@@ -9960,7 +10020,7 @@ test("render thumbnail execution opt-in posts to renderer-service and returns re
                             audit: {
                                 env: "PENPOT_RENDERER_SERVICE_RUNTIME_ASSET_MATERIALIZATION_APPROVAL_AUDIT_DIR",
                                 requiredWhenEnabled: true,
-                                configured: false,
+                                configured: true,
                                 valueRead: false,
                                 recordWrites: false,
                                 valuesIncluded: false,
@@ -9970,11 +10030,14 @@ test("render thumbnail execution opt-in posts to renderer-service and returns re
                             status: "closed",
                             approvalRequired: true,
                             approvalGranted: false,
-                            approvalTokenConfigured: false,
+                            approvalTokenConfigured: true,
                             approvalTokenAccepted: false,
                             approvalTokenConsumed: false,
                             writesEnabled: false,
                             currentBlockers: [
+                                "renderer_service_runtime_asset_materialization_approval_configuration_unsupported",
+                                "renderer_service_runtime_asset_materialization_approval_token_unsupported",
+                                "renderer_service_runtime_asset_materialization_approval_audit_unsupported",
                                 "renderer_service_runtime_asset_materialization_approval_scaffold_disabled",
                                 "renderer_service_runtime_asset_materialization_approval_token_disabled",
                             ],
@@ -9989,6 +10052,58 @@ test("render thumbnail execution opt-in posts to renderer-service and returns re
                             auditIntegrityChecked: false,
                             auditValuesIncluded: false,
                         },
+                        diagnostics: [
+                            {
+                                code: "renderer_service_runtime_asset_materialization_approval_configuration_unsupported",
+                                severity: "unsupported",
+                                field: "mode",
+                                env: "PENPOT_RENDERER_SERVICE_RUNTIME_ASSET_MATERIALIZATION_APPROVAL",
+                                valueRead: false,
+                                valuesIncluded: false,
+                                message: "Runtime asset materialization approval mode is configured, but the approval gate is not implemented yet.",
+                                nextActions: [
+                                    "Leave PENPOT_RENDERER_SERVICE_RUNTIME_ASSET_MATERIALIZATION_APPROVAL unset until the future approval gate is implemented.",
+                                ],
+                            },
+                            {
+                                code: "renderer_service_runtime_asset_materialization_approval_token_unsupported",
+                                severity: "unsupported",
+                                field: "approvalToken",
+                                env: "PENPOT_RENDERER_SERVICE_RUNTIME_ASSET_MATERIALIZATION_APPROVAL_TOKEN",
+                                valueRead: false,
+                                valuesIncluded: false,
+                                message: "Runtime asset materialization approval token is configured, but token validation is not implemented yet.",
+                                nextActions: [
+                                    "Leave PENPOT_RENDERER_SERVICE_RUNTIME_ASSET_MATERIALIZATION_APPROVAL_TOKEN unset until approval token validation is implemented.",
+                                ],
+                            },
+                            {
+                                code: "renderer_service_runtime_asset_materialization_approval_audit_unsupported",
+                                severity: "unsupported",
+                                field: "audit",
+                                env: "PENPOT_RENDERER_SERVICE_RUNTIME_ASSET_MATERIALIZATION_APPROVAL_AUDIT_DIR",
+                                valueRead: false,
+                                valuesIncluded: false,
+                                message: "Runtime asset materialization approval audit storage is configured, but audit writes are not implemented yet.",
+                                nextActions: [
+                                    "Leave PENPOT_RENDERER_SERVICE_RUNTIME_ASSET_MATERIALIZATION_APPROVAL_AUDIT_DIR unset until approval audit persistence is implemented.",
+                                ],
+                            },
+                        ],
+                        diagnosticCodes: [
+                            "renderer_service_runtime_asset_missing_public_asset",
+                            "renderer_service_runtime_asset_materialization_approval_required",
+                            "renderer_service_runtime_asset_materialization_approval_configuration_unsupported",
+                            "renderer_service_runtime_asset_materialization_approval_token_unsupported",
+                            "renderer_service_runtime_asset_materialization_approval_audit_unsupported",
+                            "renderer_service_runtime_asset_materialization_approval_scaffold_disabled",
+                            "renderer_service_runtime_asset_materialization_approval_token_disabled",
+                        ],
+                        nextActions: [
+                            "Leave PENPOT_RENDERER_SERVICE_RUNTIME_ASSET_MATERIALIZATION_APPROVAL unset until the future approval gate is implemented.",
+                            "Leave PENPOT_RENDERER_SERVICE_RUNTIME_ASSET_MATERIALIZATION_APPROVAL_TOKEN unset until approval token validation is implemented.",
+                            "Leave PENPOT_RENDERER_SERVICE_RUNTIME_ASSET_MATERIALIZATION_APPROVAL_AUDIT_DIR unset until approval audit persistence is implemented.",
+                        ],
                         sideEffects: {
                             browserProcessStarted: false,
                             runtimeExecutionRegistered: false,
@@ -10099,9 +10214,33 @@ test("render thumbnail execution opt-in posts to renderer-service and returns re
         );
         assert.equal(body.data.healthPreflight.runtimeAssetMaterializationApproval.status, "planned-disabled");
         assert.equal(body.data.healthPreflight.runtimeAssetMaterializationApproval.planVersion, "P26.27");
+        assert.equal(body.data.healthPreflight.runtimeAssetMaterializationApproval.diagnosticsVersion, "P26.28");
+        assert.equal(body.data.healthPreflight.runtimeAssetMaterializationApproval.configurationConfigured, true);
+        assert.equal(body.data.healthPreflight.runtimeAssetMaterializationApproval.modeConfigured, true);
+        assert.equal(body.data.healthPreflight.runtimeAssetMaterializationApproval.tokenConfigured, true);
+        assert.equal(body.data.healthPreflight.runtimeAssetMaterializationApproval.auditConfigured, true);
         assert.equal(body.data.healthPreflight.runtimeAssetMaterializationApproval.sourceDryRun.readiness, "degraded");
         assert.equal(body.data.healthPreflight.runtimeAssetMaterializationApproval.sourceDryRun.copyPlanCounts.blocked, 1);
+        assert.deepEqual(
+            body.data.healthPreflight.runtimeAssetMaterializationApproval.diagnosticCodes,
+            [
+                "renderer_service_runtime_asset_missing_public_asset",
+                "renderer_service_runtime_asset_materialization_approval_required",
+                "renderer_service_runtime_asset_materialization_approval_configuration_unsupported",
+                "renderer_service_runtime_asset_materialization_approval_token_unsupported",
+                "renderer_service_runtime_asset_materialization_approval_audit_unsupported",
+                "renderer_service_runtime_asset_materialization_approval_scaffold_disabled",
+                "renderer_service_runtime_asset_materialization_approval_token_disabled",
+            ]
+        );
+        assert.deepEqual(
+            body.data.healthPreflight.runtimeAssetMaterializationApproval.diagnostics.map((entry) => entry.field),
+            ["mode", "approvalToken", "audit"]
+        );
         assert.equal(body.data.healthPreflight.runtimeAssetMaterializationApproval.tokenConfig.tokenValueRead, false);
+        assert.equal(body.data.healthPreflight.runtimeAssetMaterializationApproval.tokenConfig.modeConfigured, true);
+        assert.equal(body.data.healthPreflight.runtimeAssetMaterializationApproval.tokenConfig.tokenConfigured, true);
+        assert.equal(body.data.healthPreflight.runtimeAssetMaterializationApproval.tokenConfig.auditConfigured, true);
         assert.equal(body.data.healthPreflight.runtimeAssetMaterializationApproval.tokenAccepted, false);
         assert.equal(body.data.healthPreflight.runtimeAssetMaterializationApproval.tokenConsumed, false);
         assert.equal(body.data.healthPreflight.runtimeAssetMaterializationApproval.writesEnabled, false);
@@ -10109,6 +10248,9 @@ test("render thumbnail execution opt-in posts to renderer-service and returns re
         assert.equal(body.data.healthPreflight.runtimeAssetMaterializationApproval.sideEffects.approvalTokenRead, false);
         assert.equal(body.data.healthPreflight.runtimeAssetMaterializationApproval.sideEffects.auditRecordWritten, false);
         assert.equal(body.data.healthPreflight.runtimeAssetMaterializationApproval.omitted.approvalTokenValues, true);
+        assert.equal(body.data.healthPreflight.runtimeAssetMaterializationApproval.nextActions.length > 0, true);
+        assert.equal(result.stdout.includes("secret-approval-token"), false);
+        assert.equal(result.stdout.includes("/tmp/secret-approval-audit"), false);
         assert.equal(body.data.healthPreflight.runtimeAssetPreflight.sideEffects.fileRead, true);
         assert.equal(body.data.healthPreflight.runtimeAssetPreflight.sideEffects.hashComputed, true);
         assert.equal(body.data.healthPreflight.runtimeAssetPreflight.sideEffects.localFileWrites, false);

@@ -14817,6 +14817,16 @@ function normalizeRendererServiceRuntimeAssetMaterializationApprovalDiagnostic(b
     const approvalGate = asRecord(plan.approvalGate);
     const audit = asRecord(plan.audit);
     const sideEffects = asRecord(plan.sideEffects);
+    const diagnostics = normalizeRecordArray(plan.diagnostics).map((entry) => ({
+        code: normalizeOptionalString(entry.code) ?? "renderer_service_runtime_asset_materialization_approval_diagnostic_unknown",
+        severity: normalizeOptionalString(entry.severity),
+        field: normalizeOptionalString(entry.field),
+        env: normalizeOptionalString(entry.env),
+        message: normalizeOptionalString(entry.message),
+        nextActions: normalizeStringArray(entry.nextActions),
+        valueRead: entry.valueRead === true,
+        valuesIncluded: entry.valuesIncluded === true,
+    }));
     const omitted = {
         workspaceRoot: true,
         cacheRoot: true,
@@ -14853,7 +14863,11 @@ function normalizeRendererServiceRuntimeAssetMaterializationApprovalDiagnostic(b
         return {
             status: "not-reported",
             planVersion: null,
+            diagnosticsVersion: null,
             mode: null,
+            configurationConfigured: false,
+            modeConfigured: false,
+            auditConfigured: false,
             approvalRequired: true,
             approvalGranted: false,
             tokenConfigured: false,
@@ -14873,6 +14887,9 @@ function normalizeRendererServiceRuntimeAssetMaterializationApprovalDiagnostic(b
                 modeEnv: null,
                 tokenEnv: null,
                 auditEnv: null,
+                modeConfigured: false,
+                tokenConfigured: false,
+                auditConfigured: false,
                 modeValueRead: false,
                 tokenValueRead: false,
                 auditValueRead: false,
@@ -14888,6 +14905,7 @@ function normalizeRendererServiceRuntimeAssetMaterializationApprovalDiagnostic(b
                 auditIntegrityChecked: false,
                 auditValuesIncluded: false,
             },
+            diagnostics: [],
             diagnosticCodes: [],
             nextActions: [],
             sideEffects: baseSideEffects,
@@ -14897,20 +14915,34 @@ function normalizeRendererServiceRuntimeAssetMaterializationApprovalDiagnostic(b
 
     const readiness = normalizeOptionalString(sourceDryRun.readiness);
     const normalizedReadiness = readiness === "ready" || readiness === "degraded" || readiness === "not-checked" ? readiness : "unknown";
+    const modeConfigured = modeConfig.configured === true;
+    const auditConfigured = auditConfig.configured === true;
+    const configurationConfigured = configuration.configured === true || modeConfigured || approvalToken.configured === true || auditConfigured;
     const diagnosticCodes = uniqueStrings([
         ...normalizeStringArray(sourceDryRun.diagnosticCodes),
         ...normalizeStringArray(approvalGate.currentBlockers),
+        ...normalizeStringArray(plan.diagnosticCodes),
+        ...diagnostics.map((entry) => entry.code),
     ]);
     const tokenConfigured = approvalGate.approvalTokenConfigured === true || approvalToken.configured === true;
     const tokenAccepted = approvalGate.approvalTokenAccepted === true || approvalToken.accepted === true;
     const tokenConsumed = approvalGate.approvalTokenConsumed === true || approvalToken.consumed === true;
+    const nextActions = uniqueStrings([
+        ...normalizeStringArray(plan.nextActions),
+        ...diagnostics.flatMap((entry) => entry.nextActions),
+        ...normalizeStringArray(approvalGate.opensWhen),
+    ]);
 
     return {
         status: normalizeOptionalString(plan.status) === "planned-disabled" && normalizeOptionalString(plan.planVersion) === "P26.27"
             ? "planned-disabled"
             : "invalid",
         planVersion: normalizeOptionalString(plan.planVersion),
+        diagnosticsVersion: normalizeOptionalString(plan.diagnosticsVersion),
         mode: normalizeOptionalString(plan.mode),
+        configurationConfigured,
+        modeConfigured,
+        auditConfigured,
         approvalRequired: approvalGate.approvalRequired !== false,
         approvalGranted: approvalGate.approvalGranted === true,
         tokenConfigured,
@@ -14930,6 +14962,9 @@ function normalizeRendererServiceRuntimeAssetMaterializationApprovalDiagnostic(b
             modeEnv: normalizeOptionalString(modeConfig.env),
             tokenEnv: normalizeOptionalString(approvalToken.env),
             auditEnv: normalizeOptionalString(auditConfig.env),
+            modeConfigured,
+            tokenConfigured,
+            auditConfigured,
             modeValueRead: modeConfig.valueRead === true,
             tokenValueRead: approvalToken.valueRead === true,
             auditValueRead: auditConfig.valueRead === true,
@@ -14945,8 +14980,9 @@ function normalizeRendererServiceRuntimeAssetMaterializationApprovalDiagnostic(b
             auditIntegrityChecked: audit.auditIntegrityChecked === true,
             auditValuesIncluded: audit.auditValuesIncluded === true,
         },
+        diagnostics,
         diagnosticCodes,
-        nextActions: uniqueStrings(normalizeStringArray(approvalGate.opensWhen)),
+        nextActions,
         sideEffects: {
             browserProcessStarted: sideEffects.browserProcessStarted === true,
             runtimeExecutionRegistered: sideEffects.runtimeExecutionRegistered === true,

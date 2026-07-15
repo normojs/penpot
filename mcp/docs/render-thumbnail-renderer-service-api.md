@@ -82,6 +82,15 @@ MCP expose the future approval mode/token/audit env names plus audit metadata,
 but approval stays closed: token values are not read, accepted, consumed, or
 exposed, audit records are not written, cache writes remain disabled, and no
 browser/runtime/backend dispatch or runtime registration is enabled.
+P26.28 adds redacted diagnostics for unsupported approval configuration
+attempts. When `PENPOT_RENDERER_SERVICE_RUNTIME_ASSET_MATERIALIZATION_APPROVAL`,
+`PENPOT_RENDERER_SERVICE_RUNTIME_ASSET_MATERIALIZATION_APPROVAL_TOKEN`, or
+`PENPOT_RENDERER_SERVICE_RUNTIME_ASSET_MATERIALIZATION_APPROVAL_AUDIT_DIR` is
+present, `/health`, `/thumbnail`, CLI lifecycle status, and MCP health
+preflight summaries report configured booleans plus unsupported diagnostic
+codes and next actions. The values are not read or echoed, approval tokens are
+not accepted or consumed, audit paths are omitted, and all writes remain
+disabled.
 P26.5 adds a token-safe `backendRpcClient` plan to renderer-service thumbnail
 responses so backend data/cache/persist endpoints are normalized for staged
 execution. That plan now feeds the executable file-thumbnail cache probe,
