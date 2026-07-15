@@ -322,9 +322,13 @@ metadata-only `runtimeAssetMaterializationDryRun` plan derived from P26.25
 diagnostics, command-runtime/CLI/MCP summaries report copy/cache-output counts
 and approval-required state, and the closed gate keeps writes, browser startup,
 runtime loading, network dispatch, runtime registration, and value exposure
-disabled. Current active work moves to P26.27 to define a guarded approval
-scaffold for future runtime asset cache materialization without enabling
-writes.
+disabled. P26.27 is complete: renderer-service health/thumbnail responses and
+CLI/MCP summaries now expose a disabled approval token/config/audit scaffold
+for future runtime asset cache materialization, while token reads, token
+acceptance, audit writes, cache writes, browser startup, runtime loading,
+network dispatch, runtime registration, and value exposure stay disabled.
+Current active work moves to P26.28 to report unsupported approval
+configuration attempts without reading token values or accepting approvals.
 P25.7 is complete: thumbnail renderer-service API fixtures now define
 future file refresh, file reuse, tagged frame refresh, auth forwarding,
 resource URI normalization, and MCP/CLI test expectations. P25.8 is complete:
@@ -984,7 +988,8 @@ process boundary before MCP or CLI execution is enabled.
 | P26.24 | done | Add renderer-service runtime asset preflight operator configuration | `renderer-service`, `penpot-cli`, `mcp/docs`, `todo.md`, `CHANGES.md` | Completed 2026-07-16; renderer-service manual hosts now accept `PENPOT_RENDERER_SERVICE_RUNTIME_ASSET_PREFLIGHT=read-only`, an absolute workspace root, and an optional absolute cache root to enable the P26.22 read-only readiness checks, while `penpot-cli renderer-service status/start` reports the same configuration, default cache root, diagnostics surface, manual start command, and no-effect lifecycle plan | Keeps browser startup, runtime adapter import, runtime asset loading, asset copying, backend/source-data reads, network dispatch, local writes beyond existing CLI output downloads, runtime registration, and value exposure disabled |
 | P26.25 | done | Normalize runtime asset preflight degraded diagnostics and remediation | `renderer-service`, `command-runtime`, `penpot-cli`, `mcp/docs`, `todo.md`, `CHANGES.md` | Completed 2026-07-16; renderer-service read-only preflight execution now emits `P26.25` diagnostics and redacted next actions for missing public assets, missing cache assets, hash failures, and unavailable cache outputs, command-runtime normalizes them into CLI/MCP `healthPreflight.runtimeAssetPreflight` summaries, and `penpot-cli renderer-service status/start` reports invalid operator configuration codes for bad modes or non-absolute/missing roots | Keeps browser startup, runtime adapter import/loading, asset copying, backend/source-data reads, network dispatch, local writes, runtime registration, and value exposure disabled |
 | P26.26 | done | Plan runtime asset materialization dry-run and approval checks | `renderer-service`, `command-runtime`, `penpot-cli`, `mcp/docs`, `todo.md`, `CHANGES.md` | Completed 2026-07-16; renderer-service health/thumbnail responses now expose a metadata-only `runtimeAssetMaterializationDryRun` plan derived from P26.25 diagnostics, command-runtime normalizes it into CLI/MCP health summaries, `penpot-cli renderer-service status/start` reports the approval-required lifecycle boundary, and tests cover ready/degraded plans plus unsafe write-flag rejection | Keeps actual asset copying, browser startup, runtime adapter import/loading, backend/source-data reads, network dispatch, local writes, runtime registration, and value exposure disabled |
-| P26.27 | pending | Add guarded runtime asset cache materialization approval scaffold | `renderer-service`, `command-runtime`, `penpot-cli`, `mcp/docs`, `todo.md`, `CHANGES.md` | Add an explicit disabled approval token/config scaffold and audit metadata for future cache writes, consuming P26.26 dry-run prerequisites without accepting approval or enabling writes | Keeps actual asset copying, browser startup, runtime adapter import/loading, backend/source-data reads, network dispatch, local writes, runtime registration, token acceptance, and value exposure disabled |
+| P26.27 | done | Add guarded runtime asset cache materialization approval scaffold | `renderer-service`, `command-runtime`, `penpot-cli`, `mcp/docs`, `todo.md`, `CHANGES.md` | Completed 2026-07-16; renderer-service health/thumbnail responses now expose `runtimeAssetMaterializationApproval` with future approval mode/token/audit env names, source dry-run readiness, audit metadata, and hard-disabled token/audit/write flags, while command-runtime, CLI, MCP tests, and docs assert the safe summary | Keeps actual asset copying, browser startup, runtime adapter import/loading, backend/source-data reads, network dispatch, local writes, runtime registration, token reads, token acceptance, token consumption, audit writes, and value exposure disabled |
+| P26.28 | pending | Report unsupported runtime asset materialization approval configuration attempts | `renderer-service`, `command-runtime`, `penpot-cli`, `mcp/docs`, `todo.md`, `CHANGES.md` | Add redacted diagnostics for configured approval mode/token/audit env attempts, proving operators can see unsupported approval configuration without reading token values, accepting approvals, or enabling writes | Keeps actual asset copying, browser startup, runtime adapter import/loading, backend/source-data reads, network dispatch, local writes, runtime registration, token value reads, token acceptance, token consumption, audit writes, and value exposure disabled |
 
 P26.1 is complete: `@penpot/renderer-service` is a private pnpm workspace
 package with a real no-op HTTP lifecycle. Its TypeScript output is written to
@@ -1182,8 +1187,11 @@ next actions for missing public assets, missing cache assets, cache-output
 availability, hash failures, and invalid operator configuration. P26.26 is
 complete: renderer-service, command-runtime, CLI, and MCP summaries now expose
 metadata-only runtime asset materialization dry-run and approval-gate planning
-without enabling writes. P26.27 is pending to add the disabled approval scaffold
-for future runtime asset cache materialization.
+without enabling writes. P26.27 is complete: the disabled approval
+token/config/audit scaffold is now visible through renderer-service, CLI, and
+MCP health summaries without reading tokens, accepting approvals, writing audit
+records, or enabling cache writes. P26.28 is pending to report unsupported
+approval configuration attempts with redacted diagnostics.
 
 ## Maintenance: Build Cache Hygiene
 

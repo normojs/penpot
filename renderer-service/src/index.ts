@@ -13,6 +13,9 @@ const RENDERER_RUNTIME_MODULE_ENV = "PENPOT_RENDERER_SERVICE_RUNTIME_MODULE";
 const RUNTIME_ASSET_PREFLIGHT_ENV = "PENPOT_RENDERER_SERVICE_RUNTIME_ASSET_PREFLIGHT";
 const RUNTIME_ASSET_PREFLIGHT_WORKSPACE_ROOT_ENV = "PENPOT_RENDERER_SERVICE_RUNTIME_ASSET_PREFLIGHT_WORKSPACE_ROOT";
 const RUNTIME_ASSET_PREFLIGHT_CACHE_ROOT_ENV = "PENPOT_RENDERER_SERVICE_RUNTIME_ASSET_PREFLIGHT_CACHE_ROOT";
+const RUNTIME_ASSET_MATERIALIZATION_APPROVAL_ENV = "PENPOT_RENDERER_SERVICE_RUNTIME_ASSET_MATERIALIZATION_APPROVAL";
+const RUNTIME_ASSET_MATERIALIZATION_APPROVAL_TOKEN_ENV = "PENPOT_RENDERER_SERVICE_RUNTIME_ASSET_MATERIALIZATION_APPROVAL_TOKEN";
+const RUNTIME_ASSET_MATERIALIZATION_APPROVAL_AUDIT_DIR_ENV = "PENPOT_RENDERER_SERVICE_RUNTIME_ASSET_MATERIALIZATION_APPROVAL_AUDIT_DIR";
 const RENDERER_SERVICE_CACHE_ROOT = "/Volumes/fushilu/.caches/penpot/renderer-service";
 
 export type RendererBackendRpcClientOptions = {
@@ -458,6 +461,119 @@ type RuntimeAssetMaterializationDryRunPlan = {
     execution: null;
 };
 
+type RuntimeAssetMaterializationPlanCounts = {
+    total: number;
+    ready: number;
+    blocked: number;
+    unknown: number;
+};
+
+type RuntimeAssetMaterializationApprovalPlan = {
+    status: "planned-disabled";
+    planVersion: "P26.27";
+    owner: "renderer-service";
+    mode: "metadata-only";
+    sourceDryRun: {
+        planVersion: "P26.26" | null;
+        status: "planned-disabled" | "invalid";
+        readiness: "not-checked" | "ready" | "degraded" | "unknown";
+        ready: boolean;
+        approvalRequired: boolean;
+        approvalGranted: boolean;
+        writesEnabled: boolean;
+        copyPlanCounts: RuntimeAssetMaterializationPlanCounts;
+        cacheOutputPlanCounts: RuntimeAssetMaterializationPlanCounts;
+        diagnosticCodes: string[];
+    };
+    configuration: {
+        status: "planned-disabled";
+        mode: {
+            env: typeof RUNTIME_ASSET_MATERIALIZATION_APPROVAL_ENV;
+            expectedValue: "approved";
+            configured: false;
+            valueRead: false;
+        };
+        approvalToken: {
+            env: typeof RUNTIME_ASSET_MATERIALIZATION_APPROVAL_TOKEN_ENV;
+            requiredWhenEnabled: true;
+            configured: false;
+            valueRead: false;
+            accepted: false;
+            consumed: false;
+            valuesIncluded: false;
+        };
+        audit: {
+            env: typeof RUNTIME_ASSET_MATERIALIZATION_APPROVAL_AUDIT_DIR_ENV;
+            requiredWhenEnabled: true;
+            configured: false;
+            valueRead: false;
+            recordWrites: false;
+            valuesIncluded: false;
+        };
+    };
+    approvalGate: {
+        status: "closed";
+        approvalRequired: true;
+        approvalGranted: false;
+        approvalTokenConfigured: false;
+        approvalTokenAccepted: false;
+        approvalTokenConsumed: false;
+        writesEnabled: false;
+        currentBlockers: string[];
+        opensWhen: string[];
+    };
+    audit: {
+        status: "planned-disabled";
+        auditTrailEnabled: false;
+        auditRecordPrepared: false;
+        auditRecordWritten: false;
+        auditStorageConfigured: false;
+        auditIntegrityChecked: false;
+        auditValuesIncluded: false;
+    };
+    sideEffects: {
+        browserProcessStarted: false;
+        runtimeExecutionRegistered: false;
+        runtimeAdapterImported: false;
+        runtimeAssetsLoaded: false;
+        assetManifestMaterialized: false;
+        fileRead: false;
+        hashComputed: false;
+        networkDispatch: false;
+        dispatch: false;
+        localFileWrites: false;
+        approvalTokenRead: false;
+        approvalTokenAccepted: false;
+        approvalTokenConsumed: false;
+        auditRecordWritten: false;
+    };
+    redaction: {
+        sourceDataValuesIncluded: false;
+        pageValuesIncluded: false;
+        artifactValuesIncluded: false;
+        mediaValuesIncluded: false;
+        tokenValuesIncluded: false;
+        approvalTokenValuesIncluded: false;
+        approvalAuditValuesIncluded: false;
+    };
+    omitted: {
+        workspaceRoot: true;
+        cacheRoot: true;
+        publicPaths: true;
+        cachePaths: true;
+        sha256: true;
+        tokenValues: true;
+        approvalTokenValues: true;
+        approvalAuditPaths: true;
+        approvalScopeHashes: true;
+        sourceDataValues: true;
+        pageValues: true;
+        artifactValues: true;
+        mediaValues: true;
+    };
+    execution: null;
+};
+
 function unknownStringArray(value: unknown): string[] {
     return Array.isArray(value) ? value.filter((entry): entry is string => typeof entry === "string") : [];
 }
@@ -618,8 +734,152 @@ function runtimeAssetMaterializationDryRunPlan(preflight: Record<string, unknown
     };
 }
 
+function runtimeAssetPlanCounts(entries: Record<string, unknown>[]): RuntimeAssetMaterializationPlanCounts {
+    const readiness = entries.map((entry) => (typeof entry.preflightReadiness === "string" ? entry.preflightReadiness : "unknown"));
+    return {
+        total: entries.length,
+        ready: readiness.filter((entry) => entry === "ready").length,
+        blocked: readiness.filter((entry) => entry === "blocked").length,
+        unknown: readiness.filter((entry) => entry === "unknown").length,
+    };
+}
+
+function runtimeAssetMaterializationApprovalPlan(dryRun: Record<string, unknown>): RuntimeAssetMaterializationApprovalPlan {
+    const sourcePreflight = isRecord(dryRun.sourcePreflight) ? dryRun.sourcePreflight : {};
+    const approvalGate = isRecord(dryRun.approvalGate) ? dryRun.approvalGate : {};
+    const copyPlan = Array.isArray(dryRun.copyPlan) ? dryRun.copyPlan.filter((entry): entry is Record<string, unknown> => isRecord(entry)) : [];
+    const cacheOutputPlan = Array.isArray(dryRun.cacheOutputPlan)
+        ? dryRun.cacheOutputPlan.filter((entry): entry is Record<string, unknown> => isRecord(entry))
+        : [];
+    const readiness =
+        sourcePreflight.readiness === "not-checked" || sourcePreflight.readiness === "ready" || sourcePreflight.readiness === "degraded"
+            ? sourcePreflight.readiness
+            : "unknown";
+    const approvalDisabledCode = "renderer_service_runtime_asset_materialization_approval_scaffold_disabled";
+    const approvalTokenDisabledCode = "renderer_service_runtime_asset_materialization_approval_token_disabled";
+    const diagnosticCodes = uniqueStrings([
+        ...unknownStringArray(sourcePreflight.diagnosticCodes),
+        ...unknownStringArray(approvalGate.currentBlockers),
+    ]);
+    const blockers = uniqueStrings([...diagnosticCodes, approvalDisabledCode, approvalTokenDisabledCode]);
+
+    return {
+        status: "planned-disabled",
+        planVersion: "P26.27",
+        owner: "renderer-service",
+        mode: "metadata-only",
+        sourceDryRun: {
+            planVersion: dryRun.planVersion === "P26.26" ? "P26.26" : null,
+            status: dryRun.status === "planned-disabled" && dryRun.planVersion === "P26.26" ? "planned-disabled" : "invalid",
+            readiness,
+            ready: sourcePreflight.ready === true,
+            approvalRequired: approvalGate.approvalRequired !== false,
+            approvalGranted: approvalGate.approvalGranted === true,
+            writesEnabled: approvalGate.writesEnabled === true,
+            copyPlanCounts: runtimeAssetPlanCounts(copyPlan),
+            cacheOutputPlanCounts: runtimeAssetPlanCounts(cacheOutputPlan),
+            diagnosticCodes,
+        },
+        configuration: {
+            status: "planned-disabled",
+            mode: {
+                env: RUNTIME_ASSET_MATERIALIZATION_APPROVAL_ENV,
+                expectedValue: "approved",
+                configured: false,
+                valueRead: false,
+            },
+            approvalToken: {
+                env: RUNTIME_ASSET_MATERIALIZATION_APPROVAL_TOKEN_ENV,
+                requiredWhenEnabled: true,
+                configured: false,
+                valueRead: false,
+                accepted: false,
+                consumed: false,
+                valuesIncluded: false,
+            },
+            audit: {
+                env: RUNTIME_ASSET_MATERIALIZATION_APPROVAL_AUDIT_DIR_ENV,
+                requiredWhenEnabled: true,
+                configured: false,
+                valueRead: false,
+                recordWrites: false,
+                valuesIncluded: false,
+            },
+        },
+        approvalGate: {
+            status: "closed",
+            approvalRequired: true,
+            approvalGranted: false,
+            approvalTokenConfigured: false,
+            approvalTokenAccepted: false,
+            approvalTokenConsumed: false,
+            writesEnabled: false,
+            currentBlockers: blockers,
+            opensWhen: [
+                "runtime asset materialization dry-run has been reviewed",
+                `future ${RUNTIME_ASSET_MATERIALIZATION_APPROVAL_ENV}=approved configuration is implemented`,
+                "future approval token validation and audit persistence are implemented",
+            ],
+        },
+        audit: {
+            status: "planned-disabled",
+            auditTrailEnabled: false,
+            auditRecordPrepared: false,
+            auditRecordWritten: false,
+            auditStorageConfigured: false,
+            auditIntegrityChecked: false,
+            auditValuesIncluded: false,
+        },
+        sideEffects: {
+            browserProcessStarted: false,
+            runtimeExecutionRegistered: false,
+            runtimeAdapterImported: false,
+            runtimeAssetsLoaded: false,
+            assetManifestMaterialized: false,
+            fileRead: false,
+            hashComputed: false,
+            networkDispatch: false,
+            dispatch: false,
+            localFileWrites: false,
+            approvalTokenRead: false,
+            approvalTokenAccepted: false,
+            approvalTokenConsumed: false,
+            auditRecordWritten: false,
+        },
+        redaction: {
+            sourceDataValuesIncluded: false,
+            pageValuesIncluded: false,
+            artifactValuesIncluded: false,
+            mediaValuesIncluded: false,
+            tokenValuesIncluded: false,
+            approvalTokenValuesIncluded: false,
+            approvalAuditValuesIncluded: false,
+        },
+        omitted: {
+            workspaceRoot: true,
+            cacheRoot: true,
+            publicPaths: true,
+            cachePaths: true,
+            sha256: true,
+            tokenValues: true,
+            approvalTokenValues: true,
+            approvalAuditPaths: true,
+            approvalScopeHashes: true,
+            sourceDataValues: true,
+            pageValues: true,
+            artifactValues: true,
+            mediaValues: true,
+        },
+        execution: null,
+    };
+}
+
 export const bundledRuntimeAssetMaterializationDryRunPlan = runtimeAssetMaterializationDryRunPlan(
     bundledRuntimeAssetMaterializationPreflight
+);
+
+export const bundledRuntimeAssetMaterializationApprovalPlan = runtimeAssetMaterializationApprovalPlan(
+    bundledRuntimeAssetMaterializationDryRunPlan
 );
 
 export const healthResponse = {
@@ -646,12 +906,14 @@ export const healthResponse = {
         "thumbnail.render.runtime-asset-manifest",
         "thumbnail.render.runtime-asset-preflight",
         "thumbnail.render.runtime-asset-materialization-dry-run",
+        "thumbnail.render.runtime-asset-materialization-approval-scaffold",
         "thumbnail.backend-rpc.file-thumbnail-persist",
         "thumbnail.backend-rpc.frame-thumbnail-persist",
     ],
     runtimeAssetManifest: bundledRuntimeBridgeAssetManifest,
     runtimeAssetMaterializationPreflight: bundledRuntimeAssetMaterializationPreflight,
     runtimeAssetMaterializationDryRun: bundledRuntimeAssetMaterializationDryRunPlan,
+    runtimeAssetMaterializationApproval: bundledRuntimeAssetMaterializationApprovalPlan,
 } as const;
 
 export const noopThumbnailResponse = {
@@ -675,6 +937,7 @@ export const noopThumbnailResponse = {
     runtimeAssetManifest: bundledRuntimeBridgeAssetManifest,
     runtimeAssetMaterializationPreflight: bundledRuntimeAssetMaterializationPreflight,
     runtimeAssetMaterializationDryRun: bundledRuntimeAssetMaterializationDryRunPlan,
+    runtimeAssetMaterializationApproval: bundledRuntimeAssetMaterializationApprovalPlan,
 } as const;
 
 const MAX_REQUEST_BODY_BYTES = 1024 * 1024;
@@ -1328,6 +1591,12 @@ async function runtimeAssetMaterializationPreflightResponse(
 
 function runtimeAssetMaterializationDryRunResponse(preflight: Record<string, unknown>): RuntimeAssetMaterializationDryRunPlan {
     return runtimeAssetMaterializationDryRunPlan(preflight);
+}
+
+function runtimeAssetMaterializationApprovalResponse(
+    dryRun: Record<string, unknown>
+): RuntimeAssetMaterializationApprovalPlan {
+    return runtimeAssetMaterializationApprovalPlan(dryRun);
 }
 
 function normalizeRendererRuntimeModuleSpecifier(moduleSpecifier: string): string {
@@ -2795,7 +3064,8 @@ function thumbnailResponse(
     renderExecution: ThumbnailRenderExecution,
     persistExecution: BackendRpcThumbnailPersistExecution,
     runtimeAssetPreflight: Record<string, unknown>,
-    runtimeAssetMaterializationDryRun: Record<string, unknown>
+    runtimeAssetMaterializationDryRun: Record<string, unknown>,
+    runtimeAssetMaterializationApproval: Record<string, unknown>
 ): Record<string, unknown> {
     const host = request.headers.host ?? `${DEFAULT_HOST}:${DEFAULT_PORT}`;
     const downloadUri = `http://${host}/assets/by-id/noop-thumbnail-png`;
@@ -2807,6 +3077,7 @@ function thumbnailResponse(
         ...noopThumbnailResponse,
         runtimeAssetMaterializationPreflight: runtimeAssetPreflight,
         runtimeAssetMaterializationDryRun,
+        runtimeAssetMaterializationApproval,
         request: summary,
         auth,
         backendRpcClient: summarizeBackendRpcClient(
@@ -3502,6 +3773,135 @@ function validateRuntimeAssetMaterializationDryRunResponse(actual: unknown, fiel
     requireResponseEqual(record.execution, null, `${field}.execution`);
 }
 
+function validateRuntimeAssetMaterializationApprovalResponse(actual: unknown, field: string): void {
+    const record = responseRecord(actual, field);
+    requireResponseEqual(record.status, "planned-disabled", `${field}.status`);
+    requireResponseEqual(record.planVersion, "P26.27", `${field}.planVersion`);
+    requireResponseEqual(record.owner, "renderer-service", `${field}.owner`);
+    requireResponseEqual(record.mode, "metadata-only", `${field}.mode`);
+
+    const sourceDryRun = responseRecord(record.sourceDryRun, `${field}.sourceDryRun`);
+    requireResponseEqual(sourceDryRun.planVersion, "P26.26", `${field}.sourceDryRun.planVersion`);
+    requireResponseEqual(sourceDryRun.status, "planned-disabled", `${field}.sourceDryRun.status`);
+    requireResponseEqual(
+        ["not-checked", "ready", "degraded", "unknown"].includes(String(sourceDryRun.readiness)),
+        true,
+        `${field}.sourceDryRun.readiness`
+    );
+    requireResponseEqual(responseBoolean(sourceDryRun, "ready", `${field}.sourceDryRun.ready`), sourceDryRun.readiness === "ready", `${field}.sourceDryRun.ready`);
+    requireResponseEqual(sourceDryRun.approvalRequired, true, `${field}.sourceDryRun.approvalRequired`);
+    requireResponseEqual(sourceDryRun.approvalGranted, false, `${field}.sourceDryRun.approvalGranted`);
+    requireResponseEqual(sourceDryRun.writesEnabled, false, `${field}.sourceDryRun.writesEnabled`);
+    responseStringArray(sourceDryRun, "diagnosticCodes", `${field}.sourceDryRun.diagnosticCodes`);
+    for (const countsField of ["copyPlanCounts", "cacheOutputPlanCounts"]) {
+        const counts = responseRecord(sourceDryRun[countsField], `${field}.sourceDryRun.${countsField}`);
+        for (const property of ["total", "ready", "blocked", "unknown"]) {
+            requireResponseEqual(
+                typeof counts[property] === "number" && Number.isInteger(counts[property]) && counts[property] >= 0,
+                true,
+                `${field}.sourceDryRun.${countsField}.${property}`
+            );
+        }
+    }
+
+    const configuration = responseRecord(record.configuration, `${field}.configuration`);
+    requireResponseEqual(configuration.status, "planned-disabled", `${field}.configuration.status`);
+    const mode = responseRecord(configuration.mode, `${field}.configuration.mode`);
+    requireResponseEqual(mode.env, RUNTIME_ASSET_MATERIALIZATION_APPROVAL_ENV, `${field}.configuration.mode.env`);
+    requireResponseEqual(mode.expectedValue, "approved", `${field}.configuration.mode.expectedValue`);
+    requireResponseEqual(mode.configured, false, `${field}.configuration.mode.configured`);
+    requireResponseEqual(mode.valueRead, false, `${field}.configuration.mode.valueRead`);
+    const approvalToken = responseRecord(configuration.approvalToken, `${field}.configuration.approvalToken`);
+    requireResponseEqual(approvalToken.env, RUNTIME_ASSET_MATERIALIZATION_APPROVAL_TOKEN_ENV, `${field}.configuration.approvalToken.env`);
+    requireResponseEqual(approvalToken.requiredWhenEnabled, true, `${field}.configuration.approvalToken.requiredWhenEnabled`);
+    for (const property of ["configured", "valueRead", "accepted", "consumed", "valuesIncluded"]) {
+        requireResponseEqual(approvalToken[property], false, `${field}.configuration.approvalToken.${property}`);
+    }
+    const auditConfig = responseRecord(configuration.audit, `${field}.configuration.audit`);
+    requireResponseEqual(auditConfig.env, RUNTIME_ASSET_MATERIALIZATION_APPROVAL_AUDIT_DIR_ENV, `${field}.configuration.audit.env`);
+    requireResponseEqual(auditConfig.requiredWhenEnabled, true, `${field}.configuration.audit.requiredWhenEnabled`);
+    for (const property of ["configured", "valueRead", "recordWrites", "valuesIncluded"]) {
+        requireResponseEqual(auditConfig[property], false, `${field}.configuration.audit.${property}`);
+    }
+
+    const approvalGate = responseRecord(record.approvalGate, `${field}.approvalGate`);
+    requireResponseEqual(approvalGate.status, "closed", `${field}.approvalGate.status`);
+    requireResponseEqual(approvalGate.approvalRequired, true, `${field}.approvalGate.approvalRequired`);
+    requireResponseEqual(approvalGate.approvalGranted, false, `${field}.approvalGate.approvalGranted`);
+    requireResponseEqual(approvalGate.approvalTokenConfigured, false, `${field}.approvalGate.approvalTokenConfigured`);
+    requireResponseEqual(approvalGate.approvalTokenAccepted, false, `${field}.approvalGate.approvalTokenAccepted`);
+    requireResponseEqual(approvalGate.approvalTokenConsumed, false, `${field}.approvalGate.approvalTokenConsumed`);
+    requireResponseEqual(approvalGate.writesEnabled, false, `${field}.approvalGate.writesEnabled`);
+    requireResponseEqual(responseStringArray(approvalGate, "currentBlockers", `${field}.approvalGate.currentBlockers`).length >= 1, true, `${field}.approvalGate.currentBlockers`);
+    requireResponseEqual(responseStringArray(approvalGate, "opensWhen", `${field}.approvalGate.opensWhen`).length >= 1, true, `${field}.approvalGate.opensWhen`);
+
+    const audit = responseRecord(record.audit, `${field}.audit`);
+    requireResponseEqual(audit.status, "planned-disabled", `${field}.audit.status`);
+    for (const property of [
+        "auditTrailEnabled",
+        "auditRecordPrepared",
+        "auditRecordWritten",
+        "auditStorageConfigured",
+        "auditIntegrityChecked",
+        "auditValuesIncluded",
+    ]) {
+        requireResponseEqual(audit[property], false, `${field}.audit.${property}`);
+    }
+
+    const sideEffects = responseRecord(record.sideEffects, `${field}.sideEffects`);
+    for (const property of [
+        "browserProcessStarted",
+        "runtimeExecutionRegistered",
+        "runtimeAdapterImported",
+        "runtimeAssetsLoaded",
+        "assetManifestMaterialized",
+        "fileRead",
+        "hashComputed",
+        "networkDispatch",
+        "dispatch",
+        "localFileWrites",
+        "approvalTokenRead",
+        "approvalTokenAccepted",
+        "approvalTokenConsumed",
+        "auditRecordWritten",
+    ]) {
+        requireResponseEqual(sideEffects[property], false, `${field}.sideEffects.${property}`);
+    }
+
+    const redaction = responseRecord(record.redaction, `${field}.redaction`);
+    for (const property of [
+        "sourceDataValuesIncluded",
+        "pageValuesIncluded",
+        "artifactValuesIncluded",
+        "mediaValuesIncluded",
+        "tokenValuesIncluded",
+        "approvalTokenValuesIncluded",
+        "approvalAuditValuesIncluded",
+    ]) {
+        requireResponseEqual(redaction[property], false, `${field}.redaction.${property}`);
+    }
+
+    const omitted = responseRecord(record.omitted, `${field}.omitted`);
+    for (const property of [
+        "workspaceRoot",
+        "cacheRoot",
+        "publicPaths",
+        "cachePaths",
+        "sha256",
+        "tokenValues",
+        "approvalTokenValues",
+        "approvalAuditPaths",
+        "approvalScopeHashes",
+        "sourceDataValues",
+        "pageValues",
+        "artifactValues",
+        "mediaValues",
+    ]) {
+        requireResponseEqual(omitted[property], true, `${field}.omitted.${property}`);
+    }
+    requireResponseEqual(record.execution, null, `${field}.execution`);
+}
+
 function validateRuntimeAssetMaterializationPreflightResponse(actual: unknown, field: string): void {
     const record = responseRecord(actual, field);
     requireResponseEqual(record.status, bundledRuntimeAssetMaterializationPreflight.status, `${field}.status`);
@@ -3827,6 +4227,10 @@ function validateThumbnailResponseContract(
         record.runtimeAssetMaterializationDryRun,
         "runtimeAssetMaterializationDryRun"
     );
+    validateRuntimeAssetMaterializationApprovalResponse(
+        record.runtimeAssetMaterializationApproval,
+        "runtimeAssetMaterializationApproval"
+    );
 
     validateThumbnailResourceResponse(responseRecord(record.resource, "resource"));
     validateThumbnailCacheResponse(responseRecord(record.cache, "cache"), summary, cacheProbeExecution);
@@ -3879,10 +4283,12 @@ async function handleRequest(request: IncomingMessage, response: ServerResponse,
     if (request.method === "GET" && url.pathname === "/health") {
         const runtimeAssetPreflight = await runtimeAssetMaterializationPreflightResponse(options.runtimeAssetPreflight);
         const runtimeAssetMaterializationDryRun = runtimeAssetMaterializationDryRunResponse(runtimeAssetPreflight);
+        const runtimeAssetMaterializationApproval = runtimeAssetMaterializationApprovalResponse(runtimeAssetMaterializationDryRun);
         sendJson(response, 200, {
             ...healthResponse,
             runtimeAssetMaterializationPreflight: runtimeAssetPreflight,
             runtimeAssetMaterializationDryRun,
+            runtimeAssetMaterializationApproval,
         });
         return;
     }
@@ -3898,6 +4304,7 @@ async function handleRequest(request: IncomingMessage, response: ServerResponse,
             const persistExecution = await executeThumbnailPersist(request, summary, options.backendRpc, sourceDataReadExecution, renderExecution);
             const runtimeAssetPreflight = await runtimeAssetMaterializationPreflightResponse(options.runtimeAssetPreflight);
             const runtimeAssetMaterializationDryRun = runtimeAssetMaterializationDryRunResponse(runtimeAssetPreflight);
+            const runtimeAssetMaterializationApproval = runtimeAssetMaterializationApprovalResponse(runtimeAssetMaterializationDryRun);
             const generatedResponse = thumbnailResponse(
                 request,
                 summary,
@@ -3908,7 +4315,8 @@ async function handleRequest(request: IncomingMessage, response: ServerResponse,
                 renderExecution,
                 persistExecution,
                 runtimeAssetPreflight,
-                runtimeAssetMaterializationDryRun
+                runtimeAssetMaterializationDryRun,
+                runtimeAssetMaterializationApproval
             );
             const responseBody = options.thumbnailResponseOverride
                 ? options.thumbnailResponseOverride(generatedResponse)

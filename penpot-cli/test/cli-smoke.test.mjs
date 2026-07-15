@@ -7152,6 +7152,37 @@ test("renderer-service status reports a no-spawn lifecycle plan without probing"
                 runtimeExecutionRegistered: false,
             },
         });
+        assert.deepEqual(body.data.lifecycle.runtimeAssetMaterializationApproval, {
+            status: "planned-disabled",
+            planVersion: "P26.27",
+            source: "renderer-service /health runtimeAssetMaterializationApproval",
+            approvalRequired: true,
+            approvalGranted: false,
+            tokenConfigured: false,
+            tokenAccepted: false,
+            tokenConsumed: false,
+            writesEnabled: false,
+            modeEnv: "PENPOT_RENDERER_SERVICE_RUNTIME_ASSET_MATERIALIZATION_APPROVAL",
+            tokenEnv: "PENPOT_RENDERER_SERVICE_RUNTIME_ASSET_MATERIALIZATION_APPROVAL_TOKEN",
+            auditEnv: "PENPOT_RENDERER_SERVICE_RUNTIME_ASSET_MATERIALIZATION_APPROVAL_AUDIT_DIR",
+            diagnosticsSurface: "healthPreflight.runtimeAssetMaterializationApproval",
+            lifecyclePlanEffects: {
+                healthProbe: false,
+                fileRead: false,
+                hashComputed: false,
+                browserProcessStarted: false,
+                runtimeAdapterImported: false,
+                runtimeAssetsLoaded: false,
+                assetManifestMaterialized: false,
+                networkDispatch: false,
+                localFileWrites: false,
+                runtimeExecutionRegistered: false,
+                approvalTokenRead: false,
+                approvalTokenAccepted: false,
+                approvalTokenConsumed: false,
+                auditRecordWritten: false,
+            },
+        });
         assert.equal(body.data.lifecycle.artifactWrites, false);
         assert.match(body.data.lifecycle.startCommand, /PENPOT_RENDERER_SERVICE_PORT=6072/);
         assert.match(body.data.lifecycle.startCommand, /PENPOT_RENDERER_SERVICE_BACKEND_URI=https:\/\/penpot\.example\.test/);
@@ -7223,6 +7254,11 @@ test("renderer-service start keeps startup manual and does not spawn a process",
     assert.equal(body.error.data.lifecycle.runtimeAssetMaterializationDryRun.planVersion, "P26.26");
     assert.equal(body.error.data.lifecycle.runtimeAssetMaterializationDryRun.writesEnabled, false);
     assert.equal(body.error.data.lifecycle.runtimeAssetMaterializationDryRun.lifecyclePlanEffects.localFileWrites, false);
+    assert.equal(body.error.data.lifecycle.runtimeAssetMaterializationApproval.planVersion, "P26.27");
+    assert.equal(body.error.data.lifecycle.runtimeAssetMaterializationApproval.tokenAccepted, false);
+    assert.equal(body.error.data.lifecycle.runtimeAssetMaterializationApproval.writesEnabled, false);
+    assert.equal(body.error.data.lifecycle.runtimeAssetMaterializationApproval.lifecyclePlanEffects.approvalTokenRead, false);
+    assert.equal(body.error.data.lifecycle.runtimeAssetMaterializationApproval.lifecyclePlanEffects.auditRecordWritten, false);
     assert.equal(body.error.data.lifecycle.backendRpcPlanning.configured, false);
     assert.match(body.error.actions[0], /PENPOT_RENDERER_SERVICE_PORT=6073/);
 });
@@ -9884,6 +9920,92 @@ test("render thumbnail execution opt-in posts to renderer-service and returns re
                             localFileWrites: false,
                         },
                     },
+                    runtimeAssetMaterializationApproval: {
+                        status: "planned-disabled",
+                        planVersion: "P26.27",
+                        owner: "renderer-service",
+                        mode: "metadata-only",
+                        sourceDryRun: {
+                            planVersion: "P26.26",
+                            status: "planned-disabled",
+                            readiness: "degraded",
+                            ready: false,
+                            approvalRequired: true,
+                            approvalGranted: false,
+                            writesEnabled: false,
+                            copyPlanCounts: { total: 1, ready: 0, blocked: 1, unknown: 0 },
+                            cacheOutputPlanCounts: { total: 1, ready: 1, blocked: 0, unknown: 0 },
+                            diagnosticCodes: [
+                                "renderer_service_runtime_asset_missing_public_asset",
+                                "renderer_service_runtime_asset_materialization_approval_required",
+                            ],
+                        },
+                        configuration: {
+                            status: "planned-disabled",
+                            mode: {
+                                env: "PENPOT_RENDERER_SERVICE_RUNTIME_ASSET_MATERIALIZATION_APPROVAL",
+                                expectedValue: "approved",
+                                configured: false,
+                                valueRead: false,
+                            },
+                            approvalToken: {
+                                env: "PENPOT_RENDERER_SERVICE_RUNTIME_ASSET_MATERIALIZATION_APPROVAL_TOKEN",
+                                requiredWhenEnabled: true,
+                                configured: false,
+                                valueRead: false,
+                                accepted: false,
+                                consumed: false,
+                                valuesIncluded: false,
+                            },
+                            audit: {
+                                env: "PENPOT_RENDERER_SERVICE_RUNTIME_ASSET_MATERIALIZATION_APPROVAL_AUDIT_DIR",
+                                requiredWhenEnabled: true,
+                                configured: false,
+                                valueRead: false,
+                                recordWrites: false,
+                                valuesIncluded: false,
+                            },
+                        },
+                        approvalGate: {
+                            status: "closed",
+                            approvalRequired: true,
+                            approvalGranted: false,
+                            approvalTokenConfigured: false,
+                            approvalTokenAccepted: false,
+                            approvalTokenConsumed: false,
+                            writesEnabled: false,
+                            currentBlockers: [
+                                "renderer_service_runtime_asset_materialization_approval_scaffold_disabled",
+                                "renderer_service_runtime_asset_materialization_approval_token_disabled",
+                            ],
+                            opensWhen: ["future approval token validation and audit persistence are implemented"],
+                        },
+                        audit: {
+                            status: "planned-disabled",
+                            auditTrailEnabled: false,
+                            auditRecordPrepared: false,
+                            auditRecordWritten: false,
+                            auditStorageConfigured: false,
+                            auditIntegrityChecked: false,
+                            auditValuesIncluded: false,
+                        },
+                        sideEffects: {
+                            browserProcessStarted: false,
+                            runtimeExecutionRegistered: false,
+                            runtimeAdapterImported: false,
+                            runtimeAssetsLoaded: false,
+                            assetManifestMaterialized: false,
+                            fileRead: false,
+                            hashComputed: false,
+                            networkDispatch: false,
+                            dispatch: false,
+                            localFileWrites: false,
+                            approvalTokenRead: false,
+                            approvalTokenAccepted: false,
+                            approvalTokenConsumed: false,
+                            auditRecordWritten: false,
+                        },
+                    },
                 }),
                 { status: 200, headers: { "content-type": "application/json; charset=utf-8" } }
             );
@@ -9975,6 +10097,18 @@ test("render thumbnail execution opt-in posts to renderer-service and returns re
                 entry.includes("dry-run copy")
             )
         );
+        assert.equal(body.data.healthPreflight.runtimeAssetMaterializationApproval.status, "planned-disabled");
+        assert.equal(body.data.healthPreflight.runtimeAssetMaterializationApproval.planVersion, "P26.27");
+        assert.equal(body.data.healthPreflight.runtimeAssetMaterializationApproval.sourceDryRun.readiness, "degraded");
+        assert.equal(body.data.healthPreflight.runtimeAssetMaterializationApproval.sourceDryRun.copyPlanCounts.blocked, 1);
+        assert.equal(body.data.healthPreflight.runtimeAssetMaterializationApproval.tokenConfig.tokenValueRead, false);
+        assert.equal(body.data.healthPreflight.runtimeAssetMaterializationApproval.tokenAccepted, false);
+        assert.equal(body.data.healthPreflight.runtimeAssetMaterializationApproval.tokenConsumed, false);
+        assert.equal(body.data.healthPreflight.runtimeAssetMaterializationApproval.writesEnabled, false);
+        assert.equal(body.data.healthPreflight.runtimeAssetMaterializationApproval.audit.auditRecordWritten, false);
+        assert.equal(body.data.healthPreflight.runtimeAssetMaterializationApproval.sideEffects.approvalTokenRead, false);
+        assert.equal(body.data.healthPreflight.runtimeAssetMaterializationApproval.sideEffects.auditRecordWritten, false);
+        assert.equal(body.data.healthPreflight.runtimeAssetMaterializationApproval.omitted.approvalTokenValues, true);
         assert.equal(body.data.healthPreflight.runtimeAssetPreflight.sideEffects.fileRead, true);
         assert.equal(body.data.healthPreflight.runtimeAssetPreflight.sideEffects.hashComputed, true);
         assert.equal(body.data.healthPreflight.runtimeAssetPreflight.sideEffects.localFileWrites, false);

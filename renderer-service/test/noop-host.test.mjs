@@ -155,6 +155,82 @@ function assertRuntimeAssetMaterializationDryRunPlan(plan, { status = "not-execu
     return plan;
 }
 
+function assertRuntimeAssetMaterializationApprovalPlan(plan, { readiness = "not-checked", ready = false } = {}) {
+    assert.equal(plan.status, "planned-disabled");
+    assert.equal(plan.planVersion, "P26.27");
+    assert.equal(plan.owner, "renderer-service");
+    assert.equal(plan.mode, "metadata-only");
+    assert.equal(plan.sourceDryRun.planVersion, "P26.26");
+    assert.equal(plan.sourceDryRun.status, "planned-disabled");
+    assert.equal(plan.sourceDryRun.readiness, readiness);
+    assert.equal(plan.sourceDryRun.ready, ready);
+    assert.equal(plan.sourceDryRun.approvalRequired, true);
+    assert.equal(plan.sourceDryRun.approvalGranted, false);
+    assert.equal(plan.sourceDryRun.writesEnabled, false);
+    assert.equal(plan.sourceDryRun.copyPlanCounts.total, serviceModule.bundledRuntimeBridgeAssetManifest.assets.length);
+    assert.equal(plan.sourceDryRun.cacheOutputPlanCounts.total, serviceModule.bundledRuntimeBridgeAssetManifest.cacheOutputs.length);
+    assert.equal(plan.configuration.status, "planned-disabled");
+    assert.equal(plan.configuration.mode.env, "PENPOT_RENDERER_SERVICE_RUNTIME_ASSET_MATERIALIZATION_APPROVAL");
+    assert.equal(plan.configuration.mode.expectedValue, "approved");
+    assert.equal(plan.configuration.mode.configured, false);
+    assert.equal(plan.configuration.mode.valueRead, false);
+    assert.equal(plan.configuration.approvalToken.env, "PENPOT_RENDERER_SERVICE_RUNTIME_ASSET_MATERIALIZATION_APPROVAL_TOKEN");
+    assert.equal(plan.configuration.approvalToken.requiredWhenEnabled, true);
+    assert.equal(plan.configuration.approvalToken.configured, false);
+    assert.equal(plan.configuration.approvalToken.valueRead, false);
+    assert.equal(plan.configuration.approvalToken.accepted, false);
+    assert.equal(plan.configuration.approvalToken.consumed, false);
+    assert.equal(plan.configuration.approvalToken.valuesIncluded, false);
+    assert.equal(plan.configuration.audit.env, "PENPOT_RENDERER_SERVICE_RUNTIME_ASSET_MATERIALIZATION_APPROVAL_AUDIT_DIR");
+    assert.equal(plan.configuration.audit.requiredWhenEnabled, true);
+    assert.equal(plan.configuration.audit.configured, false);
+    assert.equal(plan.configuration.audit.valueRead, false);
+    assert.equal(plan.configuration.audit.recordWrites, false);
+    assert.equal(plan.configuration.audit.valuesIncluded, false);
+    assert.equal(plan.approvalGate.status, "closed");
+    assert.equal(plan.approvalGate.approvalRequired, true);
+    assert.equal(plan.approvalGate.approvalGranted, false);
+    assert.equal(plan.approvalGate.approvalTokenConfigured, false);
+    assert.equal(plan.approvalGate.approvalTokenAccepted, false);
+    assert.equal(plan.approvalGate.approvalTokenConsumed, false);
+    assert.equal(plan.approvalGate.writesEnabled, false);
+    assert.ok(plan.approvalGate.currentBlockers.includes("renderer_service_runtime_asset_materialization_approval_scaffold_disabled"));
+    assert.ok(plan.approvalGate.currentBlockers.includes("renderer_service_runtime_asset_materialization_approval_token_disabled"));
+    assert.equal(plan.audit.status, "planned-disabled");
+    assert.equal(plan.audit.auditTrailEnabled, false);
+    assert.equal(plan.audit.auditRecordPrepared, false);
+    assert.equal(plan.audit.auditRecordWritten, false);
+    assert.equal(plan.audit.auditStorageConfigured, false);
+    assert.equal(plan.audit.auditIntegrityChecked, false);
+    assert.equal(plan.audit.auditValuesIncluded, false);
+    assert.equal(plan.sideEffects.browserProcessStarted, false);
+    assert.equal(plan.sideEffects.runtimeExecutionRegistered, false);
+    assert.equal(plan.sideEffects.runtimeAdapterImported, false);
+    assert.equal(plan.sideEffects.runtimeAssetsLoaded, false);
+    assert.equal(plan.sideEffects.assetManifestMaterialized, false);
+    assert.equal(plan.sideEffects.fileRead, false);
+    assert.equal(plan.sideEffects.hashComputed, false);
+    assert.equal(plan.sideEffects.networkDispatch, false);
+    assert.equal(plan.sideEffects.dispatch, false);
+    assert.equal(plan.sideEffects.localFileWrites, false);
+    assert.equal(plan.sideEffects.approvalTokenRead, false);
+    assert.equal(plan.sideEffects.approvalTokenAccepted, false);
+    assert.equal(plan.sideEffects.approvalTokenConsumed, false);
+    assert.equal(plan.sideEffects.auditRecordWritten, false);
+    assert.equal(plan.redaction.tokenValuesIncluded, false);
+    assert.equal(plan.redaction.approvalTokenValuesIncluded, false);
+    assert.equal(plan.redaction.approvalAuditValuesIncluded, false);
+    assert.equal(plan.omitted.workspaceRoot, true);
+    assert.equal(plan.omitted.cacheRoot, true);
+    assert.equal(plan.omitted.sha256, true);
+    assert.equal(plan.omitted.tokenValues, true);
+    assert.equal(plan.omitted.approvalTokenValues, true);
+    assert.equal(plan.omitted.approvalAuditPaths, true);
+    assert.equal(plan.omitted.approvalScopeHashes, true);
+    assert.equal(plan.execution, null);
+    return plan;
+}
+
 const rendererServiceCacheRoot = "/Volumes/fushilu/.caches/penpot/renderer-service";
 
 function remapRuntimeAssetCachePath(path, cacheRoot) {
@@ -506,9 +582,11 @@ test("noop host exposes the P25.24 health contract", async () => {
         assert.ok(serviceModule.healthResponse.capabilities.includes("thumbnail.render.runtime-asset-manifest"));
         assert.ok(serviceModule.healthResponse.capabilities.includes("thumbnail.render.runtime-asset-preflight"));
         assert.ok(serviceModule.healthResponse.capabilities.includes("thumbnail.render.runtime-asset-materialization-dry-run"));
+        assert.ok(serviceModule.healthResponse.capabilities.includes("thumbnail.render.runtime-asset-materialization-approval-scaffold"));
         assertRuntimeAssetManifestScaffold(body.runtimeAssetManifest);
         assertRuntimeAssetMaterializationPreflightScaffold(body.runtimeAssetMaterializationPreflight);
         assertRuntimeAssetMaterializationDryRunPlan(body.runtimeAssetMaterializationDryRun);
+        assertRuntimeAssetMaterializationApprovalPlan(body.runtimeAssetMaterializationApproval);
     });
 });
 
@@ -569,6 +647,13 @@ test("noop host executes the P26.22 runtime asset preflight read-only ready slic
         assert.ok(dryRun.copyPlan.every((entry) => entry.preflightReadiness === "ready"));
         assert.ok(dryRun.cacheOutputPlan.every((entry) => entry.preflightReadiness === "ready"));
         assert.deepEqual(dryRun.sourcePreflight.diagnosticCodes, []);
+        const approval = assertRuntimeAssetMaterializationApprovalPlan(body.runtimeAssetMaterializationApproval, {
+            readiness: "ready",
+            ready: true,
+        });
+        assert.equal(approval.sourceDryRun.copyPlanCounts.ready, serviceModule.bundledRuntimeBridgeAssetManifest.assets.length);
+        assert.equal(approval.sourceDryRun.cacheOutputPlanCounts.ready, serviceModule.bundledRuntimeBridgeAssetManifest.cacheOutputs.length);
+        assert.equal(approval.approvalGate.writesEnabled, false);
     } finally {
         await service.stop();
         await fixture.cleanup();
@@ -662,6 +747,14 @@ test("noop host reports degraded P26.22 runtime asset preflight readiness", asyn
         assert.ok(dryRun.sourcePreflight.diagnosticCodes.includes("renderer_service_runtime_asset_cache_output_unavailable"));
         assert.equal(dryRun.copyPlan.find((entry) => entry.assetId === "thumbnail-worker-main").preflightReadiness, "blocked");
         assert.equal(dryRun.cacheOutputPlan.find((entry) => entry.cacheOutputId === "browser-profile-cache").preflightReadiness, "blocked");
+        const approval = assertRuntimeAssetMaterializationApprovalPlan(body.runtimeAssetMaterializationApproval, {
+            readiness: "degraded",
+            ready: false,
+        });
+        assert.ok(approval.sourceDryRun.diagnosticCodes.includes("renderer_service_runtime_asset_missing_public_asset"));
+        assert.equal(approval.sourceDryRun.copyPlanCounts.blocked, 2);
+        assert.equal(approval.sourceDryRun.cacheOutputPlanCounts.blocked, 1);
+        assert.equal(approval.configuration.approvalToken.valueRead, false);
     } finally {
         await service.stop();
         await fixture.cleanup();
@@ -1984,6 +2077,12 @@ test("noop host includes the P26.22 runtime asset preflight read-only execution 
             ready: true,
         });
         assert.ok(dryRun.copyPlan.every((entry) => entry.preflightReadiness === "ready"));
+        const approval = assertRuntimeAssetMaterializationApprovalPlan(body.runtimeAssetMaterializationApproval, {
+            readiness: "ready",
+            ready: true,
+        });
+        assert.equal(approval.approvalGate.approvalTokenAccepted, false);
+        assert.equal(approval.audit.auditRecordWritten, false);
         assert.equal(JSON.stringify(body).includes("public:thumbnail-worker-main"), false);
         assert.equal(JSON.stringify(body).includes("cache:thumbnail-worker-main"), false);
     } finally {
@@ -2205,6 +2304,42 @@ test("noop host rejects unsafe P26.26 runtime asset materialization dry-run meta
         assert.equal(body.code, "renderer_service_response_invalid");
         assert.equal(body.field, "runtimeAssetMaterializationDryRun.approvalGate.writesEnabled");
         assert.match(body.message, /runtimeAssetMaterializationDryRun\.approvalGate\.writesEnabled must match false/);
+    } finally {
+        await service.stop();
+        await fixture.cleanup();
+    }
+});
+
+test("noop host rejects unsafe P26.27 runtime asset materialization approval scaffold metadata", async () => {
+    const fixture = await createRuntimePreflightFixture();
+    const service = await serviceModule.startRendererService({
+        port: 0,
+        runtimeAssetPreflight: {
+            executeReadOnly: true,
+            workspaceRoot: fixture.workspaceRoot,
+            cacheRoot: fixture.cacheRoot,
+        },
+        thumbnailResponseOverride: (body) => ({
+            ...body,
+            runtimeAssetMaterializationApproval: {
+                ...body.runtimeAssetMaterializationApproval,
+                approvalGate: {
+                    ...body.runtimeAssetMaterializationApproval.approvalGate,
+                    approvalTokenAccepted: true,
+                    writesEnabled: true,
+                },
+            },
+        }),
+    });
+    try {
+        const response = await postValidFileThumbnail(service.host, service.port);
+
+        assert.equal(response.status, 500);
+        const body = await response.json();
+        assert.equal(body.status, "error");
+        assert.equal(body.code, "renderer_service_response_invalid");
+        assert.equal(body.field, "runtimeAssetMaterializationApproval.approvalGate.approvalTokenAccepted");
+        assert.match(body.message, /runtimeAssetMaterializationApproval\.approvalGate\.approvalTokenAccepted must match false/);
     } finally {
         await service.stop();
         await fixture.cleanup();

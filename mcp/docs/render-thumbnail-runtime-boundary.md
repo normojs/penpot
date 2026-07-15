@@ -471,6 +471,14 @@ no runtime adapter is imported or loaded, no backend/source-data reads or
 network dispatch occur, no runtime execution is registered, and CLI/MCP
 summaries still omit roots, paths, hashes, tokens, source data, page data,
 artifacts, and media values.
+P26.27 adds the next guarded approval scaffold without opening that gate.
+Renderer-service health/thumbnail metadata now includes the future approval
+mode, approval token, and audit directory env names, plus audit-state metadata
+derived from the P26.26 dry-run prerequisites. The scaffold does not read or
+accept tokens, consume approvals, prepare or write audit records, enable local
+cache writes, start a browser, import/load runtime assets, dispatch backend or
+network requests, register runtime execution, or expose token/audit/root/path
+values to CLI/MCP summaries.
 
 ## Test Strategy
 

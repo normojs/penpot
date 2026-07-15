@@ -14317,6 +14317,7 @@ export function createRenderThumbnailRendererServiceHealthPreflight(options = EM
         },
         runtimeAssetPreflight: normalizeRendererServiceRuntimeAssetPreflightDiagnostic(null),
         runtimeAssetMaterializationDryRun: normalizeRendererServiceRuntimeAssetMaterializationDryRunDiagnostic(null),
+        runtimeAssetMaterializationApproval: normalizeRendererServiceRuntimeAssetMaterializationApprovalDiagnostic(null),
     };
 }
 
@@ -14795,6 +14796,177 @@ function normalizeRendererServiceRuntimeAssetMaterializationDryRunDiagnostic(bod
     };
 }
 
+function normalizePlanCounts(value) {
+    const counts = asRecord(value);
+    return {
+        total: Number.isInteger(counts.total) && counts.total >= 0 ? counts.total : 0,
+        ready: Number.isInteger(counts.ready) && counts.ready >= 0 ? counts.ready : 0,
+        blocked: Number.isInteger(counts.blocked) && counts.blocked >= 0 ? counts.blocked : 0,
+        unknown: Number.isInteger(counts.unknown) && counts.unknown >= 0 ? counts.unknown : 0,
+    };
+}
+
+function normalizeRendererServiceRuntimeAssetMaterializationApprovalDiagnostic(body) {
+    const bodyRecord = asRecord(body);
+    const plan = asRecord(bodyRecord.runtimeAssetMaterializationApproval);
+    const sourceDryRun = asRecord(plan.sourceDryRun);
+    const configuration = asRecord(plan.configuration);
+    const modeConfig = asRecord(configuration.mode);
+    const approvalToken = asRecord(configuration.approvalToken);
+    const auditConfig = asRecord(configuration.audit);
+    const approvalGate = asRecord(plan.approvalGate);
+    const audit = asRecord(plan.audit);
+    const sideEffects = asRecord(plan.sideEffects);
+    const omitted = {
+        workspaceRoot: true,
+        cacheRoot: true,
+        publicPaths: true,
+        cachePaths: true,
+        sha256: true,
+        tokenValues: true,
+        approvalTokenValues: true,
+        approvalAuditPaths: true,
+        approvalScopeHashes: true,
+        sourceDataValues: true,
+        pageValues: true,
+        artifactValues: true,
+        mediaValues: true,
+    };
+    const baseSideEffects = {
+        browserProcessStarted: false,
+        runtimeExecutionRegistered: false,
+        runtimeAdapterImported: false,
+        runtimeAssetsLoaded: false,
+        assetManifestMaterialized: false,
+        fileRead: false,
+        hashComputed: false,
+        networkDispatch: false,
+        dispatch: false,
+        localFileWrites: false,
+        approvalTokenRead: false,
+        approvalTokenAccepted: false,
+        approvalTokenConsumed: false,
+        auditRecordWritten: false,
+    };
+
+    if (!body || Object.keys(plan).length === 0) {
+        return {
+            status: "not-reported",
+            planVersion: null,
+            mode: null,
+            approvalRequired: true,
+            approvalGranted: false,
+            tokenConfigured: false,
+            tokenAccepted: false,
+            tokenConsumed: false,
+            writesEnabled: false,
+            sourceDryRun: {
+                status: "not-reported",
+                planVersion: null,
+                readiness: "not-reported",
+                ready: false,
+                writesEnabled: false,
+                copyPlanCounts: normalizePlanCounts(null),
+                cacheOutputPlanCounts: normalizePlanCounts(null),
+            },
+            tokenConfig: {
+                modeEnv: null,
+                tokenEnv: null,
+                auditEnv: null,
+                modeValueRead: false,
+                tokenValueRead: false,
+                auditValueRead: false,
+                tokenValuesIncluded: false,
+                auditValuesIncluded: false,
+            },
+            audit: {
+                status: "not-reported",
+                auditTrailEnabled: false,
+                auditRecordPrepared: false,
+                auditRecordWritten: false,
+                auditStorageConfigured: false,
+                auditIntegrityChecked: false,
+                auditValuesIncluded: false,
+            },
+            diagnosticCodes: [],
+            nextActions: [],
+            sideEffects: baseSideEffects,
+            omitted,
+        };
+    }
+
+    const readiness = normalizeOptionalString(sourceDryRun.readiness);
+    const normalizedReadiness = readiness === "ready" || readiness === "degraded" || readiness === "not-checked" ? readiness : "unknown";
+    const diagnosticCodes = uniqueStrings([
+        ...normalizeStringArray(sourceDryRun.diagnosticCodes),
+        ...normalizeStringArray(approvalGate.currentBlockers),
+    ]);
+    const tokenConfigured = approvalGate.approvalTokenConfigured === true || approvalToken.configured === true;
+    const tokenAccepted = approvalGate.approvalTokenAccepted === true || approvalToken.accepted === true;
+    const tokenConsumed = approvalGate.approvalTokenConsumed === true || approvalToken.consumed === true;
+
+    return {
+        status: normalizeOptionalString(plan.status) === "planned-disabled" && normalizeOptionalString(plan.planVersion) === "P26.27"
+            ? "planned-disabled"
+            : "invalid",
+        planVersion: normalizeOptionalString(plan.planVersion),
+        mode: normalizeOptionalString(plan.mode),
+        approvalRequired: approvalGate.approvalRequired !== false,
+        approvalGranted: approvalGate.approvalGranted === true,
+        tokenConfigured,
+        tokenAccepted,
+        tokenConsumed,
+        writesEnabled: approvalGate.writesEnabled === true,
+        sourceDryRun: {
+            status: normalizeOptionalString(sourceDryRun.status) ?? "unknown",
+            planVersion: normalizeOptionalString(sourceDryRun.planVersion),
+            readiness: normalizedReadiness,
+            ready: sourceDryRun.ready === true,
+            writesEnabled: sourceDryRun.writesEnabled === true,
+            copyPlanCounts: normalizePlanCounts(sourceDryRun.copyPlanCounts),
+            cacheOutputPlanCounts: normalizePlanCounts(sourceDryRun.cacheOutputPlanCounts),
+        },
+        tokenConfig: {
+            modeEnv: normalizeOptionalString(modeConfig.env),
+            tokenEnv: normalizeOptionalString(approvalToken.env),
+            auditEnv: normalizeOptionalString(auditConfig.env),
+            modeValueRead: modeConfig.valueRead === true,
+            tokenValueRead: approvalToken.valueRead === true,
+            auditValueRead: auditConfig.valueRead === true,
+            tokenValuesIncluded: approvalToken.valuesIncluded === true,
+            auditValuesIncluded: auditConfig.valuesIncluded === true,
+        },
+        audit: {
+            status: normalizeOptionalString(audit.status) ?? "unknown",
+            auditTrailEnabled: audit.auditTrailEnabled === true,
+            auditRecordPrepared: audit.auditRecordPrepared === true,
+            auditRecordWritten: audit.auditRecordWritten === true,
+            auditStorageConfigured: audit.auditStorageConfigured === true,
+            auditIntegrityChecked: audit.auditIntegrityChecked === true,
+            auditValuesIncluded: audit.auditValuesIncluded === true,
+        },
+        diagnosticCodes,
+        nextActions: uniqueStrings(normalizeStringArray(approvalGate.opensWhen)),
+        sideEffects: {
+            browserProcessStarted: sideEffects.browserProcessStarted === true,
+            runtimeExecutionRegistered: sideEffects.runtimeExecutionRegistered === true,
+            runtimeAdapterImported: sideEffects.runtimeAdapterImported === true,
+            runtimeAssetsLoaded: sideEffects.runtimeAssetsLoaded === true,
+            assetManifestMaterialized: sideEffects.assetManifestMaterialized === true,
+            fileRead: sideEffects.fileRead === true,
+            hashComputed: sideEffects.hashComputed === true,
+            networkDispatch: sideEffects.networkDispatch === true,
+            dispatch: sideEffects.dispatch === true,
+            localFileWrites: sideEffects.localFileWrites === true,
+            approvalTokenRead: sideEffects.approvalTokenRead === true,
+            approvalTokenAccepted: sideEffects.approvalTokenAccepted === true,
+            approvalTokenConsumed: sideEffects.approvalTokenConsumed === true,
+            auditRecordWritten: sideEffects.auditRecordWritten === true,
+        },
+        omitted,
+    };
+}
+
 function normalizeStringArray(value) {
     return Array.isArray(value) ? value.filter((entry) => typeof entry === "string") : [];
 }
@@ -14973,6 +15145,7 @@ export async function executeRenderThumbnailRendererServiceHealthPreflight(plan,
             reason: "renderer-service health preflight succeeded",
             runtimeAssetPreflight: normalizeRendererServiceRuntimeAssetPreflightDiagnostic(bodyRecord),
             runtimeAssetMaterializationDryRun: normalizeRendererServiceRuntimeAssetMaterializationDryRunDiagnostic(bodyRecord),
+            runtimeAssetMaterializationApproval: normalizeRendererServiceRuntimeAssetMaterializationApprovalDiagnostic(bodyRecord),
             response: {
                 status: httpStatus,
                 contentType,

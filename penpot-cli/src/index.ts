@@ -1190,6 +1190,37 @@ function getRendererServiceLifecyclePlan(args: string[], env: NodeJS.ProcessEnv)
             runtimeExecutionRegistered: false;
         };
     };
+    runtimeAssetMaterializationApproval: {
+        status: "planned-disabled";
+        planVersion: "P26.27";
+        source: "renderer-service /health runtimeAssetMaterializationApproval";
+        approvalRequired: true;
+        approvalGranted: false;
+        tokenConfigured: false;
+        tokenAccepted: false;
+        tokenConsumed: false;
+        writesEnabled: false;
+        modeEnv: "PENPOT_RENDERER_SERVICE_RUNTIME_ASSET_MATERIALIZATION_APPROVAL";
+        tokenEnv: "PENPOT_RENDERER_SERVICE_RUNTIME_ASSET_MATERIALIZATION_APPROVAL_TOKEN";
+        auditEnv: "PENPOT_RENDERER_SERVICE_RUNTIME_ASSET_MATERIALIZATION_APPROVAL_AUDIT_DIR";
+        diagnosticsSurface: "healthPreflight.runtimeAssetMaterializationApproval";
+        lifecyclePlanEffects: {
+            healthProbe: false;
+            fileRead: false;
+            hashComputed: false;
+            browserProcessStarted: false;
+            runtimeAdapterImported: false;
+            runtimeAssetsLoaded: false;
+            assetManifestMaterialized: false;
+            networkDispatch: false;
+            localFileWrites: false;
+            runtimeExecutionRegistered: false;
+            approvalTokenRead: false;
+            approvalTokenAccepted: false;
+            approvalTokenConsumed: false;
+            auditRecordWritten: false;
+        };
+    };
     backendRpcPlanning: {
         configured: boolean;
         baseUri: string | null;
@@ -1385,6 +1416,37 @@ function getRendererServiceLifecyclePlan(args: string[], env: NodeJS.ProcessEnv)
                 networkDispatch: false,
                 localFileWrites: false,
                 runtimeExecutionRegistered: false,
+            },
+        },
+        runtimeAssetMaterializationApproval: {
+            status: "planned-disabled",
+            planVersion: "P26.27",
+            source: "renderer-service /health runtimeAssetMaterializationApproval",
+            approvalRequired: true,
+            approvalGranted: false,
+            tokenConfigured: false,
+            tokenAccepted: false,
+            tokenConsumed: false,
+            writesEnabled: false,
+            modeEnv: "PENPOT_RENDERER_SERVICE_RUNTIME_ASSET_MATERIALIZATION_APPROVAL",
+            tokenEnv: "PENPOT_RENDERER_SERVICE_RUNTIME_ASSET_MATERIALIZATION_APPROVAL_TOKEN",
+            auditEnv: "PENPOT_RENDERER_SERVICE_RUNTIME_ASSET_MATERIALIZATION_APPROVAL_AUDIT_DIR",
+            diagnosticsSurface: "healthPreflight.runtimeAssetMaterializationApproval",
+            lifecyclePlanEffects: {
+                healthProbe: false,
+                fileRead: false,
+                hashComputed: false,
+                browserProcessStarted: false,
+                runtimeAdapterImported: false,
+                runtimeAssetsLoaded: false,
+                assetManifestMaterialized: false,
+                networkDispatch: false,
+                localFileWrites: false,
+                runtimeExecutionRegistered: false,
+                approvalTokenRead: false,
+                approvalTokenAccepted: false,
+                approvalTokenConsumed: false,
+                auditRecordWritten: false,
             },
         },
         backendRpcPlanning: {
@@ -5381,6 +5443,10 @@ async function handleRendererServiceStatus(args: string[], io: CliIO, env: NodeJ
         writeLine(
             io.stdout,
             `Runtime asset materialization dry-run: ${plan.runtimeAssetMaterializationDryRun.status}, approval required`
+        );
+        writeLine(
+            io.stdout,
+            `Runtime asset materialization approval: ${plan.runtimeAssetMaterializationApproval.status}, token disabled`
         );
         if (plan.runtimeAssetPreflight.diagnosticCodes.length > 0) {
             writeLine(io.stdout, `Runtime asset preflight diagnostics: ${plan.runtimeAssetPreflight.diagnosticCodes.join(", ")}`);

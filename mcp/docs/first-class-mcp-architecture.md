@@ -4078,6 +4078,14 @@ approval-required state, side-effect flags, and omitted-field markers. The
 gate remains closed: no asset copying, browser startup, runtime adapter
 import/loading, backend/source-data reads, network dispatch, local writes,
 runtime registration, or value exposure is enabled.
+P26.27 adds the disabled approval-token/config/audit scaffold that will guard
+future cache materialization writes. The shared health preflight summary now
+surfaces `runtimeAssetMaterializationApproval` with future mode/token/audit env
+names, source dry-run readiness, audit metadata, and false token/audit/write
+side-effect flags. It still does not read tokens, accept approvals, write audit
+records, materialize assets, start browsers, import/load runtime assets,
+dispatch backend or network requests, register runtime execution, or expose
+token/audit/root/path values.
 
 ### 8.6 Advanced Tools
 

@@ -1659,6 +1659,89 @@ export interface RenderThumbnailRendererServiceRuntimeAssetMaterializationDryRun
     };
 }
 
+export interface RenderThumbnailRendererServiceRuntimeAssetMaterializationApproval {
+    status: "not-reported" | "planned-disabled" | "invalid";
+    planVersion: "P26.27" | null;
+    mode: string | null;
+    approvalRequired: boolean;
+    approvalGranted: boolean;
+    tokenConfigured: boolean;
+    tokenAccepted: boolean;
+    tokenConsumed: boolean;
+    writesEnabled: boolean;
+    sourceDryRun: {
+        status: "not-reported" | "planned-disabled" | "invalid" | "unknown";
+        planVersion: "P26.26" | null;
+        readiness: "not-reported" | "not-checked" | "ready" | "degraded" | "unknown";
+        ready: boolean;
+        writesEnabled: boolean;
+        copyPlanCounts: {
+            total: number;
+            ready: number;
+            blocked: number;
+            unknown: number;
+        };
+        cacheOutputPlanCounts: {
+            total: number;
+            ready: number;
+            blocked: number;
+            unknown: number;
+        };
+    };
+    tokenConfig: {
+        modeEnv: string | null;
+        tokenEnv: string | null;
+        auditEnv: string | null;
+        modeValueRead: boolean;
+        tokenValueRead: boolean;
+        auditValueRead: boolean;
+        tokenValuesIncluded: boolean;
+        auditValuesIncluded: boolean;
+    };
+    audit: {
+        status: "not-reported" | "planned-disabled" | "unknown";
+        auditTrailEnabled: boolean;
+        auditRecordPrepared: boolean;
+        auditRecordWritten: boolean;
+        auditStorageConfigured: boolean;
+        auditIntegrityChecked: boolean;
+        auditValuesIncluded: boolean;
+    };
+    diagnosticCodes: string[];
+    nextActions: string[];
+    sideEffects: {
+        browserProcessStarted: boolean;
+        runtimeExecutionRegistered: boolean;
+        runtimeAdapterImported: boolean;
+        runtimeAssetsLoaded: boolean;
+        assetManifestMaterialized: boolean;
+        fileRead: boolean;
+        hashComputed: boolean;
+        networkDispatch: boolean;
+        dispatch: boolean;
+        localFileWrites: boolean;
+        approvalTokenRead: boolean;
+        approvalTokenAccepted: boolean;
+        approvalTokenConsumed: boolean;
+        auditRecordWritten: boolean;
+    };
+    omitted: {
+        workspaceRoot: true;
+        cacheRoot: true;
+        publicPaths: true;
+        cachePaths: true;
+        sha256: true;
+        tokenValues: true;
+        approvalTokenValues: true;
+        approvalAuditPaths: true;
+        approvalScopeHashes: true;
+        sourceDataValues: true;
+        pageValues: true;
+        artifactValues: true;
+        mediaValues: true;
+    };
+}
+
 export interface RenderThumbnailRendererServiceHealthPreflight {
     status: "planned-disabled" | "ready" | "skipped" | "not-configured" | "ok" | "unavailable" | "invalid";
     dispatch: boolean;
@@ -1681,6 +1764,7 @@ export interface RenderThumbnailRendererServiceHealthPreflight {
     };
     runtimeAssetPreflight: RenderThumbnailRendererServiceRuntimeAssetPreflightDiagnostic;
     runtimeAssetMaterializationDryRun: RenderThumbnailRendererServiceRuntimeAssetMaterializationDryRun;
+    runtimeAssetMaterializationApproval: RenderThumbnailRendererServiceRuntimeAssetMaterializationApproval;
     response?: {
         status: number | null;
         contentType: string | null;

@@ -76,6 +76,12 @@ assets, start a browser, import or load the runtime adapter, read backend
 source data, dispatch network requests, register runtime execution, write
 local files, or expose roots, paths, hashes, token values, source-data/page,
 artifact, or media values through CLI/MCP summaries.
+P26.27 adds `runtimeAssetMaterializationApproval`, a disabled approval
+token/config/audit scaffold over the P26.26 dry-run. Renderer-service, CLI, and
+MCP expose the future approval mode/token/audit env names plus audit metadata,
+but approval stays closed: token values are not read, accepted, consumed, or
+exposed, audit records are not written, cache writes remain disabled, and no
+browser/runtime/backend dispatch or runtime registration is enabled.
 P26.5 adds a token-safe `backendRpcClient` plan to renderer-service thumbnail
 responses so backend data/cache/persist endpoints are normalized for staged
 execution. That plan now feeds the executable file-thumbnail cache probe,

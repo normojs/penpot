@@ -256,15 +256,18 @@ cache assets, unavailable cache outputs, hash failures, or invalid operator
 configuration. The same JSON result also includes
 `healthPreflight.runtimeAssetMaterializationDryRun`, a metadata-only copy/cache
 plan with approval-required state and false write/browser/runtime side-effect
-flags. Enable the read-only host preflight with
+flags, plus `healthPreflight.runtimeAssetMaterializationApproval`, a disabled
+approval token/config/audit scaffold with token acceptance, audit writes, and
+cache writes all false. Enable the read-only host preflight with
 `PENPOT_RENDERER_SERVICE_RUNTIME_ASSET_PREFLIGHT=read-only`,
 `PENPOT_RENDERER_SERVICE_RUNTIME_ASSET_PREFLIGHT_WORKSPACE_ROOT=<absolute>`,
 and optionally
 `PENPOT_RENDERER_SERVICE_RUNTIME_ASSET_PREFLIGHT_CACHE_ROOT=<absolute>`;
 `renderer-service status/start` shows these settings plus configuration
-diagnostics and the approval-required materialization dry-run boundary without
-probing, reading files, or enabling cache writes. Backend RPC execution and
-real scene rendering remain disabled.
+diagnostics, the approval-required materialization dry-run boundary, and the
+future approval env names without probing, reading files, reading tokens,
+writing audit records, or enabling cache writes. Backend RPC execution and real
+scene rendering remain disabled.
 
 ## File Commands
 

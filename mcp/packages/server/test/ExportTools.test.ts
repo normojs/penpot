@@ -7473,6 +7473,89 @@ test("RenderThumbnailTool execution opt-in posts to renderer-service and returns
                             localFileWrites: false,
                         },
                     },
+                    runtimeAssetMaterializationApproval: {
+                        status: "planned-disabled",
+                        planVersion: "P26.27",
+                        owner: "renderer-service",
+                        mode: "metadata-only",
+                        sourceDryRun: {
+                            planVersion: "P26.26",
+                            status: "planned-disabled",
+                            readiness: "ready",
+                            ready: true,
+                            approvalRequired: true,
+                            approvalGranted: false,
+                            writesEnabled: false,
+                            copyPlanCounts: { total: 1, ready: 1, blocked: 0, unknown: 0 },
+                            cacheOutputPlanCounts: { total: 1, ready: 1, blocked: 0, unknown: 0 },
+                            diagnosticCodes: ["renderer_service_runtime_asset_materialization_approval_required"],
+                        },
+                        configuration: {
+                            status: "planned-disabled",
+                            mode: {
+                                env: "PENPOT_RENDERER_SERVICE_RUNTIME_ASSET_MATERIALIZATION_APPROVAL",
+                                expectedValue: "approved",
+                                configured: false,
+                                valueRead: false,
+                            },
+                            approvalToken: {
+                                env: "PENPOT_RENDERER_SERVICE_RUNTIME_ASSET_MATERIALIZATION_APPROVAL_TOKEN",
+                                requiredWhenEnabled: true,
+                                configured: false,
+                                valueRead: false,
+                                accepted: false,
+                                consumed: false,
+                                valuesIncluded: false,
+                            },
+                            audit: {
+                                env: "PENPOT_RENDERER_SERVICE_RUNTIME_ASSET_MATERIALIZATION_APPROVAL_AUDIT_DIR",
+                                requiredWhenEnabled: true,
+                                configured: false,
+                                valueRead: false,
+                                recordWrites: false,
+                                valuesIncluded: false,
+                            },
+                        },
+                        approvalGate: {
+                            status: "closed",
+                            approvalRequired: true,
+                            approvalGranted: false,
+                            approvalTokenConfigured: false,
+                            approvalTokenAccepted: false,
+                            approvalTokenConsumed: false,
+                            writesEnabled: false,
+                            currentBlockers: [
+                                "renderer_service_runtime_asset_materialization_approval_scaffold_disabled",
+                                "renderer_service_runtime_asset_materialization_approval_token_disabled",
+                            ],
+                            opensWhen: ["future approval token validation and audit persistence are implemented"],
+                        },
+                        audit: {
+                            status: "planned-disabled",
+                            auditTrailEnabled: false,
+                            auditRecordPrepared: false,
+                            auditRecordWritten: false,
+                            auditStorageConfigured: false,
+                            auditIntegrityChecked: false,
+                            auditValuesIncluded: false,
+                        },
+                        sideEffects: {
+                            browserProcessStarted: false,
+                            runtimeExecutionRegistered: false,
+                            runtimeAdapterImported: false,
+                            runtimeAssetsLoaded: false,
+                            assetManifestMaterialized: false,
+                            fileRead: false,
+                            hashComputed: false,
+                            networkDispatch: false,
+                            dispatch: false,
+                            localFileWrites: false,
+                            approvalTokenRead: false,
+                            approvalTokenAccepted: false,
+                            approvalTokenConsumed: false,
+                            auditRecordWritten: false,
+                        },
+                    },
                 }),
                 { status: 200, headers: { "content-type": "application/json; charset=utf-8" } }
             );
@@ -7555,6 +7638,17 @@ test("RenderThumbnailTool execution opt-in posts to renderer-service and returns
         );
         assert.equal(body.data.healthPreflight.runtimeAssetMaterializationDryRun.sideEffects.localFileWrites, false);
         assert.equal(body.data.healthPreflight.runtimeAssetMaterializationDryRun.omitted.workspaceRoot, true);
+        assert.equal(body.data.healthPreflight.runtimeAssetMaterializationApproval.status, "planned-disabled");
+        assert.equal(body.data.healthPreflight.runtimeAssetMaterializationApproval.planVersion, "P26.27");
+        assert.equal(body.data.healthPreflight.runtimeAssetMaterializationApproval.sourceDryRun.readiness, "ready");
+        assert.equal(body.data.healthPreflight.runtimeAssetMaterializationApproval.sourceDryRun.copyPlanCounts.ready, 1);
+        assert.equal(body.data.healthPreflight.runtimeAssetMaterializationApproval.tokenConfig.tokenValueRead, false);
+        assert.equal(body.data.healthPreflight.runtimeAssetMaterializationApproval.tokenAccepted, false);
+        assert.equal(body.data.healthPreflight.runtimeAssetMaterializationApproval.tokenConsumed, false);
+        assert.equal(body.data.healthPreflight.runtimeAssetMaterializationApproval.writesEnabled, false);
+        assert.equal(body.data.healthPreflight.runtimeAssetMaterializationApproval.audit.auditRecordWritten, false);
+        assert.equal(body.data.healthPreflight.runtimeAssetMaterializationApproval.sideEffects.approvalTokenRead, false);
+        assert.equal(body.data.healthPreflight.runtimeAssetMaterializationApproval.omitted.approvalTokenValues, true);
         assert.equal(JSON.stringify(body).includes("/workspace/mcp-secret"), false);
         assert.equal(JSON.stringify(body).includes("abc123"), false);
         assert.equal(body.data.adapterSelection.selected, "renderer-service");

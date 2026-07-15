@@ -10508,6 +10508,37 @@ test("render.thumbnail renderer-service API fixtures define planning requests wi
     assert.ok(
         fixtures.bundledRuntimeBridge.assetMaterializationPreflight.materializationDryRun.omittedFields.includes("workspaceRoot")
     );
+    assert.equal(fixtures.bundledRuntimeBridge.assetMaterializationPreflight.materializationApproval.status, "planned-disabled");
+    assert.equal(fixtures.bundledRuntimeBridge.assetMaterializationPreflight.materializationApproval.planVersion, "P26.27");
+    assert.equal(
+        fixtures.bundledRuntimeBridge.assetMaterializationPreflight.materializationApproval.source,
+        "runtimeAssetMaterializationDryRun"
+    );
+    assert.equal(fixtures.bundledRuntimeBridge.assetMaterializationPreflight.materializationApproval.mode, "metadata-only");
+    assert.equal(
+        fixtures.bundledRuntimeBridge.assetMaterializationPreflight.materializationApproval.configuration.modeEnv,
+        "PENPOT_RENDERER_SERVICE_RUNTIME_ASSET_MATERIALIZATION_APPROVAL"
+    );
+    assert.equal(
+        fixtures.bundledRuntimeBridge.assetMaterializationPreflight.materializationApproval.configuration.tokenValueRead,
+        false
+    );
+    assert.equal(
+        fixtures.bundledRuntimeBridge.assetMaterializationPreflight.materializationApproval.approvalGate.approvalTokenAccepted,
+        false
+    );
+    assert.equal(
+        fixtures.bundledRuntimeBridge.assetMaterializationPreflight.materializationApproval.approvalGate.writesEnabled,
+        false
+    );
+    assert.equal(
+        fixtures.bundledRuntimeBridge.assetMaterializationPreflight.materializationApproval.audit.auditRecordWritten,
+        false
+    );
+    assert.equal(fixtures.bundledRuntimeBridge.assetMaterializationPreflight.materializationApproval.noNewDispatch.approvalTokenRead, false);
+    assert.ok(
+        fixtures.bundledRuntimeBridge.assetMaterializationPreflight.materializationApproval.omittedFields.includes("approvalTokenValues")
+    );
 
     for (const fixture of fixtures.cases) {
         await t.test(fixture.id, () => {
@@ -12597,6 +12628,11 @@ test("render.thumbnail renderer-service health preflight and client harness stay
     assert.equal(healthPreflight.runtimeAssetMaterializationDryRun.planVersion, null);
     assert.equal(healthPreflight.runtimeAssetMaterializationDryRun.writesEnabled, false);
     assert.deepEqual(healthPreflight.runtimeAssetMaterializationDryRun.diagnosticCodes, []);
+    assert.equal(healthPreflight.runtimeAssetMaterializationApproval.status, "not-reported");
+    assert.equal(healthPreflight.runtimeAssetMaterializationApproval.planVersion, null);
+    assert.equal(healthPreflight.runtimeAssetMaterializationApproval.tokenAccepted, false);
+    assert.equal(healthPreflight.runtimeAssetMaterializationApproval.writesEnabled, false);
+    assert.deepEqual(healthPreflight.runtimeAssetMaterializationApproval.diagnosticCodes, []);
     assert.equal(healthPreflight.runtimeAssetPreflight.omitted.workspaceRoot, true);
     assert.equal(healthPreflight.runtimeAssetPreflight.omitted.sha256, true);
     assert.ok(healthPreflight.failureModes.some((entry) => entry.code === "renderer_service_preflight_disabled"));
@@ -12758,6 +12794,93 @@ test("render.thumbnail renderer-service health preflight executes only GET healt
                             localFileWrites: false,
                         },
                     },
+                    runtimeAssetMaterializationApproval: {
+                        status: "planned-disabled",
+                        planVersion: "P26.27",
+                        owner: "renderer-service",
+                        mode: "metadata-only",
+                        sourceDryRun: {
+                            planVersion: "P26.26",
+                            status: "planned-disabled",
+                            readiness: "degraded",
+                            ready: false,
+                            approvalRequired: true,
+                            approvalGranted: false,
+                            writesEnabled: false,
+                            copyPlanCounts: { total: 2, ready: 1, blocked: 1, unknown: 0 },
+                            cacheOutputPlanCounts: { total: 1, ready: 0, blocked: 1, unknown: 0 },
+                            diagnosticCodes: [
+                                "renderer_service_runtime_asset_missing_public_asset",
+                                "renderer_service_runtime_asset_materialization_approval_required",
+                            ],
+                        },
+                        configuration: {
+                            status: "planned-disabled",
+                            mode: {
+                                env: "PENPOT_RENDERER_SERVICE_RUNTIME_ASSET_MATERIALIZATION_APPROVAL",
+                                expectedValue: "approved",
+                                configured: false,
+                                valueRead: false,
+                            },
+                            approvalToken: {
+                                env: "PENPOT_RENDERER_SERVICE_RUNTIME_ASSET_MATERIALIZATION_APPROVAL_TOKEN",
+                                requiredWhenEnabled: true,
+                                configured: false,
+                                valueRead: false,
+                                accepted: false,
+                                consumed: false,
+                                valuesIncluded: false,
+                            },
+                            audit: {
+                                env: "PENPOT_RENDERER_SERVICE_RUNTIME_ASSET_MATERIALIZATION_APPROVAL_AUDIT_DIR",
+                                requiredWhenEnabled: true,
+                                configured: false,
+                                valueRead: false,
+                                recordWrites: false,
+                                valuesIncluded: false,
+                            },
+                        },
+                        approvalGate: {
+                            status: "closed",
+                            approvalRequired: true,
+                            approvalGranted: false,
+                            approvalTokenConfigured: false,
+                            approvalTokenAccepted: false,
+                            approvalTokenConsumed: false,
+                            writesEnabled: false,
+                            currentBlockers: [
+                                "renderer_service_runtime_asset_missing_public_asset",
+                                "renderer_service_runtime_asset_materialization_approval_scaffold_disabled",
+                                "renderer_service_runtime_asset_materialization_approval_token_disabled",
+                            ],
+                            opensWhen: ["future approval token validation and audit persistence are implemented"],
+                        },
+                        audit: {
+                            status: "planned-disabled",
+                            auditTrailEnabled: false,
+                            auditRecordPrepared: false,
+                            auditRecordWritten: false,
+                            auditStorageConfigured: false,
+                            auditIntegrityChecked: false,
+                            auditValuesIncluded: false,
+                        },
+                        sideEffects: {
+                            browserProcessStarted: false,
+                            runtimeExecutionRegistered: false,
+                            runtimeAdapterImported: false,
+                            runtimeAssetsLoaded: false,
+                            assetManifestMaterialized: false,
+                            fileRead: false,
+                            hashComputed: false,
+                            networkDispatch: false,
+                            dispatch: false,
+                            localFileWrites: false,
+                            approvalTokenRead: false,
+                            approvalTokenAccepted: false,
+                            approvalTokenConsumed: false,
+                            auditRecordWritten: false,
+                        },
+                    },
                 }),
                 { status: 200, headers: { "content-type": "application/json; charset=utf-8" } }
             );
@@ -12818,6 +12941,26 @@ test("render.thumbnail renderer-service health preflight executes only GET healt
     assert.ok(healthPreflight.runtimeAssetMaterializationDryRun.nextActions.some((entry) => entry.includes("dry-run copy")));
     assert.equal(healthPreflight.runtimeAssetMaterializationDryRun.sideEffects.localFileWrites, false);
     assert.equal(healthPreflight.runtimeAssetMaterializationDryRun.omitted.workspaceRoot, true);
+    assert.equal(healthPreflight.runtimeAssetMaterializationApproval.status, "planned-disabled");
+    assert.equal(healthPreflight.runtimeAssetMaterializationApproval.planVersion, "P26.27");
+    assert.equal(healthPreflight.runtimeAssetMaterializationApproval.sourceDryRun.planVersion, "P26.26");
+    assert.equal(healthPreflight.runtimeAssetMaterializationApproval.sourceDryRun.readiness, "degraded");
+    assert.equal(healthPreflight.runtimeAssetMaterializationApproval.sourceDryRun.copyPlanCounts.blocked, 1);
+    assert.equal(healthPreflight.runtimeAssetMaterializationApproval.tokenConfig.tokenValueRead, false);
+    assert.equal(healthPreflight.runtimeAssetMaterializationApproval.tokenConfig.tokenValuesIncluded, false);
+    assert.equal(healthPreflight.runtimeAssetMaterializationApproval.audit.auditRecordWritten, false);
+    assert.equal(healthPreflight.runtimeAssetMaterializationApproval.tokenAccepted, false);
+    assert.equal(healthPreflight.runtimeAssetMaterializationApproval.tokenConsumed, false);
+    assert.equal(healthPreflight.runtimeAssetMaterializationApproval.writesEnabled, false);
+    assert.ok(
+        healthPreflight.runtimeAssetMaterializationApproval.diagnosticCodes.includes(
+            "renderer_service_runtime_asset_materialization_approval_token_disabled"
+        )
+    );
+    assert.equal(healthPreflight.runtimeAssetMaterializationApproval.sideEffects.approvalTokenRead, false);
+    assert.equal(healthPreflight.runtimeAssetMaterializationApproval.sideEffects.auditRecordWritten, false);
+    assert.equal(healthPreflight.runtimeAssetMaterializationApproval.omitted.approvalTokenValues, true);
+    assert.equal(healthPreflight.runtimeAssetMaterializationApproval.omitted.approvalAuditPaths, true);
     assert.equal(healthPreflight.runtimeAssetPreflight.assetCounts.total, 2);
     assert.equal(healthPreflight.runtimeAssetPreflight.assetCounts.ready, 1);
     assert.equal(healthPreflight.runtimeAssetPreflight.assetCounts.missing, 1);
