@@ -18,12 +18,16 @@ persists successful file runtime adapter renders through backend
 `create-file-thumbnail`, P26.16 executes tagged-frame refresh source-data reads
 through `get-file-frame-data-for-thumbnail`, and P26.17 persists successful
 tagged-frame adapter renders through backend `create-file-object-thumbnail`.
+P26.18 executes tagged-frame reuse cache probes through backend
+`get-file-object-thumbnail`, returning cached resource metadata on hits and
+continuing through source-data read, adapter render, and
+`create-file-object-thumbnail` cache-miss persistence on misses.
 P26.5 adds a token-safe `backendRpcClient` plan to renderer-service thumbnail
 responses so backend data/cache/persist endpoints are normalized for staged
 execution. That plan now feeds the executable file-thumbnail cache probe,
 source-data read path, injected renderer runtime adapter boundary,
 file-thumbnail persistence path, and the tagged-frame refresh source-data,
-render, and persistence path.
+render, persistence, and reuse cache-probe path.
 P26.6 extends each planned backend RPC entry with a disabled request envelope
 that fixes the future GET query and POST JSON body key shapes without exposing
 request values, media values, token values, or enabling network dispatch.
@@ -500,6 +504,16 @@ resource metadata, and records target-specific `persistOutput` metadata with
 bundled real scene rendering, local file writes, request values, source-data
 and page values, media bytes in JSON, and credentials remain disabled or
 redacted.
+
+P26.18 executes tagged-frame reuse cache probes before source-data reads. For
+configured frame `reuse` requests, renderer-service calls backend
+`get-file-object-thumbnail` with `file-id`, the tagged object key as
+`object-id`, and `tag`. Hits return normalized backend resource metadata and
+skip source-data reads, adapter rendering, and persistence. Misses continue on
+the existing `get-file-frame-data-for-thumbnail -> renderThumbnail ->
+create-file-object-thumbnail` cache-miss path. The response keeps request
+values, source data, page values, media bytes, artifact bytes in JSON, and
+credentials redacted.
 
 The P25.77 revocation appeal resolution enforcement evidence attestation
 notarization certification endorsement countersignature verification revocation
@@ -1589,8 +1603,8 @@ gates remain before the renderer can be treated as fully implemented:
   --dry-run` as request inspection paths
 - keep manual hosts no-op unless a renderer runtime adapter is explicitly
   injected or configured through `PENPOT_RENDERER_SERVICE_RUNTIME_MODULE`
-- keep file thumbnail cache probe execution limited to file reuse while
-  tagged-frame cache probing remains pending
+- keep cache probe execution limited to configured file and tagged-frame reuse
+  paths
 - replace the injected test adapter with a bundled render-wasm/frontend
   rasterizer runtime bridge before claiming real scene rendering
 - keep thumbnail persistence limited to configured refresh/cache-miss adapter

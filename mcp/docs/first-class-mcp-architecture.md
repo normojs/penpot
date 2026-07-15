@@ -4028,7 +4028,11 @@ P25.87 defines disabled package materialization approval audit countersignature 
 Runtime behavior remains unavailable
 until opt-in config surfaces, renderer-service implementation, workspace
 wiring, health preflight, cache probe, executable client, and tagged-frame
-capabilities are implemented.
+capabilities are implemented. The later P26 renderer-service work now covers
+configured file reuse probes, file source-data reads, adapter rendering,
+file persistence, tagged-frame refresh source-data/render/persistence, and
+tagged-frame reuse probes while bundled real scene rendering remains a future
+bridge.
 
 ### 8.6 Advanced Tools
 

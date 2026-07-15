@@ -1764,6 +1764,12 @@ export interface RenderThumbnailRendererServiceIntegrationFixtureHarness {
             expectedPersistCommand: "create-file-object-thumbnail";
             requires: string[];
         };
+        frameReuse: {
+            target: "frame";
+            cachePolicy: "reuse";
+            expectedCacheProbe: "file-object-thumbnail-by-object-key";
+            requiredCapability: "tagged-frame-cache-probe";
+        };
     };
 }
 

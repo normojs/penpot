@@ -10320,6 +10320,10 @@ test("render.thumbnail renderer-service API fixtures define planning requests wi
             const result = createRenderThumbnailRendererServiceResult(plan, fixture.expectedResponse, {
                 publicUri: fixture.input.publicUri ?? "https://penpot.example.test",
             });
+            const targetRequiredCapabilities = plan.requiredCapabilities.filter(
+                (capability) => capability !== "thumbnail-renderer-service-implementation"
+            );
+            assert.deepEqual(fixture.requiredCapabilities ?? [], targetRequiredCapabilities);
             assert.equal(fixture.serviceRequest.command, contract.command);
             assert.equal(fixture.serviceRequest.operation, fixtures.serviceApi.operation);
             assert.equal(fixture.serviceRequest.adapter, fixtures.adapter);
@@ -10344,7 +10348,6 @@ test("render.thumbnail renderer-service API fixtures define planning requests wi
                     fixture.serviceRequest.target.objectKey,
                     `${contract.target.fileId}/${contract.target.pageId}/${contract.target.objectId}/${contract.target.tag}`
                 );
-                assert.deepEqual(fixture.requiredCapabilities, []);
             }
             assert.equal(fixture.expectedResponse.status, "ok");
             assert.match(fixture.expectedResponse.resource.resourceUri, /^\/assets\/by-id\//);
@@ -12558,6 +12561,7 @@ test("render.thumbnail renderer-service integration fixture harness plans no-dis
     assert.equal(harness.entrypointExpectations.cli.outputDownload, "future executable path only");
     assert.equal(harness.fixtureInputs.fileRefresh.expectedPersistCommand, "create-file-thumbnail");
     assert.equal(harness.fixtureInputs.frameRefresh.expectedPersistCommand, "create-file-object-thumbnail");
+    assert.equal(harness.fixtureInputs.frameReuse.expectedCacheProbe, "file-object-thumbnail-by-object-key");
     assert.ok(harness.requiredBeforeDispatch.some((entry) => entry.includes("closed gate fixture")));
 });
 

@@ -279,7 +279,12 @@ PNG bytes to backend `create-file-object-thumbnail`, return persisted backend
 resource metadata, and expose target-specific token-safe
 `backendRpcClient.persistOutput` metadata while keeping frame cache probes,
 media bytes, request values, source data, and credentials disabled or
-redacted.
+redacted. P26.18 is complete: configured tagged-frame reuse requests now probe
+backend `get-file-object-thumbnail` before source-data reads, return cached
+resource metadata on hits, and continue through the existing frame
+source-data/read-render-persist path on misses. Current active work moves to
+P26.19 to define the bundled renderer runtime bridge beyond injected/manual
+adapters.
 P25.7 is complete: thumbnail renderer-service API fixtures now define
 future file refresh, file reuse, tagged frame refresh, auth forwarding,
 resource URI normalization, and MCP/CLI test expectations. P25.8 is complete:
@@ -930,6 +935,8 @@ process boundary before MCP or CLI execution is enabled.
 | P26.15 | done | Persist rendered file thumbnails through backend RPC | `renderer-service`, `mcp/docs`, `todo.md`, `CHANGES.md` | Completed 2026-07-14; after configured file source-data reads and runtime adapter render success, the renderer-service posts PNG bytes as multipart `media` to backend `create-file-thumbnail`, validates the backend `{id, uri}` response, returns the persisted resource metadata, and marks `backendRpcClient.status:"persist-executed"` with `persistOutput` redaction metadata | Enables file-thumbnail persistence while keeping tagged-frame source-data/persistence, bundled real scene rendering, local file writes, request/media/source-data/page/credential value exposure, and CLI process spawning disabled |
 | P26.16 | done | Execute tagged-frame source-data reads and adapter renders | `backend`, `renderer-service`, `command-runtime`, `mcp/docs`, `todo.md`, `CHANGES.md` | Completed 2026-07-14; added backend `get-file-frame-data-for-thumbnail`, renderer-service execution for configured frame refresh requests, frame-aware runtime adapter inputs, token-safe `renderInput`/`renderOutput` summaries, and CLI/MCP request fixtures that use GET instead of future-capability placeholders | Enables tagged-frame refresh rendering through injected/manual adapters while keeping tagged-frame cache probes, `create-file-object-thumbnail` persistence writes, bundled real scene rendering, local file writes, request/media/source-data/page/credential value exposure, and CLI process spawning disabled |
 | P26.17 | done | Persist rendered tagged-frame thumbnails through backend RPC | `renderer-service`, `command-runtime`, `mcp/docs`, `todo.md`, `CHANGES.md` | Completed 2026-07-14; after configured frame source-data reads and runtime adapter render success, the renderer-service posts PNG bytes as multipart `media` to backend `create-file-object-thumbnail` with file/object/tag identity, validates the backend `{id, uri}` response, returns persisted backend resource metadata, and marks `backendRpcClient.status:"persist-executed"` with frame-specific `persistOutput` redaction metadata | Enables tagged-frame refresh persistence while keeping tagged-frame cache probes, bundled real scene rendering, local file writes, request/media/source-data/page/credential value exposure, and CLI process spawning disabled |
+| P26.18 | done | Execute tagged-frame cache probes for reuse requests | `backend`, `renderer-service`, `command-runtime`, `mcp/docs`, `todo.md`, `CHANGES.md` | Completed 2026-07-15; added backend `get-file-object-thumbnail`, renderer-service execution for configured frame `reuse` cache probes, command-runtime frame reuse fixtures/capability checks, and hit/miss tests that return cached metadata or continue source-data/read-render-persist | Enables tagged-frame reuse short-circuiting while keeping bundled real scene rendering, local file writes, request/media/source-data/page/credential value exposure, and CLI process spawning disabled |
+| P26.19 | in_progress | Define bundled renderer runtime bridge path | `renderer-service`, `render-wasm`, `frontend`, `command-runtime`, `mcp/docs`, `todo.md`, `CHANGES.md` | Plan the first non-injected renderer runtime bridge for thumbnail scene rendering, including input ownership, render-wasm/frontend rasterizer boundary, build/runtime loading, and fixture evidence before implementation | Moves beyond manual runtime adapters while keeping local file writes, source-data/page/artifact byte exposure, and unreviewed runtime registration disabled |
 
 P26.1 is complete: `@penpot/renderer-service` is a private pnpm workspace
 package with a real no-op HTTP lifecycle. Its TypeScript output is written to
@@ -1078,6 +1085,25 @@ frame-specific `backendRpcClient.persistOutput` metadata. Tagged-frame cache
 probes, bundled real scene rendering, local file writes,
 request/media/source-data/page values, artifact bytes in JSON, and credentials
 stay disabled or redacted.
+
+P26.18 is complete: configured tagged-frame reuse requests execute a read-only
+backend object-thumbnail probe keyed by file id, object key, and tag before any
+source-data read. Cache hits return normalized backend resource metadata and
+skip rendering; misses continue on the existing frame
+`get-file-frame-data-for-thumbnail -> renderThumbnail ->
+create-file-object-thumbnail` path. Verified with
+`pnpm --filter @penpot/command-runtime test`,
+`pnpm --filter @penpot/renderer-service test`, and
+`clojure -M:dev:test --focus backend-tests.rpc-file-thumbnails-test` using
+JDK 23 plus temporary localhost postgres/valkey test containers because the
+default compose `postgres` host EOFs from the macOS host.
+
+P26.19 is in progress: this planning slice will define the first bundled
+renderer runtime bridge after the manual/injected adapter path. The starting
+questions are whether the bridge should load render-wasm directly inside
+renderer-service, reuse frontend rasterizer code through a dedicated adapter
+module, or keep a two-step bridge that packages frontend/render-wasm assets
+without exposing source-data/page/artifact bytes in JSON.
 
 ## Maintenance: Build Cache Hygiene
 

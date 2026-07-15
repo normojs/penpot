@@ -340,6 +340,69 @@
       (t/is (th/ex-of-type? (:error out) :not-found))
       (t/is (th/ex-of-code? (:error out) :object-not-found)))))
 
+(t/deftest get-file-object-thumbnail-cache-probe
+  (let [profile   (th/create-profile* 1)
+        file      (th/create-file* 1 {:profile-id (:id profile)
+                                      :project-id (:default-project-id profile)
+                                      :is-shared false})
+        object-id "test-key-cache"
+        tag       "component"
+        data      {::th/type :create-file-object-thumbnail
+                   ::rpc/profile-id (:id profile)
+                   :file-id (:id file)
+                   :object-id object-id
+                   :tag tag
+                   :media {:filename "sample.jpg"
+                           :size 312043
+                           :path (th/tempfile "backend_tests/test_files/sample.jpg")
+                           :mtype "image/jpeg"}}]
+
+    (let [out (th/command! data)]
+      (t/is (nil? (:error out)))
+      (t/is (contains? (:result out) :uri)))
+
+    (let [[row] (th/db-query :file-tagged-object-thumbnail {:file-id (:id file)})
+          out   (th/command! {::th/type :get-file-object-thumbnail
+                              ::rpc/profile-id (:id profile)
+                              :file-id (:id file)
+                              :object-id object-id
+                              :tag tag})]
+      (t/is (nil? (:error out)))
+      (t/is (= {:hit true
+                :file-id (:id file)
+                :object-id object-id
+                :tag tag
+                :media-id (:media-id row)
+                :uri (str (cf/get :public-uri) "/assets/by-id/" (:media-id row))}
+               (:result out))))
+
+    (let [out (th/command! {::th/type :get-file-object-thumbnail
+                            ::rpc/profile-id (:id profile)
+                            :file-id (:id file)
+                            :object-id "missing-key"
+                            :tag tag})]
+      (t/is (nil? (:error out)))
+      (t/is (= {:hit false
+                :file-id (:id file)
+                :object-id "missing-key"
+                :tag tag}
+               (:result out))))))
+
+(t/deftest get-file-object-thumbnail-denies-read-permission
+  (let [owner  (th/create-profile* 1)
+        viewer (th/create-profile* 2)
+        file   (th/create-file* 1 {:profile-id (:id owner)
+                                   :project-id (:default-project-id owner)
+                                   :is-shared false})]
+    (let [out (th/command! {::th/type :get-file-object-thumbnail
+                            ::rpc/profile-id (:id viewer)
+                            :file-id (:id file)
+                            :object-id "test-key-cache"
+                            :tag "component"})]
+      (t/is (some? (:error out)))
+      (t/is (th/ex-of-type? (:error out) :not-found))
+      (t/is (th/ex-of-code? (:error out) :object-not-found)))))
+
 (t/deftest get-file-object-thumbnail
   (let [storage (::sto/storage th/*system*)
         profile (th/create-profile* 1)

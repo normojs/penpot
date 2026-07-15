@@ -321,6 +321,51 @@
                     :file-id file-id
                     :revn revn}))))
 
+;; --- COMMAND QUERY: get-file-object-thumbnail
+
+(def ^:private
+  schema:get-file-object-thumbnail
+  [:map {:title "get-file-object-thumbnail"}
+   [:file-id ::sm/uuid]
+   [:object-id [:string {:max 250}]]
+   [:tag {:optional true} [:string {:max 50}]]])
+
+(def ^:private
+  schema:file-object-thumbnail-cache-probe
+  [:map {:title "FileObjectThumbnailCacheProbe"}
+   [:hit ::sm/boolean]
+   [:file-id ::sm/uuid]
+   [:object-id [:string {:max 250}]]
+   [:tag [:string {:max 50}]]
+   [:media-id {:optional true} ::sm/uuid]
+   [:uri {:optional true} [::sm/text {:max 2048}]]])
+
+(def ^:private sql:get-file-object-thumbnail-cache-probe
+  "SELECT media_id FROM file_tagged_object_thumbnail
+    WHERE file_id = ? AND object_id = ? AND tag = ? AND deleted_at IS NULL")
+
+(sv/defmethod ::get-file-object-thumbnail
+  "Retrieves cached tagged object thumbnail metadata for a file object/tag."
+  {::doc/added "2.9"
+   ::doc/module :files
+   ::sm/params schema:get-file-object-thumbnail
+   ::sm/result schema:file-object-thumbnail-cache-probe}
+  [{:keys [::db/pool]} {:keys [::rpc/profile-id file-id object-id tag]}]
+  (dm/with-open [conn (db/open pool)]
+    (files/check-read-permissions! conn profile-id file-id)
+    (let [tag (or tag "frame")]
+      (if-let [{:keys [media-id]} (db/exec-one! conn [sql:get-file-object-thumbnail-cache-probe file-id object-id tag])]
+        {:hit true
+         :file-id file-id
+         :object-id object-id
+         :tag tag
+         :media-id media-id
+         :uri (files/resolve-public-uri media-id)}
+        {:hit false
+         :file-id file-id
+         :object-id object-id
+         :tag tag}))))
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; MUTATION COMMANDS
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;

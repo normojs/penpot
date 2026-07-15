@@ -98,6 +98,7 @@ export const healthResponse = {
         "thumbnail.backend-rpc.request-envelope",
         "thumbnail.backend-rpc.pipeline-plan",
         "thumbnail.backend-rpc.file-cache-probe",
+        "thumbnail.backend-rpc.frame-cache-probe",
         "thumbnail.backend-rpc.file-source-data-read",
         "thumbnail.backend-rpc.frame-source-data-read",
         "thumbnail.backend-rpc.file-render-input-summary",
@@ -197,7 +198,7 @@ type BackendRpcCacheProbeSummary = {
     scope: ThumbnailRequestSummary["cacheScope"];
     key: ThumbnailRequestSummary["cacheKey"];
     requestKeys: string[];
-    command: "get-file-thumbnail" | null;
+    command: "get-file-thumbnail" | "get-file-object-thumbnail" | null;
     endpoint: string | null;
     hitResult: "resource-metadata";
     missResult: "continue-pipeline";
@@ -917,10 +918,14 @@ function backendRpcEndpoint(baseUri: string | null, command: string): string | n
     return url.toString();
 }
 
-function cacheProbeNotExecuted(baseUri: string | null): BackendRpcCacheProbeExecution {
+function cacheProbeCommand(summary: ThumbnailRequestSummary): "get-file-thumbnail" | "get-file-object-thumbnail" {
+    return summary.targetKind === "file" ? "get-file-thumbnail" : "get-file-object-thumbnail";
+}
+
+function cacheProbeNotExecuted(baseUri: string | null, summary: ThumbnailRequestSummary): BackendRpcCacheProbeExecution {
     return {
         executed: false,
-        endpoint: backendRpcEndpoint(baseUri, "get-file-thumbnail"),
+        endpoint: backendRpcEndpoint(baseUri, cacheProbeCommand(summary)),
         hit: null,
         mediaId: null,
         resourceUri: null,
@@ -1015,7 +1020,7 @@ function backendResponseString(record: Record<string, unknown>, field: string, .
     return optionalString(record[field]);
 }
 
-function parseBackendFileThumbnailCacheProbe(
+function parseBackendThumbnailCacheProbe(
     data: unknown,
     summary: ThumbnailRequestSummary,
     endpoint: string
@@ -1028,12 +1033,24 @@ function parseBackendFileThumbnailCacheProbe(
     }
 
     const fileId = backendResponseString(data, "fileId", "file-id");
-    const revn = typeof data.revn === "number" ? data.revn : null;
     if (fileId !== summary.fileId) {
         backendRpcError("Renderer-service backend cache probe response file id does not match the request.", "renderer_service_backend_cache_probe_response_invalid", 502, true, "backendRpcClient.cacheProbe.response.file-id");
     }
-    if (revn !== summary.revn) {
-        backendRpcError("Renderer-service backend cache probe response revision does not match the request.", "renderer_service_backend_cache_probe_response_invalid", 502, true, "backendRpcClient.cacheProbe.response.revn");
+
+    if (summary.targetKind === "file") {
+        const revn = typeof data.revn === "number" ? data.revn : null;
+        if (revn !== summary.revn) {
+            backendRpcError("Renderer-service backend cache probe response revision does not match the request.", "renderer_service_backend_cache_probe_response_invalid", 502, true, "backendRpcClient.cacheProbe.response.revn");
+        }
+    } else {
+        const objectId = backendResponseString(data, "objectId", "object-id");
+        if (objectId !== summary.objectKey) {
+            backendRpcError("Renderer-service backend cache probe response object id does not match the request object key.", "renderer_service_backend_cache_probe_response_invalid", 502, true, "backendRpcClient.cacheProbe.response.object-id");
+        }
+        const tag = backendResponseString(data, "tag");
+        if (tag !== (summary.tag ?? "frame")) {
+            backendRpcError("Renderer-service backend cache probe response tag does not match the request.", "renderer_service_backend_cache_probe_response_invalid", 502, true, "backendRpcClient.cacheProbe.response.tag");
+        }
     }
 
     if (!data.hit) {
@@ -1187,15 +1204,19 @@ function parseBackendThumbnailPersist(
     };
 }
 
-async function executeFileThumbnailCacheProbe(
+async function executeThumbnailCacheProbe(
     request: IncomingMessage,
     summary: ThumbnailRequestSummary,
     options: RendererBackendRpcClientOptions | undefined
 ): Promise<BackendRpcCacheProbeExecution> {
     const baseUri = normalizeBackendRpcBaseUri(options);
-    const endpoint = backendRpcEndpoint(baseUri, "get-file-thumbnail");
-    if (!baseUri || !endpoint || summary.targetKind !== "file" || summary.cachePolicy !== "reuse" || summary.revn === null) {
-        return cacheProbeNotExecuted(baseUri);
+    const endpoint = backendRpcEndpoint(baseUri, cacheProbeCommand(summary));
+    const shouldProbe =
+        Boolean(baseUri && endpoint) &&
+        summary.cachePolicy === "reuse" &&
+        (summary.targetKind === "file" ? summary.revn !== null : Boolean(summary.objectKey && summary.tag));
+    if (!shouldProbe || !endpoint) {
+        return cacheProbeNotExecuted(baseUri, summary);
     }
 
     const fetchImpl = options?.fetch ?? globalThis.fetch;
@@ -1205,7 +1226,12 @@ async function executeFileThumbnailCacheProbe(
 
     const url = new URL(endpoint);
     url.searchParams.set("file-id", summary.fileId);
-    url.searchParams.set("revn", String(summary.revn));
+    if (summary.targetKind === "file") {
+        url.searchParams.set("revn", String(summary.revn));
+    } else {
+        url.searchParams.set("object-id", summary.objectKey ?? "");
+        url.searchParams.set("tag", summary.tag ?? "frame");
+    }
 
     let response: Response;
     try {
@@ -1228,7 +1254,7 @@ async function executeFileThumbnailCacheProbe(
         );
     }
 
-    return parseBackendFileThumbnailCacheProbe(parseBackendJson(text, "backendRpcClient.cacheProbe.response"), summary, endpoint);
+    return parseBackendThumbnailCacheProbe(parseBackendJson(text, "backendRpcClient.cacheProbe.response"), summary, endpoint);
 }
 
 async function executeThumbnailSourceDataRead(
@@ -1243,9 +1269,7 @@ async function executeThumbnailSourceDataRead(
     const shouldRead =
         Boolean(baseUri && endpoint) &&
         !cacheHit &&
-        (summary.targetKind === "frame"
-            ? summary.cachePolicy === "refresh"
-            : summary.cachePolicy === "refresh" || (summary.cachePolicy === "reuse" && cacheProbeExecution.executed && cacheProbeExecution.hit === false));
+        (summary.cachePolicy === "refresh" || (summary.cachePolicy === "reuse" && cacheProbeExecution.executed && cacheProbeExecution.hit === false));
 
     if (!shouldRead || !endpoint) {
         return sourceDataReadNotExecuted(baseUri, summary);
@@ -1510,6 +1534,8 @@ function backendRpcCanonicalRequestKeys(command: string): string[] {
     switch (command) {
         case "get-file-thumbnail":
             return ["file-id", "revn"];
+        case "get-file-object-thumbnail":
+            return ["file-id", "object-id", "tag"];
         case "get-file-data-for-thumbnail":
             return ["file-id", "strip-frames-with-thumbnails"];
         case "get-file-frame-data-for-thumbnail":
@@ -1570,15 +1596,15 @@ function summarizeBackendRpcCacheProbe(
         return null;
     }
 
-    const executed = execution.executed && summary.targetKind === "file";
+    const executed = execution.executed;
     return {
         status: executed ? "executed" : "planned-disabled",
         strategy: summary.cacheProbe,
         condition: "before-source-data-read",
         scope: summary.cacheScope,
         key: summary.cacheKey,
-        requestKeys: summary.targetKind === "file" ? ["file-id", "revn"] : ["object-key"],
-        command: executed ? "get-file-thumbnail" : null,
+        requestKeys: summary.targetKind === "file" ? ["file-id", "revn"] : ["file-id", "object-id", "tag"],
+        command: executed ? cacheProbeCommand(summary) : null,
         endpoint: executed ? execution.endpoint : null,
         hitResult: "resource-metadata",
         missResult: "continue-pipeline",
@@ -1621,7 +1647,7 @@ function summarizeBackendRpcPipeline(
     const persistEntry = summary.cachePolicy === "refresh" ? "persist" : "cacheMissPersist";
     const persistSummary = summary.cachePolicy === "refresh" ? summary.backendRpc.persist : summary.backendRpc.cacheMissPersist;
     const orderedStages: BackendRpcPipelineStageSummary[] = [];
-    const cacheProbeExecuted = cacheProbeExecution.executed && summary.targetKind === "file";
+    const cacheProbeExecuted = cacheProbeExecution.executed;
     const sourceDataReadExecuted = sourceDataReadExecution.executed;
     const renderExecuted = renderExecution.executed;
     const persistExecuted = persistExecution.executed;
@@ -1630,7 +1656,7 @@ function summarizeBackendRpcPipeline(
         orderedStages.push(
             backendRpcPipelineStage("cache-probe", "always", {
                 entry: null,
-                command: cacheProbeExecuted ? "get-file-thumbnail" : null,
+                command: cacheProbeExecuted ? cacheProbeCommand(summary) : null,
                 cacheProbe: summary.cacheProbe,
                 runtime: null,
                 status: cacheProbeExecuted ? "executed" : "planned-disabled",
@@ -1800,7 +1826,7 @@ function summarizeBackendRpcClient(
     persistExecution: BackendRpcThumbnailPersistExecution
 ): BackendRpcClientSummary {
     const baseUri = normalizeBackendRpcBaseUri(options);
-    const cacheProbeExecuted = cacheProbeExecution.executed && summary.targetKind === "file";
+    const cacheProbeExecuted = cacheProbeExecution.executed;
     const sourceDataReadExecuted = sourceDataReadExecution.executed;
     const renderExecuted = renderExecution.executed;
     const persistExecuted = persistExecution.executed;
@@ -2341,7 +2367,7 @@ async function handleRequest(request: IncomingMessage, response: ServerResponse,
             const body = await readJsonBody(request);
             const summary = validateThumbnailRequest(body);
             const auth = summarizeAuthHeaders(request);
-            const cacheProbeExecution = await executeFileThumbnailCacheProbe(request, summary, options.backendRpc);
+            const cacheProbeExecution = await executeThumbnailCacheProbe(request, summary, options.backendRpc);
             const sourceDataReadExecution = await executeThumbnailSourceDataRead(request, summary, options.backendRpc, cacheProbeExecution);
             const renderExecution = await executeThumbnailRender(summary, sourceDataReadExecution, options.renderer, options.renderedAssets);
             const persistExecution = await executeThumbnailPersist(request, summary, options.backendRpc, sourceDataReadExecution, renderExecution);

@@ -13933,6 +13933,12 @@ export function createRenderThumbnailRendererServiceIntegrationFixtureHarness(op
                 expectedPersistCommand: "create-file-object-thumbnail",
                 requires: [],
             },
+            frameReuse: {
+                target: "frame",
+                cachePolicy: "reuse",
+                expectedCacheProbe: "file-object-thumbnail-by-object-key",
+                requiredCapability: "tagged-frame-cache-probe",
+            },
         },
     };
 }
