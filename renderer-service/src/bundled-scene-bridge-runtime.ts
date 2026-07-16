@@ -20,6 +20,9 @@ export const bundledSceneBridgeAdapterModuleBoundary = {
 } as const;
 
 export type BundledSceneBridgeRendererRuntimeOptions = {
+    assetManifest?: unknown;
+    runtimeAssetPreflight?: unknown;
+    browser?: unknown;
     executionEnabled?: false;
 };
 

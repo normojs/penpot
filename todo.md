@@ -377,9 +377,14 @@ command-runtime normalizes it into CLI/MCP health preflight summaries, and
 factory invocation preflight plan while factory invocation, runtime option
 creation, runtime registration, browser startup, asset loading,
 backend/source-data reads, local writes, and value exposure remain disabled.
-Current active work is P26.38, next up, to execute the guarded factory
-invocation preflight with inert/redacted options without registering or
-dispatching the runtime.
+P26.38 is complete: renderer-service now executes the guarded factory
+invocation preflight after P26.36 namespace readiness, invokes the service-owned
+factory with inert redacted option handles, checks the returned runtime option
+shape, and command-runtime/CLI/MCP surface the token-safe execution summary
+while runtime registration, render dispatch, browser startup, asset loading,
+backend/source-data reads, local writes, and value exposure remain disabled.
+Current active work moves to P26.39 to plan the runtime registration preflight
+that will consume the P26.38 factory result without registering execution yet.
 P25.7 is complete: thumbnail renderer-service API fixtures now define
 future file refresh, file reuse, tagged frame refresh, auth forwarding,
 resource URI normalization, and MCP/CLI test expectations. P25.8 is complete:
@@ -1050,7 +1055,8 @@ process boundary before MCP or CLI execution is enabled.
 | P26.35 | done | Define closed bundled scene bridge adapter factory-shape preflight | `renderer-service`, `command-runtime`, `penpot-cli`, `mcp`, `mcp/docs`, `todo.md`, `CHANGES.md` | Completed 2026-07-16; renderer-service now exposes `bundledSceneBridgeFactoryShapePreflight`, command-runtime normalizes it into CLI/MCP `healthPreflight.bundledSceneBridgeFactoryShapePreflight`, `penpot-cli renderer-service status/start` reports the no-probe closed preflight plan, and tests reject unsafe import/factory/runtime-option/value flags | Keeps real scene rendering, browser startup, asset loading/materialization, backend/source-data reads, local writes, runtime registration, namespace inspection, module import, factory invocation, runtime option creation, and value exposure gated |
 | P26.36 | done | Execute gated bundled scene bridge module namespace import preflight | `renderer-service`, `command-runtime`, `penpot-cli`, `mcp`, `mcp/docs`, `todo.md`, `CHANGES.md` | Completed 2026-07-16; renderer-service now exposes `bundledSceneBridgeModuleNamespaceImportPreflight`, executes an explicitly gated service-owned module namespace import and export callability check through `/health` and `/thumbnail`, command-runtime normalizes the result into CLI/MCP `healthPreflight.bundledSceneBridgeModuleNamespaceImportPreflight`, and tests reject unsafe factory/runtime/value metadata | Keeps real scene rendering, browser startup, asset loading/materialization, backend/source-data reads, local writes, runtime registration, factory invocation, runtime option creation, and value exposure gated |
 | P26.37 | done | Plan guarded bundled scene bridge factory invocation preflight | `renderer-service`, `command-runtime`, `penpot-cli`, `mcp`, `mcp/docs`, `todo.md`, `CHANGES.md` | Completed 2026-07-16; renderer-service now exposes `bundledSceneBridgeFactoryInvocationPreflight`, consumes P26.36 namespace readiness, defines the guarded future invocation gate, inert option envelope, invocation outcome taxonomy, and runtime option shape expectations, and command-runtime/CLI/MCP tests reject unsafe factory/runtime/value metadata | Keeps factory invocation, runtime option creation, runtime registration, render dispatch, browser startup, asset loading/materialization, backend/source-data reads, local writes, and value exposure gated |
-| P26.38 | todo | Execute guarded bundled scene bridge factory invocation preflight | `renderer-service`, `command-runtime`, `penpot-cli`, `mcp`, `mcp/docs`, `todo.md`, `CHANGES.md` | Add the explicitly gated renderer-service preflight execution slice that invokes the bundled scene bridge factory with inert/redacted option handles only after P26.36 namespace readiness, reporting result shape diagnostics without registering or dispatching the runtime | Keeps runtime registration, render dispatch, browser startup beyond reviewed inert handles, asset loading/materialization, backend/source-data reads, local writes, and value exposure gated |
+| P26.38 | done | Execute guarded bundled scene bridge factory invocation preflight | `renderer-service`, `command-runtime`, `penpot-cli`, `mcp`, `mcp/docs`, `todo.md`, `CHANGES.md` | Completed 2026-07-16; renderer-service now invokes the service-owned bundled scene bridge factory after P26.36 namespace readiness with inert redacted option handles, checks returned `renderThumbnail`/optional `close` shape, and command-runtime/CLI/MCP preserve the token-safe execution summary | Keeps runtime registration, render dispatch, browser startup beyond inert handles, asset loading/materialization, backend/source-data reads, local writes, module/factory/runtime/option value exposure, and default CLI lifecycle probing gated |
+| P26.39 | todo | Plan bundled scene bridge runtime registration preflight | `renderer-service`, `command-runtime`, `penpot-cli`, `mcp/docs`, `todo.md`, `CHANGES.md` | Define the next metadata-only preflight that consumes the P26.38 ready factory result, names the runtime registration prerequisites, lifecycle cleanup expectations, and registration outcome taxonomy without registering execution | Keeps runtime registration, render dispatch, browser startup, asset loading/materialization, backend/source-data reads, local writes, and value exposure gated |
 
 P26.1 is complete: `@penpot/renderer-service` is a private pnpm workspace
 package with a real no-op HTTP lifecycle. Its TypeScript output is written to
@@ -1281,8 +1287,12 @@ creation, runtime registration, and value exposure remain disabled. P26.37 is
 complete: the guarded factory invocation preflight plan now records the
 namespace-readiness prerequisite, inert option envelope, invocation taxonomy,
 and runtime option shape expectations while factory invocation and runtime
-registration remain disabled. P26.38 is next to execute that guarded factory
-invocation preflight with inert/redacted options.
+registration remain disabled. P26.38 is complete: the guarded factory
+invocation preflight now invokes the service-owned factory with inert redacted
+option handles after namespace readiness, checks the returned runtime option
+shape, and surfaces a token-safe execution summary while runtime registration
+and render dispatch remain disabled. P26.39 is next to plan the runtime
+registration preflight without registering execution yet.
 
 ## Maintenance: Build Cache Hygiene
 

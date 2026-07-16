@@ -15774,23 +15774,10 @@ function normalizeRendererServiceBundledSceneBridgeFactoryInvocationPreflightDia
     const allTrue = (record, fields) => fields.every((field) => record[field] === true);
     const equalStringArrays = (actual, expected) =>
         actual.length === expected.length && actual.every((entry, index) => entry === expected[index]);
-    const guardFalseFields = [
-        "invocationEnabled",
-        "invocationAttempted",
-        "factoryInvoked",
-        "runtimeOptionsCreated",
-        "runtimeRegistration",
-        "runtimeExecutionRegistered",
-    ];
-    const factoryInvocationFalseFields = [
-        "invocationAttempted",
-        "factoryInvoked",
-        "promiseAwaited",
-        "resultAccepted",
-        "valuesIncluded",
-    ];
-    const inertOptionFalseFields = [
-        "optionValuesCreated",
+    const guardControlledFields = ["invocationEnabled", "invocationAttempted", "factoryInvoked", "runtimeOptionsCreated"];
+    const guardAlwaysFalseFields = ["runtimeRegistration", "runtimeExecutionRegistered"];
+    const factoryInvocationControlledFields = ["invocationAttempted", "factoryInvoked", "promiseAwaited", "resultAccepted"];
+    const inertOptionAlwaysFalseFields = [
         "optionValuesIncluded",
         "assetManifestValueIncluded",
         "runtimeAssetPreflightValueIncluded",
@@ -15799,22 +15786,18 @@ function normalizeRendererServiceBundledSceneBridgeFactoryInvocationPreflightDia
         "runtimeAssetsLoaded",
         "assetManifestMaterialized",
     ];
-    const runtimeOptionsFalseFields = [
+    const runtimeOptionsControlledFields = [
         "runtimeOptionsCreated",
         "shapeCheckAttempted",
         "renderThumbnailChecked",
         "closeHookChecked",
-        "runtimeRegistration",
-        "runtimeExecutionRegistered",
-        "valuesIncluded",
     ];
-    const sideEffectFields = [
+    const runtimeOptionsAlwaysFalseFields = ["runtimeRegistration", "runtimeExecutionRegistered", "valuesIncluded"];
+    const sideEffectControlledFields = ["runtimeAdapterImported", "runtimeFactoryInvoked", "runtimeOptionsCreated"];
+    const sideEffectAlwaysFalseFields = [
         "browserProcessStarted",
         "browserPageCreated",
         "runtimeExecutionRegistered",
-        "runtimeAdapterImported",
-        "runtimeFactoryInvoked",
-        "runtimeOptionsCreated",
         "runtimeAssetsLoaded",
         "assetManifestMaterialized",
         "backendRpcReads",
@@ -15861,12 +15844,84 @@ function normalizeRendererServiceBundledSceneBridgeFactoryInvocationPreflightDia
         "renderer_service_bundled_scene_bridge_factory_invocation_result_invalid",
         "renderer_service_bundled_scene_bridge_factory_invocation_ready",
     ];
+    const statusValue = normalizeOptionalString(summary.status);
+    const allowedStatus = ["planned-disabled", "ready", "invalid"].includes(statusValue);
+    const execution = summary.execution === null ? null : asRecord(summary.execution);
+    const normalizedExecution =
+        present && summary.execution !== null
+            ? {
+                  attempted: execution.attempted === true,
+                  succeeded: execution.succeeded === true,
+                  outcome: normalizeOptionalString(execution.outcome),
+                  namespaceImportReady: execution.namespaceImportReady === true,
+                  moduleImported: execution.moduleImported === true,
+                  factoryInvoked: execution.factoryInvoked === true,
+                  inertOptionsCreated: execution.inertOptionsCreated === true,
+                  runtimeOptionsCreated: execution.runtimeOptionsCreated === true,
+                  runtimeOptionsShapeValid: execution.runtimeOptionsShapeValid === true,
+                  runtimeRegistration: execution.runtimeRegistration === true,
+                  renderDispatch: execution.renderDispatch === true,
+                  browserProcessStarted: execution.browserProcessStarted === true,
+                  runtimeAssetsLoaded: execution.runtimeAssetsLoaded === true,
+                  assetManifestMaterialized: execution.assetManifestMaterialized === true,
+                  valuesIncluded: execution.valuesIncluded === true,
+              }
+            : null;
+    const hasExecutedPreflight = normalizedExecution !== null;
+    const plannedDisabledHasExecutionMetadata =
+        statusValue === "planned-disabled" &&
+        (!allFalse(guard, guardControlledFields) ||
+            factoryInvocationControlledFields.some((field) => factoryInvocation[field] === true) ||
+            inertOptionsPlan.optionValuesCreated === true ||
+            runtimeOptionsControlledFields.some((field) => runtimeOptionsShape[field] === true) ||
+            sideEffectControlledFields.some((field) => sideEffects[field] === true) ||
+            hasExecutedPreflight);
+    const executedStatusMissingExecution = statusValue !== "planned-disabled" && !hasExecutedPreflight;
+    const unsafeExecution =
+        normalizedExecution !== null &&
+        (normalizedExecution.runtimeRegistration === true ||
+            normalizedExecution.renderDispatch === true ||
+            normalizedExecution.browserProcessStarted === true ||
+            normalizedExecution.runtimeAssetsLoaded === true ||
+            normalizedExecution.assetManifestMaterialized === true ||
+            normalizedExecution.valuesIncluded === true);
+    const executedStatusInvalidExecution =
+        statusValue !== "planned-disabled" &&
+        normalizedExecution !== null &&
+        (normalizedExecution.attempted !== true ||
+            normalizedExecution.namespaceImportReady !== true ||
+            (statusValue === "ready" &&
+                (normalizedExecution.succeeded !== true ||
+                    normalizedExecution.outcome !== "ready" ||
+                    normalizedExecution.factoryInvoked !== true ||
+                    normalizedExecution.inertOptionsCreated !== true ||
+                    normalizedExecution.runtimeOptionsCreated !== true ||
+                    normalizedExecution.runtimeOptionsShapeValid !== true)));
+    const readyStatusMissingReadyFlags =
+        statusValue === "ready" &&
+        (source.namespaceImportReady !== true ||
+            guard.invocationEnabled !== true ||
+            guard.invocationAttempted !== true ||
+            guard.factoryInvoked !== true ||
+            guard.runtimeOptionsCreated !== true ||
+            factoryInvocation.invocationAttempted !== true ||
+            factoryInvocation.factoryInvoked !== true ||
+            factoryInvocation.promiseAwaited !== true ||
+            factoryInvocation.resultAccepted !== true ||
+            inertOptionsPlan.optionValuesCreated !== true ||
+            runtimeOptionsShape.runtimeOptionsCreated !== true ||
+            runtimeOptionsShape.shapeCheckAttempted !== true ||
+            runtimeOptionsShape.renderThumbnailChecked !== true ||
+            runtimeOptionsShape.closeHookChecked !== true ||
+            sideEffects.runtimeAdapterImported !== true ||
+            sideEffects.runtimeFactoryInvoked !== true ||
+            sideEffects.runtimeOptionsCreated !== true);
     const invalidShape =
         present &&
-        (normalizeOptionalString(summary.status) !== "planned-disabled" ||
-            normalizeOptionalString(summary.preflightVersion) !== "P26.37" ||
+        (!allowedStatus ||
+            normalizeOptionalString(summary.preflightVersion) !== "P26.38" ||
             normalizeOptionalString(summary.owner) !== "renderer-service" ||
-            normalizeOptionalString(summary.mode) !== "guarded-factory-invocation-preflight-plan" ||
+            normalizeOptionalString(summary.mode) !== "guarded-factory-invocation-preflight" ||
             normalizeOptionalString(source.contractVersion) !== "P26.32" ||
             normalizeOptionalString(source.adapterModuleReadinessVersion) !== "P26.33" ||
             normalizeOptionalString(source.importGateVersion) !== "P26.34" ||
@@ -15875,20 +15930,20 @@ function normalizeRendererServiceBundledSceneBridgeFactoryInvocationPreflightDia
             typeof source.namespaceImportReady !== "boolean" ||
             guard.namespaceImportRequired !== true ||
             guard.explicitFutureInvocationGateRequired !== true ||
-            !allFalse(guard, guardFalseFields) ||
+            !allFalse(guard, guardAlwaysFalseFields) ||
             normalizeOptionalString(factoryInvocation.exportName) !== "createBundledSceneBridgeRendererRuntime" ||
             normalizeOptionalString(factoryInvocation.expectedSignature) !== "(options) => Promise<RendererRuntimeOptions>" ||
             factoryInvocation.inertOptionsRequired !== true ||
-            !allFalse(factoryInvocation, factoryInvocationFalseFields) ||
+            factoryInvocation.valuesIncluded === true ||
             !equalStringArrays(requiredOptionKeys, ["assetManifest", "runtimeAssetPreflight", "browser"]) ||
             normalizeOptionalString(inertOptionsPlan.assetManifestSource) !== "runtimeAssetManifest" ||
             normalizeOptionalString(inertOptionsPlan.runtimeAssetPreflightSource) !== "runtimeAssetMaterializationPreflight" ||
             normalizeOptionalString(inertOptionsPlan.browserSource) !== "inert-browser-handle-placeholder" ||
-            !allFalse(inertOptionsPlan, inertOptionFalseFields) ||
+            !allFalse(inertOptionsPlan, inertOptionAlwaysFalseFields) ||
             normalizeOptionalString(runtimeOptionsShape.expectedType) !== "RendererRuntimeOptions" ||
             !equalStringArrays(requiredKeys, ["renderThumbnail"]) ||
             !equalStringArrays(optionalKeys, ["close"]) ||
-            !allFalse(runtimeOptionsShape, runtimeOptionsFalseFields) ||
+            !allFalse(runtimeOptionsShape, runtimeOptionsAlwaysFalseFields) ||
             !equalStringArrays(
                 invocationOutcomeTaxonomy.map((entry) => entry.code),
                 expectedOutcomeCodes
@@ -15899,20 +15954,24 @@ function normalizeRendererServiceBundledSceneBridgeFactoryInvocationPreflightDia
             nextActions.length === 0 ||
             checks.length === 0 ||
             checks.some((entry) => entry.dispatch !== false) ||
-            !allFalse(sideEffects, sideEffectFields) ||
+            !allFalse(sideEffects, sideEffectAlwaysFalseFields) ||
             !allFalse(redaction, redactionFields) ||
             !allTrue(omitted, omittedFields) ||
-            summary.execution !== null);
+            plannedDisabledHasExecutionMetadata ||
+            executedStatusMissingExecution ||
+            executedStatusInvalidExecution ||
+            readyStatusMissingReadyFlags ||
+            unsafeExecution);
     const unsafeDisclosure =
         present &&
-        (!allFalse(guard, guardFalseFields) ||
-            !allFalse(factoryInvocation, factoryInvocationFalseFields) ||
-            !allFalse(inertOptionsPlan, inertOptionFalseFields) ||
-            !allFalse(runtimeOptionsShape, runtimeOptionsFalseFields) ||
-            !allFalse(sideEffects, sideEffectFields) ||
+        (!allFalse(guard, guardAlwaysFalseFields) ||
+            factoryInvocation.valuesIncluded === true ||
+            !allFalse(inertOptionsPlan, inertOptionAlwaysFalseFields) ||
+            !allFalse(runtimeOptionsShape, runtimeOptionsAlwaysFalseFields) ||
+            !allFalse(sideEffects, sideEffectAlwaysFalseFields) ||
             !allFalse(redaction, redactionFields) ||
             !allTrue(omitted, omittedFields) ||
-            summary.execution !== null);
+            unsafeExecution);
     const invalid = present && (invalidShape || unsafeDisclosure);
     const normalizedDiagnosticCodes = invalid
         ? uniqueStrings(["renderer_service_bundled_scene_bridge_factory_invocation_preflight_invalid", ...diagnosticCodes])
@@ -15925,7 +15984,7 @@ function normalizeRendererServiceBundledSceneBridgeFactoryInvocationPreflightDia
         : nextActions;
 
     return {
-        status: invalid ? "invalid" : present ? "planned-disabled" : "not-reported",
+        status: invalid ? "invalid" : present ? statusValue : "not-reported",
         preflightVersion: present ? normalizeOptionalString(summary.preflightVersion) : null,
         checked: Boolean(body),
         owner: normalizeOptionalString(summary.owner),
@@ -16036,7 +16095,7 @@ function normalizeRendererServiceBundledSceneBridgeFactoryInvocationPreflightDia
             mediaBytes: omitted.mediaBytes !== false,
             tokenValues: omitted.tokenValues !== false,
         },
-        execution: null,
+        execution: normalizedExecution,
     };
 }
 

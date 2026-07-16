@@ -7968,7 +7968,7 @@ test("RenderThumbnailTool execution opt-in posts to renderer-service and returns
         assert.equal(body.data.healthPreflight.bundledSceneBridgeModuleNamespaceImportPreflight.omitted.moduleNamespace, true);
         assert.equal(body.data.healthPreflight.bundledSceneBridgeModuleNamespaceImportPreflight.omitted.factoryValue, true);
         assert.equal(body.data.healthPreflight.bundledSceneBridgeFactoryInvocationPreflight.status, "planned-disabled");
-        assert.equal(body.data.healthPreflight.bundledSceneBridgeFactoryInvocationPreflight.preflightVersion, "P26.37");
+        assert.equal(body.data.healthPreflight.bundledSceneBridgeFactoryInvocationPreflight.preflightVersion, "P26.38");
         assert.equal(body.data.healthPreflight.bundledSceneBridgeFactoryInvocationPreflight.source.namespaceImportReady, false);
         assert.equal(body.data.healthPreflight.bundledSceneBridgeFactoryInvocationPreflight.guard.invocationEnabled, false);
         assert.equal(body.data.healthPreflight.bundledSceneBridgeFactoryInvocationPreflight.guard.factoryInvoked, false);

@@ -1404,7 +1404,7 @@ function getRendererServiceLifecyclePlan(args: string[], env: NodeJS.ProcessEnv)
     };
     bundledSceneBridgeFactoryInvocationPreflight: {
         status: "planned-disabled";
-        preflightVersion: "P26.37";
+        preflightVersion: "P26.38";
         checked: false;
         source: {
             contractVersion: "P26.32";
@@ -1442,7 +1442,7 @@ function getRendererServiceLifecyclePlan(args: string[], env: NodeJS.ProcessEnv)
             runtimeRegistration: false;
             runtimeExecutionRegistered: false;
         };
-        diagnosticsVersion: "P26.37";
+        diagnosticsVersion: "P26.38";
         diagnosticCodes: string[];
         diagnostics: Array<{
             code: "renderer_service_bundled_scene_bridge_factory_invocation_namespace_not_ready";
@@ -2279,7 +2279,7 @@ function getRendererServiceLifecyclePlan(args: string[], env: NodeJS.ProcessEnv)
         },
         bundledSceneBridgeFactoryInvocationPreflight: {
             status: "planned-disabled",
-            preflightVersion: "P26.37",
+            preflightVersion: "P26.38",
             checked: false,
             source: {
                 contractVersion: "P26.32",
@@ -2317,23 +2317,23 @@ function getRendererServiceLifecyclePlan(args: string[], env: NodeJS.ProcessEnv)
                 runtimeRegistration: false,
                 runtimeExecutionRegistered: false,
             },
-            diagnosticsVersion: "P26.37",
+            diagnosticsVersion: "P26.38",
             diagnosticCodes: ["renderer_service_bundled_scene_bridge_factory_invocation_namespace_not_ready"],
             diagnostics: [
                 {
                     code: "renderer_service_bundled_scene_bridge_factory_invocation_namespace_not_ready",
                     severity: "blocked",
                     field: "source.namespaceImportReady",
-                    message: "Renderer-service bundled scene bridge factory invocation preflight is planned, but CLI lifecycle planning does not import or invoke modules.",
+                    message: "Renderer-service bundled scene bridge factory invocation preflight can execute through /health, but CLI lifecycle planning does not import or invoke modules.",
                     nextActions: [
                         `Set ${RENDERER_SERVICE_BUNDLED_SCENE_BRIDGE_RUNTIME_ENV}=${RENDERER_SERVICE_BUNDLED_SCENE_BRIDGE_RUNTIME_EXPECTED_VALUE} and query renderer-service /health to prove namespace import readiness first.`,
-                        "Keep factory invocation, runtime option creation, runtime registration, browser startup, asset loading, and value exposure disabled until the guarded invocation slice is implemented.",
+                        "Keep runtime registration, render dispatch, browser startup, asset loading, and value exposure disabled until the bundled bridge runtime is reviewed.",
                     ],
                 },
             ],
             nextActions: [
                 `Set ${RENDERER_SERVICE_BUNDLED_SCENE_BRIDGE_RUNTIME_ENV}=${RENDERER_SERVICE_BUNDLED_SCENE_BRIDGE_RUNTIME_EXPECTED_VALUE} and query renderer-service /health to prove namespace import readiness first.`,
-                "Keep factory invocation, runtime option creation, runtime registration, browser startup, asset loading, and value exposure disabled until the guarded invocation slice is implemented.",
+                "Keep runtime registration, render dispatch, browser startup, asset loading, and value exposure disabled until the bundled bridge runtime is reviewed.",
             ],
             diagnosticsSurface: "healthPreflight.bundledSceneBridgeFactoryInvocationPreflight",
             lifecyclePlanEffects: {

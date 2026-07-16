@@ -7245,7 +7245,7 @@ test("renderer-service status reports a no-spawn lifecycle plan without probing"
         assert.equal(body.data.lifecycle.bundledSceneBridgeModuleNamespaceImportPreflight.omitted.factoryValue, true);
         assert.equal(body.data.lifecycle.bundledSceneBridgeModuleNamespaceImportPreflight.omitted.runtimeOptionsValue, true);
         assert.equal(body.data.lifecycle.bundledSceneBridgeFactoryInvocationPreflight.status, "planned-disabled");
-        assert.equal(body.data.lifecycle.bundledSceneBridgeFactoryInvocationPreflight.preflightVersion, "P26.37");
+        assert.equal(body.data.lifecycle.bundledSceneBridgeFactoryInvocationPreflight.preflightVersion, "P26.38");
         assert.equal(body.data.lifecycle.bundledSceneBridgeFactoryInvocationPreflight.checked, false);
         assert.equal(body.data.lifecycle.bundledSceneBridgeFactoryInvocationPreflight.source.namespaceImportReady, false);
         assert.equal(
@@ -10891,7 +10891,7 @@ test("render thumbnail execution opt-in posts to renderer-service and returns re
         assert.equal(body.data.healthPreflight.bundledSceneBridgeModuleNamespaceImportPreflight.omitted.moduleNamespace, true);
         assert.equal(body.data.healthPreflight.bundledSceneBridgeModuleNamespaceImportPreflight.omitted.factoryValue, true);
         assert.equal(body.data.healthPreflight.bundledSceneBridgeFactoryInvocationPreflight.status, "planned-disabled");
-        assert.equal(body.data.healthPreflight.bundledSceneBridgeFactoryInvocationPreflight.preflightVersion, "P26.37");
+        assert.equal(body.data.healthPreflight.bundledSceneBridgeFactoryInvocationPreflight.preflightVersion, "P26.38");
         assert.equal(body.data.healthPreflight.bundledSceneBridgeFactoryInvocationPreflight.source.namespaceImportReady, false);
         assert.equal(body.data.healthPreflight.bundledSceneBridgeFactoryInvocationPreflight.guard.invocationEnabled, false);
         assert.equal(body.data.healthPreflight.bundledSceneBridgeFactoryInvocationPreflight.guard.factoryInvoked, false);

@@ -562,6 +562,13 @@ the future inert option envelope and invocation/result taxonomy, but no
 factory is invoked, no runtime options are created, no runtime is registered,
 no browser starts, no assets load, no backend/source data is read, no files are
 written, and no module/factory/runtime/option values are exposed.
+P26.38 executes that guarded factory invocation preflight only after the
+explicit P26.36 namespace import is ready. The service calls the bundled
+factory with inert redacted option handles, awaits the returned runtime
+options, and checks only the `renderThumbnail`/optional `close` callable
+shape. Runtime registration, render dispatch, browser startup, asset loading,
+backend/source-data reads, local writes, and module/factory/runtime/option
+value exposure remain disabled.
 
 ## Test Strategy
 

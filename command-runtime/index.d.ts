@@ -2357,11 +2357,11 @@ export interface RenderThumbnailRendererServiceBundledSceneBridgeModuleNamespace
 }
 
 export interface RenderThumbnailRendererServiceBundledSceneBridgeFactoryInvocationPreflightDiagnostic {
-    status: "not-reported" | "planned-disabled" | "invalid";
-    preflightVersion: "P26.37" | null;
+    status: "not-reported" | "planned-disabled" | "ready" | "invalid";
+    preflightVersion: "P26.38" | null;
     checked: boolean;
     owner: "renderer-service" | null;
-    mode: "guarded-factory-invocation-preflight-plan" | null;
+    mode: "guarded-factory-invocation-preflight" | null;
     source: {
         contractVersion: "P26.32" | null;
         adapterModuleReadinessVersion: "P26.33" | null;
@@ -2485,7 +2485,23 @@ export interface RenderThumbnailRendererServiceBundledSceneBridgeFactoryInvocati
         mediaBytes: boolean;
         tokenValues: boolean;
     };
-    execution: null;
+    execution: {
+        attempted: boolean;
+        succeeded: boolean;
+        outcome: string | null;
+        namespaceImportReady: boolean;
+        moduleImported: boolean;
+        factoryInvoked: boolean;
+        inertOptionsCreated: boolean;
+        runtimeOptionsCreated: boolean;
+        runtimeOptionsShapeValid: boolean;
+        runtimeRegistration: boolean;
+        renderDispatch: boolean;
+        browserProcessStarted: boolean;
+        runtimeAssetsLoaded: boolean;
+        assetManifestMaterialized: boolean;
+        valuesIncluded: boolean;
+    } | null;
 }
 
 export interface RenderThumbnailRendererServiceBrowserFixtureRuntimeDiagnostic {

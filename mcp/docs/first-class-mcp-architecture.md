@@ -4176,6 +4176,14 @@ inert option envelope plus invocation/result taxonomy, but factory invocation,
 runtime option creation, runtime registration, browser startup, asset loading,
 backend/source-data reads, local writes, and module/factory/runtime/option
 value exposure remain disabled.
+P26.38 executes that guarded factory invocation preflight through
+renderer-service `/health` and `/thumbnail` after the explicit import gate has
+proven P26.36 namespace readiness. The service-owned factory receives only
+inert redacted option handles, the result is checked for `renderThumbnail` and
+optional `close` callability, and command-runtime preserves the token-safe
+execution summary for MCP and `penpot-cli render thumbnail`. Runtime
+registration, render dispatch, browser startup, asset loading,
+backend/source-data reads, local writes, and value exposure remain disabled.
 
 ### 8.6 Advanced Tools
 

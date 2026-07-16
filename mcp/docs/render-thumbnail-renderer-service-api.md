@@ -179,6 +179,14 @@ factory option envelope, invocation outcome taxonomy, and returned runtime
 option shape, but still does not invoke the factory, create option/runtime
 values, register execution, start browsers, load assets, read backend/source
 data, write files, or expose module/factory/runtime/option values.
+P26.38 executes that guarded factory invocation preflight after P26.36 reports
+namespace readiness. Renderer-service invokes only the service-owned bundled
+factory with inert redacted option handles, awaits the result, and checks that
+the returned runtime options expose `renderThumbnail` plus an optional `close`
+hook. The preflight may report `ready`, `invalid`, or `planned-disabled`, but
+runtime registration, render dispatch, browser startup, asset loading,
+backend/source-data reads, local writes, and module/factory/runtime/option
+value exposure remain disabled.
 P26.5 adds a token-safe `backendRpcClient` plan to renderer-service thumbnail
 responses so backend data/cache/persist endpoints are normalized for staged
 execution. That plan now feeds the executable file-thumbnail cache probe,

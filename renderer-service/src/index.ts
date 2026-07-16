@@ -2226,9 +2226,9 @@ async function bundledSceneBridgeModuleNamespaceImportPreflightResponse(
 
 const bundledSceneBridgeFactoryInvocationPreflightBase = {
     status: "planned-disabled",
-    preflightVersion: "P26.37",
+    preflightVersion: "P26.38",
     owner: "renderer-service",
-    mode: "guarded-factory-invocation-preflight-plan",
+    mode: "guarded-factory-invocation-preflight",
     source: {
         contractVersion: "P26.32",
         adapterModuleReadinessVersion: "P26.33",
@@ -2326,17 +2326,17 @@ const bundledSceneBridgeFactoryInvocationPreflightBase = {
             code: "renderer_service_bundled_scene_bridge_factory_invocation_namespace_not_ready",
             severity: "blocked",
             field: "source.namespaceImportReady",
-            message: "The bundled scene bridge factory invocation preflight is planned, but module namespace import readiness has not been proven.",
+            message: "The bundled scene bridge factory invocation preflight is blocked because module namespace import readiness has not been proven.",
             nextActions: [
                 `Set ${BUNDLED_SCENE_BRIDGE_RUNTIME_ENV}=${BUNDLED_SCENE_BRIDGE_RUNTIME_EXPECTED_VALUE} and verify P26.36 namespace import readiness first.`,
-                "Keep factory invocation, runtime option creation, runtime registration, browser startup, asset loading, and value exposure disabled.",
+                "Keep runtime registration, render dispatch, browser startup, asset loading, and value exposure disabled.",
             ],
         },
     ],
     diagnosticCodes: ["renderer_service_bundled_scene_bridge_factory_invocation_namespace_not_ready"],
     nextActions: [
         `Set ${BUNDLED_SCENE_BRIDGE_RUNTIME_ENV}=${BUNDLED_SCENE_BRIDGE_RUNTIME_EXPECTED_VALUE} and verify P26.36 namespace import readiness first.`,
-        "Keep factory invocation, runtime option creation, runtime registration, browser startup, asset loading, and value exposure disabled.",
+        "Keep runtime registration, render dispatch, browser startup, asset loading, and value exposure disabled.",
     ],
     checks: [
         {
@@ -2421,9 +2421,55 @@ const bundledSceneBridgeFactoryInvocationPreflightBase = {
 
 export const bundledSceneBridgeFactoryInvocationPreflight = bundledSceneBridgeFactoryInvocationPreflightBase;
 
-function bundledSceneBridgeFactoryInvocationPreflightResponse(
+type BundledSceneBridgeFactory = (options: unknown) => unknown | Promise<unknown>;
+
+function bundledSceneBridgeFactoryInvocationDiagnostic(
+    code: string,
+    severity: "info" | "blocked" | "invalid",
+    field: string,
+    message: string,
+    nextActions: string[]
+) {
+    return {
+        code,
+        severity,
+        field,
+        message,
+        nextActions,
+    };
+}
+
+function createBundledSceneBridgeInertOptions(): Record<string, unknown> {
+    const disabledBrowserOperation = () => {
+        const error = new Error("Bundled scene bridge preflight inert browser handle cannot start a browser.");
+        Object.assign(error, { code: "renderer_service_bundled_scene_bridge_inert_browser_handle" });
+        throw error;
+    };
+
+    return Object.freeze({
+        assetManifest: Object.freeze({
+            kind: "redacted-runtime-asset-manifest-handle",
+            valuesIncluded: false,
+        }),
+        runtimeAssetPreflight: Object.freeze({
+            kind: "redacted-runtime-asset-preflight-handle",
+            valuesIncluded: false,
+        }),
+        browser: Object.freeze({
+            kind: "inert-browser-handle",
+            browserProcessStarted: false,
+            browserPageCreated: false,
+            valuesIncluded: false,
+            launch: disabledBrowserOperation,
+            newPage: disabledBrowserOperation,
+        }),
+        executionEnabled: false,
+    });
+}
+
+async function bundledSceneBridgeFactoryInvocationPreflightResponse(
     moduleNamespaceImportPreflight: Record<string, unknown>
-): Record<string, unknown> {
+): Promise<Record<string, unknown>> {
     const namespaceReady =
         moduleNamespaceImportPreflight.status === "ready" &&
         isRecord(moduleNamespaceImportPreflight.factoryShape) &&
@@ -2435,35 +2481,235 @@ function bundledSceneBridgeFactoryInvocationPreflightResponse(
         return bundledSceneBridgeFactoryInvocationPreflightBase;
     }
 
-    const diagnostic = {
-        code: "renderer_service_bundled_scene_bridge_factory_invocation_disabled",
-        severity: "blocked",
-        field: "guard.invocationEnabled",
-        message: "The bundled scene bridge module namespace is ready, but the guarded factory invocation preflight remains planned and disabled.",
-        nextActions: [
-            "Implement the guarded factory invocation execution slice with inert/redacted options before calling the factory.",
-            "Keep runtime option registration, render dispatch, browser startup, asset loading, and value exposure disabled.",
-        ],
+    const readySource = {
+        ...bundledSceneBridgeFactoryInvocationPreflightBase.source,
+        namespaceImportReady: true,
+        readiness: "ready-for-guarded-factory-invocation",
     };
+    let runtimeAdapterImported = false;
+    let optionValuesCreated = false;
+    let factoryInvoked = false;
 
-    return {
-        ...bundledSceneBridgeFactoryInvocationPreflightBase,
-        source: {
-            ...bundledSceneBridgeFactoryInvocationPreflightBase.source,
-            namespaceImportReady: true,
-            readiness: "ready-for-guarded-factory-invocation-plan",
-        },
-        diagnostics: [diagnostic],
-        diagnosticCodes: [diagnostic.code],
-        nextActions: diagnostic.nextActions,
-        checks: [
-            { id: "module-namespace-import-ready", status: "passed", required: true, dispatch: false },
-            { id: "future-invocation-gate", status: "planned", required: true, dispatch: false },
-            { id: "inert-options-envelope", status: "planned", required: true, dispatch: false },
-            { id: "factory-invocation", status: "blocked", required: true, dispatch: false },
-            { id: "runtime-options-shape", status: "planned", required: true, dispatch: false },
-        ],
-    };
+    try {
+        const namespace = await import("./bundled-scene-bridge-runtime.js");
+        runtimeAdapterImported = true;
+        const exportName = bundledSceneBridgeFactoryInvocationPreflightBase.factoryInvocation.exportName;
+        const factory = namespace[exportName as keyof typeof namespace];
+
+        if (typeof factory !== "function") {
+            const diagnostic = bundledSceneBridgeFactoryInvocationDiagnostic(
+                "renderer_service_bundled_scene_bridge_factory_invocation_result_invalid",
+                "invalid",
+                "factoryInvocation.exportName",
+                "The bundled scene bridge factory invocation preflight could not find a callable factory after namespace readiness.",
+                [
+                    "Restore the service-owned bundled scene bridge module factory export.",
+                    "Rerun renderer-service /health before registering the bundled scene bridge runtime.",
+                ]
+            );
+            return {
+                ...bundledSceneBridgeFactoryInvocationPreflightBase,
+                status: "invalid",
+                source: readySource,
+                guard: {
+                    ...bundledSceneBridgeFactoryInvocationPreflightBase.guard,
+                    invocationEnabled: true,
+                    invocationAttempted: true,
+                },
+                diagnostics: [diagnostic],
+                diagnosticCodes: [diagnostic.code],
+                nextActions: diagnostic.nextActions,
+                checks: [
+                    { id: "module-namespace-import-ready", status: "passed", required: true, dispatch: false },
+                    { id: "future-invocation-gate", status: "passed", required: true, dispatch: false },
+                    { id: "inert-options-envelope", status: "blocked", required: true, dispatch: false },
+                    { id: "factory-invocation", status: "failed", required: true, dispatch: false },
+                    { id: "runtime-options-shape", status: "blocked", required: true, dispatch: false },
+                ],
+                sideEffects: {
+                    ...bundledSceneBridgeFactoryInvocationPreflightBase.sideEffects,
+                    runtimeAdapterImported,
+                },
+                execution: {
+                    attempted: true,
+                    succeeded: false,
+                    outcome: "factory-not-callable",
+                    namespaceImportReady: true,
+                    moduleImported: runtimeAdapterImported,
+                    factoryInvoked: false,
+                    inertOptionsCreated: false,
+                    runtimeOptionsCreated: false,
+                    runtimeOptionsShapeValid: false,
+                    runtimeRegistration: false,
+                    renderDispatch: false,
+                    browserProcessStarted: false,
+                    runtimeAssetsLoaded: false,
+                    assetManifestMaterialized: false,
+                    valuesIncluded: false,
+                },
+            };
+        }
+
+        const inertOptions = createBundledSceneBridgeInertOptions();
+        optionValuesCreated = true;
+        factoryInvoked = true;
+        const runtimeOptions = await (factory as BundledSceneBridgeFactory)(inertOptions);
+        const runtimeOptionsRecord = isRecord(runtimeOptions);
+        const renderThumbnailChecked = runtimeOptionsRecord;
+        const closeHookChecked = runtimeOptionsRecord;
+        const renderThumbnailCallable = runtimeOptionsRecord && typeof runtimeOptions.renderThumbnail === "function";
+        const closeHookValid = runtimeOptionsRecord && (runtimeOptions.close === undefined || typeof runtimeOptions.close === "function");
+        const runtimeOptionsValid = renderThumbnailCallable && closeHookValid;
+        const diagnostic = runtimeOptionsValid
+            ? bundledSceneBridgeFactoryInvocationDiagnostic(
+                  "renderer_service_bundled_scene_bridge_factory_invocation_ready",
+                  "info",
+                  "runtimeOptionsShape",
+                  "The bundled scene bridge factory invocation preflight created redacted runtime options with the expected callable shape.",
+                  [
+                      "Keep runtime registration and render dispatch disabled until browser lifecycle, asset loading, and pixel assertions are reviewed.",
+                      "Proceed to the next gated task before registering the bundled scene bridge runtime.",
+                  ]
+              )
+            : bundledSceneBridgeFactoryInvocationDiagnostic(
+                  "renderer_service_bundled_scene_bridge_factory_invocation_result_invalid",
+                  "invalid",
+                  "runtimeOptionsShape",
+                  "The bundled scene bridge factory invocation preflight returned runtime options without the expected callable shape.",
+                  [
+                      "Fix the service-owned bundled scene bridge factory result shape.",
+                      "Rerun renderer-service /health before registering the bundled scene bridge runtime.",
+                  ]
+              );
+
+        return {
+            ...bundledSceneBridgeFactoryInvocationPreflightBase,
+            status: runtimeOptionsValid ? "ready" : "invalid",
+            source: readySource,
+            guard: {
+                ...bundledSceneBridgeFactoryInvocationPreflightBase.guard,
+                invocationEnabled: true,
+                invocationAttempted: true,
+                factoryInvoked: true,
+                runtimeOptionsCreated: runtimeOptionsRecord,
+            },
+            factoryInvocation: {
+                ...bundledSceneBridgeFactoryInvocationPreflightBase.factoryInvocation,
+                invocationAttempted: true,
+                factoryInvoked: true,
+                promiseAwaited: true,
+                resultAccepted: runtimeOptionsValid,
+            },
+            inertOptionsPlan: {
+                ...bundledSceneBridgeFactoryInvocationPreflightBase.inertOptionsPlan,
+                optionValuesCreated: true,
+            },
+            runtimeOptionsShape: {
+                ...bundledSceneBridgeFactoryInvocationPreflightBase.runtimeOptionsShape,
+                runtimeOptionsCreated: runtimeOptionsRecord,
+                shapeCheckAttempted: true,
+                renderThumbnailChecked,
+                closeHookChecked,
+            },
+            diagnostics: [diagnostic],
+            diagnosticCodes: [diagnostic.code],
+            nextActions: diagnostic.nextActions,
+            checks: [
+                { id: "module-namespace-import-ready", status: "passed", required: true, dispatch: false },
+                { id: "future-invocation-gate", status: "passed", required: true, dispatch: false },
+                { id: "inert-options-envelope", status: "passed", required: true, dispatch: false },
+                { id: "factory-invocation", status: "passed", required: true, dispatch: false },
+                { id: "runtime-options-shape", status: runtimeOptionsValid ? "passed" : "failed", required: true, dispatch: false },
+            ],
+            sideEffects: {
+                ...bundledSceneBridgeFactoryInvocationPreflightBase.sideEffects,
+                runtimeAdapterImported,
+                runtimeFactoryInvoked: true,
+                runtimeOptionsCreated: runtimeOptionsRecord,
+            },
+            execution: {
+                attempted: true,
+                succeeded: runtimeOptionsValid,
+                outcome: runtimeOptionsValid ? "ready" : "result-invalid",
+                namespaceImportReady: true,
+                moduleImported: runtimeAdapterImported,
+                factoryInvoked: true,
+                inertOptionsCreated: true,
+                runtimeOptionsCreated: runtimeOptionsRecord,
+                runtimeOptionsShapeValid: runtimeOptionsValid,
+                runtimeRegistration: false,
+                renderDispatch: false,
+                browserProcessStarted: false,
+                runtimeAssetsLoaded: false,
+                assetManifestMaterialized: false,
+                valuesIncluded: false,
+            },
+        };
+    } catch {
+        const diagnostic = bundledSceneBridgeFactoryInvocationDiagnostic(
+            "renderer_service_bundled_scene_bridge_factory_invocation_rejected",
+            "invalid",
+            "factoryInvocation",
+            "The bundled scene bridge factory invocation preflight rejected while using inert redacted options.",
+            [
+                "Fix the service-owned bundled scene bridge factory so it accepts the inert preflight option envelope.",
+                "Rerun renderer-service /health before registering the bundled scene bridge runtime.",
+            ]
+        );
+        return {
+            ...bundledSceneBridgeFactoryInvocationPreflightBase,
+            status: "invalid",
+            source: readySource,
+            guard: {
+                ...bundledSceneBridgeFactoryInvocationPreflightBase.guard,
+                invocationEnabled: true,
+                invocationAttempted: true,
+                factoryInvoked,
+            },
+            factoryInvocation: {
+                ...bundledSceneBridgeFactoryInvocationPreflightBase.factoryInvocation,
+                invocationAttempted: factoryInvoked,
+                factoryInvoked,
+                promiseAwaited: factoryInvoked,
+            },
+            inertOptionsPlan: {
+                ...bundledSceneBridgeFactoryInvocationPreflightBase.inertOptionsPlan,
+                optionValuesCreated,
+            },
+            diagnostics: [diagnostic],
+            diagnosticCodes: [diagnostic.code],
+            nextActions: diagnostic.nextActions,
+            checks: [
+                { id: "module-namespace-import-ready", status: "passed", required: true, dispatch: false },
+                { id: "future-invocation-gate", status: "passed", required: true, dispatch: false },
+                { id: "inert-options-envelope", status: optionValuesCreated ? "passed" : "failed", required: true, dispatch: false },
+                { id: "factory-invocation", status: "failed", required: true, dispatch: false },
+                { id: "runtime-options-shape", status: "blocked", required: true, dispatch: false },
+            ],
+            sideEffects: {
+                ...bundledSceneBridgeFactoryInvocationPreflightBase.sideEffects,
+                runtimeAdapterImported,
+                runtimeFactoryInvoked: factoryInvoked,
+            },
+            execution: {
+                attempted: true,
+                succeeded: false,
+                outcome: "factory-rejected",
+                namespaceImportReady: true,
+                moduleImported: runtimeAdapterImported,
+                factoryInvoked,
+                inertOptionsCreated: optionValuesCreated,
+                runtimeOptionsCreated: false,
+                runtimeOptionsShapeValid: false,
+                runtimeRegistration: false,
+                renderDispatch: false,
+                browserProcessStarted: false,
+                runtimeAssetsLoaded: false,
+                assetManifestMaterialized: false,
+                valuesIncluded: false,
+            },
+        };
+    }
 }
 
 function defaultBrowserFixtureRuntimeLifecycleDiagnostics(
@@ -6012,10 +6258,13 @@ function validateBundledSceneBridgeModuleNamespaceImportPreflightResponse(actual
 
 function validateBundledSceneBridgeFactoryInvocationPreflightResponse(actual: unknown, field: string): void {
     const record = responseRecord(actual, field);
-    requireResponseEqual(record.status, "planned-disabled", `${field}.status`);
-    requireResponseEqual(record.preflightVersion, "P26.37", `${field}.preflightVersion`);
+    const status = String(record.status);
+    if (!["planned-disabled", "ready", "invalid"].includes(status)) {
+        responseInvalid(`${field}.status must be planned-disabled, ready, or invalid.`, `${field}.status`);
+    }
+    requireResponseEqual(record.preflightVersion, "P26.38", `${field}.preflightVersion`);
     requireResponseEqual(record.owner, "renderer-service", `${field}.owner`);
-    requireResponseEqual(record.mode, "guarded-factory-invocation-preflight-plan", `${field}.mode`);
+    requireResponseEqual(record.mode, "guarded-factory-invocation-preflight", `${field}.mode`);
 
     const source = responseRecord(record.source, `${field}.source`);
     requireResponseEqual(source.contractVersion, "P26.32", `${field}.source.contractVersion`);
@@ -6024,19 +6273,23 @@ function validateBundledSceneBridgeFactoryInvocationPreflightResponse(actual: un
     requireResponseEqual(source.factoryShapePreflightVersion, "P26.35", `${field}.source.factoryShapePreflightVersion`);
     requireResponseEqual(source.moduleNamespaceImportPreflightVersion, "P26.36", `${field}.source.moduleNamespaceImportPreflightVersion`);
     requireResponseEqual(typeof source.namespaceImportReady, "boolean", `${field}.source.namespaceImportReady.type`);
+    if (status === "ready") {
+        requireResponseEqual(source.namespaceImportReady, true, `${field}.source.namespaceImportReady`);
+    }
 
     const guard = responseRecord(record.guard, `${field}.guard`);
     requireResponseEqual(guard.namespaceImportRequired, true, `${field}.guard.namespaceImportRequired`);
     requireResponseEqual(guard.explicitFutureInvocationGateRequired, true, `${field}.guard.explicitFutureInvocationGateRequired`);
-    for (const property of [
-        "invocationEnabled",
-        "invocationAttempted",
-        "factoryInvoked",
-        "runtimeOptionsCreated",
-        "runtimeRegistration",
-        "runtimeExecutionRegistered",
-    ]) {
+    for (const property of ["invocationEnabled", "invocationAttempted", "factoryInvoked", "runtimeOptionsCreated"]) {
+        requireResponseEqual(typeof guard[property], "boolean", `${field}.guard.${property}.type`);
+    }
+    for (const property of ["runtimeRegistration", "runtimeExecutionRegistered"]) {
         requireResponseEqual(guard[property], false, `${field}.guard.${property}`);
+    }
+    if (status === "planned-disabled") {
+        for (const property of ["invocationEnabled", "invocationAttempted", "factoryInvoked", "runtimeOptionsCreated"]) {
+            requireResponseEqual(guard[property], false, `${field}.guard.${property}`);
+        }
     }
 
     const factoryInvocation = responseRecord(record.factoryInvocation, `${field}.factoryInvocation`);
@@ -6047,8 +6300,14 @@ function validateBundledSceneBridgeFactoryInvocationPreflightResponse(actual: un
         `${field}.factoryInvocation.expectedSignature`
     );
     requireResponseEqual(factoryInvocation.inertOptionsRequired, true, `${field}.factoryInvocation.inertOptionsRequired`);
-    for (const property of ["invocationAttempted", "factoryInvoked", "promiseAwaited", "resultAccepted", "valuesIncluded"]) {
-        requireResponseEqual(factoryInvocation[property], false, `${field}.factoryInvocation.${property}`);
+    for (const property of ["invocationAttempted", "factoryInvoked", "promiseAwaited", "resultAccepted"]) {
+        requireResponseEqual(typeof factoryInvocation[property], "boolean", `${field}.factoryInvocation.${property}.type`);
+    }
+    requireResponseEqual(factoryInvocation.valuesIncluded, false, `${field}.factoryInvocation.valuesIncluded`);
+    if (status === "planned-disabled") {
+        for (const property of ["invocationAttempted", "factoryInvoked", "promiseAwaited", "resultAccepted"]) {
+            requireResponseEqual(factoryInvocation[property], false, `${field}.factoryInvocation.${property}`);
+        }
     }
 
     const inertOptionsPlan = responseRecord(record.inertOptionsPlan, `${field}.inertOptionsPlan`);
@@ -6064,8 +6323,11 @@ function validateBundledSceneBridgeFactoryInvocationPreflightResponse(actual: un
         `${field}.inertOptionsPlan.runtimeAssetPreflightSource`
     );
     requireResponseEqual(inertOptionsPlan.browserSource, "inert-browser-handle-placeholder", `${field}.inertOptionsPlan.browserSource`);
+    requireResponseEqual(typeof inertOptionsPlan.optionValuesCreated, "boolean", `${field}.inertOptionsPlan.optionValuesCreated.type`);
+    if (status === "planned-disabled") {
+        requireResponseEqual(inertOptionsPlan.optionValuesCreated, false, `${field}.inertOptionsPlan.optionValuesCreated`);
+    }
     for (const property of [
-        "optionValuesCreated",
         "optionValuesIncluded",
         "assetManifestValueIncluded",
         "runtimeAssetPreflightValueIncluded",
@@ -6094,11 +6356,20 @@ function validateBundledSceneBridgeFactoryInvocationPreflightResponse(actual: un
         "shapeCheckAttempted",
         "renderThumbnailChecked",
         "closeHookChecked",
+    ]) {
+        requireResponseEqual(typeof runtimeOptionsShape[property], "boolean", `${field}.runtimeOptionsShape.${property}.type`);
+    }
+    for (const property of [
         "runtimeRegistration",
         "runtimeExecutionRegistered",
         "valuesIncluded",
     ]) {
         requireResponseEqual(runtimeOptionsShape[property], false, `${field}.runtimeOptionsShape.${property}`);
+    }
+    if (status === "planned-disabled") {
+        for (const property of ["runtimeOptionsCreated", "shapeCheckAttempted", "renderThumbnailChecked", "closeHookChecked"]) {
+            requireResponseEqual(runtimeOptionsShape[property], false, `${field}.runtimeOptionsShape.${property}`);
+        }
     }
 
     const invocationOutcomeTaxonomy = responseRecordArray(record.invocationOutcomeTaxonomy, `${field}.invocationOutcomeTaxonomy`);
@@ -6141,13 +6412,18 @@ function validateBundledSceneBridgeFactoryInvocationPreflightResponse(actual: un
     }
 
     const sideEffects = responseRecord(record.sideEffects, `${field}.sideEffects`);
+    for (const property of ["runtimeAdapterImported", "runtimeFactoryInvoked", "runtimeOptionsCreated"]) {
+        requireResponseEqual(typeof sideEffects[property], "boolean", `${field}.sideEffects.${property}.type`);
+    }
+    if (status === "planned-disabled") {
+        for (const property of ["runtimeAdapterImported", "runtimeFactoryInvoked", "runtimeOptionsCreated"]) {
+            requireResponseEqual(sideEffects[property], false, `${field}.sideEffects.${property}`);
+        }
+    }
     for (const property of [
         "browserProcessStarted",
         "browserPageCreated",
         "runtimeExecutionRegistered",
-        "runtimeAdapterImported",
-        "runtimeFactoryInvoked",
-        "runtimeOptionsCreated",
         "runtimeAssetsLoaded",
         "assetManifestMaterialized",
         "backendRpcReads",
@@ -6197,7 +6473,49 @@ function validateBundledSceneBridgeFactoryInvocationPreflightResponse(actual: un
     ]) {
         requireResponseEqual(omitted[property], true, `${field}.omitted.${property}`);
     }
-    requireResponseEqual(record.execution ?? null, null, `${field}.execution`);
+
+    if (record.execution !== null) {
+        const execution = responseRecord(record.execution, `${field}.execution`);
+        requireResponseEqual(execution.attempted, true, `${field}.execution.attempted`);
+        requireResponseEqual(typeof execution.succeeded, "boolean", `${field}.execution.succeeded.type`);
+        requireResponseEqual(typeof execution.outcome, "string", `${field}.execution.outcome.type`);
+        requireResponseEqual(execution.namespaceImportReady, true, `${field}.execution.namespaceImportReady`);
+        requireResponseEqual(typeof execution.moduleImported, "boolean", `${field}.execution.moduleImported.type`);
+        requireResponseEqual(typeof execution.factoryInvoked, "boolean", `${field}.execution.factoryInvoked.type`);
+        requireResponseEqual(typeof execution.inertOptionsCreated, "boolean", `${field}.execution.inertOptionsCreated.type`);
+        requireResponseEqual(typeof execution.runtimeOptionsCreated, "boolean", `${field}.execution.runtimeOptionsCreated.type`);
+        requireResponseEqual(typeof execution.runtimeOptionsShapeValid, "boolean", `${field}.execution.runtimeOptionsShapeValid.type`);
+        requireResponseEqual(execution.runtimeRegistration, false, `${field}.execution.runtimeRegistration`);
+        requireResponseEqual(execution.renderDispatch, false, `${field}.execution.renderDispatch`);
+        requireResponseEqual(execution.browserProcessStarted, false, `${field}.execution.browserProcessStarted`);
+        requireResponseEqual(execution.runtimeAssetsLoaded, false, `${field}.execution.runtimeAssetsLoaded`);
+        requireResponseEqual(execution.assetManifestMaterialized, false, `${field}.execution.assetManifestMaterialized`);
+        requireResponseEqual(execution.valuesIncluded, false, `${field}.execution.valuesIncluded`);
+        requireResponseEqual(guard.invocationAttempted, true, `${field}.guard.invocationAttempted`);
+        requireResponseEqual(guard.factoryInvoked, execution.factoryInvoked, `${field}.guard.factoryInvoked`);
+        requireResponseEqual(guard.runtimeOptionsCreated, execution.runtimeOptionsCreated, `${field}.guard.runtimeOptionsCreated`);
+        requireResponseEqual(factoryInvocation.invocationAttempted, execution.factoryInvoked, `${field}.factoryInvocation.invocationAttempted`);
+        requireResponseEqual(factoryInvocation.factoryInvoked, execution.factoryInvoked, `${field}.factoryInvocation.factoryInvoked`);
+        requireResponseEqual(factoryInvocation.promiseAwaited, execution.factoryInvoked, `${field}.factoryInvocation.promiseAwaited`);
+        requireResponseEqual(inertOptionsPlan.optionValuesCreated, execution.inertOptionsCreated, `${field}.inertOptionsPlan.optionValuesCreated`);
+        requireResponseEqual(runtimeOptionsShape.runtimeOptionsCreated, execution.runtimeOptionsCreated, `${field}.runtimeOptionsShape.runtimeOptionsCreated`);
+        requireResponseEqual(sideEffects.runtimeFactoryInvoked, execution.factoryInvoked, `${field}.sideEffects.runtimeFactoryInvoked`);
+        requireResponseEqual(sideEffects.runtimeOptionsCreated, execution.runtimeOptionsCreated, `${field}.sideEffects.runtimeOptionsCreated`);
+        if (status === "ready") {
+            requireResponseEqual(execution.succeeded, true, `${field}.execution.succeeded`);
+            requireResponseEqual(execution.outcome, "ready", `${field}.execution.outcome`);
+            requireResponseEqual(execution.factoryInvoked, true, `${field}.execution.factoryInvoked`);
+            requireResponseEqual(execution.inertOptionsCreated, true, `${field}.execution.inertOptionsCreated`);
+            requireResponseEqual(execution.runtimeOptionsCreated, true, `${field}.execution.runtimeOptionsCreated`);
+            requireResponseEqual(execution.runtimeOptionsShapeValid, true, `${field}.execution.runtimeOptionsShapeValid`);
+            requireResponseEqual(factoryInvocation.resultAccepted, true, `${field}.factoryInvocation.resultAccepted`);
+            requireResponseEqual(runtimeOptionsShape.shapeCheckAttempted, true, `${field}.runtimeOptionsShape.shapeCheckAttempted`);
+            requireResponseEqual(runtimeOptionsShape.renderThumbnailChecked, true, `${field}.runtimeOptionsShape.renderThumbnailChecked`);
+            requireResponseEqual(runtimeOptionsShape.closeHookChecked, true, `${field}.runtimeOptionsShape.closeHookChecked`);
+        }
+    } else if (status !== "planned-disabled") {
+        responseInvalid(`${field}.execution must be present for executed preflight statuses.`, `${field}.execution`);
+    }
 }
 
 function validateRuntimeAssetMaterializationPreflightCheckResponse(
@@ -7206,7 +7524,7 @@ async function handleRequest(request: IncomingMessage, response: ServerResponse,
         const browserFixtureRuntime = browserFixtureRuntimeLifecycleResponse(options);
         const importGate = bundledSceneBridgeImportGateResponse(options);
         const moduleNamespaceImportPreflight = await bundledSceneBridgeModuleNamespaceImportPreflightResponse(importGate);
-        const factoryInvocationPreflight = bundledSceneBridgeFactoryInvocationPreflightResponse(moduleNamespaceImportPreflight);
+        const factoryInvocationPreflight = await bundledSceneBridgeFactoryInvocationPreflightResponse(moduleNamespaceImportPreflight);
         sendJson(response, 200, {
             ...healthResponse,
             runtimeAssetMaterializationPreflight: runtimeAssetPreflight,
@@ -7238,7 +7556,7 @@ async function handleRequest(request: IncomingMessage, response: ServerResponse,
             const browserFixtureRuntime = browserFixtureRuntimeLifecycleResponse(options);
             const importGate = bundledSceneBridgeImportGateResponse(options);
             const moduleNamespaceImportPreflight = await bundledSceneBridgeModuleNamespaceImportPreflightResponse(importGate);
-            const factoryInvocationPreflight = bundledSceneBridgeFactoryInvocationPreflightResponse(moduleNamespaceImportPreflight);
+            const factoryInvocationPreflight = await bundledSceneBridgeFactoryInvocationPreflightResponse(moduleNamespaceImportPreflight);
             const generatedResponse = thumbnailResponse(
                 request,
                 summary,

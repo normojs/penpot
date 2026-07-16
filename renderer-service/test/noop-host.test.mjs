@@ -995,11 +995,14 @@ function assertBundledSceneBridgeModuleNamespaceImportPreflight(
     return preflight;
 }
 
-function assertBundledSceneBridgeFactoryInvocationPreflight(preflight, { namespaceImportReady = false } = {}) {
-    assert.equal(preflight.status, "planned-disabled");
-    assert.equal(preflight.preflightVersion, "P26.37");
+function assertBundledSceneBridgeFactoryInvocationPreflight(
+    preflight,
+    { status = "planned-disabled", namespaceImportReady = false, factoryInvoked = false, runtimeOptionsCreated = false } = {}
+) {
+    assert.equal(preflight.status, status);
+    assert.equal(preflight.preflightVersion, "P26.38");
     assert.equal(preflight.owner, "renderer-service");
-    assert.equal(preflight.mode, "guarded-factory-invocation-preflight-plan");
+    assert.equal(preflight.mode, "guarded-factory-invocation-preflight");
     assert.equal(preflight.source.contractVersion, "P26.32");
     assert.equal(preflight.source.adapterModuleReadinessVersion, "P26.33");
     assert.equal(preflight.source.importGateVersion, "P26.34");
@@ -1008,31 +1011,33 @@ function assertBundledSceneBridgeFactoryInvocationPreflight(preflight, { namespa
     assert.equal(preflight.source.namespaceImportReady, namespaceImportReady);
     assert.equal(
         preflight.source.readiness,
-        namespaceImportReady ? "ready-for-guarded-factory-invocation-plan" : "blocked-until-namespace-import-ready"
+        namespaceImportReady ? "ready-for-guarded-factory-invocation" : "blocked-until-namespace-import-ready"
     );
     assert.equal(preflight.guard.namespaceImportRequired, true);
     assert.equal(preflight.guard.explicitFutureInvocationGateRequired, true);
-    assert.equal(preflight.guard.invocationEnabled, false);
-    assert.equal(preflight.guard.invocationAttempted, false);
-    assert.equal(preflight.guard.factoryInvoked, false);
-    assert.equal(preflight.guard.runtimeOptionsCreated, false);
+    assert.equal(preflight.guard.invocationEnabled, factoryInvoked);
+    assert.equal(preflight.guard.invocationAttempted, factoryInvoked);
+    assert.equal(preflight.guard.factoryInvoked, factoryInvoked);
+    assert.equal(preflight.guard.runtimeOptionsCreated, runtimeOptionsCreated);
     assert.equal(preflight.guard.runtimeRegistration, false);
     assert.equal(preflight.factoryInvocation.exportName, "createBundledSceneBridgeRendererRuntime");
     assert.equal(preflight.factoryInvocation.expectedSignature, "(options) => Promise<RendererRuntimeOptions>");
     assert.equal(preflight.factoryInvocation.inertOptionsRequired, true);
-    assert.equal(preflight.factoryInvocation.invocationAttempted, false);
-    assert.equal(preflight.factoryInvocation.factoryInvoked, false);
-    assert.equal(preflight.factoryInvocation.promiseAwaited, false);
-    assert.equal(preflight.factoryInvocation.resultAccepted, false);
+    assert.equal(preflight.factoryInvocation.invocationAttempted, factoryInvoked);
+    assert.equal(preflight.factoryInvocation.factoryInvoked, factoryInvoked);
+    assert.equal(preflight.factoryInvocation.promiseAwaited, factoryInvoked);
+    assert.equal(preflight.factoryInvocation.resultAccepted, status === "ready");
     assert.deepEqual(preflight.inertOptionsPlan.requiredOptionKeys, ["assetManifest", "runtimeAssetPreflight", "browser"]);
-    assert.equal(preflight.inertOptionsPlan.optionValuesCreated, false);
+    assert.equal(preflight.inertOptionsPlan.optionValuesCreated, factoryInvoked);
     assert.equal(preflight.inertOptionsPlan.optionValuesIncluded, false);
     assert.equal(preflight.inertOptionsPlan.browserProcessStarted, false);
     assert.equal(preflight.inertOptionsPlan.runtimeAssetsLoaded, false);
     assert.deepEqual(preflight.runtimeOptionsShape.requiredKeys, ["renderThumbnail"]);
     assert.deepEqual(preflight.runtimeOptionsShape.optionalKeys, ["close"]);
-    assert.equal(preflight.runtimeOptionsShape.runtimeOptionsCreated, false);
-    assert.equal(preflight.runtimeOptionsShape.shapeCheckAttempted, false);
+    assert.equal(preflight.runtimeOptionsShape.runtimeOptionsCreated, runtimeOptionsCreated);
+    assert.equal(preflight.runtimeOptionsShape.shapeCheckAttempted, factoryInvoked);
+    assert.equal(preflight.runtimeOptionsShape.renderThumbnailChecked, factoryInvoked);
+    assert.equal(preflight.runtimeOptionsShape.closeHookChecked, factoryInvoked);
     assert.equal(preflight.runtimeOptionsShape.runtimeRegistration, false);
     assert.deepEqual(
         preflight.invocationOutcomeTaxonomy.map((entry) => entry.code),
@@ -1045,13 +1050,13 @@ function assertBundledSceneBridgeFactoryInvocationPreflight(preflight, { namespa
         ]
     );
     assert.deepEqual(preflight.diagnosticCodes, [
-        namespaceImportReady
-            ? "renderer_service_bundled_scene_bridge_factory_invocation_disabled"
+        status === "ready"
+            ? "renderer_service_bundled_scene_bridge_factory_invocation_ready"
             : "renderer_service_bundled_scene_bridge_factory_invocation_namespace_not_ready",
     ]);
-    assert.equal(preflight.sideEffects.runtimeAdapterImported, false);
-    assert.equal(preflight.sideEffects.runtimeFactoryInvoked, false);
-    assert.equal(preflight.sideEffects.runtimeOptionsCreated, false);
+    assert.equal(preflight.sideEffects.runtimeAdapterImported, factoryInvoked);
+    assert.equal(preflight.sideEffects.runtimeFactoryInvoked, factoryInvoked);
+    assert.equal(preflight.sideEffects.runtimeOptionsCreated, runtimeOptionsCreated);
     assert.equal(preflight.sideEffects.browserProcessStarted, false);
     assert.equal(preflight.sideEffects.runtimeAssetsLoaded, false);
     assert.equal(preflight.sideEffects.localFileWrites, false);
@@ -1066,7 +1071,24 @@ function assertBundledSceneBridgeFactoryInvocationPreflight(preflight, { namespa
     assert.equal(preflight.omitted.modulePath, true);
     assert.equal(preflight.omitted.sourceData, true);
     assert.equal(preflight.omitted.tokenValues, true);
-    assert.equal(preflight.execution, null);
+    if (factoryInvoked) {
+        assert.equal(preflight.execution.attempted, true);
+        assert.equal(preflight.execution.succeeded, status === "ready");
+        assert.equal(preflight.execution.outcome, status === "ready" ? "ready" : "result-invalid");
+        assert.equal(preflight.execution.namespaceImportReady, true);
+        assert.equal(preflight.execution.moduleImported, true);
+        assert.equal(preflight.execution.factoryInvoked, true);
+        assert.equal(preflight.execution.inertOptionsCreated, true);
+        assert.equal(preflight.execution.runtimeOptionsCreated, runtimeOptionsCreated);
+        assert.equal(preflight.execution.runtimeOptionsShapeValid, status === "ready");
+        assert.equal(preflight.execution.runtimeRegistration, false);
+        assert.equal(preflight.execution.renderDispatch, false);
+        assert.equal(preflight.execution.browserProcessStarted, false);
+        assert.equal(preflight.execution.runtimeAssetsLoaded, false);
+        assert.equal(preflight.execution.valuesIncluded, false);
+    } else {
+        assert.equal(preflight.execution, null);
+    }
     return preflight;
 }
 
@@ -1126,7 +1148,7 @@ test("noop host exposes the P25.24 health contract", async () => {
     });
 });
 
-test("noop host reports configured P26.34 bundled scene bridge import gate and P26.36 module namespace import preflight", async () => {
+test("noop host reports configured P26.34 import gate plus P26.36 namespace and P26.38 factory invocation preflights", async () => {
     const service = await serviceModule.startRendererService({
         port: 0,
         bundledSceneBridgeImportGate: {
@@ -1158,7 +1180,10 @@ test("noop host reports configured P26.34 bundled scene bridge import gate and P
             factoryCallable: true,
         });
         assertBundledSceneBridgeFactoryInvocationPreflight(body.bundledSceneBridgeFactoryInvocationPreflight, {
+            status: "ready",
             namespaceImportReady: true,
+            factoryInvoked: true,
+            runtimeOptionsCreated: true,
         });
     } finally {
         await service.stop();
@@ -3457,7 +3482,7 @@ test("noop host rejects unsafe P26.36 bundled scene bridge module namespace impo
     }
 });
 
-test("noop host rejects unsafe P26.37 bundled scene bridge factory invocation preflight metadata", async () => {
+test("noop host rejects unsafe P26.38 bundled scene bridge factory invocation preflight metadata", async () => {
     const service = await serviceModule.startRendererService({
         port: 0,
         thumbnailResponseOverride: (body) => ({

@@ -10416,7 +10416,7 @@ test("render.thumbnail renderer-service API fixtures define planning requests wi
     assert.equal(fixtures.bundledRuntimeBridge.bundledSceneBridgeModuleNamespaceImportPreflight.omitted.moduleNamespace, true);
     assert.equal(fixtures.bundledRuntimeBridge.bundledSceneBridgeModuleNamespaceImportPreflight.execution, null);
     assert.equal(fixtures.bundledRuntimeBridge.bundledSceneBridgeFactoryInvocationPreflight.status, "planned-disabled");
-    assert.equal(fixtures.bundledRuntimeBridge.bundledSceneBridgeFactoryInvocationPreflight.preflightVersion, "P26.37");
+    assert.equal(fixtures.bundledRuntimeBridge.bundledSceneBridgeFactoryInvocationPreflight.preflightVersion, "P26.38");
     assert.equal(fixtures.bundledRuntimeBridge.bundledSceneBridgeFactoryInvocationPreflight.source.namespaceImportReady, false);
     assert.equal(fixtures.bundledRuntimeBridge.bundledSceneBridgeFactoryInvocationPreflight.guard.invocationEnabled, false);
     assert.equal(fixtures.bundledRuntimeBridge.bundledSceneBridgeFactoryInvocationPreflight.guard.factoryInvoked, false);
@@ -13514,7 +13514,7 @@ test("render.thumbnail renderer-service health preflight executes only GET healt
     assert.equal(JSON.stringify(healthPreflight.bundledSceneBridgeModuleNamespaceImportPreflight).includes("/workspace/secret"), false);
     assert.equal(JSON.stringify(healthPreflight.bundledSceneBridgeModuleNamespaceImportPreflight).includes("abc123"), false);
     assert.equal(healthPreflight.bundledSceneBridgeFactoryInvocationPreflight.status, "planned-disabled");
-    assert.equal(healthPreflight.bundledSceneBridgeFactoryInvocationPreflight.preflightVersion, "P26.37");
+    assert.equal(healthPreflight.bundledSceneBridgeFactoryInvocationPreflight.preflightVersion, "P26.38");
     assert.equal(healthPreflight.bundledSceneBridgeFactoryInvocationPreflight.checked, true);
     assert.equal(healthPreflight.bundledSceneBridgeFactoryInvocationPreflight.source.namespaceImportReady, false);
     assert.equal(healthPreflight.bundledSceneBridgeFactoryInvocationPreflight.guard.invocationEnabled, false);
@@ -13536,6 +13536,7 @@ test("render.thumbnail renderer-service health preflight executes only GET healt
     assert.equal(healthPreflight.bundledSceneBridgeFactoryInvocationPreflight.redaction.optionValuesIncluded, false);
     assert.equal(healthPreflight.bundledSceneBridgeFactoryInvocationPreflight.omitted.factoryValue, true);
     assert.equal(healthPreflight.bundledSceneBridgeFactoryInvocationPreflight.omitted.optionValues, true);
+    assert.equal(healthPreflight.bundledSceneBridgeFactoryInvocationPreflight.execution, null);
     assert.equal(JSON.stringify(healthPreflight.bundledSceneBridgeFactoryInvocationPreflight).includes("/workspace/secret"), false);
     assert.equal(JSON.stringify(healthPreflight.bundledSceneBridgeFactoryInvocationPreflight).includes("abc123"), false);
     assert.equal(healthPreflight.runtimeAssetPreflight.status, "executed");
@@ -14212,6 +14213,131 @@ test("render.thumbnail renderer-service health preflight rejects unsafe bundled 
             entry.includes("bundledSceneBridgeModuleNamespaceImportPreflight")
         )
     );
+});
+
+test("render.thumbnail renderer-service health preflight normalizes executed bundled scene bridge factory invocation readiness", async () => {
+    const plan = createRenderThumbnailRendererServicePlan({
+        fileId: "file-1",
+        endpoint: "http://127.0.0.1:6070/thumbnail",
+        optInConfiguration: {
+            entrypoint: "cli",
+            cliFlagValue: "renderer-service",
+        },
+    });
+    const safePreflight =
+        renderThumbnailRendererServiceFixtures.bundledRuntimeBridge.bundledSceneBridgeFactoryInvocationPreflight;
+    const readyPreflight = {
+        ...safePreflight,
+        status: "ready",
+        source: {
+            ...safePreflight.source,
+            namespaceImportReady: true,
+            readiness: "ready-for-guarded-factory-invocation",
+        },
+        guard: {
+            ...safePreflight.guard,
+            invocationEnabled: true,
+            invocationAttempted: true,
+            factoryInvoked: true,
+            runtimeOptionsCreated: true,
+        },
+        factoryInvocation: {
+            ...safePreflight.factoryInvocation,
+            invocationAttempted: true,
+            factoryInvoked: true,
+            promiseAwaited: true,
+            resultAccepted: true,
+        },
+        inertOptionsPlan: {
+            ...safePreflight.inertOptionsPlan,
+            optionValuesCreated: true,
+        },
+        runtimeOptionsShape: {
+            ...safePreflight.runtimeOptionsShape,
+            runtimeOptionsCreated: true,
+            shapeCheckAttempted: true,
+            renderThumbnailChecked: true,
+            closeHookChecked: true,
+        },
+        diagnostics: [
+            {
+                code: "renderer_service_bundled_scene_bridge_factory_invocation_ready",
+                severity: "info",
+                field: "runtimeOptionsShape",
+                message: "The bundled scene bridge factory invocation preflight created redacted runtime options with the expected callable shape.",
+                nextActions: [
+                    "Keep runtime registration and render dispatch disabled until browser lifecycle, asset loading, and pixel assertions are reviewed.",
+                ],
+            },
+        ],
+        diagnosticCodes: ["renderer_service_bundled_scene_bridge_factory_invocation_ready"],
+        nextActions: [
+            "Keep runtime registration and render dispatch disabled until browser lifecycle, asset loading, and pixel assertions are reviewed.",
+        ],
+        checks: safePreflight.checks.map((entry) => ({
+            ...entry,
+            status: "passed",
+        })),
+        sideEffects: {
+            ...safePreflight.sideEffects,
+            runtimeAdapterImported: true,
+            runtimeFactoryInvoked: true,
+            runtimeOptionsCreated: true,
+        },
+        execution: {
+            attempted: true,
+            succeeded: true,
+            outcome: "ready",
+            namespaceImportReady: true,
+            moduleImported: true,
+            factoryInvoked: true,
+            inertOptionsCreated: true,
+            runtimeOptionsCreated: true,
+            runtimeOptionsShapeValid: true,
+            runtimeRegistration: false,
+            renderDispatch: false,
+            browserProcessStarted: false,
+            runtimeAssetsLoaded: false,
+            assetManifestMaterialized: false,
+            valuesIncluded: false,
+        },
+    };
+    const healthPreflight = await executeRenderThumbnailRendererServiceHealthPreflight(plan, {
+        fetch: async () =>
+            new Response(
+                JSON.stringify({
+                    status: "ok",
+                    renderer: "penpot-thumbnail-renderer",
+                    mode: "noop",
+                    runtimeRegistration: false,
+                    dispatch: false,
+                    capabilities: [
+                        "health",
+                        "thumbnail.render.noop",
+                        "thumbnail.render.bundled-scene-bridge-factory-invocation-preflight",
+                    ],
+                    bundledSceneBridgeFactoryInvocationPreflight: readyPreflight,
+                }),
+                { status: 200, headers: { "content-type": "application/json; charset=utf-8" } }
+            ),
+    });
+
+    const preflight = healthPreflight.bundledSceneBridgeFactoryInvocationPreflight;
+    assert.equal(preflight.status, "ready");
+    assert.equal(preflight.preflightVersion, "P26.38");
+    assert.equal(preflight.source.namespaceImportReady, true);
+    assert.equal(preflight.guard.factoryInvoked, true);
+    assert.equal(preflight.factoryInvocation.resultAccepted, true);
+    assert.equal(preflight.inertOptionsPlan.optionValuesCreated, true);
+    assert.equal(preflight.runtimeOptionsShape.renderThumbnailChecked, true);
+    assert.equal(preflight.runtimeOptionsShape.runtimeRegistration, false);
+    assert.equal(preflight.sideEffects.runtimeFactoryInvoked, true);
+    assert.equal(preflight.sideEffects.browserProcessStarted, false);
+    assert.equal(preflight.redaction.factoryValuesIncluded, false);
+    assert.equal(preflight.omitted.factoryValue, true);
+    assert.equal(preflight.execution.succeeded, true);
+    assert.equal(preflight.execution.renderDispatch, false);
+    assert.equal(preflight.execution.valuesIncluded, false);
 });
 
 test("render.thumbnail renderer-service health preflight rejects unsafe bundled scene bridge factory invocation preflight metadata", async () => {
