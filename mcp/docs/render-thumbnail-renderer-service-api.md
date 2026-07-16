@@ -239,6 +239,20 @@ installation, close-hook registration, duplicate rollback, runtime
 registration, render dispatch, browser startup, asset loading/materialization,
 backend/source-data reads, local writes, registry/runtime/lifecycle value
 exposure, or execution values are allowed.
+P26.43 adds the explicit guarded runtime registry installation gate. The
+renderer-service reports
+`bundledSceneBridgeRuntimeRegistryInstallationGate`, and command-runtime
+carries it to CLI/MCP as
+`healthPreflight.bundledSceneBridgeRuntimeRegistryInstallationGate`. The gate
+depends on the P26.42 installation contract being ready and on
+`PENPOT_RENDERER_SERVICE_BUNDLED_SCENE_BRIDGE_RUNTIME_INSTALLATION_GATE` being
+set to `reviewed`; any other configured value is invalid and redacted. Even
+when reviewed, it only reports that a later installation attempt is allowed:
+registry writes, runtime value creation, runtime installation, close-hook
+registration, duplicate rollback, runtime registration, render dispatch,
+browser startup, asset loading/materialization, backend/source-data reads,
+local writes, registry/runtime/lifecycle value exposure, and execution values
+remain disabled.
 P26.5 adds a token-safe `backendRpcClient` plan to renderer-service thumbnail
 responses so backend data/cache/persist endpoints are normalized for staged
 execution. That plan now feeds the executable file-thumbnail cache probe,

@@ -13106,6 +13106,32 @@ test("render.thumbnail renderer-service health preflight and client harness stay
     assert.equal(healthPreflight.bundledSceneBridgeRuntimeRegistryInstallationContract.redaction.runtimeValuesIncluded, false);
     assert.equal(healthPreflight.bundledSceneBridgeRuntimeRegistryInstallationContract.omitted.runtimeValue, true);
     assert.equal(healthPreflight.bundledSceneBridgeRuntimeRegistryInstallationContract.execution, null);
+    assert.equal(healthPreflight.bundledSceneBridgeRuntimeRegistryInstallationGate.status, "not-reported");
+    assert.equal(healthPreflight.bundledSceneBridgeRuntimeRegistryInstallationGate.gateVersion, null);
+    assert.equal(healthPreflight.bundledSceneBridgeRuntimeRegistryInstallationGate.checked, false);
+    assert.equal(
+        healthPreflight.bundledSceneBridgeRuntimeRegistryInstallationGate.source.registryInstallationContractReady,
+        false
+    );
+    assert.equal(healthPreflight.bundledSceneBridgeRuntimeRegistryInstallationGate.configuration.configured, false);
+    assert.equal(healthPreflight.bundledSceneBridgeRuntimeRegistryInstallationGate.configuration.valuesIncluded, false);
+    assert.equal(healthPreflight.bundledSceneBridgeRuntimeRegistryInstallationGate.gate.reviewedGateOpen, false);
+    assert.equal(
+        healthPreflight.bundledSceneBridgeRuntimeRegistryInstallationGate.gate.futureInstallationAttemptAllowed,
+        false
+    );
+    assert.equal(healthPreflight.bundledSceneBridgeRuntimeRegistryInstallationGate.gate.runtimeInstalled, false);
+    assert.equal(healthPreflight.bundledSceneBridgeRuntimeRegistryInstallationGate.refusalDiagnostics.valuesIncluded, false);
+    assert.equal(healthPreflight.bundledSceneBridgeRuntimeRegistryInstallationGate.rollbackPreconditions.rollbackAttempted, false);
+    assert.equal(healthPreflight.bundledSceneBridgeRuntimeRegistryInstallationGate.lifecycleOwnership.runtimeValueOwned, false);
+    assert.deepEqual(healthPreflight.bundledSceneBridgeRuntimeRegistryInstallationGate.gateOutcomeTaxonomy, []);
+    assert.deepEqual(healthPreflight.bundledSceneBridgeRuntimeRegistryInstallationGate.diagnosticCodes, []);
+    assert.equal(healthPreflight.bundledSceneBridgeRuntimeRegistryInstallationGate.sideEffects.registryWrite, false);
+    assert.equal(healthPreflight.bundledSceneBridgeRuntimeRegistryInstallationGate.sideEffects.runtimeInstallation, false);
+    assert.equal(healthPreflight.bundledSceneBridgeRuntimeRegistryInstallationGate.redaction.runtimeValuesIncluded, false);
+    assert.equal(healthPreflight.bundledSceneBridgeRuntimeRegistryInstallationGate.omitted.configuredValue, true);
+    assert.equal(healthPreflight.bundledSceneBridgeRuntimeRegistryInstallationGate.omitted.runtimeValue, true);
+    assert.equal(healthPreflight.bundledSceneBridgeRuntimeRegistryInstallationGate.execution, null);
     assert.equal(healthPreflight.runtimeAssetPreflight.omitted.workspaceRoot, true);
     assert.equal(healthPreflight.runtimeAssetPreflight.omitted.sha256, true);
     assert.ok(healthPreflight.failureModes.some((entry) => entry.code === "renderer_service_preflight_disabled"));
@@ -14940,6 +14966,139 @@ test("render.thumbnail renderer-service health preflight normalizes guarded bund
     assert.equal(contract.execution, null);
 });
 
+test("render.thumbnail renderer-service health preflight normalizes guarded bundled scene bridge runtime registry installation gate", async () => {
+    const plan = createRenderThumbnailRendererServicePlan({
+        fileId: "file-1",
+        endpoint: "http://127.0.0.1:6070/thumbnail",
+        optInConfiguration: {
+            entrypoint: "cli",
+            cliFlagValue: "renderer-service",
+        },
+    });
+    const safeGate = renderThumbnailRendererServiceFixtures.bundledRuntimeBridge
+        .bundledSceneBridgeRuntimeRegistryInstallationGate;
+    const reviewedNextActions = [
+        "Proceed with a later reviewed runtime installation task before creating or installing any runtime registry value.",
+        "Keep registry writes, runtime installation, runtime registration, render dispatch, browser startup, asset loading, reads, writes, and value exposure disabled in P26.43.",
+    ];
+    const reviewedGate = {
+        ...safeGate,
+        status: "configured-disabled",
+        source: {
+            ...safeGate.source,
+            runtimeRegistrationPreflightReady: true,
+            registryRegistrationBoundaryReady: true,
+            registryInstallationContractReady: true,
+            registryInstallationContractStatus: "planned-disabled",
+            registryInstallationContractReadiness: "runtime-registry-installation-contract-planned",
+            readiness: "installation-gate-reviewed-disabled",
+        },
+        configuration: {
+            ...safeGate.configuration,
+            configured: true,
+            accepted: true,
+            valid: true,
+        },
+        gate: {
+            ...safeGate.gate,
+            reviewedGateOpen: true,
+            futureInstallationAttemptAllowed: true,
+        },
+        refusalDiagnostics: {
+            ...safeGate.refusalDiagnostics,
+            refusalReason: "installation-disabled-until-runtime-installation-task",
+        },
+        diagnostics: [
+            {
+                code: "renderer_service_bundled_scene_bridge_runtime_registry_installation_gate_reviewed_disabled",
+                severity: "info",
+                field: "gate.reviewedGateOpen",
+                env: "PENPOT_RENDERER_SERVICE_BUNDLED_SCENE_BRIDGE_RUNTIME_INSTALLATION_GATE",
+                valueRead: false,
+                valuesIncluded: false,
+                message:
+                    "The bundled scene bridge runtime registry installation gate is reviewed after the P26.42 contract, but runtime installation remains disabled.",
+                nextActions: reviewedNextActions,
+            },
+        ],
+        diagnosticCodes: [
+            "renderer_service_bundled_scene_bridge_runtime_registry_installation_gate_reviewed_disabled",
+        ],
+        nextActions: reviewedNextActions,
+        checks: safeGate.checks.map((entry) => ({
+            ...entry,
+            status:
+                entry.id === "installation-contract-ready" || entry.id === "explicit-installation-gate-reviewed"
+                    ? "passed"
+                    : "planned",
+        })),
+    };
+    const healthPreflight = await executeRenderThumbnailRendererServiceHealthPreflight(plan, {
+        fetch: async () =>
+            new Response(
+                JSON.stringify({
+                    status: "ok",
+                    renderer: "penpot-thumbnail-renderer",
+                    mode: "noop",
+                    runtimeRegistration: false,
+                    dispatch: false,
+                    capabilities: [
+                        "health",
+                        "thumbnail.render.noop",
+                        "thumbnail.render.bundled-scene-bridge-runtime-registry-installation-gate",
+                    ],
+                    bundledSceneBridgeRuntimeRegistryInstallationGate: reviewedGate,
+                }),
+                { status: 200, headers: { "content-type": "application/json; charset=utf-8" } }
+            ),
+    });
+
+    const gate = healthPreflight.bundledSceneBridgeRuntimeRegistryInstallationGate;
+    assert.equal(healthPreflight.status, "ok");
+    assert.equal(gate.status, "configured-disabled");
+    assert.equal(gate.gateVersion, "P26.43");
+    assert.equal(gate.mode, "guarded-runtime-registry-installation-gate");
+    assert.equal(gate.source.registryInstallationContractReady, true);
+    assert.equal(gate.source.registryInstallationContractReadiness, "runtime-registry-installation-contract-planned");
+    assert.equal(gate.source.readiness, "installation-gate-reviewed-disabled");
+    assert.equal(gate.configuration.configured, true);
+    assert.equal(gate.configuration.accepted, true);
+    assert.equal(gate.configuration.valid, true);
+    assert.equal(gate.configuration.valueRead, false);
+    assert.equal(gate.gate.reviewedGateOpen, true);
+    assert.equal(gate.gate.futureInstallationAttemptAllowed, true);
+    assert.equal(gate.gate.runtimeInstallationEnabled, false);
+    assert.equal(gate.gate.runtimeInstalled, false);
+    assert.equal(gate.refusalDiagnostics.refusalReason, "installation-disabled-until-runtime-installation-task");
+    assert.equal(gate.refusalDiagnostics.registryWriteRefused, true);
+    assert.equal(gate.rollbackPreconditions.rollbackRequiredOnDuplicate, true);
+    assert.equal(gate.rollbackPreconditions.rollbackAttempted, false);
+    assert.equal(gate.lifecycleOwnership.noDispatchLifecycle, true);
+    assert.equal(gate.lifecycleOwnership.runtimeValueOwned, false);
+    assert.deepEqual(
+        gate.checks.map((entry) => [entry.id, entry.status, entry.dispatch]),
+        [
+            ["installation-contract-ready", "passed", false],
+            ["explicit-installation-gate-reviewed", "passed", false],
+            ["rollback-preconditions-planned", "planned", false],
+            ["no-dispatch-lifecycle-owned", "planned", false],
+            ["refusal-diagnostics-planned", "planned", false],
+        ]
+    );
+    assert.deepEqual(gate.diagnosticCodes, [
+        "renderer_service_bundled_scene_bridge_runtime_registry_installation_gate_reviewed_disabled",
+    ]);
+    assert.equal(gate.sideEffects.registryWrite, false);
+    assert.equal(gate.sideEffects.runtimeInstallation, false);
+    assert.equal(gate.sideEffects.renderDispatch, false);
+    assert.equal(gate.redaction.runtimeValuesIncluded, false);
+    assert.equal(gate.redaction.registryValuesIncluded, false);
+    assert.equal(gate.omitted.configuredValue, true);
+    assert.equal(gate.omitted.runtimeValue, true);
+    assert.equal(gate.omitted.registryValue, true);
+    assert.equal(gate.execution, null);
+});
+
 test("render.thumbnail renderer-service health preflight rejects unsafe bundled scene bridge factory invocation preflight metadata", async () => {
     const plan = createRenderThumbnailRendererServicePlan({
         fileId: "file-1",
@@ -15243,6 +15402,88 @@ test("render.thumbnail renderer-service health preflight rejects unsafe bundled 
     assert.ok(
         contract.nextActions.some((entry) => entry.includes("bundledSceneBridgeRuntimeRegistryInstallationContract"))
     );
+});
+
+test("render.thumbnail renderer-service health preflight rejects unsafe bundled scene bridge runtime registry installation gate metadata", async () => {
+    const plan = createRenderThumbnailRendererServicePlan({
+        fileId: "file-1",
+        endpoint: "http://127.0.0.1:6070/thumbnail",
+        optInConfiguration: {
+            entrypoint: "cli",
+            cliFlagValue: "renderer-service",
+        },
+    });
+    const safeGate = renderThumbnailRendererServiceFixtures.bundledRuntimeBridge
+        .bundledSceneBridgeRuntimeRegistryInstallationGate;
+    const unsafeGate = {
+        ...safeGate,
+        gate: {
+            ...safeGate.gate,
+            runtimeInstalled: true,
+        },
+        refusalDiagnostics: {
+            ...safeGate.refusalDiagnostics,
+            valuesIncluded: true,
+        },
+        rollbackPreconditions: {
+            ...safeGate.rollbackPreconditions,
+            rollbackAttempted: true,
+        },
+        lifecycleOwnership: {
+            ...safeGate.lifecycleOwnership,
+            runtimeValueOwned: true,
+        },
+        sideEffects: {
+            ...safeGate.sideEffects,
+            registryWrite: true,
+            runtimeInstallation: true,
+        },
+        redaction: {
+            ...safeGate.redaction,
+            runtimeValuesIncluded: true,
+        },
+        omitted: {
+            ...safeGate.omitted,
+            runtimeValue: false,
+        },
+    };
+    const healthPreflight = await executeRenderThumbnailRendererServiceHealthPreflight(plan, {
+        fetch: async () =>
+            new Response(
+                JSON.stringify({
+                    status: "ok",
+                    renderer: "penpot-thumbnail-renderer",
+                    mode: "noop",
+                    runtimeRegistration: false,
+                    dispatch: false,
+                    capabilities: [
+                        "health",
+                        "thumbnail.render.noop",
+                        "thumbnail.render.bundled-scene-bridge-runtime-registry-installation-gate",
+                    ],
+                    bundledSceneBridgeRuntimeRegistryInstallationGate: unsafeGate,
+                }),
+                { status: 200, headers: { "content-type": "application/json; charset=utf-8" } }
+            ),
+    });
+
+    const gate = healthPreflight.bundledSceneBridgeRuntimeRegistryInstallationGate;
+    assert.equal(healthPreflight.status, "ok");
+    assert.equal(gate.status, "invalid");
+    assert.equal(gate.gate.runtimeInstalled, true);
+    assert.equal(gate.refusalDiagnostics.valuesIncluded, true);
+    assert.equal(gate.rollbackPreconditions.rollbackAttempted, true);
+    assert.equal(gate.lifecycleOwnership.runtimeValueOwned, true);
+    assert.equal(gate.sideEffects.registryWrite, true);
+    assert.equal(gate.sideEffects.runtimeInstallation, true);
+    assert.equal(gate.redaction.runtimeValuesIncluded, true);
+    assert.equal(gate.omitted.runtimeValue, false);
+    assert.ok(
+        gate.diagnosticCodes.includes(
+            "renderer_service_bundled_scene_bridge_runtime_registry_installation_gate_invalid"
+        )
+    );
+    assert.ok(gate.nextActions.some((entry) => entry.includes("bundledSceneBridgeRuntimeRegistryInstallationGate")));
 });
 
 test("render.thumbnail renderer-service health preflight normalizes unavailable health responses", async () => {

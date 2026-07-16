@@ -4240,6 +4240,24 @@ duplicate rollback, runtime registration, render dispatch, browser startup,
 asset loading/materialization, backend/source-data reads, local writes,
 registry/runtime/lifecycle value exposure, or local value materialization
 occurs.
+P26.43 adds the explicit guarded runtime registry installation gate. The
+renderer-service exposes
+`bundledSceneBridgeRuntimeRegistryInstallationGate` in `/health` and
+`/thumbnail`; command-runtime carries it into MCP and `penpot-cli render
+thumbnail` as
+`healthPreflight.bundledSceneBridgeRuntimeRegistryInstallationGate`; and
+`penpot-cli renderer-service status/start` reports a local no-probe lifecycle
+plan for
+`PENPOT_RENDERER_SERVICE_BUNDLED_SCENE_BRIDGE_RUNTIME_INSTALLATION_GATE=reviewed`.
+The gate links to P26.42 readiness, redacts configured values, rejects any
+non-`reviewed` value, records rollback preconditions and no-dispatch lifecycle
+ownership, and only marks future installation attempts as allowed when both
+P26.42 and the reviewed gate are satisfied in renderer-service `/health`. It
+remains disabled for execution: no registry write, runtime value creation,
+runtime installation, close-hook registration, duplicate rollback, runtime
+registration, render dispatch, browser startup, asset loading/materialization,
+backend/source-data reads, local writes, registry/runtime/lifecycle value
+exposure, or local value materialization occurs.
 
 ### 8.6 Advanced Tools
 

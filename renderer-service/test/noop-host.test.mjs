@@ -1609,6 +1609,205 @@ function assertBundledSceneBridgeRuntimeRegistryInstallationContract(
     return contract;
 }
 
+function assertBundledSceneBridgeRuntimeRegistryInstallationGate(
+    gate,
+    { contractReady = false, reviewed = false, invalid = false } = {}
+) {
+    const configured = reviewed || invalid;
+    const expectedStatus = invalid ? "invalid" : reviewed ? "configured-disabled" : "planned-disabled";
+    const expectedReadiness = invalid
+        ? "invalid-installation-gate-configuration"
+        : reviewed
+          ? "installation-gate-reviewed-disabled"
+          : contractReady
+            ? "blocked-until-installation-gate-reviewed"
+            : "blocked-until-installation-contract-ready";
+    const expectedRefusalReason = invalid
+        ? "installation-gate-configuration-invalid"
+        : reviewed
+          ? "installation-disabled-until-runtime-installation-task"
+          : contractReady
+            ? "installation-gate-not-reviewed"
+            : "installation-contract-not-ready";
+    const expectedDiagnosticCode = invalid
+        ? "renderer_service_bundled_scene_bridge_runtime_registry_installation_gate_configuration_invalid"
+        : reviewed
+          ? "renderer_service_bundled_scene_bridge_runtime_registry_installation_gate_reviewed_disabled"
+          : contractReady
+            ? "renderer_service_bundled_scene_bridge_runtime_registry_installation_gate_not_configured"
+            : "renderer_service_bundled_scene_bridge_runtime_registry_installation_gate_contract_not_ready";
+
+    assert.equal(gate.status, expectedStatus);
+    assert.equal(gate.gateVersion, "P26.43");
+    assert.equal(gate.owner, "renderer-service");
+    assert.equal(gate.mode, "guarded-runtime-registry-installation-gate");
+    assert.equal(gate.source.runtimeRegistrationPreflightVersion, "P26.40");
+    assert.equal(gate.source.registryRegistrationBoundaryVersion, "P26.41");
+    assert.equal(gate.source.registryInstallationContractVersion, "P26.42");
+    assert.equal(gate.source.registryInstallationGateVersion, "P26.43");
+    assert.equal(gate.source.runtimeRegistrationPreflightReady, contractReady);
+    assert.equal(gate.source.registryRegistrationBoundaryReady, contractReady);
+    assert.equal(gate.source.registryInstallationContractReady, contractReady);
+    assert.equal(gate.source.registryInstallationContractStatus, "planned-disabled");
+    assert.equal(
+        gate.source.registryInstallationContractReadiness,
+        contractReady
+            ? "runtime-registry-installation-contract-planned"
+            : "blocked-until-registry-registration-boundary-ready"
+    );
+    assert.equal(gate.source.readiness, expectedReadiness);
+    assert.equal(gate.configuration.env, "PENPOT_RENDERER_SERVICE_BUNDLED_SCENE_BRIDGE_RUNTIME_INSTALLATION_GATE");
+    assert.equal(gate.configuration.configured, configured);
+    assert.equal(gate.configuration.acceptedValue, "reviewed");
+    assert.equal(gate.configuration.accepted, reviewed);
+    assert.equal(gate.configuration.valid, !invalid);
+    assert.equal(gate.configuration.valueRead, false);
+    assert.equal(gate.configuration.valuesIncluded, false);
+    assert.equal(gate.gate.registryInstallationContractReadyRequired, true);
+    assert.equal(gate.gate.explicitReviewedGateRequired, true);
+    assert.equal(gate.gate.reviewedGateOpen, reviewed);
+    assert.equal(gate.gate.futureInstallationAttemptAllowed, reviewed);
+    for (const property of [
+        "runtimeInstallationEnabled",
+        "runtimeInstallationAttempted",
+        "runtimeInstalled",
+        "runtimeRegistered",
+        "runtimeRegistration",
+        "runtimeExecutionRegistered",
+        "renderDispatch",
+        "browserProcessStarted",
+        "runtimeValuesIncluded",
+        "registryValuesIncluded",
+    ]) {
+        assert.equal(gate.gate[property], false);
+    }
+    assert.equal(gate.refusalDiagnostics.refusalRequired, true);
+    assert.equal(gate.refusalDiagnostics.refusalReason, expectedRefusalReason);
+    assert.equal(gate.refusalDiagnostics.invalidGateValue, invalid);
+    assert.equal(gate.refusalDiagnostics.registryWriteRefused, true);
+    assert.equal(gate.refusalDiagnostics.runtimeValueCreationRefused, true);
+    assert.equal(gate.refusalDiagnostics.runtimeInstallationRefused, true);
+    assert.equal(gate.refusalDiagnostics.renderDispatchRefused, true);
+    assert.equal(gate.refusalDiagnostics.valuesIncluded, false);
+    assert.equal(gate.rollbackPreconditions.duplicateDetectionRequired, true);
+    assert.equal(gate.rollbackPreconditions.duplicateRegistrationPolicy, "reject-until-explicit-replace-policy");
+    assert.equal(gate.rollbackPreconditions.replacementPolicy, "not-supported-until-reviewed");
+    assert.equal(gate.rollbackPreconditions.rollbackRequiredOnDuplicate, true);
+    assert.equal(gate.rollbackPreconditions.cleanupOnInstallationFailure, true);
+    assert.equal(gate.rollbackPreconditions.cleanupOnServiceStop, true);
+    assert.equal(gate.rollbackPreconditions.closeHookCleanupRequired, true);
+    for (const property of ["rollbackPrepared", "rollbackAttempted", "cleanupAttempted", "valuesIncluded"]) {
+        assert.equal(gate.rollbackPreconditions[property], false);
+    }
+    assert.equal(gate.lifecycleOwnership.lifecycleOwner, "renderer-service");
+    assert.equal(gate.lifecycleOwnership.registryOwner, "renderer-service");
+    assert.equal(gate.lifecycleOwnership.closeHookOwner, "renderer-service");
+    assert.equal(gate.lifecycleOwnership.runtimeId, "bundled-scene-bridge");
+    assert.equal(gate.lifecycleOwnership.targetRegistry, "renderer-service.thumbnail-runtime-registry");
+    assert.equal(gate.lifecycleOwnership.lifecycleScope, "thumbnail-runtime-registry");
+    assert.equal(gate.lifecycleOwnership.noDispatchLifecycle, true);
+    for (const property of ["closeHookRegistered", "runtimeValueOwned", "registrySlotOwned", "valuesIncluded"]) {
+        assert.equal(gate.lifecycleOwnership[property], false);
+    }
+    assert.deepEqual(
+        gate.gateOutcomeTaxonomy.map((entry) => entry.code),
+        [
+            "renderer_service_bundled_scene_bridge_runtime_registry_installation_gate_contract_not_ready",
+            "renderer_service_bundled_scene_bridge_runtime_registry_installation_gate_not_configured",
+            "renderer_service_bundled_scene_bridge_runtime_registry_installation_gate_configuration_invalid",
+            "renderer_service_bundled_scene_bridge_runtime_registry_installation_gate_reviewed_disabled",
+            "renderer_service_bundled_scene_bridge_runtime_registry_installation_gate_rollback_preconditions_invalid",
+        ]
+    );
+    assert.ok(gate.gateOutcomeTaxonomy.every((entry) => entry.dispatch === false));
+    assert.deepEqual(gate.diagnosticCodes, [expectedDiagnosticCode]);
+    assert.deepEqual(gate.diagnostics.map((entry) => entry.code), [expectedDiagnosticCode]);
+    assert.equal(gate.diagnostics[0].env, "PENPOT_RENDERER_SERVICE_BUNDLED_SCENE_BRIDGE_RUNTIME_INSTALLATION_GATE");
+    assert.equal(gate.diagnostics[0].valueRead, false);
+    assert.equal(gate.diagnostics[0].valuesIncluded, false);
+    assert.deepEqual(gate.nextActions, gate.diagnostics[0].nextActions);
+    assert.deepEqual(
+        gate.checks.map((entry) => [entry.id, entry.status, entry.dispatch]),
+        [
+            ["installation-contract-ready", contractReady ? "passed" : "blocked", false],
+            ["explicit-installation-gate-reviewed", invalid ? "invalid" : reviewed ? "passed" : "blocked", false],
+            ["rollback-preconditions-planned", "planned", false],
+            ["no-dispatch-lifecycle-owned", "planned", false],
+            ["refusal-diagnostics-planned", "planned", false],
+        ]
+    );
+    for (const property of [
+        "registryLookup",
+        "registryWrite",
+        "runtimeValueCreation",
+        "runtimeInstallation",
+        "runtimeRegistration",
+        "runtimeExecutionRegistered",
+        "closeHookRegistration",
+        "duplicateRollback",
+        "renderDispatch",
+        "browserProcessStarted",
+        "browserPageCreated",
+        "runtimeAdapterImported",
+        "runtimeFactoryInvoked",
+        "runtimeOptionsCreated",
+        "runtimeAssetsLoaded",
+        "assetManifestMaterialized",
+        "backendRpcReads",
+        "sourceDataReads",
+        "networkDispatch",
+        "dispatch",
+        "localFileWrites",
+    ]) {
+        assert.equal(gate.sideEffects[property], false);
+    }
+    for (const property of [
+        "modeValuesIncluded",
+        "moduleValuesIncluded",
+        "factoryValuesIncluded",
+        "runtimeOptionsValuesIncluded",
+        "optionValuesIncluded",
+        "runtimeValuesIncluded",
+        "registryValuesIncluded",
+        "lifecycleValuesIncluded",
+        "pathValuesIncluded",
+        "sourceDataValuesIncluded",
+        "pageValuesIncluded",
+        "artifactValuesIncluded",
+        "mediaValuesIncluded",
+        "tokenValuesIncluded",
+    ]) {
+        assert.equal(gate.redaction[property], false);
+    }
+    for (const property of [
+        "configuredValue",
+        "moduleNamespace",
+        "factoryValue",
+        "runtimeOptionsValue",
+        "optionValues",
+        "runtimeValue",
+        "registryValue",
+        "lifecycleHandles",
+        "workspaceRoot",
+        "cacheRoot",
+        "modulePath",
+        "publicPaths",
+        "cachePaths",
+        "sha256",
+        "playwrightBrowserPath",
+        "runtimeModulePath",
+        "sourceData",
+        "pageData",
+        "artifactBytes",
+        "mediaBytes",
+        "tokenValues",
+    ]) {
+        assert.equal(gate.omitted[property], true);
+    }
+    assert.equal(gate.execution, null);
+    return gate;
+}
+
 function persistedThumbnailResponse(id = "persisted-thumbnail-png") {
     return new Response(
         JSON.stringify({
@@ -1643,6 +1842,7 @@ test("noop host exposes the P25.24 health contract", async () => {
         assert.ok(serviceModule.healthResponse.capabilities.includes("thumbnail.render.bundled-scene-bridge-runtime-registration-preflight"));
         assert.ok(serviceModule.healthResponse.capabilities.includes("thumbnail.render.bundled-scene-bridge-runtime-registry-registration-boundary"));
         assert.ok(serviceModule.healthResponse.capabilities.includes("thumbnail.render.bundled-scene-bridge-runtime-registry-installation-contract"));
+        assert.ok(serviceModule.healthResponse.capabilities.includes("thumbnail.render.bundled-scene-bridge-runtime-registry-installation-gate"));
         assert.deepEqual(body.browserFixtureRuntime, serviceModule.defaultBrowserFixtureRuntimeLifecycle);
         assertBrowserFixtureRuntimeLifecycle(body.browserFixtureRuntime);
         assertRuntimeAssetManifestScaffold(body.runtimeAssetManifest);
@@ -1680,6 +1880,11 @@ test("noop host exposes the P25.24 health contract", async () => {
             serviceModule.bundledSceneBridgeRuntimeRegistryInstallationContract
         );
         assertBundledSceneBridgeRuntimeRegistryInstallationContract(body.bundledSceneBridgeRuntimeRegistryInstallationContract);
+        assert.deepEqual(
+            body.bundledSceneBridgeRuntimeRegistryInstallationGate,
+            serviceModule.bundledSceneBridgeRuntimeRegistryInstallationGate
+        );
+        assertBundledSceneBridgeRuntimeRegistryInstallationGate(body.bundledSceneBridgeRuntimeRegistryInstallationGate);
     });
 });
 
@@ -1736,6 +1941,9 @@ test("noop host reports configured P26.34 import gate plus P26.36 namespace, P26
                 registryRegistrationBoundaryReady: false,
             }
         );
+        assertBundledSceneBridgeRuntimeRegistryInstallationGate(body.bundledSceneBridgeRuntimeRegistryInstallationGate, {
+            contractReady: false,
+        });
     } finally {
         await service.stop();
     }
@@ -1799,6 +2007,86 @@ test("noop host reports configured P26.40 registration preflight ready without r
                 registryRegistrationBoundaryReady: true,
             }
         );
+        assertBundledSceneBridgeRuntimeRegistryInstallationGate(body.bundledSceneBridgeRuntimeRegistryInstallationGate, {
+            contractReady: true,
+        });
+    } finally {
+        await service.stop();
+    }
+});
+
+test("noop host reports reviewed P26.43 runtime registry installation gate without runtime side effects", async () => {
+    const service = await serviceModule.startRendererService({
+        port: 0,
+        bundledSceneBridgeImportGate: {
+            configured: true,
+            value: "registration-preflight",
+        },
+        bundledSceneBridgeRuntimeRegistryInstallationGate: {
+            configured: true,
+            value: "reviewed",
+        },
+    });
+    try {
+        const response = await fetch(`http://${service.host}:${service.port}/health`);
+
+        assert.equal(response.status, 200);
+        const body = await response.json();
+        assertBundledSceneBridgeRuntimeRegistryInstallationContract(
+            body.bundledSceneBridgeRuntimeRegistryInstallationContract,
+            {
+                registryRegistrationBoundaryReady: true,
+            }
+        );
+        const gate = assertBundledSceneBridgeRuntimeRegistryInstallationGate(
+            body.bundledSceneBridgeRuntimeRegistryInstallationGate,
+            {
+                contractReady: true,
+                reviewed: true,
+            }
+        );
+        assert.equal(gate.gate.reviewedGateOpen, true);
+        assert.equal(gate.gate.futureInstallationAttemptAllowed, true);
+        assert.equal(gate.sideEffects.registryWrite, false);
+        assert.equal(gate.sideEffects.runtimeInstallation, false);
+        assert.equal(gate.sideEffects.renderDispatch, false);
+        assert.equal(gate.omitted.runtimeValue, true);
+        assert.equal(gate.omitted.configuredValue, true);
+    } finally {
+        await service.stop();
+    }
+});
+
+test("noop host reports invalid P26.43 runtime registry installation gate diagnostics", async () => {
+    const service = await serviceModule.startRendererService({
+        port: 0,
+        bundledSceneBridgeImportGate: {
+            configured: true,
+            value: "registration-preflight",
+        },
+        bundledSceneBridgeRuntimeRegistryInstallationGate: {
+            configured: true,
+            value: "enabled",
+        },
+    });
+    try {
+        const response = await fetch(`http://${service.host}:${service.port}/health`);
+
+        assert.equal(response.status, 200);
+        const body = await response.json();
+        const gate = assertBundledSceneBridgeRuntimeRegistryInstallationGate(
+            body.bundledSceneBridgeRuntimeRegistryInstallationGate,
+            {
+                contractReady: true,
+                invalid: true,
+            }
+        );
+        assert.equal(gate.configuration.configured, true);
+        assert.equal(gate.configuration.accepted, false);
+        assert.equal(gate.configuration.valid, false);
+        assert.equal(gate.configuration.valueRead, false);
+        assert.equal(gate.refusalDiagnostics.invalidGateValue, true);
+        assert.equal(gate.sideEffects.registryWrite, false);
     } finally {
         await service.stop();
     }
@@ -4274,6 +4562,46 @@ test("noop host rejects unsafe P26.42 bundled scene bridge runtime registry inst
         assert.equal(body.code, "renderer_service_response_invalid");
         assert.equal(body.field, "bundledSceneBridgeRuntimeRegistryInstallationContract.guard.runtimeInstalled");
         assert.match(body.message, /bundledSceneBridgeRuntimeRegistryInstallationContract\.guard\.runtimeInstalled must match false/);
+    } finally {
+        await service.stop();
+    }
+});
+
+test("noop host rejects unsafe P26.43 bundled scene bridge runtime registry installation gate metadata", async () => {
+    const service = await serviceModule.startRendererService({
+        port: 0,
+        thumbnailResponseOverride: (body) => ({
+            ...body,
+            bundledSceneBridgeRuntimeRegistryInstallationGate: {
+                ...body.bundledSceneBridgeRuntimeRegistryInstallationGate,
+                gate: {
+                    ...body.bundledSceneBridgeRuntimeRegistryInstallationGate.gate,
+                    runtimeInstalled: true,
+                },
+                sideEffects: {
+                    ...body.bundledSceneBridgeRuntimeRegistryInstallationGate.sideEffects,
+                    registryWrite: true,
+                },
+                redaction: {
+                    ...body.bundledSceneBridgeRuntimeRegistryInstallationGate.redaction,
+                    runtimeValuesIncluded: true,
+                },
+                omitted: {
+                    ...body.bundledSceneBridgeRuntimeRegistryInstallationGate.omitted,
+                    runtimeValue: false,
+                },
+            },
+        }),
+    });
+    try {
+        const response = await postValidFileThumbnail(service.host, service.port);
+
+        assert.equal(response.status, 500);
+        const body = await response.json();
+        assert.equal(body.status, "error");
+        assert.equal(body.code, "renderer_service_response_invalid");
+        assert.equal(body.field, "bundledSceneBridgeRuntimeRegistryInstallationGate.gate.runtimeInstalled");
+        assert.match(body.message, /bundledSceneBridgeRuntimeRegistryInstallationGate\.gate\.runtimeInstalled must match false/);
     } finally {
         await service.stop();
     }
