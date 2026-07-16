@@ -10485,6 +10485,75 @@ test("render.thumbnail renderer-service API fixtures define planning requests wi
     assert.equal(fixtures.bundledRuntimeBridge.bundledSceneBridgeRuntimeRegistrationPreflight.redaction.registryValuesIncluded, false);
     assert.equal(fixtures.bundledRuntimeBridge.bundledSceneBridgeRuntimeRegistrationPreflight.omitted.registryValue, true);
     assert.equal(fixtures.bundledRuntimeBridge.bundledSceneBridgeRuntimeRegistrationPreflight.execution, null);
+    assert.equal(fixtures.bundledRuntimeBridge.bundledSceneBridgeRuntimeRegistryRegistrationBoundary.status, "planned-disabled");
+    assert.equal(fixtures.bundledRuntimeBridge.bundledSceneBridgeRuntimeRegistryRegistrationBoundary.boundaryVersion, "P26.41");
+    assert.equal(
+        fixtures.bundledRuntimeBridge.bundledSceneBridgeRuntimeRegistryRegistrationBoundary.mode,
+        "no-dispatch-runtime-registry-registration-boundary"
+    );
+    assert.equal(
+        fixtures.bundledRuntimeBridge.bundledSceneBridgeRuntimeRegistryRegistrationBoundary.source.runtimeRegistrationPreflightVersion,
+        "P26.40"
+    );
+    assert.equal(
+        fixtures.bundledRuntimeBridge.bundledSceneBridgeRuntimeRegistryRegistrationBoundary.source.runtimeRegistrationPreflightReady,
+        false
+    );
+    assert.equal(
+        fixtures.bundledRuntimeBridge.bundledSceneBridgeRuntimeRegistryRegistrationBoundary.source.readiness,
+        "blocked-until-runtime-registration-preflight-ready"
+    );
+    assert.equal(
+        fixtures.bundledRuntimeBridge.bundledSceneBridgeRuntimeRegistryRegistrationBoundary.guard.runtimeInstalled,
+        false
+    );
+    assert.equal(
+        fixtures.bundledRuntimeBridge.bundledSceneBridgeRuntimeRegistryRegistrationBoundary.registrySlot.slotStatus,
+        "planned-empty"
+    );
+    assert.equal(
+        fixtures.bundledRuntimeBridge.bundledSceneBridgeRuntimeRegistryRegistrationBoundary.registrySlot.runtimeAvailableForDispatch,
+        false
+    );
+    assert.equal(
+        fixtures.bundledRuntimeBridge.bundledSceneBridgeRuntimeRegistryRegistrationBoundary.duplicateRegistrationPolicy.replacementPolicy,
+        "not-supported-until-reviewed"
+    );
+    assert.equal(
+        fixtures.bundledRuntimeBridge.bundledSceneBridgeRuntimeRegistryRegistrationBoundary.runtimeAvailability.runtimeValueAvailable,
+        false
+    );
+    assert.equal(
+        fixtures.bundledRuntimeBridge.bundledSceneBridgeRuntimeRegistryRegistrationBoundary.lifecycleCleanup.cleanupOnServiceStop,
+        true
+    );
+    assert.deepEqual(
+        fixtures.bundledRuntimeBridge.bundledSceneBridgeRuntimeRegistryRegistrationBoundary.boundaryOutcomeTaxonomy.map((entry) => entry.code),
+        [
+            "renderer_service_bundled_scene_bridge_runtime_registry_registration_boundary_preflight_not_ready",
+            "renderer_service_bundled_scene_bridge_runtime_registry_registration_boundary_planned",
+            "renderer_service_bundled_scene_bridge_runtime_registry_registration_duplicate_rejected",
+            "renderer_service_bundled_scene_bridge_runtime_registry_registration_replacement_unsupported",
+            "renderer_service_bundled_scene_bridge_runtime_registry_registration_cleanup_invalid",
+        ]
+    );
+    assert.equal(
+        fixtures.bundledRuntimeBridge.bundledSceneBridgeRuntimeRegistryRegistrationBoundary.sideEffects.runtimeInstallation,
+        false
+    );
+    assert.equal(
+        fixtures.bundledRuntimeBridge.bundledSceneBridgeRuntimeRegistryRegistrationBoundary.sideEffects.renderDispatch,
+        false
+    );
+    assert.equal(
+        fixtures.bundledRuntimeBridge.bundledSceneBridgeRuntimeRegistryRegistrationBoundary.redaction.runtimeValuesIncluded,
+        false
+    );
+    assert.equal(
+        fixtures.bundledRuntimeBridge.bundledSceneBridgeRuntimeRegistryRegistrationBoundary.omitted.runtimeValue,
+        true
+    );
+    assert.equal(fixtures.bundledRuntimeBridge.bundledSceneBridgeRuntimeRegistryRegistrationBoundary.execution, null);
     assert.ok(fixtures.bundledRuntimeBridge.blockedAlternatives.some((entry) => entry.id === "direct-node-render-wasm"));
     assert.ok(fixtures.bundledRuntimeBridge.requiredBeforeImplementation.some((entry) => entry.includes("pixel/resource tests")));
     assert.ok(fixtures.bundledRuntimeBridge.requiredBeforeImplementation.some((entry) => entry.includes("existence/hash readiness")));
@@ -12915,6 +12984,23 @@ test("render.thumbnail renderer-service health preflight and client harness stay
     assert.equal(healthPreflight.bundledSceneBridgeRuntimeRegistrationPreflight.redaction.registryValuesIncluded, false);
     assert.equal(healthPreflight.bundledSceneBridgeRuntimeRegistrationPreflight.omitted.registryValue, true);
     assert.equal(healthPreflight.bundledSceneBridgeRuntimeRegistrationPreflight.execution, null);
+    assert.equal(healthPreflight.bundledSceneBridgeRuntimeRegistryRegistrationBoundary.status, "not-reported");
+    assert.equal(healthPreflight.bundledSceneBridgeRuntimeRegistryRegistrationBoundary.boundaryVersion, null);
+    assert.equal(healthPreflight.bundledSceneBridgeRuntimeRegistryRegistrationBoundary.checked, false);
+    assert.equal(
+        healthPreflight.bundledSceneBridgeRuntimeRegistryRegistrationBoundary.source.runtimeRegistrationPreflightReady,
+        false
+    );
+    assert.equal(healthPreflight.bundledSceneBridgeRuntimeRegistryRegistrationBoundary.guard.runtimeInstalled, false);
+    assert.equal(healthPreflight.bundledSceneBridgeRuntimeRegistryRegistrationBoundary.registrySlot.runtimeId, null);
+    assert.equal(healthPreflight.bundledSceneBridgeRuntimeRegistryRegistrationBoundary.registrySlot.runtimeInstalled, false);
+    assert.equal(healthPreflight.bundledSceneBridgeRuntimeRegistryRegistrationBoundary.runtimeAvailability.runtimeInstalled, false);
+    assert.deepEqual(healthPreflight.bundledSceneBridgeRuntimeRegistryRegistrationBoundary.boundaryOutcomeTaxonomy, []);
+    assert.deepEqual(healthPreflight.bundledSceneBridgeRuntimeRegistryRegistrationBoundary.diagnosticCodes, []);
+    assert.equal(healthPreflight.bundledSceneBridgeRuntimeRegistryRegistrationBoundary.sideEffects.runtimeInstallation, false);
+    assert.equal(healthPreflight.bundledSceneBridgeRuntimeRegistryRegistrationBoundary.redaction.runtimeValuesIncluded, false);
+    assert.equal(healthPreflight.bundledSceneBridgeRuntimeRegistryRegistrationBoundary.omitted.runtimeValue, true);
+    assert.equal(healthPreflight.bundledSceneBridgeRuntimeRegistryRegistrationBoundary.execution, null);
     assert.equal(healthPreflight.runtimeAssetPreflight.omitted.workspaceRoot, true);
     assert.equal(healthPreflight.runtimeAssetPreflight.omitted.sha256, true);
     assert.ok(healthPreflight.failureModes.some((entry) => entry.code === "renderer_service_preflight_disabled"));
@@ -14531,6 +14617,109 @@ test("render.thumbnail renderer-service health preflight normalizes ready bundle
     assert.equal(preflight.execution, null);
 });
 
+test("render.thumbnail renderer-service health preflight normalizes planned bundled scene bridge runtime registry registration boundary without installation", async () => {
+    const plan = createRenderThumbnailRendererServicePlan({
+        fileId: "file-1",
+        endpoint: "http://127.0.0.1:6070/thumbnail",
+        optInConfiguration: {
+            entrypoint: "cli",
+            cliFlagValue: "renderer-service",
+        },
+    });
+    const safeBoundary =
+        renderThumbnailRendererServiceFixtures.bundledRuntimeBridge.bundledSceneBridgeRuntimeRegistryRegistrationBoundary;
+    const readyBoundary = {
+        ...safeBoundary,
+        source: {
+            ...safeBoundary.source,
+            runtimeRegistrationPreflightReady: true,
+            runtimeRegistrationPreflightStatus: "ready",
+            registrationPreflightGateOpen: true,
+            readiness: "registry-registration-boundary-planned",
+        },
+        diagnostics: [
+            {
+                code: "renderer_service_bundled_scene_bridge_runtime_registry_registration_boundary_planned",
+                severity: "info",
+                field: "source.runtimeRegistrationPreflightReady",
+                message:
+                    "The bundled scene bridge runtime registry registration boundary is planned after the P26.40 preflight, but no runtime value is installed or available for dispatch.",
+                nextActions: [
+                    "Proceed with a later reviewed task before installing any bundled scene bridge runtime value in the renderer-service registry.",
+                    "Keep registry lookup, runtime registration, render dispatch, browser startup, asset loading, reads, writes, and value exposure disabled.",
+                ],
+            },
+        ],
+        diagnosticCodes: ["renderer_service_bundled_scene_bridge_runtime_registry_registration_boundary_planned"],
+        nextActions: [
+            "Proceed with a later reviewed task before installing any bundled scene bridge runtime value in the renderer-service registry.",
+            "Keep registry lookup, runtime registration, render dispatch, browser startup, asset loading, reads, writes, and value exposure disabled.",
+        ],
+        checks: safeBoundary.checks.map((entry) => ({
+            ...entry,
+            status: entry.id === "runtime-registration-preflight-ready" ? "passed" : "planned",
+        })),
+    };
+    const healthPreflight = await executeRenderThumbnailRendererServiceHealthPreflight(plan, {
+        fetch: async () =>
+            new Response(
+                JSON.stringify({
+                    status: "ok",
+                    renderer: "penpot-thumbnail-renderer",
+                    mode: "noop",
+                    runtimeRegistration: false,
+                    dispatch: false,
+                    capabilities: [
+                        "health",
+                        "thumbnail.render.noop",
+                        "thumbnail.render.bundled-scene-bridge-runtime-registry-registration-boundary",
+                    ],
+                    bundledSceneBridgeRuntimeRegistryRegistrationBoundary: readyBoundary,
+                }),
+                { status: 200, headers: { "content-type": "application/json; charset=utf-8" } }
+            ),
+    });
+
+    const boundary = healthPreflight.bundledSceneBridgeRuntimeRegistryRegistrationBoundary;
+    assert.equal(boundary.status, "planned-disabled");
+    assert.equal(boundary.boundaryVersion, "P26.41");
+    assert.equal(boundary.mode, "no-dispatch-runtime-registry-registration-boundary");
+    assert.equal(boundary.source.runtimeRegistrationPreflightReady, true);
+    assert.equal(boundary.source.runtimeRegistrationPreflightStatus, "ready");
+    assert.equal(boundary.source.registrationPreflightGateOpen, true);
+    assert.equal(boundary.source.readiness, "registry-registration-boundary-planned");
+    assert.equal(boundary.guard.registryRegistrationEnabled, false);
+    assert.equal(boundary.guard.runtimeInstalled, false);
+    assert.equal(boundary.registrySlot.runtimeId, "bundled-scene-bridge");
+    assert.equal(boundary.registrySlot.slotStatus, "planned-empty");
+    assert.equal(boundary.registrySlot.runtimeAvailableForDispatch, false);
+    assert.equal(boundary.duplicateRegistrationPolicy.replacementPolicy, "not-supported-until-reviewed");
+    assert.equal(boundary.runtimeAvailability.runtimeInstalled, false);
+    assert.equal(boundary.runtimeAvailability.runtimeValueAvailable, false);
+    assert.equal(boundary.lifecycleCleanup.cleanupOnServiceStop, true);
+    assert.deepEqual(
+        boundary.checks.map((entry) => [entry.id, entry.status, entry.dispatch]),
+        [
+            ["runtime-registration-preflight-ready", "passed", false],
+            ["registry-slot-plan", "planned", false],
+            ["duplicate-registration-policy", "planned", false],
+            ["lifecycle-cleanup-plan", "planned", false],
+            ["no-dispatch-runtime-availability", "planned", false],
+        ]
+    );
+    assert.deepEqual(boundary.diagnosticCodes, [
+        "renderer_service_bundled_scene_bridge_runtime_registry_registration_boundary_planned",
+    ]);
+    assert.equal(boundary.sideEffects.runtimeInstallation, false);
+    assert.equal(boundary.sideEffects.registryLookup, false);
+    assert.equal(boundary.sideEffects.renderDispatch, false);
+    assert.equal(boundary.redaction.runtimeValuesIncluded, false);
+    assert.equal(boundary.redaction.registryValuesIncluded, false);
+    assert.equal(boundary.omitted.runtimeValue, true);
+    assert.equal(boundary.omitted.registryValue, true);
+    assert.equal(boundary.execution, null);
+});
+
 test("render.thumbnail renderer-service health preflight rejects unsafe bundled scene bridge factory invocation preflight metadata", async () => {
     const plan = createRenderThumbnailRendererServicePlan({
         fileId: "file-1",
@@ -14679,6 +14868,78 @@ test("render.thumbnail renderer-service health preflight rejects unsafe bundled 
         healthPreflight.bundledSceneBridgeRuntimeRegistrationPreflight.nextActions.some((entry) =>
             entry.includes("bundledSceneBridgeRuntimeRegistrationPreflight")
         )
+    );
+});
+
+test("render.thumbnail renderer-service health preflight rejects unsafe bundled scene bridge runtime registry registration boundary metadata", async () => {
+    const plan = createRenderThumbnailRendererServicePlan({
+        fileId: "file-1",
+        endpoint: "http://127.0.0.1:6070/thumbnail",
+        optInConfiguration: {
+            entrypoint: "cli",
+            cliFlagValue: "renderer-service",
+        },
+    });
+    const safeBoundary =
+        renderThumbnailRendererServiceFixtures.bundledRuntimeBridge.bundledSceneBridgeRuntimeRegistryRegistrationBoundary;
+    const unsafeBoundary = {
+        ...safeBoundary,
+        guard: {
+            ...safeBoundary.guard,
+            runtimeInstalled: true,
+        },
+        registrySlot: {
+            ...safeBoundary.registrySlot,
+            runtimeInstalled: true,
+        },
+        sideEffects: {
+            ...safeBoundary.sideEffects,
+            runtimeInstallation: true,
+        },
+        redaction: {
+            ...safeBoundary.redaction,
+            runtimeValuesIncluded: true,
+        },
+        omitted: {
+            ...safeBoundary.omitted,
+            runtimeValue: false,
+        },
+    };
+    const healthPreflight = await executeRenderThumbnailRendererServiceHealthPreflight(plan, {
+        fetch: async () =>
+            new Response(
+                JSON.stringify({
+                    status: "ok",
+                    renderer: "penpot-thumbnail-renderer",
+                    mode: "noop",
+                    runtimeRegistration: false,
+                    dispatch: false,
+                    capabilities: [
+                        "health",
+                        "thumbnail.render.noop",
+                        "thumbnail.render.bundled-scene-bridge-runtime-registry-registration-boundary",
+                    ],
+                    bundledSceneBridgeRuntimeRegistryRegistrationBoundary: unsafeBoundary,
+                }),
+                { status: 200, headers: { "content-type": "application/json; charset=utf-8" } }
+            ),
+    });
+
+    const boundary = healthPreflight.bundledSceneBridgeRuntimeRegistryRegistrationBoundary;
+    assert.equal(healthPreflight.status, "ok");
+    assert.equal(boundary.status, "invalid");
+    assert.equal(boundary.guard.runtimeInstalled, true);
+    assert.equal(boundary.registrySlot.runtimeInstalled, true);
+    assert.equal(boundary.sideEffects.runtimeInstallation, true);
+    assert.equal(boundary.redaction.runtimeValuesIncluded, true);
+    assert.equal(boundary.omitted.runtimeValue, false);
+    assert.ok(
+        boundary.diagnosticCodes.includes(
+            "renderer_service_bundled_scene_bridge_runtime_registry_registration_boundary_invalid"
+        )
+    );
+    assert.ok(
+        boundary.nextActions.some((entry) => entry.includes("bundledSceneBridgeRuntimeRegistryRegistrationBoundary"))
     );
 });
 

@@ -4209,6 +4209,21 @@ new value only as local lifecycle configuration and tells operators to query
 browser startup, asset loading/materialization, backend/source-data reads, local
 writes, registry/lifecycle/runtime option value exposure, and local value
 materialization remain disabled even when the guarded preflight is ready.
+P26.41 adds the no-dispatch runtime registry registration boundary. The
+renderer-service exposes
+`bundledSceneBridgeRuntimeRegistryRegistrationBoundary` in `/health` and
+`/thumbnail`; command-runtime carries it into MCP and `penpot-cli render
+thumbnail` as
+`healthPreflight.bundledSceneBridgeRuntimeRegistryRegistrationBoundary`; and
+`penpot-cli renderer-service status/start` reports the same no-probe lifecycle
+plan. The boundary links to P26.40 readiness, defines the future
+`bundled-scene-bridge` registry slot owner, duplicate/replacement policy,
+lifecycle cleanup expectations, runtime availability metadata, and invalid
+unsafe-metadata diagnostics. It remains `planned-disabled`: no registry lookup,
+runtime installation, runtime registration, render dispatch, browser startup,
+asset loading/materialization, backend/source-data reads, local writes,
+registry/runtime/lifecycle value exposure, or local value materialization
+occurs.
 
 ### 8.6 Advanced Tools
 

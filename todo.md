@@ -394,9 +394,12 @@ P26.40 is complete: renderer-service now executes the guarded registration
 preflight only when `PENPOT_RENDERER_SERVICE_BUNDLED_SCENE_BRIDGE_RUNTIME` is
 `registration-preflight`, reports ready/blocked outcomes through `/health` and
 `/thumbnail`, and command-runtime/CLI/MCP surface the redacted summary while CLI
-status remains no-probe planning. Next planned work is P26.41 to define a
-no-dispatch runtime registry registration boundary and cleanup contract before
-any real runtime registration or render dispatch is enabled.
+status remains no-probe planning. P26.41 is complete: renderer-service now
+reports a no-dispatch runtime registry registration boundary with slot
+ownership, duplicate/replacement policy, lifecycle cleanup, runtime
+availability, and unsafe-value rejection metadata, and command-runtime/CLI
+surface the redacted plan. Next planned work is P26.42 to define the guarded
+runtime registry installation contract before any runtime value is installed.
 P25.7 is complete: thumbnail renderer-service API fixtures now define
 future file refresh, file reuse, tagged frame refresh, auth forwarding,
 resource URI normalization, and MCP/CLI test expectations. P25.8 is complete:
@@ -1070,7 +1073,8 @@ process boundary before MCP or CLI execution is enabled.
 | P26.38 | done | Execute guarded bundled scene bridge factory invocation preflight | `renderer-service`, `command-runtime`, `penpot-cli`, `mcp`, `mcp/docs`, `todo.md`, `CHANGES.md` | Completed 2026-07-16; renderer-service now invokes the service-owned bundled scene bridge factory after P26.36 namespace readiness with inert redacted option handles, checks returned `renderThumbnail`/optional `close` shape, and command-runtime/CLI/MCP preserve the token-safe execution summary | Keeps runtime registration, render dispatch, browser startup beyond inert handles, asset loading/materialization, backend/source-data reads, local writes, module/factory/runtime/option value exposure, and default CLI lifecycle probing gated |
 | P26.39 | done | Plan bundled scene bridge runtime registration preflight | `renderer-service`, `command-runtime`, `penpot-cli`, `mcp/docs`, `todo.md`, `CHANGES.md` | Completed 2026-07-17; renderer-service now exposes `bundledSceneBridgeRuntimeRegistrationPreflight`, consumes P26.38 factory invocation readiness, records the future registration contract, lifecycle cleanup expectations, and registration outcome taxonomy, and command-runtime/CLI/MCP surface redacted health preflight summaries | Keeps runtime registration, runtime execution registration, render dispatch, browser startup, asset loading/materialization, backend/source-data reads, local writes, registry/lifecycle/runtime option value exposure, and default CLI lifecycle probing gated |
 | P26.40 | done | Execute guarded bundled scene bridge runtime registration preflight | `renderer-service`, `command-runtime`, `penpot-cli`, `mcp`, `mcp/docs`, `todo.md`, `CHANGES.md` | Completed 2026-07-17; renderer-service now accepts the explicit `registration-preflight` gate, consumes P26.38 ready factory invocation results, reports ready/blocked/invalid registration preflight outcomes through `/health` and `/thumbnail`, command-runtime normalizes the P26.40 contract, and `penpot-cli renderer-service status/start` recognizes the new value as no-probe lifecycle configuration | Keeps actual runtime registration, runtime execution registration, render dispatch, browser startup, asset loading/materialization, backend/source-data reads, local writes, registry/lifecycle/runtime option value exposure, and default CLI lifecycle probing gated |
-| P26.41 | planned | Plan no-dispatch bundled scene bridge runtime registry registration boundary | `renderer-service`, `command-runtime`, `penpot-cli`, `mcp/docs`, `todo.md`, `CHANGES.md` | Define the next explicit gate after P26.40 that can describe registry slot ownership, duplicate/replacement policy, lifecycle close-hook cleanup, and no-dispatch runtime availability metadata before any runtime value is installed | Keeps actual runtime registration, render dispatch, browser startup, asset loading/materialization, backend/source-data reads, local writes, registry/lifecycle/runtime option value exposure, and default CLI lifecycle probing gated |
+| P26.41 | done | Plan no-dispatch bundled scene bridge runtime registry registration boundary | `renderer-service`, `command-runtime`, `penpot-cli`, `mcp/docs`, `todo.md`, `CHANGES.md` | Completed 2026-07-17; renderer-service now exposes `bundledSceneBridgeRuntimeRegistryRegistrationBoundary`, links it to P26.40 readiness, records registry slot ownership, duplicate/replacement policy, lifecycle cleanup, and no-dispatch runtime availability metadata, command-runtime normalizes valid/invalid boundary reports, and `penpot-cli renderer-service status/start` surfaces the no-probe lifecycle plan | Keeps actual runtime registration, render dispatch, browser startup, asset loading/materialization, backend/source-data reads, local writes, registry/lifecycle/runtime option value exposure, and default CLI lifecycle probing gated |
+| P26.42 | planned | Plan guarded bundled scene bridge runtime registry installation contract | `renderer-service`, `command-runtime`, `penpot-cli`, `mcp/docs`, `todo.md`, `CHANGES.md` | Define the next explicit contract for a future registry installation gate, including required runtime value shape, close-hook ownership, duplicate rollback handling, and invalid-installation diagnostics before any runtime value is installed | Keeps actual runtime installation, runtime registration, render dispatch, browser startup, asset loading/materialization, backend/source-data reads, local writes, registry/lifecycle/runtime value exposure, and default CLI lifecycle probing gated |
 
 P26.1 is complete: `@penpot/renderer-service` is a private pnpm workspace
 package with a real no-op HTTP lifecycle. Its TypeScript output is written to
@@ -1312,8 +1316,12 @@ and outcome taxonomy while runtime registration and render dispatch remain
 disabled. P26.40 is complete: the guarded registration preflight now reports
 ready only behind the explicit `registration-preflight` gate in running
 renderer-service health responses while CLI status remains local planning.
-P26.41 is planned next to define a no-dispatch runtime registry registration
-boundary before any real scene rendering is enabled.
+P26.41 is complete: the no-dispatch runtime registry registration boundary now
+records planned registry slot ownership, duplicate/replacement policy,
+lifecycle cleanup, runtime availability, and unsafe metadata rejection while no
+runtime value is installed. P26.42 is planned next to define the guarded
+runtime registry installation contract before any real scene rendering is
+enabled.
 
 ## Maintenance: Build Cache Hygiene
 

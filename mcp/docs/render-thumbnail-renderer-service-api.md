@@ -212,6 +212,19 @@ whether `bundledSceneBridgeRuntimeRegistrationPreflight.status` is `ready` or
 runtime option values and still disables runtime registration, runtime execution
 registration, render dispatch, browser startup, asset loading/materialization,
 backend/source-data reads, local writes, and value exposure.
+P26.41 adds the no-dispatch runtime registry registration boundary. The
+renderer-service reports it as
+`bundledSceneBridgeRuntimeRegistryRegistrationBoundary`, and command-runtime
+carries it to CLI/MCP as
+`healthPreflight.bundledSceneBridgeRuntimeRegistryRegistrationBoundary`. The
+boundary consumes P26.40 readiness, records the future `bundled-scene-bridge`
+registry slot owner, duplicate/replacement policy, lifecycle cleanup contract,
+and runtime availability metadata, and marks the first readiness check as
+passed only when P26.40 reports `ready`. It remains `planned-disabled`: no
+registry lookup, runtime installation, runtime registration, runtime execution
+registration, render dispatch, browser startup, asset loading/materialization,
+backend/source-data reads, local writes, registry/runtime/lifecycle value
+exposure, or execution values are allowed.
 P26.5 adds a token-safe `backendRpcClient` plan to renderer-service thumbnail
 responses so backend data/cache/persist endpoints are normalized for staged
 execution. That plan now feeds the executable file-thumbnail cache probe,

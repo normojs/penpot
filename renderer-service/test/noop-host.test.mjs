@@ -1263,6 +1263,174 @@ function assertBundledSceneBridgeRuntimeRegistrationPreflight(
     return preflight;
 }
 
+function assertBundledSceneBridgeRuntimeRegistryRegistrationBoundary(
+    boundary,
+    { runtimeRegistrationPreflightReady = false } = {}
+) {
+    assert.equal(boundary.status, "planned-disabled");
+    assert.equal(boundary.boundaryVersion, "P26.41");
+    assert.equal(boundary.owner, "renderer-service");
+    assert.equal(boundary.mode, "no-dispatch-runtime-registry-registration-boundary");
+    assert.equal(boundary.source.contractVersion, "P26.32");
+    assert.equal(boundary.source.runtimeRegistrationPreflightVersion, "P26.40");
+    assert.equal(boundary.source.registryBoundaryVersion, "P26.41");
+    assert.equal(boundary.source.runtimeRegistrationPreflightReady, runtimeRegistrationPreflightReady);
+    assert.equal(boundary.source.runtimeRegistrationPreflightStatus, runtimeRegistrationPreflightReady ? "ready" : "planned-disabled");
+    assert.equal(boundary.source.registrationPreflightGateOpen, runtimeRegistrationPreflightReady);
+    assert.equal(
+        boundary.source.readiness,
+        runtimeRegistrationPreflightReady
+            ? "registry-registration-boundary-planned"
+            : "blocked-until-runtime-registration-preflight-ready"
+    );
+    assert.equal(boundary.guard.runtimeRegistrationPreflightReadyRequired, true);
+    assert.equal(boundary.guard.explicitFutureRegistryRegistrationGateRequired, true);
+    for (const property of [
+        "registryRegistrationEnabled",
+        "registryRegistrationAttempted",
+        "runtimeInstalled",
+        "runtimeRegistered",
+        "runtimeRegistration",
+        "runtimeExecutionRegistered",
+        "renderDispatch",
+        "browserProcessStarted",
+        "registryValuesIncluded",
+    ]) {
+        assert.equal(boundary.guard[property], false);
+    }
+    assert.equal(boundary.registrySlot.runtimeId, "bundled-scene-bridge");
+    assert.equal(boundary.registrySlot.targetRegistry, "renderer-service.thumbnail-runtime-registry");
+    assert.equal(boundary.registrySlot.slotOwner, "renderer-service");
+    assert.equal(boundary.registrySlot.slotStatus, "planned-empty");
+    for (const property of ["runtimeInstalled", "runtimeAvailableForDispatch", "renderDispatchEnabled", "valuesIncluded"]) {
+        assert.equal(boundary.registrySlot[property], false);
+    }
+    assert.equal(boundary.duplicateRegistrationPolicy.duplicateRegistrationPolicy, "reject-until-explicit-replace-policy");
+    assert.equal(boundary.duplicateRegistrationPolicy.replacementPolicy, "not-supported-until-reviewed");
+    for (const property of ["existingRuntimeLookup", "existingRuntimeValuesIncluded", "duplicateReplacementAttempted", "valuesIncluded"]) {
+        assert.equal(boundary.duplicateRegistrationPolicy[property], false);
+    }
+    assert.equal(boundary.runtimeAvailability.status, "metadata-only");
+    assert.equal(boundary.runtimeAvailability.runtimeId, "bundled-scene-bridge");
+    for (const property of [
+        "runtimeInstalled",
+        "runtimeValueAvailable",
+        "runtimeAvailableForDispatch",
+        "renderDispatchEnabled",
+        "valuesIncluded",
+    ]) {
+        assert.equal(boundary.runtimeAvailability[property], false);
+    }
+    assert.equal(boundary.lifecycleCleanup.lifecycleOwner, "renderer-service");
+    assert.equal(boundary.lifecycleCleanup.closeHookPolicy, "register-close-if-present-call-on-unregister");
+    assert.equal(boundary.lifecycleCleanup.closeHookRequired, false);
+    assert.equal(boundary.lifecycleCleanup.cleanupOnDuplicateRejected, true);
+    assert.equal(boundary.lifecycleCleanup.cleanupOnRegistrationFailure, true);
+    assert.equal(boundary.lifecycleCleanup.cleanupOnServiceStop, true);
+    for (const property of [
+        "closeHookRegistered",
+        "closeAttempted",
+        "closeSucceeded",
+        "closeFailed",
+        "browserProcessStarted",
+        "browserPageCreated",
+        "runtimeAssetsLoaded",
+        "localFileWrites",
+        "valuesIncluded",
+    ]) {
+        assert.equal(boundary.lifecycleCleanup[property], false);
+    }
+    assert.deepEqual(
+        boundary.boundaryOutcomeTaxonomy.map((entry) => entry.code),
+        [
+            "renderer_service_bundled_scene_bridge_runtime_registry_registration_boundary_preflight_not_ready",
+            "renderer_service_bundled_scene_bridge_runtime_registry_registration_boundary_planned",
+            "renderer_service_bundled_scene_bridge_runtime_registry_registration_duplicate_rejected",
+            "renderer_service_bundled_scene_bridge_runtime_registry_registration_replacement_unsupported",
+            "renderer_service_bundled_scene_bridge_runtime_registry_registration_cleanup_invalid",
+        ]
+    );
+    assert.deepEqual(boundary.diagnosticCodes, [
+        runtimeRegistrationPreflightReady
+            ? "renderer_service_bundled_scene_bridge_runtime_registry_registration_boundary_planned"
+            : "renderer_service_bundled_scene_bridge_runtime_registry_registration_boundary_preflight_not_ready",
+    ]);
+    assert.deepEqual(
+        boundary.checks.map((entry) => [entry.id, entry.status, entry.dispatch]),
+        [
+            ["runtime-registration-preflight-ready", runtimeRegistrationPreflightReady ? "passed" : "blocked", false],
+            ["registry-slot-plan", "planned", false],
+            ["duplicate-registration-policy", "planned", false],
+            ["lifecycle-cleanup-plan", "planned", false],
+            ["no-dispatch-runtime-availability", "planned", false],
+        ]
+    );
+    for (const property of [
+        "registryLookup",
+        "runtimeInstallation",
+        "runtimeRegistration",
+        "runtimeExecutionRegistered",
+        "renderDispatch",
+        "browserProcessStarted",
+        "browserPageCreated",
+        "runtimeAdapterImported",
+        "runtimeFactoryInvoked",
+        "runtimeOptionsCreated",
+        "runtimeAssetsLoaded",
+        "assetManifestMaterialized",
+        "backendRpcReads",
+        "sourceDataReads",
+        "networkDispatch",
+        "dispatch",
+        "localFileWrites",
+    ]) {
+        assert.equal(boundary.sideEffects[property], false);
+    }
+    for (const property of [
+        "moduleValuesIncluded",
+        "factoryValuesIncluded",
+        "runtimeOptionsValuesIncluded",
+        "optionValuesIncluded",
+        "runtimeValuesIncluded",
+        "registryValuesIncluded",
+        "lifecycleValuesIncluded",
+        "pathValuesIncluded",
+        "sourceDataValuesIncluded",
+        "pageValuesIncluded",
+        "artifactValuesIncluded",
+        "mediaValuesIncluded",
+        "tokenValuesIncluded",
+    ]) {
+        assert.equal(boundary.redaction[property], false);
+    }
+    for (const property of [
+        "moduleNamespace",
+        "factoryValue",
+        "runtimeOptionsValue",
+        "optionValues",
+        "runtimeValue",
+        "registryValue",
+        "lifecycleHandles",
+        "workspaceRoot",
+        "cacheRoot",
+        "modulePath",
+        "publicPaths",
+        "cachePaths",
+        "sha256",
+        "playwrightBrowserPath",
+        "runtimeModulePath",
+        "sourceData",
+        "pageData",
+        "artifactBytes",
+        "mediaBytes",
+        "tokenValues",
+    ]) {
+        assert.equal(boundary.omitted[property], true);
+    }
+    assert.equal(boundary.execution, null);
+    return boundary;
+}
+
 function persistedThumbnailResponse(id = "persisted-thumbnail-png") {
     return new Response(
         JSON.stringify({
@@ -1295,6 +1463,7 @@ test("noop host exposes the P25.24 health contract", async () => {
         assert.ok(serviceModule.healthResponse.capabilities.includes("thumbnail.render.bundled-scene-bridge-module-namespace-import-preflight"));
         assert.ok(serviceModule.healthResponse.capabilities.includes("thumbnail.render.bundled-scene-bridge-factory-invocation-preflight"));
         assert.ok(serviceModule.healthResponse.capabilities.includes("thumbnail.render.bundled-scene-bridge-runtime-registration-preflight"));
+        assert.ok(serviceModule.healthResponse.capabilities.includes("thumbnail.render.bundled-scene-bridge-runtime-registry-registration-boundary"));
         assert.deepEqual(body.browserFixtureRuntime, serviceModule.defaultBrowserFixtureRuntimeLifecycle);
         assertBrowserFixtureRuntimeLifecycle(body.browserFixtureRuntime);
         assertRuntimeAssetManifestScaffold(body.runtimeAssetManifest);
@@ -1322,6 +1491,11 @@ test("noop host exposes the P25.24 health contract", async () => {
             serviceModule.bundledSceneBridgeRuntimeRegistrationPreflight
         );
         assertBundledSceneBridgeRuntimeRegistrationPreflight(body.bundledSceneBridgeRuntimeRegistrationPreflight);
+        assert.deepEqual(
+            body.bundledSceneBridgeRuntimeRegistryRegistrationBoundary,
+            serviceModule.bundledSceneBridgeRuntimeRegistryRegistrationBoundary
+        );
+        assertBundledSceneBridgeRuntimeRegistryRegistrationBoundary(body.bundledSceneBridgeRuntimeRegistryRegistrationBoundary);
     });
 });
 
@@ -1366,6 +1540,12 @@ test("noop host reports configured P26.34 import gate plus P26.36 namespace, P26
             factoryInvocationReady: true,
             registrationPreflightGateOpen: false,
         });
+        assertBundledSceneBridgeRuntimeRegistryRegistrationBoundary(
+            body.bundledSceneBridgeRuntimeRegistryRegistrationBoundary,
+            {
+                runtimeRegistrationPreflightReady: false,
+            }
+        );
     } finally {
         await service.stop();
     }
@@ -1417,6 +1597,12 @@ test("noop host reports configured P26.40 registration preflight ready without r
             factoryInvocationReady: true,
             registrationPreflightGateOpen: true,
         });
+        assertBundledSceneBridgeRuntimeRegistryRegistrationBoundary(
+            body.bundledSceneBridgeRuntimeRegistryRegistrationBoundary,
+            {
+                runtimeRegistrationPreflightReady: true,
+            }
+        );
     } finally {
         await service.stop();
     }
@@ -3796,6 +3982,50 @@ test("noop host rejects unsafe P26.40 bundled scene bridge runtime registration 
         assert.equal(body.code, "renderer_service_response_invalid");
         assert.equal(body.field, "bundledSceneBridgeRuntimeRegistrationPreflight.guard.runtimeRegistration");
         assert.match(body.message, /bundledSceneBridgeRuntimeRegistrationPreflight\.guard\.runtimeRegistration must match false/);
+    } finally {
+        await service.stop();
+    }
+});
+
+test("noop host rejects unsafe P26.41 bundled scene bridge runtime registry registration boundary metadata", async () => {
+    const service = await serviceModule.startRendererService({
+        port: 0,
+        thumbnailResponseOverride: (body) => ({
+            ...body,
+            bundledSceneBridgeRuntimeRegistryRegistrationBoundary: {
+                ...body.bundledSceneBridgeRuntimeRegistryRegistrationBoundary,
+                guard: {
+                    ...body.bundledSceneBridgeRuntimeRegistryRegistrationBoundary.guard,
+                    runtimeInstalled: true,
+                },
+                registrySlot: {
+                    ...body.bundledSceneBridgeRuntimeRegistryRegistrationBoundary.registrySlot,
+                    runtimeInstalled: true,
+                },
+                sideEffects: {
+                    ...body.bundledSceneBridgeRuntimeRegistryRegistrationBoundary.sideEffects,
+                    runtimeInstallation: true,
+                },
+                redaction: {
+                    ...body.bundledSceneBridgeRuntimeRegistryRegistrationBoundary.redaction,
+                    runtimeValuesIncluded: true,
+                },
+                omitted: {
+                    ...body.bundledSceneBridgeRuntimeRegistryRegistrationBoundary.omitted,
+                    runtimeValue: false,
+                },
+            },
+        }),
+    });
+    try {
+        const response = await postValidFileThumbnail(service.host, service.port);
+
+        assert.equal(response.status, 500);
+        const body = await response.json();
+        assert.equal(body.status, "error");
+        assert.equal(body.code, "renderer_service_response_invalid");
+        assert.equal(body.field, "bundledSceneBridgeRuntimeRegistryRegistrationBoundary.guard.runtimeInstalled");
+        assert.match(body.message, /bundledSceneBridgeRuntimeRegistryRegistrationBoundary\.guard\.runtimeInstalled must match false/);
     } finally {
         await service.stop();
     }
