@@ -1727,6 +1727,137 @@ function getRendererServiceLifecyclePlan(args: string[], env: NodeJS.ProcessEnv)
             tokenValues: true;
         };
     };
+    bundledSceneBridgeRuntimeRegistryInstallationContract: {
+        status: "planned-disabled";
+        contractVersion: "P26.42";
+        checked: false;
+        source: {
+            runtimeRegistrationPreflightVersion: "P26.40";
+            registryRegistrationBoundaryVersion: "P26.41";
+            registryInstallationContractVersion: "P26.42";
+            runtimeRegistrationPreflightReady: false;
+            registryRegistrationBoundaryReady: false;
+            registryRegistrationBoundaryStatus: "planned-disabled";
+            registrySlotStatus: "planned-empty";
+            readiness: "blocked-until-registry-registration-boundary-ready";
+        };
+        guard: {
+            registryRegistrationBoundaryReadyRequired: true;
+            explicitFutureInstallationGateRequired: true;
+            runtimeInstallationEnabled: false;
+            runtimeInstallationAttempted: false;
+            runtimeInstalled: false;
+            runtimeRegistered: false;
+            runtimeRegistration: false;
+            runtimeExecutionRegistered: false;
+            renderDispatch: false;
+            browserProcessStarted: false;
+            runtimeValuesIncluded: false;
+            registryValuesIncluded: false;
+        };
+        runtimeValueShape: {
+            runtimeId: "bundled-scene-bridge";
+            targetRegistry: "renderer-service.thumbnail-runtime-registry";
+            requiredMethods: ["renderThumbnail"];
+            optionalMethods: ["close"];
+            requiredInstallationInputs: ["runtimeId", "runtimeValue", "lifecycleOwner"];
+            runtimeValueCreated: false;
+            runtimeValueInstalled: false;
+            renderDispatchEnabledAfterInstallation: false;
+            valuesIncluded: false;
+        };
+        closeHookOwnership: {
+            lifecycleOwner: "renderer-service";
+            closeHookOwner: "renderer-service";
+            closeHookSource: "runtime.close";
+            closeHookRequired: false;
+            closeHookRegistered: false;
+            closeAttempted: false;
+            closeSucceeded: false;
+            closeFailed: false;
+            browserProcessStarted: false;
+            browserPageCreated: false;
+            runtimeAssetsLoaded: false;
+            localFileWrites: false;
+            valuesIncluded: false;
+        };
+        duplicateRollbackHandling: {
+            duplicateDetectionRequired: true;
+            duplicateRegistrationPolicy: "reject-until-explicit-replace-policy";
+            replacementPolicy: "not-supported-until-reviewed";
+            rollbackRequiredOnDuplicate: true;
+            cleanupOnInstallationFailure: true;
+            cleanupOnServiceStop: true;
+            existingRuntimeLookup: false;
+            existingRuntimeValuesIncluded: false;
+            duplicateDetected: false;
+            rollbackAttempted: false;
+            rollbackSucceeded: false;
+            rollbackFailed: false;
+            valuesIncluded: false;
+        };
+        diagnosticsVersion: "P26.42";
+        diagnosticCodes: string[];
+        diagnostics: Array<{
+            code: "renderer_service_bundled_scene_bridge_runtime_registry_installation_contract_boundary_not_ready";
+            severity: "blocked";
+            field: "source.registryRegistrationBoundaryReady";
+            message: string;
+            nextActions: string[];
+        }>;
+        nextActions: string[];
+        diagnosticsSurface: "healthPreflight.bundledSceneBridgeRuntimeRegistryInstallationContract";
+        lifecyclePlanEffects: {
+            healthProbe: false;
+            registryLookup: false;
+            runtimeValueCreation: false;
+            runtimeInstallation: false;
+            runtimeRegistration: false;
+            runtimeExecutionRegistered: false;
+            closeHookRegistration: false;
+            duplicateRollback: false;
+            renderDispatch: false;
+            browserProcessStarted: false;
+            runtimeAdapterImported: false;
+            runtimeFactoryInvoked: false;
+            runtimeOptionsCreated: false;
+            runtimeAssetsLoaded: false;
+            assetManifestMaterialized: false;
+            networkDispatch: false;
+            localFileWrites: false;
+            sourceDataValuesIncluded: false;
+            pageValuesIncluded: false;
+            artifactValuesIncluded: false;
+            mediaValuesIncluded: false;
+            tokenValuesIncluded: false;
+            pathValuesIncluded: false;
+            runtimeValuesIncluded: false;
+            registryValuesIncluded: false;
+            lifecycleValuesIncluded: false;
+        };
+        omitted: {
+            moduleNamespace: true;
+            factoryValue: true;
+            runtimeOptionsValue: true;
+            optionValues: true;
+            runtimeValue: true;
+            registryValue: true;
+            lifecycleHandles: true;
+            modulePath: true;
+            workspaceRoot: true;
+            cacheRoot: true;
+            publicPaths: true;
+            cachePaths: true;
+            sha256: true;
+            playwrightBrowserPath: true;
+            runtimeModulePath: true;
+            sourceData: true;
+            pageData: true;
+            artifactBytes: true;
+            mediaBytes: true;
+            tokenValues: true;
+        };
+    };
     runtimeAssetPreflight: {
         configured: boolean;
         executeReadOnly: boolean;
@@ -2820,6 +2951,147 @@ function getRendererServiceLifecyclePlan(args: string[], env: NodeJS.ProcessEnv)
                 runtimeInstallation: false,
                 runtimeRegistration: false,
                 runtimeExecutionRegistered: false,
+                renderDispatch: false,
+                browserProcessStarted: false,
+                runtimeAdapterImported: false,
+                runtimeFactoryInvoked: false,
+                runtimeOptionsCreated: false,
+                runtimeAssetsLoaded: false,
+                assetManifestMaterialized: false,
+                networkDispatch: false,
+                localFileWrites: false,
+                sourceDataValuesIncluded: false,
+                pageValuesIncluded: false,
+                artifactValuesIncluded: false,
+                mediaValuesIncluded: false,
+                tokenValuesIncluded: false,
+                pathValuesIncluded: false,
+                runtimeValuesIncluded: false,
+                registryValuesIncluded: false,
+                lifecycleValuesIncluded: false,
+            },
+            omitted: {
+                moduleNamespace: true,
+                factoryValue: true,
+                runtimeOptionsValue: true,
+                optionValues: true,
+                runtimeValue: true,
+                registryValue: true,
+                lifecycleHandles: true,
+                modulePath: true,
+                workspaceRoot: true,
+                cacheRoot: true,
+                publicPaths: true,
+                cachePaths: true,
+                sha256: true,
+                playwrightBrowserPath: true,
+                runtimeModulePath: true,
+                sourceData: true,
+                pageData: true,
+                artifactBytes: true,
+                mediaBytes: true,
+                tokenValues: true,
+            },
+        },
+        bundledSceneBridgeRuntimeRegistryInstallationContract: {
+            status: "planned-disabled",
+            contractVersion: "P26.42",
+            checked: false,
+            source: {
+                runtimeRegistrationPreflightVersion: "P26.40",
+                registryRegistrationBoundaryVersion: "P26.41",
+                registryInstallationContractVersion: "P26.42",
+                runtimeRegistrationPreflightReady: false,
+                registryRegistrationBoundaryReady: false,
+                registryRegistrationBoundaryStatus: "planned-disabled",
+                registrySlotStatus: "planned-empty",
+                readiness: "blocked-until-registry-registration-boundary-ready",
+            },
+            guard: {
+                registryRegistrationBoundaryReadyRequired: true,
+                explicitFutureInstallationGateRequired: true,
+                runtimeInstallationEnabled: false,
+                runtimeInstallationAttempted: false,
+                runtimeInstalled: false,
+                runtimeRegistered: false,
+                runtimeRegistration: false,
+                runtimeExecutionRegistered: false,
+                renderDispatch: false,
+                browserProcessStarted: false,
+                runtimeValuesIncluded: false,
+                registryValuesIncluded: false,
+            },
+            runtimeValueShape: {
+                runtimeId: "bundled-scene-bridge",
+                targetRegistry: "renderer-service.thumbnail-runtime-registry",
+                requiredMethods: ["renderThumbnail"],
+                optionalMethods: ["close"],
+                requiredInstallationInputs: ["runtimeId", "runtimeValue", "lifecycleOwner"],
+                runtimeValueCreated: false,
+                runtimeValueInstalled: false,
+                renderDispatchEnabledAfterInstallation: false,
+                valuesIncluded: false,
+            },
+            closeHookOwnership: {
+                lifecycleOwner: "renderer-service",
+                closeHookOwner: "renderer-service",
+                closeHookSource: "runtime.close",
+                closeHookRequired: false,
+                closeHookRegistered: false,
+                closeAttempted: false,
+                closeSucceeded: false,
+                closeFailed: false,
+                browserProcessStarted: false,
+                browserPageCreated: false,
+                runtimeAssetsLoaded: false,
+                localFileWrites: false,
+                valuesIncluded: false,
+            },
+            duplicateRollbackHandling: {
+                duplicateDetectionRequired: true,
+                duplicateRegistrationPolicy: "reject-until-explicit-replace-policy",
+                replacementPolicy: "not-supported-until-reviewed",
+                rollbackRequiredOnDuplicate: true,
+                cleanupOnInstallationFailure: true,
+                cleanupOnServiceStop: true,
+                existingRuntimeLookup: false,
+                existingRuntimeValuesIncluded: false,
+                duplicateDetected: false,
+                rollbackAttempted: false,
+                rollbackSucceeded: false,
+                rollbackFailed: false,
+                valuesIncluded: false,
+            },
+            diagnosticsVersion: "P26.42",
+            diagnosticCodes: [
+                "renderer_service_bundled_scene_bridge_runtime_registry_installation_contract_boundary_not_ready",
+            ],
+            diagnostics: [
+                {
+                    code: "renderer_service_bundled_scene_bridge_runtime_registry_installation_contract_boundary_not_ready",
+                    severity: "blocked",
+                    field: "source.registryRegistrationBoundaryReady",
+                    message: "Renderer-service bundled scene bridge runtime registry installation contract is planned through /health, but CLI lifecycle planning does not create or install a runtime value.",
+                    nextActions: [
+                        "Start renderer-service and query /health to verify whether bundledSceneBridgeRuntimeRegistryInstallationContract reports planned after P26.41 readiness.",
+                        "Keep runtime installation, runtime registration, render dispatch, browser startup, asset loading, local writes, and value exposure disabled until a later reviewed installation task.",
+                    ],
+                },
+            ],
+            nextActions: [
+                "Start renderer-service and query /health to verify whether bundledSceneBridgeRuntimeRegistryInstallationContract reports planned after P26.41 readiness.",
+                "Keep runtime installation, runtime registration, render dispatch, browser startup, asset loading, local writes, and value exposure disabled until a later reviewed installation task.",
+            ],
+            diagnosticsSurface: "healthPreflight.bundledSceneBridgeRuntimeRegistryInstallationContract",
+            lifecyclePlanEffects: {
+                healthProbe: false,
+                registryLookup: false,
+                runtimeValueCreation: false,
+                runtimeInstallation: false,
+                runtimeRegistration: false,
+                runtimeExecutionRegistered: false,
+                closeHookRegistration: false,
+                duplicateRollback: false,
                 renderDispatch: false,
                 browserProcessStarted: false,
                 runtimeAdapterImported: false,
@@ -7071,6 +7343,10 @@ async function handleRendererServiceStatus(args: string[], io: CliIO, env: NodeJ
         );
         writeLine(
             io.stdout,
+            `Bundled scene bridge runtime registry installation contract: ${plan.bundledSceneBridgeRuntimeRegistryInstallationContract.status}`
+        );
+        writeLine(
+            io.stdout,
             `Runtime asset preflight: ${plan.runtimeAssetPreflight.executeReadOnly ? "read-only" : "disabled"}`
         );
         if (plan.browserFixtureRuntime.diagnosticCodes.length > 0) {
@@ -7137,6 +7413,16 @@ async function handleRendererServiceStatus(args: string[], io: CliIO, env: NodeJ
             );
             writeLine(io.stdout, "Runtime registry registration boundary next actions:");
             for (const action of plan.bundledSceneBridgeRuntimeRegistryRegistrationBoundary.nextActions) {
+                writeLine(io.stdout, `- ${action}`);
+            }
+        }
+        if (plan.bundledSceneBridgeRuntimeRegistryInstallationContract.diagnosticCodes.length > 0) {
+            writeLine(
+                io.stdout,
+                `Bundled scene bridge runtime registry installation contract diagnostics: ${plan.bundledSceneBridgeRuntimeRegistryInstallationContract.diagnosticCodes.join(", ")}`
+            );
+            writeLine(io.stdout, "Runtime registry installation contract next actions:");
+            for (const action of plan.bundledSceneBridgeRuntimeRegistryInstallationContract.nextActions) {
                 writeLine(io.stdout, `- ${action}`);
             }
         }

@@ -4224,6 +4224,22 @@ runtime installation, runtime registration, render dispatch, browser startup,
 asset loading/materialization, backend/source-data reads, local writes,
 registry/runtime/lifecycle value exposure, or local value materialization
 occurs.
+P26.42 adds the guarded runtime registry installation contract. The
+renderer-service exposes
+`bundledSceneBridgeRuntimeRegistryInstallationContract` in `/health` and
+`/thumbnail`; command-runtime carries it into MCP and `penpot-cli render
+thumbnail` as
+`healthPreflight.bundledSceneBridgeRuntimeRegistryInstallationContract`; and
+`penpot-cli renderer-service status/start` reports the same no-probe lifecycle
+plan. The contract links to the P26.41 planned-empty registry boundary,
+defines the future `bundled-scene-bridge` runtime value shape, close-hook
+ownership, duplicate rollback and cleanup expectations, and invalid
+installation diagnostics. It remains `planned-disabled`: no runtime value
+creation, registry lookup, runtime installation, close-hook registration,
+duplicate rollback, runtime registration, render dispatch, browser startup,
+asset loading/materialization, backend/source-data reads, local writes,
+registry/runtime/lifecycle value exposure, or local value materialization
+occurs.
 
 ### 8.6 Advanced Tools
 

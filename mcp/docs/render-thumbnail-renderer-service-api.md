@@ -225,6 +225,20 @@ registry lookup, runtime installation, runtime registration, runtime execution
 registration, render dispatch, browser startup, asset loading/materialization,
 backend/source-data reads, local writes, registry/runtime/lifecycle value
 exposure, or execution values are allowed.
+P26.42 adds the guarded runtime registry installation contract. The
+renderer-service reports
+`bundledSceneBridgeRuntimeRegistryInstallationContract`, and command-runtime
+carries it to CLI/MCP as
+`healthPreflight.bundledSceneBridgeRuntimeRegistryInstallationContract`. The
+contract consumes P26.41 readiness, defines the future `bundled-scene-bridge`
+runtime value shape (`renderThumbnail` plus optional `close`), close-hook
+ownership, duplicate rollback expectations, cleanup requirements, and invalid
+installation diagnostics before any registry value can be installed. It remains
+`planned-disabled`: no runtime value creation, registry lookup, runtime
+installation, close-hook registration, duplicate rollback, runtime
+registration, render dispatch, browser startup, asset loading/materialization,
+backend/source-data reads, local writes, registry/runtime/lifecycle value
+exposure, or execution values are allowed.
 P26.5 adds a token-safe `backendRpcClient` plan to renderer-service thumbnail
 responses so backend data/cache/persist endpoints are normalized for staged
 execution. That plan now feeds the executable file-thumbnail cache probe,
