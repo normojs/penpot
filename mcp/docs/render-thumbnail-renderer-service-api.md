@@ -253,6 +253,23 @@ registration, duplicate rollback, runtime registration, render dispatch,
 browser startup, asset loading/materialization, backend/source-data reads,
 local writes, registry/runtime/lifecycle value exposure, and execution values
 remain disabled.
+P26.44 adds the guarded runtime registry installation preflight. The
+renderer-service reports
+`bundledSceneBridgeRuntimeRegistryInstallationPreflight`, and command-runtime
+carries it to CLI/MCP as
+`healthPreflight.bundledSceneBridgeRuntimeRegistryInstallationPreflight`. The
+preflight consumes the P26.43 gate and only reports `ready` when the reviewed
+gate is already `configured-disabled` in renderer-service `/health`, rollback
+preconditions are verified, and lifecycle ownership remains no-dispatch. A
+`ready` result authorizes only a later reviewed installation execution task; it
+does not perform registry lookup, registry writes, runtime value creation,
+runtime installation, close-hook registration, duplicate rollback, runtime
+registration, render dispatch, browser startup, asset loading/materialization,
+backend/source-data reads, local writes, registry/runtime/lifecycle value
+exposure, or execution values. `penpot-cli renderer-service status/start`
+continues to report a no-probe local lifecycle plan and tells operators to
+query `/health` for the real preflight outcome instead of inferring readiness
+from local env configuration.
 P26.5 adds a token-safe `backendRpcClient` plan to renderer-service thumbnail
 responses so backend data/cache/persist endpoints are normalized for staged
 execution. That plan now feeds the executable file-thumbnail cache probe,

@@ -4258,6 +4258,22 @@ runtime installation, close-hook registration, duplicate rollback, runtime
 registration, render dispatch, browser startup, asset loading/materialization,
 backend/source-data reads, local writes, registry/runtime/lifecycle value
 exposure, or local value materialization occurs.
+P26.44 adds the guarded runtime registry installation preflight. The
+renderer-service exposes
+`bundledSceneBridgeRuntimeRegistryInstallationPreflight` in `/health` and
+`/thumbnail`; command-runtime carries it into MCP and `penpot-cli render
+thumbnail` as
+`healthPreflight.bundledSceneBridgeRuntimeRegistryInstallationPreflight`; and
+`penpot-cli renderer-service status/start` reports a local no-probe lifecycle
+plan that remains `blocked` or `invalid` until operators inspect
+renderer-service `/health`. The preflight consumes P26.43 readiness, verifies
+the reviewed gate, rollback prerequisites, and no-dispatch lifecycle ownership,
+and reports `ready` only as permission for a later reviewed installation
+execution task. It still performs no registry lookup, registry write, runtime
+value creation, runtime installation, close-hook registration, duplicate
+rollback, runtime registration, render dispatch, browser startup, asset
+loading/materialization, backend/source-data reads, local writes,
+registry/runtime/lifecycle value exposure, or local value materialization.
 
 ### 8.6 Advanced Tools
 

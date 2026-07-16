@@ -14334,6 +14334,8 @@ export function createRenderThumbnailRendererServiceHealthPreflight(options = EM
             normalizeRendererServiceBundledSceneBridgeRuntimeRegistryInstallationContractDiagnostic(null),
         bundledSceneBridgeRuntimeRegistryInstallationGate:
             normalizeRendererServiceBundledSceneBridgeRuntimeRegistryInstallationGateDiagnostic(null),
+        bundledSceneBridgeRuntimeRegistryInstallationPreflight:
+            normalizeRendererServiceBundledSceneBridgeRuntimeRegistryInstallationPreflightDiagnostic(null),
         browserFixtureRuntime: normalizeRendererServiceBrowserFixtureRuntimeDiagnostic(null),
     };
 }
@@ -17602,6 +17604,420 @@ function normalizeRendererServiceBundledSceneBridgeRuntimeRegistryInstallationGa
     };
 }
 
+function normalizeRendererServiceBundledSceneBridgeRuntimeRegistryInstallationPreflightDiagnostic(body) {
+    const bodyRecord = asRecord(body);
+    const present = Object.prototype.hasOwnProperty.call(bodyRecord, "bundledSceneBridgeRuntimeRegistryInstallationPreflight");
+    const summary = asRecord(bodyRecord.bundledSceneBridgeRuntimeRegistryInstallationPreflight);
+    const source = asRecord(summary.source);
+    const preflight = asRecord(summary.preflight);
+    const refusalDiagnostics = asRecord(summary.refusalDiagnostics);
+    const rollbackPreconditions = asRecord(summary.rollbackPreconditions);
+    const lifecycleOwnership = asRecord(summary.lifecycleOwnership);
+    const sideEffects = asRecord(summary.sideEffects);
+    const redaction = asRecord(summary.redaction);
+    const omitted = asRecord(summary.omitted);
+    const preflightOutcomeTaxonomy = normalizeDiagnosticRecordArray(summary.preflightOutcomeTaxonomy).map((entry) => ({
+        code:
+            normalizeOptionalString(entry.code) ??
+            "renderer_service_bundled_scene_bridge_runtime_registry_installation_preflight_outcome_unknown",
+        stage: normalizeOptionalString(entry.stage),
+        severity: normalizeOptionalString(entry.severity),
+        retryable: entry.retryable === true,
+        dispatch: entry.dispatch === true,
+    }));
+    const diagnostics = normalizeDiagnosticRecordArray(summary.diagnostics).map((entry) => ({
+        code:
+            normalizeOptionalString(entry.code) ??
+            "renderer_service_bundled_scene_bridge_runtime_registry_installation_preflight_diagnostic_unknown",
+        severity: normalizeOptionalString(entry.severity),
+        field: normalizeOptionalString(entry.field),
+        env: normalizeOptionalString(entry.env),
+        valueRead: entry.valueRead === true,
+        valuesIncluded: entry.valuesIncluded === true,
+        message: normalizeOptionalString(entry.message),
+        nextActions: normalizeDiagnosticStringArray(entry.nextActions),
+    }));
+    const diagnosticCodes = normalizeDiagnosticStringArray(summary.diagnosticCodes);
+    const nextActions = normalizeDiagnosticStringArray(summary.nextActions);
+    const checks = normalizeDiagnosticRecordArray(summary.checks).map((entry) => ({
+        id: normalizeOptionalString(entry.id) ?? "unknown",
+        status: normalizeOptionalString(entry.status) ?? "unknown",
+        required: entry.required === true,
+        dispatch: entry.dispatch === true,
+    }));
+    const allFalse = (record, fields) => fields.every((field) => record[field] === false);
+    const allTrue = (record, fields) => fields.every((field) => record[field] === true);
+    const equalStringArrays = (actual, expected) =>
+        actual.length === expected.length && actual.every((entry, index) => entry === expected[index]);
+    const statusValue = normalizeOptionalString(summary.status) ?? "not-reported";
+    const statusAllowed = ["blocked", "ready", "invalid"].includes(statusValue);
+    const ready = statusValue === "ready";
+    const gateInvalid = statusValue === "invalid";
+    const expectedDiagnosticCode = ready
+        ? "renderer_service_bundled_scene_bridge_runtime_registry_installation_preflight_ready"
+        : gateInvalid
+          ? "renderer_service_bundled_scene_bridge_runtime_registry_installation_preflight_gate_invalid"
+          : "renderer_service_bundled_scene_bridge_runtime_registry_installation_preflight_gate_not_ready";
+    const expectedOutcomeCodes = [
+        "renderer_service_bundled_scene_bridge_runtime_registry_installation_preflight_gate_not_ready",
+        "renderer_service_bundled_scene_bridge_runtime_registry_installation_preflight_gate_invalid",
+        "renderer_service_bundled_scene_bridge_runtime_registry_installation_preflight_ready",
+        "renderer_service_bundled_scene_bridge_runtime_registry_installation_preflight_unsafe_metadata",
+    ];
+    const expectedCheckIds = [
+        "installation-gate-ready",
+        "reviewed-gate-open",
+        "future-installation-attempt-allowed",
+        "rollback-preconditions-verified",
+        "no-dispatch-lifecycle-owned",
+        "runtime-values-redacted",
+    ];
+    const preflightTrueFields = [
+        "registryInstallationGateReadyRequired",
+        "reviewedGateOpenRequired",
+        "futureInstallationAttemptAllowedRequired",
+        "rollbackPreconditionsRequired",
+        "lifecycleOwnershipRequired",
+        "noDispatchRequired",
+    ];
+    const preflightFalseFields = [
+        "installationAttemptAllowedInThisTask",
+        "registryLookupAttempted",
+        "registryWriteAttempted",
+        "runtimeValueCreated",
+        "runtimeInstallationAttempted",
+        "runtimeInstalled",
+        "runtimeRegistered",
+        "runtimeRegistration",
+        "runtimeExecutionRegistered",
+        "closeHookRegistered",
+        "duplicateRollbackAttempted",
+        "renderDispatch",
+        "browserProcessStarted",
+        "runtimeValuesIncluded",
+        "registryValuesIncluded",
+    ];
+    const sideEffectFields = [
+        "registryLookup",
+        "registryWrite",
+        "runtimeValueCreation",
+        "runtimeInstallation",
+        "runtimeRegistration",
+        "runtimeExecutionRegistered",
+        "closeHookRegistration",
+        "duplicateRollback",
+        "renderDispatch",
+        "browserProcessStarted",
+        "browserPageCreated",
+        "runtimeAdapterImported",
+        "runtimeFactoryInvoked",
+        "runtimeOptionsCreated",
+        "runtimeAssetsLoaded",
+        "assetManifestMaterialized",
+        "backendRpcReads",
+        "sourceDataReads",
+        "networkDispatch",
+        "dispatch",
+        "localFileWrites",
+    ];
+    const redactionFields = [
+        "modeValuesIncluded",
+        "moduleValuesIncluded",
+        "factoryValuesIncluded",
+        "runtimeOptionsValuesIncluded",
+        "optionValuesIncluded",
+        "runtimeValuesIncluded",
+        "registryValuesIncluded",
+        "lifecycleValuesIncluded",
+        "pathValuesIncluded",
+        "sourceDataValuesIncluded",
+        "pageValuesIncluded",
+        "artifactValuesIncluded",
+        "mediaValuesIncluded",
+        "tokenValuesIncluded",
+    ];
+    const omittedFields = [
+        "configuredValue",
+        "moduleNamespace",
+        "factoryValue",
+        "runtimeOptionsValue",
+        "optionValues",
+        "runtimeValue",
+        "registryValue",
+        "lifecycleHandles",
+        "workspaceRoot",
+        "cacheRoot",
+        "modulePath",
+        "publicPaths",
+        "cachePaths",
+        "sha256",
+        "playwrightBrowserPath",
+        "runtimeModulePath",
+        "sourceData",
+        "pageData",
+        "artifactBytes",
+        "mediaBytes",
+        "tokenValues",
+    ];
+    const expectedGateStatus = ready ? "configured-disabled" : gateInvalid ? "invalid" : "planned-disabled";
+    const expectedGateReadiness = ready
+        ? "installation-gate-reviewed-disabled"
+        : gateInvalid
+          ? "invalid-installation-gate-configuration"
+          : null;
+    const expectedReadiness = ready
+        ? "installation-preflight-ready"
+        : gateInvalid
+          ? "invalid-installation-gate"
+          : "blocked-until-reviewed-installation-gate";
+    const expectedRefusalReason = ready
+        ? "installation-execution-disabled-in-preflight"
+        : gateInvalid
+          ? "installation-gate-invalid"
+          : "installation-gate-not-ready";
+    const diagnosticNextActions = uniqueStrings(diagnostics.flatMap((entry) => entry.nextActions));
+    const expectedCheckStatus = gateInvalid ? "invalid" : ready ? "passed" : "blocked";
+    const checksConsistent = checks.every((entry) =>
+        entry.id === "runtime-values-redacted" ? entry.status === "passed" : entry.status === expectedCheckStatus
+    );
+    const blockedGateReadinessValues = [
+        "blocked-until-installation-contract-ready",
+        "blocked-until-installation-gate-reviewed",
+    ];
+    const unsafe =
+        present &&
+        (!statusAllowed ||
+            normalizeOptionalString(summary.preflightVersion) !== "P26.44" ||
+            normalizeOptionalString(summary.owner) !== "renderer-service" ||
+            normalizeOptionalString(summary.mode) !== "guarded-runtime-registry-installation-preflight" ||
+            normalizeOptionalString(source.runtimeRegistrationPreflightVersion) !== "P26.40" ||
+            normalizeOptionalString(source.registryRegistrationBoundaryVersion) !== "P26.41" ||
+            normalizeOptionalString(source.registryInstallationContractVersion) !== "P26.42" ||
+            normalizeOptionalString(source.registryInstallationGateVersion) !== "P26.43" ||
+            normalizeOptionalString(source.registryInstallationPreflightVersion) !== "P26.44" ||
+            source.registryInstallationGateReady !== ready ||
+            normalizeOptionalString(source.registryInstallationGateStatus) !== expectedGateStatus ||
+            (expectedGateReadiness === null
+                ? !blockedGateReadinessValues.includes(normalizeOptionalString(source.registryInstallationGateReadiness))
+                : normalizeOptionalString(source.registryInstallationGateReadiness) !== expectedGateReadiness) ||
+            source.reviewedGateOpen !== ready ||
+            source.futureInstallationAttemptAllowed !== ready ||
+            normalizeOptionalString(source.readiness) !== expectedReadiness ||
+            !allTrue(preflight, preflightTrueFields) ||
+            preflight.readyForLaterInstallationTask !== ready ||
+            !allFalse(preflight, preflightFalseFields) ||
+            refusalDiagnostics.refusalRequired !== true ||
+            normalizeOptionalString(refusalDiagnostics.refusalReason) !== expectedRefusalReason ||
+            refusalDiagnostics.invalidGateMetadata !== gateInvalid ||
+            refusalDiagnostics.registryLookupRefused !== true ||
+            refusalDiagnostics.registryWriteRefused !== true ||
+            refusalDiagnostics.runtimeValueCreationRefused !== true ||
+            refusalDiagnostics.runtimeInstallationRefused !== true ||
+            refusalDiagnostics.closeHookRegistrationRefused !== true ||
+            refusalDiagnostics.duplicateRollbackRefused !== true ||
+            refusalDiagnostics.renderDispatchRefused !== true ||
+            refusalDiagnostics.valuesIncluded !== false ||
+            rollbackPreconditions.duplicateDetectionRequired !== true ||
+            normalizeOptionalString(rollbackPreconditions.duplicateRegistrationPolicy) !==
+                "reject-until-explicit-replace-policy" ||
+            normalizeOptionalString(rollbackPreconditions.replacementPolicy) !== "not-supported-until-reviewed" ||
+            rollbackPreconditions.rollbackRequiredOnDuplicate !== true ||
+            rollbackPreconditions.cleanupOnInstallationFailure !== true ||
+            rollbackPreconditions.cleanupOnServiceStop !== true ||
+            rollbackPreconditions.closeHookCleanupRequired !== true ||
+            rollbackPreconditions.preconditionsVerified !== ready ||
+            !allFalse(rollbackPreconditions, ["rollbackPrepared", "rollbackAttempted", "cleanupAttempted", "valuesIncluded"]) ||
+            normalizeOptionalString(lifecycleOwnership.lifecycleOwner) !== "renderer-service" ||
+            normalizeOptionalString(lifecycleOwnership.registryOwner) !== "renderer-service" ||
+            normalizeOptionalString(lifecycleOwnership.closeHookOwner) !== "renderer-service" ||
+            normalizeOptionalString(lifecycleOwnership.runtimeId) !== "bundled-scene-bridge" ||
+            normalizeOptionalString(lifecycleOwnership.targetRegistry) !== "renderer-service.thumbnail-runtime-registry" ||
+            normalizeOptionalString(lifecycleOwnership.lifecycleScope) !== "thumbnail-runtime-registry" ||
+            lifecycleOwnership.noDispatchLifecycle !== true ||
+            lifecycleOwnership.lifecycleOwnershipVerified !== ready ||
+            !allFalse(lifecycleOwnership, ["closeHookRegistered", "runtimeValueOwned", "registrySlotOwned", "valuesIncluded"]) ||
+            !equalStringArrays(preflightOutcomeTaxonomy.map((entry) => entry.code), expectedOutcomeCodes) ||
+            preflightOutcomeTaxonomy.some((entry) => entry.dispatch) ||
+            diagnostics.length === 0 ||
+            diagnosticCodes.length === 0 ||
+            !equalStringArrays(diagnosticCodes, [expectedDiagnosticCode]) ||
+            diagnostics.some((entry) => !diagnosticCodes.includes(entry.code)) ||
+            !equalStringArrays(nextActions, diagnosticNextActions) ||
+            !equalStringArrays(checks.map((entry) => entry.id), expectedCheckIds) ||
+            !checksConsistent ||
+            checks.some((entry) => entry.dispatch) ||
+            !allFalse(sideEffects, sideEffectFields) ||
+            !allFalse(redaction, redactionFields) ||
+            !allTrue(omitted, omittedFields) ||
+            summary.execution !== null);
+    const normalizedDiagnosticCodes = unsafe
+        ? uniqueStrings([
+              "renderer_service_bundled_scene_bridge_runtime_registry_installation_preflight_unsafe_metadata",
+              ...diagnosticCodes,
+          ])
+        : diagnosticCodes;
+    const normalizedNextActions = unsafe
+        ? uniqueStrings([
+              "Inspect renderer-service /health bundledSceneBridgeRuntimeRegistryInstallationPreflight before trusting bundled scene bridge runtime registry installation preflight metadata.",
+              ...nextActions,
+          ])
+        : nextActions;
+
+    return {
+        status: unsafe ? "invalid" : present ? statusValue : "not-reported",
+        preflightVersion: present ? normalizeOptionalString(summary.preflightVersion) : null,
+        checked: Boolean(body),
+        owner: normalizeOptionalString(summary.owner),
+        mode: normalizeOptionalString(summary.mode),
+        source: {
+            runtimeRegistrationPreflightVersion: normalizeOptionalString(source.runtimeRegistrationPreflightVersion),
+            registryRegistrationBoundaryVersion: normalizeOptionalString(source.registryRegistrationBoundaryVersion),
+            registryInstallationContractVersion: normalizeOptionalString(source.registryInstallationContractVersion),
+            registryInstallationGateVersion: normalizeOptionalString(source.registryInstallationGateVersion),
+            registryInstallationPreflightVersion: normalizeOptionalString(source.registryInstallationPreflightVersion),
+            registryInstallationGateReady: source.registryInstallationGateReady === true,
+            registryInstallationGateStatus: normalizeOptionalString(source.registryInstallationGateStatus),
+            registryInstallationGateReadiness: normalizeOptionalString(source.registryInstallationGateReadiness),
+            reviewedGateOpen: source.reviewedGateOpen === true,
+            futureInstallationAttemptAllowed: source.futureInstallationAttemptAllowed === true,
+            readiness: normalizeOptionalString(source.readiness),
+        },
+        preflight: {
+            registryInstallationGateReadyRequired: preflight.registryInstallationGateReadyRequired === true,
+            reviewedGateOpenRequired: preflight.reviewedGateOpenRequired === true,
+            futureInstallationAttemptAllowedRequired: preflight.futureInstallationAttemptAllowedRequired === true,
+            rollbackPreconditionsRequired: preflight.rollbackPreconditionsRequired === true,
+            lifecycleOwnershipRequired: preflight.lifecycleOwnershipRequired === true,
+            noDispatchRequired: preflight.noDispatchRequired === true,
+            installationAttemptAllowedInThisTask: preflight.installationAttemptAllowedInThisTask === true,
+            readyForLaterInstallationTask: preflight.readyForLaterInstallationTask === true,
+            registryLookupAttempted: preflight.registryLookupAttempted === true,
+            registryWriteAttempted: preflight.registryWriteAttempted === true,
+            runtimeValueCreated: preflight.runtimeValueCreated === true,
+            runtimeInstallationAttempted: preflight.runtimeInstallationAttempted === true,
+            runtimeInstalled: preflight.runtimeInstalled === true,
+            runtimeRegistered: preflight.runtimeRegistered === true,
+            runtimeRegistration: preflight.runtimeRegistration === true,
+            runtimeExecutionRegistered: preflight.runtimeExecutionRegistered === true,
+            closeHookRegistered: preflight.closeHookRegistered === true,
+            duplicateRollbackAttempted: preflight.duplicateRollbackAttempted === true,
+            renderDispatch: preflight.renderDispatch === true,
+            browserProcessStarted: preflight.browserProcessStarted === true,
+            runtimeValuesIncluded: preflight.runtimeValuesIncluded === true,
+            registryValuesIncluded: preflight.registryValuesIncluded === true,
+        },
+        refusalDiagnostics: {
+            refusalRequired: refusalDiagnostics.refusalRequired === true,
+            refusalReason: normalizeOptionalString(refusalDiagnostics.refusalReason),
+            invalidGateMetadata: refusalDiagnostics.invalidGateMetadata === true,
+            registryLookupRefused: refusalDiagnostics.registryLookupRefused === true,
+            registryWriteRefused: refusalDiagnostics.registryWriteRefused === true,
+            runtimeValueCreationRefused: refusalDiagnostics.runtimeValueCreationRefused === true,
+            runtimeInstallationRefused: refusalDiagnostics.runtimeInstallationRefused === true,
+            closeHookRegistrationRefused: refusalDiagnostics.closeHookRegistrationRefused === true,
+            duplicateRollbackRefused: refusalDiagnostics.duplicateRollbackRefused === true,
+            renderDispatchRefused: refusalDiagnostics.renderDispatchRefused === true,
+            valuesIncluded: refusalDiagnostics.valuesIncluded === true,
+        },
+        rollbackPreconditions: {
+            duplicateDetectionRequired: rollbackPreconditions.duplicateDetectionRequired === true,
+            duplicateRegistrationPolicy: normalizeOptionalString(rollbackPreconditions.duplicateRegistrationPolicy),
+            replacementPolicy: normalizeOptionalString(rollbackPreconditions.replacementPolicy),
+            rollbackRequiredOnDuplicate: rollbackPreconditions.rollbackRequiredOnDuplicate === true,
+            cleanupOnInstallationFailure: rollbackPreconditions.cleanupOnInstallationFailure === true,
+            cleanupOnServiceStop: rollbackPreconditions.cleanupOnServiceStop === true,
+            closeHookCleanupRequired: rollbackPreconditions.closeHookCleanupRequired === true,
+            preconditionsVerified: rollbackPreconditions.preconditionsVerified === true,
+            rollbackPrepared: rollbackPreconditions.rollbackPrepared === true,
+            rollbackAttempted: rollbackPreconditions.rollbackAttempted === true,
+            cleanupAttempted: rollbackPreconditions.cleanupAttempted === true,
+            valuesIncluded: rollbackPreconditions.valuesIncluded === true,
+        },
+        lifecycleOwnership: {
+            lifecycleOwner: normalizeOptionalString(lifecycleOwnership.lifecycleOwner),
+            registryOwner: normalizeOptionalString(lifecycleOwnership.registryOwner),
+            closeHookOwner: normalizeOptionalString(lifecycleOwnership.closeHookOwner),
+            runtimeId: normalizeOptionalString(lifecycleOwnership.runtimeId),
+            targetRegistry: normalizeOptionalString(lifecycleOwnership.targetRegistry),
+            lifecycleScope: normalizeOptionalString(lifecycleOwnership.lifecycleScope),
+            noDispatchLifecycle: lifecycleOwnership.noDispatchLifecycle === true,
+            lifecycleOwnershipVerified: lifecycleOwnership.lifecycleOwnershipVerified === true,
+            closeHookRegistered: lifecycleOwnership.closeHookRegistered === true,
+            runtimeValueOwned: lifecycleOwnership.runtimeValueOwned === true,
+            registrySlotOwned: lifecycleOwnership.registrySlotOwned === true,
+            valuesIncluded: lifecycleOwnership.valuesIncluded === true,
+        },
+        preflightOutcomeTaxonomy,
+        diagnostics,
+        diagnosticCodes: normalizedDiagnosticCodes,
+        nextActions: normalizedNextActions,
+        checks,
+        sideEffects: {
+            registryLookup: sideEffects.registryLookup === true,
+            registryWrite: sideEffects.registryWrite === true,
+            runtimeValueCreation: sideEffects.runtimeValueCreation === true,
+            runtimeInstallation: sideEffects.runtimeInstallation === true,
+            runtimeRegistration: sideEffects.runtimeRegistration === true,
+            runtimeExecutionRegistered: sideEffects.runtimeExecutionRegistered === true,
+            closeHookRegistration: sideEffects.closeHookRegistration === true,
+            duplicateRollback: sideEffects.duplicateRollback === true,
+            renderDispatch: sideEffects.renderDispatch === true,
+            browserProcessStarted: sideEffects.browserProcessStarted === true,
+            browserPageCreated: sideEffects.browserPageCreated === true,
+            runtimeAdapterImported: sideEffects.runtimeAdapterImported === true,
+            runtimeFactoryInvoked: sideEffects.runtimeFactoryInvoked === true,
+            runtimeOptionsCreated: sideEffects.runtimeOptionsCreated === true,
+            runtimeAssetsLoaded: sideEffects.runtimeAssetsLoaded === true,
+            assetManifestMaterialized: sideEffects.assetManifestMaterialized === true,
+            backendRpcReads: sideEffects.backendRpcReads === true,
+            sourceDataReads: sideEffects.sourceDataReads === true,
+            networkDispatch: sideEffects.networkDispatch === true,
+            dispatch: sideEffects.dispatch === true,
+            localFileWrites: sideEffects.localFileWrites === true,
+        },
+        redaction: {
+            modeValuesIncluded: redaction.modeValuesIncluded === true,
+            moduleValuesIncluded: redaction.moduleValuesIncluded === true,
+            factoryValuesIncluded: redaction.factoryValuesIncluded === true,
+            runtimeOptionsValuesIncluded: redaction.runtimeOptionsValuesIncluded === true,
+            optionValuesIncluded: redaction.optionValuesIncluded === true,
+            runtimeValuesIncluded: redaction.runtimeValuesIncluded === true,
+            registryValuesIncluded: redaction.registryValuesIncluded === true,
+            lifecycleValuesIncluded: redaction.lifecycleValuesIncluded === true,
+            pathValuesIncluded: redaction.pathValuesIncluded === true,
+            sourceDataValuesIncluded: redaction.sourceDataValuesIncluded === true,
+            pageValuesIncluded: redaction.pageValuesIncluded === true,
+            artifactValuesIncluded: redaction.artifactValuesIncluded === true,
+            mediaValuesIncluded: redaction.mediaValuesIncluded === true,
+            tokenValuesIncluded: redaction.tokenValuesIncluded === true,
+        },
+        omitted: {
+            configuredValue: omitted.configuredValue !== false,
+            moduleNamespace: omitted.moduleNamespace !== false,
+            factoryValue: omitted.factoryValue !== false,
+            runtimeOptionsValue: omitted.runtimeOptionsValue !== false,
+            optionValues: omitted.optionValues !== false,
+            runtimeValue: omitted.runtimeValue !== false,
+            registryValue: omitted.registryValue !== false,
+            lifecycleHandles: omitted.lifecycleHandles !== false,
+            workspaceRoot: omitted.workspaceRoot !== false,
+            cacheRoot: omitted.cacheRoot !== false,
+            modulePath: omitted.modulePath !== false,
+            publicPaths: omitted.publicPaths !== false,
+            cachePaths: omitted.cachePaths !== false,
+            sha256: omitted.sha256 !== false,
+            playwrightBrowserPath: omitted.playwrightBrowserPath !== false,
+            runtimeModulePath: omitted.runtimeModulePath !== false,
+            sourceData: omitted.sourceData !== false,
+            pageData: omitted.pageData !== false,
+            artifactBytes: omitted.artifactBytes !== false,
+            mediaBytes: omitted.mediaBytes !== false,
+            tokenValues: omitted.tokenValues !== false,
+        },
+        execution: null,
+    };
+}
+
 const RUNTIME_ASSET_PREFLIGHT_DIAGNOSTIC_CODES = new Set([
     "renderer_service_runtime_asset_missing_public_asset",
     "renderer_service_runtime_asset_missing_cache_asset",
@@ -18610,6 +19026,8 @@ export async function executeRenderThumbnailRendererServiceHealthPreflight(plan,
                 normalizeRendererServiceBundledSceneBridgeRuntimeRegistryInstallationContractDiagnostic(bodyRecord),
             bundledSceneBridgeRuntimeRegistryInstallationGate:
                 normalizeRendererServiceBundledSceneBridgeRuntimeRegistryInstallationGateDiagnostic(bodyRecord),
+            bundledSceneBridgeRuntimeRegistryInstallationPreflight:
+                normalizeRendererServiceBundledSceneBridgeRuntimeRegistryInstallationPreflightDiagnostic(bodyRecord),
             browserFixtureRuntime: normalizeRendererServiceBrowserFixtureRuntimeDiagnostic(bodyRecord),
             response: {
                 status: httpStatus,

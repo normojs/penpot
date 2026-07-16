@@ -2010,6 +2010,163 @@ function getRendererServiceLifecyclePlan(args: string[], env: NodeJS.ProcessEnv)
             tokenValues: true;
         };
     };
+    bundledSceneBridgeRuntimeRegistryInstallationPreflight: {
+        status: "blocked" | "invalid";
+        preflightVersion: "P26.44";
+        checked: false;
+        owner: "renderer-service";
+        mode: "guarded-runtime-registry-installation-preflight";
+        source: {
+            runtimeRegistrationPreflightVersion: "P26.40";
+            registryRegistrationBoundaryVersion: "P26.41";
+            registryInstallationContractVersion: "P26.42";
+            registryInstallationGateVersion: "P26.43";
+            registryInstallationPreflightVersion: "P26.44";
+            registryInstallationGateReady: false;
+            registryInstallationGateStatus: "planned-disabled" | "invalid";
+            registryInstallationGateReadiness:
+                | "blocked-until-installation-contract-ready"
+                | "invalid-installation-gate-configuration";
+            reviewedGateOpen: false;
+            futureInstallationAttemptAllowed: false;
+            readiness: "blocked-until-renderer-service-health" | "invalid-installation-gate";
+        };
+        preflight: {
+            registryInstallationGateReadyRequired: true;
+            reviewedGateOpenRequired: true;
+            futureInstallationAttemptAllowedRequired: true;
+            rollbackPreconditionsRequired: true;
+            lifecycleOwnershipRequired: true;
+            noDispatchRequired: true;
+            installationAttemptAllowedInThisTask: false;
+            readyForLaterInstallationTask: false;
+            registryLookupAttempted: false;
+            registryWriteAttempted: false;
+            runtimeValueCreated: false;
+            runtimeInstallationAttempted: false;
+            runtimeInstalled: false;
+            runtimeRegistered: false;
+            runtimeRegistration: false;
+            runtimeExecutionRegistered: false;
+            closeHookRegistered: false;
+            duplicateRollbackAttempted: false;
+            renderDispatch: false;
+            browserProcessStarted: false;
+            runtimeValuesIncluded: false;
+            registryValuesIncluded: false;
+        };
+        refusalDiagnostics: {
+            refusalRequired: true;
+            refusalReason: "renderer-service-health-not-checked" | "installation-gate-invalid";
+            invalidGateMetadata: boolean;
+            registryLookupRefused: true;
+            registryWriteRefused: true;
+            runtimeValueCreationRefused: true;
+            runtimeInstallationRefused: true;
+            closeHookRegistrationRefused: true;
+            duplicateRollbackRefused: true;
+            renderDispatchRefused: true;
+            valuesIncluded: false;
+        };
+        rollbackPreconditions: {
+            duplicateDetectionRequired: true;
+            duplicateRegistrationPolicy: "reject-until-explicit-replace-policy";
+            replacementPolicy: "not-supported-until-reviewed";
+            rollbackRequiredOnDuplicate: true;
+            cleanupOnInstallationFailure: true;
+            cleanupOnServiceStop: true;
+            closeHookCleanupRequired: true;
+            preconditionsVerified: false;
+            rollbackPrepared: false;
+            rollbackAttempted: false;
+            cleanupAttempted: false;
+            valuesIncluded: false;
+        };
+        lifecycleOwnership: {
+            lifecycleOwner: "renderer-service";
+            registryOwner: "renderer-service";
+            closeHookOwner: "renderer-service";
+            runtimeId: "bundled-scene-bridge";
+            targetRegistry: "renderer-service.thumbnail-runtime-registry";
+            lifecycleScope: "thumbnail-runtime-registry";
+            noDispatchLifecycle: true;
+            lifecycleOwnershipVerified: false;
+            closeHookRegistered: false;
+            runtimeValueOwned: false;
+            registrySlotOwned: false;
+            valuesIncluded: false;
+        };
+        diagnosticsVersion: "P26.44";
+        diagnosticCodes: string[];
+        diagnostics: Array<{
+            code:
+                | "renderer_service_bundled_scene_bridge_runtime_registry_installation_preflight_health_not_checked"
+                | "renderer_service_bundled_scene_bridge_runtime_registry_installation_preflight_gate_invalid";
+            severity: "blocked" | "invalid";
+            field: "source.registryInstallationGateReady" | "source.registryInstallationGateStatus";
+            env: typeof RENDERER_SERVICE_BUNDLED_SCENE_BRIDGE_RUNTIME_INSTALLATION_GATE_ENV;
+            valueRead: false;
+            valuesIncluded: false;
+            message: string;
+            nextActions: string[];
+        }>;
+        nextActions: string[];
+        diagnosticsSurface: "healthPreflight.bundledSceneBridgeRuntimeRegistryInstallationPreflight";
+        lifecyclePlanEffects: {
+            healthProbe: false;
+            registryLookup: false;
+            registryWrite: false;
+            runtimeValueCreation: false;
+            runtimeInstallation: false;
+            runtimeRegistration: false;
+            runtimeExecutionRegistered: false;
+            closeHookRegistration: false;
+            duplicateRollback: false;
+            renderDispatch: false;
+            browserProcessStarted: false;
+            runtimeAdapterImported: false;
+            runtimeFactoryInvoked: false;
+            runtimeOptionsCreated: false;
+            runtimeAssetsLoaded: false;
+            assetManifestMaterialized: false;
+            backendRpcReads: false;
+            sourceDataReads: false;
+            networkDispatch: false;
+            localFileWrites: false;
+            sourceDataValuesIncluded: false;
+            pageValuesIncluded: false;
+            artifactValuesIncluded: false;
+            mediaValuesIncluded: false;
+            tokenValuesIncluded: false;
+            pathValuesIncluded: false;
+            runtimeValuesIncluded: false;
+            registryValuesIncluded: false;
+            lifecycleValuesIncluded: false;
+        };
+        omitted: {
+            configuredValue: true;
+            moduleNamespace: true;
+            factoryValue: true;
+            runtimeOptionsValue: true;
+            optionValues: true;
+            runtimeValue: true;
+            registryValue: true;
+            lifecycleHandles: true;
+            modulePath: true;
+            workspaceRoot: true;
+            cacheRoot: true;
+            publicPaths: true;
+            cachePaths: true;
+            sha256: true;
+            playwrightBrowserPath: true;
+            runtimeModulePath: true;
+            sourceData: true;
+            pageData: true;
+            artifactBytes: true;
+            mediaBytes: true;
+            tokenValues: true;
+        };
+    };
     runtimeAssetPreflight: {
         configured: boolean;
         executeReadOnly: boolean;
@@ -2368,6 +2525,40 @@ function getRendererServiceLifecyclePlan(args: string[], env: NodeJS.ProcessEnv)
               message: "Renderer-service bundled scene bridge runtime registry installation gate is planned through /health, but CLI lifecycle planning does not install runtime registry values.",
               nextActions: bundledSceneBridgeRuntimeRegistryInstallationGateNextActions,
           };
+    const bundledSceneBridgeRuntimeRegistryInstallationPreflightInvalid =
+        bundledSceneBridgeRuntimeRegistryInstallationGateInvalid;
+    const bundledSceneBridgeRuntimeRegistryInstallationPreflightNextActions =
+        bundledSceneBridgeRuntimeRegistryInstallationPreflightInvalid
+            ? [
+                  `Set ${RENDERER_SERVICE_BUNDLED_SCENE_BRIDGE_RUNTIME_INSTALLATION_GATE_ENV}=reviewed only after reviewing the P26.42 installation contract, or leave it unset.`,
+                  "Rerun penpot-cli renderer-service status after fixing the installation preflight gate input.",
+              ]
+            : [
+                  "Start renderer-service and query /health to verify whether bundledSceneBridgeRuntimeRegistryInstallationPreflight reports ready after the reviewed P26.43 gate.",
+                  "Keep registry lookup, registry writes, runtime value creation, runtime installation, close-hook registration, rollback execution, render dispatch, browser startup, asset/backend/source reads, local writes, and value exposure disabled until a later reviewed installation execution task.",
+              ];
+    const bundledSceneBridgeRuntimeRegistryInstallationPreflightDiagnostic =
+        bundledSceneBridgeRuntimeRegistryInstallationPreflightInvalid
+            ? {
+                  code: "renderer_service_bundled_scene_bridge_runtime_registry_installation_preflight_gate_invalid" as const,
+                  severity: "invalid" as const,
+                  field: "source.registryInstallationGateStatus" as const,
+                  env: RENDERER_SERVICE_BUNDLED_SCENE_BRIDGE_RUNTIME_INSTALLATION_GATE_ENV,
+                  valueRead: false as const,
+                  valuesIncluded: false as const,
+                  message: "Renderer-service bundled scene bridge runtime registry installation preflight is invalid until the P26.43 gate configuration is fixed.",
+                  nextActions: bundledSceneBridgeRuntimeRegistryInstallationPreflightNextActions,
+              }
+            : {
+                  code: "renderer_service_bundled_scene_bridge_runtime_registry_installation_preflight_health_not_checked" as const,
+                  severity: "blocked" as const,
+                  field: "source.registryInstallationGateReady" as const,
+                  env: RENDERER_SERVICE_BUNDLED_SCENE_BRIDGE_RUNTIME_INSTALLATION_GATE_ENV,
+                  valueRead: false as const,
+                  valuesIncluded: false as const,
+                  message: "Renderer-service bundled scene bridge runtime registry installation preflight must be read from renderer-service /health; CLI lifecycle planning does not run the preflight or install runtime registry values.",
+                  nextActions: bundledSceneBridgeRuntimeRegistryInstallationPreflightNextActions,
+              };
     const runtimeAssetPreflightValue = env[RENDERER_SERVICE_RUNTIME_ASSET_PREFLIGHT_ENV]?.trim() || null;
     const runtimeAssetPreflightWorkspaceRoot = env[RENDERER_SERVICE_RUNTIME_ASSET_PREFLIGHT_WORKSPACE_ROOT_ENV]?.trim() || null;
     const runtimeAssetPreflightCacheRoot = env[RENDERER_SERVICE_RUNTIME_ASSET_PREFLIGHT_CACHE_ROOT_ENV]?.trim() || null;
@@ -3442,6 +3633,158 @@ function getRendererServiceLifecyclePlan(args: string[], env: NodeJS.ProcessEnv)
                 runtimeOptionsCreated: false,
                 runtimeAssetsLoaded: false,
                 assetManifestMaterialized: false,
+                networkDispatch: false,
+                localFileWrites: false,
+                sourceDataValuesIncluded: false,
+                pageValuesIncluded: false,
+                artifactValuesIncluded: false,
+                mediaValuesIncluded: false,
+                tokenValuesIncluded: false,
+                pathValuesIncluded: false,
+                runtimeValuesIncluded: false,
+                registryValuesIncluded: false,
+                lifecycleValuesIncluded: false,
+            },
+            omitted: {
+                configuredValue: true,
+                moduleNamespace: true,
+                factoryValue: true,
+                runtimeOptionsValue: true,
+                optionValues: true,
+                runtimeValue: true,
+                registryValue: true,
+                lifecycleHandles: true,
+                modulePath: true,
+                workspaceRoot: true,
+                cacheRoot: true,
+                publicPaths: true,
+                cachePaths: true,
+                sha256: true,
+                playwrightBrowserPath: true,
+                runtimeModulePath: true,
+                sourceData: true,
+                pageData: true,
+                artifactBytes: true,
+                mediaBytes: true,
+                tokenValues: true,
+            },
+        },
+        bundledSceneBridgeRuntimeRegistryInstallationPreflight: {
+            status: bundledSceneBridgeRuntimeRegistryInstallationPreflightInvalid ? "invalid" : "blocked",
+            preflightVersion: "P26.44",
+            checked: false,
+            owner: "renderer-service",
+            mode: "guarded-runtime-registry-installation-preflight",
+            source: {
+                runtimeRegistrationPreflightVersion: "P26.40",
+                registryRegistrationBoundaryVersion: "P26.41",
+                registryInstallationContractVersion: "P26.42",
+                registryInstallationGateVersion: "P26.43",
+                registryInstallationPreflightVersion: "P26.44",
+                registryInstallationGateReady: false,
+                registryInstallationGateStatus: bundledSceneBridgeRuntimeRegistryInstallationPreflightInvalid
+                    ? "invalid"
+                    : "planned-disabled",
+                registryInstallationGateReadiness: bundledSceneBridgeRuntimeRegistryInstallationPreflightInvalid
+                    ? "invalid-installation-gate-configuration"
+                    : "blocked-until-installation-contract-ready",
+                reviewedGateOpen: false,
+                futureInstallationAttemptAllowed: false,
+                readiness: bundledSceneBridgeRuntimeRegistryInstallationPreflightInvalid
+                    ? "invalid-installation-gate"
+                    : "blocked-until-renderer-service-health",
+            },
+            preflight: {
+                registryInstallationGateReadyRequired: true,
+                reviewedGateOpenRequired: true,
+                futureInstallationAttemptAllowedRequired: true,
+                rollbackPreconditionsRequired: true,
+                lifecycleOwnershipRequired: true,
+                noDispatchRequired: true,
+                installationAttemptAllowedInThisTask: false,
+                readyForLaterInstallationTask: false,
+                registryLookupAttempted: false,
+                registryWriteAttempted: false,
+                runtimeValueCreated: false,
+                runtimeInstallationAttempted: false,
+                runtimeInstalled: false,
+                runtimeRegistered: false,
+                runtimeRegistration: false,
+                runtimeExecutionRegistered: false,
+                closeHookRegistered: false,
+                duplicateRollbackAttempted: false,
+                renderDispatch: false,
+                browserProcessStarted: false,
+                runtimeValuesIncluded: false,
+                registryValuesIncluded: false,
+            },
+            refusalDiagnostics: {
+                refusalRequired: true,
+                refusalReason: bundledSceneBridgeRuntimeRegistryInstallationPreflightInvalid
+                    ? "installation-gate-invalid"
+                    : "renderer-service-health-not-checked",
+                invalidGateMetadata: bundledSceneBridgeRuntimeRegistryInstallationPreflightInvalid,
+                registryLookupRefused: true,
+                registryWriteRefused: true,
+                runtimeValueCreationRefused: true,
+                runtimeInstallationRefused: true,
+                closeHookRegistrationRefused: true,
+                duplicateRollbackRefused: true,
+                renderDispatchRefused: true,
+                valuesIncluded: false,
+            },
+            rollbackPreconditions: {
+                duplicateDetectionRequired: true,
+                duplicateRegistrationPolicy: "reject-until-explicit-replace-policy",
+                replacementPolicy: "not-supported-until-reviewed",
+                rollbackRequiredOnDuplicate: true,
+                cleanupOnInstallationFailure: true,
+                cleanupOnServiceStop: true,
+                closeHookCleanupRequired: true,
+                preconditionsVerified: false,
+                rollbackPrepared: false,
+                rollbackAttempted: false,
+                cleanupAttempted: false,
+                valuesIncluded: false,
+            },
+            lifecycleOwnership: {
+                lifecycleOwner: "renderer-service",
+                registryOwner: "renderer-service",
+                closeHookOwner: "renderer-service",
+                runtimeId: "bundled-scene-bridge",
+                targetRegistry: "renderer-service.thumbnail-runtime-registry",
+                lifecycleScope: "thumbnail-runtime-registry",
+                noDispatchLifecycle: true,
+                lifecycleOwnershipVerified: false,
+                closeHookRegistered: false,
+                runtimeValueOwned: false,
+                registrySlotOwned: false,
+                valuesIncluded: false,
+            },
+            diagnosticsVersion: "P26.44",
+            diagnosticCodes: [bundledSceneBridgeRuntimeRegistryInstallationPreflightDiagnostic.code],
+            diagnostics: [bundledSceneBridgeRuntimeRegistryInstallationPreflightDiagnostic],
+            nextActions: bundledSceneBridgeRuntimeRegistryInstallationPreflightNextActions,
+            diagnosticsSurface: "healthPreflight.bundledSceneBridgeRuntimeRegistryInstallationPreflight",
+            lifecyclePlanEffects: {
+                healthProbe: false,
+                registryLookup: false,
+                registryWrite: false,
+                runtimeValueCreation: false,
+                runtimeInstallation: false,
+                runtimeRegistration: false,
+                runtimeExecutionRegistered: false,
+                closeHookRegistration: false,
+                duplicateRollback: false,
+                renderDispatch: false,
+                browserProcessStarted: false,
+                runtimeAdapterImported: false,
+                runtimeFactoryInvoked: false,
+                runtimeOptionsCreated: false,
+                runtimeAssetsLoaded: false,
+                assetManifestMaterialized: false,
+                backendRpcReads: false,
+                sourceDataReads: false,
                 networkDispatch: false,
                 localFileWrites: false,
                 sourceDataValuesIncluded: false,
@@ -7695,6 +8038,10 @@ async function handleRendererServiceStatus(args: string[], io: CliIO, env: NodeJ
         );
         writeLine(
             io.stdout,
+            `Bundled scene bridge runtime registry installation preflight: ${plan.bundledSceneBridgeRuntimeRegistryInstallationPreflight.status}`
+        );
+        writeLine(
+            io.stdout,
             `Runtime asset preflight: ${plan.runtimeAssetPreflight.executeReadOnly ? "read-only" : "disabled"}`
         );
         if (plan.browserFixtureRuntime.diagnosticCodes.length > 0) {
@@ -7784,6 +8131,16 @@ async function handleRendererServiceStatus(args: string[], io: CliIO, env: NodeJ
                 writeLine(io.stdout, `- ${action}`);
             }
         }
+        if (plan.bundledSceneBridgeRuntimeRegistryInstallationPreflight.diagnosticCodes.length > 0) {
+            writeLine(
+                io.stdout,
+                `Bundled scene bridge runtime registry installation preflight diagnostics: ${plan.bundledSceneBridgeRuntimeRegistryInstallationPreflight.diagnosticCodes.join(", ")}`
+            );
+            writeLine(io.stdout, "Runtime registry installation preflight next actions:");
+            for (const action of plan.bundledSceneBridgeRuntimeRegistryInstallationPreflight.nextActions) {
+                writeLine(io.stdout, `- ${action}`);
+            }
+        }
         writeLine(
             io.stdout,
             `Runtime asset materialization dry-run: ${plan.runtimeAssetMaterializationDryRun.status}, approval required`
@@ -7839,6 +8196,7 @@ async function handleRendererServiceStart(args: string[], io: CliIO, env: NodeJS
             "Stop the host with Ctrl-C or SIGTERM.",
             "MCP and CLI render.thumbnail execution still requires explicit renderer-service opt-in after the host starts.",
             ...plan.bundledSceneBridgeRuntimeRegistryInstallationGate.nextActions,
+            ...plan.bundledSceneBridgeRuntimeRegistryInstallationPreflight.nextActions,
             ...plan.runtimeAssetPreflight.nextActions,
         ],
         {

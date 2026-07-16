@@ -50,6 +50,8 @@ const bundledSceneBridgeRuntimeRegistryInstallationContractFixture =
     renderThumbnailRendererServiceFixtures.bundledRuntimeBridge.bundledSceneBridgeRuntimeRegistryInstallationContract;
 const bundledSceneBridgeRuntimeRegistryInstallationGateFixture =
     renderThumbnailRendererServiceFixtures.bundledRuntimeBridge.bundledSceneBridgeRuntimeRegistryInstallationGate;
+const bundledSceneBridgeRuntimeRegistryInstallationPreflightFixture =
+    renderThumbnailRendererServiceFixtures.bundledRuntimeBridge.bundledSceneBridgeRuntimeRegistryInstallationPreflight;
 
 function getRenderThumbnailRendererServiceFixture(id) {
     const fixture = renderThumbnailRendererServiceFixtures.cases.find((entry) => entry.id === id);
@@ -7530,6 +7532,47 @@ test("renderer-service status reports a no-spawn lifecycle plan without probing"
         assert.equal(installationGate.omitted.runtimeValue, true);
         assert.equal(installationGate.omitted.registryValue, true);
         assert.equal(installationGate.omitted.lifecycleHandles, true);
+        const installationPreflight = body.data.lifecycle.bundledSceneBridgeRuntimeRegistryInstallationPreflight;
+        assert.equal(installationPreflight.status, "blocked");
+        assert.equal(installationPreflight.preflightVersion, "P26.44");
+        assert.equal(installationPreflight.checked, false);
+        assert.equal(installationPreflight.source.registryInstallationGateReady, false);
+        assert.equal(installationPreflight.source.registryInstallationGateStatus, "planned-disabled");
+        assert.equal(installationPreflight.source.readiness, "blocked-until-renderer-service-health");
+        assert.equal(installationPreflight.preflight.readyForLaterInstallationTask, false);
+        assert.equal(installationPreflight.preflight.registryLookupAttempted, false);
+        assert.equal(installationPreflight.preflight.runtimeInstallationAttempted, false);
+        assert.equal(installationPreflight.preflight.runtimeInstalled, false);
+        assert.equal(installationPreflight.preflight.renderDispatch, false);
+        assert.equal(installationPreflight.refusalDiagnostics.refusalReason, "renderer-service-health-not-checked");
+        assert.equal(installationPreflight.refusalDiagnostics.valuesIncluded, false);
+        assert.equal(installationPreflight.rollbackPreconditions.preconditionsVerified, false);
+        assert.equal(installationPreflight.rollbackPreconditions.rollbackAttempted, false);
+        assert.equal(installationPreflight.lifecycleOwnership.lifecycleOwnershipVerified, false);
+        assert.equal(installationPreflight.lifecycleOwnership.runtimeValueOwned, false);
+        assert.deepEqual(installationPreflight.diagnosticCodes, [
+            "renderer_service_bundled_scene_bridge_runtime_registry_installation_preflight_health_not_checked",
+        ]);
+        assert.equal(
+            installationPreflight.diagnosticsSurface,
+            "healthPreflight.bundledSceneBridgeRuntimeRegistryInstallationPreflight"
+        );
+        assert.equal(installationPreflight.lifecyclePlanEffects.healthProbe, false);
+        assert.equal(installationPreflight.lifecyclePlanEffects.registryLookup, false);
+        assert.equal(installationPreflight.lifecyclePlanEffects.registryWrite, false);
+        assert.equal(installationPreflight.lifecyclePlanEffects.runtimeValueCreation, false);
+        assert.equal(installationPreflight.lifecyclePlanEffects.runtimeInstallation, false);
+        assert.equal(installationPreflight.lifecyclePlanEffects.closeHookRegistration, false);
+        assert.equal(installationPreflight.lifecyclePlanEffects.duplicateRollback, false);
+        assert.equal(installationPreflight.lifecyclePlanEffects.renderDispatch, false);
+        assert.equal(installationPreflight.lifecyclePlanEffects.backendRpcReads, false);
+        assert.equal(installationPreflight.lifecyclePlanEffects.sourceDataReads, false);
+        assert.equal(installationPreflight.lifecyclePlanEffects.runtimeValuesIncluded, false);
+        assert.equal(installationPreflight.lifecyclePlanEffects.registryValuesIncluded, false);
+        assert.equal(installationPreflight.omitted.configuredValue, true);
+        assert.equal(installationPreflight.omitted.runtimeValue, true);
+        assert.equal(installationPreflight.omitted.registryValue, true);
+        assert.equal(installationPreflight.omitted.lifecycleHandles, true);
         assert.deepEqual(body.data.lifecycle.backendRpcPlanning, {
             configured: true,
             baseUri: "https://penpot.example.test",
@@ -7778,6 +7821,15 @@ test("renderer-service status text reports bundled scene bridge registry install
         /Bundled scene bridge runtime registry installation gate diagnostics: renderer_service_bundled_scene_bridge_runtime_registry_installation_gate_contract_not_ready/
     );
     assert.match(result.stdout, /Runtime registry installation gate next actions:/);
+    assert.match(
+        result.stdout,
+        /Bundled scene bridge runtime registry installation preflight: blocked/
+    );
+    assert.match(
+        result.stdout,
+        /Bundled scene bridge runtime registry installation preflight diagnostics: renderer_service_bundled_scene_bridge_runtime_registry_installation_preflight_health_not_checked/
+    );
+    assert.match(result.stdout, /Runtime registry installation preflight next actions:/);
 });
 
 test("renderer-service status reports runtime asset preflight configuration diagnostics", async () => {
@@ -7970,6 +8022,7 @@ test("renderer-service status reports bundled scene bridge registration prefligh
     const registryBoundary = body.data.lifecycle.bundledSceneBridgeRuntimeRegistryRegistrationBoundary;
     const installationContract = body.data.lifecycle.bundledSceneBridgeRuntimeRegistryInstallationContract;
     const installationGate = body.data.lifecycle.bundledSceneBridgeRuntimeRegistryInstallationGate;
+    const installationPreflight = body.data.lifecycle.bundledSceneBridgeRuntimeRegistryInstallationPreflight;
 
     assert.equal(result.exitCode, 0);
     assert.equal(importGate.status, "configured-disabled");
@@ -8046,6 +8099,22 @@ test("renderer-service status reports bundled scene bridge registration prefligh
     assert.ok(
         installationGate.nextActions.some((entry) => entry.includes("bundledSceneBridgeRuntimeRegistryInstallationGate"))
     );
+    assert.equal(installationPreflight.status, "blocked");
+    assert.equal(installationPreflight.preflightVersion, "P26.44");
+    assert.equal(installationPreflight.checked, false);
+    assert.equal(installationPreflight.source.registryInstallationGateReady, false);
+    assert.equal(installationPreflight.source.readiness, "blocked-until-renderer-service-health");
+    assert.equal(installationPreflight.preflight.readyForLaterInstallationTask, false);
+    assert.equal(installationPreflight.preflight.runtimeInstalled, false);
+    assert.equal(installationPreflight.lifecyclePlanEffects.healthProbe, false);
+    assert.equal(installationPreflight.lifecyclePlanEffects.registryLookup, false);
+    assert.equal(installationPreflight.lifecyclePlanEffects.registryWrite, false);
+    assert.equal(installationPreflight.lifecyclePlanEffects.runtimeInstallation, false);
+    assert.equal(installationPreflight.lifecyclePlanEffects.renderDispatch, false);
+    assert.equal(installationPreflight.omitted.runtimeValue, true);
+    assert.ok(
+        installationPreflight.nextActions.some((entry) => entry.includes("bundledSceneBridgeRuntimeRegistryInstallationPreflight"))
+    );
     assert.match(
         body.data.lifecycle.startCommand,
         /PENPOT_RENDERER_SERVICE_BUNDLED_SCENE_BRIDGE_RUNTIME=registration-preflight/
@@ -8058,6 +8127,7 @@ test("renderer-service status reports reviewed runtime registry installation gat
     });
     const body = parseJson(result.stdout);
     const installationGate = body.data.lifecycle.bundledSceneBridgeRuntimeRegistryInstallationGate;
+    const installationPreflight = body.data.lifecycle.bundledSceneBridgeRuntimeRegistryInstallationPreflight;
 
     assert.equal(result.exitCode, 0);
     assert.equal(installationGate.status, "planned-disabled");
@@ -8080,6 +8150,21 @@ test("renderer-service status reports reviewed runtime registry installation gat
     assert.deepEqual(installationGate.diagnosticCodes, [
         "renderer_service_bundled_scene_bridge_runtime_registry_installation_gate_contract_not_ready",
     ]);
+    assert.equal(installationPreflight.status, "blocked");
+    assert.equal(installationPreflight.checked, false);
+    assert.equal(installationPreflight.source.registryInstallationGateReady, false);
+    assert.equal(installationPreflight.source.registryInstallationGateStatus, "planned-disabled");
+    assert.equal(installationPreflight.source.reviewedGateOpen, false);
+    assert.equal(installationPreflight.source.futureInstallationAttemptAllowed, false);
+    assert.equal(installationPreflight.source.readiness, "blocked-until-renderer-service-health");
+    assert.equal(installationPreflight.preflight.readyForLaterInstallationTask, false);
+    assert.equal(installationPreflight.preflight.runtimeInstalled, false);
+    assert.equal(installationPreflight.lifecyclePlanEffects.healthProbe, false);
+    assert.equal(installationPreflight.lifecyclePlanEffects.registryLookup, false);
+    assert.equal(installationPreflight.lifecyclePlanEffects.runtimeInstallation, false);
+    assert.deepEqual(installationPreflight.diagnosticCodes, [
+        "renderer_service_bundled_scene_bridge_runtime_registry_installation_preflight_health_not_checked",
+    ]);
     assert.match(
         body.data.lifecycle.startCommand,
         /PENPOT_RENDERER_SERVICE_BUNDLED_SCENE_BRIDGE_RUNTIME_INSTALLATION_GATE=reviewed/
@@ -8092,6 +8177,7 @@ test("renderer-service status reports invalid runtime registry installation gate
     });
     const body = parseJson(result.stdout);
     const installationGate = body.data.lifecycle.bundledSceneBridgeRuntimeRegistryInstallationGate;
+    const installationPreflight = body.data.lifecycle.bundledSceneBridgeRuntimeRegistryInstallationPreflight;
 
     assert.equal(result.exitCode, 0);
     assert.equal(installationGate.status, "invalid");
@@ -8109,6 +8195,19 @@ test("renderer-service status reports invalid runtime registry installation gate
     assert.equal(installationGate.lifecyclePlanEffects.runtimeInstallation, false);
     assert.equal(installationGate.omitted.configuredValue, true);
     assert.equal(JSON.stringify(installationGate).includes("enabled"), false);
+    assert.equal(installationPreflight.status, "invalid");
+    assert.equal(installationPreflight.source.registryInstallationGateStatus, "invalid");
+    assert.equal(installationPreflight.source.readiness, "invalid-installation-gate");
+    assert.equal(installationPreflight.refusalDiagnostics.invalidGateMetadata, true);
+    assert.equal(installationPreflight.refusalDiagnostics.valuesIncluded, false);
+    assert.deepEqual(installationPreflight.diagnosticCodes, [
+        "renderer_service_bundled_scene_bridge_runtime_registry_installation_preflight_gate_invalid",
+    ]);
+    assert.equal(installationPreflight.lifecyclePlanEffects.registryLookup, false);
+    assert.equal(installationPreflight.lifecyclePlanEffects.registryWrite, false);
+    assert.equal(installationPreflight.lifecyclePlanEffects.runtimeInstallation, false);
+    assert.equal(installationPreflight.omitted.configuredValue, true);
+    assert.equal(JSON.stringify(installationPreflight).includes("enabled"), false);
 });
 
 test("renderer-service status reports bundled scene bridge import gate conflicts", async () => {
@@ -8212,7 +8311,33 @@ test("renderer-service start keeps startup manual and does not spawn a process",
     );
     assert.equal(body.error.data.lifecycle.bundledSceneBridgeRuntimeRegistryInstallationGate.omitted.configuredValue, true);
     assert.equal(body.error.data.lifecycle.bundledSceneBridgeRuntimeRegistryInstallationGate.omitted.runtimeValue, true);
+    assert.equal(body.error.data.lifecycle.bundledSceneBridgeRuntimeRegistryInstallationPreflight.status, "blocked");
+    assert.equal(body.error.data.lifecycle.bundledSceneBridgeRuntimeRegistryInstallationPreflight.checked, false);
+    assert.equal(
+        body.error.data.lifecycle.bundledSceneBridgeRuntimeRegistryInstallationPreflight.source.registryInstallationGateReady,
+        false
+    );
+    assert.equal(
+        body.error.data.lifecycle.bundledSceneBridgeRuntimeRegistryInstallationPreflight.preflight.readyForLaterInstallationTask,
+        false
+    );
+    assert.equal(
+        body.error.data.lifecycle.bundledSceneBridgeRuntimeRegistryInstallationPreflight.lifecyclePlanEffects.registryLookup,
+        false
+    );
+    assert.equal(
+        body.error.data.lifecycle.bundledSceneBridgeRuntimeRegistryInstallationPreflight.lifecyclePlanEffects.runtimeInstallation,
+        false
+    );
+    assert.equal(
+        body.error.data.lifecycle.bundledSceneBridgeRuntimeRegistryInstallationPreflight.lifecyclePlanEffects.renderDispatch,
+        false
+    );
+    assert.equal(body.error.data.lifecycle.bundledSceneBridgeRuntimeRegistryInstallationPreflight.omitted.runtimeValue, true);
     assert.match(body.error.actions[0], /PENPOT_RENDERER_SERVICE_PORT=6073/);
+    assert.ok(
+        body.error.actions.some((entry) => entry.includes("bundledSceneBridgeRuntimeRegistryInstallationPreflight"))
+    );
 });
 
 test("renderer-service lifecycle commands reject invalid local ports", async () => {
@@ -10784,6 +10909,7 @@ test("render thumbnail execution opt-in posts to renderer-service and returns re
                         "thumbnail.render.bundled-scene-bridge-runtime-registry-registration-boundary",
                         "thumbnail.render.bundled-scene-bridge-runtime-registry-installation-contract",
                         "thumbnail.render.bundled-scene-bridge-runtime-registry-installation-gate",
+                        "thumbnail.render.bundled-scene-bridge-runtime-registry-installation-preflight",
                     ],
                     bundledSceneBridgeContract: bundledSceneBridgeContractFixture,
                     bundledSceneBridgeAdapterModule: bundledSceneBridgeAdapterModuleFixture,
@@ -10801,6 +10927,8 @@ test("render thumbnail execution opt-in posts to renderer-service and returns re
                         bundledSceneBridgeRuntimeRegistryInstallationContractFixture,
                     bundledSceneBridgeRuntimeRegistryInstallationGate:
                         bundledSceneBridgeRuntimeRegistryInstallationGateFixture,
+                    bundledSceneBridgeRuntimeRegistryInstallationPreflight:
+                        bundledSceneBridgeRuntimeRegistryInstallationPreflightFixture,
                     browserFixtureRuntime: {
                         status: "started",
                         diagnosticsVersion: "P26.31",
@@ -11610,6 +11738,72 @@ test("render thumbnail execution opt-in posts to renderer-service and returns re
         );
         assert.equal(
             body.data.healthPreflight.bundledSceneBridgeRuntimeRegistryInstallationGate.omitted.runtimeValue,
+            true
+        );
+        assert.equal(body.data.healthPreflight.bundledSceneBridgeRuntimeRegistryInstallationPreflight.status, "blocked");
+        assert.equal(
+            body.data.healthPreflight.bundledSceneBridgeRuntimeRegistryInstallationPreflight.preflightVersion,
+            "P26.44"
+        );
+        assert.equal(body.data.healthPreflight.bundledSceneBridgeRuntimeRegistryInstallationPreflight.checked, true);
+        assert.equal(
+            body.data.healthPreflight.bundledSceneBridgeRuntimeRegistryInstallationPreflight.source.registryInstallationGateReady,
+            false
+        );
+        assert.equal(
+            body.data.healthPreflight.bundledSceneBridgeRuntimeRegistryInstallationPreflight.source.registryInstallationGateStatus,
+            "planned-disabled"
+        );
+        assert.equal(
+            body.data.healthPreflight.bundledSceneBridgeRuntimeRegistryInstallationPreflight.preflight.readyForLaterInstallationTask,
+            false
+        );
+        assert.equal(
+            body.data.healthPreflight.bundledSceneBridgeRuntimeRegistryInstallationPreflight.preflight.runtimeInstalled,
+            false
+        );
+        assert.equal(
+            body.data.healthPreflight.bundledSceneBridgeRuntimeRegistryInstallationPreflight.refusalDiagnostics.valuesIncluded,
+            false
+        );
+        assert.equal(
+            body.data.healthPreflight.bundledSceneBridgeRuntimeRegistryInstallationPreflight.rollbackPreconditions.preconditionsVerified,
+            false
+        );
+        assert.equal(
+            body.data.healthPreflight.bundledSceneBridgeRuntimeRegistryInstallationPreflight.rollbackPreconditions.rollbackAttempted,
+            false
+        );
+        assert.equal(
+            body.data.healthPreflight.bundledSceneBridgeRuntimeRegistryInstallationPreflight.lifecycleOwnership.runtimeValueOwned,
+            false
+        );
+        assert.deepEqual(
+            body.data.healthPreflight.bundledSceneBridgeRuntimeRegistryInstallationPreflight.diagnosticCodes,
+            ["renderer_service_bundled_scene_bridge_runtime_registry_installation_preflight_gate_not_ready"]
+        );
+        assert.equal(
+            body.data.healthPreflight.bundledSceneBridgeRuntimeRegistryInstallationPreflight.sideEffects.registryLookup,
+            false
+        );
+        assert.equal(
+            body.data.healthPreflight.bundledSceneBridgeRuntimeRegistryInstallationPreflight.sideEffects.registryWrite,
+            false
+        );
+        assert.equal(
+            body.data.healthPreflight.bundledSceneBridgeRuntimeRegistryInstallationPreflight.sideEffects.runtimeInstallation,
+            false
+        );
+        assert.equal(
+            body.data.healthPreflight.bundledSceneBridgeRuntimeRegistryInstallationPreflight.redaction.runtimeValuesIncluded,
+            false
+        );
+        assert.equal(
+            body.data.healthPreflight.bundledSceneBridgeRuntimeRegistryInstallationPreflight.omitted.configuredValue,
+            true
+        );
+        assert.equal(
+            body.data.healthPreflight.bundledSceneBridgeRuntimeRegistryInstallationPreflight.omitted.runtimeValue,
             true
         );
         assert.equal(body.data.healthPreflight.runtimeAssetPreflight.status, "executed");

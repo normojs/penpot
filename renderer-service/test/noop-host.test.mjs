@@ -1808,6 +1808,214 @@ function assertBundledSceneBridgeRuntimeRegistryInstallationGate(
     return gate;
 }
 
+function assertBundledSceneBridgeRuntimeRegistryInstallationPreflight(
+    preflight,
+    { gateReady = false, invalid = false, gateReadiness = "blocked-until-installation-contract-ready" } = {}
+) {
+    const expectedStatus = invalid ? "invalid" : gateReady ? "ready" : "blocked";
+    const expectedGateStatus = invalid ? "invalid" : gateReady ? "configured-disabled" : "planned-disabled";
+    const expectedGateReadiness = invalid
+        ? "invalid-installation-gate-configuration"
+        : gateReady
+          ? "installation-gate-reviewed-disabled"
+          : gateReadiness;
+    const expectedReadiness = invalid
+        ? "invalid-installation-gate"
+        : gateReady
+          ? "installation-preflight-ready"
+          : "blocked-until-reviewed-installation-gate";
+    const expectedRefusalReason = invalid
+        ? "installation-gate-invalid"
+        : gateReady
+          ? "installation-execution-disabled-in-preflight"
+          : "installation-gate-not-ready";
+    const expectedDiagnosticCode = invalid
+        ? "renderer_service_bundled_scene_bridge_runtime_registry_installation_preflight_gate_invalid"
+        : gateReady
+          ? "renderer_service_bundled_scene_bridge_runtime_registry_installation_preflight_ready"
+          : "renderer_service_bundled_scene_bridge_runtime_registry_installation_preflight_gate_not_ready";
+
+    assert.equal(preflight.status, expectedStatus);
+    assert.equal(preflight.preflightVersion, "P26.44");
+    assert.equal(preflight.owner, "renderer-service");
+    assert.equal(preflight.mode, "guarded-runtime-registry-installation-preflight");
+    assert.equal(preflight.source.runtimeRegistrationPreflightVersion, "P26.40");
+    assert.equal(preflight.source.registryRegistrationBoundaryVersion, "P26.41");
+    assert.equal(preflight.source.registryInstallationContractVersion, "P26.42");
+    assert.equal(preflight.source.registryInstallationGateVersion, "P26.43");
+    assert.equal(preflight.source.registryInstallationPreflightVersion, "P26.44");
+    assert.equal(preflight.source.registryInstallationGateReady, gateReady);
+    assert.equal(preflight.source.registryInstallationGateStatus, expectedGateStatus);
+    assert.equal(preflight.source.registryInstallationGateReadiness, expectedGateReadiness);
+    assert.equal(preflight.source.reviewedGateOpen, gateReady);
+    assert.equal(preflight.source.futureInstallationAttemptAllowed, gateReady);
+    assert.equal(preflight.source.readiness, expectedReadiness);
+    for (const property of [
+        "registryInstallationGateReadyRequired",
+        "reviewedGateOpenRequired",
+        "futureInstallationAttemptAllowedRequired",
+        "rollbackPreconditionsRequired",
+        "lifecycleOwnershipRequired",
+        "noDispatchRequired",
+    ]) {
+        assert.equal(preflight.preflight[property], true);
+    }
+    assert.equal(preflight.preflight.readyForLaterInstallationTask, gateReady);
+    for (const property of [
+        "installationAttemptAllowedInThisTask",
+        "registryLookupAttempted",
+        "registryWriteAttempted",
+        "runtimeValueCreated",
+        "runtimeInstallationAttempted",
+        "runtimeInstalled",
+        "runtimeRegistered",
+        "runtimeRegistration",
+        "runtimeExecutionRegistered",
+        "closeHookRegistered",
+        "duplicateRollbackAttempted",
+        "renderDispatch",
+        "browserProcessStarted",
+        "runtimeValuesIncluded",
+        "registryValuesIncluded",
+    ]) {
+        assert.equal(preflight.preflight[property], false);
+    }
+    assert.equal(preflight.refusalDiagnostics.refusalRequired, true);
+    assert.equal(preflight.refusalDiagnostics.refusalReason, expectedRefusalReason);
+    assert.equal(preflight.refusalDiagnostics.invalidGateMetadata, invalid);
+    for (const property of [
+        "registryLookupRefused",
+        "registryWriteRefused",
+        "runtimeValueCreationRefused",
+        "runtimeInstallationRefused",
+        "closeHookRegistrationRefused",
+        "duplicateRollbackRefused",
+        "renderDispatchRefused",
+    ]) {
+        assert.equal(preflight.refusalDiagnostics[property], true);
+    }
+    assert.equal(preflight.refusalDiagnostics.valuesIncluded, false);
+    assert.equal(preflight.rollbackPreconditions.duplicateDetectionRequired, true);
+    assert.equal(preflight.rollbackPreconditions.duplicateRegistrationPolicy, "reject-until-explicit-replace-policy");
+    assert.equal(preflight.rollbackPreconditions.replacementPolicy, "not-supported-until-reviewed");
+    assert.equal(preflight.rollbackPreconditions.rollbackRequiredOnDuplicate, true);
+    assert.equal(preflight.rollbackPreconditions.cleanupOnInstallationFailure, true);
+    assert.equal(preflight.rollbackPreconditions.cleanupOnServiceStop, true);
+    assert.equal(preflight.rollbackPreconditions.closeHookCleanupRequired, true);
+    assert.equal(preflight.rollbackPreconditions.preconditionsVerified, gateReady);
+    for (const property of ["rollbackPrepared", "rollbackAttempted", "cleanupAttempted", "valuesIncluded"]) {
+        assert.equal(preflight.rollbackPreconditions[property], false);
+    }
+    assert.equal(preflight.lifecycleOwnership.lifecycleOwner, "renderer-service");
+    assert.equal(preflight.lifecycleOwnership.registryOwner, "renderer-service");
+    assert.equal(preflight.lifecycleOwnership.closeHookOwner, "renderer-service");
+    assert.equal(preflight.lifecycleOwnership.runtimeId, "bundled-scene-bridge");
+    assert.equal(preflight.lifecycleOwnership.targetRegistry, "renderer-service.thumbnail-runtime-registry");
+    assert.equal(preflight.lifecycleOwnership.lifecycleScope, "thumbnail-runtime-registry");
+    assert.equal(preflight.lifecycleOwnership.noDispatchLifecycle, true);
+    assert.equal(preflight.lifecycleOwnership.lifecycleOwnershipVerified, gateReady);
+    for (const property of ["closeHookRegistered", "runtimeValueOwned", "registrySlotOwned", "valuesIncluded"]) {
+        assert.equal(preflight.lifecycleOwnership[property], false);
+    }
+    assert.deepEqual(
+        preflight.preflightOutcomeTaxonomy.map((entry) => entry.code),
+        [
+            "renderer_service_bundled_scene_bridge_runtime_registry_installation_preflight_gate_not_ready",
+            "renderer_service_bundled_scene_bridge_runtime_registry_installation_preflight_gate_invalid",
+            "renderer_service_bundled_scene_bridge_runtime_registry_installation_preflight_ready",
+            "renderer_service_bundled_scene_bridge_runtime_registry_installation_preflight_unsafe_metadata",
+        ]
+    );
+    assert.ok(preflight.preflightOutcomeTaxonomy.every((entry) => entry.dispatch === false));
+    assert.deepEqual(preflight.diagnosticCodes, [expectedDiagnosticCode]);
+    assert.deepEqual(preflight.diagnostics.map((entry) => entry.code), [expectedDiagnosticCode]);
+    assert.equal(preflight.diagnostics[0].env, "PENPOT_RENDERER_SERVICE_BUNDLED_SCENE_BRIDGE_RUNTIME_INSTALLATION_GATE");
+    assert.equal(preflight.diagnostics[0].valueRead, false);
+    assert.equal(preflight.diagnostics[0].valuesIncluded, false);
+    assert.deepEqual(preflight.nextActions, preflight.diagnostics[0].nextActions);
+    assert.deepEqual(
+        preflight.checks.map((entry) => [entry.id, entry.status, entry.dispatch]),
+        [
+            ["installation-gate-ready", invalid ? "invalid" : gateReady ? "passed" : "blocked", false],
+            ["reviewed-gate-open", invalid ? "invalid" : gateReady ? "passed" : "blocked", false],
+            ["future-installation-attempt-allowed", invalid ? "invalid" : gateReady ? "passed" : "blocked", false],
+            ["rollback-preconditions-verified", invalid ? "invalid" : gateReady ? "passed" : "blocked", false],
+            ["no-dispatch-lifecycle-owned", invalid ? "invalid" : gateReady ? "passed" : "blocked", false],
+            ["runtime-values-redacted", "passed", false],
+        ]
+    );
+    for (const property of [
+        "registryLookup",
+        "registryWrite",
+        "runtimeValueCreation",
+        "runtimeInstallation",
+        "runtimeRegistration",
+        "runtimeExecutionRegistered",
+        "closeHookRegistration",
+        "duplicateRollback",
+        "renderDispatch",
+        "browserProcessStarted",
+        "browserPageCreated",
+        "runtimeAdapterImported",
+        "runtimeFactoryInvoked",
+        "runtimeOptionsCreated",
+        "runtimeAssetsLoaded",
+        "assetManifestMaterialized",
+        "backendRpcReads",
+        "sourceDataReads",
+        "networkDispatch",
+        "dispatch",
+        "localFileWrites",
+    ]) {
+        assert.equal(preflight.sideEffects[property], false);
+    }
+    for (const property of [
+        "modeValuesIncluded",
+        "moduleValuesIncluded",
+        "factoryValuesIncluded",
+        "runtimeOptionsValuesIncluded",
+        "optionValuesIncluded",
+        "runtimeValuesIncluded",
+        "registryValuesIncluded",
+        "lifecycleValuesIncluded",
+        "pathValuesIncluded",
+        "sourceDataValuesIncluded",
+        "pageValuesIncluded",
+        "artifactValuesIncluded",
+        "mediaValuesIncluded",
+        "tokenValuesIncluded",
+    ]) {
+        assert.equal(preflight.redaction[property], false);
+    }
+    for (const property of [
+        "configuredValue",
+        "moduleNamespace",
+        "factoryValue",
+        "runtimeOptionsValue",
+        "optionValues",
+        "runtimeValue",
+        "registryValue",
+        "lifecycleHandles",
+        "workspaceRoot",
+        "cacheRoot",
+        "modulePath",
+        "publicPaths",
+        "cachePaths",
+        "sha256",
+        "playwrightBrowserPath",
+        "runtimeModulePath",
+        "sourceData",
+        "pageData",
+        "artifactBytes",
+        "mediaBytes",
+        "tokenValues",
+    ]) {
+        assert.equal(preflight.omitted[property], true);
+    }
+    assert.equal(preflight.execution, null);
+    return preflight;
+}
+
 function persistedThumbnailResponse(id = "persisted-thumbnail-png") {
     return new Response(
         JSON.stringify({
@@ -1843,6 +2051,7 @@ test("noop host exposes the P25.24 health contract", async () => {
         assert.ok(serviceModule.healthResponse.capabilities.includes("thumbnail.render.bundled-scene-bridge-runtime-registry-registration-boundary"));
         assert.ok(serviceModule.healthResponse.capabilities.includes("thumbnail.render.bundled-scene-bridge-runtime-registry-installation-contract"));
         assert.ok(serviceModule.healthResponse.capabilities.includes("thumbnail.render.bundled-scene-bridge-runtime-registry-installation-gate"));
+        assert.ok(serviceModule.healthResponse.capabilities.includes("thumbnail.render.bundled-scene-bridge-runtime-registry-installation-preflight"));
         assert.deepEqual(body.browserFixtureRuntime, serviceModule.defaultBrowserFixtureRuntimeLifecycle);
         assertBrowserFixtureRuntimeLifecycle(body.browserFixtureRuntime);
         assertRuntimeAssetManifestScaffold(body.runtimeAssetManifest);
@@ -1885,6 +2094,13 @@ test("noop host exposes the P25.24 health contract", async () => {
             serviceModule.bundledSceneBridgeRuntimeRegistryInstallationGate
         );
         assertBundledSceneBridgeRuntimeRegistryInstallationGate(body.bundledSceneBridgeRuntimeRegistryInstallationGate);
+        assert.deepEqual(
+            body.bundledSceneBridgeRuntimeRegistryInstallationPreflight,
+            serviceModule.bundledSceneBridgeRuntimeRegistryInstallationPreflight
+        );
+        assertBundledSceneBridgeRuntimeRegistryInstallationPreflight(
+            body.bundledSceneBridgeRuntimeRegistryInstallationPreflight
+        );
     });
 });
 
@@ -1944,6 +2160,9 @@ test("noop host reports configured P26.34 import gate plus P26.36 namespace, P26
         assertBundledSceneBridgeRuntimeRegistryInstallationGate(body.bundledSceneBridgeRuntimeRegistryInstallationGate, {
             contractReady: false,
         });
+        assertBundledSceneBridgeRuntimeRegistryInstallationPreflight(
+            body.bundledSceneBridgeRuntimeRegistryInstallationPreflight
+        );
     } finally {
         await service.stop();
     }
@@ -2010,6 +2229,12 @@ test("noop host reports configured P26.40 registration preflight ready without r
         assertBundledSceneBridgeRuntimeRegistryInstallationGate(body.bundledSceneBridgeRuntimeRegistryInstallationGate, {
             contractReady: true,
         });
+        assertBundledSceneBridgeRuntimeRegistryInstallationPreflight(
+            body.bundledSceneBridgeRuntimeRegistryInstallationPreflight,
+            {
+                gateReadiness: "blocked-until-installation-gate-reviewed",
+            }
+        );
     } finally {
         await service.stop();
     }
@@ -2052,6 +2277,15 @@ test("noop host reports reviewed P26.43 runtime registry installation gate witho
         assert.equal(gate.sideEffects.renderDispatch, false);
         assert.equal(gate.omitted.runtimeValue, true);
         assert.equal(gate.omitted.configuredValue, true);
+        const preflight = assertBundledSceneBridgeRuntimeRegistryInstallationPreflight(
+            body.bundledSceneBridgeRuntimeRegistryInstallationPreflight,
+            {
+                gateReady: true,
+            }
+        );
+        assert.equal(preflight.preflight.readyForLaterInstallationTask, true);
+        assert.equal(preflight.rollbackPreconditions.preconditionsVerified, true);
+        assert.equal(preflight.lifecycleOwnership.lifecycleOwnershipVerified, true);
     } finally {
         await service.stop();
     }
@@ -2087,6 +2321,12 @@ test("noop host reports invalid P26.43 runtime registry installation gate diagno
         assert.equal(gate.configuration.valueRead, false);
         assert.equal(gate.refusalDiagnostics.invalidGateValue, true);
         assert.equal(gate.sideEffects.registryWrite, false);
+        assertBundledSceneBridgeRuntimeRegistryInstallationPreflight(
+            body.bundledSceneBridgeRuntimeRegistryInstallationPreflight,
+            {
+                invalid: true,
+            }
+        );
     } finally {
         await service.stop();
     }
@@ -4602,6 +4842,49 @@ test("noop host rejects unsafe P26.43 bundled scene bridge runtime registry inst
         assert.equal(body.code, "renderer_service_response_invalid");
         assert.equal(body.field, "bundledSceneBridgeRuntimeRegistryInstallationGate.gate.runtimeInstalled");
         assert.match(body.message, /bundledSceneBridgeRuntimeRegistryInstallationGate\.gate\.runtimeInstalled must match false/);
+    } finally {
+        await service.stop();
+    }
+});
+
+test("noop host rejects unsafe P26.44 bundled scene bridge runtime registry installation preflight metadata", async () => {
+    const service = await serviceModule.startRendererService({
+        port: 0,
+        thumbnailResponseOverride: (body) => ({
+            ...body,
+            bundledSceneBridgeRuntimeRegistryInstallationPreflight: {
+                ...body.bundledSceneBridgeRuntimeRegistryInstallationPreflight,
+                preflight: {
+                    ...body.bundledSceneBridgeRuntimeRegistryInstallationPreflight.preflight,
+                    runtimeInstalled: true,
+                },
+                sideEffects: {
+                    ...body.bundledSceneBridgeRuntimeRegistryInstallationPreflight.sideEffects,
+                    registryWrite: true,
+                },
+                redaction: {
+                    ...body.bundledSceneBridgeRuntimeRegistryInstallationPreflight.redaction,
+                    runtimeValuesIncluded: true,
+                },
+                omitted: {
+                    ...body.bundledSceneBridgeRuntimeRegistryInstallationPreflight.omitted,
+                    runtimeValue: false,
+                },
+            },
+        }),
+    });
+    try {
+        const response = await postValidFileThumbnail(service.host, service.port);
+
+        assert.equal(response.status, 500);
+        const body = await response.json();
+        assert.equal(body.status, "error");
+        assert.equal(body.code, "renderer_service_response_invalid");
+        assert.equal(body.field, "bundledSceneBridgeRuntimeRegistryInstallationPreflight.preflight.runtimeInstalled");
+        assert.match(
+            body.message,
+            /bundledSceneBridgeRuntimeRegistryInstallationPreflight\.preflight\.runtimeInstalled must match false/
+        );
     } finally {
         await service.stop();
     }

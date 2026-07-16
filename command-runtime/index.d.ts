@@ -3122,6 +3122,180 @@ export interface RenderThumbnailRendererServiceBundledSceneBridgeRuntimeRegistry
     execution: null;
 }
 
+export interface RenderThumbnailRendererServiceBundledSceneBridgeRuntimeRegistryInstallationPreflightDiagnostic {
+    status: "not-reported" | "blocked" | "ready" | "invalid";
+    preflightVersion: "P26.44" | null;
+    checked: boolean;
+    owner: "renderer-service" | null;
+    mode: "guarded-runtime-registry-installation-preflight" | null;
+    source: {
+        runtimeRegistrationPreflightVersion: "P26.40" | null;
+        registryRegistrationBoundaryVersion: "P26.41" | null;
+        registryInstallationContractVersion: "P26.42" | null;
+        registryInstallationGateVersion: "P26.43" | null;
+        registryInstallationPreflightVersion: "P26.44" | null;
+        registryInstallationGateReady: boolean;
+        registryInstallationGateStatus: string | null;
+        registryInstallationGateReadiness: string | null;
+        reviewedGateOpen: boolean;
+        futureInstallationAttemptAllowed: boolean;
+        readiness: string | null;
+    };
+    preflight: {
+        registryInstallationGateReadyRequired: boolean;
+        reviewedGateOpenRequired: boolean;
+        futureInstallationAttemptAllowedRequired: boolean;
+        rollbackPreconditionsRequired: boolean;
+        lifecycleOwnershipRequired: boolean;
+        noDispatchRequired: boolean;
+        installationAttemptAllowedInThisTask: boolean;
+        readyForLaterInstallationTask: boolean;
+        registryLookupAttempted: boolean;
+        registryWriteAttempted: boolean;
+        runtimeValueCreated: boolean;
+        runtimeInstallationAttempted: boolean;
+        runtimeInstalled: boolean;
+        runtimeRegistered: boolean;
+        runtimeRegistration: boolean;
+        runtimeExecutionRegistered: boolean;
+        closeHookRegistered: boolean;
+        duplicateRollbackAttempted: boolean;
+        renderDispatch: boolean;
+        browserProcessStarted: boolean;
+        runtimeValuesIncluded: boolean;
+        registryValuesIncluded: boolean;
+    };
+    refusalDiagnostics: {
+        refusalRequired: boolean;
+        refusalReason: string | null;
+        invalidGateMetadata: boolean;
+        registryLookupRefused: boolean;
+        registryWriteRefused: boolean;
+        runtimeValueCreationRefused: boolean;
+        runtimeInstallationRefused: boolean;
+        closeHookRegistrationRefused: boolean;
+        duplicateRollbackRefused: boolean;
+        renderDispatchRefused: boolean;
+        valuesIncluded: boolean;
+    };
+    rollbackPreconditions: {
+        duplicateDetectionRequired: boolean;
+        duplicateRegistrationPolicy: string | null;
+        replacementPolicy: string | null;
+        rollbackRequiredOnDuplicate: boolean;
+        cleanupOnInstallationFailure: boolean;
+        cleanupOnServiceStop: boolean;
+        closeHookCleanupRequired: boolean;
+        preconditionsVerified: boolean;
+        rollbackPrepared: boolean;
+        rollbackAttempted: boolean;
+        cleanupAttempted: boolean;
+        valuesIncluded: boolean;
+    };
+    lifecycleOwnership: {
+        lifecycleOwner: string | null;
+        registryOwner: string | null;
+        closeHookOwner: string | null;
+        runtimeId: string | null;
+        targetRegistry: string | null;
+        lifecycleScope: string | null;
+        noDispatchLifecycle: boolean;
+        lifecycleOwnershipVerified: boolean;
+        closeHookRegistered: boolean;
+        runtimeValueOwned: boolean;
+        registrySlotOwned: boolean;
+        valuesIncluded: boolean;
+    };
+    preflightOutcomeTaxonomy: Array<{
+        code: string;
+        stage: string | null;
+        severity: string | null;
+        retryable: boolean;
+        dispatch: boolean;
+    }>;
+    diagnostics: Array<{
+        code: string;
+        severity: string | null;
+        field: string | null;
+        env: string | null;
+        valueRead: boolean;
+        valuesIncluded: boolean;
+        message: string | null;
+        nextActions: string[];
+    }>;
+    diagnosticCodes: string[];
+    nextActions: string[];
+    checks: Array<{
+        id: string;
+        status: string;
+        required: boolean;
+        dispatch: boolean;
+    }>;
+    sideEffects: {
+        registryLookup: boolean;
+        registryWrite: boolean;
+        runtimeValueCreation: boolean;
+        runtimeInstallation: boolean;
+        runtimeRegistration: boolean;
+        runtimeExecutionRegistered: boolean;
+        closeHookRegistration: boolean;
+        duplicateRollback: boolean;
+        renderDispatch: boolean;
+        browserProcessStarted: boolean;
+        browserPageCreated: boolean;
+        runtimeAdapterImported: boolean;
+        runtimeFactoryInvoked: boolean;
+        runtimeOptionsCreated: boolean;
+        runtimeAssetsLoaded: boolean;
+        assetManifestMaterialized: boolean;
+        backendRpcReads: boolean;
+        sourceDataReads: boolean;
+        networkDispatch: boolean;
+        dispatch: boolean;
+        localFileWrites: boolean;
+    };
+    redaction: {
+        modeValuesIncluded: boolean;
+        moduleValuesIncluded: boolean;
+        factoryValuesIncluded: boolean;
+        runtimeOptionsValuesIncluded: boolean;
+        optionValuesIncluded: boolean;
+        runtimeValuesIncluded: boolean;
+        registryValuesIncluded: boolean;
+        lifecycleValuesIncluded: boolean;
+        pathValuesIncluded: boolean;
+        sourceDataValuesIncluded: boolean;
+        pageValuesIncluded: boolean;
+        artifactValuesIncluded: boolean;
+        mediaValuesIncluded: boolean;
+        tokenValuesIncluded: boolean;
+    };
+    omitted: {
+        configuredValue: boolean;
+        moduleNamespace: boolean;
+        factoryValue: boolean;
+        runtimeOptionsValue: boolean;
+        optionValues: boolean;
+        runtimeValue: boolean;
+        registryValue: boolean;
+        lifecycleHandles: boolean;
+        workspaceRoot: boolean;
+        cacheRoot: boolean;
+        modulePath: boolean;
+        publicPaths: boolean;
+        cachePaths: boolean;
+        sha256: boolean;
+        playwrightBrowserPath: boolean;
+        runtimeModulePath: boolean;
+        sourceData: boolean;
+        pageData: boolean;
+        artifactBytes: boolean;
+        mediaBytes: boolean;
+        tokenValues: boolean;
+    };
+    execution: null;
+}
+
 export interface RenderThumbnailRendererServiceBrowserFixtureRuntimeDiagnostic {
     status: "not-reported" | "not-configured" | "started" | "closed" | "invalid";
     diagnosticsVersion: "P26.31";
@@ -3222,6 +3396,7 @@ export interface RenderThumbnailRendererServiceHealthPreflight {
     bundledSceneBridgeRuntimeRegistryRegistrationBoundary: RenderThumbnailRendererServiceBundledSceneBridgeRuntimeRegistryRegistrationBoundaryDiagnostic;
     bundledSceneBridgeRuntimeRegistryInstallationContract: RenderThumbnailRendererServiceBundledSceneBridgeRuntimeRegistryInstallationContractDiagnostic;
     bundledSceneBridgeRuntimeRegistryInstallationGate: RenderThumbnailRendererServiceBundledSceneBridgeRuntimeRegistryInstallationGateDiagnostic;
+    bundledSceneBridgeRuntimeRegistryInstallationPreflight: RenderThumbnailRendererServiceBundledSceneBridgeRuntimeRegistryInstallationPreflightDiagnostic;
     browserFixtureRuntime: RenderThumbnailRendererServiceBrowserFixtureRuntimeDiagnostic;
     response?: {
         status: number | null;
