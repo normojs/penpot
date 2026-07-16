@@ -2356,6 +2356,138 @@ export interface RenderThumbnailRendererServiceBundledSceneBridgeModuleNamespace
     } | null;
 }
 
+export interface RenderThumbnailRendererServiceBundledSceneBridgeFactoryInvocationPreflightDiagnostic {
+    status: "not-reported" | "planned-disabled" | "invalid";
+    preflightVersion: "P26.37" | null;
+    checked: boolean;
+    owner: "renderer-service" | null;
+    mode: "guarded-factory-invocation-preflight-plan" | null;
+    source: {
+        contractVersion: "P26.32" | null;
+        adapterModuleReadinessVersion: "P26.33" | null;
+        importGateVersion: "P26.34" | null;
+        factoryShapePreflightVersion: "P26.35" | null;
+        moduleNamespaceImportPreflightVersion: "P26.36" | null;
+        namespaceImportReady: boolean;
+        readiness: string | null;
+    };
+    guard: {
+        namespaceImportRequired: boolean;
+        explicitFutureInvocationGateRequired: boolean;
+        invocationEnabled: boolean;
+        invocationAttempted: boolean;
+        factoryInvoked: boolean;
+        runtimeOptionsCreated: boolean;
+        runtimeRegistration: boolean;
+        runtimeExecutionRegistered: boolean;
+    };
+    factoryInvocation: {
+        exportName: string | null;
+        expectedSignature: string | null;
+        inertOptionsRequired: boolean;
+        invocationAttempted: boolean;
+        factoryInvoked: boolean;
+        promiseAwaited: boolean;
+        resultAccepted: boolean;
+        valuesIncluded: boolean;
+    };
+    inertOptionsPlan: {
+        requiredOptionKeys: string[];
+        assetManifestSource: string | null;
+        runtimeAssetPreflightSource: string | null;
+        browserSource: string | null;
+        optionValuesCreated: boolean;
+        optionValuesIncluded: boolean;
+        assetManifestValueIncluded: boolean;
+        runtimeAssetPreflightValueIncluded: boolean;
+        browserValueIncluded: boolean;
+        browserProcessStarted: boolean;
+        runtimeAssetsLoaded: boolean;
+        assetManifestMaterialized: boolean;
+    };
+    runtimeOptionsShape: {
+        expectedType: "RendererRuntimeOptions" | null;
+        requiredKeys: string[];
+        optionalKeys: string[];
+        runtimeOptionsCreated: boolean;
+        shapeCheckAttempted: boolean;
+        renderThumbnailChecked: boolean;
+        closeHookChecked: boolean;
+        runtimeRegistration: boolean;
+        runtimeExecutionRegistered: boolean;
+        valuesIncluded: boolean;
+    };
+    invocationOutcomeTaxonomy: Array<{
+        code: string;
+        stage: string | null;
+        severity: string | null;
+        retryable: boolean;
+        dispatch: boolean;
+    }>;
+    diagnostics: Array<{
+        code: string;
+        severity: string | null;
+        field: string | null;
+        message: string | null;
+        nextActions: string[];
+    }>;
+    diagnosticCodes: string[];
+    nextActions: string[];
+    checks: Array<{
+        id: string;
+        status: string;
+        required: boolean;
+        dispatch: boolean;
+    }>;
+    sideEffects: {
+        browserProcessStarted: boolean;
+        browserPageCreated: boolean;
+        runtimeExecutionRegistered: boolean;
+        runtimeAdapterImported: boolean;
+        runtimeFactoryInvoked: boolean;
+        runtimeOptionsCreated: boolean;
+        runtimeAssetsLoaded: boolean;
+        assetManifestMaterialized: boolean;
+        backendRpcReads: boolean;
+        sourceDataReads: boolean;
+        networkDispatch: boolean;
+        dispatch: boolean;
+        localFileWrites: boolean;
+    };
+    redaction: {
+        moduleValuesIncluded: boolean;
+        factoryValuesIncluded: boolean;
+        runtimeOptionsValuesIncluded: boolean;
+        optionValuesIncluded: boolean;
+        pathValuesIncluded: boolean;
+        sourceDataValuesIncluded: boolean;
+        pageValuesIncluded: boolean;
+        artifactValuesIncluded: boolean;
+        mediaValuesIncluded: boolean;
+        tokenValuesIncluded: boolean;
+    };
+    omitted: {
+        moduleNamespace: boolean;
+        factoryValue: boolean;
+        runtimeOptionsValue: boolean;
+        optionValues: boolean;
+        workspaceRoot: boolean;
+        cacheRoot: boolean;
+        modulePath: boolean;
+        publicPaths: boolean;
+        cachePaths: boolean;
+        sha256: boolean;
+        playwrightBrowserPath: boolean;
+        runtimeModulePath: boolean;
+        sourceData: boolean;
+        pageData: boolean;
+        artifactBytes: boolean;
+        mediaBytes: boolean;
+        tokenValues: boolean;
+    };
+    execution: null;
+}
+
 export interface RenderThumbnailRendererServiceBrowserFixtureRuntimeDiagnostic {
     status: "not-reported" | "not-configured" | "started" | "closed" | "invalid";
     diagnosticsVersion: "P26.31";
@@ -2451,6 +2583,7 @@ export interface RenderThumbnailRendererServiceHealthPreflight {
     bundledSceneBridgeImportGate: RenderThumbnailRendererServiceBundledSceneBridgeImportGateDiagnostic;
     bundledSceneBridgeFactoryShapePreflight: RenderThumbnailRendererServiceBundledSceneBridgeFactoryShapePreflightDiagnostic;
     bundledSceneBridgeModuleNamespaceImportPreflight: RenderThumbnailRendererServiceBundledSceneBridgeModuleNamespaceImportPreflightDiagnostic;
+    bundledSceneBridgeFactoryInvocationPreflight: RenderThumbnailRendererServiceBundledSceneBridgeFactoryInvocationPreflightDiagnostic;
     browserFixtureRuntime: RenderThumbnailRendererServiceBrowserFixtureRuntimeDiagnostic;
     response?: {
         status: number | null;

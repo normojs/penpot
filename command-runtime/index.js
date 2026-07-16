@@ -14324,6 +14324,8 @@ export function createRenderThumbnailRendererServiceHealthPreflight(options = EM
         bundledSceneBridgeFactoryShapePreflight: normalizeRendererServiceBundledSceneBridgeFactoryShapePreflightDiagnostic(null),
         bundledSceneBridgeModuleNamespaceImportPreflight:
             normalizeRendererServiceBundledSceneBridgeModuleNamespaceImportPreflightDiagnostic(null),
+        bundledSceneBridgeFactoryInvocationPreflight:
+            normalizeRendererServiceBundledSceneBridgeFactoryInvocationPreflightDiagnostic(null),
         browserFixtureRuntime: normalizeRendererServiceBrowserFixtureRuntimeDiagnostic(null),
     };
 }
@@ -15731,6 +15733,313 @@ function normalizeRendererServiceBundledSceneBridgeModuleNamespaceImportPrefligh
     };
 }
 
+function normalizeRendererServiceBundledSceneBridgeFactoryInvocationPreflightDiagnostic(body) {
+    const bodyRecord = asRecord(body);
+    const present = Object.prototype.hasOwnProperty.call(bodyRecord, "bundledSceneBridgeFactoryInvocationPreflight");
+    const summary = asRecord(bodyRecord.bundledSceneBridgeFactoryInvocationPreflight);
+    const source = asRecord(summary.source);
+    const guard = asRecord(summary.guard);
+    const factoryInvocation = asRecord(summary.factoryInvocation);
+    const inertOptionsPlan = asRecord(summary.inertOptionsPlan);
+    const runtimeOptionsShape = asRecord(summary.runtimeOptionsShape);
+    const sideEffects = asRecord(summary.sideEffects);
+    const redaction = asRecord(summary.redaction);
+    const omitted = asRecord(summary.omitted);
+    const invocationOutcomeTaxonomy = normalizeDiagnosticRecordArray(summary.invocationOutcomeTaxonomy).map((entry) => ({
+        code: normalizeOptionalString(entry.code) ?? "renderer_service_bundled_scene_bridge_factory_invocation_outcome_unknown",
+        stage: normalizeOptionalString(entry.stage),
+        severity: normalizeOptionalString(entry.severity),
+        retryable: entry.retryable === true,
+        dispatch: entry.dispatch === true,
+    }));
+    const diagnostics = normalizeDiagnosticRecordArray(summary.diagnostics).map((entry) => ({
+        code: normalizeOptionalString(entry.code) ?? "renderer_service_bundled_scene_bridge_factory_invocation_diagnostic_unknown",
+        severity: normalizeOptionalString(entry.severity),
+        field: normalizeOptionalString(entry.field),
+        message: normalizeOptionalString(entry.message),
+        nextActions: normalizeDiagnosticStringArray(entry.nextActions),
+    }));
+    const diagnosticCodes = normalizeDiagnosticStringArray(summary.diagnosticCodes);
+    const nextActions = normalizeDiagnosticStringArray(summary.nextActions);
+    const checks = normalizeDiagnosticRecordArray(summary.checks).map((entry) => ({
+        id: normalizeOptionalString(entry.id) ?? "unknown",
+        status: normalizeOptionalString(entry.status) ?? "unknown",
+        required: entry.required === true,
+        dispatch: entry.dispatch === true,
+    }));
+    const requiredOptionKeys = normalizeDiagnosticStringArray(inertOptionsPlan.requiredOptionKeys);
+    const requiredKeys = normalizeDiagnosticStringArray(runtimeOptionsShape.requiredKeys);
+    const optionalKeys = normalizeDiagnosticStringArray(runtimeOptionsShape.optionalKeys);
+    const allFalse = (record, fields) => fields.every((field) => record[field] === false);
+    const allTrue = (record, fields) => fields.every((field) => record[field] === true);
+    const equalStringArrays = (actual, expected) =>
+        actual.length === expected.length && actual.every((entry, index) => entry === expected[index]);
+    const guardFalseFields = [
+        "invocationEnabled",
+        "invocationAttempted",
+        "factoryInvoked",
+        "runtimeOptionsCreated",
+        "runtimeRegistration",
+        "runtimeExecutionRegistered",
+    ];
+    const factoryInvocationFalseFields = [
+        "invocationAttempted",
+        "factoryInvoked",
+        "promiseAwaited",
+        "resultAccepted",
+        "valuesIncluded",
+    ];
+    const inertOptionFalseFields = [
+        "optionValuesCreated",
+        "optionValuesIncluded",
+        "assetManifestValueIncluded",
+        "runtimeAssetPreflightValueIncluded",
+        "browserValueIncluded",
+        "browserProcessStarted",
+        "runtimeAssetsLoaded",
+        "assetManifestMaterialized",
+    ];
+    const runtimeOptionsFalseFields = [
+        "runtimeOptionsCreated",
+        "shapeCheckAttempted",
+        "renderThumbnailChecked",
+        "closeHookChecked",
+        "runtimeRegistration",
+        "runtimeExecutionRegistered",
+        "valuesIncluded",
+    ];
+    const sideEffectFields = [
+        "browserProcessStarted",
+        "browserPageCreated",
+        "runtimeExecutionRegistered",
+        "runtimeAdapterImported",
+        "runtimeFactoryInvoked",
+        "runtimeOptionsCreated",
+        "runtimeAssetsLoaded",
+        "assetManifestMaterialized",
+        "backendRpcReads",
+        "sourceDataReads",
+        "networkDispatch",
+        "dispatch",
+        "localFileWrites",
+    ];
+    const redactionFields = [
+        "moduleValuesIncluded",
+        "factoryValuesIncluded",
+        "runtimeOptionsValuesIncluded",
+        "optionValuesIncluded",
+        "pathValuesIncluded",
+        "sourceDataValuesIncluded",
+        "pageValuesIncluded",
+        "artifactValuesIncluded",
+        "mediaValuesIncluded",
+        "tokenValuesIncluded",
+    ];
+    const omittedFields = [
+        "moduleNamespace",
+        "factoryValue",
+        "runtimeOptionsValue",
+        "optionValues",
+        "workspaceRoot",
+        "cacheRoot",
+        "modulePath",
+        "publicPaths",
+        "cachePaths",
+        "sha256",
+        "playwrightBrowserPath",
+        "runtimeModulePath",
+        "sourceData",
+        "pageData",
+        "artifactBytes",
+        "mediaBytes",
+        "tokenValues",
+    ];
+    const expectedOutcomeCodes = [
+        "renderer_service_bundled_scene_bridge_factory_invocation_namespace_not_ready",
+        "renderer_service_bundled_scene_bridge_factory_invocation_disabled",
+        "renderer_service_bundled_scene_bridge_factory_invocation_rejected",
+        "renderer_service_bundled_scene_bridge_factory_invocation_result_invalid",
+        "renderer_service_bundled_scene_bridge_factory_invocation_ready",
+    ];
+    const invalidShape =
+        present &&
+        (normalizeOptionalString(summary.status) !== "planned-disabled" ||
+            normalizeOptionalString(summary.preflightVersion) !== "P26.37" ||
+            normalizeOptionalString(summary.owner) !== "renderer-service" ||
+            normalizeOptionalString(summary.mode) !== "guarded-factory-invocation-preflight-plan" ||
+            normalizeOptionalString(source.contractVersion) !== "P26.32" ||
+            normalizeOptionalString(source.adapterModuleReadinessVersion) !== "P26.33" ||
+            normalizeOptionalString(source.importGateVersion) !== "P26.34" ||
+            normalizeOptionalString(source.factoryShapePreflightVersion) !== "P26.35" ||
+            normalizeOptionalString(source.moduleNamespaceImportPreflightVersion) !== "P26.36" ||
+            typeof source.namespaceImportReady !== "boolean" ||
+            guard.namespaceImportRequired !== true ||
+            guard.explicitFutureInvocationGateRequired !== true ||
+            !allFalse(guard, guardFalseFields) ||
+            normalizeOptionalString(factoryInvocation.exportName) !== "createBundledSceneBridgeRendererRuntime" ||
+            normalizeOptionalString(factoryInvocation.expectedSignature) !== "(options) => Promise<RendererRuntimeOptions>" ||
+            factoryInvocation.inertOptionsRequired !== true ||
+            !allFalse(factoryInvocation, factoryInvocationFalseFields) ||
+            !equalStringArrays(requiredOptionKeys, ["assetManifest", "runtimeAssetPreflight", "browser"]) ||
+            normalizeOptionalString(inertOptionsPlan.assetManifestSource) !== "runtimeAssetManifest" ||
+            normalizeOptionalString(inertOptionsPlan.runtimeAssetPreflightSource) !== "runtimeAssetMaterializationPreflight" ||
+            normalizeOptionalString(inertOptionsPlan.browserSource) !== "inert-browser-handle-placeholder" ||
+            !allFalse(inertOptionsPlan, inertOptionFalseFields) ||
+            normalizeOptionalString(runtimeOptionsShape.expectedType) !== "RendererRuntimeOptions" ||
+            !equalStringArrays(requiredKeys, ["renderThumbnail"]) ||
+            !equalStringArrays(optionalKeys, ["close"]) ||
+            !allFalse(runtimeOptionsShape, runtimeOptionsFalseFields) ||
+            !equalStringArrays(
+                invocationOutcomeTaxonomy.map((entry) => entry.code),
+                expectedOutcomeCodes
+            ) ||
+            invocationOutcomeTaxonomy.some((entry) => entry.dispatch === true) ||
+            diagnostics.length === 0 ||
+            diagnosticCodes.length === 0 ||
+            nextActions.length === 0 ||
+            checks.length === 0 ||
+            checks.some((entry) => entry.dispatch !== false) ||
+            !allFalse(sideEffects, sideEffectFields) ||
+            !allFalse(redaction, redactionFields) ||
+            !allTrue(omitted, omittedFields) ||
+            summary.execution !== null);
+    const unsafeDisclosure =
+        present &&
+        (!allFalse(guard, guardFalseFields) ||
+            !allFalse(factoryInvocation, factoryInvocationFalseFields) ||
+            !allFalse(inertOptionsPlan, inertOptionFalseFields) ||
+            !allFalse(runtimeOptionsShape, runtimeOptionsFalseFields) ||
+            !allFalse(sideEffects, sideEffectFields) ||
+            !allFalse(redaction, redactionFields) ||
+            !allTrue(omitted, omittedFields) ||
+            summary.execution !== null);
+    const invalid = present && (invalidShape || unsafeDisclosure);
+    const normalizedDiagnosticCodes = invalid
+        ? uniqueStrings(["renderer_service_bundled_scene_bridge_factory_invocation_preflight_invalid", ...diagnosticCodes])
+        : diagnosticCodes;
+    const normalizedNextActions = invalid
+        ? uniqueStrings([
+              "Inspect renderer-service /health bundledSceneBridgeFactoryInvocationPreflight before trusting bundled scene bridge factory invocation readiness.",
+              ...nextActions,
+          ])
+        : nextActions;
+
+    return {
+        status: invalid ? "invalid" : present ? "planned-disabled" : "not-reported",
+        preflightVersion: present ? normalizeOptionalString(summary.preflightVersion) : null,
+        checked: Boolean(body),
+        owner: normalizeOptionalString(summary.owner),
+        mode: normalizeOptionalString(summary.mode),
+        source: {
+            contractVersion: normalizeOptionalString(source.contractVersion),
+            adapterModuleReadinessVersion: normalizeOptionalString(source.adapterModuleReadinessVersion),
+            importGateVersion: normalizeOptionalString(source.importGateVersion),
+            factoryShapePreflightVersion: normalizeOptionalString(source.factoryShapePreflightVersion),
+            moduleNamespaceImportPreflightVersion: normalizeOptionalString(source.moduleNamespaceImportPreflightVersion),
+            namespaceImportReady: source.namespaceImportReady === true,
+            readiness: normalizeOptionalString(source.readiness),
+        },
+        guard: {
+            namespaceImportRequired: guard.namespaceImportRequired === true,
+            explicitFutureInvocationGateRequired: guard.explicitFutureInvocationGateRequired === true,
+            invocationEnabled: guard.invocationEnabled === true,
+            invocationAttempted: guard.invocationAttempted === true,
+            factoryInvoked: guard.factoryInvoked === true,
+            runtimeOptionsCreated: guard.runtimeOptionsCreated === true,
+            runtimeRegistration: guard.runtimeRegistration === true,
+            runtimeExecutionRegistered: guard.runtimeExecutionRegistered === true,
+        },
+        factoryInvocation: {
+            exportName: normalizeOptionalString(factoryInvocation.exportName),
+            expectedSignature: normalizeOptionalString(factoryInvocation.expectedSignature),
+            inertOptionsRequired: factoryInvocation.inertOptionsRequired === true,
+            invocationAttempted: factoryInvocation.invocationAttempted === true,
+            factoryInvoked: factoryInvocation.factoryInvoked === true,
+            promiseAwaited: factoryInvocation.promiseAwaited === true,
+            resultAccepted: factoryInvocation.resultAccepted === true,
+            valuesIncluded: factoryInvocation.valuesIncluded === true,
+        },
+        inertOptionsPlan: {
+            requiredOptionKeys,
+            assetManifestSource: normalizeOptionalString(inertOptionsPlan.assetManifestSource),
+            runtimeAssetPreflightSource: normalizeOptionalString(inertOptionsPlan.runtimeAssetPreflightSource),
+            browserSource: normalizeOptionalString(inertOptionsPlan.browserSource),
+            optionValuesCreated: inertOptionsPlan.optionValuesCreated === true,
+            optionValuesIncluded: inertOptionsPlan.optionValuesIncluded === true,
+            assetManifestValueIncluded: inertOptionsPlan.assetManifestValueIncluded === true,
+            runtimeAssetPreflightValueIncluded: inertOptionsPlan.runtimeAssetPreflightValueIncluded === true,
+            browserValueIncluded: inertOptionsPlan.browserValueIncluded === true,
+            browserProcessStarted: inertOptionsPlan.browserProcessStarted === true,
+            runtimeAssetsLoaded: inertOptionsPlan.runtimeAssetsLoaded === true,
+            assetManifestMaterialized: inertOptionsPlan.assetManifestMaterialized === true,
+        },
+        runtimeOptionsShape: {
+            expectedType: normalizeOptionalString(runtimeOptionsShape.expectedType),
+            requiredKeys,
+            optionalKeys,
+            runtimeOptionsCreated: runtimeOptionsShape.runtimeOptionsCreated === true,
+            shapeCheckAttempted: runtimeOptionsShape.shapeCheckAttempted === true,
+            renderThumbnailChecked: runtimeOptionsShape.renderThumbnailChecked === true,
+            closeHookChecked: runtimeOptionsShape.closeHookChecked === true,
+            runtimeRegistration: runtimeOptionsShape.runtimeRegistration === true,
+            runtimeExecutionRegistered: runtimeOptionsShape.runtimeExecutionRegistered === true,
+            valuesIncluded: runtimeOptionsShape.valuesIncluded === true,
+        },
+        invocationOutcomeTaxonomy,
+        diagnostics,
+        diagnosticCodes: normalizedDiagnosticCodes,
+        nextActions: normalizedNextActions,
+        checks,
+        sideEffects: {
+            browserProcessStarted: sideEffects.browserProcessStarted === true,
+            browserPageCreated: sideEffects.browserPageCreated === true,
+            runtimeExecutionRegistered: sideEffects.runtimeExecutionRegistered === true,
+            runtimeAdapterImported: sideEffects.runtimeAdapterImported === true,
+            runtimeFactoryInvoked: sideEffects.runtimeFactoryInvoked === true,
+            runtimeOptionsCreated: sideEffects.runtimeOptionsCreated === true,
+            runtimeAssetsLoaded: sideEffects.runtimeAssetsLoaded === true,
+            assetManifestMaterialized: sideEffects.assetManifestMaterialized === true,
+            backendRpcReads: sideEffects.backendRpcReads === true,
+            sourceDataReads: sideEffects.sourceDataReads === true,
+            networkDispatch: sideEffects.networkDispatch === true,
+            dispatch: sideEffects.dispatch === true,
+            localFileWrites: sideEffects.localFileWrites === true,
+        },
+        redaction: {
+            moduleValuesIncluded: redaction.moduleValuesIncluded === true,
+            factoryValuesIncluded: redaction.factoryValuesIncluded === true,
+            runtimeOptionsValuesIncluded: redaction.runtimeOptionsValuesIncluded === true,
+            optionValuesIncluded: redaction.optionValuesIncluded === true,
+            pathValuesIncluded: redaction.pathValuesIncluded === true,
+            sourceDataValuesIncluded: redaction.sourceDataValuesIncluded === true,
+            pageValuesIncluded: redaction.pageValuesIncluded === true,
+            artifactValuesIncluded: redaction.artifactValuesIncluded === true,
+            mediaValuesIncluded: redaction.mediaValuesIncluded === true,
+            tokenValuesIncluded: redaction.tokenValuesIncluded === true,
+        },
+        omitted: {
+            moduleNamespace: omitted.moduleNamespace !== false,
+            factoryValue: omitted.factoryValue !== false,
+            runtimeOptionsValue: omitted.runtimeOptionsValue !== false,
+            optionValues: omitted.optionValues !== false,
+            workspaceRoot: omitted.workspaceRoot !== false,
+            cacheRoot: omitted.cacheRoot !== false,
+            modulePath: omitted.modulePath !== false,
+            publicPaths: omitted.publicPaths !== false,
+            cachePaths: omitted.cachePaths !== false,
+            sha256: omitted.sha256 !== false,
+            playwrightBrowserPath: omitted.playwrightBrowserPath !== false,
+            runtimeModulePath: omitted.runtimeModulePath !== false,
+            sourceData: omitted.sourceData !== false,
+            pageData: omitted.pageData !== false,
+            artifactBytes: omitted.artifactBytes !== false,
+            mediaBytes: omitted.mediaBytes !== false,
+            tokenValues: omitted.tokenValues !== false,
+        },
+        execution: null,
+    };
+}
+
 const RUNTIME_ASSET_PREFLIGHT_DIAGNOSTIC_CODES = new Set([
     "renderer_service_runtime_asset_missing_public_asset",
     "renderer_service_runtime_asset_missing_cache_asset",
@@ -16729,6 +17038,8 @@ export async function executeRenderThumbnailRendererServiceHealthPreflight(plan,
             bundledSceneBridgeFactoryShapePreflight: normalizeRendererServiceBundledSceneBridgeFactoryShapePreflightDiagnostic(bodyRecord),
             bundledSceneBridgeModuleNamespaceImportPreflight:
                 normalizeRendererServiceBundledSceneBridgeModuleNamespaceImportPreflightDiagnostic(bodyRecord),
+            bundledSceneBridgeFactoryInvocationPreflight:
+                normalizeRendererServiceBundledSceneBridgeFactoryInvocationPreflightDiagnostic(bodyRecord),
             browserFixtureRuntime: normalizeRendererServiceBrowserFixtureRuntimeDiagnostic(bodyRecord),
             response: {
                 status: httpStatus,

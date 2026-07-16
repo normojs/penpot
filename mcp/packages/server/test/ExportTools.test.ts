@@ -19,6 +19,8 @@ const bundledSceneBridgeFactoryShapePreflightFixture =
     renderThumbnailRendererServiceFixtures.bundledRuntimeBridge.bundledSceneBridgeFactoryShapePreflight;
 const bundledSceneBridgeModuleNamespaceImportPreflightFixture =
     renderThumbnailRendererServiceFixtures.bundledRuntimeBridge.bundledSceneBridgeModuleNamespaceImportPreflight;
+const bundledSceneBridgeFactoryInvocationPreflightFixture =
+    renderThumbnailRendererServiceFixtures.bundledRuntimeBridge.bundledSceneBridgeFactoryInvocationPreflight;
 
 function getRenderThumbnailRendererServiceFixture(id: string): any {
     const fixture = renderThumbnailRendererServiceFixtures.cases.find((entry: any) => entry.id === id);
@@ -7494,6 +7496,7 @@ test("RenderThumbnailTool execution opt-in posts to renderer-service and returns
                         "thumbnail.render.bundled-scene-bridge-import-gate",
                         "thumbnail.render.bundled-scene-bridge-factory-shape-preflight",
                         "thumbnail.render.bundled-scene-bridge-module-namespace-import-preflight",
+                        "thumbnail.render.bundled-scene-bridge-factory-invocation-preflight",
                     ],
                     bundledSceneBridgeContract: bundledSceneBridgeContractFixture,
                     bundledSceneBridgeAdapterModule: bundledSceneBridgeAdapterModuleFixture,
@@ -7501,6 +7504,8 @@ test("RenderThumbnailTool execution opt-in posts to renderer-service and returns
                     bundledSceneBridgeFactoryShapePreflight: bundledSceneBridgeFactoryShapePreflightFixture,
                     bundledSceneBridgeModuleNamespaceImportPreflight:
                         bundledSceneBridgeModuleNamespaceImportPreflightFixture,
+                    bundledSceneBridgeFactoryInvocationPreflight:
+                        bundledSceneBridgeFactoryInvocationPreflightFixture,
                     browserFixtureRuntime: {
                         status: "started",
                         diagnosticsVersion: "P26.31",
@@ -7962,6 +7967,28 @@ test("RenderThumbnailTool execution opt-in posts to renderer-service and returns
         assert.equal(body.data.healthPreflight.bundledSceneBridgeModuleNamespaceImportPreflight.redaction.moduleValuesIncluded, false);
         assert.equal(body.data.healthPreflight.bundledSceneBridgeModuleNamespaceImportPreflight.omitted.moduleNamespace, true);
         assert.equal(body.data.healthPreflight.bundledSceneBridgeModuleNamespaceImportPreflight.omitted.factoryValue, true);
+        assert.equal(body.data.healthPreflight.bundledSceneBridgeFactoryInvocationPreflight.status, "planned-disabled");
+        assert.equal(body.data.healthPreflight.bundledSceneBridgeFactoryInvocationPreflight.preflightVersion, "P26.37");
+        assert.equal(body.data.healthPreflight.bundledSceneBridgeFactoryInvocationPreflight.source.namespaceImportReady, false);
+        assert.equal(body.data.healthPreflight.bundledSceneBridgeFactoryInvocationPreflight.guard.invocationEnabled, false);
+        assert.equal(body.data.healthPreflight.bundledSceneBridgeFactoryInvocationPreflight.guard.factoryInvoked, false);
+        assert.equal(body.data.healthPreflight.bundledSceneBridgeFactoryInvocationPreflight.factoryInvocation.factoryInvoked, false);
+        assert.deepEqual(body.data.healthPreflight.bundledSceneBridgeFactoryInvocationPreflight.inertOptionsPlan.requiredOptionKeys, [
+            "assetManifest",
+            "runtimeAssetPreflight",
+            "browser",
+        ]);
+        assert.equal(body.data.healthPreflight.bundledSceneBridgeFactoryInvocationPreflight.inertOptionsPlan.optionValuesCreated, false);
+        assert.equal(body.data.healthPreflight.bundledSceneBridgeFactoryInvocationPreflight.runtimeOptionsShape.runtimeOptionsCreated, false);
+        assert.equal(body.data.healthPreflight.bundledSceneBridgeFactoryInvocationPreflight.runtimeOptionsShape.runtimeRegistration, false);
+        assert.deepEqual(body.data.healthPreflight.bundledSceneBridgeFactoryInvocationPreflight.diagnosticCodes, [
+            "renderer_service_bundled_scene_bridge_factory_invocation_namespace_not_ready",
+        ]);
+        assert.equal(body.data.healthPreflight.bundledSceneBridgeFactoryInvocationPreflight.sideEffects.runtimeFactoryInvoked, false);
+        assert.equal(body.data.healthPreflight.bundledSceneBridgeFactoryInvocationPreflight.redaction.factoryValuesIncluded, false);
+        assert.equal(body.data.healthPreflight.bundledSceneBridgeFactoryInvocationPreflight.redaction.optionValuesIncluded, false);
+        assert.equal(body.data.healthPreflight.bundledSceneBridgeFactoryInvocationPreflight.omitted.factoryValue, true);
+        assert.equal(body.data.healthPreflight.bundledSceneBridgeFactoryInvocationPreflight.omitted.optionValues, true);
         assert.equal(body.data.healthPreflight.runtimeAssetPreflight.status, "executed");
         assert.equal(body.data.healthPreflight.runtimeAssetPreflight.diagnosticsVersion, "P26.25");
         assert.equal(body.data.healthPreflight.runtimeAssetPreflight.executionVersion, "P26.22");

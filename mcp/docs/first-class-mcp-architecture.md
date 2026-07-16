@@ -4166,6 +4166,16 @@ open, renderer-service may import the service-owned bundled module and inspect
 only the target export shape; factory invocation, runtime option creation,
 runtime registration, browser startup, asset loading, backend/source-data
 reads, local writes, and value exposure remain disabled.
+P26.37 adds the guarded bundled scene bridge factory invocation preflight
+plan. Renderer-service exposes `bundledSceneBridgeFactoryInvocationPreflight`;
+command-runtime carries it into MCP and `penpot-cli render thumbnail` as
+`healthPreflight.bundledSceneBridgeFactoryInvocationPreflight`; and
+`penpot-cli renderer-service status/start` reports the no-probe lifecycle
+guidance. The plan depends on P26.36 namespace readiness and records the future
+inert option envelope plus invocation/result taxonomy, but factory invocation,
+runtime option creation, runtime registration, browser startup, asset loading,
+backend/source-data reads, local writes, and module/factory/runtime/option
+value exposure remain disabled.
 
 ### 8.6 Advanced Tools
 

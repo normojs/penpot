@@ -554,6 +554,14 @@ Only the service-owned module namespace and target export callability are
 checked; factory invocation, runtime option creation, runtime registration,
 browser startup, asset loading, backend/source-data reads, local writes, and
 module/factory/runtime value exposure remain disabled.
+P26.37 defines the guarded factory invocation preflight plan after namespace
+readiness. Renderer-service exposes
+`bundledSceneBridgeFactoryInvocationPreflight`, and CLI/MCP summaries expose
+`healthPreflight.bundledSceneBridgeFactoryInvocationPreflight`. The plan fixes
+the future inert option envelope and invocation/result taxonomy, but no
+factory is invoked, no runtime options are created, no runtime is registered,
+no browser starts, no assets load, no backend/source data is read, no files are
+written, and no module/factory/runtime/option values are exposed.
 
 ## Test Strategy
 

@@ -170,6 +170,15 @@ namespace/export shape when the import gate is explicitly open, but it still
 keeps factory invocation, runtime option creation, runtime registration,
 browser startup, asset loading, backend/source-data reads, local writes, and
 value exposure disabled.
+P26.37 adds the guarded factory invocation preflight plan. Renderer-service
+reports it as `bundledSceneBridgeFactoryInvocationPreflight`, and
+command-runtime carries it to CLI/MCP as
+`healthPreflight.bundledSceneBridgeFactoryInvocationPreflight`. The preflight
+records the namespace-readiness prerequisite, future invocation guard, inert
+factory option envelope, invocation outcome taxonomy, and returned runtime
+option shape, but still does not invoke the factory, create option/runtime
+values, register execution, start browsers, load assets, read backend/source
+data, write files, or expose module/factory/runtime/option values.
 P26.5 adds a token-safe `backendRpcClient` plan to renderer-service thumbnail
 responses so backend data/cache/persist endpoints are normalized for staged
 execution. That plan now feeds the executable file-thumbnail cache probe,

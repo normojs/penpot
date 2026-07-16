@@ -1402,6 +1402,94 @@ function getRendererServiceLifecyclePlan(args: string[], env: NodeJS.ProcessEnv)
             tokenValues: true;
         };
     };
+    bundledSceneBridgeFactoryInvocationPreflight: {
+        status: "planned-disabled";
+        preflightVersion: "P26.37";
+        checked: false;
+        source: {
+            contractVersion: "P26.32";
+            adapterModuleReadinessVersion: "P26.33";
+            importGateVersion: "P26.34";
+            factoryShapePreflightVersion: "P26.35";
+            moduleNamespaceImportPreflightVersion: "P26.36";
+            namespaceImportReady: false;
+            readiness: "blocked-until-namespace-import-ready";
+        };
+        guard: {
+            invocationEnabled: false;
+            invocationAttempted: false;
+            factoryInvoked: false;
+            runtimeOptionsCreated: false;
+            runtimeRegistration: false;
+        };
+        factoryInvocation: {
+            exportName: "createBundledSceneBridgeRendererRuntime";
+            inertOptionsRequired: true;
+            invocationAttempted: false;
+            factoryInvoked: false;
+        };
+        inertOptionsPlan: {
+            requiredOptionKeys: string[];
+            optionValuesCreated: false;
+            optionValuesIncluded: false;
+            browserProcessStarted: false;
+            runtimeAssetsLoaded: false;
+        };
+        runtimeOptionsShape: {
+            requiredKeys: string[];
+            optionalKeys: string[];
+            runtimeOptionsCreated: false;
+            runtimeRegistration: false;
+            runtimeExecutionRegistered: false;
+        };
+        diagnosticsVersion: "P26.37";
+        diagnosticCodes: string[];
+        diagnostics: Array<{
+            code: "renderer_service_bundled_scene_bridge_factory_invocation_namespace_not_ready";
+            severity: "blocked";
+            field: "source.namespaceImportReady";
+            message: string;
+            nextActions: string[];
+        }>;
+        nextActions: string[];
+        diagnosticsSurface: "healthPreflight.bundledSceneBridgeFactoryInvocationPreflight";
+        lifecyclePlanEffects: {
+            healthProbe: false;
+            moduleImport: false;
+            namespaceInspection: false;
+            factoryInvocation: false;
+            factoryInvoked: false;
+            runtimeOptionsCreated: false;
+            browserProcessStarted: false;
+            runtimeAdapterImported: false;
+            runtimeAssetsLoaded: false;
+            assetManifestMaterialized: false;
+            renderDispatch: false;
+            networkDispatch: false;
+            localFileWrites: false;
+            runtimeExecutionRegistered: false;
+            sourceDataValuesIncluded: false;
+            pageValuesIncluded: false;
+            artifactValuesIncluded: false;
+            mediaValuesIncluded: false;
+            tokenValuesIncluded: false;
+            pathValuesIncluded: false;
+        };
+        omitted: {
+            moduleNamespace: true;
+            factoryValue: true;
+            runtimeOptionsValue: true;
+            optionValues: true;
+            modulePath: true;
+            workspaceRoot: true;
+            cacheRoot: true;
+            sourceData: true;
+            pageData: true;
+            artifactBytes: true;
+            mediaBytes: true;
+            tokenValues: true;
+        };
+    };
     runtimeAssetPreflight: {
         configured: boolean;
         executeReadOnly: boolean;
@@ -2179,6 +2267,102 @@ function getRendererServiceLifecyclePlan(args: string[], env: NodeJS.ProcessEnv)
                 moduleNamespace: true,
                 factoryValue: true,
                 runtimeOptionsValue: true,
+                modulePath: true,
+                workspaceRoot: true,
+                cacheRoot: true,
+                sourceData: true,
+                pageData: true,
+                artifactBytes: true,
+                mediaBytes: true,
+                tokenValues: true,
+            },
+        },
+        bundledSceneBridgeFactoryInvocationPreflight: {
+            status: "planned-disabled",
+            preflightVersion: "P26.37",
+            checked: false,
+            source: {
+                contractVersion: "P26.32",
+                adapterModuleReadinessVersion: "P26.33",
+                importGateVersion: "P26.34",
+                factoryShapePreflightVersion: "P26.35",
+                moduleNamespaceImportPreflightVersion: "P26.36",
+                namespaceImportReady: false,
+                readiness: "blocked-until-namespace-import-ready",
+            },
+            guard: {
+                invocationEnabled: false,
+                invocationAttempted: false,
+                factoryInvoked: false,
+                runtimeOptionsCreated: false,
+                runtimeRegistration: false,
+            },
+            factoryInvocation: {
+                exportName: "createBundledSceneBridgeRendererRuntime",
+                inertOptionsRequired: true,
+                invocationAttempted: false,
+                factoryInvoked: false,
+            },
+            inertOptionsPlan: {
+                requiredOptionKeys: ["assetManifest", "runtimeAssetPreflight", "browser"],
+                optionValuesCreated: false,
+                optionValuesIncluded: false,
+                browserProcessStarted: false,
+                runtimeAssetsLoaded: false,
+            },
+            runtimeOptionsShape: {
+                requiredKeys: ["renderThumbnail"],
+                optionalKeys: ["close"],
+                runtimeOptionsCreated: false,
+                runtimeRegistration: false,
+                runtimeExecutionRegistered: false,
+            },
+            diagnosticsVersion: "P26.37",
+            diagnosticCodes: ["renderer_service_bundled_scene_bridge_factory_invocation_namespace_not_ready"],
+            diagnostics: [
+                {
+                    code: "renderer_service_bundled_scene_bridge_factory_invocation_namespace_not_ready",
+                    severity: "blocked",
+                    field: "source.namespaceImportReady",
+                    message: "Renderer-service bundled scene bridge factory invocation preflight is planned, but CLI lifecycle planning does not import or invoke modules.",
+                    nextActions: [
+                        `Set ${RENDERER_SERVICE_BUNDLED_SCENE_BRIDGE_RUNTIME_ENV}=${RENDERER_SERVICE_BUNDLED_SCENE_BRIDGE_RUNTIME_EXPECTED_VALUE} and query renderer-service /health to prove namespace import readiness first.`,
+                        "Keep factory invocation, runtime option creation, runtime registration, browser startup, asset loading, and value exposure disabled until the guarded invocation slice is implemented.",
+                    ],
+                },
+            ],
+            nextActions: [
+                `Set ${RENDERER_SERVICE_BUNDLED_SCENE_BRIDGE_RUNTIME_ENV}=${RENDERER_SERVICE_BUNDLED_SCENE_BRIDGE_RUNTIME_EXPECTED_VALUE} and query renderer-service /health to prove namespace import readiness first.`,
+                "Keep factory invocation, runtime option creation, runtime registration, browser startup, asset loading, and value exposure disabled until the guarded invocation slice is implemented.",
+            ],
+            diagnosticsSurface: "healthPreflight.bundledSceneBridgeFactoryInvocationPreflight",
+            lifecyclePlanEffects: {
+                healthProbe: false,
+                moduleImport: false,
+                namespaceInspection: false,
+                factoryInvocation: false,
+                factoryInvoked: false,
+                runtimeOptionsCreated: false,
+                browserProcessStarted: false,
+                runtimeAdapterImported: false,
+                runtimeAssetsLoaded: false,
+                assetManifestMaterialized: false,
+                renderDispatch: false,
+                networkDispatch: false,
+                localFileWrites: false,
+                runtimeExecutionRegistered: false,
+                sourceDataValuesIncluded: false,
+                pageValuesIncluded: false,
+                artifactValuesIncluded: false,
+                mediaValuesIncluded: false,
+                tokenValuesIncluded: false,
+                pathValuesIncluded: false,
+            },
+            omitted: {
+                moduleNamespace: true,
+                factoryValue: true,
+                runtimeOptionsValue: true,
+                optionValues: true,
                 modulePath: true,
                 workspaceRoot: true,
                 cacheRoot: true,
@@ -6386,6 +6570,10 @@ async function handleRendererServiceStatus(args: string[], io: CliIO, env: NodeJ
         );
         writeLine(
             io.stdout,
+            `Bundled scene bridge factory invocation preflight: ${plan.bundledSceneBridgeFactoryInvocationPreflight.status}`
+        );
+        writeLine(
+            io.stdout,
             `Runtime asset preflight: ${plan.runtimeAssetPreflight.executeReadOnly ? "read-only" : "disabled"}`
         );
         if (plan.browserFixtureRuntime.diagnosticCodes.length > 0) {
@@ -6422,6 +6610,16 @@ async function handleRendererServiceStatus(args: string[], io: CliIO, env: NodeJ
             );
             writeLine(io.stdout, "Module namespace import preflight next actions:");
             for (const action of plan.bundledSceneBridgeModuleNamespaceImportPreflight.nextActions) {
+                writeLine(io.stdout, `- ${action}`);
+            }
+        }
+        if (plan.bundledSceneBridgeFactoryInvocationPreflight.diagnosticCodes.length > 0) {
+            writeLine(
+                io.stdout,
+                `Bundled scene bridge factory invocation preflight diagnostics: ${plan.bundledSceneBridgeFactoryInvocationPreflight.diagnosticCodes.join(", ")}`
+            );
+            writeLine(io.stdout, "Factory invocation preflight next actions:");
+            for (const action of plan.bundledSceneBridgeFactoryInvocationPreflight.nextActions) {
                 writeLine(io.stdout, `- ${action}`);
             }
         }
