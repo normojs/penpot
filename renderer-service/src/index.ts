@@ -2712,6 +2712,278 @@ async function bundledSceneBridgeFactoryInvocationPreflightResponse(
     }
 }
 
+const bundledSceneBridgeRuntimeRegistrationPreflightBase = {
+    status: "planned-disabled",
+    preflightVersion: "P26.39",
+    owner: "renderer-service",
+    mode: "runtime-registration-preflight-plan",
+    source: {
+        contractVersion: "P26.32",
+        adapterModuleReadinessVersion: "P26.33",
+        importGateVersion: "P26.34",
+        factoryShapePreflightVersion: "P26.35",
+        moduleNamespaceImportPreflightVersion: "P26.36",
+        factoryInvocationPreflightVersion: "P26.38",
+        factoryInvocationReady: false,
+        factoryInvocationExecuted: false,
+        runtimeOptionsShapeReady: false,
+        readiness: "blocked-until-factory-invocation-ready",
+    },
+    guard: {
+        factoryInvocationReadyRequired: true,
+        explicitFutureRegistrationGateRequired: true,
+        registrationEnabled: false,
+        registrationAttempted: false,
+        runtimeRegistered: false,
+        runtimeRegistration: false,
+        runtimeExecutionRegistered: false,
+        renderDispatch: false,
+    },
+    registrationContract: {
+        runtimeId: "bundled-scene-bridge",
+        targetRegistry: "renderer-service.thumbnail-runtime-registry",
+        requiredRuntimeOptionKeys: ["renderThumbnail"],
+        optionalRuntimeOptionKeys: ["close"],
+        requiredRegistrationInputs: ["runtimeId", "runtimeOptions", "lifecycleOwner"],
+        duplicateRegistrationPolicy: "reject-until-explicit-replace-policy",
+        renderDispatchEnabledAfterRegistration: false,
+        valuesIncluded: false,
+    },
+    lifecycleCleanup: {
+        lifecycleOwner: "renderer-service",
+        closeHookPolicy: "register-close-if-present-call-on-unregister",
+        closeHookRequired: false,
+        cleanupOnRegistrationFailure: true,
+        cleanupOnServiceStop: true,
+        closeHookRegistered: false,
+        closeAttempted: false,
+        closeSucceeded: false,
+        closeFailed: false,
+        browserProcessStarted: false,
+        browserPageCreated: false,
+        runtimeAssetsLoaded: false,
+        localFileWrites: false,
+        valuesIncluded: false,
+    },
+    registrationOutcomeTaxonomy: [
+        {
+            code: "renderer_service_bundled_scene_bridge_runtime_registration_factory_not_ready",
+            stage: "factory-invocation",
+            severity: "blocked",
+            retryable: false,
+            dispatch: false,
+        },
+        {
+            code: "renderer_service_bundled_scene_bridge_runtime_registration_disabled",
+            stage: "registration-gate",
+            severity: "blocked",
+            retryable: false,
+            dispatch: false,
+        },
+        {
+            code: "renderer_service_bundled_scene_bridge_runtime_registration_runtime_options_invalid",
+            stage: "runtime-options",
+            severity: "invalid",
+            retryable: false,
+            dispatch: false,
+        },
+        {
+            code: "renderer_service_bundled_scene_bridge_runtime_registration_lifecycle_cleanup_invalid",
+            stage: "lifecycle-cleanup",
+            severity: "invalid",
+            retryable: false,
+            dispatch: false,
+        },
+        {
+            code: "renderer_service_bundled_scene_bridge_runtime_registration_ready",
+            stage: "registration-plan",
+            severity: "info",
+            retryable: false,
+            dispatch: false,
+        },
+    ],
+    diagnostics: [
+        {
+            code: "renderer_service_bundled_scene_bridge_runtime_registration_factory_not_ready",
+            severity: "blocked",
+            field: "source.factoryInvocationReady",
+            message: "The bundled scene bridge runtime registration preflight is blocked until the P26.38 factory invocation preflight reports ready runtime options.",
+            nextActions: [
+                "Verify renderer-service /health bundledSceneBridgeFactoryInvocationPreflight reports ready before planning runtime registration.",
+                "Keep runtime registration, render dispatch, browser startup, asset loading, and value exposure disabled.",
+            ],
+        },
+    ],
+    diagnosticCodes: ["renderer_service_bundled_scene_bridge_runtime_registration_factory_not_ready"],
+    nextActions: [
+        "Verify renderer-service /health bundledSceneBridgeFactoryInvocationPreflight reports ready before planning runtime registration.",
+        "Keep runtime registration, render dispatch, browser startup, asset loading, and value exposure disabled.",
+    ],
+    checks: [
+        {
+            id: "factory-invocation-ready",
+            status: "blocked",
+            required: true,
+            dispatch: false,
+        },
+        {
+            id: "runtime-options-registration-shape",
+            status: "blocked",
+            required: true,
+            dispatch: false,
+        },
+        {
+            id: "future-registration-gate",
+            status: "planned",
+            required: true,
+            dispatch: false,
+        },
+        {
+            id: "lifecycle-cleanup-contract",
+            status: "planned",
+            required: true,
+            dispatch: false,
+        },
+        {
+            id: "registration-outcome-taxonomy",
+            status: "planned",
+            required: true,
+            dispatch: false,
+        },
+    ],
+    sideEffects: {
+        runtimeRegistration: false,
+        runtimeExecutionRegistered: false,
+        renderDispatch: false,
+        browserProcessStarted: false,
+        browserPageCreated: false,
+        runtimeAdapterImported: false,
+        runtimeFactoryInvoked: false,
+        runtimeOptionsCreated: false,
+        runtimeAssetsLoaded: false,
+        assetManifestMaterialized: false,
+        backendRpcReads: false,
+        sourceDataReads: false,
+        networkDispatch: false,
+        dispatch: false,
+        localFileWrites: false,
+    },
+    redaction: {
+        moduleValuesIncluded: false,
+        factoryValuesIncluded: false,
+        runtimeOptionsValuesIncluded: false,
+        optionValuesIncluded: false,
+        registryValuesIncluded: false,
+        lifecycleValuesIncluded: false,
+        pathValuesIncluded: false,
+        sourceDataValuesIncluded: false,
+        pageValuesIncluded: false,
+        artifactValuesIncluded: false,
+        mediaValuesIncluded: false,
+        tokenValuesIncluded: false,
+    },
+    omitted: {
+        moduleNamespace: true,
+        factoryValue: true,
+        runtimeOptionsValue: true,
+        optionValues: true,
+        registryValue: true,
+        lifecycleHandles: true,
+        workspaceRoot: true,
+        cacheRoot: true,
+        modulePath: true,
+        publicPaths: true,
+        cachePaths: true,
+        sha256: true,
+        playwrightBrowserPath: true,
+        runtimeModulePath: true,
+        sourceData: true,
+        pageData: true,
+        artifactBytes: true,
+        mediaBytes: true,
+        tokenValues: true,
+    },
+    execution: null,
+} as const;
+
+export const bundledSceneBridgeRuntimeRegistrationPreflight = bundledSceneBridgeRuntimeRegistrationPreflightBase;
+
+function bundledSceneBridgeRuntimeRegistrationDiagnostic(
+    code: string,
+    severity: "info" | "blocked" | "invalid",
+    field: string,
+    message: string,
+    nextActions: string[]
+) {
+    return {
+        code,
+        severity,
+        field,
+        message,
+        nextActions,
+    };
+}
+
+function bundledSceneBridgeRuntimeRegistrationPreflightResponse(
+    factoryInvocationPreflight: Record<string, unknown>
+): Record<string, unknown> {
+    const runtimeOptionsShape = isRecord(factoryInvocationPreflight.runtimeOptionsShape)
+        ? factoryInvocationPreflight.runtimeOptionsShape
+        : {};
+    const execution = isRecord(factoryInvocationPreflight.execution) ? factoryInvocationPreflight.execution : {};
+    const factoryReady =
+        factoryInvocationPreflight.status === "ready" &&
+        factoryInvocationPreflight.preflightVersion === "P26.38" &&
+        execution.attempted === true &&
+        execution.succeeded === true &&
+        execution.outcome === "ready" &&
+        execution.runtimeOptionsShapeValid === true &&
+        execution.runtimeRegistration === false &&
+        execution.renderDispatch === false &&
+        runtimeOptionsShape.runtimeOptionsCreated === true &&
+        runtimeOptionsShape.shapeCheckAttempted === true &&
+        runtimeOptionsShape.renderThumbnailChecked === true &&
+        runtimeOptionsShape.runtimeRegistration === false &&
+        runtimeOptionsShape.runtimeExecutionRegistered === false;
+
+    if (!factoryReady) {
+        return bundledSceneBridgeRuntimeRegistrationPreflightBase;
+    }
+
+    const diagnostic = bundledSceneBridgeRuntimeRegistrationDiagnostic(
+        "renderer_service_bundled_scene_bridge_runtime_registration_disabled",
+        "blocked",
+        "guard.registrationEnabled",
+        "The bundled scene bridge runtime registration preflight is planned, but registration execution remains disabled until the guarded registration slice is implemented.",
+        [
+            "Implement the guarded runtime registration preflight as a separate reviewed step before registering any renderer runtime.",
+            "Keep render dispatch, browser startup, asset loading, backend/source-data reads, local writes, and value exposure disabled.",
+        ]
+    );
+
+    return {
+        ...bundledSceneBridgeRuntimeRegistrationPreflightBase,
+        source: {
+            ...bundledSceneBridgeRuntimeRegistrationPreflightBase.source,
+            factoryInvocationReady: true,
+            factoryInvocationExecuted: true,
+            runtimeOptionsShapeReady: true,
+            readiness: "ready-for-runtime-registration-preflight-execution",
+        },
+        diagnostics: [diagnostic],
+        diagnosticCodes: [diagnostic.code],
+        nextActions: diagnostic.nextActions,
+        checks: [
+            { id: "factory-invocation-ready", status: "passed", required: true, dispatch: false },
+            { id: "runtime-options-registration-shape", status: "passed", required: true, dispatch: false },
+            { id: "future-registration-gate", status: "planned", required: true, dispatch: false },
+            { id: "lifecycle-cleanup-contract", status: "planned", required: true, dispatch: false },
+            { id: "registration-outcome-taxonomy", status: "planned", required: true, dispatch: false },
+        ],
+        execution: null,
+    };
+}
+
 function defaultBrowserFixtureRuntimeLifecycleDiagnostics(
     runtimeSource: RendererRuntimeSource,
     {
@@ -2828,6 +3100,7 @@ export const healthResponse = {
         "thumbnail.render.bundled-scene-bridge-factory-shape-preflight",
         "thumbnail.render.bundled-scene-bridge-module-namespace-import-preflight",
         "thumbnail.render.bundled-scene-bridge-factory-invocation-preflight",
+        "thumbnail.render.bundled-scene-bridge-runtime-registration-preflight",
         "thumbnail.backend-rpc.file-thumbnail-persist",
         "thumbnail.backend-rpc.frame-thumbnail-persist",
     ],
@@ -2841,6 +3114,7 @@ export const healthResponse = {
     bundledSceneBridgeFactoryShapePreflight,
     bundledSceneBridgeModuleNamespaceImportPreflight,
     bundledSceneBridgeFactoryInvocationPreflight,
+    bundledSceneBridgeRuntimeRegistrationPreflight,
     browserFixtureRuntime: defaultBrowserFixtureRuntimeLifecycle,
 } as const;
 
@@ -5056,6 +5330,7 @@ function thumbnailResponse(
     bundledSceneBridgeImportGate: Record<string, unknown>,
     bundledSceneBridgeModuleNamespaceImportPreflight: Record<string, unknown>,
     bundledSceneBridgeFactoryInvocationPreflight: Record<string, unknown>,
+    bundledSceneBridgeRuntimeRegistrationPreflight: Record<string, unknown>,
     browserFixtureRuntime: Record<string, unknown>
 ): Record<string, unknown> {
     const host = request.headers.host ?? `${DEFAULT_HOST}:${DEFAULT_PORT}`;
@@ -5072,6 +5347,7 @@ function thumbnailResponse(
         bundledSceneBridgeImportGate,
         bundledSceneBridgeModuleNamespaceImportPreflight,
         bundledSceneBridgeFactoryInvocationPreflight,
+        bundledSceneBridgeRuntimeRegistrationPreflight,
         browserFixtureRuntime,
         request: summary,
         auth,
@@ -6518,6 +6794,210 @@ function validateBundledSceneBridgeFactoryInvocationPreflightResponse(actual: un
     }
 }
 
+function validateBundledSceneBridgeRuntimeRegistrationPreflightResponse(actual: unknown, field: string): void {
+    const record = responseRecord(actual, field);
+    const status = String(record.status);
+    if (status !== "planned-disabled") {
+        responseInvalid(`${field}.status must be planned-disabled.`, `${field}.status`);
+    }
+    requireResponseEqual(record.preflightVersion, "P26.39", `${field}.preflightVersion`);
+    requireResponseEqual(record.owner, "renderer-service", `${field}.owner`);
+    requireResponseEqual(record.mode, "runtime-registration-preflight-plan", `${field}.mode`);
+
+    const source = responseRecord(record.source, `${field}.source`);
+    requireResponseEqual(source.contractVersion, "P26.32", `${field}.source.contractVersion`);
+    requireResponseEqual(source.adapterModuleReadinessVersion, "P26.33", `${field}.source.adapterModuleReadinessVersion`);
+    requireResponseEqual(source.importGateVersion, "P26.34", `${field}.source.importGateVersion`);
+    requireResponseEqual(source.factoryShapePreflightVersion, "P26.35", `${field}.source.factoryShapePreflightVersion`);
+    requireResponseEqual(source.moduleNamespaceImportPreflightVersion, "P26.36", `${field}.source.moduleNamespaceImportPreflightVersion`);
+    requireResponseEqual(source.factoryInvocationPreflightVersion, "P26.38", `${field}.source.factoryInvocationPreflightVersion`);
+    for (const property of ["factoryInvocationReady", "factoryInvocationExecuted", "runtimeOptionsShapeReady"]) {
+        requireResponseEqual(typeof source[property], "boolean", `${field}.source.${property}.type`);
+    }
+    if (source.factoryInvocationReady === false) {
+        requireResponseEqual(source.factoryInvocationExecuted, false, `${field}.source.factoryInvocationExecuted`);
+        requireResponseEqual(source.runtimeOptionsShapeReady, false, `${field}.source.runtimeOptionsShapeReady`);
+        requireResponseEqual(source.readiness, "blocked-until-factory-invocation-ready", `${field}.source.readiness`);
+    }
+    if (source.factoryInvocationReady === true) {
+        requireResponseEqual(source.factoryInvocationExecuted, true, `${field}.source.factoryInvocationExecuted`);
+        requireResponseEqual(source.runtimeOptionsShapeReady, true, `${field}.source.runtimeOptionsShapeReady`);
+        requireResponseEqual(source.readiness, "ready-for-runtime-registration-preflight-execution", `${field}.source.readiness`);
+    }
+
+    const guard = responseRecord(record.guard, `${field}.guard`);
+    requireResponseEqual(guard.factoryInvocationReadyRequired, true, `${field}.guard.factoryInvocationReadyRequired`);
+    requireResponseEqual(guard.explicitFutureRegistrationGateRequired, true, `${field}.guard.explicitFutureRegistrationGateRequired`);
+    for (const property of [
+        "registrationEnabled",
+        "registrationAttempted",
+        "runtimeRegistered",
+        "runtimeRegistration",
+        "runtimeExecutionRegistered",
+        "renderDispatch",
+    ]) {
+        requireResponseEqual(guard[property], false, `${field}.guard.${property}`);
+    }
+
+    const registrationContract = responseRecord(record.registrationContract, `${field}.registrationContract`);
+    requireResponseEqual(registrationContract.runtimeId, "bundled-scene-bridge", `${field}.registrationContract.runtimeId`);
+    requireResponseEqual(
+        registrationContract.targetRegistry,
+        "renderer-service.thumbnail-runtime-registry",
+        `${field}.registrationContract.targetRegistry`
+    );
+    requireResponseArrayEqual(
+        responseStringArray(registrationContract, "requiredRuntimeOptionKeys", `${field}.registrationContract.requiredRuntimeOptionKeys`),
+        ["renderThumbnail"],
+        `${field}.registrationContract.requiredRuntimeOptionKeys`
+    );
+    requireResponseArrayEqual(
+        responseStringArray(registrationContract, "optionalRuntimeOptionKeys", `${field}.registrationContract.optionalRuntimeOptionKeys`),
+        ["close"],
+        `${field}.registrationContract.optionalRuntimeOptionKeys`
+    );
+    requireResponseArrayEqual(
+        responseStringArray(registrationContract, "requiredRegistrationInputs", `${field}.registrationContract.requiredRegistrationInputs`),
+        ["runtimeId", "runtimeOptions", "lifecycleOwner"],
+        `${field}.registrationContract.requiredRegistrationInputs`
+    );
+    requireResponseEqual(
+        registrationContract.duplicateRegistrationPolicy,
+        "reject-until-explicit-replace-policy",
+        `${field}.registrationContract.duplicateRegistrationPolicy`
+    );
+    requireResponseEqual(registrationContract.renderDispatchEnabledAfterRegistration, false, `${field}.registrationContract.renderDispatchEnabledAfterRegistration`);
+    requireResponseEqual(registrationContract.valuesIncluded, false, `${field}.registrationContract.valuesIncluded`);
+
+    const lifecycleCleanup = responseRecord(record.lifecycleCleanup, `${field}.lifecycleCleanup`);
+    requireResponseEqual(lifecycleCleanup.lifecycleOwner, "renderer-service", `${field}.lifecycleCleanup.lifecycleOwner`);
+    requireResponseEqual(
+        lifecycleCleanup.closeHookPolicy,
+        "register-close-if-present-call-on-unregister",
+        `${field}.lifecycleCleanup.closeHookPolicy`
+    );
+    requireResponseEqual(lifecycleCleanup.closeHookRequired, false, `${field}.lifecycleCleanup.closeHookRequired`);
+    requireResponseEqual(lifecycleCleanup.cleanupOnRegistrationFailure, true, `${field}.lifecycleCleanup.cleanupOnRegistrationFailure`);
+    requireResponseEqual(lifecycleCleanup.cleanupOnServiceStop, true, `${field}.lifecycleCleanup.cleanupOnServiceStop`);
+    for (const property of [
+        "closeHookRegistered",
+        "closeAttempted",
+        "closeSucceeded",
+        "closeFailed",
+        "browserProcessStarted",
+        "browserPageCreated",
+        "runtimeAssetsLoaded",
+        "localFileWrites",
+        "valuesIncluded",
+    ]) {
+        requireResponseEqual(lifecycleCleanup[property], false, `${field}.lifecycleCleanup.${property}`);
+    }
+
+    const registrationOutcomeTaxonomy = responseRecordArray(record.registrationOutcomeTaxonomy, `${field}.registrationOutcomeTaxonomy`);
+    requireResponseArrayEqual(
+        registrationOutcomeTaxonomy.map((entry) => String(entry.code)),
+        bundledSceneBridgeRuntimeRegistrationPreflight.registrationOutcomeTaxonomy.map((entry) => entry.code),
+        `${field}.registrationOutcomeTaxonomy.codes`
+    );
+    for (const entry of registrationOutcomeTaxonomy) {
+        requireResponseEqual(entry.dispatch, false, `${field}.registrationOutcomeTaxonomy.${String(entry.code)}.dispatch`);
+    }
+
+    const diagnostics = responseRecordArray(record.diagnostics, `${field}.diagnostics`);
+    if (diagnostics.length === 0) {
+        responseInvalid(`${field}.diagnostics must include at least one entry.`, `${field}.diagnostics`);
+    }
+    const diagnosticCodes = responseStringArray(record, "diagnosticCodes", `${field}.diagnosticCodes`);
+    if (diagnosticCodes.length === 0) {
+        responseInvalid(`${field}.diagnosticCodes must include at least one code.`, `${field}.diagnosticCodes`);
+    }
+    for (const diagnostic of diagnostics) {
+        if (!diagnosticCodes.includes(String(diagnostic.code))) {
+            responseInvalid(`${field}.diagnostics code must be listed in diagnosticCodes.`, `${field}.diagnostics.code`);
+        }
+    }
+    requireResponseArrayEqual(
+        responseStringArray(record, "nextActions", `${field}.nextActions`),
+        [...new Set(diagnostics.flatMap((entry) => responseStringArray(entry, "nextActions", `${field}.diagnostics.nextActions`)))],
+        `${field}.nextActions`
+    );
+
+    const checks = responseRecordArray(record.checks, `${field}.checks`);
+    requireResponseArrayEqual(
+        checks.map((entry) => String(entry.id)),
+        bundledSceneBridgeRuntimeRegistrationPreflight.checks.map((entry) => entry.id),
+        `${field}.checks.ids`
+    );
+    for (const check of checks) {
+        requireResponseEqual(check.dispatch, false, `${field}.checks.${String(check.id)}.dispatch`);
+    }
+
+    const sideEffects = responseRecord(record.sideEffects, `${field}.sideEffects`);
+    for (const property of [
+        "runtimeRegistration",
+        "runtimeExecutionRegistered",
+        "renderDispatch",
+        "browserProcessStarted",
+        "browserPageCreated",
+        "runtimeAdapterImported",
+        "runtimeFactoryInvoked",
+        "runtimeOptionsCreated",
+        "runtimeAssetsLoaded",
+        "assetManifestMaterialized",
+        "backendRpcReads",
+        "sourceDataReads",
+        "networkDispatch",
+        "dispatch",
+        "localFileWrites",
+    ]) {
+        requireResponseEqual(sideEffects[property], false, `${field}.sideEffects.${property}`);
+    }
+
+    const redaction = responseRecord(record.redaction, `${field}.redaction`);
+    for (const property of [
+        "moduleValuesIncluded",
+        "factoryValuesIncluded",
+        "runtimeOptionsValuesIncluded",
+        "optionValuesIncluded",
+        "registryValuesIncluded",
+        "lifecycleValuesIncluded",
+        "pathValuesIncluded",
+        "sourceDataValuesIncluded",
+        "pageValuesIncluded",
+        "artifactValuesIncluded",
+        "mediaValuesIncluded",
+        "tokenValuesIncluded",
+    ]) {
+        requireResponseEqual(redaction[property], false, `${field}.redaction.${property}`);
+    }
+
+    const omitted = responseRecord(record.omitted, `${field}.omitted`);
+    for (const property of [
+        "moduleNamespace",
+        "factoryValue",
+        "runtimeOptionsValue",
+        "optionValues",
+        "registryValue",
+        "lifecycleHandles",
+        "workspaceRoot",
+        "cacheRoot",
+        "modulePath",
+        "publicPaths",
+        "cachePaths",
+        "sha256",
+        "playwrightBrowserPath",
+        "runtimeModulePath",
+        "sourceData",
+        "pageData",
+        "artifactBytes",
+        "mediaBytes",
+        "tokenValues",
+    ]) {
+        requireResponseEqual(omitted[property], true, `${field}.omitted.${property}`);
+    }
+    requireResponseEqual(record.execution ?? null, null, `${field}.execution`);
+}
+
 function validateRuntimeAssetMaterializationPreflightCheckResponse(
     actual: unknown,
     expected: (typeof bundledRuntimeAssetMaterializationPreflight.checks)[number],
@@ -7464,6 +7944,10 @@ function validateThumbnailResponseContract(
         record.bundledSceneBridgeFactoryInvocationPreflight,
         "bundledSceneBridgeFactoryInvocationPreflight"
     );
+    validateBundledSceneBridgeRuntimeRegistrationPreflightResponse(
+        record.bundledSceneBridgeRuntimeRegistrationPreflight,
+        "bundledSceneBridgeRuntimeRegistrationPreflight"
+    );
     validateBrowserFixtureRuntimeLifecycleResponse(record.browserFixtureRuntime, "browserFixtureRuntime");
 
     validateThumbnailResourceResponse(responseRecord(record.resource, "resource"));
@@ -7525,6 +8009,7 @@ async function handleRequest(request: IncomingMessage, response: ServerResponse,
         const importGate = bundledSceneBridgeImportGateResponse(options);
         const moduleNamespaceImportPreflight = await bundledSceneBridgeModuleNamespaceImportPreflightResponse(importGate);
         const factoryInvocationPreflight = await bundledSceneBridgeFactoryInvocationPreflightResponse(moduleNamespaceImportPreflight);
+        const runtimeRegistrationPreflight = bundledSceneBridgeRuntimeRegistrationPreflightResponse(factoryInvocationPreflight);
         sendJson(response, 200, {
             ...healthResponse,
             runtimeAssetMaterializationPreflight: runtimeAssetPreflight,
@@ -7533,6 +8018,7 @@ async function handleRequest(request: IncomingMessage, response: ServerResponse,
             bundledSceneBridgeImportGate: importGate,
             bundledSceneBridgeModuleNamespaceImportPreflight: moduleNamespaceImportPreflight,
             bundledSceneBridgeFactoryInvocationPreflight: factoryInvocationPreflight,
+            bundledSceneBridgeRuntimeRegistrationPreflight: runtimeRegistrationPreflight,
             browserFixtureRuntime,
         });
         return;
@@ -7557,6 +8043,7 @@ async function handleRequest(request: IncomingMessage, response: ServerResponse,
             const importGate = bundledSceneBridgeImportGateResponse(options);
             const moduleNamespaceImportPreflight = await bundledSceneBridgeModuleNamespaceImportPreflightResponse(importGate);
             const factoryInvocationPreflight = await bundledSceneBridgeFactoryInvocationPreflightResponse(moduleNamespaceImportPreflight);
+            const runtimeRegistrationPreflight = bundledSceneBridgeRuntimeRegistrationPreflightResponse(factoryInvocationPreflight);
             const generatedResponse = thumbnailResponse(
                 request,
                 summary,
@@ -7572,6 +8059,7 @@ async function handleRequest(request: IncomingMessage, response: ServerResponse,
                 importGate,
                 moduleNamespaceImportPreflight,
                 factoryInvocationPreflight,
+                runtimeRegistrationPreflight,
                 browserFixtureRuntime
             );
             const responseBody = options.thumbnailResponseOverride

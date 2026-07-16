@@ -187,6 +187,17 @@ hook. The preflight may report `ready`, `invalid`, or `planned-disabled`, but
 runtime registration, render dispatch, browser startup, asset loading,
 backend/source-data reads, local writes, and module/factory/runtime/option
 value exposure remain disabled.
+P26.39 adds the runtime registration preflight plan. Renderer-service reports
+it as `bundledSceneBridgeRuntimeRegistrationPreflight`, and command-runtime
+carries it to CLI/MCP as
+`healthPreflight.bundledSceneBridgeRuntimeRegistrationPreflight`. The preflight
+consumes P26.38 factory invocation readiness and documents the future runtime
+registration inputs, duplicate-registration policy, lifecycle cleanup
+contract, and registration outcome taxonomy. It remains `planned-disabled`
+even when P26.38 is ready: runtime registration, runtime execution
+registration, render dispatch, browser startup, asset loading/materialization,
+backend/source-data reads, local writes, registry/lifecycle/runtime option
+value exposure, and execution values remain disabled.
 P26.5 adds a token-safe `backendRpcClient` plan to renderer-service thumbnail
 responses so backend data/cache/persist endpoints are normalized for staged
 execution. That plan now feeds the executable file-thumbnail cache probe,

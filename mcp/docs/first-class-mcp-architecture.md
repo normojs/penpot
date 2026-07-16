@@ -4184,6 +4184,20 @@ optional `close` callability, and command-runtime preserves the token-safe
 execution summary for MCP and `penpot-cli render thumbnail`. Runtime
 registration, render dispatch, browser startup, asset loading,
 backend/source-data reads, local writes, and value exposure remain disabled.
+P26.39 plans the bundled scene bridge runtime registration preflight.
+Renderer-service exposes `bundledSceneBridgeRuntimeRegistrationPreflight` in
+`/health` and `/thumbnail`; command-runtime carries it into MCP and
+`penpot-cli render thumbnail` as
+`healthPreflight.bundledSceneBridgeRuntimeRegistrationPreflight`; and
+`penpot-cli renderer-service status/start` reports the same no-probe lifecycle
+plan. The preflight consumes P26.38 factory invocation readiness, records the
+future registration contract, lifecycle cleanup expectations, and registration
+outcome taxonomy, and reports `ready-for-runtime-registration-preflight-execution`
+only as metadata when P26.38 is ready. It remains `planned-disabled`: no
+runtime registration, runtime execution registration, render dispatch, browser
+startup, asset loading/materialization, backend/source-data reads, local
+writes, registry/lifecycle/runtime option value exposure, or local value
+materialization occurs.
 
 ### 8.6 Advanced Tools
 

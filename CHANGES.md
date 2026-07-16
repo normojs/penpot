@@ -4,6 +4,7 @@
 
 ### :sparkles: New features & Enhancements
 
+- Plan the bundled scene bridge runtime registration preflight through renderer-service health/thumbnail responses and CLI/MCP health summaries, documenting registration prerequisites, lifecycle cleanup, and outcome taxonomy while keeping runtime registration, render dispatch, browser startup, asset loading, reads, writes, and value exposure disabled.
 - Execute the guarded bundled scene bridge factory invocation preflight through renderer-service health/thumbnail responses and CLI/MCP health summaries, invoking the service-owned factory with inert redacted option handles and checking returned runtime option shape while keeping runtime registration, render dispatch, browser startup, asset loading, reads, writes, and value exposure disabled.
 - Add a guarded bundled scene bridge factory invocation preflight plan through renderer-service health/thumbnail responses and CLI/MCP health summaries, documenting namespace readiness, inert factory options, and invocation outcome taxonomy while keeping factory invocation, runtime option creation, runtime registration, browser startup, asset loading, reads, writes, and value exposure disabled.
 - Execute a gated bundled scene bridge module namespace import preflight through renderer-service health/thumbnail responses and CLI/MCP health summaries, allowing only namespace/export shape inspection while keeping factory invocation, runtime option creation, runtime registration, browser startup, asset loading, reads, writes, and value exposure disabled.
