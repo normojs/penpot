@@ -15022,6 +15022,11 @@ function normalizeRendererServiceBundledSceneBridgeImportGateDiagnostic(body) {
     const nextActions = normalizeDiagnosticStringArray(summary.nextActions);
     const allFalse = (record, fields) => fields.every((field) => record[field] === false);
     const allTrue = (record, fields) => fields.every((field) => record[field] === true);
+    const equalStringArrays = (actual, expected) =>
+        actual.length === expected.length && actual.every((entry, index) => entry === expected[index]);
+    const expectedAcceptedValues = ["import-gate", "registration-preflight"];
+    const acceptedValues = normalizeDiagnosticStringArray(summary.acceptedValues);
+    const configurationAcceptedValues = normalizeDiagnosticStringArray(configuration.acceptedValues);
     const statusValue = normalizeOptionalString(summary.status);
     const reportedStatus = ["planned-disabled", "configured-disabled", "invalid"].includes(statusValue)
         ? statusValue
@@ -15082,14 +15087,21 @@ function normalizeRendererServiceBundledSceneBridgeImportGateDiagnostic(body) {
             normalizeOptionalString(summary.mode) !== "explicit-import-gate" ||
             normalizeOptionalString(summary.env) !== "PENPOT_RENDERER_SERVICE_BUNDLED_SCENE_BRIDGE_RUNTIME" ||
             normalizeOptionalString(summary.expectedValue) !== "import-gate" ||
+            !equalStringArrays(acceptedValues, expectedAcceptedValues) ||
             typeof summary.configured !== "boolean" ||
             typeof summary.requested !== "boolean" ||
+            typeof summary.importGateRequested !== "boolean" ||
+            typeof summary.registrationPreflightRequested !== "boolean" ||
             typeof summary.valid !== "boolean" ||
             normalizeOptionalString(configuration.expectedValue) !== "import-gate" ||
+            !equalStringArrays(configurationAcceptedValues, expectedAcceptedValues) ||
             configuration.valueRead !== false ||
             configuration.valuesIncluded !== false ||
             typeof configuration.configured !== "boolean" ||
             typeof configuration.accepted !== "boolean" ||
+            typeof configuration.importGateAccepted !== "boolean" ||
+            typeof configuration.registrationPreflightAccepted !== "boolean" ||
+            (configuration.importGateAccepted === true && configuration.registrationPreflightAccepted === true) ||
             typeof conflicts.runtimeModule !== "boolean" ||
             typeof conflicts.browserFixtureRuntime !== "boolean" ||
             typeof conflicts.injectedRuntime !== "boolean" ||
@@ -15130,15 +15142,21 @@ function normalizeRendererServiceBundledSceneBridgeImportGateDiagnostic(body) {
         mode: normalizeOptionalString(summary.mode),
         env: normalizeOptionalString(summary.env),
         expectedValue: normalizeOptionalString(summary.expectedValue),
+        acceptedValues,
         configured: summary.configured === true,
         requested: summary.requested === true,
+        importGateRequested: summary.importGateRequested === true,
+        registrationPreflightRequested: summary.registrationPreflightRequested === true,
         valid: summary.valid === true,
         configuration: {
             configured: configuration.configured === true,
             expectedValue: normalizeOptionalString(configuration.expectedValue),
+            acceptedValues: configurationAcceptedValues,
             valueRead: configuration.valueRead === true,
             valuesIncluded: configuration.valuesIncluded === true,
             accepted: configuration.accepted === true,
+            importGateAccepted: configuration.importGateAccepted === true,
+            registrationPreflightAccepted: configuration.registrationPreflightAccepted === true,
         },
         conflicts: {
             runtimeModule: conflicts.runtimeModule === true,
@@ -16203,35 +16221,66 @@ function normalizeRendererServiceBundledSceneBridgeRuntimeRegistrationPreflightD
     const expectedCheckIds = [
         "factory-invocation-ready",
         "runtime-options-registration-shape",
-        "future-registration-gate",
+        "registration-preflight-gate",
         "lifecycle-cleanup-contract",
         "registration-outcome-taxonomy",
     ];
     const statusValue = normalizeOptionalString(summary.status) ?? "not-reported";
     const sourceReady = source.factoryInvocationReady === true;
+    const registrationPreflightGateOpen = source.registrationPreflightGateOpen === true;
     const sourceReadinessValid = sourceReady
         ? source.factoryInvocationExecuted === true &&
           source.runtimeOptionsShapeReady === true &&
-          normalizeOptionalString(source.readiness) === "ready-for-runtime-registration-preflight-execution"
+          (registrationPreflightGateOpen
+              ? normalizeOptionalString(source.readiness) === "runtime-registration-preflight-ready"
+              : normalizeOptionalString(source.readiness) === "blocked-until-registration-preflight-gate-opens")
         : source.factoryInvocationReady === false &&
           source.factoryInvocationExecuted === false &&
           source.runtimeOptionsShapeReady === false &&
+          source.registrationPreflightGateOpen === false &&
           normalizeOptionalString(source.readiness) === "blocked-until-factory-invocation-ready";
+    const statusValueValid = ["planned-disabled", "ready", "invalid"].includes(statusValue);
+    const statusGateConsistent =
+        statusValue === "ready"
+            ? sourceReady && registrationPreflightGateOpen
+            : statusValue === "planned-disabled"
+              ? !registrationPreflightGateOpen
+              : statusValue === "invalid";
+    const checkStatus = (id) => checks.find((entry) => entry.id === id)?.status ?? "unknown";
+    const checksConsistent =
+        statusValue === "ready"
+            ? expectedCheckIds.every((id) => checkStatus(id) === "passed")
+            : sourceReady
+              ? checkStatus("factory-invocation-ready") === "passed" &&
+                checkStatus("runtime-options-registration-shape") === "passed" &&
+                checkStatus("registration-preflight-gate") === "blocked" &&
+                checkStatus("lifecycle-cleanup-contract") === "planned" &&
+                checkStatus("registration-outcome-taxonomy") === "planned"
+              : checkStatus("factory-invocation-ready") === "blocked" &&
+                checkStatus("runtime-options-registration-shape") === "blocked" &&
+                checkStatus("registration-preflight-gate") === "blocked" &&
+                checkStatus("lifecycle-cleanup-contract") === "planned" &&
+                checkStatus("registration-outcome-taxonomy") === "planned";
     const diagnosticNextActions = uniqueStrings(diagnostics.flatMap((entry) => entry.nextActions));
     const invalid = present && (
-        statusValue !== "planned-disabled" ||
-        normalizeOptionalString(summary.preflightVersion) !== "P26.39" ||
+        statusValue === "invalid" ||
+        !statusValueValid ||
+        !statusGateConsistent ||
+        normalizeOptionalString(summary.preflightVersion) !== "P26.40" ||
         normalizeOptionalString(summary.owner) !== "renderer-service" ||
-        normalizeOptionalString(summary.mode) !== "runtime-registration-preflight-plan" ||
+        normalizeOptionalString(summary.mode) !== "guarded-runtime-registration-preflight" ||
         normalizeOptionalString(source.contractVersion) !== "P26.32" ||
         normalizeOptionalString(source.adapterModuleReadinessVersion) !== "P26.33" ||
         normalizeOptionalString(source.importGateVersion) !== "P26.34" ||
         normalizeOptionalString(source.factoryShapePreflightVersion) !== "P26.35" ||
         normalizeOptionalString(source.moduleNamespaceImportPreflightVersion) !== "P26.36" ||
         normalizeOptionalString(source.factoryInvocationPreflightVersion) !== "P26.38" ||
+        normalizeOptionalString(source.registrationPreflightGateVersion) !== "P26.40" ||
         !sourceReadinessValid ||
         guard.factoryInvocationReadyRequired !== true ||
         guard.explicitFutureRegistrationGateRequired !== true ||
+        guard.explicitRegistrationPreflightGateRequired !== true ||
+        guard.registrationPreflightGateOpen !== registrationPreflightGateOpen ||
         !allFalse(guard, [
             "registrationEnabled",
             "registrationAttempted",
@@ -16271,6 +16320,7 @@ function normalizeRendererServiceBundledSceneBridgeRuntimeRegistrationPreflightD
         diagnostics.some((entry) => !diagnosticCodes.includes(entry.code)) ||
         !equalStringArrays(nextActions, diagnosticNextActions) ||
         !equalStringArrays(checks.map((entry) => entry.id), expectedCheckIds) ||
+        !checksConsistent ||
         checks.some((entry) => entry.dispatch) ||
         !allFalse(sideEffects, sideEffectFields) ||
         !allFalse(redaction, redactionFields) ||
@@ -16300,14 +16350,18 @@ function normalizeRendererServiceBundledSceneBridgeRuntimeRegistrationPreflightD
             factoryShapePreflightVersion: normalizeOptionalString(source.factoryShapePreflightVersion),
             moduleNamespaceImportPreflightVersion: normalizeOptionalString(source.moduleNamespaceImportPreflightVersion),
             factoryInvocationPreflightVersion: normalizeOptionalString(source.factoryInvocationPreflightVersion),
+            registrationPreflightGateVersion: normalizeOptionalString(source.registrationPreflightGateVersion),
             factoryInvocationReady: source.factoryInvocationReady === true,
             factoryInvocationExecuted: source.factoryInvocationExecuted === true,
             runtimeOptionsShapeReady: source.runtimeOptionsShapeReady === true,
+            registrationPreflightGateOpen: source.registrationPreflightGateOpen === true,
             readiness: normalizeOptionalString(source.readiness),
         },
         guard: {
             factoryInvocationReadyRequired: guard.factoryInvocationReadyRequired === true,
             explicitFutureRegistrationGateRequired: guard.explicitFutureRegistrationGateRequired === true,
+            explicitRegistrationPreflightGateRequired: guard.explicitRegistrationPreflightGateRequired === true,
+            registrationPreflightGateOpen: guard.registrationPreflightGateOpen === true,
             registrationEnabled: guard.registrationEnabled === true,
             registrationAttempted: guard.registrationAttempted === true,
             runtimeRegistered: guard.runtimeRegistered === true,

@@ -198,6 +198,20 @@ even when P26.38 is ready: runtime registration, runtime execution
 registration, render dispatch, browser startup, asset loading/materialization,
 backend/source-data reads, local writes, registry/lifecycle/runtime option
 value exposure, and execution values remain disabled.
+P26.40 executes a guarded registration preflight only when the service is
+started with
+`PENPOT_RENDERER_SERVICE_BUNDLED_SCENE_BRIDGE_RUNTIME=registration-preflight`.
+The gate is independent from the older `import-gate` value: `import-gate`
+continues to exercise namespace/factory readiness, while `registration-preflight`
+allows `/health` and `/thumbnail` to report whether the P26.38 factory result is
+ready for a future registry registration. `penpot-cli renderer-service status`
+recognizes both accepted values, but it remains a local no-probe lifecycle plan;
+operators must query `/health` on a running renderer-service process to see
+whether `bundledSceneBridgeRuntimeRegistrationPreflight.status` is `ready` or
+`planned-disabled`. Even on `ready`, the response contains no registry values or
+runtime option values and still disables runtime registration, runtime execution
+registration, render dispatch, browser startup, asset loading/materialization,
+backend/source-data reads, local writes, and value exposure.
 P26.5 adds a token-safe `backendRpcClient` plan to renderer-service thumbnail
 responses so backend data/cache/persist endpoints are normalized for staged
 execution. That plan now feeds the executable file-thumbnail cache probe,

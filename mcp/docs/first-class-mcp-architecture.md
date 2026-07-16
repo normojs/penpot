@@ -4192,12 +4192,23 @@ Renderer-service exposes `bundledSceneBridgeRuntimeRegistrationPreflight` in
 `penpot-cli renderer-service status/start` reports the same no-probe lifecycle
 plan. The preflight consumes P26.38 factory invocation readiness, records the
 future registration contract, lifecycle cleanup expectations, and registration
-outcome taxonomy, and reports `ready-for-runtime-registration-preflight-execution`
-only as metadata when P26.38 is ready. It remains `planned-disabled`: no
-runtime registration, runtime execution registration, render dispatch, browser
-startup, asset loading/materialization, backend/source-data reads, local
-writes, registry/lifecycle/runtime option value exposure, or local value
-materialization occurs.
+outcome taxonomy, and records readiness metadata when P26.38 is ready. It
+remains `planned-disabled`: no runtime registration, runtime execution
+registration, render dispatch, browser startup, asset loading/materialization,
+backend/source-data reads, local writes, registry/lifecycle/runtime option value
+exposure, or local value materialization occurs.
+P26.40 executes the guarded runtime registration preflight behind the explicit
+`PENPOT_RENDERER_SERVICE_BUNDLED_SCENE_BRIDGE_RUNTIME=registration-preflight`
+gate. Renderer-service can now report
+`bundledSceneBridgeRuntimeRegistrationPreflight.status=ready` from `/health` or
+`/thumbnail` when P26.38 factory invocation readiness is present and the
+registration-preflight gate is open; otherwise it reports the blocked
+`planned-disabled` path. `penpot-cli renderer-service status/start` accepts the
+new value only as local lifecycle configuration and tells operators to query
+`/health` for the real preflight result. Runtime registration, render dispatch,
+browser startup, asset loading/materialization, backend/source-data reads, local
+writes, registry/lifecycle/runtime option value exposure, and local value
+materialization remain disabled even when the guarded preflight is ready.
 
 ### 8.6 Advanced Tools
 

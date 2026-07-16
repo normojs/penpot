@@ -50,7 +50,14 @@ const DEFAULT_RENDERER_SERVICE_PORT = 6070;
 const RENDERER_SERVICE_BUILD_DIR = "/Volumes/fushilu/.caches/penpot/renderer-service";
 const RENDERER_SERVICE_BROWSER_FIXTURE_RUNTIME_ENV = "PENPOT_RENDERER_SERVICE_BROWSER_FIXTURE_RUNTIME";
 const RENDERER_SERVICE_BUNDLED_SCENE_BRIDGE_RUNTIME_ENV = "PENPOT_RENDERER_SERVICE_BUNDLED_SCENE_BRIDGE_RUNTIME";
-const RENDERER_SERVICE_BUNDLED_SCENE_BRIDGE_RUNTIME_EXPECTED_VALUE = "import-gate";
+const RENDERER_SERVICE_BUNDLED_SCENE_BRIDGE_RUNTIME_IMPORT_GATE_VALUE = "import-gate";
+const RENDERER_SERVICE_BUNDLED_SCENE_BRIDGE_RUNTIME_REGISTRATION_PREFLIGHT_VALUE = "registration-preflight";
+const RENDERER_SERVICE_BUNDLED_SCENE_BRIDGE_RUNTIME_ACCEPTED_VALUES = [
+    RENDERER_SERVICE_BUNDLED_SCENE_BRIDGE_RUNTIME_IMPORT_GATE_VALUE,
+    RENDERER_SERVICE_BUNDLED_SCENE_BRIDGE_RUNTIME_REGISTRATION_PREFLIGHT_VALUE,
+] as const;
+const RENDERER_SERVICE_BUNDLED_SCENE_BRIDGE_RUNTIME_EXPECTED_VALUE =
+    RENDERER_SERVICE_BUNDLED_SCENE_BRIDGE_RUNTIME_IMPORT_GATE_VALUE;
 const RENDERER_SERVICE_RUNTIME_ASSET_PREFLIGHT_ENV = "PENPOT_RENDERER_SERVICE_RUNTIME_ASSET_PREFLIGHT";
 const RENDERER_SERVICE_RUNTIME_ASSET_PREFLIGHT_WORKSPACE_ROOT_ENV = "PENPOT_RENDERER_SERVICE_RUNTIME_ASSET_PREFLIGHT_WORKSPACE_ROOT";
 const RENDERER_SERVICE_RUNTIME_ASSET_PREFLIGHT_CACHE_ROOT_ENV = "PENPOT_RENDERER_SERVICE_RUNTIME_ASSET_PREFLIGHT_CACHE_ROOT";
@@ -1190,8 +1197,11 @@ function getRendererServiceLifecyclePlan(args: string[], env: NodeJS.ProcessEnv)
         gateVersion: "P26.34";
         configured: boolean;
         requested: boolean;
+        importGateRequested: boolean;
+        registrationPreflightRequested: boolean;
         value: string | null;
         expectedValue: typeof RENDERER_SERVICE_BUNDLED_SCENE_BRIDGE_RUNTIME_EXPECTED_VALUE;
+        acceptedValues: typeof RENDERER_SERVICE_BUNDLED_SCENE_BRIDGE_RUNTIME_ACCEPTED_VALUES;
         valid: boolean;
         source: typeof RENDERER_SERVICE_BUNDLED_SCENE_BRIDGE_RUNTIME_ENV | null;
         runtimeModuleConflict: boolean;
@@ -1492,7 +1502,7 @@ function getRendererServiceLifecyclePlan(args: string[], env: NodeJS.ProcessEnv)
     };
     bundledSceneBridgeRuntimeRegistrationPreflight: {
         status: "planned-disabled";
-        preflightVersion: "P26.39";
+        preflightVersion: "P26.40";
         checked: false;
         source: {
             contractVersion: "P26.32";
@@ -1501,12 +1511,18 @@ function getRendererServiceLifecyclePlan(args: string[], env: NodeJS.ProcessEnv)
             factoryShapePreflightVersion: "P26.35";
             moduleNamespaceImportPreflightVersion: "P26.36";
             factoryInvocationPreflightVersion: "P26.38";
+            registrationPreflightGateVersion: "P26.40";
             factoryInvocationReady: false;
             factoryInvocationExecuted: false;
             runtimeOptionsShapeReady: false;
+            registrationPreflightGateOpen: false;
             readiness: "blocked-until-factory-invocation-ready";
         };
         guard: {
+            factoryInvocationReadyRequired: true;
+            explicitFutureRegistrationGateRequired: true;
+            explicitRegistrationPreflightGateRequired: true;
+            registrationPreflightGateOpen: false;
             registrationEnabled: false;
             registrationAttempted: false;
             runtimeRegistered: false;
@@ -1534,7 +1550,7 @@ function getRendererServiceLifecyclePlan(args: string[], env: NodeJS.ProcessEnv)
             closeSucceeded: false;
             closeFailed: false;
         };
-        diagnosticsVersion: "P26.39";
+        diagnosticsVersion: "P26.40";
         diagnosticCodes: string[];
         diagnostics: Array<{
             code: "renderer_service_bundled_scene_bridge_runtime_registration_factory_not_ready";
@@ -1835,6 +1851,10 @@ function getRendererServiceLifecyclePlan(args: string[], env: NodeJS.ProcessEnv)
         : null;
     const bundledSceneBridgeImportGateRequested =
         bundledSceneBridgeImportGateValue === RENDERER_SERVICE_BUNDLED_SCENE_BRIDGE_RUNTIME_EXPECTED_VALUE;
+    const bundledSceneBridgeRegistrationPreflightRequested =
+        bundledSceneBridgeImportGateValue === RENDERER_SERVICE_BUNDLED_SCENE_BRIDGE_RUNTIME_REGISTRATION_PREFLIGHT_VALUE;
+    const bundledSceneBridgeImportGateAccepted =
+        bundledSceneBridgeImportGateRequested || bundledSceneBridgeRegistrationPreflightRequested;
     const bundledSceneBridgeImportGateDiagnostics: Array<{
         code:
             | "renderer_service_bundled_scene_bridge_import_gate_configuration_invalid"
@@ -1848,7 +1868,7 @@ function getRendererServiceLifecyclePlan(args: string[], env: NodeJS.ProcessEnv)
         message: string;
         nextActions: string[];
     }> = [];
-    if (bundledSceneBridgeImportGateConfigured && !bundledSceneBridgeImportGateRequested) {
+    if (bundledSceneBridgeImportGateConfigured && !bundledSceneBridgeImportGateAccepted) {
         bundledSceneBridgeImportGateDiagnostics.push({
             code: "renderer_service_bundled_scene_bridge_import_gate_configuration_invalid",
             severity: "invalid",
@@ -1856,9 +1876,9 @@ function getRendererServiceLifecyclePlan(args: string[], env: NodeJS.ProcessEnv)
             env: RENDERER_SERVICE_BUNDLED_SCENE_BRIDGE_RUNTIME_ENV,
             valueRead: false,
             valuesIncluded: false,
-            message: "Renderer-service bundled scene bridge runtime mode must be import-gate when configured.",
+            message: "Renderer-service bundled scene bridge runtime mode must be import-gate or registration-preflight when configured.",
             nextActions: [
-                `Set ${RENDERER_SERVICE_BUNDLED_SCENE_BRIDGE_RUNTIME_ENV}=${RENDERER_SERVICE_BUNDLED_SCENE_BRIDGE_RUNTIME_EXPECTED_VALUE} or leave it unset.`,
+                `Set ${RENDERER_SERVICE_BUNDLED_SCENE_BRIDGE_RUNTIME_ENV}=import-gate, set ${RENDERER_SERVICE_BUNDLED_SCENE_BRIDGE_RUNTIME_ENV}=registration-preflight, or leave it unset.`,
                 "Rerun penpot-cli renderer-service status after fixing the mode.",
             ],
         });
@@ -2152,9 +2172,12 @@ function getRendererServiceLifecyclePlan(args: string[], env: NodeJS.ProcessEnv)
                   : "planned-disabled",
             gateVersion: "P26.34",
             configured: bundledSceneBridgeImportGateConfigured,
-            requested: bundledSceneBridgeImportGateRequested,
+            requested: bundledSceneBridgeImportGateAccepted,
+            importGateRequested: bundledSceneBridgeImportGateRequested,
+            registrationPreflightRequested: bundledSceneBridgeRegistrationPreflightRequested,
             value: null,
             expectedValue: RENDERER_SERVICE_BUNDLED_SCENE_BRIDGE_RUNTIME_EXPECTED_VALUE,
+            acceptedValues: RENDERER_SERVICE_BUNDLED_SCENE_BRIDGE_RUNTIME_ACCEPTED_VALUES,
             valid: bundledSceneBridgeImportGateDiagnostics.length === 0,
             source: bundledSceneBridgeImportGateConfigured ? RENDERER_SERVICE_BUNDLED_SCENE_BRIDGE_RUNTIME_ENV : null,
             runtimeModuleConflict: bundledSceneBridgeImportGateConfigured && Boolean(rendererRuntimeModule),
@@ -2467,7 +2490,7 @@ function getRendererServiceLifecyclePlan(args: string[], env: NodeJS.ProcessEnv)
         },
         bundledSceneBridgeRuntimeRegistrationPreflight: {
             status: "planned-disabled",
-            preflightVersion: "P26.39",
+            preflightVersion: "P26.40",
             checked: false,
             source: {
                 contractVersion: "P26.32",
@@ -2476,12 +2499,18 @@ function getRendererServiceLifecyclePlan(args: string[], env: NodeJS.ProcessEnv)
                 factoryShapePreflightVersion: "P26.35",
                 moduleNamespaceImportPreflightVersion: "P26.36",
                 factoryInvocationPreflightVersion: "P26.38",
+                registrationPreflightGateVersion: "P26.40",
                 factoryInvocationReady: false,
                 factoryInvocationExecuted: false,
                 runtimeOptionsShapeReady: false,
+                registrationPreflightGateOpen: false,
                 readiness: "blocked-until-factory-invocation-ready",
             },
             guard: {
+                factoryInvocationReadyRequired: true,
+                explicitFutureRegistrationGateRequired: true,
+                explicitRegistrationPreflightGateRequired: true,
+                registrationPreflightGateOpen: false,
                 registrationEnabled: false,
                 registrationAttempted: false,
                 runtimeRegistered: false,
@@ -2509,23 +2538,23 @@ function getRendererServiceLifecyclePlan(args: string[], env: NodeJS.ProcessEnv)
                 closeSucceeded: false,
                 closeFailed: false,
             },
-            diagnosticsVersion: "P26.39",
+            diagnosticsVersion: "P26.40",
             diagnosticCodes: ["renderer_service_bundled_scene_bridge_runtime_registration_factory_not_ready"],
             diagnostics: [
                 {
                     code: "renderer_service_bundled_scene_bridge_runtime_registration_factory_not_ready",
                     severity: "blocked",
                     field: "source.factoryInvocationReady",
-                    message: "Renderer-service bundled scene bridge runtime registration preflight is planned through /health, but CLI lifecycle planning does not register runtime execution.",
+                    message: "Renderer-service bundled scene bridge runtime registration preflight is planned through /health, but CLI lifecycle planning does not execute the guarded registration-preflight path.",
                     nextActions: [
-                        "Query renderer-service /health and verify bundledSceneBridgeFactoryInvocationPreflight reports ready before planning runtime registration.",
-                        "Keep runtime registration, render dispatch, browser startup, asset loading, and value exposure disabled until the guarded registration preflight is reviewed.",
+                        "Start renderer-service and query /health to verify whether bundledSceneBridgeRuntimeRegistrationPreflight reports ready under the guarded registration-preflight mode.",
+                        "Keep render dispatch, browser startup, asset loading, local writes, and value exposure disabled until a later reviewed runtime execution slice.",
                     ],
                 },
             ],
             nextActions: [
-                "Query renderer-service /health and verify bundledSceneBridgeFactoryInvocationPreflight reports ready before planning runtime registration.",
-                "Keep runtime registration, render dispatch, browser startup, asset loading, and value exposure disabled until the guarded registration preflight is reviewed.",
+                "Start renderer-service and query /health to verify whether bundledSceneBridgeRuntimeRegistrationPreflight reports ready under the guarded registration-preflight mode.",
+                "Keep render dispatch, browser startup, asset loading, local writes, and value exposure disabled until a later reviewed runtime execution slice.",
             ],
             diagnosticsSurface: "healthPreflight.bundledSceneBridgeRuntimeRegistrationPreflight",
             lifecyclePlanEffects: {

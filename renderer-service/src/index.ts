@@ -15,7 +15,13 @@ const BACKEND_RPC_BASE_URI_FALLBACK_ENV = "PENPOT_BACKEND_URI";
 const RENDERER_RUNTIME_MODULE_ENV = "PENPOT_RENDERER_SERVICE_RUNTIME_MODULE";
 const BROWSER_FIXTURE_RUNTIME_ENV = "PENPOT_RENDERER_SERVICE_BROWSER_FIXTURE_RUNTIME";
 const BUNDLED_SCENE_BRIDGE_RUNTIME_ENV = "PENPOT_RENDERER_SERVICE_BUNDLED_SCENE_BRIDGE_RUNTIME";
-const BUNDLED_SCENE_BRIDGE_RUNTIME_EXPECTED_VALUE = "import-gate";
+const BUNDLED_SCENE_BRIDGE_RUNTIME_IMPORT_GATE_VALUE = "import-gate";
+const BUNDLED_SCENE_BRIDGE_RUNTIME_REGISTRATION_PREFLIGHT_VALUE = "registration-preflight";
+const BUNDLED_SCENE_BRIDGE_RUNTIME_EXPECTED_VALUE = BUNDLED_SCENE_BRIDGE_RUNTIME_IMPORT_GATE_VALUE;
+const BUNDLED_SCENE_BRIDGE_RUNTIME_ACCEPTED_VALUES = [
+    BUNDLED_SCENE_BRIDGE_RUNTIME_IMPORT_GATE_VALUE,
+    BUNDLED_SCENE_BRIDGE_RUNTIME_REGISTRATION_PREFLIGHT_VALUE,
+] as const;
 const RUNTIME_ASSET_PREFLIGHT_ENV = "PENPOT_RENDERER_SERVICE_RUNTIME_ASSET_PREFLIGHT";
 const RUNTIME_ASSET_PREFLIGHT_WORKSPACE_ROOT_ENV = "PENPOT_RENDERER_SERVICE_RUNTIME_ASSET_PREFLIGHT_WORKSPACE_ROOT";
 const RUNTIME_ASSET_PREFLIGHT_CACHE_ROOT_ENV = "PENPOT_RENDERER_SERVICE_RUNTIME_ASSET_PREFLIGHT_CACHE_ROOT";
@@ -1534,7 +1540,9 @@ function bundledSceneBridgeImportGateResponse(
     const runtimeSource = rendererRuntimeSourceForOptions(options);
     const configured = options.bundledSceneBridgeImportGate?.configured === true;
     const value = options.bundledSceneBridgeImportGate?.value;
-    const valueValid = !configured || value === BUNDLED_SCENE_BRIDGE_RUNTIME_EXPECTED_VALUE;
+    const importGateRequested = value === BUNDLED_SCENE_BRIDGE_RUNTIME_IMPORT_GATE_VALUE;
+    const registrationPreflightRequested = value === BUNDLED_SCENE_BRIDGE_RUNTIME_REGISTRATION_PREFLIGHT_VALUE;
+    const valueValid = !configured || importGateRequested || registrationPreflightRequested;
     const runtimeModuleConflict = configured && (Boolean(options.rendererRuntimeModule) || runtimeSource === "runtime-module");
     const browserFixtureRuntimeConflict = configured && (options.browserFixtureRuntime === true || runtimeSource === "browser-fixture");
     const injectedRuntimeConflict = configured && (Boolean(options.renderer) || runtimeSource === "injected");
@@ -1548,9 +1556,9 @@ function bundledSceneBridgeImportGateResponse(
             env: BUNDLED_SCENE_BRIDGE_RUNTIME_ENV,
             valueRead: false,
             valuesIncluded: false,
-            message: "Renderer-service bundled scene bridge runtime mode must be import-gate when configured.",
+            message: "Renderer-service bundled scene bridge runtime mode must be import-gate or registration-preflight when configured.",
             nextActions: [
-                `Set ${BUNDLED_SCENE_BRIDGE_RUNTIME_ENV}=${BUNDLED_SCENE_BRIDGE_RUNTIME_EXPECTED_VALUE} or leave it unset.`,
+                `Set ${BUNDLED_SCENE_BRIDGE_RUNTIME_ENV}=${BUNDLED_SCENE_BRIDGE_RUNTIME_IMPORT_GATE_VALUE} for import/factory preflight, set it to ${BUNDLED_SCENE_BRIDGE_RUNTIME_REGISTRATION_PREFLIGHT_VALUE} for runtime registration preflight, or leave it unset.`,
                 "Rerun renderer-service /health after fixing the mode.",
             ],
         });
@@ -1616,6 +1624,7 @@ function bundledSceneBridgeImportGateResponse(
                       message: "The bundled scene bridge import gate is defined, but module import, factory invocation, and runtime registration remain disabled.",
                       nextActions: [
                           `Set ${BUNDLED_SCENE_BRIDGE_RUNTIME_ENV}=${BUNDLED_SCENE_BRIDGE_RUNTIME_EXPECTED_VALUE} only after the future import implementation is enabled.`,
+                          `Use ${BUNDLED_SCENE_BRIDGE_RUNTIME_ENV}=${BUNDLED_SCENE_BRIDGE_RUNTIME_REGISTRATION_PREFLIGHT_VALUE} only for the guarded P26.40 runtime registration preflight.`,
                           "Keep default MCP/CLI rendering on the existing renderer-service path until browser and pixel tests pass.",
                       ],
                   },
@@ -1628,15 +1637,21 @@ function bundledSceneBridgeImportGateResponse(
         mode: "explicit-import-gate",
         env: BUNDLED_SCENE_BRIDGE_RUNTIME_ENV,
         expectedValue: BUNDLED_SCENE_BRIDGE_RUNTIME_EXPECTED_VALUE,
+        acceptedValues: [...BUNDLED_SCENE_BRIDGE_RUNTIME_ACCEPTED_VALUES],
         configured,
         requested: configured && valueValid,
+        importGateRequested: configured && importGateRequested,
+        registrationPreflightRequested: configured && registrationPreflightRequested,
         valid: !invalid,
         configuration: {
             configured,
             expectedValue: BUNDLED_SCENE_BRIDGE_RUNTIME_EXPECTED_VALUE,
+            acceptedValues: [...BUNDLED_SCENE_BRIDGE_RUNTIME_ACCEPTED_VALUES],
             valueRead: false,
             valuesIncluded: false,
             accepted: configured && valueValid && !invalid,
+            importGateAccepted: configured && importGateRequested && !invalid,
+            registrationPreflightAccepted: configured && registrationPreflightRequested && !invalid,
         },
         conflicts: {
             runtimeModule: runtimeModuleConflict,
@@ -2714,9 +2729,9 @@ async function bundledSceneBridgeFactoryInvocationPreflightResponse(
 
 const bundledSceneBridgeRuntimeRegistrationPreflightBase = {
     status: "planned-disabled",
-    preflightVersion: "P26.39",
+    preflightVersion: "P26.40",
     owner: "renderer-service",
-    mode: "runtime-registration-preflight-plan",
+    mode: "guarded-runtime-registration-preflight",
     source: {
         contractVersion: "P26.32",
         adapterModuleReadinessVersion: "P26.33",
@@ -2724,14 +2739,18 @@ const bundledSceneBridgeRuntimeRegistrationPreflightBase = {
         factoryShapePreflightVersion: "P26.35",
         moduleNamespaceImportPreflightVersion: "P26.36",
         factoryInvocationPreflightVersion: "P26.38",
+        registrationPreflightGateVersion: "P26.40",
         factoryInvocationReady: false,
         factoryInvocationExecuted: false,
         runtimeOptionsShapeReady: false,
+        registrationPreflightGateOpen: false,
         readiness: "blocked-until-factory-invocation-ready",
     },
     guard: {
         factoryInvocationReadyRequired: true,
         explicitFutureRegistrationGateRequired: true,
+        explicitRegistrationPreflightGateRequired: true,
+        registrationPreflightGateOpen: false,
         registrationEnabled: false,
         registrationAttempted: false,
         runtimeRegistered: false,
@@ -2775,7 +2794,7 @@ const bundledSceneBridgeRuntimeRegistrationPreflightBase = {
         },
         {
             code: "renderer_service_bundled_scene_bridge_runtime_registration_disabled",
-            stage: "registration-gate",
+            stage: "registration-preflight-gate",
             severity: "blocked",
             retryable: false,
             dispatch: false,
@@ -2796,7 +2815,7 @@ const bundledSceneBridgeRuntimeRegistrationPreflightBase = {
         },
         {
             code: "renderer_service_bundled_scene_bridge_runtime_registration_ready",
-            stage: "registration-plan",
+            stage: "registration-preflight-plan",
             severity: "info",
             retryable: false,
             dispatch: false,
@@ -2833,8 +2852,8 @@ const bundledSceneBridgeRuntimeRegistrationPreflightBase = {
             dispatch: false,
         },
         {
-            id: "future-registration-gate",
-            status: "planned",
+            id: "registration-preflight-gate",
+            status: "blocked",
             required: true,
             dispatch: false,
         },
@@ -2925,8 +2944,12 @@ function bundledSceneBridgeRuntimeRegistrationDiagnostic(
 }
 
 function bundledSceneBridgeRuntimeRegistrationPreflightResponse(
+    importGate: Record<string, unknown>,
     factoryInvocationPreflight: Record<string, unknown>
 ): Record<string, unknown> {
+    const importGateConfiguration = isRecord(importGate.configuration) ? importGate.configuration : {};
+    const registrationPreflightGateOpen =
+        importGate.status === "configured-disabled" && importGateConfiguration.registrationPreflightAccepted === true;
     const runtimeOptionsShape = isRecord(factoryInvocationPreflight.runtimeOptionsShape)
         ? factoryInvocationPreflight.runtimeOptionsShape
         : {};
@@ -2950,35 +2973,77 @@ function bundledSceneBridgeRuntimeRegistrationPreflightResponse(
         return bundledSceneBridgeRuntimeRegistrationPreflightBase;
     }
 
+    const source = {
+        ...bundledSceneBridgeRuntimeRegistrationPreflightBase.source,
+        factoryInvocationReady: true,
+        factoryInvocationExecuted: true,
+        runtimeOptionsShapeReady: true,
+        registrationPreflightGateOpen,
+        readiness: registrationPreflightGateOpen
+            ? "runtime-registration-preflight-ready"
+            : "blocked-until-registration-preflight-gate-opens",
+    };
+
+    const guard = {
+        ...bundledSceneBridgeRuntimeRegistrationPreflightBase.guard,
+        registrationPreflightGateOpen,
+    };
+
+    if (!registrationPreflightGateOpen) {
+        const diagnostic = bundledSceneBridgeRuntimeRegistrationDiagnostic(
+            "renderer_service_bundled_scene_bridge_runtime_registration_disabled",
+            "blocked",
+            "guard.registrationPreflightGateOpen",
+            "The bundled scene bridge runtime registration preflight is blocked until PENPOT_RENDERER_SERVICE_BUNDLED_SCENE_BRIDGE_RUNTIME is set to registration-preflight.",
+            [
+                `Set ${BUNDLED_SCENE_BRIDGE_RUNTIME_ENV}=${BUNDLED_SCENE_BRIDGE_RUNTIME_REGISTRATION_PREFLIGHT_VALUE} only for the guarded P26.40 runtime registration preflight.`,
+                "Keep render dispatch, browser startup, asset loading, backend/source-data reads, local writes, and value exposure disabled.",
+            ]
+        );
+
+        return {
+            ...bundledSceneBridgeRuntimeRegistrationPreflightBase,
+            source,
+            guard,
+            diagnostics: [diagnostic],
+            diagnosticCodes: [diagnostic.code],
+            nextActions: diagnostic.nextActions,
+            checks: [
+                { id: "factory-invocation-ready", status: "passed", required: true, dispatch: false },
+                { id: "runtime-options-registration-shape", status: "passed", required: true, dispatch: false },
+                { id: "registration-preflight-gate", status: "blocked", required: true, dispatch: false },
+                { id: "lifecycle-cleanup-contract", status: "planned", required: true, dispatch: false },
+                { id: "registration-outcome-taxonomy", status: "planned", required: true, dispatch: false },
+            ],
+            execution: null,
+        };
+    }
+
     const diagnostic = bundledSceneBridgeRuntimeRegistrationDiagnostic(
-        "renderer_service_bundled_scene_bridge_runtime_registration_disabled",
-        "blocked",
-        "guard.registrationEnabled",
-        "The bundled scene bridge runtime registration preflight is planned, but registration execution remains disabled until the guarded registration slice is implemented.",
+        "renderer_service_bundled_scene_bridge_runtime_registration_ready",
+        "info",
+        "guard.registrationPreflightGateOpen",
+        "The bundled scene bridge runtime registration preflight gate is open and the redacted factory invocation output is ready for the next reviewed registration task.",
         [
-            "Implement the guarded runtime registration preflight as a separate reviewed step before registering any renderer runtime.",
+            "Proceed with the next reviewed task before registering any renderer runtime in the service registry.",
             "Keep render dispatch, browser startup, asset loading, backend/source-data reads, local writes, and value exposure disabled.",
         ]
     );
 
     return {
         ...bundledSceneBridgeRuntimeRegistrationPreflightBase,
-        source: {
-            ...bundledSceneBridgeRuntimeRegistrationPreflightBase.source,
-            factoryInvocationReady: true,
-            factoryInvocationExecuted: true,
-            runtimeOptionsShapeReady: true,
-            readiness: "ready-for-runtime-registration-preflight-execution",
-        },
+        status: "ready",
+        source,
+        guard,
         diagnostics: [diagnostic],
         diagnosticCodes: [diagnostic.code],
         nextActions: diagnostic.nextActions,
         checks: [
             { id: "factory-invocation-ready", status: "passed", required: true, dispatch: false },
             { id: "runtime-options-registration-shape", status: "passed", required: true, dispatch: false },
-            { id: "future-registration-gate", status: "planned", required: true, dispatch: false },
-            { id: "lifecycle-cleanup-contract", status: "planned", required: true, dispatch: false },
-            { id: "registration-outcome-taxonomy", status: "planned", required: true, dispatch: false },
+            { id: "registration-preflight-gate", status: "passed", required: true, dispatch: false },
+            { id: "lifecycle-cleanup-contract", status: "passed", required: true, dispatch: false },
+            { id: "registration-outcome-taxonomy", status: "passed", required: true, dispatch: false },
         ],
         execution: null,
     };
@@ -6063,13 +6128,25 @@ function validateBundledSceneBridgeImportGateResponse(actual: unknown, field: st
     requireResponseEqual(record.mode, "explicit-import-gate", `${field}.mode`);
     requireResponseEqual(record.env, BUNDLED_SCENE_BRIDGE_RUNTIME_ENV, `${field}.env`);
     requireResponseEqual(record.expectedValue, BUNDLED_SCENE_BRIDGE_RUNTIME_EXPECTED_VALUE, `${field}.expectedValue`);
+    requireResponseArrayEqual(
+        responseStringArray(record, "acceptedValues", `${field}.acceptedValues`),
+        [...BUNDLED_SCENE_BRIDGE_RUNTIME_ACCEPTED_VALUES],
+        `${field}.acceptedValues`
+    );
     requireResponseEqual(typeof record.configured, "boolean", `${field}.configured.type`);
     requireResponseEqual(typeof record.requested, "boolean", `${field}.requested.type`);
+    requireResponseEqual(typeof record.importGateRequested, "boolean", `${field}.importGateRequested.type`);
+    requireResponseEqual(typeof record.registrationPreflightRequested, "boolean", `${field}.registrationPreflightRequested.type`);
     requireResponseEqual(typeof record.valid, "boolean", `${field}.valid.type`);
     if (status === "configured-disabled") {
         requireResponseEqual(record.configured, true, `${field}.configured`);
         requireResponseEqual(record.requested, true, `${field}.requested`);
         requireResponseEqual(record.valid, true, `${field}.valid`);
+        requireResponseEqual(
+            record.importGateRequested === true || record.registrationPreflightRequested === true,
+            true,
+            `${field}.acceptedRequest`
+        );
     }
     if (status === "planned-disabled") {
         requireResponseEqual(record.valid, true, `${field}.valid`);
@@ -6081,9 +6158,17 @@ function validateBundledSceneBridgeImportGateResponse(actual: unknown, field: st
     const configuration = responseRecord(record.configuration, `${field}.configuration`);
     requireResponseEqual(typeof configuration.configured, "boolean", `${field}.configuration.configured.type`);
     requireResponseEqual(configuration.expectedValue, BUNDLED_SCENE_BRIDGE_RUNTIME_EXPECTED_VALUE, `${field}.configuration.expectedValue`);
+    requireResponseArrayEqual(
+        responseStringArray(configuration, "acceptedValues", `${field}.configuration.acceptedValues`),
+        [...BUNDLED_SCENE_BRIDGE_RUNTIME_ACCEPTED_VALUES],
+        `${field}.configuration.acceptedValues`
+    );
     requireResponseEqual(configuration.valueRead, false, `${field}.configuration.valueRead`);
     requireResponseEqual(configuration.valuesIncluded, false, `${field}.configuration.valuesIncluded`);
     requireResponseEqual(typeof configuration.accepted, "boolean", `${field}.configuration.accepted.type`);
+    requireResponseEqual(typeof configuration.importGateAccepted, "boolean", `${field}.configuration.importGateAccepted.type`);
+    requireResponseEqual(typeof configuration.registrationPreflightAccepted, "boolean", `${field}.configuration.registrationPreflightAccepted.type`);
+    requireResponseEqual(configuration.importGateAccepted === true && configuration.registrationPreflightAccepted === true, false, `${field}.configuration.acceptedModeExclusive`);
 
     const conflicts = responseRecord(record.conflicts, `${field}.conflicts`);
     for (const property of ["runtimeModule", "browserFixtureRuntime", "injectedRuntime"]) {
@@ -6797,12 +6882,12 @@ function validateBundledSceneBridgeFactoryInvocationPreflightResponse(actual: un
 function validateBundledSceneBridgeRuntimeRegistrationPreflightResponse(actual: unknown, field: string): void {
     const record = responseRecord(actual, field);
     const status = String(record.status);
-    if (status !== "planned-disabled") {
-        responseInvalid(`${field}.status must be planned-disabled.`, `${field}.status`);
+    if (!["planned-disabled", "ready", "invalid"].includes(status)) {
+        responseInvalid(`${field}.status must be planned-disabled, ready, or invalid.`, `${field}.status`);
     }
-    requireResponseEqual(record.preflightVersion, "P26.39", `${field}.preflightVersion`);
+    requireResponseEqual(record.preflightVersion, "P26.40", `${field}.preflightVersion`);
     requireResponseEqual(record.owner, "renderer-service", `${field}.owner`);
-    requireResponseEqual(record.mode, "runtime-registration-preflight-plan", `${field}.mode`);
+    requireResponseEqual(record.mode, "guarded-runtime-registration-preflight", `${field}.mode`);
 
     const source = responseRecord(record.source, `${field}.source`);
     requireResponseEqual(source.contractVersion, "P26.32", `${field}.source.contractVersion`);
@@ -6811,23 +6896,34 @@ function validateBundledSceneBridgeRuntimeRegistrationPreflightResponse(actual: 
     requireResponseEqual(source.factoryShapePreflightVersion, "P26.35", `${field}.source.factoryShapePreflightVersion`);
     requireResponseEqual(source.moduleNamespaceImportPreflightVersion, "P26.36", `${field}.source.moduleNamespaceImportPreflightVersion`);
     requireResponseEqual(source.factoryInvocationPreflightVersion, "P26.38", `${field}.source.factoryInvocationPreflightVersion`);
+    requireResponseEqual(source.registrationPreflightGateVersion, "P26.40", `${field}.source.registrationPreflightGateVersion`);
     for (const property of ["factoryInvocationReady", "factoryInvocationExecuted", "runtimeOptionsShapeReady"]) {
         requireResponseEqual(typeof source[property], "boolean", `${field}.source.${property}.type`);
     }
+    requireResponseEqual(typeof source.registrationPreflightGateOpen, "boolean", `${field}.source.registrationPreflightGateOpen.type`);
     if (source.factoryInvocationReady === false) {
         requireResponseEqual(source.factoryInvocationExecuted, false, `${field}.source.factoryInvocationExecuted`);
         requireResponseEqual(source.runtimeOptionsShapeReady, false, `${field}.source.runtimeOptionsShapeReady`);
+        requireResponseEqual(source.registrationPreflightGateOpen, false, `${field}.source.registrationPreflightGateOpen`);
         requireResponseEqual(source.readiness, "blocked-until-factory-invocation-ready", `${field}.source.readiness`);
     }
-    if (source.factoryInvocationReady === true) {
+    if (source.factoryInvocationReady === true && source.registrationPreflightGateOpen === false) {
         requireResponseEqual(source.factoryInvocationExecuted, true, `${field}.source.factoryInvocationExecuted`);
         requireResponseEqual(source.runtimeOptionsShapeReady, true, `${field}.source.runtimeOptionsShapeReady`);
-        requireResponseEqual(source.readiness, "ready-for-runtime-registration-preflight-execution", `${field}.source.readiness`);
+        requireResponseEqual(source.readiness, "blocked-until-registration-preflight-gate-opens", `${field}.source.readiness`);
+    }
+    if (source.factoryInvocationReady === true && source.registrationPreflightGateOpen === true) {
+        requireResponseEqual(source.factoryInvocationExecuted, true, `${field}.source.factoryInvocationExecuted`);
+        requireResponseEqual(source.runtimeOptionsShapeReady, true, `${field}.source.runtimeOptionsShapeReady`);
+        requireResponseEqual(status, "ready", `${field}.status`);
+        requireResponseEqual(source.readiness, "runtime-registration-preflight-ready", `${field}.source.readiness`);
     }
 
     const guard = responseRecord(record.guard, `${field}.guard`);
     requireResponseEqual(guard.factoryInvocationReadyRequired, true, `${field}.guard.factoryInvocationReadyRequired`);
     requireResponseEqual(guard.explicitFutureRegistrationGateRequired, true, `${field}.guard.explicitFutureRegistrationGateRequired`);
+    requireResponseEqual(guard.explicitRegistrationPreflightGateRequired, true, `${field}.guard.explicitRegistrationPreflightGateRequired`);
+    requireResponseEqual(guard.registrationPreflightGateOpen, source.registrationPreflightGateOpen, `${field}.guard.registrationPreflightGateOpen`);
     for (const property of [
         "registrationEnabled",
         "registrationAttempted",
@@ -6928,6 +7024,47 @@ function validateBundledSceneBridgeRuntimeRegistrationPreflightResponse(actual: 
         bundledSceneBridgeRuntimeRegistrationPreflight.checks.map((entry) => entry.id),
         `${field}.checks.ids`
     );
+    const checkStatus = (id: string) => String(checks.find((entry) => entry.id === id)?.status ?? "unknown");
+    if (status === "ready") {
+        for (const expectedCheckId of bundledSceneBridgeRuntimeRegistrationPreflight.checks.map((entry) => entry.id)) {
+            requireResponseEqual(checkStatus(expectedCheckId), "passed", `${field}.checks.${expectedCheckId}.status`);
+        }
+        requireResponseArrayEqual(
+            diagnosticCodes,
+            ["renderer_service_bundled_scene_bridge_runtime_registration_ready"],
+            `${field}.diagnosticCodes`
+        );
+    } else if (source.factoryInvocationReady === true) {
+        requireResponseEqual(checkStatus("factory-invocation-ready"), "passed", `${field}.checks.factory-invocation-ready.status`);
+        requireResponseEqual(
+            checkStatus("runtime-options-registration-shape"),
+            "passed",
+            `${field}.checks.runtime-options-registration-shape.status`
+        );
+        requireResponseEqual(checkStatus("registration-preflight-gate"), "blocked", `${field}.checks.registration-preflight-gate.status`);
+        requireResponseEqual(checkStatus("lifecycle-cleanup-contract"), "planned", `${field}.checks.lifecycle-cleanup-contract.status`);
+        requireResponseEqual(checkStatus("registration-outcome-taxonomy"), "planned", `${field}.checks.registration-outcome-taxonomy.status`);
+        requireResponseArrayEqual(
+            diagnosticCodes,
+            ["renderer_service_bundled_scene_bridge_runtime_registration_disabled"],
+            `${field}.diagnosticCodes`
+        );
+    } else {
+        requireResponseEqual(checkStatus("factory-invocation-ready"), "blocked", `${field}.checks.factory-invocation-ready.status`);
+        requireResponseEqual(
+            checkStatus("runtime-options-registration-shape"),
+            "blocked",
+            `${field}.checks.runtime-options-registration-shape.status`
+        );
+        requireResponseEqual(checkStatus("registration-preflight-gate"), "blocked", `${field}.checks.registration-preflight-gate.status`);
+        requireResponseEqual(checkStatus("lifecycle-cleanup-contract"), "planned", `${field}.checks.lifecycle-cleanup-contract.status`);
+        requireResponseEqual(checkStatus("registration-outcome-taxonomy"), "planned", `${field}.checks.registration-outcome-taxonomy.status`);
+        requireResponseArrayEqual(
+            diagnosticCodes,
+            ["renderer_service_bundled_scene_bridge_runtime_registration_factory_not_ready"],
+            `${field}.diagnosticCodes`
+        );
+    }
     for (const check of checks) {
         requireResponseEqual(check.dispatch, false, `${field}.checks.${String(check.id)}.dispatch`);
     }
@@ -8009,7 +8146,7 @@ async function handleRequest(request: IncomingMessage, response: ServerResponse,
         const importGate = bundledSceneBridgeImportGateResponse(options);
         const moduleNamespaceImportPreflight = await bundledSceneBridgeModuleNamespaceImportPreflightResponse(importGate);
         const factoryInvocationPreflight = await bundledSceneBridgeFactoryInvocationPreflightResponse(moduleNamespaceImportPreflight);
-        const runtimeRegistrationPreflight = bundledSceneBridgeRuntimeRegistrationPreflightResponse(factoryInvocationPreflight);
+        const runtimeRegistrationPreflight = bundledSceneBridgeRuntimeRegistrationPreflightResponse(importGate, factoryInvocationPreflight);
         sendJson(response, 200, {
             ...healthResponse,
             runtimeAssetMaterializationPreflight: runtimeAssetPreflight,
@@ -8043,7 +8180,7 @@ async function handleRequest(request: IncomingMessage, response: ServerResponse,
             const importGate = bundledSceneBridgeImportGateResponse(options);
             const moduleNamespaceImportPreflight = await bundledSceneBridgeModuleNamespaceImportPreflightResponse(importGate);
             const factoryInvocationPreflight = await bundledSceneBridgeFactoryInvocationPreflightResponse(moduleNamespaceImportPreflight);
-            const runtimeRegistrationPreflight = bundledSceneBridgeRuntimeRegistrationPreflightResponse(factoryInvocationPreflight);
+            const runtimeRegistrationPreflight = bundledSceneBridgeRuntimeRegistrationPreflightResponse(importGate, factoryInvocationPreflight);
             const generatedResponse = thumbnailResponse(
                 request,
                 summary,

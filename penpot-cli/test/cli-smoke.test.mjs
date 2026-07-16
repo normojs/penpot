@@ -7147,8 +7147,11 @@ test("renderer-service status reports a no-spawn lifecycle plan without probing"
             gateVersion: "P26.34",
             configured: false,
             requested: false,
+            importGateRequested: false,
+            registrationPreflightRequested: false,
             value: null,
             expectedValue: "import-gate",
+            acceptedValues: ["import-gate", "registration-preflight"],
             valid: true,
             source: null,
             runtimeModuleConflict: false,
@@ -7279,15 +7282,33 @@ test("renderer-service status reports a no-spawn lifecycle plan without probing"
         assert.equal(body.data.lifecycle.bundledSceneBridgeFactoryInvocationPreflight.omitted.factoryValue, true);
         assert.equal(body.data.lifecycle.bundledSceneBridgeFactoryInvocationPreflight.omitted.optionValues, true);
         assert.equal(body.data.lifecycle.bundledSceneBridgeRuntimeRegistrationPreflight.status, "planned-disabled");
-        assert.equal(body.data.lifecycle.bundledSceneBridgeRuntimeRegistrationPreflight.preflightVersion, "P26.39");
+        assert.equal(body.data.lifecycle.bundledSceneBridgeRuntimeRegistrationPreflight.preflightVersion, "P26.40");
         assert.equal(body.data.lifecycle.bundledSceneBridgeRuntimeRegistrationPreflight.checked, false);
+        assert.equal(
+            body.data.lifecycle.bundledSceneBridgeRuntimeRegistrationPreflight.source.registrationPreflightGateVersion,
+            "P26.40"
+        );
         assert.equal(body.data.lifecycle.bundledSceneBridgeRuntimeRegistrationPreflight.source.factoryInvocationReady, false);
         assert.equal(body.data.lifecycle.bundledSceneBridgeRuntimeRegistrationPreflight.source.factoryInvocationExecuted, false);
         assert.equal(body.data.lifecycle.bundledSceneBridgeRuntimeRegistrationPreflight.source.runtimeOptionsShapeReady, false);
+        assert.equal(body.data.lifecycle.bundledSceneBridgeRuntimeRegistrationPreflight.source.registrationPreflightGateOpen, false);
         assert.equal(
             body.data.lifecycle.bundledSceneBridgeRuntimeRegistrationPreflight.source.readiness,
             "blocked-until-factory-invocation-ready"
         );
+        assert.equal(
+            body.data.lifecycle.bundledSceneBridgeRuntimeRegistrationPreflight.guard.factoryInvocationReadyRequired,
+            true
+        );
+        assert.equal(
+            body.data.lifecycle.bundledSceneBridgeRuntimeRegistrationPreflight.guard.explicitFutureRegistrationGateRequired,
+            true
+        );
+        assert.equal(
+            body.data.lifecycle.bundledSceneBridgeRuntimeRegistrationPreflight.guard.explicitRegistrationPreflightGateRequired,
+            true
+        );
+        assert.equal(body.data.lifecycle.bundledSceneBridgeRuntimeRegistrationPreflight.guard.registrationPreflightGateOpen, false);
         assert.equal(body.data.lifecycle.bundledSceneBridgeRuntimeRegistrationPreflight.guard.registrationEnabled, false);
         assert.equal(body.data.lifecycle.bundledSceneBridgeRuntimeRegistrationPreflight.guard.runtimeRegistration, false);
         assert.equal(body.data.lifecycle.bundledSceneBridgeRuntimeRegistrationPreflight.registrationContract.runtimeId, "bundled-scene-bridge");
@@ -7697,8 +7718,11 @@ test("renderer-service status reports bundled scene bridge import gate configura
     assert.equal(importGate.gateVersion, "P26.34");
     assert.equal(importGate.configured, true);
     assert.equal(importGate.requested, true);
+    assert.equal(importGate.importGateRequested, true);
+    assert.equal(importGate.registrationPreflightRequested, false);
     assert.equal(importGate.value, null);
     assert.equal(importGate.expectedValue, "import-gate");
+    assert.deepEqual(importGate.acceptedValues, ["import-gate", "registration-preflight"]);
     assert.equal(importGate.valid, true);
     assert.equal(importGate.source, "PENPOT_RENDERER_SERVICE_BUNDLED_SCENE_BRIDGE_RUNTIME");
     assert.deepEqual(importGate.diagnosticCodes, []);
@@ -7714,6 +7738,47 @@ test("renderer-service status reports bundled scene bridge import gate configura
     assert.match(body.data.lifecycle.startCommand, /PENPOT_RENDERER_SERVICE_BUNDLED_SCENE_BRIDGE_RUNTIME=import-gate/);
 });
 
+test("renderer-service status reports bundled scene bridge registration preflight gate configuration", async () => {
+    const result = await runCli(["renderer-service", "status", "--format", "json"], {
+        PENPOT_RENDERER_SERVICE_BUNDLED_SCENE_BRIDGE_RUNTIME: "registration-preflight",
+    });
+    const body = parseJson(result.stdout);
+    const importGate = body.data.lifecycle.bundledSceneBridgeImportGate;
+    const runtimeRegistration = body.data.lifecycle.bundledSceneBridgeRuntimeRegistrationPreflight;
+
+    assert.equal(result.exitCode, 0);
+    assert.equal(importGate.status, "configured-disabled");
+    assert.equal(importGate.configured, true);
+    assert.equal(importGate.requested, true);
+    assert.equal(importGate.importGateRequested, false);
+    assert.equal(importGate.registrationPreflightRequested, true);
+    assert.equal(importGate.value, null);
+    assert.equal(importGate.expectedValue, "import-gate");
+    assert.deepEqual(importGate.acceptedValues, ["import-gate", "registration-preflight"]);
+    assert.equal(importGate.valid, true);
+    assert.deepEqual(importGate.diagnosticCodes, []);
+    assert.equal(importGate.lifecyclePlanEffects.healthProbe, false);
+    assert.equal(importGate.lifecyclePlanEffects.moduleImport, false);
+    assert.equal(importGate.lifecyclePlanEffects.factoryInvoked, false);
+    assert.equal(importGate.lifecyclePlanEffects.renderDispatch, false);
+    assert.equal(runtimeRegistration.status, "planned-disabled");
+    assert.equal(runtimeRegistration.preflightVersion, "P26.40");
+    assert.equal(runtimeRegistration.checked, false);
+    assert.equal(runtimeRegistration.source.registrationPreflightGateVersion, "P26.40");
+    assert.equal(runtimeRegistration.source.registrationPreflightGateOpen, false);
+    assert.equal(runtimeRegistration.guard.registrationPreflightGateOpen, false);
+    assert.equal(runtimeRegistration.lifecyclePlanEffects.healthProbe, false);
+    assert.equal(runtimeRegistration.lifecyclePlanEffects.runtimeRegistration, false);
+    assert.equal(runtimeRegistration.lifecyclePlanEffects.renderDispatch, false);
+    assert.ok(
+        runtimeRegistration.nextActions.some((entry) => entry.includes("query /health"))
+    );
+    assert.match(
+        body.data.lifecycle.startCommand,
+        /PENPOT_RENDERER_SERVICE_BUNDLED_SCENE_BRIDGE_RUNTIME=registration-preflight/
+    );
+});
+
 test("renderer-service status reports bundled scene bridge import gate conflicts", async () => {
     const result = await runCli(["renderer-service", "status", "--format", "json"], {
         PENPOT_RENDERER_SERVICE_BUNDLED_SCENE_BRIDGE_RUNTIME: "enabled",
@@ -7726,6 +7791,9 @@ test("renderer-service status reports bundled scene bridge import gate conflicts
     assert.equal(importGate.status, "invalid");
     assert.equal(importGate.configured, true);
     assert.equal(importGate.requested, false);
+    assert.equal(importGate.importGateRequested, false);
+    assert.equal(importGate.registrationPreflightRequested, false);
+    assert.deepEqual(importGate.acceptedValues, ["import-gate", "registration-preflight"]);
     assert.equal(importGate.valid, false);
     assert.equal(importGate.runtimeModuleConflict, true);
     assert.deepEqual(importGate.diagnosticCodes, [
@@ -7741,6 +7809,11 @@ test("renderer-service status reports bundled scene bridge import gate conflicts
     assert.ok(
         importGate.nextActions.some((entry) =>
             entry.includes("PENPOT_RENDERER_SERVICE_BUNDLED_SCENE_BRIDGE_RUNTIME=import-gate")
+        )
+    );
+    assert.ok(
+        importGate.nextActions.some((entry) =>
+            entry.includes("PENPOT_RENDERER_SERVICE_BUNDLED_SCENE_BRIDGE_RUNTIME=registration-preflight")
         )
     );
 });
@@ -10881,6 +10954,13 @@ test("render thumbnail execution opt-in posts to renderer-service and returns re
         assert.equal(body.data.healthPreflight.bundledSceneBridgeImportGate.gateVersion, "P26.34");
         assert.equal(body.data.healthPreflight.bundledSceneBridgeImportGate.env, "PENPOT_RENDERER_SERVICE_BUNDLED_SCENE_BRIDGE_RUNTIME");
         assert.equal(body.data.healthPreflight.bundledSceneBridgeImportGate.configured, false);
+        assert.equal(body.data.healthPreflight.bundledSceneBridgeImportGate.requested, false);
+        assert.equal(body.data.healthPreflight.bundledSceneBridgeImportGate.importGateRequested, false);
+        assert.equal(body.data.healthPreflight.bundledSceneBridgeImportGate.registrationPreflightRequested, false);
+        assert.deepEqual(body.data.healthPreflight.bundledSceneBridgeImportGate.acceptedValues, [
+            "import-gate",
+            "registration-preflight",
+        ]);
         assert.equal(body.data.healthPreflight.bundledSceneBridgeImportGate.gate.importEnabled, false);
         assert.equal(body.data.healthPreflight.bundledSceneBridgeImportGate.gate.importAttempted, false);
         assert.equal(body.data.healthPreflight.bundledSceneBridgeImportGate.gate.moduleImported, false);
@@ -10951,11 +11031,35 @@ test("render thumbnail execution opt-in posts to renderer-service and returns re
         assert.equal(body.data.healthPreflight.bundledSceneBridgeFactoryInvocationPreflight.omitted.factoryValue, true);
         assert.equal(body.data.healthPreflight.bundledSceneBridgeFactoryInvocationPreflight.omitted.optionValues, true);
         assert.equal(body.data.healthPreflight.bundledSceneBridgeRuntimeRegistrationPreflight.status, "planned-disabled");
-        assert.equal(body.data.healthPreflight.bundledSceneBridgeRuntimeRegistrationPreflight.preflightVersion, "P26.39");
+        assert.equal(body.data.healthPreflight.bundledSceneBridgeRuntimeRegistrationPreflight.preflightVersion, "P26.40");
+        assert.equal(
+            body.data.healthPreflight.bundledSceneBridgeRuntimeRegistrationPreflight.source.registrationPreflightGateVersion,
+            "P26.40"
+        );
         assert.equal(body.data.healthPreflight.bundledSceneBridgeRuntimeRegistrationPreflight.source.factoryInvocationReady, false);
+        assert.equal(
+            body.data.healthPreflight.bundledSceneBridgeRuntimeRegistrationPreflight.source.registrationPreflightGateOpen,
+            false
+        );
         assert.equal(
             body.data.healthPreflight.bundledSceneBridgeRuntimeRegistrationPreflight.source.readiness,
             "blocked-until-factory-invocation-ready"
+        );
+        assert.equal(
+            body.data.healthPreflight.bundledSceneBridgeRuntimeRegistrationPreflight.guard.factoryInvocationReadyRequired,
+            true
+        );
+        assert.equal(
+            body.data.healthPreflight.bundledSceneBridgeRuntimeRegistrationPreflight.guard.explicitFutureRegistrationGateRequired,
+            true
+        );
+        assert.equal(
+            body.data.healthPreflight.bundledSceneBridgeRuntimeRegistrationPreflight.guard.explicitRegistrationPreflightGateRequired,
+            true
+        );
+        assert.equal(
+            body.data.healthPreflight.bundledSceneBridgeRuntimeRegistrationPreflight.guard.registrationPreflightGateOpen,
+            false
         );
         assert.equal(body.data.healthPreflight.bundledSceneBridgeRuntimeRegistrationPreflight.guard.registrationEnabled, false);
         assert.equal(body.data.healthPreflight.bundledSceneBridgeRuntimeRegistrationPreflight.guard.runtimeRegistration, false);

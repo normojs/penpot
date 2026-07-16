@@ -10446,13 +10446,24 @@ test("render.thumbnail renderer-service API fixtures define planning requests wi
     assert.equal(fixtures.bundledRuntimeBridge.bundledSceneBridgeFactoryInvocationPreflight.omitted.optionValues, true);
     assert.equal(fixtures.bundledRuntimeBridge.bundledSceneBridgeFactoryInvocationPreflight.execution, null);
     assert.equal(fixtures.bundledRuntimeBridge.bundledSceneBridgeRuntimeRegistrationPreflight.status, "planned-disabled");
-    assert.equal(fixtures.bundledRuntimeBridge.bundledSceneBridgeRuntimeRegistrationPreflight.preflightVersion, "P26.39");
+    assert.equal(fixtures.bundledRuntimeBridge.bundledSceneBridgeRuntimeRegistrationPreflight.preflightVersion, "P26.40");
+    assert.equal(fixtures.bundledRuntimeBridge.bundledSceneBridgeRuntimeRegistrationPreflight.mode, "guarded-runtime-registration-preflight");
+    assert.equal(
+        fixtures.bundledRuntimeBridge.bundledSceneBridgeRuntimeRegistrationPreflight.source.registrationPreflightGateVersion,
+        "P26.40"
+    );
     assert.equal(fixtures.bundledRuntimeBridge.bundledSceneBridgeRuntimeRegistrationPreflight.source.factoryInvocationReady, false);
+    assert.equal(fixtures.bundledRuntimeBridge.bundledSceneBridgeRuntimeRegistrationPreflight.source.registrationPreflightGateOpen, false);
     assert.equal(
         fixtures.bundledRuntimeBridge.bundledSceneBridgeRuntimeRegistrationPreflight.source.readiness,
         "blocked-until-factory-invocation-ready"
     );
     assert.equal(fixtures.bundledRuntimeBridge.bundledSceneBridgeRuntimeRegistrationPreflight.guard.registrationEnabled, false);
+    assert.equal(
+        fixtures.bundledRuntimeBridge.bundledSceneBridgeRuntimeRegistrationPreflight.guard.explicitRegistrationPreflightGateRequired,
+        true
+    );
+    assert.equal(fixtures.bundledRuntimeBridge.bundledSceneBridgeRuntimeRegistrationPreflight.guard.registrationPreflightGateOpen, false);
     assert.equal(fixtures.bundledRuntimeBridge.bundledSceneBridgeRuntimeRegistrationPreflight.guard.runtimeRegistration, false);
     assert.equal(fixtures.bundledRuntimeBridge.bundledSceneBridgeRuntimeRegistrationPreflight.registrationContract.runtimeId, "bundled-scene-bridge");
     assert.deepEqual(fixtures.bundledRuntimeBridge.bundledSceneBridgeRuntimeRegistrationPreflight.registrationContract.requiredRuntimeOptionKeys, [
@@ -14390,7 +14401,7 @@ test("render.thumbnail renderer-service health preflight normalizes executed bun
     assert.equal(preflight.execution.valuesIncluded, false);
 });
 
-test("render.thumbnail renderer-service health preflight normalizes bundled scene bridge runtime registration planning without execution", async () => {
+test("render.thumbnail renderer-service health preflight normalizes ready bundled scene bridge runtime registration preflight without execution", async () => {
     const plan = createRenderThumbnailRendererServicePlan({
         fileId: "file-1",
         endpoint: "http://127.0.0.1:6070/thumbnail",
@@ -14402,29 +14413,67 @@ test("render.thumbnail renderer-service health preflight normalizes bundled scen
     const safePreflight = renderThumbnailRendererServiceFixtures.bundledRuntimeBridge.bundledSceneBridgeRuntimeRegistrationPreflight;
     const readyPreflight = {
         ...safePreflight,
+        status: "ready",
         source: {
             ...safePreflight.source,
             factoryInvocationReady: true,
             factoryInvocationExecuted: true,
             runtimeOptionsShapeReady: true,
-            readiness: "ready-for-runtime-registration-preflight-execution",
+            registrationPreflightGateOpen: true,
+            readiness: "runtime-registration-preflight-ready",
         },
+        guard: {
+            ...safePreflight.guard,
+            registrationPreflightGateOpen: true,
+        },
+        checks: [
+            {
+                id: "factory-invocation-ready",
+                required: true,
+                status: "passed",
+                dispatch: false,
+            },
+            {
+                id: "runtime-options-registration-shape",
+                required: true,
+                status: "passed",
+                dispatch: false,
+            },
+            {
+                id: "registration-preflight-gate",
+                required: true,
+                status: "passed",
+                dispatch: false,
+            },
+            {
+                id: "lifecycle-cleanup-contract",
+                required: true,
+                status: "passed",
+                dispatch: false,
+            },
+            {
+                id: "registration-outcome-taxonomy",
+                required: true,
+                status: "passed",
+                dispatch: false,
+            },
+        ],
         diagnostics: [
             {
-                code: "renderer_service_bundled_scene_bridge_runtime_registration_disabled",
-                severity: "blocked",
-                field: "guard.registrationEnabled",
+                code: "renderer_service_bundled_scene_bridge_runtime_registration_ready",
+                severity: "info",
+                field: "guard.registrationPreflightGateOpen",
                 message:
-                    "The bundled scene bridge runtime registration preflight is planned, but registration execution remains disabled until the guarded registration slice is implemented.",
+                    "The bundled scene bridge runtime registration preflight gate is open and the redacted factory invocation output is ready for the next reviewed registration task.",
                 nextActions: [
-                    "Implement the guarded runtime registration preflight as a separate reviewed step before registering any renderer runtime.",
+                    "Proceed with the next reviewed task before registering any renderer runtime in the service registry.",
                     "Keep render dispatch, browser startup, asset loading, backend/source-data reads, local writes, and value exposure disabled.",
                 ],
             },
         ],
-        diagnosticCodes: ["renderer_service_bundled_scene_bridge_runtime_registration_disabled"],
+        diagnosticCodes: ["renderer_service_bundled_scene_bridge_runtime_registration_ready"],
         nextActions: [
-            "Implement the guarded runtime registration preflight as a separate reviewed step before registering any renderer runtime.",
+            "Proceed with the next reviewed task before registering any renderer runtime in the service registry.",
             "Keep render dispatch, browser startup, asset loading, backend/source-data reads, local writes, and value exposure disabled.",
         ],
     };
@@ -14449,18 +14498,30 @@ test("render.thumbnail renderer-service health preflight normalizes bundled scen
     });
 
     const preflight = healthPreflight.bundledSceneBridgeRuntimeRegistrationPreflight;
-    assert.equal(preflight.status, "planned-disabled");
-    assert.equal(preflight.preflightVersion, "P26.39");
+    assert.equal(preflight.status, "ready");
+    assert.equal(preflight.preflightVersion, "P26.40");
     assert.equal(preflight.source.factoryInvocationReady, true);
     assert.equal(preflight.source.factoryInvocationExecuted, true);
     assert.equal(preflight.source.runtimeOptionsShapeReady, true);
-    assert.equal(preflight.source.readiness, "ready-for-runtime-registration-preflight-execution");
+    assert.equal(preflight.source.registrationPreflightGateOpen, true);
+    assert.equal(preflight.source.readiness, "runtime-registration-preflight-ready");
+    assert.equal(preflight.guard.registrationPreflightGateOpen, true);
     assert.equal(preflight.guard.registrationEnabled, false);
     assert.equal(preflight.guard.runtimeRegistration, false);
     assert.equal(preflight.registrationContract.valuesIncluded, false);
-    assert.deepEqual(preflight.diagnosticCodes, ["renderer_service_bundled_scene_bridge_runtime_registration_disabled"]);
+    assert.deepEqual(
+        preflight.checks.map((entry) => [entry.id, entry.status, entry.dispatch]),
+        [
+            ["factory-invocation-ready", "passed", false],
+            ["runtime-options-registration-shape", "passed", false],
+            ["registration-preflight-gate", "passed", false],
+            ["lifecycle-cleanup-contract", "passed", false],
+            ["registration-outcome-taxonomy", "passed", false],
+        ]
+    );
+    assert.deepEqual(preflight.diagnosticCodes, ["renderer_service_bundled_scene_bridge_runtime_registration_ready"]);
     assert.deepEqual(preflight.nextActions, [
-        "Implement the guarded runtime registration preflight as a separate reviewed step before registering any renderer runtime.",
+        "Proceed with the next reviewed task before registering any renderer runtime in the service registry.",
         "Keep render dispatch, browser startup, asset loading, backend/source-data reads, local writes, and value exposure disabled.",
     ]);
     assert.equal(preflight.sideEffects.runtimeRegistration, false);

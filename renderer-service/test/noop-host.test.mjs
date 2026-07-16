@@ -828,17 +828,35 @@ function assertBundledSceneBridgeAdapterModule(readiness) {
     return readiness;
 }
 
-function assertBundledSceneBridgeImportGate(gate, { status = "planned-disabled", configured = false, requested = false } = {}) {
+function assertBundledSceneBridgeImportGate(
+    gate,
+    {
+        status = "planned-disabled",
+        configured = false,
+        requested = false,
+        importGateRequested = requested,
+        registrationPreflightRequested = false,
+    } = {}
+) {
     assert.equal(gate.status, status);
     assert.equal(gate.gateVersion, "P26.34");
     assert.equal(gate.owner, "renderer-service");
     assert.equal(gate.mode, "explicit-import-gate");
     assert.equal(gate.env, "PENPOT_RENDERER_SERVICE_BUNDLED_SCENE_BRIDGE_RUNTIME");
     assert.equal(gate.expectedValue, "import-gate");
+    assert.deepEqual(gate.acceptedValues, ["import-gate", "registration-preflight"]);
     assert.equal(gate.configured, configured);
     assert.equal(gate.requested, requested);
+    assert.equal(gate.importGateRequested, importGateRequested);
+    assert.equal(gate.registrationPreflightRequested, registrationPreflightRequested);
+    assert.equal(gate.configuration.configured, configured);
+    assert.equal(gate.configuration.expectedValue, "import-gate");
+    assert.deepEqual(gate.configuration.acceptedValues, ["import-gate", "registration-preflight"]);
     assert.equal(gate.configuration.valueRead, false);
     assert.equal(gate.configuration.valuesIncluded, false);
+    assert.equal(gate.configuration.accepted, requested && status !== "invalid");
+    assert.equal(gate.configuration.importGateAccepted, importGateRequested && status !== "invalid");
+    assert.equal(gate.configuration.registrationPreflightAccepted, registrationPreflightRequested && status !== "invalid");
     assert.equal(gate.conflicts.runtimeModule, false);
     assert.equal(gate.conflicts.browserFixtureRuntime, false);
     assert.equal(gate.gate.importRequiresExplicitConfig, true);
@@ -1092,28 +1110,38 @@ function assertBundledSceneBridgeFactoryInvocationPreflight(
     return preflight;
 }
 
-function assertBundledSceneBridgeRuntimeRegistrationPreflight(preflight, { factoryInvocationReady = false } = {}) {
-    assert.equal(preflight.status, "planned-disabled");
-    assert.equal(preflight.preflightVersion, "P26.39");
+function assertBundledSceneBridgeRuntimeRegistrationPreflight(
+    preflight,
+    { status = "planned-disabled", factoryInvocationReady = false, registrationPreflightGateOpen = false } = {}
+) {
+    const lifecycleReady = factoryInvocationReady && registrationPreflightGateOpen;
+    assert.equal(preflight.status, status);
+    assert.equal(preflight.preflightVersion, "P26.40");
     assert.equal(preflight.owner, "renderer-service");
-    assert.equal(preflight.mode, "runtime-registration-preflight-plan");
+    assert.equal(preflight.mode, "guarded-runtime-registration-preflight");
     assert.equal(preflight.source.contractVersion, "P26.32");
     assert.equal(preflight.source.adapterModuleReadinessVersion, "P26.33");
     assert.equal(preflight.source.importGateVersion, "P26.34");
     assert.equal(preflight.source.factoryShapePreflightVersion, "P26.35");
     assert.equal(preflight.source.moduleNamespaceImportPreflightVersion, "P26.36");
     assert.equal(preflight.source.factoryInvocationPreflightVersion, "P26.38");
+    assert.equal(preflight.source.registrationPreflightGateVersion, "P26.40");
     assert.equal(preflight.source.factoryInvocationReady, factoryInvocationReady);
     assert.equal(preflight.source.factoryInvocationExecuted, factoryInvocationReady);
     assert.equal(preflight.source.runtimeOptionsShapeReady, factoryInvocationReady);
+    assert.equal(preflight.source.registrationPreflightGateOpen, lifecycleReady);
     assert.equal(
         preflight.source.readiness,
-        factoryInvocationReady
-            ? "ready-for-runtime-registration-preflight-execution"
+        lifecycleReady
+            ? "runtime-registration-preflight-ready"
+            : factoryInvocationReady
+              ? "blocked-until-registration-preflight-gate-opens"
             : "blocked-until-factory-invocation-ready"
     );
     assert.equal(preflight.guard.factoryInvocationReadyRequired, true);
     assert.equal(preflight.guard.explicitFutureRegistrationGateRequired, true);
+    assert.equal(preflight.guard.explicitRegistrationPreflightGateRequired, true);
+    assert.equal(preflight.guard.registrationPreflightGateOpen, lifecycleReady);
     assert.equal(preflight.guard.registrationEnabled, false);
     assert.equal(preflight.guard.registrationAttempted, false);
     assert.equal(preflight.guard.runtimeRegistered, false);
@@ -1157,8 +1185,10 @@ function assertBundledSceneBridgeRuntimeRegistrationPreflight(preflight, { facto
         ]
     );
     assert.deepEqual(preflight.diagnosticCodes, [
-        factoryInvocationReady
-            ? "renderer_service_bundled_scene_bridge_runtime_registration_disabled"
+        lifecycleReady
+            ? "renderer_service_bundled_scene_bridge_runtime_registration_ready"
+            : factoryInvocationReady
+              ? "renderer_service_bundled_scene_bridge_runtime_registration_disabled"
             : "renderer_service_bundled_scene_bridge_runtime_registration_factory_not_ready",
     ]);
     assert.deepEqual(
@@ -1166,9 +1196,9 @@ function assertBundledSceneBridgeRuntimeRegistrationPreflight(preflight, { facto
         [
             ["factory-invocation-ready", factoryInvocationReady ? "passed" : "blocked", false],
             ["runtime-options-registration-shape", factoryInvocationReady ? "passed" : "blocked", false],
-            ["future-registration-gate", "planned", false],
-            ["lifecycle-cleanup-contract", "planned", false],
-            ["registration-outcome-taxonomy", "planned", false],
+            ["registration-preflight-gate", lifecycleReady ? "passed" : "blocked", false],
+            ["lifecycle-cleanup-contract", lifecycleReady ? "passed" : "planned", false],
+            ["registration-outcome-taxonomy", lifecycleReady ? "passed" : "planned", false],
         ]
     );
     for (const property of [
@@ -1295,7 +1325,7 @@ test("noop host exposes the P25.24 health contract", async () => {
     });
 });
 
-test("noop host reports configured P26.34 import gate plus P26.36 namespace, P26.38 factory invocation, and P26.39 registration preflights", async () => {
+test("noop host reports configured P26.34 import gate plus P26.36 namespace, P26.38 factory invocation, and P26.40 blocked registration preflights", async () => {
     const service = await serviceModule.startRendererService({
         port: 0,
         bundledSceneBridgeImportGate: {
@@ -1334,6 +1364,58 @@ test("noop host reports configured P26.34 import gate plus P26.36 namespace, P26
         });
         assertBundledSceneBridgeRuntimeRegistrationPreflight(body.bundledSceneBridgeRuntimeRegistrationPreflight, {
             factoryInvocationReady: true,
+            registrationPreflightGateOpen: false,
+        });
+    } finally {
+        await service.stop();
+    }
+});
+
+test("noop host reports configured P26.40 registration preflight ready without runtime side effects", async () => {
+    const service = await serviceModule.startRendererService({
+        port: 0,
+        bundledSceneBridgeImportGate: {
+            configured: true,
+            value: "registration-preflight",
+        },
+    });
+    try {
+        const response = await fetch(`http://${service.host}:${service.port}/health`);
+
+        assert.equal(response.status, 200);
+        const body = await response.json();
+        const gate = assertBundledSceneBridgeImportGate(body.bundledSceneBridgeImportGate, {
+            status: "configured-disabled",
+            configured: true,
+            requested: true,
+            importGateRequested: false,
+            registrationPreflightRequested: true,
+        });
+        assert.equal(gate.valid, true);
+        assert.equal(gate.configuration.accepted, true);
+        assert.equal(gate.configuration.importGateAccepted, false);
+        assert.equal(gate.configuration.registrationPreflightAccepted, true);
+        assert.deepEqual(gate.diagnosticCodes, [
+            "renderer_service_bundled_scene_bridge_import_gate_defined_disabled",
+        ]);
+        assertBundledSceneBridgeModuleNamespaceImportPreflight(body.bundledSceneBridgeModuleNamespaceImportPreflight, {
+            status: "ready",
+            importGateOpen: true,
+            importAttempted: true,
+            moduleImported: true,
+            factoryPresent: true,
+            factoryCallable: true,
+        });
+        assertBundledSceneBridgeFactoryInvocationPreflight(body.bundledSceneBridgeFactoryInvocationPreflight, {
+            status: "ready",
+            namespaceImportReady: true,
+            factoryInvoked: true,
+            runtimeOptionsCreated: true,
+        });
+        assertBundledSceneBridgeRuntimeRegistrationPreflight(body.bundledSceneBridgeRuntimeRegistrationPreflight, {
+            status: "ready",
+            factoryInvocationReady: true,
+            registrationPreflightGateOpen: true,
         });
     } finally {
         await service.stop();
@@ -1357,9 +1439,15 @@ test("noop host reports invalid P26.34 bundled scene bridge import gate diagnost
         assert.equal(gate.status, "invalid");
         assert.equal(gate.configured, true);
         assert.equal(gate.requested, false);
+        assert.equal(gate.importGateRequested, false);
+        assert.equal(gate.registrationPreflightRequested, false);
         assert.equal(gate.valid, false);
+        assert.deepEqual(gate.acceptedValues, ["import-gate", "registration-preflight"]);
         assert.equal(gate.configuration.valueRead, false);
         assert.equal(gate.configuration.valuesIncluded, false);
+        assert.deepEqual(gate.configuration.acceptedValues, ["import-gate", "registration-preflight"]);
+        assert.equal(gate.configuration.importGateAccepted, false);
+        assert.equal(gate.configuration.registrationPreflightAccepted, false);
         assert.deepEqual(gate.diagnosticCodes, [
             "renderer_service_bundled_scene_bridge_import_gate_configuration_invalid",
         ]);
@@ -3673,7 +3761,7 @@ test("noop host rejects unsafe P26.38 bundled scene bridge factory invocation pr
     }
 });
 
-test("noop host rejects unsafe P26.39 bundled scene bridge runtime registration preflight metadata", async () => {
+test("noop host rejects unsafe P26.40 bundled scene bridge runtime registration preflight metadata", async () => {
     const service = await serviceModule.startRendererService({
         port: 0,
         thumbnailResponseOverride: (body) => ({

@@ -2041,15 +2041,21 @@ export interface RenderThumbnailRendererServiceBundledSceneBridgeImportGateDiagn
     mode: "explicit-import-gate" | null;
     env: string | null;
     expectedValue: string | null;
+    acceptedValues: string[];
     configured: boolean;
     requested: boolean;
+    importGateRequested: boolean;
+    registrationPreflightRequested: boolean;
     valid: boolean;
     configuration: {
         configured: boolean;
         expectedValue: string | null;
+        acceptedValues: string[];
         valueRead: boolean;
         valuesIncluded: boolean;
         accepted: boolean;
+        importGateAccepted: boolean;
+        registrationPreflightAccepted: boolean;
     };
     conflicts: {
         runtimeModule: boolean;
@@ -2505,11 +2511,11 @@ export interface RenderThumbnailRendererServiceBundledSceneBridgeFactoryInvocati
 }
 
 export interface RenderThumbnailRendererServiceBundledSceneBridgeRuntimeRegistrationPreflightDiagnostic {
-    status: "not-reported" | "planned-disabled" | "invalid";
-    preflightVersion: "P26.39" | null;
+    status: "not-reported" | "planned-disabled" | "ready" | "invalid";
+    preflightVersion: "P26.40" | null;
     checked: boolean;
     owner: "renderer-service" | null;
-    mode: "runtime-registration-preflight-plan" | null;
+    mode: "guarded-runtime-registration-preflight" | null;
     source: {
         contractVersion: "P26.32" | null;
         adapterModuleReadinessVersion: "P26.33" | null;
@@ -2517,14 +2523,18 @@ export interface RenderThumbnailRendererServiceBundledSceneBridgeRuntimeRegistra
         factoryShapePreflightVersion: "P26.35" | null;
         moduleNamespaceImportPreflightVersion: "P26.36" | null;
         factoryInvocationPreflightVersion: "P26.38" | null;
+        registrationPreflightGateVersion: "P26.40" | null;
         factoryInvocationReady: boolean;
         factoryInvocationExecuted: boolean;
         runtimeOptionsShapeReady: boolean;
+        registrationPreflightGateOpen: boolean;
         readiness: string | null;
     };
     guard: {
         factoryInvocationReadyRequired: boolean;
         explicitFutureRegistrationGateRequired: boolean;
+        explicitRegistrationPreflightGateRequired: boolean;
+        registrationPreflightGateOpen: boolean;
         registrationEnabled: boolean;
         registrationAttempted: boolean;
         runtimeRegistered: boolean;
