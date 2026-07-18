@@ -4,6 +4,7 @@
 
 ### :sparkles: New features & Enhancements
 
+- Record product decision to keep page/selection live-only tools plugin-live without persisted agent session state.
 - Document Components/Tokens evaluation (defer executable tools) and fork packaging/upstream ops notes after Phase 26 close-out.
 - Add backend-command/headless grid cell placement via optional `layout.cells` (CLI `--layout-grid-cells`, MCP layout.cells) while keeping complex area editing plugin-live.
 - P26.54 adds optional controlled renderer-service process lifecycle: `penpot-cli renderer-service start --spawn` / `PENPOT_RENDERER_SERVICE_LIFECYCLE=spawn` can spawn/stop/health-watch a private-checkout host with pid tracking, while default `start` remains no-spawn manual.

@@ -435,10 +435,10 @@ the existing backend thumbnail path. P26.53 is complete: default `render.thumbna
 configured renderer-service endpoint plus normal auth is enough, while explicit
 disable still closes the gate and diagnostics remain redacted. P26.54 is complete: optional controlled renderer-service process lifecycle is
 available via explicit spawn opt-in, while default start remains no-spawn.
-Phase 26 close-out rows P26.46–P26.54 are complete. Grid cell placement is implemented.
+Phase 26 close-out rows P26.46–P26.54 are complete. Tracker status: no open product checklist rows remain after the 2026-07-19 live-only decision and fork push. Grid cell placement is implemented.
 Components/Tokens evaluated and deferred (names only; no headless path yet). Portable CLI
 package-check re-verified; upstream sync/npm policy documented. Remaining open items are
-mainly `git push` to `fork` (network) and live-only workspace product decisions.
+closed: fork push succeeded; live-only workspace state stays plugin-live by product decision. No open product checklist rows remain for post-26 close-out.
 P25.7 is complete: thumbnail renderer-service API fixtures now define
 future file refresh, file reuse, tagged frame refresh, auth forwarding,
 resource URI normalization, and MCP/CLI test expectations. P25.8 is complete:
@@ -1150,7 +1150,7 @@ tracker row is `done` and verified. Keep at most one table row `in_progress`.
 - [x] **Grid cell / child placement** — backend-command supports optional `layout.cells` placements (row/column/spans/shapes); complex area auto-assignment remains limited/plugin-live
 - [x] **Components wave** — evaluated 2026-07-19: names only in ToolNames; common library helpers exist; no headless/MCP registration; **defer** executable tools until library-file targeting contract (see `headless-live-gap-audit.md`)
 - [x] **Tokens wave** — evaluated 2026-07-19: names only; tokens-lib/feature flags exist in common; no MCP/CLI/headless path; **defer** until token set/theme apply scope is specified (prefer future read-only `tokens.list` descriptor first)
-- [ ] **Live-only workspace state** — keep current-page / some selection paths plugin-live unless a product decision adds persisted session state
+- [x] **Live-only workspace state** — product decision 2026-07-19: keep `page.set_current` / `selection.get` / `selection.set` plugin-live/editor-local; no persisted agent session state (see `headless-live-gap-audit.md`)
 
 ### Packaging, ops, and distribution
 

@@ -1095,3 +1095,38 @@ Date: 2026-07-19
 
 - Keep checklist items open as **evaluate/defer** with documented outcome above.
 - No implementation slice opened in this session beyond documentation.
+
+
+## Live-only workspace state decision (2026-07-19)
+
+**Decision: keep plugin-live. Do not add persisted session state in this fork wave.**
+
+Commands:
+
+- `page.set_current`
+- `selection.get`
+- `selection.set`
+
+Rationale:
+
+1. These mutate or read **editor-local** workspace state (`penpot.openPage`,
+   workspace selection), not durable file data.
+2. Headless agents already have an explicit recovery path:
+   `file.open` → `file.get_context` → `file.bind_context` → retry live-only tool.
+3. Adding persisted "current page" / selection would create a second source of
+   truth against open editor tabs and multi-tab ownership, with no clear product
+   owner for conflict resolution.
+4. Backend-command continues to support **explicit ids** for page/shape edits
+   without needing current-page or selection.
+
+Operational policy:
+
+- MCP tools remain registered as **plugin-live only**.
+- CLI continues to report these as live-only / unsupported for headless execution
+  rather than inventing a fake session store.
+- `file_context_required` / live-only errors keep target-aware open/bind/retry
+  guidance.
+- Revisit only if a future product requirement explicitly needs agent-owned
+  session state independent of an open editor tab.
+
+This closes the post-Phase-26 checklist item without a runtime behavior change.

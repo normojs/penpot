@@ -4842,3 +4842,11 @@ Build the smallest version that proves MCP can be global:
 This keeps the existing working MCP bridge intact while changing the product
 model from "open a file, then connect a plugin" to "MCP is part of Penpot, and
 file context is attached when needed."
+
+## Live-only workspace state (2026-07-19)
+
+Product decision: `page.set_current`, `selection.get`, and `selection.set` remain
+plugin-live/editor-local. This fork will not introduce persisted agent session
+state for current page or selection. Agents must bind a live workspace context
+(or supply explicit file/page/shape ids for backend-command edits). See
+`headless-live-gap-audit.md`.
