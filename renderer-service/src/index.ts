@@ -4011,6 +4011,240 @@ const bundledSceneBridgeRuntimeRegistryInstallationPreflightBase = {
 export const bundledSceneBridgeRuntimeRegistryInstallationPreflight =
     bundledSceneBridgeRuntimeRegistryInstallationPreflightBase;
 
+const bundledSceneBridgeRuntimeRegistryInstallationExecutionBoundaryBase = {
+    status: "blocked",
+    boundaryVersion: "P26.45",
+    owner: "renderer-service",
+    mode: "guarded-runtime-registry-installation-execution-boundary",
+    source: {
+        runtimeRegistrationPreflightVersion: "P26.40",
+        registryRegistrationBoundaryVersion: "P26.41",
+        registryInstallationContractVersion: "P26.42",
+        registryInstallationGateVersion: "P26.43",
+        registryInstallationPreflightVersion: "P26.44",
+        registryInstallationExecutionBoundaryVersion: "P26.45",
+        registryInstallationPreflightReady: false,
+        registryInstallationPreflightStatus: "blocked",
+        registryInstallationPreflightReadiness: "blocked-until-reviewed-installation-gate",
+        reviewedGateOpen: false,
+        futureInstallationAttemptAllowed: false,
+        readiness: "blocked-until-installation-preflight-ready",
+    },
+    executionBoundary: {
+        registryInstallationPreflightReadyRequired: true,
+        explicitExecutionReviewRequired: true,
+        duplicateLookupRequired: true,
+        runtimeValueCreationRequired: true,
+        registryInstallationRequired: true,
+        closeHookRegistrationRequired: true,
+        rollbackHookRequired: true,
+        noDispatchRequired: true,
+        executionPlanReady: false,
+        executionAttemptAllowedInThisTask: false,
+        runtimeInstallationEnabled: false,
+        registryLookupAttempted: false,
+        registryWriteAttempted: false,
+        runtimeValueCreated: false,
+        runtimeInstallationAttempted: false,
+        runtimeInstalled: false,
+        runtimeRegistered: false,
+        runtimeRegistration: false,
+        runtimeExecutionRegistered: false,
+        closeHookRegistered: false,
+        duplicateRollbackAttempted: false,
+        renderDispatch: false,
+        browserProcessStarted: false,
+        runtimeValuesIncluded: false,
+        registryValuesIncluded: false,
+    },
+    runtimeValuePlan: {
+        runtimeId: "bundled-scene-bridge",
+        targetRegistry: "renderer-service.thumbnail-runtime-registry",
+        requiredMethods: ["renderThumbnail"],
+        optionalMethods: ["close"],
+        requiredInstallationInputs: ["runtimeId", "runtimeValue", "lifecycleOwner", "closeHook"],
+        runtimeValueCreationPlanned: true,
+        runtimeValueCreated: false,
+        runtimeValueInstalled: false,
+        runtimeRegistered: false,
+        runtimeExecutionRegistered: false,
+        renderDispatchEnabledAfterInstallation: false,
+        valuesIncluded: false,
+    },
+    duplicateHandling: {
+        duplicateDetectionRequired: true,
+        existingRuntimeLookupRequired: true,
+        duplicateRegistrationPolicy: "reject-until-explicit-replace-policy",
+        replacementPolicy: "not-supported-until-reviewed",
+        rollbackRequiredOnDuplicate: true,
+        rollbackHookRequired: true,
+        cleanupOnInstallationFailure: true,
+        cleanupOnServiceStop: true,
+        existingRuntimeLookupAttempted: false,
+        existingRuntimeFound: false,
+        duplicateDetected: false,
+        rollbackPrepared: false,
+        rollbackAttempted: false,
+        cleanupAttempted: false,
+        valuesIncluded: false,
+    },
+    lifecycleOwnership: {
+        lifecycleOwner: "renderer-service",
+        registryOwner: "renderer-service",
+        closeHookOwner: "renderer-service",
+        rollbackOwner: "renderer-service",
+        runtimeId: "bundled-scene-bridge",
+        targetRegistry: "renderer-service.thumbnail-runtime-registry",
+        lifecycleScope: "thumbnail-runtime-registry",
+        noDispatchLifecycle: true,
+        lifecycleOwnershipVerified: false,
+        closeHookRegistered: false,
+        rollbackHookRegistered: false,
+        runtimeValueOwned: false,
+        registrySlotOwned: false,
+        valuesIncluded: false,
+    },
+    refusalDiagnostics: {
+        refusalRequired: true,
+        refusalReason: "installation-preflight-not-ready",
+        invalidPreflightMetadata: false,
+        registryLookupRefused: true,
+        registryWriteRefused: true,
+        runtimeValueCreationRefused: true,
+        runtimeInstallationRefused: true,
+        closeHookRegistrationRefused: true,
+        duplicateRollbackRefused: true,
+        renderDispatchRefused: true,
+        valuesIncluded: false,
+    },
+    executionOutcomeTaxonomy: [
+        {
+            code: "renderer_service_bundled_scene_bridge_runtime_registry_installation_execution_boundary_preflight_not_ready",
+            stage: "installation-preflight-readiness",
+            severity: "blocked",
+            retryable: false,
+            dispatch: false,
+        },
+        {
+            code: "renderer_service_bundled_scene_bridge_runtime_registry_installation_execution_boundary_preflight_invalid",
+            stage: "installation-preflight-readiness",
+            severity: "invalid",
+            retryable: false,
+            dispatch: false,
+        },
+        {
+            code: "renderer_service_bundled_scene_bridge_runtime_registry_installation_execution_boundary_planned",
+            stage: "installation-execution-boundary",
+            severity: "info",
+            retryable: false,
+            dispatch: false,
+        },
+        {
+            code: "renderer_service_bundled_scene_bridge_runtime_registry_installation_execution_boundary_unsafe_metadata",
+            stage: "installation-execution-boundary-metadata",
+            severity: "invalid",
+            retryable: false,
+            dispatch: false,
+        },
+    ],
+    diagnostics: [
+        {
+            code: "renderer_service_bundled_scene_bridge_runtime_registry_installation_execution_boundary_preflight_not_ready",
+            severity: "blocked",
+            field: "source.registryInstallationPreflightReady",
+            env: BUNDLED_SCENE_BRIDGE_RUNTIME_INSTALLATION_GATE_ENV,
+            valueRead: false,
+            valuesIncluded: false,
+            message: "The bundled scene bridge runtime registry installation execution boundary is blocked until the P26.44 installation preflight is ready.",
+            nextActions: [
+                "Verify renderer-service /health bundledSceneBridgeRuntimeRegistryInstallationPreflight reports installation-preflight-ready before planning installation execution.",
+                "Keep registry lookup, registry writes, runtime value creation, runtime installation, close-hook registration, rollback, render dispatch, browser startup, reads, writes, and value exposure disabled.",
+            ],
+        },
+    ],
+    diagnosticCodes: [
+        "renderer_service_bundled_scene_bridge_runtime_registry_installation_execution_boundary_preflight_not_ready",
+    ],
+    nextActions: [
+        "Verify renderer-service /health bundledSceneBridgeRuntimeRegistryInstallationPreflight reports installation-preflight-ready before planning installation execution.",
+        "Keep registry lookup, registry writes, runtime value creation, runtime installation, close-hook registration, rollback, render dispatch, browser startup, reads, writes, and value exposure disabled.",
+    ],
+    checks: [
+        { id: "installation-preflight-ready", status: "blocked", required: true, dispatch: false },
+        { id: "runtime-value-creation-boundary", status: "planned", required: true, dispatch: false },
+        { id: "registry-installation-boundary", status: "planned", required: true, dispatch: false },
+        { id: "close-hook-registration-boundary", status: "planned", required: true, dispatch: false },
+        { id: "duplicate-rollback-boundary", status: "planned", required: true, dispatch: false },
+        { id: "runtime-values-redacted", status: "passed", required: true, dispatch: false },
+    ],
+    sideEffects: {
+        registryLookup: false,
+        registryWrite: false,
+        runtimeValueCreation: false,
+        runtimeInstallation: false,
+        runtimeRegistration: false,
+        runtimeExecutionRegistered: false,
+        closeHookRegistration: false,
+        duplicateRollback: false,
+        renderDispatch: false,
+        browserProcessStarted: false,
+        browserPageCreated: false,
+        runtimeAdapterImported: false,
+        runtimeFactoryInvoked: false,
+        runtimeOptionsCreated: false,
+        runtimeAssetsLoaded: false,
+        assetManifestMaterialized: false,
+        backendRpcReads: false,
+        sourceDataReads: false,
+        networkDispatch: false,
+        dispatch: false,
+        localFileWrites: false,
+    },
+    redaction: {
+        modeValuesIncluded: false,
+        moduleValuesIncluded: false,
+        factoryValuesIncluded: false,
+        runtimeOptionsValuesIncluded: false,
+        optionValuesIncluded: false,
+        runtimeValuesIncluded: false,
+        registryValuesIncluded: false,
+        lifecycleValuesIncluded: false,
+        pathValuesIncluded: false,
+        sourceDataValuesIncluded: false,
+        pageValuesIncluded: false,
+        artifactValuesIncluded: false,
+        mediaValuesIncluded: false,
+        tokenValuesIncluded: false,
+    },
+    omitted: {
+        configuredValue: true,
+        moduleNamespace: true,
+        factoryValue: true,
+        runtimeOptionsValue: true,
+        optionValues: true,
+        runtimeValue: true,
+        registryValue: true,
+        lifecycleHandles: true,
+        workspaceRoot: true,
+        cacheRoot: true,
+        modulePath: true,
+        publicPaths: true,
+        cachePaths: true,
+        sha256: true,
+        playwrightBrowserPath: true,
+        runtimeModulePath: true,
+        sourceData: true,
+        pageData: true,
+        artifactBytes: true,
+        mediaBytes: true,
+        tokenValues: true,
+    },
+    execution: null,
+} as const;
+
+export const bundledSceneBridgeRuntimeRegistryInstallationExecutionBoundary =
+    bundledSceneBridgeRuntimeRegistryInstallationExecutionBoundaryBase;
+
 function bundledSceneBridgeRuntimeRegistryInstallationGateDiagnostic(
     code: string,
     severity: "info" | "blocked" | "invalid",
@@ -4361,6 +4595,149 @@ function bundledSceneBridgeRuntimeRegistryInstallationPreflightResponse(
     };
 }
 
+function bundledSceneBridgeRuntimeRegistryInstallationExecutionBoundaryDiagnostic(
+    code: string,
+    severity: "info" | "blocked" | "invalid",
+    field: string,
+    message: string,
+    nextActions: string[]
+) {
+    return {
+        code,
+        severity,
+        field,
+        env: BUNDLED_SCENE_BRIDGE_RUNTIME_INSTALLATION_GATE_ENV,
+        valueRead: false,
+        valuesIncluded: false,
+        message,
+        nextActions,
+    };
+}
+
+function bundledSceneBridgeRuntimeRegistryInstallationExecutionBoundaryResponse(
+    registryInstallationPreflight: Record<string, unknown>
+): Record<string, unknown> {
+    const source = isRecord(registryInstallationPreflight.source) ? registryInstallationPreflight.source : {};
+    const preflight = isRecord(registryInstallationPreflight.preflight) ? registryInstallationPreflight.preflight : {};
+    const rollbackPreconditions = isRecord(registryInstallationPreflight.rollbackPreconditions)
+        ? registryInstallationPreflight.rollbackPreconditions
+        : {};
+    const lifecycleOwnership = isRecord(registryInstallationPreflight.lifecycleOwnership)
+        ? registryInstallationPreflight.lifecycleOwnership
+        : {};
+    const preflightReady =
+        registryInstallationPreflight.status === "ready" &&
+        registryInstallationPreflight.preflightVersion === "P26.44" &&
+        source.readiness === "installation-preflight-ready" &&
+        preflight.readyForLaterInstallationTask === true &&
+        preflight.registryLookupAttempted === false &&
+        preflight.registryWriteAttempted === false &&
+        preflight.runtimeValueCreated === false &&
+        preflight.runtimeInstallationAttempted === false &&
+        preflight.runtimeInstalled === false &&
+        preflight.closeHookRegistered === false &&
+        preflight.duplicateRollbackAttempted === false &&
+        preflight.renderDispatch === false &&
+        rollbackPreconditions.preconditionsVerified === true &&
+        rollbackPreconditions.rollbackAttempted === false &&
+        lifecycleOwnership.lifecycleOwnershipVerified === true &&
+        lifecycleOwnership.runtimeValueOwned === false &&
+        lifecycleOwnership.registrySlotOwned === false;
+    const preflightInvalid = registryInstallationPreflight.status === "invalid";
+
+    let status = "blocked";
+    let readiness = "blocked-until-installation-preflight-ready";
+    let refusalReason = "installation-preflight-not-ready";
+    let diagnostic = bundledSceneBridgeRuntimeRegistryInstallationExecutionBoundaryDiagnostic(
+        "renderer_service_bundled_scene_bridge_runtime_registry_installation_execution_boundary_preflight_not_ready",
+        "blocked",
+        "source.registryInstallationPreflightReady",
+        "The bundled scene bridge runtime registry installation execution boundary is blocked until the P26.44 installation preflight is ready.",
+        [
+            "Verify renderer-service /health bundledSceneBridgeRuntimeRegistryInstallationPreflight reports installation-preflight-ready before planning installation execution.",
+            "Keep registry lookup, registry writes, runtime value creation, runtime installation, close-hook registration, rollback, render dispatch, browser startup, reads, writes, and value exposure disabled.",
+        ]
+    );
+
+    if (preflightInvalid) {
+        status = "invalid";
+        readiness = "invalid-installation-preflight";
+        refusalReason = "installation-preflight-invalid";
+        diagnostic = bundledSceneBridgeRuntimeRegistryInstallationExecutionBoundaryDiagnostic(
+            "renderer_service_bundled_scene_bridge_runtime_registry_installation_execution_boundary_preflight_invalid",
+            "invalid",
+            "source.registryInstallationPreflightStatus",
+            "The bundled scene bridge runtime registry installation execution boundary rejected invalid P26.44 preflight metadata.",
+            [
+                "Fix renderer-service /health bundledSceneBridgeRuntimeRegistryInstallationPreflight before planning runtime installation execution.",
+                "Keep registry lookup, registry writes, runtime value creation, runtime installation, close-hook registration, rollback, render dispatch, browser startup, reads, writes, and value exposure disabled.",
+            ]
+        );
+    } else if (preflightReady) {
+        status = "planned-disabled";
+        readiness = "runtime-registry-installation-execution-boundary-planned";
+        refusalReason = "installation-execution-disabled-until-reviewed-execution-task";
+        diagnostic = bundledSceneBridgeRuntimeRegistryInstallationExecutionBoundaryDiagnostic(
+            "renderer_service_bundled_scene_bridge_runtime_registry_installation_execution_boundary_planned",
+            "info",
+            "executionBoundary.executionPlanReady",
+            "The bundled scene bridge runtime registry installation execution boundary is planned after the P26.44 preflight, but runtime installation remains disabled.",
+            [
+                "Proceed only with a later reviewed execution task before looking up, creating, installing, or exposing a runtime registry value.",
+                "Keep registry lookup, registry writes, runtime value creation, runtime installation, close-hook registration, rollback execution, render dispatch, browser startup, reads, writes, and value exposure disabled in P26.45.",
+            ]
+        );
+    }
+
+    const preflightStatus = typeof registryInstallationPreflight.status === "string" ? registryInstallationPreflight.status : "blocked";
+    const preflightReadiness = typeof source.readiness === "string" ? source.readiness : "blocked-until-reviewed-installation-gate";
+    const boundaryCheckStatus = preflightInvalid ? "invalid" : preflightReady ? "planned" : "planned";
+
+    return {
+        ...bundledSceneBridgeRuntimeRegistryInstallationExecutionBoundaryBase,
+        status,
+        source: {
+            ...bundledSceneBridgeRuntimeRegistryInstallationExecutionBoundaryBase.source,
+            registryInstallationPreflightReady: preflightReady,
+            registryInstallationPreflightStatus: preflightStatus,
+            registryInstallationPreflightReadiness: preflightReadiness,
+            reviewedGateOpen: source.reviewedGateOpen === true,
+            futureInstallationAttemptAllowed: source.futureInstallationAttemptAllowed === true,
+            readiness,
+        },
+        executionBoundary: {
+            ...bundledSceneBridgeRuntimeRegistryInstallationExecutionBoundaryBase.executionBoundary,
+            executionPlanReady: preflightReady,
+        },
+        lifecycleOwnership: {
+            ...bundledSceneBridgeRuntimeRegistryInstallationExecutionBoundaryBase.lifecycleOwnership,
+            lifecycleOwnershipVerified: preflightReady,
+        },
+        refusalDiagnostics: {
+            ...bundledSceneBridgeRuntimeRegistryInstallationExecutionBoundaryBase.refusalDiagnostics,
+            refusalReason,
+            invalidPreflightMetadata: preflightInvalid,
+        },
+        diagnostics: [diagnostic],
+        diagnosticCodes: [diagnostic.code],
+        nextActions: diagnostic.nextActions,
+        checks: [
+            {
+                id: "installation-preflight-ready",
+                status: preflightInvalid ? "invalid" : preflightReady ? "passed" : "blocked",
+                required: true,
+                dispatch: false,
+            },
+            { id: "runtime-value-creation-boundary", status: boundaryCheckStatus, required: true, dispatch: false },
+            { id: "registry-installation-boundary", status: boundaryCheckStatus, required: true, dispatch: false },
+            { id: "close-hook-registration-boundary", status: boundaryCheckStatus, required: true, dispatch: false },
+            { id: "duplicate-rollback-boundary", status: boundaryCheckStatus, required: true, dispatch: false },
+            { id: "runtime-values-redacted", status: "passed", required: true, dispatch: false },
+        ],
+        execution: null,
+    };
+}
+
 function defaultBrowserFixtureRuntimeLifecycleDiagnostics(
     runtimeSource: RendererRuntimeSource,
     {
@@ -4482,6 +4859,7 @@ export const healthResponse = {
         "thumbnail.render.bundled-scene-bridge-runtime-registry-installation-contract",
         "thumbnail.render.bundled-scene-bridge-runtime-registry-installation-gate",
         "thumbnail.render.bundled-scene-bridge-runtime-registry-installation-preflight",
+        "thumbnail.render.bundled-scene-bridge-runtime-registry-installation-execution-boundary",
         "thumbnail.backend-rpc.file-thumbnail-persist",
         "thumbnail.backend-rpc.frame-thumbnail-persist",
     ],
@@ -4500,6 +4878,7 @@ export const healthResponse = {
     bundledSceneBridgeRuntimeRegistryInstallationContract,
     bundledSceneBridgeRuntimeRegistryInstallationGate,
     bundledSceneBridgeRuntimeRegistryInstallationPreflight,
+    bundledSceneBridgeRuntimeRegistryInstallationExecutionBoundary,
     browserFixtureRuntime: defaultBrowserFixtureRuntimeLifecycle,
 } as const;
 
@@ -4536,6 +4915,7 @@ export const noopThumbnailResponse = {
     bundledSceneBridgeRuntimeRegistryInstallationContract,
     bundledSceneBridgeRuntimeRegistryInstallationGate,
     bundledSceneBridgeRuntimeRegistryInstallationPreflight,
+    bundledSceneBridgeRuntimeRegistryInstallationExecutionBoundary,
     browserFixtureRuntime: defaultBrowserFixtureRuntimeLifecycle,
 } as const;
 
@@ -6726,6 +7106,7 @@ function thumbnailResponse(
     bundledSceneBridgeRuntimeRegistryInstallationContract: Record<string, unknown>,
     bundledSceneBridgeRuntimeRegistryInstallationGate: Record<string, unknown>,
     bundledSceneBridgeRuntimeRegistryInstallationPreflight: Record<string, unknown>,
+    bundledSceneBridgeRuntimeRegistryInstallationExecutionBoundary: Record<string, unknown>,
     browserFixtureRuntime: Record<string, unknown>
 ): Record<string, unknown> {
     const host = request.headers.host ?? `${DEFAULT_HOST}:${DEFAULT_PORT}`;
@@ -6747,6 +7128,7 @@ function thumbnailResponse(
         bundledSceneBridgeRuntimeRegistryInstallationContract,
         bundledSceneBridgeRuntimeRegistryInstallationGate,
         bundledSceneBridgeRuntimeRegistryInstallationPreflight,
+        bundledSceneBridgeRuntimeRegistryInstallationExecutionBoundary,
         browserFixtureRuntime,
         request: summary,
         auth,
@@ -9514,6 +9896,312 @@ function validateBundledSceneBridgeRuntimeRegistryInstallationPreflightResponse(
     requireResponseEqual(record.execution ?? null, null, `${field}.execution`);
 }
 
+function validateBundledSceneBridgeRuntimeRegistryInstallationExecutionBoundaryResponse(actual: unknown, field: string): void {
+    const record = responseRecord(actual, field);
+    const status = String(record.status ?? "");
+    if (!["blocked", "planned-disabled", "invalid"].includes(status)) {
+        responseInvalid(`${field}.status must be blocked, planned-disabled, or invalid.`, `${field}.status`);
+    }
+    requireResponseEqual(record.boundaryVersion, "P26.45", `${field}.boundaryVersion`);
+    requireResponseEqual(record.owner, "renderer-service", `${field}.owner`);
+    requireResponseEqual(record.mode, "guarded-runtime-registry-installation-execution-boundary", `${field}.mode`);
+
+    const planned = status === "planned-disabled";
+    const invalid = status === "invalid";
+    const source = responseRecord(record.source, `${field}.source`);
+    requireResponseEqual(source.runtimeRegistrationPreflightVersion, "P26.40", `${field}.source.runtimeRegistrationPreflightVersion`);
+    requireResponseEqual(source.registryRegistrationBoundaryVersion, "P26.41", `${field}.source.registryRegistrationBoundaryVersion`);
+    requireResponseEqual(source.registryInstallationContractVersion, "P26.42", `${field}.source.registryInstallationContractVersion`);
+    requireResponseEqual(source.registryInstallationGateVersion, "P26.43", `${field}.source.registryInstallationGateVersion`);
+    requireResponseEqual(source.registryInstallationPreflightVersion, "P26.44", `${field}.source.registryInstallationPreflightVersion`);
+    requireResponseEqual(source.registryInstallationExecutionBoundaryVersion, "P26.45", `${field}.source.registryInstallationExecutionBoundaryVersion`);
+    requireResponseEqual(source.registryInstallationPreflightReady, planned, `${field}.source.registryInstallationPreflightReady`);
+    requireResponseEqual(
+        source.registryInstallationPreflightStatus,
+        planned ? "ready" : invalid ? "invalid" : "blocked",
+        `${field}.source.registryInstallationPreflightStatus`
+    );
+    if (planned || invalid) {
+        requireResponseEqual(
+            source.registryInstallationPreflightReadiness,
+            planned ? "installation-preflight-ready" : "invalid-installation-gate",
+            `${field}.source.registryInstallationPreflightReadiness`
+        );
+    } else if (
+        ![
+            "blocked-until-reviewed-installation-gate",
+            "blocked-until-renderer-service-health",
+        ].includes(String(source.registryInstallationPreflightReadiness ?? ""))
+    ) {
+        responseInvalid(
+            `${field}.source.registryInstallationPreflightReadiness must be a blocked installation preflight readiness value.`,
+            `${field}.source.registryInstallationPreflightReadiness`
+        );
+    }
+    requireResponseEqual(source.reviewedGateOpen, planned, `${field}.source.reviewedGateOpen`);
+    requireResponseEqual(source.futureInstallationAttemptAllowed, planned, `${field}.source.futureInstallationAttemptAllowed`);
+    requireResponseEqual(
+        source.readiness,
+        planned
+            ? "runtime-registry-installation-execution-boundary-planned"
+            : invalid
+              ? "invalid-installation-preflight"
+              : "blocked-until-installation-preflight-ready",
+        `${field}.source.readiness`
+    );
+
+    const executionBoundary = responseRecord(record.executionBoundary, `${field}.executionBoundary`);
+    for (const property of [
+        "registryInstallationPreflightReadyRequired",
+        "explicitExecutionReviewRequired",
+        "duplicateLookupRequired",
+        "runtimeValueCreationRequired",
+        "registryInstallationRequired",
+        "closeHookRegistrationRequired",
+        "rollbackHookRequired",
+        "noDispatchRequired",
+    ]) {
+        requireResponseEqual(executionBoundary[property], true, `${field}.executionBoundary.${property}`);
+    }
+    requireResponseEqual(executionBoundary.executionPlanReady, planned, `${field}.executionBoundary.executionPlanReady`);
+    for (const property of [
+        "executionAttemptAllowedInThisTask",
+        "runtimeInstallationEnabled",
+        "registryLookupAttempted",
+        "registryWriteAttempted",
+        "runtimeValueCreated",
+        "runtimeInstallationAttempted",
+        "runtimeInstalled",
+        "runtimeRegistered",
+        "runtimeRegistration",
+        "runtimeExecutionRegistered",
+        "closeHookRegistered",
+        "duplicateRollbackAttempted",
+        "renderDispatch",
+        "browserProcessStarted",
+        "runtimeValuesIncluded",
+        "registryValuesIncluded",
+    ]) {
+        requireResponseEqual(executionBoundary[property], false, `${field}.executionBoundary.${property}`);
+    }
+
+    const runtimeValuePlan = responseRecord(record.runtimeValuePlan, `${field}.runtimeValuePlan`);
+    requireResponseEqual(runtimeValuePlan.runtimeId, "bundled-scene-bridge", `${field}.runtimeValuePlan.runtimeId`);
+    requireResponseEqual(runtimeValuePlan.targetRegistry, "renderer-service.thumbnail-runtime-registry", `${field}.runtimeValuePlan.targetRegistry`);
+    requireResponseArrayEqual(responseStringArray(runtimeValuePlan, "requiredMethods", `${field}.runtimeValuePlan.requiredMethods`), ["renderThumbnail"], `${field}.runtimeValuePlan.requiredMethods`);
+    requireResponseArrayEqual(responseStringArray(runtimeValuePlan, "optionalMethods", `${field}.runtimeValuePlan.optionalMethods`), ["close"], `${field}.runtimeValuePlan.optionalMethods`);
+    requireResponseArrayEqual(
+        responseStringArray(runtimeValuePlan, "requiredInstallationInputs", `${field}.runtimeValuePlan.requiredInstallationInputs`),
+        ["runtimeId", "runtimeValue", "lifecycleOwner", "closeHook"],
+        `${field}.runtimeValuePlan.requiredInstallationInputs`
+    );
+    requireResponseEqual(runtimeValuePlan.runtimeValueCreationPlanned, true, `${field}.runtimeValuePlan.runtimeValueCreationPlanned`);
+    for (const property of [
+        "runtimeValueCreated",
+        "runtimeValueInstalled",
+        "runtimeRegistered",
+        "runtimeExecutionRegistered",
+        "renderDispatchEnabledAfterInstallation",
+        "valuesIncluded",
+    ]) {
+        requireResponseEqual(runtimeValuePlan[property], false, `${field}.runtimeValuePlan.${property}`);
+    }
+
+    const duplicateHandling = responseRecord(record.duplicateHandling, `${field}.duplicateHandling`);
+    for (const property of [
+        "duplicateDetectionRequired",
+        "existingRuntimeLookupRequired",
+        "rollbackRequiredOnDuplicate",
+        "rollbackHookRequired",
+        "cleanupOnInstallationFailure",
+        "cleanupOnServiceStop",
+    ]) {
+        requireResponseEqual(duplicateHandling[property], true, `${field}.duplicateHandling.${property}`);
+    }
+    requireResponseEqual(duplicateHandling.duplicateRegistrationPolicy, "reject-until-explicit-replace-policy", `${field}.duplicateHandling.duplicateRegistrationPolicy`);
+    requireResponseEqual(duplicateHandling.replacementPolicy, "not-supported-until-reviewed", `${field}.duplicateHandling.replacementPolicy`);
+    for (const property of [
+        "existingRuntimeLookupAttempted",
+        "existingRuntimeFound",
+        "duplicateDetected",
+        "rollbackPrepared",
+        "rollbackAttempted",
+        "cleanupAttempted",
+        "valuesIncluded",
+    ]) {
+        requireResponseEqual(duplicateHandling[property], false, `${field}.duplicateHandling.${property}`);
+    }
+
+    const lifecycleOwnership = responseRecord(record.lifecycleOwnership, `${field}.lifecycleOwnership`);
+    requireResponseEqual(lifecycleOwnership.lifecycleOwner, "renderer-service", `${field}.lifecycleOwnership.lifecycleOwner`);
+    requireResponseEqual(lifecycleOwnership.registryOwner, "renderer-service", `${field}.lifecycleOwnership.registryOwner`);
+    requireResponseEqual(lifecycleOwnership.closeHookOwner, "renderer-service", `${field}.lifecycleOwnership.closeHookOwner`);
+    requireResponseEqual(lifecycleOwnership.rollbackOwner, "renderer-service", `${field}.lifecycleOwnership.rollbackOwner`);
+    requireResponseEqual(lifecycleOwnership.runtimeId, "bundled-scene-bridge", `${field}.lifecycleOwnership.runtimeId`);
+    requireResponseEqual(lifecycleOwnership.targetRegistry, "renderer-service.thumbnail-runtime-registry", `${field}.lifecycleOwnership.targetRegistry`);
+    requireResponseEqual(lifecycleOwnership.lifecycleScope, "thumbnail-runtime-registry", `${field}.lifecycleOwnership.lifecycleScope`);
+    requireResponseEqual(lifecycleOwnership.noDispatchLifecycle, true, `${field}.lifecycleOwnership.noDispatchLifecycle`);
+    requireResponseEqual(lifecycleOwnership.lifecycleOwnershipVerified, planned, `${field}.lifecycleOwnership.lifecycleOwnershipVerified`);
+    for (const property of ["closeHookRegistered", "rollbackHookRegistered", "runtimeValueOwned", "registrySlotOwned", "valuesIncluded"]) {
+        requireResponseEqual(lifecycleOwnership[property], false, `${field}.lifecycleOwnership.${property}`);
+    }
+
+    const refusalDiagnostics = responseRecord(record.refusalDiagnostics, `${field}.refusalDiagnostics`);
+    requireResponseEqual(refusalDiagnostics.refusalRequired, true, `${field}.refusalDiagnostics.refusalRequired`);
+    requireResponseEqual(refusalDiagnostics.invalidPreflightMetadata, invalid, `${field}.refusalDiagnostics.invalidPreflightMetadata`);
+    requireResponseEqual(
+        refusalDiagnostics.refusalReason,
+        planned
+            ? "installation-execution-disabled-until-reviewed-execution-task"
+            : invalid
+              ? "installation-preflight-invalid"
+              : "installation-preflight-not-ready",
+        `${field}.refusalDiagnostics.refusalReason`
+    );
+    for (const property of [
+        "registryLookupRefused",
+        "registryWriteRefused",
+        "runtimeValueCreationRefused",
+        "runtimeInstallationRefused",
+        "closeHookRegistrationRefused",
+        "duplicateRollbackRefused",
+        "renderDispatchRefused",
+    ]) {
+        requireResponseEqual(refusalDiagnostics[property], true, `${field}.refusalDiagnostics.${property}`);
+    }
+    requireResponseEqual(refusalDiagnostics.valuesIncluded, false, `${field}.refusalDiagnostics.valuesIncluded`);
+
+    const executionOutcomeTaxonomy = responseRecordArray(record.executionOutcomeTaxonomy, `${field}.executionOutcomeTaxonomy`);
+    requireResponseArrayEqual(
+        executionOutcomeTaxonomy.map((entry) => String(entry.code)),
+        bundledSceneBridgeRuntimeRegistryInstallationExecutionBoundary.executionOutcomeTaxonomy.map((entry) => entry.code),
+        `${field}.executionOutcomeTaxonomy.codes`
+    );
+    for (const outcome of executionOutcomeTaxonomy) {
+        requireResponseEqual(outcome.dispatch, false, `${field}.executionOutcomeTaxonomy.${String(outcome.code)}.dispatch`);
+    }
+
+    const diagnostics = responseRecordArray(record.diagnostics, `${field}.diagnostics`);
+    const diagnosticCodes = responseStringArray(record, "diagnosticCodes", `${field}.diagnosticCodes`);
+    requireResponseArrayEqual(diagnostics.map((entry) => String(entry.code)), diagnosticCodes, `${field}.diagnostics.codes`);
+    requireResponseArrayEqual(
+        responseStringArray(record, "nextActions", `${field}.nextActions`),
+        [...new Set(diagnostics.flatMap((entry) => responseStringArray(entry, "nextActions", `${field}.diagnostics.nextActions`)))],
+        `${field}.nextActions`
+    );
+    requireResponseArrayEqual(
+        diagnosticCodes,
+        [
+            planned
+                ? "renderer_service_bundled_scene_bridge_runtime_registry_installation_execution_boundary_planned"
+                : invalid
+                  ? "renderer_service_bundled_scene_bridge_runtime_registry_installation_execution_boundary_preflight_invalid"
+                  : "renderer_service_bundled_scene_bridge_runtime_registry_installation_execution_boundary_preflight_not_ready",
+        ],
+        `${field}.diagnosticCodes`
+    );
+
+    const checks = responseRecordArray(record.checks, `${field}.checks`);
+    requireResponseArrayEqual(
+        checks.map((entry) => String(entry.id)),
+        bundledSceneBridgeRuntimeRegistryInstallationExecutionBoundary.checks.map((entry) => entry.id),
+        `${field}.checks.ids`
+    );
+    const checkStatus = (id: string) => String(checks.find((entry) => entry.id === id)?.status ?? "unknown");
+    requireResponseEqual(
+        checkStatus("installation-preflight-ready"),
+        invalid ? "invalid" : planned ? "passed" : "blocked",
+        `${field}.checks.installation-preflight-ready.status`
+    );
+    for (const checkId of [
+        "runtime-value-creation-boundary",
+        "registry-installation-boundary",
+        "close-hook-registration-boundary",
+        "duplicate-rollback-boundary",
+    ]) {
+        requireResponseEqual(checkStatus(checkId), invalid ? "invalid" : "planned", `${field}.checks.${checkId}.status`);
+    }
+    requireResponseEqual(checkStatus("runtime-values-redacted"), "passed", `${field}.checks.runtime-values-redacted.status`);
+    for (const check of checks) {
+        requireResponseEqual(check.dispatch, false, `${field}.checks.${String(check.id)}.dispatch`);
+    }
+
+    const sideEffects = responseRecord(record.sideEffects, `${field}.sideEffects`);
+    for (const property of [
+        "registryLookup",
+        "registryWrite",
+        "runtimeValueCreation",
+        "runtimeInstallation",
+        "runtimeRegistration",
+        "runtimeExecutionRegistered",
+        "closeHookRegistration",
+        "duplicateRollback",
+        "renderDispatch",
+        "browserProcessStarted",
+        "browserPageCreated",
+        "runtimeAdapterImported",
+        "runtimeFactoryInvoked",
+        "runtimeOptionsCreated",
+        "runtimeAssetsLoaded",
+        "assetManifestMaterialized",
+        "backendRpcReads",
+        "sourceDataReads",
+        "networkDispatch",
+        "dispatch",
+        "localFileWrites",
+    ]) {
+        requireResponseEqual(sideEffects[property], false, `${field}.sideEffects.${property}`);
+    }
+
+    const redaction = responseRecord(record.redaction, `${field}.redaction`);
+    for (const property of [
+        "modeValuesIncluded",
+        "moduleValuesIncluded",
+        "factoryValuesIncluded",
+        "runtimeOptionsValuesIncluded",
+        "optionValuesIncluded",
+        "runtimeValuesIncluded",
+        "registryValuesIncluded",
+        "lifecycleValuesIncluded",
+        "pathValuesIncluded",
+        "sourceDataValuesIncluded",
+        "pageValuesIncluded",
+        "artifactValuesIncluded",
+        "mediaValuesIncluded",
+        "tokenValuesIncluded",
+    ]) {
+        requireResponseEqual(redaction[property], false, `${field}.redaction.${property}`);
+    }
+
+    const omitted = responseRecord(record.omitted, `${field}.omitted`);
+    for (const property of [
+        "configuredValue",
+        "moduleNamespace",
+        "factoryValue",
+        "runtimeOptionsValue",
+        "optionValues",
+        "runtimeValue",
+        "registryValue",
+        "lifecycleHandles",
+        "workspaceRoot",
+        "cacheRoot",
+        "modulePath",
+        "publicPaths",
+        "cachePaths",
+        "sha256",
+        "playwrightBrowserPath",
+        "runtimeModulePath",
+        "sourceData",
+        "pageData",
+        "artifactBytes",
+        "mediaBytes",
+        "tokenValues",
+    ]) {
+        requireResponseEqual(omitted[property], true, `${field}.omitted.${property}`);
+    }
+    requireResponseEqual(record.execution ?? null, null, `${field}.execution`);
+}
+
 function validateRuntimeAssetMaterializationPreflightCheckResponse(
     actual: unknown,
     expected: (typeof bundledRuntimeAssetMaterializationPreflight.checks)[number],
@@ -10480,6 +11168,10 @@ function validateThumbnailResponseContract(
         record.bundledSceneBridgeRuntimeRegistryInstallationPreflight,
         "bundledSceneBridgeRuntimeRegistryInstallationPreflight"
     );
+    validateBundledSceneBridgeRuntimeRegistryInstallationExecutionBoundaryResponse(
+        record.bundledSceneBridgeRuntimeRegistryInstallationExecutionBoundary,
+        "bundledSceneBridgeRuntimeRegistryInstallationExecutionBoundary"
+    );
     validateBrowserFixtureRuntimeLifecycleResponse(record.browserFixtureRuntime, "browserFixtureRuntime");
 
     validateThumbnailResourceResponse(responseRecord(record.resource, "resource"));
@@ -10552,6 +11244,8 @@ async function handleRequest(request: IncomingMessage, response: ServerResponse,
         );
         const runtimeRegistryInstallationPreflight =
             bundledSceneBridgeRuntimeRegistryInstallationPreflightResponse(runtimeRegistryInstallationGate);
+        const runtimeRegistryInstallationExecutionBoundary =
+            bundledSceneBridgeRuntimeRegistryInstallationExecutionBoundaryResponse(runtimeRegistryInstallationPreflight);
         sendJson(response, 200, {
             ...healthResponse,
             runtimeAssetMaterializationPreflight: runtimeAssetPreflight,
@@ -10565,6 +11259,7 @@ async function handleRequest(request: IncomingMessage, response: ServerResponse,
             bundledSceneBridgeRuntimeRegistryInstallationContract: runtimeRegistryInstallationContract,
             bundledSceneBridgeRuntimeRegistryInstallationGate: runtimeRegistryInstallationGate,
             bundledSceneBridgeRuntimeRegistryInstallationPreflight: runtimeRegistryInstallationPreflight,
+            bundledSceneBridgeRuntimeRegistryInstallationExecutionBoundary: runtimeRegistryInstallationExecutionBoundary,
             browserFixtureRuntime,
         });
         return;
@@ -10600,6 +11295,8 @@ async function handleRequest(request: IncomingMessage, response: ServerResponse,
             );
             const runtimeRegistryInstallationPreflight =
                 bundledSceneBridgeRuntimeRegistryInstallationPreflightResponse(runtimeRegistryInstallationGate);
+            const runtimeRegistryInstallationExecutionBoundary =
+                bundledSceneBridgeRuntimeRegistryInstallationExecutionBoundaryResponse(runtimeRegistryInstallationPreflight);
             const generatedResponse = thumbnailResponse(
                 request,
                 summary,
@@ -10620,6 +11317,7 @@ async function handleRequest(request: IncomingMessage, response: ServerResponse,
                 runtimeRegistryInstallationContract,
                 runtimeRegistryInstallationGate,
                 runtimeRegistryInstallationPreflight,
+                runtimeRegistryInstallationExecutionBoundary,
                 browserFixtureRuntime
             );
             const responseBody = options.thumbnailResponseOverride

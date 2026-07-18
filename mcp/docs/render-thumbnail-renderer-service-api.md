@@ -311,6 +311,8 @@ export `renderThumbnail` directly or through its default export. Loading the
 module does not change dry-run behavior, does not import modules from CLI
 lifecycle status/start planning, and still routes adapter results through the
 P26.13 PNG byte and response redaction validators.
+P26.45 adds the guarded runtime registry installation execution boundary. After a P26.44 `ready` installation preflight, `/health` and `/thumbnail` report `bundledSceneBridgeRuntimeRegistryInstallationExecutionBoundary` with status `planned-disabled`. A planned result authorizes only a later reviewed installation execution task; it does not look up, create, install, register, roll back, or expose a runtime value.
+
 
 Status: P25.144 supersedes the earlier disabled-planning boundary for the
 first executable slice. The renderer-service package, health/no-op host, MCP

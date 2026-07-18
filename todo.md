@@ -413,8 +413,7 @@ installation preflight, consumes the P26.43 gate, verifies rollback and
 lifecycle prerequisites, and command-runtime/CLI/MCP surface ready/blocked/invalid
 redacted summaries while no registry lookup, write, runtime installation,
 rollback execution, dispatch, browser startup, asset/backend/source reads,
-writes, or value exposure occurs. P26.45 is selected next to plan the guarded
-installation execution boundary without enabling execution by default.
+writes, or value exposure occurs. P26.45 is complete: renderer-service now reports the planned installation execution boundary after a ready P26.44 preflight without enabling execution.
 P25.7 is complete: thumbnail renderer-service API fixtures now define
 future file refresh, file reuse, tagged frame refresh, auth forwarding,
 resource URI normalization, and MCP/CLI test expectations. P25.8 is complete:
@@ -1092,7 +1091,7 @@ process boundary before MCP or CLI execution is enabled.
 | P26.42 | done | Plan guarded bundled scene bridge runtime registry installation contract | `renderer-service`, `command-runtime`, `penpot-cli`, `mcp/docs`, `todo.md`, `CHANGES.md` | Completed 2026-07-17; renderer-service now exposes `bundledSceneBridgeRuntimeRegistryInstallationContract`, links it to P26.41 planned-empty registry readiness, records required runtime value shape, close-hook ownership, duplicate rollback and cleanup handling, invalid-installation diagnostics, and command-runtime/CLI/MCP surface valid/invalid redacted summaries | Keeps actual runtime installation, runtime registration, render dispatch, browser startup, asset loading/materialization, backend/source-data reads, local writes, registry/lifecycle/runtime value exposure, and default CLI lifecycle probing gated |
 | P26.43 | done | Plan guarded bundled scene bridge runtime registry installation gate | `renderer-service`, `command-runtime`, `penpot-cli`, `mcp/docs`, `todo.md`, `CHANGES.md` | Completed 2026-07-17; renderer-service now exposes `bundledSceneBridgeRuntimeRegistryInstallationGate`, links it to P26.42 readiness and the explicit reviewed env gate, reports refusal/ready diagnostics plus rollback preconditions, and command-runtime/CLI/MCP surface valid/invalid redacted summaries | Keeps registry writes, runtime installation, runtime registration, render dispatch, browser startup, asset loading/materialization, backend/source-data reads, local writes, registry/lifecycle/runtime value exposure, and default CLI lifecycle probing gated |
 | P26.44 | done | Execute guarded bundled scene bridge runtime registry installation preflight | `renderer-service`, `command-runtime`, `penpot-cli`, `mcp/docs`, `todo.md`, `CHANGES.md` | Completed 2026-07-17; renderer-service now exposes `bundledSceneBridgeRuntimeRegistryInstallationPreflight`, consumes P26.43 reviewed-gate readiness, reports ready/blocked/invalid outcomes, verifies rollback and lifecycle prerequisites, and command-runtime/CLI/MCP surface redacted summaries while CLI local lifecycle remains no-probe | Keeps registry lookup, registry writes, runtime installation, close-hook registration, rollback execution, runtime registration, render dispatch, browser startup, asset loading/materialization, backend/source-data reads, local writes, registry/lifecycle/runtime value exposure, and default CLI lifecycle probing gated |
-| P26.45 | todo | Plan guarded bundled scene bridge runtime registry installation execution boundary | `renderer-service`, `command-runtime`, `penpot-cli`, `mcp/docs`, `todo.md`, `CHANGES.md` | Plan the reviewed execution boundary that will eventually create/install/register the bundled scene bridge runtime value, including duplicate handling, rollback hooks, close-hook ownership, and invalid execution diagnostics before any execution is enabled | Must keep default registry lookup/write, runtime value creation, runtime installation, close-hook registration, rollback execution, runtime registration, render dispatch, browser startup, asset/backend/source reads, local writes, and value exposure gated until the boundary is explicitly implemented and tested |
+| P26.45 | done | Plan guarded bundled scene bridge runtime registry installation execution boundary | `renderer-service`, `command-runtime`, `penpot-cli`, `mcp/docs`, `todo.md`, `CHANGES.md` | Completed 2026-07-18; renderer-service now exposes `bundledSceneBridgeRuntimeRegistryInstallationExecutionBoundary`, consumes P26.44 ready preflight, reports planned-disabled/blocked/invalid outcomes with duplicate/rollback/close-hook ownership metadata, and command-runtime/CLI/MCP surface redacted summaries while CLI local lifecycle remains no-probe | Keeps registry lookup, registry writes, runtime value creation, runtime installation, close-hook registration, rollback execution, runtime registration, render dispatch, browser startup, asset/backend/source reads, local writes, and value exposure gated |
 
 P26.1 is complete: `@penpot/renderer-service` is a private pnpm workspace
 package with a real no-op HTTP lifecycle. Its TypeScript output is written to
@@ -1345,8 +1344,8 @@ runtime registry installation gate now requires P26.42 readiness plus reviewed
 operator opt-in before future installation attempts are allowed, while no
 runtime value is installed. P26.44 is complete: the guarded reviewed
 installation preflight now reports ready/blocked/invalid outcomes without
-looking up, writing to, or installing runtime registry values. P26.45 is
-selected next to plan the reviewed installation execution boundary.
+looking up, writing to, or installing runtime registry values. P26.45 is complete: the planned installation execution boundary is
+exposed without enabling installation execution.
 
 ## Maintenance: Build Cache Hygiene
 

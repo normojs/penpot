@@ -4275,6 +4275,8 @@ rollback, runtime registration, render dispatch, browser startup, asset
 loading/materialization, backend/source-data reads, local writes,
 registry/runtime/lifecycle value exposure, or local value materialization.
 
+P26.45 plans the guarded runtime registry installation execution boundary. The renderer-service health and thumbnail responses expose `bundledSceneBridgeRuntimeRegistryInstallationExecutionBoundary`, and command-runtime normalizes the redacted summary into CLI/MCP `healthPreflight.bundledSceneBridgeRuntimeRegistryInstallationExecutionBoundary`. The planned boundary records future runtime-value creation, registry installation, close-hook ownership, duplicate rollback handling, and invalid-execution diagnostics while keeping registry lookup, registry writes, runtime installation, close-hook registration, rollback execution, render dispatch, browser startup, asset loading, backend/source-data reads, local writes, and value exposure disabled.
+
 ### 8.6 Advanced Tools
 
 Available only when explicitly enabled:

@@ -4,6 +4,7 @@
 
 ### :sparkles: New features & Enhancements
 
+- P26.45 plans the guarded bundled scene bridge runtime registry installation execution boundary (`bundledSceneBridgeRuntimeRegistryInstallationExecutionBoundary`) without enabling registry lookup, runtime value creation, installation, rollback, or dispatch.
 - Add a guarded bundled scene bridge runtime registry installation preflight through renderer-service, command-runtime, CLI, and fixtures, reporting ready/blocked/invalid outcomes after the reviewed P26.43 gate while keeping registry lookup, registry writes, runtime installation, close-hook registration, rollback execution, dispatch, browser startup, reads, writes, and value exposure disabled.
 - Add a guarded bundled scene bridge runtime registry installation gate through renderer-service, command-runtime, CLI, and fixtures, requiring explicit reviewed operator opt-in plus P26.42 contract readiness while keeping registry writes, runtime installation, registration, dispatch, browser startup, asset loading, reads, writes, and value exposure disabled.
 - Add a guarded bundled scene bridge runtime registry installation contract through renderer-service, command-runtime, CLI, and fixtures, documenting the required runtime value shape, close-hook ownership, duplicate rollback handling, and invalid-installation diagnostics while keeping runtime installation, registration, dispatch, browser startup, asset loading, reads, writes, and value exposure disabled.

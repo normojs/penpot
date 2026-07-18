@@ -52,6 +52,8 @@ const bundledSceneBridgeRuntimeRegistryInstallationGateFixture =
     renderThumbnailRendererServiceFixtures.bundledRuntimeBridge.bundledSceneBridgeRuntimeRegistryInstallationGate;
 const bundledSceneBridgeRuntimeRegistryInstallationPreflightFixture =
     renderThumbnailRendererServiceFixtures.bundledRuntimeBridge.bundledSceneBridgeRuntimeRegistryInstallationPreflight;
+const bundledSceneBridgeRuntimeRegistryInstallationExecutionBoundaryFixture =
+    renderThumbnailRendererServiceFixtures.bundledRuntimeBridge.bundledSceneBridgeRuntimeRegistryInstallationExecutionBoundary;
 
 function getRenderThumbnailRendererServiceFixture(id) {
     const fixture = renderThumbnailRendererServiceFixtures.cases.find((entry) => entry.id === id);
@@ -8312,6 +8314,30 @@ test("renderer-service start keeps startup manual and does not spawn a process",
     assert.equal(body.error.data.lifecycle.bundledSceneBridgeRuntimeRegistryInstallationGate.omitted.configuredValue, true);
     assert.equal(body.error.data.lifecycle.bundledSceneBridgeRuntimeRegistryInstallationGate.omitted.runtimeValue, true);
     assert.equal(body.error.data.lifecycle.bundledSceneBridgeRuntimeRegistryInstallationPreflight.status, "blocked");
+    assert.equal(body.error.data.lifecycle.bundledSceneBridgeRuntimeRegistryInstallationExecutionBoundary.status, "blocked");
+    assert.equal(body.error.data.lifecycle.bundledSceneBridgeRuntimeRegistryInstallationExecutionBoundary.checked, false);
+    assert.equal(
+        body.error.data.lifecycle.bundledSceneBridgeRuntimeRegistryInstallationExecutionBoundary.source.registryInstallationPreflightReady,
+        false
+    );
+    assert.equal(
+        body.error.data.lifecycle.bundledSceneBridgeRuntimeRegistryInstallationExecutionBoundary.executionBoundary.executionPlanReady,
+        false
+    );
+    assert.equal(
+        body.error.data.lifecycle.bundledSceneBridgeRuntimeRegistryInstallationExecutionBoundary.lifecyclePlanEffects.registryLookup,
+        false
+    );
+    assert.equal(
+        body.error.data.lifecycle.bundledSceneBridgeRuntimeRegistryInstallationExecutionBoundary.lifecyclePlanEffects.runtimeInstallation,
+        false
+    );
+    assert.equal(
+        body.error.data.lifecycle.bundledSceneBridgeRuntimeRegistryInstallationExecutionBoundary.lifecyclePlanEffects.renderDispatch,
+        false
+    );
+    assert.equal(body.error.data.lifecycle.bundledSceneBridgeRuntimeRegistryInstallationExecutionBoundary.omitted.runtimeValue, true);
+
     assert.equal(body.error.data.lifecycle.bundledSceneBridgeRuntimeRegistryInstallationPreflight.checked, false);
     assert.equal(
         body.error.data.lifecycle.bundledSceneBridgeRuntimeRegistryInstallationPreflight.source.registryInstallationGateReady,
@@ -10929,6 +10955,8 @@ test("render thumbnail execution opt-in posts to renderer-service and returns re
                         bundledSceneBridgeRuntimeRegistryInstallationGateFixture,
                     bundledSceneBridgeRuntimeRegistryInstallationPreflight:
                         bundledSceneBridgeRuntimeRegistryInstallationPreflightFixture,
+                    bundledSceneBridgeRuntimeRegistryInstallationExecutionBoundary:
+                        bundledSceneBridgeRuntimeRegistryInstallationExecutionBoundaryFixture,
                     browserFixtureRuntime: {
                         status: "started",
                         diagnosticsVersion: "P26.31",
