@@ -1154,7 +1154,7 @@ tracker row is `done` and verified. Keep at most one table row `in_progress`.
 
 ### Packaging, ops, and distribution
 
-- [ ] **Push local `main` to `fork`** — still blocked on this host: `git fetch/push fork` times out / no `fork/main` remote-tracking ref despite HTTPS 200 to github.com (likely Clash fake-ip/TUN). Large Phase 26+ WIP also still uncommitted. Commit, then push when `git ls-remote fork` succeeds
+- [x] **Push local `main` to `fork`** — succeeded 2026-07-19; `main` tracks `fork/main` at `af187d7e6d` (Phase 26 close-out + post-26 gaps)
 - [x] **Private release smoke** — re-verified 2026-07-19 via `pnpm cli:package-check`; archive `tmp/penpot-cli-release/penpot-cli-0.1.0.tar.gz` extracts and `bin/penpot-cli --help` works (clean-machine recheck still recommended when distributing)
 - [x] **Upstream sync policy** — fetch-only `upstream`, push only to `fork`; periodic fetch + selective cherry-pick/rebase on a branch; never push upstream (documented in `penpot-cli-build-install-strategy.md`)
 - [x] **npm publish** — confirmed out of scope; private workspace + release archive only unless product decision changes
