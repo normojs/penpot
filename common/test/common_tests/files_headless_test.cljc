@@ -1376,6 +1376,57 @@
              (:layout-grid-columns frame')))
     (t/is (= {} (:layout-grid-cells frame')))))
 
+(t/deftest update-shape-request-updates-frame-grid-cell-placements
+  (let [file-id  (uuid/next)
+        page-id  (uuid/next)
+        frame-id (uuid/next)
+        rect-id  (uuid/next)
+        data     (ctf/make-file-data file-id page-id)
+        frame    (headless/create-shape-request data {:page-id page-id
+                                                      :shape-id frame-id
+                                                      :type :frame
+                                                      :x 0
+                                                      :y 0
+                                                      :width 320
+                                                      :height 640})
+        data     (cpc/process-changes data (:changes frame))
+        rect     (headless/create-shape-request data {:page-id page-id
+                                                      :shape-id rect-id
+                                                      :parent-id frame-id
+                                                      :type :rect
+                                                      :x 10
+                                                      :y 10
+                                                      :width 40
+                                                      :height 40})
+        data     (cpc/process-changes data (:changes rect))
+        update   (headless/update-shape-request data {:shape-id frame-id
+                                                      :layout {:type "grid"
+                                                               :direction "row"
+                                                               :rows [{:type "fixed" :value 100}
+                                                                      {:type "fixed" :value 100}]
+                                                               :columns [{:type "fixed" :value 100}
+                                                                         {:type "fixed" :value 100}]
+                                                               :cells [{:row 1
+                                                                        :column 2
+                                                                        :shapes [rect-id]
+                                                                        :position "manual"
+                                                                        :alignSelf "center"
+                                                                        :justifySelf "start"}]}})
+        data'    (cpc/process-changes data (:changes update))
+        frame'   (get-in data' [:pages-index page-id :objects frame-id])
+        cells    (vals (:layout-grid-cells frame'))
+        cell     (first cells)]
+    (t/is (= :grid (:layout frame')))
+    (t/is (= 1 (count cells)))
+    (t/is (= 1 (:row cell)))
+    (t/is (= 2 (:column cell)))
+    (t/is (= 1 (:row-span cell)))
+    (t/is (= 1 (:column-span cell)))
+    (t/is (= :manual (:position cell)))
+    (t/is (= :center (:align-self cell)))
+    (t/is (= :start (:justify-self cell)))
+    (t/is (= [rect-id] (:shapes cell)))))
+
 (t/deftest update-shape-request-moves-shape-between-frames
   (let [file-id    (uuid/next)
         page-id    (uuid/next)

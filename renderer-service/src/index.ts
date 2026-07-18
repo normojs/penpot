@@ -1,8 +1,8 @@
 import { createHash } from "node:crypto";
 import { constants as fsConstants } from "node:fs";
-import { access, readFile, stat } from "node:fs/promises";
+import { access, copyFile, mkdir, readFile, rm, stat, writeFile } from "node:fs/promises";
 import { createServer, type IncomingMessage, type Server, type ServerResponse } from "node:http";
-import { isAbsolute, resolve } from "node:path";
+import { dirname, isAbsolute, resolve } from "node:path";
 import { pathToFileURL } from "node:url";
 import { createBrowserFixtureRendererRuntime } from "./browser-fixture-runtime.js";
 
@@ -25,6 +25,14 @@ const BUNDLED_SCENE_BRIDGE_RUNTIME_ACCEPTED_VALUES = [
 const BUNDLED_SCENE_BRIDGE_RUNTIME_INSTALLATION_GATE_ENV =
     "PENPOT_RENDERER_SERVICE_BUNDLED_SCENE_BRIDGE_RUNTIME_INSTALLATION_GATE";
 const BUNDLED_SCENE_BRIDGE_RUNTIME_INSTALLATION_GATE_REVIEWED_VALUE = "reviewed";
+const BUNDLED_SCENE_BRIDGE_REAL_RUNTIME_MODULE_GATE_ENV =
+    "PENPOT_RENDERER_SERVICE_BUNDLED_SCENE_BRIDGE_REAL_RUNTIME_MODULE_GATE";
+const BUNDLED_SCENE_BRIDGE_REAL_RUNTIME_MODULE_GATE_REVIEWED_VALUE = "reviewed-scaffold";
+const BUNDLED_SCENE_BRIDGE_RENDER_DISPATCH_GATE_ENV =
+    "PENPOT_RENDERER_SERVICE_BUNDLED_SCENE_BRIDGE_RENDER_DISPATCH_GATE";
+const BUNDLED_SCENE_BRIDGE_RENDER_DISPATCH_GATE_REVIEWED_VALUE = "reviewed-dispatch";
+const BUNDLED_SCENE_BRIDGE_RUNTIME_ID = "bundled-scene-bridge";
+const BUNDLED_SCENE_BRIDGE_TARGET_REGISTRY = "renderer-service.thumbnail-runtime-registry";
 const RUNTIME_ASSET_PREFLIGHT_ENV = "PENPOT_RENDERER_SERVICE_RUNTIME_ASSET_PREFLIGHT";
 const RUNTIME_ASSET_PREFLIGHT_WORKSPACE_ROOT_ENV = "PENPOT_RENDERER_SERVICE_RUNTIME_ASSET_PREFLIGHT_WORKSPACE_ROOT";
 const RUNTIME_ASSET_PREFLIGHT_CACHE_ROOT_ENV = "PENPOT_RENDERER_SERVICE_RUNTIME_ASSET_PREFLIGHT_CACHE_ROOT";
@@ -171,6 +179,10 @@ export type RendererRuntimeAssetMaterializationApprovalOptions = {
     modeConfigured?: boolean;
     approvalTokenConfigured?: boolean;
     auditConfigured?: boolean;
+    mode?: string;
+    approvalToken?: string;
+    auditDir?: string;
+    executeMaterialization?: boolean;
 };
 
 export type RendererBundledSceneBridgeImportGateOptions = {
@@ -182,6 +194,27 @@ export type RendererBundledSceneBridgeRuntimeRegistryInstallationGateOptions = {
     configured?: boolean;
     value?: string;
 };
+
+export type RendererBundledSceneBridgeRealRuntimeModuleGateOptions = {
+    configured?: boolean;
+    value?: string;
+};
+
+export type RendererBundledSceneBridgeRenderDispatchGateOptions = {
+    configured?: boolean;
+    value?: string;
+};
+
+type BundledSceneBridgeInstalledRuntimeEntry = {
+    runtimeId: typeof BUNDLED_SCENE_BRIDGE_RUNTIME_ID;
+    runtimeValue: RendererRuntimeOptions;
+    closeHookRegistered: boolean;
+    rollbackHookRegistered: boolean;
+    installedAtMs: number;
+    runtimeKind?: "stub" | "real";
+};
+
+type BundledSceneBridgeThumbnailRuntimeRegistry = Map<string, BundledSceneBridgeInstalledRuntimeEntry>;
 
 export type RendererServiceOptions = {
     host?: string;
@@ -195,6 +228,8 @@ export type RendererServiceOptions = {
     runtimeAssetMaterializationApproval?: RendererRuntimeAssetMaterializationApprovalOptions;
     bundledSceneBridgeImportGate?: RendererBundledSceneBridgeImportGateOptions;
     bundledSceneBridgeRuntimeRegistryInstallationGate?: RendererBundledSceneBridgeRuntimeRegistryInstallationGateOptions;
+    bundledSceneBridgeRealRuntimeModuleGate?: RendererBundledSceneBridgeRealRuntimeModuleGateOptions;
+    bundledSceneBridgeRenderDispatchGate?: RendererBundledSceneBridgeRenderDispatchGateOptions;
     thumbnailResponseOverride?: (response: Record<string, unknown>) => unknown;
 };
 
@@ -934,10 +969,73 @@ function runtimeAssetPlanCounts(entries: Record<string, unknown>[]): RuntimeAsse
     };
 }
 
+function resolveMaterializationApprovalSecrets(
+    options: RendererRuntimeAssetMaterializationApprovalOptions | undefined
+): {
+    mode: string | undefined;
+    approvalToken: string | undefined;
+    auditDir: string | undefined;
+} {
+    return {
+        mode:
+            (typeof options?.mode === "string" ? options.mode.trim() : undefined) ||
+            optionalString(process.env[RUNTIME_ASSET_MATERIALIZATION_APPROVAL_ENV])?.trim() ||
+            undefined,
+        approvalToken:
+            (typeof options?.approvalToken === "string" ? options.approvalToken : undefined) ||
+            optionalString(process.env[RUNTIME_ASSET_MATERIALIZATION_APPROVAL_TOKEN_ENV]) ||
+            undefined,
+        auditDir:
+            (typeof options?.auditDir === "string" ? options.auditDir.trim() : undefined) ||
+            optionalString(process.env[RUNTIME_ASSET_MATERIALIZATION_APPROVAL_AUDIT_DIR_ENV])?.trim() ||
+            undefined,
+    };
+}
+
+function isMaterializationApproved(options: RendererRuntimeAssetMaterializationApprovalOptions | undefined): {
+    modeConfigured: boolean;
+    modeAccepted: boolean;
+    tokenConfigured: boolean;
+    tokenAccepted: boolean;
+    auditConfigured: boolean;
+    approved: boolean;
+    mode: string | undefined;
+    approvalToken: string | undefined;
+    auditDir: string | undefined;
+} {
+    const secrets = resolveMaterializationApprovalSecrets(options);
+    const modeConfigured = options?.modeConfigured === true || typeof options?.mode === "string" || Boolean(secrets.mode);
+    const tokenConfigured =
+        options?.approvalTokenConfigured === true || typeof options?.approvalToken === "string" || Boolean(secrets.approvalToken);
+    const auditConfigured = options?.auditConfigured === true || typeof options?.auditDir === "string" || Boolean(secrets.auditDir);
+    const modeAccepted = secrets.mode === "approved";
+    const tokenAccepted = typeof secrets.approvalToken === "string" && secrets.approvalToken.trim().length > 0;
+    const auditDirOk = typeof secrets.auditDir === "string" && secrets.auditDir.trim().length > 0;
+    return {
+        modeConfigured,
+        modeAccepted,
+        tokenConfigured,
+        tokenAccepted,
+        auditConfigured,
+        approved: modeAccepted && tokenAccepted && auditDirOk && options?.executeMaterialization !== false,
+        mode: secrets.mode,
+        approvalToken: secrets.approvalToken,
+        auditDir: secrets.auditDir,
+    };
+}
+
 function runtimeAssetMaterializationApprovalDiagnostics(
     options: RendererRuntimeAssetMaterializationApprovalOptions | undefined
 ): RuntimeAssetMaterializationApprovalPlan["diagnostics"] {
     const diagnostics: RuntimeAssetMaterializationApprovalPlan["diagnostics"] = [];
+    // P26.51 supports fully approved mode+token+audit. Partial/invalid config remains unsupported.
+    const approval = isMaterializationApproved({
+        ...options,
+        executeMaterialization: true,
+    });
+    if (approval.approved) {
+        return diagnostics;
+    }
     if (options?.modeConfigured === true) {
         diagnostics.push({
             code: "renderer_service_runtime_asset_materialization_approval_configuration_unsupported",
@@ -1279,6 +1377,857 @@ export const bundledRuntimeAssetMaterializationDryRunPlan = runtimeAssetMaterial
 export const bundledRuntimeAssetMaterializationApprovalPlan = runtimeAssetMaterializationApprovalPlan(
     bundledRuntimeAssetMaterializationDryRunPlan
 );
+
+const runtimeAssetMaterializationExecutionBase = {
+    status: "blocked",
+    executionVersion: "P26.51",
+    owner: "renderer-service",
+    mode: "approved-runtime-asset-cache-materialization",
+    source: {
+        preflightVersion: "P26.21",
+        dryRunVersion: "P26.26",
+        approvalVersion: "P26.27",
+        readinessVerdictVersion: "P26.29",
+        materializationExecutionVersion: "P26.51",
+        preflightReady: false,
+        dryRunReady: false,
+        approvalReady: false,
+        readiness: "blocked-until-approved-materialization",
+    },
+    approval: {
+        modeConfigured: false,
+        modeAccepted: false,
+        tokenConfigured: false,
+        tokenAccepted: false,
+        auditConfigured: false,
+        auditWritable: false,
+        approvalGranted: false,
+        valuesIncluded: false,
+    },
+    materialization: {
+        attempted: false,
+        succeeded: false,
+        assetsCopied: 0,
+        assetsVerified: 0,
+        assetsRolledBack: 0,
+        hashVerificationEnabled: true,
+        rollbackOnFailure: true,
+        localFileWrites: false,
+        valuesIncluded: false,
+    },
+    diagnostics: [
+        {
+            code: "renderer_service_runtime_asset_materialization_execution_blocked",
+            severity: "blocked",
+            field: "source.approvalReady",
+            message:
+                "Runtime asset cache materialization is blocked until preflight/dry-run readiness and an explicit approved materialization configuration are present.",
+            nextActions: [
+                "Configure runtime asset preflight readiness, set PENPOT_RENDERER_SERVICE_RUNTIME_ASSET_MATERIALIZATION_APPROVAL=approved with a non-empty approval token and audit dir, then rerun /health.",
+                "Keep unapproved writes, browser startup before assets are ready, runtime value exposure, and default MCP/CLI enablement gated.",
+            ],
+        },
+    ],
+    diagnosticCodes: ["renderer_service_runtime_asset_materialization_execution_blocked"],
+    nextActions: [
+        "Configure runtime asset preflight readiness, set PENPOT_RENDERER_SERVICE_RUNTIME_ASSET_MATERIALIZATION_APPROVAL=approved with a non-empty approval token and audit dir, then rerun /health.",
+        "Keep unapproved writes, browser startup before assets are ready, runtime value exposure, and default MCP/CLI enablement gated.",
+    ],
+    checks: [
+        { id: "preflight-ready", status: "blocked", required: true, dispatch: false },
+        { id: "dry-run-ready", status: "blocked", required: true, dispatch: false },
+        { id: "approval-granted", status: "blocked", required: true, dispatch: false },
+        { id: "hash-verification", status: "planned", required: true, dispatch: false },
+        { id: "rollback-on-failure", status: "planned", required: true, dispatch: false },
+        { id: "values-redacted", status: "passed", required: true, dispatch: false },
+    ],
+    sideEffects: {
+        browserProcessStarted: false,
+        runtimeExecutionRegistered: false,
+        runtimeAdapterImported: false,
+        runtimeAssetsLoaded: false,
+        assetManifestMaterialized: false,
+        fileRead: false,
+        hashComputed: false,
+        networkDispatch: false,
+        dispatch: false,
+        localFileWrites: false,
+        auditRecordWritten: false,
+    },
+    redaction: {
+        pathValuesIncluded: false,
+        tokenValuesIncluded: false,
+        sourceDataValuesIncluded: false,
+        pageValuesIncluded: false,
+        artifactValuesIncluded: false,
+        mediaValuesIncluded: false,
+    },
+    omitted: {
+        workspaceRoot: true,
+        cacheRoot: true,
+        publicPaths: true,
+        cachePaths: true,
+        sha256: true,
+        tokenValues: true,
+        approvalAuditPaths: true,
+    },
+    execution: null,
+} as const;
+
+
+export const runtimeAssetMaterializationExecution = runtimeAssetMaterializationExecutionBase;
+
+const bundledSceneBridgeRealScenePngBase = {
+    status: "blocked",
+    productionVersion: "P26.52",
+    owner: "renderer-service",
+    mode: "minimal-real-scene-png-production",
+    source: {
+        registryInstallationVersion: "P26.46",
+        installedRuntimeLifecycleVersion: "P26.47",
+        realRuntimeModuleScaffoldVersion: "P26.49",
+        installedRuntimeRenderDispatchVersion: "P26.50",
+        materializationExecutionVersion: "P26.51",
+        realScenePngProductionVersion: "P26.52",
+        realRuntimeInstalled: false,
+        assetsMaterialized: false,
+        sourceDataAvailable: false,
+        renderDispatched: false,
+        readiness: "blocked-until-real-runtime-assets-source-data-and-dispatch",
+    },
+    production: {
+        targetKinds: ["file", "frame"],
+        nonEmptyPngRequired: true,
+        persistThroughBackendRpc: true,
+        multiTargetMatrixEnabled: false,
+        realRuntimeSelected: false,
+        nonEmptyPngProduced: false,
+        persisted: false,
+        valuesIncluded: false,
+    },
+    refusalDiagnostics: {
+        refusalRequired: true,
+        refusalReason: "real-scene-png-prerequisites-not-met",
+        realRuntimeMissing: true,
+        assetsNotMaterialized: true,
+        sourceDataMissing: true,
+        renderDispatchRefused: true,
+        valuesIncluded: false,
+    },
+    diagnostics: [
+        {
+            code: "renderer_service_bundled_scene_bridge_real_scene_png_blocked",
+            severity: "blocked",
+            field: "source.realRuntimeInstalled",
+            message:
+                "Minimal real-scene PNG production is blocked until a real installed runtime, approved asset materialization, backend source-data, and reviewed render dispatch are available.",
+            nextActions: [
+                "Approve asset materialization, open the real-runtime module scaffold and render-dispatch gates, install the real runtime, then request a single file or tagged-frame thumbnail.",
+                "Keep broad default enablement, multi-target matrix expansion, and credential/media/source value exposure gated.",
+            ],
+        },
+    ],
+    diagnosticCodes: ["renderer_service_bundled_scene_bridge_real_scene_png_blocked"],
+    nextActions: [
+        "Approve asset materialization, open the real-runtime module scaffold and render-dispatch gates, install the real runtime, then request a single file or tagged-frame thumbnail.",
+        "Keep broad default enablement, multi-target matrix expansion, and credential/media/source value exposure gated.",
+    ],
+    checks: [
+        { id: "real-runtime-installed", status: "blocked", required: true, dispatch: false },
+        { id: "assets-materialized", status: "blocked", required: true, dispatch: false },
+        { id: "source-data-available", status: "blocked", required: true, dispatch: false },
+        { id: "render-dispatch", status: "blocked", required: true, dispatch: false },
+        { id: "non-empty-png", status: "planned", required: true, dispatch: false },
+        { id: "backend-persist", status: "planned", required: true, dispatch: false },
+        { id: "values-redacted", status: "passed", required: true, dispatch: false },
+    ],
+    sideEffects: {
+        browserProcessStarted: false,
+        runtimeAssetsLoaded: false,
+        renderDispatch: false,
+        networkDispatch: false,
+        dispatch: false,
+        localFileWrites: false,
+    },
+    redaction: {
+        runtimeValuesIncluded: false,
+        sourceDataValuesIncluded: false,
+        pageValuesIncluded: false,
+        artifactValuesIncluded: false,
+        mediaValuesIncluded: false,
+        tokenValuesIncluded: false,
+        pathValuesIncluded: false,
+    },
+    omitted: {
+        runtimeValue: true,
+        sourceData: true,
+        pageData: true,
+        artifactBytes: true,
+        mediaBytes: true,
+        tokenValues: true,
+        publicPaths: true,
+        cachePaths: true,
+        sha256: true,
+    },
+    execution: null,
+} as const;
+
+export const bundledSceneBridgeRealScenePng = bundledSceneBridgeRealScenePngBase;
+
+function bundledSceneBridgeRealScenePngResponse(input: {
+    realRuntimeInstalled: boolean;
+    assetsMaterialized: boolean;
+    sourceDataAvailable: boolean;
+    renderDispatched: boolean;
+    nonEmptyPngProduced: boolean;
+    persisted: boolean;
+    realRuntimeSelected: boolean;
+    targetKind?: "file" | "frame" | null;
+}): Record<string, unknown> {
+    if (
+        !input.realRuntimeInstalled &&
+        !input.assetsMaterialized &&
+        !input.sourceDataAvailable &&
+        !input.renderDispatched &&
+        !input.nonEmptyPngProduced &&
+        !input.persisted &&
+        !input.realRuntimeSelected
+    ) {
+        return { ...bundledSceneBridgeRealScenePngBase };
+    }
+    const ready =
+        input.realRuntimeInstalled &&
+        input.assetsMaterialized &&
+        input.sourceDataAvailable &&
+        input.renderDispatched &&
+        input.nonEmptyPngProduced;
+    if (!ready) {
+        return {
+            ...bundledSceneBridgeRealScenePngBase,
+            source: {
+                ...bundledSceneBridgeRealScenePngBase.source,
+                realRuntimeInstalled: input.realRuntimeInstalled,
+                assetsMaterialized: input.assetsMaterialized,
+                sourceDataAvailable: input.sourceDataAvailable,
+                renderDispatched: input.renderDispatched,
+                readiness: !input.realRuntimeInstalled
+                    ? "blocked-until-real-runtime-installed"
+                    : !input.assetsMaterialized
+                      ? "blocked-until-assets-materialized"
+                      : !input.sourceDataAvailable
+                        ? "blocked-until-source-data"
+                        : !input.renderDispatched
+                          ? "blocked-until-render-dispatch"
+                          : "blocked-until-non-empty-png",
+            },
+            production: {
+                ...bundledSceneBridgeRealScenePngBase.production,
+                realRuntimeSelected: input.realRuntimeSelected,
+                nonEmptyPngProduced: input.nonEmptyPngProduced,
+                persisted: input.persisted,
+            },
+            refusalDiagnostics: {
+                refusalRequired: true,
+                refusalReason: "real-scene-png-prerequisites-not-met",
+                realRuntimeMissing: !input.realRuntimeInstalled,
+                assetsNotMaterialized: !input.assetsMaterialized,
+                sourceDataMissing: !input.sourceDataAvailable,
+                renderDispatchRefused: !input.renderDispatched,
+                valuesIncluded: false,
+            },
+            checks: [
+                {
+                    id: "real-runtime-installed",
+                    status: input.realRuntimeInstalled ? "passed" : "blocked",
+                    required: true,
+                    dispatch: false,
+                },
+                {
+                    id: "assets-materialized",
+                    status: input.assetsMaterialized ? "passed" : "blocked",
+                    required: true,
+                    dispatch: false,
+                },
+                {
+                    id: "source-data-available",
+                    status: input.sourceDataAvailable ? "passed" : "blocked",
+                    required: true,
+                    dispatch: false,
+                },
+                {
+                    id: "render-dispatch",
+                    status: input.renderDispatched ? "passed" : "blocked",
+                    required: true,
+                    dispatch: input.renderDispatched,
+                },
+                {
+                    id: "non-empty-png",
+                    status: input.nonEmptyPngProduced ? "passed" : "planned",
+                    required: true,
+                    dispatch: false,
+                },
+                {
+                    id: "backend-persist",
+                    status: input.persisted ? "passed" : "planned",
+                    required: true,
+                    dispatch: false,
+                },
+                { id: "values-redacted", status: "passed", required: true, dispatch: false },
+            ],
+            sideEffects: {
+                ...bundledSceneBridgeRealScenePngBase.sideEffects,
+                renderDispatch: input.renderDispatched,
+                dispatch: input.renderDispatched,
+            },
+            execution: null,
+        };
+    }
+
+    return {
+        ...bundledSceneBridgeRealScenePngBase,
+        status: "produced",
+        source: {
+            ...bundledSceneBridgeRealScenePngBase.source,
+            realRuntimeInstalled: true,
+            assetsMaterialized: true,
+            sourceDataAvailable: true,
+            renderDispatched: true,
+            readiness: "minimal-real-scene-png-produced",
+        },
+        production: {
+            ...bundledSceneBridgeRealScenePngBase.production,
+            realRuntimeSelected: true,
+            nonEmptyPngProduced: true,
+            persisted: input.persisted,
+            valuesIncluded: false,
+        },
+        refusalDiagnostics: {
+            refusalRequired: false,
+            refusalReason: "real-scene-png-produced",
+            realRuntimeMissing: false,
+            assetsNotMaterialized: false,
+            sourceDataMissing: false,
+            renderDispatchRefused: false,
+            valuesIncluded: false,
+        },
+        diagnostics: [
+            {
+                code: "renderer_service_bundled_scene_bridge_real_scene_png_produced",
+                severity: "info",
+                field: "production.nonEmptyPngProduced",
+                message:
+                    "Minimal real-scene PNG was produced through the installed real bundled scene bridge runtime and existing resource/persist pipeline for a single target.",
+                nextActions: [
+                    "Keep multi-target matrix expansion and broad default enablement gated.",
+                    "Keep credential/media/source value exposure redacted in diagnostics and responses.",
+                ],
+            },
+        ],
+        diagnosticCodes: ["renderer_service_bundled_scene_bridge_real_scene_png_produced"],
+        nextActions: [
+            "Keep multi-target matrix expansion and broad default enablement gated.",
+            "Keep credential/media/source value exposure redacted in diagnostics and responses.",
+        ],
+        checks: [
+            { id: "real-runtime-installed", status: "passed", required: true, dispatch: false },
+            { id: "assets-materialized", status: "passed", required: true, dispatch: false },
+            { id: "source-data-available", status: "passed", required: true, dispatch: false },
+            { id: "render-dispatch", status: "passed", required: true, dispatch: true },
+            { id: "non-empty-png", status: "passed", required: true, dispatch: false },
+            { id: "backend-persist", status: input.persisted ? "passed" : "planned", required: true, dispatch: false },
+            { id: "values-redacted", status: "passed", required: true, dispatch: false },
+        ],
+        sideEffects: {
+            browserProcessStarted: false,
+            runtimeAssetsLoaded: false,
+            renderDispatch: true,
+            networkDispatch: input.persisted,
+            dispatch: true,
+            localFileWrites: false,
+        },
+        execution: {
+            attempted: true,
+            succeeded: true,
+            outcome: "produced",
+            targetKind: input.targetKind ?? null,
+            nonEmptyPngProduced: true,
+            persisted: input.persisted,
+            multiTargetMatrixEnabled: false,
+            valuesIncluded: false,
+        },
+    };
+}
+
+function validateBundledSceneBridgeRealScenePngResponse(actual: unknown, field: string): void {
+    const record = responseRecord(actual, field);
+    const status = String(record.status ?? "");
+    if (!["blocked", "produced", "invalid"].includes(status)) {
+        responseInvalid(`${field}.status must be blocked, produced, or invalid.`, `${field}.status`);
+    }
+    requireResponseEqual(record.productionVersion, "P26.52", `${field}.productionVersion`);
+    requireResponseEqual(record.owner, "renderer-service", `${field}.owner`);
+    requireResponseEqual(record.mode, "minimal-real-scene-png-production", `${field}.mode`);
+    const production = responseRecord(record.production, `${field}.production`);
+    requireResponseEqual(production.multiTargetMatrixEnabled, false, `${field}.production.multiTargetMatrixEnabled`);
+    requireResponseEqual(production.valuesIncluded, false, `${field}.production.valuesIncluded`);
+    const redaction = responseRecord(record.redaction, `${field}.redaction`);
+    for (const property of [
+        "runtimeValuesIncluded",
+        "sourceDataValuesIncluded",
+        "pageValuesIncluded",
+        "artifactValuesIncluded",
+        "mediaValuesIncluded",
+        "tokenValuesIncluded",
+        "pathValuesIncluded",
+    ]) {
+        requireResponseEqual(redaction[property], false, `${field}.redaction.${property}`);
+    }
+    const omitted = responseRecord(record.omitted, `${field}.omitted`);
+    for (const property of [
+        "runtimeValue",
+        "sourceData",
+        "pageData",
+        "artifactBytes",
+        "mediaBytes",
+        "tokenValues",
+        "publicPaths",
+        "cachePaths",
+        "sha256",
+    ]) {
+        requireResponseEqual(omitted[property], true, `${field}.omitted.${property}`);
+    }
+}
+
+
+function materializationExecutionDiagnostic(
+    code: string,
+    severity: "info" | "blocked" | "invalid",
+    field: string,
+    message: string,
+    nextActions: string[]
+) {
+    return {
+        code,
+        severity,
+        field,
+        message,
+        nextActions,
+    };
+}
+
+async function ensureParentDir(path: string): Promise<void> {
+    await mkdir(dirname(path), { recursive: true });
+}
+
+async function executeRuntimeAssetMaterialization(
+    preflight: Record<string, unknown>,
+    dryRun: Record<string, unknown>,
+    options: RendererRuntimeAssetMaterializationApprovalOptions | undefined
+): Promise<Record<string, unknown>> {
+    const approval = isMaterializationApproved(options);
+    const execution = isRecord(preflight.execution) ? preflight.execution : null;
+    const summary = isRecord(execution?.summary) ? execution.summary : {};
+    const checks = Array.isArray(execution?.checks)
+        ? execution.checks.filter((entry): entry is Record<string, unknown> => isRecord(entry))
+        : [];
+    const publicAssetsReady =
+        checks.length > 0 &&
+        checks.every((entry) => entry.required !== true || entry.exists === true);
+    const preflightExecuted = execution !== null && (execution.readiness === "ready" || execution.readiness === "degraded");
+    const preflightReady = preflightExecuted && publicAssetsReady;
+    const dryRunSource = isRecord(dryRun.sourcePreflight) ? dryRun.sourcePreflight : {};
+    // Dry-run is usable once preflight executed; cache misses are expected before materialization.
+    const dryRunReady = preflightExecuted && dryRun.planVersion === "P26.26";
+    const workspaceRoot = typeof execution?.workspaceRoot === "string" ? execution.workspaceRoot : null;
+    const cacheRoot = typeof execution?.cacheRoot === "string" ? execution.cacheRoot : null;
+
+    if (!approval.approved || !preflightReady || !dryRunReady || !workspaceRoot || !cacheRoot) {
+        const diagnostic = materializationExecutionDiagnostic(
+            "renderer_service_runtime_asset_materialization_execution_blocked",
+            "blocked",
+            !approval.approved ? "source.approvalReady" : "source.preflightReady",
+            "Runtime asset cache materialization is blocked until preflight/dry-run readiness and an explicit approved materialization configuration are present.",
+            [
+                "Configure runtime asset preflight readiness, set PENPOT_RENDERER_SERVICE_RUNTIME_ASSET_MATERIALIZATION_APPROVAL=approved with a non-empty approval token and audit dir, then rerun /health.",
+                "Keep unapproved writes, browser startup before assets are ready, runtime value exposure, and default MCP/CLI enablement gated.",
+            ]
+        );
+        return {
+            ...runtimeAssetMaterializationExecutionBase,
+            source: {
+                ...runtimeAssetMaterializationExecutionBase.source,
+                preflightReady,
+                dryRunReady,
+                approvalReady: approval.approved,
+                readiness: !approval.approved
+                    ? "blocked-until-approved-materialization"
+                    : !preflightReady
+                      ? "blocked-until-preflight-ready"
+                      : "blocked-until-dry-run-ready",
+            },
+            approval: {
+                modeConfigured: approval.modeConfigured,
+                modeAccepted: approval.modeAccepted,
+                tokenConfigured: approval.tokenConfigured,
+                tokenAccepted: approval.tokenAccepted,
+                auditConfigured: approval.auditConfigured,
+                auditWritable: false,
+                approvalGranted: approval.approved,
+                valuesIncluded: false,
+            },
+            diagnostics: [diagnostic],
+            diagnosticCodes: [diagnostic.code],
+            nextActions: diagnostic.nextActions,
+            checks: [
+                { id: "preflight-ready", status: preflightReady ? "passed" : "blocked", required: true, dispatch: false },
+                { id: "dry-run-ready", status: dryRunReady ? "passed" : "blocked", required: true, dispatch: false },
+                { id: "approval-granted", status: approval.approved ? "passed" : "blocked", required: true, dispatch: false },
+                { id: "hash-verification", status: "planned", required: true, dispatch: false },
+                { id: "rollback-on-failure", status: "planned", required: true, dispatch: false },
+                { id: "values-redacted", status: "passed", required: true, dispatch: false },
+            ],
+            execution: null,
+        };
+    }
+
+    // Invalid mode/token when configured incorrectly
+    if ((approval.modeConfigured && !approval.modeAccepted) || (approval.tokenConfigured && !approval.tokenAccepted)) {
+        const diagnostic = materializationExecutionDiagnostic(
+            "renderer_service_runtime_asset_materialization_execution_approval_invalid",
+            "invalid",
+            "approval.modeAccepted",
+            "Runtime asset cache materialization rejected invalid approval configuration.",
+            [
+                "Set PENPOT_RENDERER_SERVICE_RUNTIME_ASSET_MATERIALIZATION_APPROVAL=approved with a non-empty token and audit directory.",
+                "Keep unapproved writes and value exposure gated.",
+            ]
+        );
+        return {
+            ...runtimeAssetMaterializationExecutionBase,
+            status: "invalid",
+            source: {
+                ...runtimeAssetMaterializationExecutionBase.source,
+                preflightReady,
+                dryRunReady,
+                approvalReady: false,
+                readiness: "invalid-materialization-approval",
+            },
+            approval: {
+                modeConfigured: approval.modeConfigured,
+                modeAccepted: approval.modeAccepted,
+                tokenConfigured: approval.tokenConfigured,
+                tokenAccepted: approval.tokenAccepted,
+                auditConfigured: approval.auditConfigured,
+                auditWritable: false,
+                approvalGranted: false,
+                valuesIncluded: false,
+            },
+            diagnostics: [diagnostic],
+            diagnosticCodes: [diagnostic.code],
+            nextActions: diagnostic.nextActions,
+            checks: [
+                { id: "preflight-ready", status: preflightReady ? "passed" : "blocked", required: true, dispatch: false },
+                { id: "dry-run-ready", status: dryRunReady ? "passed" : "blocked", required: true, dispatch: false },
+                { id: "approval-granted", status: "invalid", required: true, dispatch: false },
+                { id: "hash-verification", status: "blocked", required: true, dispatch: false },
+                { id: "rollback-on-failure", status: "blocked", required: true, dispatch: false },
+                { id: "values-redacted", status: "passed", required: true, dispatch: false },
+            ],
+            execution: null,
+        };
+    }
+
+    const writtenPaths: string[] = [];
+    let assetsCopied = 0;
+    let assetsVerified = 0;
+    let assetsRolledBack = 0;
+    let fileRead = false;
+    let hashComputed = false;
+    let auditRecordWritten = false;
+    const assetResults: Array<Record<string, unknown>> = [];
+
+    try {
+        for (const asset of bundledRuntimeBridgeAssetManifest.assets) {
+            const publicPath = isAbsolute(asset.publicPath) ? asset.publicPath : resolve(workspaceRoot, asset.publicPath);
+            const cachePath = remapRuntimeAssetCachePath(asset.cachePath, cacheRoot);
+            const sourceExists = await filesystemEntryExists(publicPath);
+            if (!sourceExists) {
+                throw Object.assign(new Error(`Missing public runtime asset for materialization: ${asset.id}`), {
+                    code: "renderer_service_runtime_asset_materialization_source_missing",
+                });
+            }
+            const sourceHash = await runtimeAssetHash(publicPath, true);
+            fileRead = fileRead || sourceHash.fileRead;
+            hashComputed = hashComputed || sourceHash.hashComputed;
+            await ensureParentDir(cachePath);
+            // Write via temp then rename for atomicity; track for rollback
+            const tempPath = `${cachePath}.materializing`;
+            await copyFile(publicPath, tempPath);
+            writtenPaths.push(tempPath);
+            const tempHash = await runtimeAssetHash(tempPath, true);
+            fileRead = true;
+            hashComputed = true;
+            if (!tempHash.hashComputed || tempHash.sha256 !== sourceHash.sha256) {
+                throw Object.assign(new Error(`Hash verification failed for runtime asset materialization: ${asset.id}`), {
+                    code: "renderer_service_runtime_asset_materialization_hash_mismatch",
+                });
+            }
+            await rm(cachePath, { force: true }).catch(() => undefined);
+            // rename by copy+rm for cross-device safety
+            await copyFile(tempPath, cachePath);
+            writtenPaths.push(cachePath);
+            await rm(tempPath, { force: true });
+            // remove temp from written list conceptually; keep cachePath
+            const tempIndex = writtenPaths.indexOf(tempPath);
+            if (tempIndex >= 0) {
+                writtenPaths.splice(tempIndex, 1);
+            }
+            assetsCopied += 1;
+            assetsVerified += 1;
+            assetResults.push({
+                assetId: asset.id,
+                copied: true,
+                hashVerified: true,
+                valuesIncluded: false,
+            });
+        }
+
+        const auditDir = approval.auditDir?.trim() ?? "";
+        await mkdir(auditDir, { recursive: true });
+        const auditPath = resolve(auditDir, `runtime-asset-materialization-${Date.now()}.json`);
+        const auditPayload = {
+            executionVersion: "P26.51",
+            status: "executed",
+            assetsCopied,
+            assetsVerified,
+            assetResults,
+            // no token/path/hash values
+            valuesIncluded: false,
+            tokenValuesIncluded: false,
+            pathValuesIncluded: false,
+            sha256ValuesIncluded: false,
+        };
+        await writeFile(auditPath, `${JSON.stringify(auditPayload)}\n`, "utf8");
+        auditRecordWritten = true;
+
+        const diagnostic = materializationExecutionDiagnostic(
+            "renderer_service_runtime_asset_materialization_execution_succeeded",
+            "info",
+            "materialization.succeeded",
+            "Approved runtime asset cache materialization copied and hash-verified public assets into the cache root with audit metadata.",
+            [
+                "Keep browser startup, runtime value exposure, and default MCP/CLI enablement gated until later reviewed slices.",
+                "Proceed to real-scene PNG production only after installed real runtime and source-data paths are ready.",
+            ]
+        );
+        return {
+            ...runtimeAssetMaterializationExecutionBase,
+            status: "executed",
+            source: {
+                ...runtimeAssetMaterializationExecutionBase.source,
+                preflightReady: true,
+                dryRunReady: true,
+                approvalReady: true,
+                readiness: "runtime-asset-materialization-executed",
+            },
+            approval: {
+                modeConfigured: true,
+                modeAccepted: true,
+                tokenConfigured: true,
+                tokenAccepted: true,
+                auditConfigured: true,
+                auditWritable: true,
+                approvalGranted: true,
+                valuesIncluded: false,
+            },
+            materialization: {
+                attempted: true,
+                succeeded: true,
+                assetsCopied,
+                assetsVerified,
+                assetsRolledBack: 0,
+                hashVerificationEnabled: true,
+                rollbackOnFailure: true,
+                localFileWrites: true,
+                valuesIncluded: false,
+            },
+            diagnostics: [diagnostic],
+            diagnosticCodes: [diagnostic.code],
+            nextActions: diagnostic.nextActions,
+            checks: [
+                { id: "preflight-ready", status: "passed", required: true, dispatch: false },
+                { id: "dry-run-ready", status: "passed", required: true, dispatch: false },
+                { id: "approval-granted", status: "passed", required: true, dispatch: false },
+                { id: "hash-verification", status: "passed", required: true, dispatch: false },
+                { id: "rollback-on-failure", status: "passed", required: true, dispatch: false },
+                { id: "values-redacted", status: "passed", required: true, dispatch: false },
+            ],
+            sideEffects: {
+                browserProcessStarted: false,
+                runtimeExecutionRegistered: false,
+                runtimeAdapterImported: false,
+                runtimeAssetsLoaded: false,
+                assetManifestMaterialized: true,
+                fileRead: true,
+                hashComputed: true,
+                networkDispatch: false,
+                dispatch: false,
+                localFileWrites: true,
+                auditRecordWritten: true,
+            },
+            execution: {
+                attempted: true,
+                succeeded: true,
+                outcome: "executed",
+                assetsCopied,
+                assetsVerified,
+                assetsRolledBack: 0,
+                assetCount: assetResults.length,
+                valuesIncluded: false,
+            },
+        };
+    } catch (error) {
+        for (const written of [...writtenPaths].reverse()) {
+            try {
+                await rm(written, { force: true, recursive: true });
+                assetsRolledBack += 1;
+            } catch {
+                // best-effort rollback
+            }
+        }
+        const diagnostic = materializationExecutionDiagnostic(
+            "renderer_service_runtime_asset_materialization_execution_failed",
+            "invalid",
+            "materialization.succeeded",
+            error instanceof Error ? error.message : "Runtime asset cache materialization failed.",
+            [
+                "Inspect public asset availability and cache root permissions, then rerun approved materialization.",
+                "Keep unapproved writes, browser startup before assets are ready, runtime value exposure, and default MCP/CLI enablement gated.",
+            ]
+        );
+        return {
+            ...runtimeAssetMaterializationExecutionBase,
+            status: "invalid",
+            source: {
+                ...runtimeAssetMaterializationExecutionBase.source,
+                preflightReady: true,
+                dryRunReady: true,
+                approvalReady: true,
+                readiness: "runtime-asset-materialization-failed",
+            },
+            approval: {
+                modeConfigured: true,
+                modeAccepted: true,
+                tokenConfigured: true,
+                tokenAccepted: true,
+                auditConfigured: true,
+                auditWritable: false,
+                approvalGranted: true,
+                valuesIncluded: false,
+            },
+            materialization: {
+                attempted: true,
+                succeeded: false,
+                assetsCopied,
+                assetsVerified,
+                assetsRolledBack,
+                hashVerificationEnabled: true,
+                rollbackOnFailure: true,
+                localFileWrites: assetsCopied > 0 || assetsRolledBack > 0,
+                valuesIncluded: false,
+            },
+            diagnostics: [diagnostic],
+            diagnosticCodes: [diagnostic.code],
+            nextActions: diagnostic.nextActions,
+            checks: [
+                { id: "preflight-ready", status: "passed", required: true, dispatch: false },
+                { id: "dry-run-ready", status: "passed", required: true, dispatch: false },
+                { id: "approval-granted", status: "passed", required: true, dispatch: false },
+                { id: "hash-verification", status: "failed", required: true, dispatch: false },
+                { id: "rollback-on-failure", status: "passed", required: true, dispatch: false },
+                { id: "values-redacted", status: "passed", required: true, dispatch: false },
+            ],
+            sideEffects: {
+                browserProcessStarted: false,
+                runtimeExecutionRegistered: false,
+                runtimeAdapterImported: false,
+                runtimeAssetsLoaded: false,
+                assetManifestMaterialized: false,
+                fileRead,
+                hashComputed,
+                networkDispatch: false,
+                dispatch: false,
+                localFileWrites: assetsCopied > 0 || assetsRolledBack > 0,
+                auditRecordWritten,
+            },
+            execution: {
+                attempted: true,
+                succeeded: false,
+                outcome: "failed-rolled-back",
+                assetsCopied,
+                assetsVerified,
+                assetsRolledBack,
+                valuesIncluded: false,
+            },
+        };
+    }
+}
+
+function validateRuntimeAssetMaterializationExecutionResponse(actual: unknown, field: string): void {
+    const record = responseRecord(actual, field);
+    const status = String(record.status ?? "");
+    if (!["blocked", "executed", "invalid"].includes(status)) {
+        responseInvalid(`${field}.status must be blocked, executed, or invalid.`, `${field}.status`);
+    }
+    requireResponseEqual(record.executionVersion, "P26.51", `${field}.executionVersion`);
+    requireResponseEqual(record.owner, "renderer-service", `${field}.owner`);
+    requireResponseEqual(record.mode, "approved-runtime-asset-cache-materialization", `${field}.mode`);
+
+    const source = responseRecord(record.source, `${field}.source`);
+    requireResponseEqual(source.materializationExecutionVersion, "P26.51", `${field}.source.materializationExecutionVersion`);
+
+    const approval = responseRecord(record.approval, `${field}.approval`);
+    requireResponseEqual(approval.valuesIncluded, false, `${field}.approval.valuesIncluded`);
+
+    const materialization = responseRecord(record.materialization, `${field}.materialization`);
+    requireResponseEqual(materialization.valuesIncluded, false, `${field}.materialization.valuesIncluded`);
+    requireResponseEqual(materialization.hashVerificationEnabled, true, `${field}.materialization.hashVerificationEnabled`);
+    requireResponseEqual(materialization.rollbackOnFailure, true, `${field}.materialization.rollbackOnFailure`);
+
+    const redaction = responseRecord(record.redaction, `${field}.redaction`);
+    for (const property of [
+        "pathValuesIncluded",
+        "tokenValuesIncluded",
+        "sourceDataValuesIncluded",
+        "pageValuesIncluded",
+        "artifactValuesIncluded",
+        "mediaValuesIncluded",
+    ]) {
+        requireResponseEqual(redaction[property], false, `${field}.redaction.${property}`);
+    }
+
+    const omitted = responseRecord(record.omitted, `${field}.omitted`);
+    for (const property of [
+        "workspaceRoot",
+        "cacheRoot",
+        "publicPaths",
+        "cachePaths",
+        "sha256",
+        "tokenValues",
+        "approvalAuditPaths",
+    ]) {
+        requireResponseEqual(omitted[property], true, `${field}.omitted.${property}`);
+    }
+
+    const sideEffects = responseRecord(record.sideEffects, `${field}.sideEffects`);
+    requireResponseEqual(sideEffects.browserProcessStarted, false, `${field}.sideEffects.browserProcessStarted`);
+    requireResponseEqual(sideEffects.runtimeAdapterImported, false, `${field}.sideEffects.runtimeAdapterImported`);
+    requireResponseEqual(sideEffects.runtimeAssetsLoaded, false, `${field}.sideEffects.runtimeAssetsLoaded`);
+    requireResponseEqual(sideEffects.dispatch, false, `${field}.sideEffects.dispatch`);
+    requireResponseEqual(sideEffects.networkDispatch, false, `${field}.sideEffects.networkDispatch`);
+}
+
+
 
 export const bundledSceneBridgeContract = {
     status: "planned-disabled",
@@ -4738,6 +5687,2486 @@ function bundledSceneBridgeRuntimeRegistryInstallationExecutionBoundaryResponse(
     };
 }
 
+const bundledSceneBridgeRuntimeRegistryInstallationBase = {
+    status: "blocked",
+    installationVersion: "P26.46",
+    owner: "renderer-service",
+    mode: "guarded-runtime-registry-installation-execution",
+    source: {
+        runtimeRegistrationPreflightVersion: "P26.40",
+        registryRegistrationBoundaryVersion: "P26.41",
+        registryInstallationContractVersion: "P26.42",
+        registryInstallationGateVersion: "P26.43",
+        registryInstallationPreflightVersion: "P26.44",
+        registryInstallationExecutionBoundaryVersion: "P26.45",
+        registryInstallationVersion: "P26.46",
+        registryInstallationExecutionBoundaryReady: false,
+        registryInstallationExecutionBoundaryStatus: "blocked",
+        registryInstallationExecutionBoundaryReadiness: "blocked-until-installation-preflight-ready",
+        reviewedGateOpen: false,
+        readiness: "blocked-until-installation-execution-boundary-planned",
+    },
+    installation: {
+        registryInstallationExecutionBoundaryReadyRequired: true,
+        duplicateLookupRequired: true,
+        runtimeValueCreationRequired: true,
+        registryInstallationRequired: true,
+        closeHookRegistrationRequired: true,
+        rollbackHookRequired: true,
+        noDispatchRequired: true,
+        installationAttemptAllowed: false,
+        runtimeInstallationEnabled: false,
+        registryLookupAttempted: false,
+        registryWriteAttempted: false,
+        runtimeValueCreated: false,
+        runtimeInstallationAttempted: false,
+        runtimeInstalled: false,
+        runtimeRegistered: false,
+        runtimeRegistration: false,
+        runtimeExecutionRegistered: false,
+        closeHookRegistered: false,
+        rollbackHookRegistered: false,
+        duplicateRollbackAttempted: false,
+        renderDispatch: false,
+        browserProcessStarted: false,
+        runtimeValuesIncluded: false,
+        registryValuesIncluded: false,
+    },
+    runtimeValue: {
+        runtimeId: BUNDLED_SCENE_BRIDGE_RUNTIME_ID,
+        targetRegistry: BUNDLED_SCENE_BRIDGE_TARGET_REGISTRY,
+        requiredMethods: ["renderThumbnail"],
+        optionalMethods: ["close"],
+        requiredInstallationInputs: ["runtimeId", "runtimeValue", "lifecycleOwner", "closeHook"],
+        runtimeValueCreationPlanned: true,
+        runtimeValueCreated: false,
+        runtimeValueInstalled: false,
+        runtimeRegistered: false,
+        runtimeExecutionRegistered: false,
+        renderDispatchEnabledAfterInstallation: false,
+        valuesIncluded: false,
+    },
+    registrySlot: {
+        runtimeId: BUNDLED_SCENE_BRIDGE_RUNTIME_ID,
+        targetRegistry: BUNDLED_SCENE_BRIDGE_TARGET_REGISTRY,
+        slotOwner: "renderer-service",
+        slotStatus: "empty",
+        runtimeInstalled: false,
+        runtimeAvailableForDispatch: false,
+        renderDispatchEnabled: false,
+        valuesIncluded: false,
+    },
+    duplicateHandling: {
+        duplicateDetectionRequired: true,
+        existingRuntimeLookupRequired: true,
+        duplicateRegistrationPolicy: "reject-until-explicit-replace-policy",
+        replacementPolicy: "not-supported-until-reviewed",
+        rollbackRequiredOnDuplicate: true,
+        rollbackHookRequired: true,
+        cleanupOnInstallationFailure: true,
+        cleanupOnServiceStop: true,
+        existingRuntimeLookupAttempted: false,
+        existingRuntimeFound: false,
+        duplicateDetected: false,
+        rollbackPrepared: false,
+        rollbackAttempted: false,
+        cleanupAttempted: false,
+        valuesIncluded: false,
+    },
+    lifecycleOwnership: {
+        lifecycleOwner: "renderer-service",
+        registryOwner: "renderer-service",
+        closeHookOwner: "renderer-service",
+        rollbackOwner: "renderer-service",
+        runtimeId: BUNDLED_SCENE_BRIDGE_RUNTIME_ID,
+        targetRegistry: BUNDLED_SCENE_BRIDGE_TARGET_REGISTRY,
+        lifecycleScope: "thumbnail-runtime-registry",
+        noDispatchLifecycle: true,
+        lifecycleOwnershipVerified: false,
+        closeHookRegistered: false,
+        rollbackHookRegistered: false,
+        runtimeValueOwned: false,
+        registrySlotOwned: false,
+        valuesIncluded: false,
+    },
+    refusalDiagnostics: {
+        refusalRequired: true,
+        refusalReason: "installation-execution-boundary-not-planned",
+        invalidBoundaryMetadata: false,
+        registryLookupRefused: true,
+        registryWriteRefused: true,
+        runtimeValueCreationRefused: true,
+        runtimeInstallationRefused: true,
+        closeHookRegistrationRefused: true,
+        duplicateRollbackRefused: true,
+        renderDispatchRefused: true,
+        valuesIncluded: false,
+    },
+    installationOutcomeTaxonomy: [
+        {
+            code: "renderer_service_bundled_scene_bridge_runtime_registry_installation_boundary_not_planned",
+            stage: "installation-execution-boundary",
+            severity: "blocked",
+            retryable: false,
+            dispatch: false,
+        },
+        {
+            code: "renderer_service_bundled_scene_bridge_runtime_registry_installation_boundary_invalid",
+            stage: "installation-execution-boundary",
+            severity: "invalid",
+            retryable: false,
+            dispatch: false,
+        },
+        {
+            code: "renderer_service_bundled_scene_bridge_runtime_registry_installation_duplicate_rejected",
+            stage: "duplicate-registration-policy",
+            severity: "blocked",
+            retryable: false,
+            dispatch: false,
+        },
+        {
+            code: "renderer_service_bundled_scene_bridge_runtime_registry_installation_runtime_invalid",
+            stage: "runtime-value-creation",
+            severity: "invalid",
+            retryable: false,
+            dispatch: false,
+        },
+        {
+            code: "renderer_service_bundled_scene_bridge_runtime_registry_installation_executed",
+            stage: "registry-installation",
+            severity: "info",
+            retryable: false,
+            dispatch: false,
+        },
+        {
+            code: "renderer_service_bundled_scene_bridge_runtime_registry_installation_unsafe_metadata",
+            stage: "installation-metadata",
+            severity: "invalid",
+            retryable: false,
+            dispatch: false,
+        },
+    ],
+    diagnostics: [
+        {
+            code: "renderer_service_bundled_scene_bridge_runtime_registry_installation_boundary_not_planned",
+            severity: "blocked",
+            field: "source.registryInstallationExecutionBoundaryReady",
+            env: BUNDLED_SCENE_BRIDGE_RUNTIME_INSTALLATION_GATE_ENV,
+            valueRead: false,
+            valuesIncluded: false,
+            message:
+                "The bundled scene bridge runtime registry installation is blocked until the P26.45 installation execution boundary is planned.",
+            nextActions: [
+                "Verify renderer-service /health bundledSceneBridgeRuntimeRegistryInstallationExecutionBoundary reports planned-disabled after a ready P26.44 preflight.",
+                "Keep registry lookup, registry writes, runtime value creation, runtime installation, close-hook registration, rollback, render dispatch, browser startup, reads, writes, and value exposure disabled until the planned boundary is ready.",
+            ],
+        },
+    ],
+    diagnosticCodes: [
+        "renderer_service_bundled_scene_bridge_runtime_registry_installation_boundary_not_planned",
+    ],
+    nextActions: [
+        "Verify renderer-service /health bundledSceneBridgeRuntimeRegistryInstallationExecutionBoundary reports planned-disabled after a ready P26.44 preflight.",
+        "Keep registry lookup, registry writes, runtime value creation, runtime installation, close-hook registration, rollback, render dispatch, browser startup, reads, writes, and value exposure disabled until the planned boundary is ready.",
+    ],
+    checks: [
+        { id: "installation-execution-boundary-planned", status: "blocked", required: true, dispatch: false },
+        { id: "duplicate-lookup", status: "planned", required: true, dispatch: false },
+        { id: "runtime-value-creation", status: "planned", required: true, dispatch: false },
+        { id: "registry-installation", status: "planned", required: true, dispatch: false },
+        { id: "close-hook-registration", status: "planned", required: true, dispatch: false },
+        { id: "rollback-hook-registration", status: "planned", required: true, dispatch: false },
+        { id: "runtime-values-redacted", status: "passed", required: true, dispatch: false },
+    ],
+    sideEffects: {
+        registryLookup: false,
+        registryWrite: false,
+        runtimeValueCreation: false,
+        runtimeInstallation: false,
+        runtimeRegistration: false,
+        runtimeExecutionRegistered: false,
+        closeHookRegistration: false,
+        duplicateRollback: false,
+        renderDispatch: false,
+        browserProcessStarted: false,
+        browserPageCreated: false,
+        runtimeAdapterImported: false,
+        runtimeFactoryInvoked: false,
+        runtimeOptionsCreated: false,
+        runtimeAssetsLoaded: false,
+        assetManifestMaterialized: false,
+        backendRpcReads: false,
+        sourceDataReads: false,
+        networkDispatch: false,
+        dispatch: false,
+        localFileWrites: false,
+    },
+    redaction: {
+        modeValuesIncluded: false,
+        moduleValuesIncluded: false,
+        factoryValuesIncluded: false,
+        runtimeOptionsValuesIncluded: false,
+        optionValuesIncluded: false,
+        runtimeValuesIncluded: false,
+        registryValuesIncluded: false,
+        lifecycleValuesIncluded: false,
+        pathValuesIncluded: false,
+        sourceDataValuesIncluded: false,
+        pageValuesIncluded: false,
+        artifactValuesIncluded: false,
+        mediaValuesIncluded: false,
+        tokenValuesIncluded: false,
+    },
+    omitted: {
+        configuredValue: true,
+        moduleNamespace: true,
+        factoryValue: true,
+        runtimeOptionsValue: true,
+        optionValues: true,
+        runtimeValue: true,
+        registryValue: true,
+        lifecycleHandles: true,
+        workspaceRoot: true,
+        cacheRoot: true,
+        modulePath: true,
+        publicPaths: true,
+        cachePaths: true,
+        sha256: true,
+        playwrightBrowserPath: true,
+        runtimeModulePath: true,
+        sourceData: true,
+        pageData: true,
+        artifactBytes: true,
+        mediaBytes: true,
+        tokenValues: true,
+    },
+    execution: null,
+} as const;
+
+export const bundledSceneBridgeRuntimeRegistryInstallation = bundledSceneBridgeRuntimeRegistryInstallationBase;
+
+function bundledSceneBridgeRuntimeRegistryInstallationDiagnostic(
+    code: string,
+    severity: "info" | "blocked" | "invalid",
+    field: string,
+    message: string,
+    nextActions: string[]
+) {
+    return {
+        code,
+        severity,
+        field,
+        env: BUNDLED_SCENE_BRIDGE_RUNTIME_INSTALLATION_GATE_ENV,
+        valueRead: false,
+        valuesIncluded: false,
+        message,
+        nextActions,
+    };
+}
+
+async function createBundledSceneBridgeInstalledRuntimeValue(options?: {
+    preferRealRuntime?: boolean;
+    materializationExecuted?: boolean;
+}): Promise<{ runtime: RendererRuntimeOptions; runtimeKind: "stub" | "real" }> {
+    if (options?.preferRealRuntime) {
+        const realNamespace = await import("./bundled-scene-bridge-real-runtime.js");
+        const realFactory = realNamespace.createBundledSceneBridgeRealRendererRuntime;
+        if (typeof realFactory === "function") {
+            const realRuntime = await realFactory({
+                executionEnabled: true,
+                materializationExecuted: options.materializationExecuted === true,
+                assetsMaterialized: options.materializationExecuted === true,
+                realRuntimeScaffold: true,
+            });
+            if (isRecord(realRuntime) && typeof realRuntime.renderThumbnail === "function") {
+                return {
+                    runtime: {
+                        renderThumbnail: realRuntime.renderThumbnail as RendererRuntimeOptions["renderThumbnail"],
+                        ...(typeof realRuntime.close === "function"
+                            ? { close: realRuntime.close as RendererRuntimeOptions["close"] }
+                            : {}),
+                    },
+                    runtimeKind: "real",
+                };
+            }
+        }
+    }
+
+    const namespace = await import("./bundled-scene-bridge-runtime.js");
+    const factory = namespace.createBundledSceneBridgeRendererRuntime;
+    if (typeof factory !== "function") {
+        const error = new Error(
+            "Bundled scene bridge runtime factory is missing for registry installation."
+        ) as Error & { code?: string };
+        error.code = "renderer_service_bundled_scene_bridge_runtime_registry_installation_runtime_invalid";
+        throw error;
+    }
+    const runtimeOptions = await factory(createBundledSceneBridgeInertOptions());
+    if (!isRecord(runtimeOptions) || typeof runtimeOptions.renderThumbnail !== "function") {
+        const error = new Error(
+            "Bundled scene bridge runtime value is missing renderThumbnail for registry installation."
+        ) as Error & { code?: string };
+        error.code = "renderer_service_bundled_scene_bridge_runtime_registry_installation_runtime_invalid";
+        throw error;
+    }
+    if (runtimeOptions.close !== undefined && typeof runtimeOptions.close !== "function") {
+        const error = new Error(
+            "Bundled scene bridge runtime value has a non-callable close hook."
+        ) as Error & { code?: string };
+        error.code = "renderer_service_bundled_scene_bridge_runtime_registry_installation_runtime_invalid";
+        throw error;
+    }
+    return {
+        runtime: {
+            renderThumbnail: runtimeOptions.renderThumbnail as RendererRuntimeOptions["renderThumbnail"],
+            ...(typeof runtimeOptions.close === "function"
+                ? { close: runtimeOptions.close as RendererRuntimeOptions["close"] }
+                : {}),
+        },
+        runtimeKind: "stub",
+    };
+}
+
+async function closeBundledSceneBridgeInstalledRuntimeEntry(
+    entry: BundledSceneBridgeInstalledRuntimeEntry | undefined
+): Promise<void> {
+    if (!entry) {
+        return;
+    }
+    if (typeof entry.runtimeValue.close === "function") {
+        await entry.runtimeValue.close();
+    }
+}
+
+async function closeBundledSceneBridgeThumbnailRuntimeRegistry(
+    registry: BundledSceneBridgeThumbnailRuntimeRegistry | undefined
+): Promise<void> {
+    if (!registry || registry.size === 0) {
+        return;
+    }
+    const entries = [...registry.values()];
+    registry.clear();
+    for (const entry of entries) {
+        await closeBundledSceneBridgeInstalledRuntimeEntry(entry);
+    }
+}
+
+async function bundledSceneBridgeRuntimeRegistryInstallationResponse(
+    registryInstallationExecutionBoundary: Record<string, unknown>,
+    registry: BundledSceneBridgeThumbnailRuntimeRegistry,
+    installOptions: {
+        preferRealRuntime?: boolean;
+        materializationExecuted?: boolean;
+    } = {}
+): Promise<Record<string, unknown>> {
+    const source = isRecord(registryInstallationExecutionBoundary.source)
+        ? registryInstallationExecutionBoundary.source
+        : {};
+    const executionBoundary = isRecord(registryInstallationExecutionBoundary.executionBoundary)
+        ? registryInstallationExecutionBoundary.executionBoundary
+        : {};
+    const lifecycleOwnership = isRecord(registryInstallationExecutionBoundary.lifecycleOwnership)
+        ? registryInstallationExecutionBoundary.lifecycleOwnership
+        : {};
+    const boundaryPlanned =
+        registryInstallationExecutionBoundary.status === "planned-disabled" &&
+        registryInstallationExecutionBoundary.boundaryVersion === "P26.45" &&
+        source.readiness === "runtime-registry-installation-execution-boundary-planned" &&
+        source.registryInstallationPreflightReady === true &&
+        executionBoundary.executionPlanReady === true &&
+        executionBoundary.runtimeInstallationEnabled === false &&
+        executionBoundary.runtimeInstalled === false &&
+        executionBoundary.renderDispatch === false &&
+        lifecycleOwnership.lifecycleOwnershipVerified === true;
+    const boundaryInvalid = registryInstallationExecutionBoundary.status === "invalid";
+    const boundaryStatus =
+        typeof registryInstallationExecutionBoundary.status === "string"
+            ? registryInstallationExecutionBoundary.status
+            : "blocked";
+    const boundaryReadiness =
+        typeof source.readiness === "string" ? source.readiness : "blocked-until-installation-preflight-ready";
+
+    if (boundaryInvalid) {
+        const diagnostic = bundledSceneBridgeRuntimeRegistryInstallationDiagnostic(
+            "renderer_service_bundled_scene_bridge_runtime_registry_installation_boundary_invalid",
+            "invalid",
+            "source.registryInstallationExecutionBoundaryStatus",
+            "The bundled scene bridge runtime registry installation rejected invalid P26.45 execution boundary metadata.",
+            [
+                "Fix renderer-service /health bundledSceneBridgeRuntimeRegistryInstallationExecutionBoundary before installing a runtime registry value.",
+                "Keep registry lookup, registry writes, runtime value creation, runtime installation, close-hook registration, rollback, render dispatch, browser startup, reads, writes, and value exposure disabled.",
+            ]
+        );
+        return {
+            ...bundledSceneBridgeRuntimeRegistryInstallationBase,
+            status: "invalid",
+            source: {
+                ...bundledSceneBridgeRuntimeRegistryInstallationBase.source,
+                registryInstallationExecutionBoundaryReady: false,
+                registryInstallationExecutionBoundaryStatus: boundaryStatus,
+                registryInstallationExecutionBoundaryReadiness: boundaryReadiness,
+                reviewedGateOpen: source.reviewedGateOpen === true,
+                readiness: "invalid-installation-execution-boundary",
+            },
+            refusalDiagnostics: {
+                ...bundledSceneBridgeRuntimeRegistryInstallationBase.refusalDiagnostics,
+                refusalReason: "installation-execution-boundary-invalid",
+                invalidBoundaryMetadata: true,
+            },
+            diagnostics: [diagnostic],
+            diagnosticCodes: [diagnostic.code],
+            nextActions: diagnostic.nextActions,
+            checks: [
+                { id: "installation-execution-boundary-planned", status: "invalid", required: true, dispatch: false },
+                { id: "duplicate-lookup", status: "invalid", required: true, dispatch: false },
+                { id: "runtime-value-creation", status: "invalid", required: true, dispatch: false },
+                { id: "registry-installation", status: "invalid", required: true, dispatch: false },
+                { id: "close-hook-registration", status: "invalid", required: true, dispatch: false },
+                { id: "rollback-hook-registration", status: "invalid", required: true, dispatch: false },
+                { id: "runtime-values-redacted", status: "passed", required: true, dispatch: false },
+            ],
+            execution: null,
+        };
+    }
+
+    if (!boundaryPlanned) {
+        const diagnostic = bundledSceneBridgeRuntimeRegistryInstallationDiagnostic(
+            "renderer_service_bundled_scene_bridge_runtime_registry_installation_boundary_not_planned",
+            "blocked",
+            "source.registryInstallationExecutionBoundaryReady",
+            "The bundled scene bridge runtime registry installation is blocked until the P26.45 installation execution boundary is planned.",
+            [
+                "Verify renderer-service /health bundledSceneBridgeRuntimeRegistryInstallationExecutionBoundary reports planned-disabled after a ready P26.44 preflight.",
+                "Keep registry lookup, registry writes, runtime value creation, runtime installation, close-hook registration, rollback, render dispatch, browser startup, reads, writes, and value exposure disabled until the planned boundary is ready.",
+            ]
+        );
+        return {
+            ...bundledSceneBridgeRuntimeRegistryInstallationBase,
+            status: "blocked",
+            source: {
+                ...bundledSceneBridgeRuntimeRegistryInstallationBase.source,
+                registryInstallationExecutionBoundaryReady: false,
+                registryInstallationExecutionBoundaryStatus: boundaryStatus,
+                registryInstallationExecutionBoundaryReadiness: boundaryReadiness,
+                reviewedGateOpen: source.reviewedGateOpen === true,
+                readiness: "blocked-until-installation-execution-boundary-planned",
+            },
+            diagnostics: [diagnostic],
+            diagnosticCodes: [diagnostic.code],
+            nextActions: diagnostic.nextActions,
+            execution: null,
+        };
+    }
+
+    const existing = registry.get(BUNDLED_SCENE_BRIDGE_RUNTIME_ID);
+    if (existing) {
+        const diagnostic = bundledSceneBridgeRuntimeRegistryInstallationDiagnostic(
+            "renderer_service_bundled_scene_bridge_runtime_registry_installation_executed",
+            "info",
+            "installation.runtimeInstalled",
+            "The bundled scene bridge stub runtime is already installed in the process-local thumbnail runtime registry; replacement remains unsupported.",
+            [
+                "Keep render dispatch disabled until a later reviewed task wires the installed runtime into gated thumbnail execution.",
+                "Proceed to P26.47 installed-runtime lifecycle diagnostics without exposing runtime values or enabling default MCP/CLI rendering.",
+            ]
+        );
+        return {
+            ...bundledSceneBridgeRuntimeRegistryInstallationBase,
+            status: "executed",
+            source: {
+                ...bundledSceneBridgeRuntimeRegistryInstallationBase.source,
+                registryInstallationExecutionBoundaryReady: true,
+                registryInstallationExecutionBoundaryStatus: boundaryStatus,
+                registryInstallationExecutionBoundaryReadiness: boundaryReadiness,
+                reviewedGateOpen: source.reviewedGateOpen === true,
+                readiness: "runtime-registry-installation-executed",
+            },
+            installation: {
+                ...bundledSceneBridgeRuntimeRegistryInstallationBase.installation,
+                installationAttemptAllowed: true,
+                runtimeInstallationEnabled: true,
+                registryLookupAttempted: true,
+                runtimeInstalled: true,
+                closeHookRegistered: existing.closeHookRegistered,
+                rollbackHookRegistered: existing.rollbackHookRegistered,
+            },
+            runtimeValue: {
+                ...bundledSceneBridgeRuntimeRegistryInstallationBase.runtimeValue,
+                runtimeValueInstalled: true,
+            },
+            registrySlot: {
+                ...bundledSceneBridgeRuntimeRegistryInstallationBase.registrySlot,
+                slotStatus: "occupied",
+                runtimeInstalled: true,
+            },
+            duplicateHandling: {
+                ...bundledSceneBridgeRuntimeRegistryInstallationBase.duplicateHandling,
+                existingRuntimeLookupAttempted: true,
+                existingRuntimeFound: true,
+                duplicateDetected: true,
+                rollbackPrepared: true,
+            },
+            lifecycleOwnership: {
+                ...bundledSceneBridgeRuntimeRegistryInstallationBase.lifecycleOwnership,
+                lifecycleOwnershipVerified: true,
+                closeHookRegistered: existing.closeHookRegistered,
+                rollbackHookRegistered: existing.rollbackHookRegistered,
+                runtimeValueOwned: true,
+                registrySlotOwned: true,
+            },
+            refusalDiagnostics: {
+                refusalRequired: false,
+                refusalReason: "installation-executed-without-dispatch",
+                invalidBoundaryMetadata: false,
+                registryLookupRefused: false,
+                registryWriteRefused: true,
+                runtimeValueCreationRefused: true,
+                runtimeInstallationRefused: true,
+                closeHookRegistrationRefused: false,
+                duplicateRollbackRefused: false,
+                renderDispatchRefused: true,
+                valuesIncluded: false,
+            },
+            diagnostics: [diagnostic],
+            diagnosticCodes: [diagnostic.code],
+            nextActions: diagnostic.nextActions,
+            checks: [
+                { id: "installation-execution-boundary-planned", status: "passed", required: true, dispatch: false },
+                { id: "duplicate-lookup", status: "passed", required: true, dispatch: false },
+                { id: "runtime-value-creation", status: "passed", required: true, dispatch: false },
+                { id: "registry-installation", status: "passed", required: true, dispatch: false },
+                {
+                    id: "close-hook-registration",
+                    status: existing.closeHookRegistered ? "passed" : "failed",
+                    required: true,
+                    dispatch: false,
+                },
+                { id: "rollback-hook-registration", status: "passed", required: true, dispatch: false },
+                { id: "runtime-values-redacted", status: "passed", required: true, dispatch: false },
+            ],
+            sideEffects: {
+                ...bundledSceneBridgeRuntimeRegistryInstallationBase.sideEffects,
+                registryLookup: true,
+            },
+            execution: {
+                attempted: true,
+                succeeded: true,
+                outcome: "already-installed",
+                registryLookupAttempted: true,
+                existingRuntimeFound: true,
+                runtimeValueCreated: false,
+                registryWriteAttempted: false,
+                runtimeInstalled: true,
+                closeHookRegistered: existing.closeHookRegistered,
+                rollbackHookRegistered: existing.rollbackHookRegistered,
+                renderDispatch: false,
+                browserProcessStarted: false,
+                runtimeAssetsLoaded: false,
+                assetManifestMaterialized: false,
+                valuesIncluded: false,
+            },
+        };
+    }
+
+    let runtimeValueCreated = false;
+    let runtimeAdapterImported = false;
+    let runtimeFactoryInvoked = false;
+    let runtimeOptionsCreated = false;
+    let closeHookRegistered = false;
+    let rollbackHookRegistered = false;
+    let registryWriteAttempted = false;
+    let createdRuntime: RendererRuntimeOptions | undefined;
+
+    try {
+        const created = await createBundledSceneBridgeInstalledRuntimeValue(installOptions);
+        createdRuntime = created.runtime;
+        runtimeAdapterImported = true;
+        runtimeFactoryInvoked = true;
+        runtimeOptionsCreated = true;
+        runtimeValueCreated = true;
+        closeHookRegistered = typeof createdRuntime.close === "function";
+        rollbackHookRegistered = true;
+        registryWriteAttempted = true;
+        registry.set(BUNDLED_SCENE_BRIDGE_RUNTIME_ID, {
+            runtimeId: BUNDLED_SCENE_BRIDGE_RUNTIME_ID,
+            runtimeValue: createdRuntime,
+            closeHookRegistered,
+            rollbackHookRegistered,
+            installedAtMs: Date.now(),
+            runtimeKind: created.runtimeKind,
+        });
+        const diagnostic = bundledSceneBridgeRuntimeRegistryInstallationDiagnostic(
+            "renderer_service_bundled_scene_bridge_runtime_registry_installation_executed",
+            "info",
+            "installation.runtimeInstalled",
+            "The bundled scene bridge stub runtime was installed into the process-local thumbnail runtime registry with close/rollback hooks registered.",
+            [
+                "Keep render dispatch disabled until a later reviewed task wires the installed runtime into gated thumbnail execution.",
+                "Proceed to P26.47 installed-runtime lifecycle diagnostics without exposing runtime values or enabling default MCP/CLI rendering.",
+            ]
+        );
+        return {
+            ...bundledSceneBridgeRuntimeRegistryInstallationBase,
+            status: "executed",
+            source: {
+                ...bundledSceneBridgeRuntimeRegistryInstallationBase.source,
+                registryInstallationExecutionBoundaryReady: true,
+                registryInstallationExecutionBoundaryStatus: boundaryStatus,
+                registryInstallationExecutionBoundaryReadiness: boundaryReadiness,
+                reviewedGateOpen: source.reviewedGateOpen === true,
+                readiness: "runtime-registry-installation-executed",
+            },
+            installation: {
+                ...bundledSceneBridgeRuntimeRegistryInstallationBase.installation,
+                installationAttemptAllowed: true,
+                runtimeInstallationEnabled: true,
+                registryLookupAttempted: true,
+                registryWriteAttempted: true,
+                runtimeValueCreated: true,
+                runtimeInstallationAttempted: true,
+                runtimeInstalled: true,
+                closeHookRegistered,
+                rollbackHookRegistered,
+            },
+            runtimeValue: {
+                ...bundledSceneBridgeRuntimeRegistryInstallationBase.runtimeValue,
+                runtimeValueCreated: true,
+                runtimeValueInstalled: true,
+            },
+            registrySlot: {
+                ...bundledSceneBridgeRuntimeRegistryInstallationBase.registrySlot,
+                slotStatus: "occupied",
+                runtimeInstalled: true,
+            },
+            duplicateHandling: {
+                ...bundledSceneBridgeRuntimeRegistryInstallationBase.duplicateHandling,
+                existingRuntimeLookupAttempted: true,
+                existingRuntimeFound: false,
+                duplicateDetected: false,
+                rollbackPrepared: true,
+            },
+            lifecycleOwnership: {
+                ...bundledSceneBridgeRuntimeRegistryInstallationBase.lifecycleOwnership,
+                lifecycleOwnershipVerified: true,
+                closeHookRegistered,
+                rollbackHookRegistered,
+                runtimeValueOwned: true,
+                registrySlotOwned: true,
+            },
+            refusalDiagnostics: {
+                refusalRequired: false,
+                refusalReason: "installation-executed-without-dispatch",
+                invalidBoundaryMetadata: false,
+                registryLookupRefused: false,
+                registryWriteRefused: false,
+                runtimeValueCreationRefused: false,
+                runtimeInstallationRefused: false,
+                closeHookRegistrationRefused: false,
+                duplicateRollbackRefused: false,
+                renderDispatchRefused: true,
+                valuesIncluded: false,
+            },
+            diagnostics: [diagnostic],
+            diagnosticCodes: [diagnostic.code],
+            nextActions: diagnostic.nextActions,
+            checks: [
+                { id: "installation-execution-boundary-planned", status: "passed", required: true, dispatch: false },
+                { id: "duplicate-lookup", status: "passed", required: true, dispatch: false },
+                { id: "runtime-value-creation", status: "passed", required: true, dispatch: false },
+                { id: "registry-installation", status: "passed", required: true, dispatch: false },
+                { id: "close-hook-registration", status: closeHookRegistered ? "passed" : "failed", required: true, dispatch: false },
+                { id: "rollback-hook-registration", status: "passed", required: true, dispatch: false },
+                { id: "runtime-values-redacted", status: "passed", required: true, dispatch: false },
+            ],
+            sideEffects: {
+                ...bundledSceneBridgeRuntimeRegistryInstallationBase.sideEffects,
+                registryLookup: true,
+                registryWrite: true,
+                runtimeValueCreation: true,
+                runtimeInstallation: true,
+                closeHookRegistration: closeHookRegistered,
+                runtimeAdapterImported,
+                runtimeFactoryInvoked,
+                runtimeOptionsCreated,
+            },
+            execution: {
+                attempted: true,
+                succeeded: true,
+                outcome: "executed",
+                registryLookupAttempted: true,
+                existingRuntimeFound: false,
+                runtimeValueCreated: true,
+                registryWriteAttempted: true,
+                runtimeInstalled: true,
+                closeHookRegistered,
+                rollbackHookRegistered,
+                renderDispatch: false,
+                browserProcessStarted: false,
+                runtimeAssetsLoaded: false,
+                assetManifestMaterialized: false,
+                valuesIncluded: false,
+            },
+        };
+    } catch {
+        if (createdRuntime) {
+            await closeBundledSceneBridgeInstalledRuntimeEntry({
+                runtimeId: BUNDLED_SCENE_BRIDGE_RUNTIME_ID,
+                runtimeValue: createdRuntime,
+                closeHookRegistered: typeof createdRuntime.close === "function",
+                rollbackHookRegistered: true,
+                installedAtMs: Date.now(),
+            });
+        }
+        const diagnostic = bundledSceneBridgeRuntimeRegistryInstallationDiagnostic(
+            "renderer_service_bundled_scene_bridge_runtime_registry_installation_runtime_invalid",
+            "invalid",
+            "runtimeValue",
+            "The bundled scene bridge runtime registry installation failed while creating or validating the stub runtime value.",
+            [
+                "Fix the service-owned bundled scene bridge factory so it returns renderThumbnail and an optional close hook.",
+                "Rerun renderer-service /health before retrying guarded runtime registry installation.",
+            ]
+        );
+        return {
+            ...bundledSceneBridgeRuntimeRegistryInstallationBase,
+            status: "invalid",
+            source: {
+                ...bundledSceneBridgeRuntimeRegistryInstallationBase.source,
+                registryInstallationExecutionBoundaryReady: true,
+                registryInstallationExecutionBoundaryStatus: boundaryStatus,
+                registryInstallationExecutionBoundaryReadiness: boundaryReadiness,
+                reviewedGateOpen: source.reviewedGateOpen === true,
+                readiness: "invalid-runtime-registry-installation",
+            },
+            installation: {
+                ...bundledSceneBridgeRuntimeRegistryInstallationBase.installation,
+                installationAttemptAllowed: true,
+                runtimeInstallationEnabled: true,
+                registryLookupAttempted: true,
+                registryWriteAttempted,
+                runtimeValueCreated,
+                runtimeInstallationAttempted: true,
+                closeHookRegistered,
+                rollbackHookRegistered,
+            },
+            duplicateHandling: {
+                ...bundledSceneBridgeRuntimeRegistryInstallationBase.duplicateHandling,
+                existingRuntimeLookupAttempted: true,
+                existingRuntimeFound: false,
+                duplicateDetected: false,
+                rollbackPrepared: true,
+                cleanupAttempted: true,
+            },
+            lifecycleOwnership: {
+                ...bundledSceneBridgeRuntimeRegistryInstallationBase.lifecycleOwnership,
+                lifecycleOwnershipVerified: true,
+            },
+            refusalDiagnostics: {
+                ...bundledSceneBridgeRuntimeRegistryInstallationBase.refusalDiagnostics,
+                refusalReason: "runtime-value-invalid",
+                registryLookupRefused: false,
+                registryWriteRefused: !registryWriteAttempted,
+                runtimeValueCreationRefused: !runtimeValueCreated,
+                runtimeInstallationRefused: true,
+                closeHookRegistrationRefused: !closeHookRegistered,
+                duplicateRollbackRefused: false,
+                renderDispatchRefused: true,
+            },
+            diagnostics: [diagnostic],
+            diagnosticCodes: [diagnostic.code],
+            nextActions: diagnostic.nextActions,
+            checks: [
+                { id: "installation-execution-boundary-planned", status: "passed", required: true, dispatch: false },
+                { id: "duplicate-lookup", status: "passed", required: true, dispatch: false },
+                { id: "runtime-value-creation", status: "failed", required: true, dispatch: false },
+                { id: "registry-installation", status: "failed", required: true, dispatch: false },
+                { id: "close-hook-registration", status: "blocked", required: true, dispatch: false },
+                { id: "rollback-hook-registration", status: "blocked", required: true, dispatch: false },
+                { id: "runtime-values-redacted", status: "passed", required: true, dispatch: false },
+            ],
+            sideEffects: {
+                ...bundledSceneBridgeRuntimeRegistryInstallationBase.sideEffects,
+                registryLookup: true,
+                registryWrite: registryWriteAttempted,
+                runtimeValueCreation: runtimeValueCreated,
+                runtimeInstallation: false,
+                closeHookRegistration: closeHookRegistered,
+                runtimeAdapterImported,
+                runtimeFactoryInvoked,
+                runtimeOptionsCreated,
+            },
+            execution: {
+                attempted: true,
+                succeeded: false,
+                outcome: "runtime-invalid",
+                registryLookupAttempted: true,
+                existingRuntimeFound: false,
+                runtimeValueCreated,
+                registryWriteAttempted,
+                runtimeInstalled: false,
+                closeHookRegistered,
+                rollbackHookRegistered,
+                renderDispatch: false,
+                browserProcessStarted: false,
+                runtimeAssetsLoaded: false,
+                assetManifestMaterialized: false,
+                valuesIncluded: false,
+            },
+        };
+    }
+}
+
+
+const bundledSceneBridgeInstalledRuntimeLifecycleBase = {
+    status: "not-installed",
+    diagnosticsVersion: "P26.47",
+    owner: "renderer-service",
+    mode: "installed-runtime-lifecycle-diagnostics",
+    source: {
+        runtimeRegistrationPreflightVersion: "P26.40",
+        registryRegistrationBoundaryVersion: "P26.41",
+        registryInstallationContractVersion: "P26.42",
+        registryInstallationGateVersion: "P26.43",
+        registryInstallationPreflightVersion: "P26.44",
+        registryInstallationExecutionBoundaryVersion: "P26.45",
+        registryInstallationVersion: "P26.46",
+        installedRuntimeLifecycleVersion: "P26.47",
+        registryInstallationStatus: "blocked",
+        registryInstallationReady: false,
+        runtimeInstalled: false,
+        readiness: "blocked-until-runtime-registry-installation",
+    },
+    registrySlot: {
+        runtimeId: BUNDLED_SCENE_BRIDGE_RUNTIME_ID,
+        targetRegistry: BUNDLED_SCENE_BRIDGE_TARGET_REGISTRY,
+        slotOwner: "renderer-service",
+        slotStatus: "empty",
+        slotOccupied: false,
+        runtimeInstalled: false,
+        runtimeAvailableForDispatch: false,
+        renderDispatchEnabled: false,
+        valuesIncluded: false,
+    },
+    lifecycleHooks: {
+        lifecycleOwner: "renderer-service",
+        closeHookOwner: "renderer-service",
+        rollbackOwner: "renderer-service",
+        closeHookRegistered: false,
+        rollbackHookRegistered: false,
+        closeHookCallable: false,
+        closeAttempted: false,
+        closeSucceeded: false,
+        closeFailed: false,
+        valuesIncluded: false,
+    },
+    duplicateReplacementPolicy: {
+        duplicateRegistrationPolicy: "reject-until-explicit-replace-policy",
+        replacementPolicy: "not-supported-until-reviewed",
+        existingRuntimeFound: false,
+        duplicateDetected: false,
+        replacementSupported: false,
+        replacementAttempted: false,
+        valuesIncluded: false,
+    },
+    rollbackReadiness: {
+        rollbackReady: false,
+        rollbackHookRegistered: false,
+        cleanupOnServiceStop: true,
+        cleanupOnInstallationFailure: true,
+        rollbackAttempted: false,
+        rollbackSucceeded: false,
+        rollbackFailed: false,
+        valuesIncluded: false,
+    },
+    runtimeAvailability: {
+        status: "metadata-only",
+        runtimeId: BUNDLED_SCENE_BRIDGE_RUNTIME_ID,
+        runtimeInstalled: false,
+        runtimeValueAvailable: false,
+        runtimeAvailableForDispatch: false,
+        renderDispatchEnabled: false,
+        valuesIncluded: false,
+    },
+    refusalDiagnostics: {
+        refusalRequired: true,
+        refusalReason: "runtime-not-installed",
+        invalidInstallationMetadata: false,
+        renderDispatchRefused: true,
+        runtimeValueExposureRefused: true,
+        valuesIncluded: false,
+    },
+    lifecycleOutcomeTaxonomy: [
+        {
+            code: "renderer_service_bundled_scene_bridge_installed_runtime_lifecycle_not_installed",
+            stage: "registry-installation",
+            severity: "blocked",
+            retryable: false,
+            dispatch: false,
+        },
+        {
+            code: "renderer_service_bundled_scene_bridge_installed_runtime_lifecycle_installation_invalid",
+            stage: "registry-installation",
+            severity: "invalid",
+            retryable: false,
+            dispatch: false,
+        },
+        {
+            code: "renderer_service_bundled_scene_bridge_installed_runtime_lifecycle_reported",
+            stage: "installed-runtime-lifecycle",
+            severity: "info",
+            retryable: false,
+            dispatch: false,
+        },
+        {
+            code: "renderer_service_bundled_scene_bridge_installed_runtime_lifecycle_unsafe_metadata",
+            stage: "installed-runtime-lifecycle-metadata",
+            severity: "invalid",
+            retryable: false,
+            dispatch: false,
+        },
+    ],
+    diagnostics: [
+        {
+            code: "renderer_service_bundled_scene_bridge_installed_runtime_lifecycle_not_installed",
+            severity: "blocked",
+            field: "source.runtimeInstalled",
+            env: BUNDLED_SCENE_BRIDGE_RUNTIME_INSTALLATION_GATE_ENV,
+            valueRead: false,
+            valuesIncluded: false,
+            message:
+                "The bundled scene bridge installed-runtime lifecycle diagnostics are blocked until P26.46 registry installation reports an installed runtime.",
+            nextActions: [
+                "Verify renderer-service /health bundledSceneBridgeRuntimeRegistryInstallation reports executed with an occupied registry slot.",
+                "Keep render dispatch, real scene assets, asset materialization writes, and runtime value exposure gated.",
+            ],
+        },
+    ],
+    diagnosticCodes: ["renderer_service_bundled_scene_bridge_installed_runtime_lifecycle_not_installed"],
+    nextActions: [
+        "Verify renderer-service /health bundledSceneBridgeRuntimeRegistryInstallation reports executed with an occupied registry slot.",
+        "Keep render dispatch, real scene assets, asset materialization writes, and runtime value exposure gated.",
+    ],
+    checks: [
+        { id: "registry-installation-executed", status: "blocked", required: true, dispatch: false },
+        { id: "registry-slot-occupied", status: "blocked", required: true, dispatch: false },
+        { id: "close-hook-registered", status: "blocked", required: true, dispatch: false },
+        { id: "rollback-readiness", status: "blocked", required: true, dispatch: false },
+        { id: "duplicate-replacement-policy", status: "planned", required: true, dispatch: false },
+        { id: "runtime-values-redacted", status: "passed", required: true, dispatch: false },
+    ],
+    sideEffects: {
+        registryLookup: false,
+        registryWrite: false,
+        runtimeValueCreation: false,
+        runtimeInstallation: false,
+        runtimeRegistration: false,
+        runtimeExecutionRegistered: false,
+        closeHookRegistration: false,
+        closeHookInvocation: false,
+        duplicateRollback: false,
+        renderDispatch: false,
+        browserProcessStarted: false,
+        browserPageCreated: false,
+        runtimeAdapterImported: false,
+        runtimeFactoryInvoked: false,
+        runtimeOptionsCreated: false,
+        runtimeAssetsLoaded: false,
+        assetManifestMaterialized: false,
+        backendRpcReads: false,
+        sourceDataReads: false,
+        networkDispatch: false,
+        dispatch: false,
+        localFileWrites: false,
+    },
+    redaction: {
+        modeValuesIncluded: false,
+        moduleValuesIncluded: false,
+        factoryValuesIncluded: false,
+        runtimeOptionsValuesIncluded: false,
+        optionValuesIncluded: false,
+        runtimeValuesIncluded: false,
+        registryValuesIncluded: false,
+        lifecycleValuesIncluded: false,
+        pathValuesIncluded: false,
+        sourceDataValuesIncluded: false,
+        pageValuesIncluded: false,
+        artifactValuesIncluded: false,
+        mediaValuesIncluded: false,
+        tokenValuesIncluded: false,
+    },
+    omitted: {
+        configuredValue: true,
+        moduleNamespace: true,
+        factoryValue: true,
+        runtimeOptionsValue: true,
+        optionValues: true,
+        runtimeValue: true,
+        registryValue: true,
+        lifecycleHandles: true,
+        workspaceRoot: true,
+        cacheRoot: true,
+        modulePath: true,
+        publicPaths: true,
+        cachePaths: true,
+        sha256: true,
+        playwrightBrowserPath: true,
+        runtimeModulePath: true,
+        sourceData: true,
+        pageData: true,
+        artifactBytes: true,
+        mediaBytes: true,
+        tokenValues: true,
+    },
+    execution: null,
+} as const;
+
+export const bundledSceneBridgeInstalledRuntimeLifecycle = bundledSceneBridgeInstalledRuntimeLifecycleBase;
+
+const bundledSceneBridgeRealRuntimeValueContractBase = {
+    status: "planned-disabled",
+    contractVersion: "P26.48",
+    owner: "renderer-service",
+    mode: "real-runtime-value-contract-plan",
+    source: {
+        adapterContractVersion: "P26.32",
+        adapterModuleReadinessVersion: "P26.33",
+        registryInstallationVersion: "P26.46",
+        installedRuntimeLifecycleVersion: "P26.47",
+        realRuntimeValueContractVersion: "P26.48",
+        stubRuntimeInstalledAllowed: true,
+        realRuntimeImplemented: false,
+        readiness: "real-runtime-value-contract-planned",
+    },
+    ownership: {
+        lifecycleOwner: "renderer-service",
+        registryOwner: "renderer-service",
+        browserOwner: "renderer-service",
+        renderWasmOwner: "renderer-service",
+        rasterizerOwner: "renderer-service",
+        activeEditorTabRequired: false,
+        processLocalRegistryRequired: true,
+        valuesIncluded: false,
+    },
+    runtimeValueShape: {
+        runtimeId: BUNDLED_SCENE_BRIDGE_RUNTIME_ID,
+        targetRegistry: BUNDLED_SCENE_BRIDGE_TARGET_REGISTRY,
+        type: "RendererRuntimeOptions",
+        requiredMethods: ["renderThumbnail"],
+        optionalMethods: ["close"],
+        primaryRuntime: "render-wasm-worker",
+        fallbackRuntime: "frontend-rasterizer",
+        stubRuntimeSelectable: true,
+        realRuntimeSelectable: false,
+        valuesIncluded: false,
+    },
+    browserPageHandoff: {
+        engine: "chromium",
+        headless: true,
+        pageReusePolicy: "single-page-serial-queue",
+        sourceDataTransfer: "renderer-service-internal-redacted",
+        activeEditorTabRequired: false,
+        browserProcessStarted: false,
+        pageCreated: false,
+        pageValuesIncluded: false,
+        playwrightPathIncluded: false,
+    },
+    renderInputContract: {
+        type: "RendererRuntimeRenderInput",
+        targetKinds: ["file", "frame"],
+        requiredSections: ["target", "artifact", "cache", "render", "sourceData"],
+        renderRuntime: "render-wasm-worker",
+        renderFallback: "frontend-rasterizer",
+        sourceDataValuesIncluded: false,
+        pageValuesIncluded: false,
+        artifactValuesIncluded: false,
+        mediaValuesIncluded: false,
+        tokenValuesIncluded: false,
+    },
+    renderOutputContract: {
+        type: "RendererRuntimeRenderResult",
+        artifactFormat: "png",
+        artifactMimeType: "image/png",
+        allowedRuntimes: ["render-wasm-worker", "frontend-rasterizer"],
+        nonEmptyPngRequired: true,
+        artifactByteLengthIncluded: false,
+        artifactBytesIncluded: false,
+        localFileWrites: false,
+        resourceValuesIncluded: false,
+        mediaValuesIncluded: false,
+    },
+    failureTaxonomy: [
+        {
+            code: "renderer_service_bundled_scene_bridge_real_runtime_value_contract_planned",
+            stage: "contract-plan",
+            severity: "info",
+            retryable: false,
+            dispatch: false,
+        },
+        {
+            code: "renderer_service_bundled_scene_bridge_real_runtime_assets_not_ready",
+            stage: "asset-prerequisites",
+            severity: "blocked",
+            retryable: false,
+            dispatch: false,
+        },
+        {
+            code: "renderer_service_bundled_scene_bridge_real_runtime_browser_start_failed",
+            stage: "browser-page-handoff",
+            severity: "invalid",
+            retryable: true,
+            dispatch: false,
+        },
+        {
+            code: "renderer_service_bundled_scene_bridge_real_runtime_render_wasm_failed",
+            stage: "render-wasm-worker",
+            severity: "invalid",
+            retryable: true,
+            dispatch: false,
+        },
+        {
+            code: "renderer_service_bundled_scene_bridge_real_runtime_rasterizer_fallback_failed",
+            stage: "frontend-rasterizer",
+            severity: "invalid",
+            retryable: true,
+            dispatch: false,
+        },
+        {
+            code: "renderer_service_bundled_scene_bridge_real_runtime_value_contract_unsafe_metadata",
+            stage: "contract-metadata",
+            severity: "invalid",
+            retryable: false,
+            dispatch: false,
+        },
+    ],
+    diagnostics: [
+        {
+            code: "renderer_service_bundled_scene_bridge_real_runtime_value_contract_planned",
+            severity: "info",
+            field: "source.realRuntimeImplemented",
+            message:
+                "The real bundled scene bridge runtime value contract is planned after stub installation and lifecycle diagnostics, but the real browser-backed runtime remains unimplemented.",
+            nextActions: [
+                "Scaffold the real runtime module behind a reviewed gate in P26.49 without loading public assets or starting a browser by default.",
+                "Keep browser startup for real assets, asset materialization writes, default MCP/CLI rendering, and value exposure gated.",
+            ],
+        },
+    ],
+    diagnosticCodes: ["renderer_service_bundled_scene_bridge_real_runtime_value_contract_planned"],
+    nextActions: [
+        "Scaffold the real runtime module behind a reviewed gate in P26.49 without loading public assets or starting a browser by default.",
+        "Keep browser startup for real assets, asset materialization writes, default MCP/CLI rendering, and value exposure gated.",
+    ],
+    checks: [
+        { id: "stub-installation-compatible", status: "planned", required: true, dispatch: false },
+        { id: "render-wasm-ownership", status: "planned", required: true, dispatch: false },
+        { id: "frontend-rasterizer-fallback-ownership", status: "planned", required: true, dispatch: false },
+        { id: "browser-page-handoff-plan", status: "planned", required: true, dispatch: false },
+        { id: "render-io-contract", status: "planned", required: true, dispatch: false },
+        { id: "failure-taxonomy", status: "planned", required: true, dispatch: false },
+        { id: "runtime-values-redacted", status: "passed", required: true, dispatch: false },
+    ],
+    testMatrix: [
+        { id: "contract-surfaced-health-thumbnail", required: true, status: "planned", dispatch: false },
+        { id: "stub-runtime-remains-default", required: true, status: "planned", dispatch: false },
+        { id: "real-runtime-selection-gated", required: true, status: "planned", dispatch: false },
+        { id: "browser-page-handoff-redaction", required: true, status: "planned", dispatch: false },
+        { id: "render-input-output-validation", required: true, status: "planned", dispatch: false },
+        { id: "failure-taxonomy-codes", required: true, status: "planned", dispatch: false },
+    ],
+    sideEffects: {
+        registryLookup: false,
+        registryWrite: false,
+        runtimeValueCreation: false,
+        runtimeInstallation: false,
+        runtimeRegistration: false,
+        runtimeExecutionRegistered: false,
+        renderDispatch: false,
+        browserProcessStarted: false,
+        browserPageCreated: false,
+        runtimeAdapterImported: false,
+        runtimeFactoryInvoked: false,
+        runtimeOptionsCreated: false,
+        runtimeAssetsLoaded: false,
+        assetManifestMaterialized: false,
+        backendRpcReads: false,
+        sourceDataReads: false,
+        networkDispatch: false,
+        dispatch: false,
+        localFileWrites: false,
+    },
+    redaction: {
+        modeValuesIncluded: false,
+        moduleValuesIncluded: false,
+        factoryValuesIncluded: false,
+        runtimeOptionsValuesIncluded: false,
+        optionValuesIncluded: false,
+        runtimeValuesIncluded: false,
+        registryValuesIncluded: false,
+        lifecycleValuesIncluded: false,
+        pathValuesIncluded: false,
+        sourceDataValuesIncluded: false,
+        pageValuesIncluded: false,
+        artifactValuesIncluded: false,
+        mediaValuesIncluded: false,
+        tokenValuesIncluded: false,
+    },
+    omitted: {
+        configuredValue: true,
+        moduleNamespace: true,
+        factoryValue: true,
+        runtimeOptionsValue: true,
+        optionValues: true,
+        runtimeValue: true,
+        registryValue: true,
+        lifecycleHandles: true,
+        workspaceRoot: true,
+        cacheRoot: true,
+        modulePath: true,
+        publicPaths: true,
+        cachePaths: true,
+        sha256: true,
+        playwrightBrowserPath: true,
+        runtimeModulePath: true,
+        sourceData: true,
+        pageData: true,
+        artifactBytes: true,
+        mediaBytes: true,
+        tokenValues: true,
+    },
+    execution: null,
+} as const;
+
+export const bundledSceneBridgeRealRuntimeValueContract = bundledSceneBridgeRealRuntimeValueContractBase;
+
+function validateBundledSceneBridgeRealRuntimeValueContractResponse(actual: unknown, field: string): void {
+    const record = responseRecord(actual, field);
+    requireResponseEqual(record.status, "planned-disabled", `${field}.status`);
+    requireResponseEqual(record.contractVersion, "P26.48", `${field}.contractVersion`);
+    requireResponseEqual(record.owner, "renderer-service", `${field}.owner`);
+    requireResponseEqual(record.mode, "real-runtime-value-contract-plan", `${field}.mode`);
+
+    const source = responseRecord(record.source, `${field}.source`);
+    requireResponseEqual(source.realRuntimeValueContractVersion, "P26.48", `${field}.source.realRuntimeValueContractVersion`);
+    requireResponseEqual(source.registryInstallationVersion, "P26.46", `${field}.source.registryInstallationVersion`);
+    requireResponseEqual(source.installedRuntimeLifecycleVersion, "P26.47", `${field}.source.installedRuntimeLifecycleVersion`);
+    requireResponseEqual(source.realRuntimeImplemented, false, `${field}.source.realRuntimeImplemented`);
+    requireResponseEqual(source.readiness, "real-runtime-value-contract-planned", `${field}.source.readiness`);
+
+    const ownership = responseRecord(record.ownership, `${field}.ownership`);
+    requireResponseEqual(ownership.activeEditorTabRequired, false, `${field}.ownership.activeEditorTabRequired`);
+    requireResponseEqual(ownership.processLocalRegistryRequired, true, `${field}.ownership.processLocalRegistryRequired`);
+    requireResponseEqual(ownership.valuesIncluded, false, `${field}.ownership.valuesIncluded`);
+
+    const runtimeValueShape = responseRecord(record.runtimeValueShape, `${field}.runtimeValueShape`);
+    requireResponseEqual(runtimeValueShape.runtimeId, BUNDLED_SCENE_BRIDGE_RUNTIME_ID, `${field}.runtimeValueShape.runtimeId`);
+    requireResponseEqual(runtimeValueShape.targetRegistry, BUNDLED_SCENE_BRIDGE_TARGET_REGISTRY, `${field}.runtimeValueShape.targetRegistry`);
+    requireResponseEqual(runtimeValueShape.primaryRuntime, "render-wasm-worker", `${field}.runtimeValueShape.primaryRuntime`);
+    requireResponseEqual(runtimeValueShape.fallbackRuntime, "frontend-rasterizer", `${field}.runtimeValueShape.fallbackRuntime`);
+    requireResponseEqual(runtimeValueShape.realRuntimeSelectable, false, `${field}.runtimeValueShape.realRuntimeSelectable`);
+    requireResponseEqual(runtimeValueShape.valuesIncluded, false, `${field}.runtimeValueShape.valuesIncluded`);
+
+    const browserPageHandoff = responseRecord(record.browserPageHandoff, `${field}.browserPageHandoff`);
+    requireResponseEqual(browserPageHandoff.browserProcessStarted, false, `${field}.browserPageHandoff.browserProcessStarted`);
+    requireResponseEqual(browserPageHandoff.pageCreated, false, `${field}.browserPageHandoff.pageCreated`);
+    requireResponseEqual(browserPageHandoff.pageValuesIncluded, false, `${field}.browserPageHandoff.pageValuesIncluded`);
+
+    const sideEffects = responseRecord(record.sideEffects, `${field}.sideEffects`);
+    for (const property of [
+        "registryWrite",
+        "runtimeInstallation",
+        "runtimeRegistration",
+        "runtimeExecutionRegistered",
+        "renderDispatch",
+        "browserProcessStarted",
+        "browserPageCreated",
+        "runtimeAssetsLoaded",
+        "assetManifestMaterialized",
+        "networkDispatch",
+        "dispatch",
+        "localFileWrites",
+    ]) {
+        requireResponseEqual(sideEffects[property], false, `${field}.sideEffects.${property}`);
+    }
+
+    const redaction = responseRecord(record.redaction, `${field}.redaction`);
+    for (const property of [
+        "runtimeValuesIncluded",
+        "registryValuesIncluded",
+        "lifecycleValuesIncluded",
+        "pathValuesIncluded",
+        "sourceDataValuesIncluded",
+        "pageValuesIncluded",
+        "artifactValuesIncluded",
+        "mediaValuesIncluded",
+        "tokenValuesIncluded",
+    ]) {
+        requireResponseEqual(redaction[property], false, `${field}.redaction.${property}`);
+    }
+
+    const omitted = responseRecord(record.omitted, `${field}.omitted`);
+    for (const property of [
+        "runtimeValue",
+        "registryValue",
+        "lifecycleHandles",
+        "playwrightBrowserPath",
+        "sourceData",
+        "pageData",
+        "artifactBytes",
+        "mediaBytes",
+        "tokenValues",
+    ]) {
+        requireResponseEqual(omitted[property], true, `${field}.omitted.${property}`);
+    }
+
+    requireResponseEqual(record.execution ?? null, null, `${field}.execution`);
+    if (!Array.isArray(record.diagnostics) || record.diagnostics.length < 1) {
+        responseInvalid(`${field}.diagnostics must be a non-empty array.`, `${field}.diagnostics`);
+    }
+    requireResponseEqual(
+        responseRecord(record.diagnostics[0], `${field}.diagnostics[0]`).code,
+        "renderer_service_bundled_scene_bridge_real_runtime_value_contract_planned",
+        `${field}.diagnostics[0].code`
+    );
+}
+
+
+
+const bundledSceneBridgeRealRuntimeModuleScaffoldBase = {
+    status: "planned-disabled",
+    scaffoldVersion: "P26.49",
+    owner: "renderer-service",
+    mode: "gated-real-runtime-module-scaffold",
+    source: {
+        realRuntimeValueContractVersion: "P26.48",
+        realRuntimeModuleScaffoldVersion: "P26.49",
+        realRuntimeValueContractReady: true,
+        realRuntimeImplemented: false,
+        readiness: "real-runtime-module-scaffold-planned",
+    },
+    module: {
+        module: "./bundled-scene-bridge-real-runtime.js",
+        moduleType: "service-owned-es-module",
+        exportName: "createBundledSceneBridgeRealRendererRuntime",
+        factorySignature: "(options) => Promise<RendererRuntimeOptions>",
+        implements: "RendererRuntimeOptions.renderThumbnail",
+        lifecycleHook: "close",
+        primaryRuntime: "render-wasm-worker",
+        fallbackRuntime: "frontend-rasterizer",
+        moduleDefined: true,
+        moduleImported: false,
+        factoryInvoked: false,
+        valuesIncluded: false,
+    },
+    gate: {
+        env: BUNDLED_SCENE_BRIDGE_REAL_RUNTIME_MODULE_GATE_ENV,
+        acceptedValue: BUNDLED_SCENE_BRIDGE_REAL_RUNTIME_MODULE_GATE_REVIEWED_VALUE,
+        configured: false,
+        accepted: false,
+        reviewedScaffoldOpen: false,
+        realRuntimeSelectable: false,
+        realRuntimeSelected: false,
+        valueRead: false,
+        valuesIncluded: false,
+    },
+    selection: {
+        stubFactoryDefault: true,
+        realFactorySelectable: false,
+        realFactorySelected: false,
+        replacesStubInstallation: false,
+        valuesIncluded: false,
+    },
+    refusalDiagnostics: {
+        refusalRequired: true,
+        refusalReason: "real-runtime-module-scaffold-disabled",
+        invalidGateValue: false,
+        assetLoadingRefused: true,
+        browserStartupRefused: true,
+        renderDispatchRefused: true,
+        valuesIncluded: false,
+    },
+    scaffoldOutcomeTaxonomy: [
+        {
+            code: "renderer_service_bundled_scene_bridge_real_runtime_module_scaffold_planned",
+            stage: "module-scaffold",
+            severity: "info",
+            retryable: false,
+            dispatch: false,
+        },
+        {
+            code: "renderer_service_bundled_scene_bridge_real_runtime_module_scaffold_gate_reviewed",
+            stage: "module-gate",
+            severity: "info",
+            retryable: false,
+            dispatch: false,
+        },
+        {
+            code: "renderer_service_bundled_scene_bridge_real_runtime_module_scaffold_gate_invalid",
+            stage: "module-gate",
+            severity: "invalid",
+            retryable: false,
+            dispatch: false,
+        },
+        {
+            code: "renderer_service_bundled_scene_bridge_real_runtime_module_scaffold_unsafe_metadata",
+            stage: "module-scaffold-metadata",
+            severity: "invalid",
+            retryable: false,
+            dispatch: false,
+        },
+    ],
+    diagnostics: [
+        {
+            code: "renderer_service_bundled_scene_bridge_real_runtime_module_scaffold_planned",
+            severity: "info",
+            field: "gate.reviewedScaffoldOpen",
+            env: BUNDLED_SCENE_BRIDGE_REAL_RUNTIME_MODULE_GATE_ENV,
+            valueRead: false,
+            valuesIncluded: false,
+            message:
+                "The real bundled scene bridge runtime module scaffold exists, but the reviewed gate is closed and default selection remains the stub factory.",
+            nextActions: [
+                `Set ${BUNDLED_SCENE_BRIDGE_REAL_RUNTIME_MODULE_GATE_ENV}=${BUNDLED_SCENE_BRIDGE_REAL_RUNTIME_MODULE_GATE_REVIEWED_VALUE} only to acknowledge the scaffold boundary without enabling assets or browser startup.`,
+                "Keep asset loading, browser startup, render dispatch, materialization writes, and value exposure gated until later explicit slices.",
+            ],
+        },
+    ],
+    diagnosticCodes: ["renderer_service_bundled_scene_bridge_real_runtime_module_scaffold_planned"],
+    nextActions: [
+        `Set ${BUNDLED_SCENE_BRIDGE_REAL_RUNTIME_MODULE_GATE_ENV}=${BUNDLED_SCENE_BRIDGE_REAL_RUNTIME_MODULE_GATE_REVIEWED_VALUE} only to acknowledge the scaffold boundary without enabling assets or browser startup.`,
+        "Keep asset loading, browser startup, render dispatch, materialization writes, and value exposure gated until later explicit slices.",
+    ],
+    checks: [
+        { id: "real-runtime-value-contract-planned", status: "passed", required: true, dispatch: false },
+        { id: "real-runtime-module-defined", status: "passed", required: true, dispatch: false },
+        { id: "reviewed-scaffold-gate", status: "planned", required: true, dispatch: false },
+        { id: "no-default-asset-loading", status: "passed", required: true, dispatch: false },
+        { id: "no-default-browser-startup", status: "passed", required: true, dispatch: false },
+        { id: "runtime-values-redacted", status: "passed", required: true, dispatch: false },
+    ],
+    sideEffects: {
+        registryLookup: false,
+        registryWrite: false,
+        runtimeValueCreation: false,
+        runtimeInstallation: false,
+        runtimeRegistration: false,
+        runtimeExecutionRegistered: false,
+        renderDispatch: false,
+        browserProcessStarted: false,
+        browserPageCreated: false,
+        runtimeAdapterImported: false,
+        runtimeFactoryInvoked: false,
+        runtimeOptionsCreated: false,
+        runtimeAssetsLoaded: false,
+        assetManifestMaterialized: false,
+        backendRpcReads: false,
+        sourceDataReads: false,
+        networkDispatch: false,
+        dispatch: false,
+        localFileWrites: false,
+    },
+    redaction: {
+        modeValuesIncluded: false,
+        moduleValuesIncluded: false,
+        factoryValuesIncluded: false,
+        runtimeOptionsValuesIncluded: false,
+        optionValuesIncluded: false,
+        runtimeValuesIncluded: false,
+        registryValuesIncluded: false,
+        lifecycleValuesIncluded: false,
+        pathValuesIncluded: false,
+        sourceDataValuesIncluded: false,
+        pageValuesIncluded: false,
+        artifactValuesIncluded: false,
+        mediaValuesIncluded: false,
+        tokenValuesIncluded: false,
+    },
+    omitted: {
+        configuredValue: true,
+        moduleNamespace: true,
+        factoryValue: true,
+        runtimeOptionsValue: true,
+        optionValues: true,
+        runtimeValue: true,
+        registryValue: true,
+        lifecycleHandles: true,
+        workspaceRoot: true,
+        cacheRoot: true,
+        modulePath: true,
+        publicPaths: true,
+        cachePaths: true,
+        sha256: true,
+        playwrightBrowserPath: true,
+        runtimeModulePath: true,
+        sourceData: true,
+        pageData: true,
+        artifactBytes: true,
+        mediaBytes: true,
+        tokenValues: true,
+    },
+    execution: null,
+} as const;
+
+export const bundledSceneBridgeRealRuntimeModuleScaffold = bundledSceneBridgeRealRuntimeModuleScaffoldBase;
+
+const bundledSceneBridgeInstalledRuntimeRenderDispatchBase = {
+    status: "blocked",
+    dispatchVersion: "P26.50",
+    owner: "renderer-service",
+    mode: "gated-installed-runtime-render-dispatch",
+    source: {
+        registryInstallationVersion: "P26.46",
+        installedRuntimeLifecycleVersion: "P26.47",
+        realRuntimeModuleScaffoldVersion: "P26.49",
+        installedRuntimeRenderDispatchVersion: "P26.50",
+        runtimeInstalled: false,
+        renderDispatchGateOpen: false,
+        readiness: "blocked-until-installed-runtime-and-reviewed-dispatch-gate",
+    },
+    gate: {
+        env: BUNDLED_SCENE_BRIDGE_RENDER_DISPATCH_GATE_ENV,
+        acceptedValue: BUNDLED_SCENE_BRIDGE_RENDER_DISPATCH_GATE_REVIEWED_VALUE,
+        configured: false,
+        accepted: false,
+        reviewedDispatchOpen: false,
+        valueRead: false,
+        valuesIncluded: false,
+    },
+    dispatch: {
+        runtimeInstalledRequired: true,
+        reviewedDispatchGateRequired: true,
+        preferInjectedRenderer: true,
+        registryRuntimeSelectable: false,
+        registryRuntimeSelected: false,
+        renderThumbnailCalled: false,
+        renderDispatch: false,
+        pngMappedToResourcePipeline: false,
+        valuesIncluded: false,
+    },
+    refusalDiagnostics: {
+        refusalRequired: true,
+        refusalReason: "installed-runtime-render-dispatch-disabled",
+        invalidGateValue: false,
+        runtimeNotInstalled: true,
+        renderDispatchRefused: true,
+        valuesIncluded: false,
+    },
+    dispatchOutcomeTaxonomy: [
+        {
+            code: "renderer_service_bundled_scene_bridge_installed_runtime_render_dispatch_blocked",
+            stage: "render-dispatch-gate",
+            severity: "blocked",
+            retryable: false,
+            dispatch: false,
+        },
+        {
+            code: "renderer_service_bundled_scene_bridge_installed_runtime_render_dispatch_gate_invalid",
+            stage: "render-dispatch-gate",
+            severity: "invalid",
+            retryable: false,
+            dispatch: false,
+        },
+        {
+            code: "renderer_service_bundled_scene_bridge_installed_runtime_render_dispatch_ready",
+            stage: "render-dispatch",
+            severity: "info",
+            retryable: false,
+            dispatch: false,
+        },
+        {
+            code: "renderer_service_bundled_scene_bridge_installed_runtime_render_dispatch_selected",
+            stage: "render-dispatch",
+            severity: "info",
+            retryable: false,
+            dispatch: true,
+        },
+        {
+            code: "renderer_service_bundled_scene_bridge_installed_runtime_render_dispatch_unsafe_metadata",
+            stage: "render-dispatch-metadata",
+            severity: "invalid",
+            retryable: false,
+            dispatch: false,
+        },
+    ],
+    diagnostics: [
+        {
+            code: "renderer_service_bundled_scene_bridge_installed_runtime_render_dispatch_blocked",
+            severity: "blocked",
+            field: "source.renderDispatchGateOpen",
+            env: BUNDLED_SCENE_BRIDGE_RENDER_DISPATCH_GATE_ENV,
+            valueRead: false,
+            valuesIncluded: false,
+            message:
+                "Installed-runtime thumbnail render dispatch is blocked until a runtime is installed and the reviewed render-dispatch gate is open.",
+            nextActions: [
+                "Install the bundled scene bridge runtime through the reviewed P26.46 path, then set PENPOT_RENDERER_SERVICE_BUNDLED_SCENE_BRIDGE_RENDER_DISPATCH_GATE=reviewed-dispatch only after reviewing dispatch side effects.",
+                "Keep default MCP/CLI enablement, unreviewed gates, asset materialization writes, and credential/media/source value exposure gated.",
+            ],
+        },
+    ],
+    diagnosticCodes: ["renderer_service_bundled_scene_bridge_installed_runtime_render_dispatch_blocked"],
+    nextActions: [
+        "Install the bundled scene bridge runtime through the reviewed P26.46 path, then set PENPOT_RENDERER_SERVICE_BUNDLED_SCENE_BRIDGE_RENDER_DISPATCH_GATE=reviewed-dispatch only after reviewing dispatch side effects.",
+        "Keep default MCP/CLI enablement, unreviewed gates, asset materialization writes, and credential/media/source value exposure gated.",
+    ],
+    checks: [
+        { id: "runtime-installed", status: "blocked", required: true, dispatch: false },
+        { id: "reviewed-render-dispatch-gate", status: "blocked", required: true, dispatch: false },
+        { id: "registry-runtime-selection", status: "planned", required: true, dispatch: false },
+        { id: "png-resource-pipeline-mapping", status: "planned", required: true, dispatch: false },
+        { id: "runtime-values-redacted", status: "passed", required: true, dispatch: false },
+    ],
+    sideEffects: {
+        registryLookup: false,
+        runtimeInstallation: false,
+        renderDispatch: false,
+        browserProcessStarted: false,
+        runtimeAssetsLoaded: false,
+        assetManifestMaterialized: false,
+        backendRpcReads: false,
+        sourceDataReads: false,
+        networkDispatch: false,
+        dispatch: false,
+        localFileWrites: false,
+    },
+    redaction: {
+        runtimeValuesIncluded: false,
+        registryValuesIncluded: false,
+        pathValuesIncluded: false,
+        sourceDataValuesIncluded: false,
+        pageValuesIncluded: false,
+        artifactValuesIncluded: false,
+        mediaValuesIncluded: false,
+        tokenValuesIncluded: false,
+    },
+    omitted: {
+        configuredValue: true,
+        runtimeValue: true,
+        registryValue: true,
+        sourceData: true,
+        pageData: true,
+        artifactBytes: true,
+        mediaBytes: true,
+        tokenValues: true,
+    },
+    execution: null,
+} as const;
+
+export const bundledSceneBridgeInstalledRuntimeRenderDispatch = bundledSceneBridgeInstalledRuntimeRenderDispatchBase;
+
+function bundledSceneBridgeInstalledRuntimeRenderDispatchDiagnostic(
+    code: string,
+    severity: "info" | "blocked" | "invalid",
+    field: string,
+    message: string,
+    nextActions: string[]
+) {
+    return {
+        code,
+        severity,
+        field,
+        env: BUNDLED_SCENE_BRIDGE_RENDER_DISPATCH_GATE_ENV,
+        valueRead: false,
+        valuesIncluded: false,
+        message,
+        nextActions,
+    };
+}
+
+function bundledSceneBridgeInstalledRuntimeRenderDispatchResponse(
+    options: Pick<RendererServiceOptions, "bundledSceneBridgeRenderDispatchGate" | "renderer"> = {},
+    registry: BundledSceneBridgeThumbnailRuntimeRegistry,
+    {
+        registryRuntimeSelected = false,
+        renderThumbnailCalled = false,
+        renderDispatch = false,
+        pngMappedToResourcePipeline = false,
+    }: {
+        registryRuntimeSelected?: boolean;
+        renderThumbnailCalled?: boolean;
+        renderDispatch?: boolean;
+        pngMappedToResourcePipeline?: boolean;
+    } = {}
+): Record<string, unknown> {
+    const configured = options.bundledSceneBridgeRenderDispatchGate?.configured === true;
+    const value = options.bundledSceneBridgeRenderDispatchGate?.value;
+    const accepted = configured && value === BUNDLED_SCENE_BRIDGE_RENDER_DISPATCH_GATE_REVIEWED_VALUE;
+    const invalid = configured && !accepted;
+    const installed = registry.has(BUNDLED_SCENE_BRIDGE_RUNTIME_ID);
+    const injectedRendererPresent = typeof options.renderer?.renderThumbnail === "function";
+
+    if (!configured && !installed && !renderDispatch && !registryRuntimeSelected && !renderThumbnailCalled) {
+        return {
+            ...bundledSceneBridgeInstalledRuntimeRenderDispatchBase,
+        };
+    }
+
+    if (invalid) {
+        const diagnostic = bundledSceneBridgeInstalledRuntimeRenderDispatchDiagnostic(
+            "renderer_service_bundled_scene_bridge_installed_runtime_render_dispatch_gate_invalid",
+            "invalid",
+            "gate.accepted",
+            "Installed-runtime thumbnail render dispatch rejected an invalid reviewed-dispatch gate value.",
+            [
+                `Set ${BUNDLED_SCENE_BRIDGE_RENDER_DISPATCH_GATE_ENV}=${BUNDLED_SCENE_BRIDGE_RENDER_DISPATCH_GATE_REVIEWED_VALUE} only after reviewing installed-runtime dispatch side effects, or leave it unset.`,
+                "Keep default MCP/CLI enablement, unreviewed gates, asset materialization writes, and credential/media/source value exposure gated.",
+            ]
+        );
+        return {
+            ...bundledSceneBridgeInstalledRuntimeRenderDispatchBase,
+            status: "invalid",
+            source: {
+                ...bundledSceneBridgeInstalledRuntimeRenderDispatchBase.source,
+                runtimeInstalled: installed,
+                renderDispatchGateOpen: false,
+                readiness: "invalid-installed-runtime-render-dispatch-gate",
+            },
+            gate: {
+                ...bundledSceneBridgeInstalledRuntimeRenderDispatchBase.gate,
+                configured: true,
+                accepted: false,
+                reviewedDispatchOpen: false,
+            },
+            refusalDiagnostics: {
+                ...bundledSceneBridgeInstalledRuntimeRenderDispatchBase.refusalDiagnostics,
+                refusalReason: "render-dispatch-gate-invalid",
+                invalidGateValue: true,
+                runtimeNotInstalled: !installed,
+            },
+            diagnostics: [diagnostic],
+            diagnosticCodes: [diagnostic.code],
+            nextActions: diagnostic.nextActions,
+            checks: [
+                { id: "runtime-installed", status: installed ? "passed" : "blocked", required: true, dispatch: false },
+                { id: "reviewed-render-dispatch-gate", status: "invalid", required: true, dispatch: false },
+                { id: "registry-runtime-selection", status: "blocked", required: true, dispatch: false },
+                { id: "png-resource-pipeline-mapping", status: "blocked", required: true, dispatch: false },
+                { id: "runtime-values-redacted", status: "passed", required: true, dispatch: false },
+            ],
+            execution: null,
+        };
+    }
+
+    if (!accepted || !installed) {
+        const injectedDispatched = accepted && !installed && renderDispatch;
+        const diagnostic = bundledSceneBridgeInstalledRuntimeRenderDispatchDiagnostic(
+            injectedDispatched
+                ? "renderer_service_bundled_scene_bridge_installed_runtime_render_dispatch_ready"
+                : "renderer_service_bundled_scene_bridge_installed_runtime_render_dispatch_blocked",
+            injectedDispatched ? "info" : "blocked",
+            !installed ? "source.runtimeInstalled" : "source.renderDispatchGateOpen",
+            injectedDispatched
+                ? "Reviewed render-dispatch gate is open and an injected renderer handled thumbnail render dispatch; registry runtime selection remains blocked until installation."
+                : !installed
+                  ? "Installed-runtime thumbnail render dispatch is blocked because no runtime is installed in the process-local registry."
+                  : "Installed-runtime thumbnail render dispatch is blocked because the reviewed render-dispatch gate is closed.",
+            injectedDispatched
+                ? [
+                      "Keep preferring injected adapters until a later reviewed path selects the installed registry runtime.",
+                      "Keep default MCP/CLI enablement, unreviewed gates, asset materialization writes, and credential/media/source value exposure gated.",
+                  ]
+                : [
+                      "Install the bundled scene bridge runtime through the reviewed P26.46 path, then set PENPOT_RENDERER_SERVICE_BUNDLED_SCENE_BRIDGE_RENDER_DISPATCH_GATE=reviewed-dispatch only after reviewing dispatch side effects.",
+                      "Keep default MCP/CLI enablement, unreviewed gates, asset materialization writes, and credential/media/source value exposure gated.",
+                  ]
+        );
+        return {
+            ...bundledSceneBridgeInstalledRuntimeRenderDispatchBase,
+            status: injectedDispatched ? "ready" : "blocked",
+            source: {
+                ...bundledSceneBridgeInstalledRuntimeRenderDispatchBase.source,
+                runtimeInstalled: installed,
+                renderDispatchGateOpen: accepted,
+                readiness: injectedDispatched
+                    ? "render-dispatch-gate-open-injected-renderer-preferred"
+                    : !installed
+                      ? accepted
+                        ? "blocked-until-runtime-registry-installation"
+                        : "blocked-until-installed-runtime-and-reviewed-dispatch-gate"
+                      : "blocked-until-reviewed-render-dispatch-gate",
+            },
+            gate: {
+                ...bundledSceneBridgeInstalledRuntimeRenderDispatchBase.gate,
+                configured,
+                accepted,
+                reviewedDispatchOpen: accepted,
+            },
+            dispatch: {
+                ...bundledSceneBridgeInstalledRuntimeRenderDispatchBase.dispatch,
+                registryRuntimeSelectable: false,
+                registryRuntimeSelected: false,
+                renderThumbnailCalled: renderThumbnailCalled || renderDispatch,
+                renderDispatch,
+                pngMappedToResourcePipeline,
+            },
+            refusalDiagnostics: {
+                ...bundledSceneBridgeInstalledRuntimeRenderDispatchBase.refusalDiagnostics,
+                refusalRequired: !injectedDispatched,
+                refusalReason: injectedDispatched
+                    ? "dispatch-ready-injected-renderer-preferred"
+                    : "installed-runtime-render-dispatch-disabled",
+                runtimeNotInstalled: !installed,
+                renderDispatchRefused: !renderDispatch,
+            },
+            diagnostics: [diagnostic],
+            diagnosticCodes: [diagnostic.code],
+            nextActions: diagnostic.nextActions,
+            checks: [
+                { id: "runtime-installed", status: installed ? "passed" : "blocked", required: true, dispatch: false },
+                {
+                    id: "reviewed-render-dispatch-gate",
+                    status: accepted ? "passed" : "blocked",
+                    required: true,
+                    dispatch: false,
+                },
+                { id: "registry-runtime-selection", status: "planned", required: true, dispatch: false },
+                {
+                    id: "png-resource-pipeline-mapping",
+                    status: pngMappedToResourcePipeline ? "passed" : "planned",
+                    required: true,
+                    dispatch: pngMappedToResourcePipeline,
+                },
+                { id: "runtime-values-redacted", status: "passed", required: true, dispatch: false },
+            ],
+            sideEffects: {
+                ...bundledSceneBridgeInstalledRuntimeRenderDispatchBase.sideEffects,
+                renderDispatch,
+                dispatch: renderDispatch,
+            },
+            execution: injectedDispatched
+                ? {
+                      attempted: true,
+                      succeeded: true,
+                      outcome: "injected-renderer-dispatched",
+                      registryRuntimeSelected: false,
+                      renderThumbnailCalled: true,
+                      renderDispatch: true,
+                      pngMappedToResourcePipeline,
+                      valuesIncluded: false,
+                  }
+                : null,
+        };
+    }
+
+    const selected = registryRuntimeSelected || (renderDispatch && !injectedRendererPresent);
+    const diagnostic = bundledSceneBridgeInstalledRuntimeRenderDispatchDiagnostic(
+        selected
+            ? "renderer_service_bundled_scene_bridge_installed_runtime_render_dispatch_selected"
+            : "renderer_service_bundled_scene_bridge_installed_runtime_render_dispatch_ready",
+        "info",
+        selected ? "dispatch.registryRuntimeSelected" : "dispatch.registryRuntimeSelectable",
+        selected
+            ? "Installed registry runtime was selected for gated thumbnail render dispatch and mapped through the existing resource pipeline when PNG bytes were produced."
+            : "Installed registry runtime is selectable for gated thumbnail render dispatch; injected renderer adapters still take precedence when present.",
+        [
+            "Keep unreviewed gates, default MCP/CLI enablement, asset materialization writes, and credential/media/source value exposure gated.",
+            "Use later slices for real-scene assets and broader default-path enablement.",
+        ]
+    );
+
+    return {
+        ...bundledSceneBridgeInstalledRuntimeRenderDispatchBase,
+        status: selected ? "dispatched" : "ready",
+        source: {
+            ...bundledSceneBridgeInstalledRuntimeRenderDispatchBase.source,
+            runtimeInstalled: true,
+            renderDispatchGateOpen: true,
+            readiness: selected
+                ? "installed-runtime-render-dispatch-selected"
+                : "installed-runtime-render-dispatch-ready",
+        },
+        gate: {
+            ...bundledSceneBridgeInstalledRuntimeRenderDispatchBase.gate,
+            configured: true,
+            accepted: true,
+            reviewedDispatchOpen: true,
+        },
+        dispatch: {
+            ...bundledSceneBridgeInstalledRuntimeRenderDispatchBase.dispatch,
+            registryRuntimeSelectable: true,
+            registryRuntimeSelected: selected,
+            renderThumbnailCalled,
+            renderDispatch,
+            pngMappedToResourcePipeline,
+        },
+        refusalDiagnostics: {
+            refusalRequired: false,
+            refusalReason: selected ? "dispatch-enabled-for-installed-runtime" : "dispatch-ready-injected-renderer-preferred",
+            invalidGateValue: false,
+            runtimeNotInstalled: false,
+            renderDispatchRefused: !renderDispatch,
+            valuesIncluded: false,
+        },
+        diagnostics: [diagnostic],
+        diagnosticCodes: [diagnostic.code],
+        nextActions: diagnostic.nextActions,
+        checks: [
+            { id: "runtime-installed", status: "passed", required: true, dispatch: false },
+            { id: "reviewed-render-dispatch-gate", status: "passed", required: true, dispatch: false },
+            {
+                id: "registry-runtime-selection",
+                status: selected ? "passed" : "planned",
+                required: true,
+                dispatch: selected,
+            },
+            {
+                id: "png-resource-pipeline-mapping",
+                status: pngMappedToResourcePipeline ? "passed" : "planned",
+                required: true,
+                dispatch: pngMappedToResourcePipeline,
+            },
+            { id: "runtime-values-redacted", status: "passed", required: true, dispatch: false },
+        ],
+        sideEffects: {
+            ...bundledSceneBridgeInstalledRuntimeRenderDispatchBase.sideEffects,
+            registryLookup: true,
+            renderDispatch,
+            dispatch: renderDispatch,
+        },
+        execution: {
+            attempted: renderThumbnailCalled,
+            succeeded: renderDispatch,
+            outcome: selected
+                ? pngMappedToResourcePipeline
+                    ? "registry-runtime-dispatched"
+                    : "registry-runtime-selected"
+                : "ready-not-selected",
+            registryRuntimeSelected: selected,
+            renderThumbnailCalled,
+            renderDispatch,
+            pngMappedToResourcePipeline,
+            valuesIncluded: false,
+        },
+    };
+}
+
+function resolveThumbnailRenderer(
+    options: Pick<RendererServiceOptions, "renderer" | "bundledSceneBridgeRenderDispatchGate">,
+    registry: BundledSceneBridgeThumbnailRuntimeRegistry
+): {
+    renderer: RendererRuntimeOptions | undefined;
+    registryRuntimeSelected: boolean;
+    renderDispatchGateOpen: boolean;
+} {
+    if (typeof options.renderer?.renderThumbnail === "function") {
+        return {
+            renderer: options.renderer,
+            registryRuntimeSelected: false,
+            renderDispatchGateOpen:
+                options.bundledSceneBridgeRenderDispatchGate?.configured === true &&
+                options.bundledSceneBridgeRenderDispatchGate?.value ===
+                    BUNDLED_SCENE_BRIDGE_RENDER_DISPATCH_GATE_REVIEWED_VALUE,
+        };
+    }
+    const gateOpen =
+        options.bundledSceneBridgeRenderDispatchGate?.configured === true &&
+        options.bundledSceneBridgeRenderDispatchGate?.value ===
+            BUNDLED_SCENE_BRIDGE_RENDER_DISPATCH_GATE_REVIEWED_VALUE;
+    if (!gateOpen) {
+        return { renderer: undefined, registryRuntimeSelected: false, renderDispatchGateOpen: false };
+    }
+    const installed = registry.get(BUNDLED_SCENE_BRIDGE_RUNTIME_ID);
+    if (!installed || typeof installed.runtimeValue.renderThumbnail !== "function") {
+        return { renderer: undefined, registryRuntimeSelected: false, renderDispatchGateOpen: true };
+    }
+    return {
+        renderer: installed.runtimeValue,
+        registryRuntimeSelected: true,
+        renderDispatchGateOpen: true,
+    };
+}
+
+function validateBundledSceneBridgeInstalledRuntimeRenderDispatchResponse(actual: unknown, field: string): void {
+    const record = responseRecord(actual, field);
+    const status = String(record.status ?? "");
+    if (!["blocked", "ready", "dispatched", "invalid"].includes(status)) {
+        responseInvalid(`${field}.status must be blocked, ready, dispatched, or invalid.`, `${field}.status`);
+    }
+    requireResponseEqual(record.dispatchVersion, "P26.50", `${field}.dispatchVersion`);
+    requireResponseEqual(record.owner, "renderer-service", `${field}.owner`);
+    requireResponseEqual(record.mode, "gated-installed-runtime-render-dispatch", `${field}.mode`);
+
+    const source = responseRecord(record.source, `${field}.source`);
+    requireResponseEqual(source.installedRuntimeRenderDispatchVersion, "P26.50", `${field}.source.installedRuntimeRenderDispatchVersion`);
+    requireResponseEqual(source.registryInstallationVersion, "P26.46", `${field}.source.registryInstallationVersion`);
+
+    const gate = responseRecord(record.gate, `${field}.gate`);
+    requireResponseEqual(gate.env, BUNDLED_SCENE_BRIDGE_RENDER_DISPATCH_GATE_ENV, `${field}.gate.env`);
+    requireResponseEqual(gate.acceptedValue, BUNDLED_SCENE_BRIDGE_RENDER_DISPATCH_GATE_REVIEWED_VALUE, `${field}.gate.acceptedValue`);
+    requireResponseEqual(gate.valuesIncluded, false, `${field}.gate.valuesIncluded`);
+
+    const dispatch = responseRecord(record.dispatch, `${field}.dispatch`);
+    requireResponseEqual(dispatch.runtimeInstalledRequired, true, `${field}.dispatch.runtimeInstalledRequired`);
+    requireResponseEqual(dispatch.reviewedDispatchGateRequired, true, `${field}.dispatch.reviewedDispatchGateRequired`);
+    requireResponseEqual(dispatch.preferInjectedRenderer, true, `${field}.dispatch.preferInjectedRenderer`);
+    requireResponseEqual(dispatch.valuesIncluded, false, `${field}.dispatch.valuesIncluded`);
+
+    const redaction = responseRecord(record.redaction, `${field}.redaction`);
+    for (const property of [
+        "runtimeValuesIncluded",
+        "registryValuesIncluded",
+        "pathValuesIncluded",
+        "sourceDataValuesIncluded",
+        "pageValuesIncluded",
+        "artifactValuesIncluded",
+        "mediaValuesIncluded",
+        "tokenValuesIncluded",
+    ]) {
+        requireResponseEqual(redaction[property], false, `${field}.redaction.${property}`);
+    }
+
+    const omitted = responseRecord(record.omitted, `${field}.omitted`);
+    for (const property of [
+        "configuredValue",
+        "runtimeValue",
+        "registryValue",
+        "sourceData",
+        "pageData",
+        "artifactBytes",
+        "mediaBytes",
+        "tokenValues",
+    ]) {
+        requireResponseEqual(omitted[property], true, `${field}.omitted.${property}`);
+    }
+}
+
+
+function bundledSceneBridgeRealRuntimeModuleScaffoldDiagnostic(
+    code: string,
+    severity: "info" | "blocked" | "invalid",
+    field: string,
+    message: string,
+    nextActions: string[]
+) {
+    return {
+        code,
+        severity,
+        field,
+        env: BUNDLED_SCENE_BRIDGE_REAL_RUNTIME_MODULE_GATE_ENV,
+        valueRead: false,
+        valuesIncluded: false,
+        message,
+        nextActions,
+    };
+}
+
+function bundledSceneBridgeRealRuntimeModuleScaffoldResponse(
+    options: Pick<RendererServiceOptions, "bundledSceneBridgeRealRuntimeModuleGate"> = {}
+): Record<string, unknown> {
+    const configured = options.bundledSceneBridgeRealRuntimeModuleGate?.configured === true;
+    const value = options.bundledSceneBridgeRealRuntimeModuleGate?.value;
+    const accepted = configured && value === BUNDLED_SCENE_BRIDGE_REAL_RUNTIME_MODULE_GATE_REVIEWED_VALUE;
+    const invalid = configured && !accepted;
+
+    if (invalid) {
+        const diagnostic = bundledSceneBridgeRealRuntimeModuleScaffoldDiagnostic(
+            "renderer_service_bundled_scene_bridge_real_runtime_module_scaffold_gate_invalid",
+            "invalid",
+            "gate.accepted",
+            "The real bundled scene bridge runtime module scaffold rejected an invalid reviewed-scaffold gate value.",
+            [
+                `Set ${BUNDLED_SCENE_BRIDGE_REAL_RUNTIME_MODULE_GATE_ENV}=${BUNDLED_SCENE_BRIDGE_REAL_RUNTIME_MODULE_GATE_REVIEWED_VALUE} only after reviewing the P26.48 contract, or leave it unset.`,
+                "Keep asset loading, browser startup, render dispatch, materialization writes, and value exposure gated.",
+            ]
+        );
+        return {
+            ...bundledSceneBridgeRealRuntimeModuleScaffoldBase,
+            status: "invalid",
+            source: {
+                ...bundledSceneBridgeRealRuntimeModuleScaffoldBase.source,
+                readiness: "invalid-real-runtime-module-scaffold-gate",
+            },
+            gate: {
+                ...bundledSceneBridgeRealRuntimeModuleScaffoldBase.gate,
+                configured: true,
+                accepted: false,
+                reviewedScaffoldOpen: false,
+                realRuntimeSelectable: false,
+                realRuntimeSelected: false,
+            },
+            refusalDiagnostics: {
+                ...bundledSceneBridgeRealRuntimeModuleScaffoldBase.refusalDiagnostics,
+                refusalReason: "real-runtime-module-scaffold-gate-invalid",
+                invalidGateValue: true,
+            },
+            diagnostics: [diagnostic],
+            diagnosticCodes: [diagnostic.code],
+            nextActions: diagnostic.nextActions,
+            checks: [
+                { id: "real-runtime-value-contract-planned", status: "passed", required: true, dispatch: false },
+                { id: "real-runtime-module-defined", status: "passed", required: true, dispatch: false },
+                { id: "reviewed-scaffold-gate", status: "invalid", required: true, dispatch: false },
+                { id: "no-default-asset-loading", status: "passed", required: true, dispatch: false },
+                { id: "no-default-browser-startup", status: "passed", required: true, dispatch: false },
+                { id: "runtime-values-redacted", status: "passed", required: true, dispatch: false },
+            ],
+            execution: null,
+        };
+    }
+
+    if (accepted) {
+        const diagnostic = bundledSceneBridgeRealRuntimeModuleScaffoldDiagnostic(
+            "renderer_service_bundled_scene_bridge_real_runtime_module_scaffold_gate_reviewed",
+            "info",
+            "gate.reviewedScaffoldOpen",
+            "The real bundled scene bridge runtime module scaffold gate is reviewed, but the module remains no-import/no-browser/no-dispatch and is not selected over the stub factory.",
+            [
+                "Proceed only with later reviewed tasks before importing the real module, loading assets, starting a browser, or enabling render dispatch.",
+                "Keep asset loading, browser startup, render dispatch, materialization writes, and value exposure gated in P26.49.",
+            ]
+        );
+        return {
+            ...bundledSceneBridgeRealRuntimeModuleScaffoldBase,
+            status: "configured-disabled",
+            source: {
+                ...bundledSceneBridgeRealRuntimeModuleScaffoldBase.source,
+                readiness: "real-runtime-module-scaffold-gate-reviewed",
+            },
+            gate: {
+                ...bundledSceneBridgeRealRuntimeModuleScaffoldBase.gate,
+                configured: true,
+                accepted: true,
+                reviewedScaffoldOpen: true,
+                realRuntimeSelectable: false,
+                realRuntimeSelected: false,
+            },
+            selection: {
+                ...bundledSceneBridgeRealRuntimeModuleScaffoldBase.selection,
+                realFactorySelectable: false,
+                realFactorySelected: false,
+            },
+            refusalDiagnostics: {
+                ...bundledSceneBridgeRealRuntimeModuleScaffoldBase.refusalDiagnostics,
+                refusalReason: "real-runtime-module-scaffold-reviewed-disabled",
+            },
+            diagnostics: [diagnostic],
+            diagnosticCodes: [diagnostic.code],
+            nextActions: diagnostic.nextActions,
+            checks: [
+                { id: "real-runtime-value-contract-planned", status: "passed", required: true, dispatch: false },
+                { id: "real-runtime-module-defined", status: "passed", required: true, dispatch: false },
+                { id: "reviewed-scaffold-gate", status: "passed", required: true, dispatch: false },
+                { id: "no-default-asset-loading", status: "passed", required: true, dispatch: false },
+                { id: "no-default-browser-startup", status: "passed", required: true, dispatch: false },
+                { id: "runtime-values-redacted", status: "passed", required: true, dispatch: false },
+            ],
+            execution: null,
+        };
+    }
+
+    return {
+        ...bundledSceneBridgeRealRuntimeModuleScaffoldBase,
+        status: configured ? "configured-disabled" : "planned-disabled",
+        gate: {
+            ...bundledSceneBridgeRealRuntimeModuleScaffoldBase.gate,
+            configured,
+            accepted: false,
+            reviewedScaffoldOpen: false,
+        },
+        execution: null,
+    };
+}
+
+function validateBundledSceneBridgeRealRuntimeModuleScaffoldResponse(actual: unknown, field: string): void {
+    const record = responseRecord(actual, field);
+    const status = String(record.status ?? "");
+    if (!["planned-disabled", "configured-disabled", "invalid"].includes(status)) {
+        responseInvalid(`${field}.status must be planned-disabled, configured-disabled, or invalid.`, `${field}.status`);
+    }
+    requireResponseEqual(record.scaffoldVersion, "P26.49", `${field}.scaffoldVersion`);
+    requireResponseEqual(record.owner, "renderer-service", `${field}.owner`);
+    requireResponseEqual(record.mode, "gated-real-runtime-module-scaffold", `${field}.mode`);
+
+    const source = responseRecord(record.source, `${field}.source`);
+    requireResponseEqual(source.realRuntimeValueContractVersion, "P26.48", `${field}.source.realRuntimeValueContractVersion`);
+    requireResponseEqual(source.realRuntimeModuleScaffoldVersion, "P26.49", `${field}.source.realRuntimeModuleScaffoldVersion`);
+    requireResponseEqual(source.realRuntimeImplemented, false, `${field}.source.realRuntimeImplemented`);
+
+    const module = responseRecord(record.module, `${field}.module`);
+    requireResponseEqual(module.module, "./bundled-scene-bridge-real-runtime.js", `${field}.module.module`);
+    requireResponseEqual(module.exportName, "createBundledSceneBridgeRealRendererRuntime", `${field}.module.exportName`);
+    requireResponseEqual(module.moduleDefined, true, `${field}.module.moduleDefined`);
+    requireResponseEqual(module.moduleImported, false, `${field}.module.moduleImported`);
+    requireResponseEqual(module.factoryInvoked, false, `${field}.module.factoryInvoked`);
+    requireResponseEqual(module.valuesIncluded, false, `${field}.module.valuesIncluded`);
+
+    const gate = responseRecord(record.gate, `${field}.gate`);
+    requireResponseEqual(gate.env, BUNDLED_SCENE_BRIDGE_REAL_RUNTIME_MODULE_GATE_ENV, `${field}.gate.env`);
+    requireResponseEqual(gate.acceptedValue, BUNDLED_SCENE_BRIDGE_REAL_RUNTIME_MODULE_GATE_REVIEWED_VALUE, `${field}.gate.acceptedValue`);
+    requireResponseEqual(gate.realRuntimeSelected, false, `${field}.gate.realRuntimeSelected`);
+    requireResponseEqual(gate.valuesIncluded, false, `${field}.gate.valuesIncluded`);
+
+    const selection = responseRecord(record.selection, `${field}.selection`);
+    requireResponseEqual(selection.stubFactoryDefault, true, `${field}.selection.stubFactoryDefault`);
+    requireResponseEqual(selection.realFactorySelected, false, `${field}.selection.realFactorySelected`);
+    requireResponseEqual(selection.replacesStubInstallation, false, `${field}.selection.replacesStubInstallation`);
+
+    const sideEffects = responseRecord(record.sideEffects, `${field}.sideEffects`);
+    for (const property of [
+        "runtimeInstallation",
+        "runtimeRegistration",
+        "runtimeExecutionRegistered",
+        "renderDispatch",
+        "browserProcessStarted",
+        "browserPageCreated",
+        "runtimeAdapterImported",
+        "runtimeFactoryInvoked",
+        "runtimeAssetsLoaded",
+        "assetManifestMaterialized",
+        "networkDispatch",
+        "dispatch",
+        "localFileWrites",
+    ]) {
+        requireResponseEqual(sideEffects[property], false, `${field}.sideEffects.${property}`);
+    }
+
+    const redaction = responseRecord(record.redaction, `${field}.redaction`);
+    for (const property of [
+        "runtimeValuesIncluded",
+        "registryValuesIncluded",
+        "pathValuesIncluded",
+        "sourceDataValuesIncluded",
+        "pageValuesIncluded",
+        "artifactValuesIncluded",
+        "mediaValuesIncluded",
+        "tokenValuesIncluded",
+    ]) {
+        requireResponseEqual(redaction[property], false, `${field}.redaction.${property}`);
+    }
+
+    const omitted = responseRecord(record.omitted, `${field}.omitted`);
+    for (const property of [
+        "configuredValue",
+        "moduleNamespace",
+        "factoryValue",
+        "runtimeValue",
+        "registryValue",
+        "playwrightBrowserPath",
+        "sourceData",
+        "pageData",
+        "artifactBytes",
+        "mediaBytes",
+        "tokenValues",
+    ]) {
+        requireResponseEqual(omitted[property], true, `${field}.omitted.${property}`);
+    }
+
+    requireResponseEqual(record.execution ?? null, null, `${field}.execution`);
+}
+
+function bundledSceneBridgeInstalledRuntimeLifecycleDiagnostic(
+    code: string,
+    severity: "info" | "blocked" | "invalid",
+    field: string,
+    message: string,
+    nextActions: string[]
+) {
+    return {
+        code,
+        severity,
+        field,
+        env: BUNDLED_SCENE_BRIDGE_RUNTIME_INSTALLATION_GATE_ENV,
+        valueRead: false,
+        valuesIncluded: false,
+        message,
+        nextActions,
+    };
+}
+
+function bundledSceneBridgeInstalledRuntimeLifecycleResponse(
+    registryInstallation: Record<string, unknown>,
+    registry: BundledSceneBridgeThumbnailRuntimeRegistry
+): Record<string, unknown> {
+    const installationSource = isRecord(registryInstallation.source) ? registryInstallation.source : {};
+    const installation = isRecord(registryInstallation.installation) ? registryInstallation.installation : {};
+    const installationRegistrySlot = isRecord(registryInstallation.registrySlot) ? registryInstallation.registrySlot : {};
+    const installationLifecycle = isRecord(registryInstallation.lifecycleOwnership)
+        ? registryInstallation.lifecycleOwnership
+        : {};
+    const installationDuplicate = isRecord(registryInstallation.duplicateHandling)
+        ? registryInstallation.duplicateHandling
+        : {};
+    const installationStatus =
+        typeof registryInstallation.status === "string" ? registryInstallation.status : "blocked";
+    const installationInvalid = installationStatus === "invalid";
+    const entry = registry.get(BUNDLED_SCENE_BRIDGE_RUNTIME_ID);
+    const installedFromInstallation =
+        installationStatus === "executed" &&
+        registryInstallation.installationVersion === "P26.46" &&
+        installation.runtimeInstalled === true &&
+        installationRegistrySlot.runtimeInstalled === true &&
+        installationRegistrySlot.slotStatus === "occupied";
+    const installed = installedFromInstallation || Boolean(entry);
+
+    if (installationInvalid) {
+        const diagnostic = bundledSceneBridgeInstalledRuntimeLifecycleDiagnostic(
+            "renderer_service_bundled_scene_bridge_installed_runtime_lifecycle_installation_invalid",
+            "invalid",
+            "source.registryInstallationStatus",
+            "The bundled scene bridge installed-runtime lifecycle diagnostics rejected invalid P26.46 installation metadata.",
+            [
+                "Fix renderer-service /health bundledSceneBridgeRuntimeRegistryInstallation before trusting installed-runtime lifecycle diagnostics.",
+                "Keep render dispatch, real scene assets, asset materialization writes, and runtime value exposure gated.",
+            ]
+        );
+        return {
+            ...bundledSceneBridgeInstalledRuntimeLifecycleBase,
+            status: "invalid",
+            source: {
+                ...bundledSceneBridgeInstalledRuntimeLifecycleBase.source,
+                registryInstallationStatus: installationStatus,
+                registryInstallationReady: false,
+                runtimeInstalled: false,
+                readiness: "invalid-runtime-registry-installation",
+            },
+            refusalDiagnostics: {
+                ...bundledSceneBridgeInstalledRuntimeLifecycleBase.refusalDiagnostics,
+                refusalReason: "installation-invalid",
+                invalidInstallationMetadata: true,
+            },
+            diagnostics: [diagnostic],
+            diagnosticCodes: [diagnostic.code],
+            nextActions: diagnostic.nextActions,
+            checks: [
+                { id: "registry-installation-executed", status: "invalid", required: true, dispatch: false },
+                { id: "registry-slot-occupied", status: "invalid", required: true, dispatch: false },
+                { id: "close-hook-registered", status: "invalid", required: true, dispatch: false },
+                { id: "rollback-readiness", status: "invalid", required: true, dispatch: false },
+                { id: "duplicate-replacement-policy", status: "invalid", required: true, dispatch: false },
+                { id: "runtime-values-redacted", status: "passed", required: true, dispatch: false },
+            ],
+            execution: null,
+        };
+    }
+
+    if (!installed) {
+        const diagnostic = bundledSceneBridgeInstalledRuntimeLifecycleDiagnostic(
+            "renderer_service_bundled_scene_bridge_installed_runtime_lifecycle_not_installed",
+            "blocked",
+            "source.runtimeInstalled",
+            "The bundled scene bridge installed-runtime lifecycle diagnostics are blocked until P26.46 registry installation reports an installed runtime.",
+            [
+                "Verify renderer-service /health bundledSceneBridgeRuntimeRegistryInstallation reports executed with an occupied registry slot.",
+                "Keep render dispatch, real scene assets, asset materialization writes, and runtime value exposure gated.",
+            ]
+        );
+        return {
+            ...bundledSceneBridgeInstalledRuntimeLifecycleBase,
+            status: "not-installed",
+            source: {
+                ...bundledSceneBridgeInstalledRuntimeLifecycleBase.source,
+                registryInstallationStatus: installationStatus,
+                registryInstallationReady: installationStatus === "executed",
+                runtimeInstalled: false,
+                readiness: "blocked-until-runtime-registry-installation",
+            },
+            diagnostics: [diagnostic],
+            diagnosticCodes: [diagnostic.code],
+            nextActions: diagnostic.nextActions,
+            execution: null,
+        };
+    }
+
+    const closeHookRegistered =
+        entry?.closeHookRegistered === true ||
+        installation.closeHookRegistered === true ||
+        installationLifecycle.closeHookRegistered === true;
+    const rollbackHookRegistered =
+        entry?.rollbackHookRegistered === true ||
+        installation.rollbackHookRegistered === true ||
+        installationLifecycle.rollbackHookRegistered === true;
+    const closeHookCallable = entry ? typeof entry.runtimeValue.close === "function" : closeHookRegistered;
+    const existingRuntimeFound =
+        installationDuplicate.existingRuntimeFound === true || Boolean(entry);
+    const duplicateDetected = installationDuplicate.duplicateDetected === true || Boolean(entry);
+    const diagnostic = bundledSceneBridgeInstalledRuntimeLifecycleDiagnostic(
+        "renderer_service_bundled_scene_bridge_installed_runtime_lifecycle_reported",
+        "info",
+        "registrySlot.slotOccupied",
+        "The bundled scene bridge installed-runtime lifecycle diagnostics report an occupied registry slot with close/rollback readiness and no-dispatch availability.",
+        [
+            "Keep render dispatch disabled until a later reviewed task wires the installed runtime into gated thumbnail execution.",
+            "Proceed to the next reviewed runtime contract slice without exposing runtime values or enabling default MCP/CLI rendering.",
+        ]
+    );
+
+    return {
+        ...bundledSceneBridgeInstalledRuntimeLifecycleBase,
+        status: "installed",
+        source: {
+            ...bundledSceneBridgeInstalledRuntimeLifecycleBase.source,
+            registryInstallationStatus: installationStatus,
+            registryInstallationReady: true,
+            runtimeInstalled: true,
+            readiness: "installed-runtime-lifecycle-reported",
+        },
+        registrySlot: {
+            ...bundledSceneBridgeInstalledRuntimeLifecycleBase.registrySlot,
+            slotStatus: "occupied",
+            slotOccupied: true,
+            runtimeInstalled: true,
+        },
+        lifecycleHooks: {
+            ...bundledSceneBridgeInstalledRuntimeLifecycleBase.lifecycleHooks,
+            closeHookRegistered,
+            rollbackHookRegistered,
+            closeHookCallable,
+        },
+        duplicateReplacementPolicy: {
+            ...bundledSceneBridgeInstalledRuntimeLifecycleBase.duplicateReplacementPolicy,
+            existingRuntimeFound,
+            duplicateDetected,
+            replacementSupported: false,
+            replacementAttempted: false,
+        },
+        rollbackReadiness: {
+            ...bundledSceneBridgeInstalledRuntimeLifecycleBase.rollbackReadiness,
+            rollbackReady: rollbackHookRegistered,
+            rollbackHookRegistered,
+        },
+        runtimeAvailability: {
+            ...bundledSceneBridgeInstalledRuntimeLifecycleBase.runtimeAvailability,
+            runtimeInstalled: true,
+            runtimeValueAvailable: false,
+            runtimeAvailableForDispatch: false,
+            renderDispatchEnabled: false,
+        },
+        refusalDiagnostics: {
+            refusalRequired: false,
+            refusalReason: "installed-without-dispatch",
+            invalidInstallationMetadata: false,
+            renderDispatchRefused: true,
+            runtimeValueExposureRefused: true,
+            valuesIncluded: false,
+        },
+        diagnostics: [diagnostic],
+        diagnosticCodes: [diagnostic.code],
+        nextActions: diagnostic.nextActions,
+        checks: [
+            { id: "registry-installation-executed", status: "passed", required: true, dispatch: false },
+            { id: "registry-slot-occupied", status: "passed", required: true, dispatch: false },
+            { id: "close-hook-registered", status: closeHookRegistered ? "passed" : "failed", required: true, dispatch: false },
+            { id: "rollback-readiness", status: rollbackHookRegistered ? "passed" : "failed", required: true, dispatch: false },
+            { id: "duplicate-replacement-policy", status: "passed", required: true, dispatch: false },
+            { id: "runtime-values-redacted", status: "passed", required: true, dispatch: false },
+        ],
+        sideEffects: {
+            ...bundledSceneBridgeInstalledRuntimeLifecycleBase.sideEffects,
+            registryLookup: true,
+        },
+        execution: {
+            attempted: false,
+            succeeded: true,
+            outcome: "lifecycle-reported",
+            runtimeInstalled: true,
+            slotOccupied: true,
+            closeHookRegistered,
+            rollbackHookRegistered,
+            renderDispatch: false,
+            valuesIncluded: false,
+        },
+    };
+}
+
 function defaultBrowserFixtureRuntimeLifecycleDiagnostics(
     runtimeSource: RendererRuntimeSource,
     {
@@ -4848,6 +8277,8 @@ export const healthResponse = {
         "thumbnail.render.runtime-asset-preflight",
         "thumbnail.render.runtime-asset-materialization-dry-run",
         "thumbnail.render.runtime-asset-materialization-approval-scaffold",
+        "thumbnail.render.runtime-asset-materialization-execution",
+        "thumbnail.render.bundled-scene-bridge-real-scene-png",
         "thumbnail.render.bundled-scene-bridge-contract",
         "thumbnail.render.bundled-scene-bridge-adapter-module",
         "thumbnail.render.bundled-scene-bridge-import-gate",
@@ -4860,6 +8291,11 @@ export const healthResponse = {
         "thumbnail.render.bundled-scene-bridge-runtime-registry-installation-gate",
         "thumbnail.render.bundled-scene-bridge-runtime-registry-installation-preflight",
         "thumbnail.render.bundled-scene-bridge-runtime-registry-installation-execution-boundary",
+        "thumbnail.render.bundled-scene-bridge-runtime-registry-installation",
+        "thumbnail.render.bundled-scene-bridge-installed-runtime-lifecycle",
+        "thumbnail.render.bundled-scene-bridge-real-runtime-value-contract",
+        "thumbnail.render.bundled-scene-bridge-real-runtime-module-scaffold",
+        "thumbnail.render.bundled-scene-bridge-installed-runtime-render-dispatch",
         "thumbnail.backend-rpc.file-thumbnail-persist",
         "thumbnail.backend-rpc.frame-thumbnail-persist",
     ],
@@ -4867,6 +8303,8 @@ export const healthResponse = {
     runtimeAssetMaterializationPreflight: bundledRuntimeAssetMaterializationPreflight,
     runtimeAssetMaterializationDryRun: bundledRuntimeAssetMaterializationDryRunPlan,
     runtimeAssetMaterializationApproval: bundledRuntimeAssetMaterializationApprovalPlan,
+    runtimeAssetMaterializationExecution,
+    bundledSceneBridgeRealScenePng,
     bundledSceneBridgeContract,
     bundledSceneBridgeAdapterModule,
     bundledSceneBridgeImportGate,
@@ -4879,6 +8317,11 @@ export const healthResponse = {
     bundledSceneBridgeRuntimeRegistryInstallationGate,
     bundledSceneBridgeRuntimeRegistryInstallationPreflight,
     bundledSceneBridgeRuntimeRegistryInstallationExecutionBoundary,
+    bundledSceneBridgeRuntimeRegistryInstallation,
+    bundledSceneBridgeInstalledRuntimeLifecycle,
+    bundledSceneBridgeRealRuntimeValueContract,
+    bundledSceneBridgeRealRuntimeModuleScaffold,
+    bundledSceneBridgeInstalledRuntimeRenderDispatch,
     browserFixtureRuntime: defaultBrowserFixtureRuntimeLifecycle,
 } as const;
 
@@ -4904,6 +8347,8 @@ export const noopThumbnailResponse = {
     runtimeAssetMaterializationPreflight: bundledRuntimeAssetMaterializationPreflight,
     runtimeAssetMaterializationDryRun: bundledRuntimeAssetMaterializationDryRunPlan,
     runtimeAssetMaterializationApproval: bundledRuntimeAssetMaterializationApprovalPlan,
+    runtimeAssetMaterializationExecution,
+    bundledSceneBridgeRealScenePng,
     bundledSceneBridgeContract,
     bundledSceneBridgeAdapterModule,
     bundledSceneBridgeImportGate,
@@ -4916,6 +8361,11 @@ export const noopThumbnailResponse = {
     bundledSceneBridgeRuntimeRegistryInstallationGate,
     bundledSceneBridgeRuntimeRegistryInstallationPreflight,
     bundledSceneBridgeRuntimeRegistryInstallationExecutionBoundary,
+    bundledSceneBridgeRuntimeRegistryInstallation,
+    bundledSceneBridgeInstalledRuntimeLifecycle,
+    bundledSceneBridgeRealRuntimeValueContract,
+    bundledSceneBridgeRealRuntimeModuleScaffold,
+    bundledSceneBridgeInstalledRuntimeRenderDispatch,
     browserFixtureRuntime: defaultBrowserFixtureRuntimeLifecycle,
 } as const;
 
@@ -5259,9 +8709,12 @@ type RendererServiceRuntimeOptions = Pick<
     | "runtimeAssetMaterializationApproval"
     | "bundledSceneBridgeImportGate"
     | "bundledSceneBridgeRuntimeRegistryInstallationGate"
+    | "bundledSceneBridgeRealRuntimeModuleGate"
+    | "bundledSceneBridgeRenderDispatchGate"
     | "thumbnailResponseOverride"
 > & {
     renderedAssets: RenderedAssetStore;
+    bundledSceneBridgeThumbnailRuntimeRegistry: BundledSceneBridgeThumbnailRuntimeRegistry;
 };
 
 type AuthSummary = {
@@ -5584,12 +9037,14 @@ function runtimeAssetMaterializationDryRunResponse(preflight: Record<string, unk
     return runtimeAssetMaterializationDryRunPlan(preflight);
 }
 
+
 function runtimeAssetMaterializationApprovalResponse(
     dryRun: Record<string, unknown>,
     options: RendererRuntimeAssetMaterializationApprovalOptions | undefined
 ): RuntimeAssetMaterializationApprovalPlan {
     return runtimeAssetMaterializationApprovalPlan(dryRun, options);
 }
+
 
 function rendererRuntimeSourceForOptions(
     options: Pick<RendererServiceOptions, "renderer" | "rendererRuntimeModule" | "browserFixtureRuntime" | "rendererRuntimeSource">
@@ -7098,6 +10553,8 @@ function thumbnailResponse(
     runtimeAssetPreflight: Record<string, unknown>,
     runtimeAssetMaterializationDryRun: Record<string, unknown>,
     runtimeAssetMaterializationApproval: Record<string, unknown>,
+    runtimeAssetMaterializationExecution: Record<string, unknown>,
+    bundledSceneBridgeRealScenePng: Record<string, unknown>,
     bundledSceneBridgeImportGate: Record<string, unknown>,
     bundledSceneBridgeModuleNamespaceImportPreflight: Record<string, unknown>,
     bundledSceneBridgeFactoryInvocationPreflight: Record<string, unknown>,
@@ -7107,6 +10564,10 @@ function thumbnailResponse(
     bundledSceneBridgeRuntimeRegistryInstallationGate: Record<string, unknown>,
     bundledSceneBridgeRuntimeRegistryInstallationPreflight: Record<string, unknown>,
     bundledSceneBridgeRuntimeRegistryInstallationExecutionBoundary: Record<string, unknown>,
+    bundledSceneBridgeRuntimeRegistryInstallation: Record<string, unknown>,
+    bundledSceneBridgeInstalledRuntimeLifecycle: Record<string, unknown>,
+    bundledSceneBridgeRealRuntimeModuleScaffold: Record<string, unknown>,
+    bundledSceneBridgeInstalledRuntimeRenderDispatch: Record<string, unknown>,
     browserFixtureRuntime: Record<string, unknown>
 ): Record<string, unknown> {
     const host = request.headers.host ?? `${DEFAULT_HOST}:${DEFAULT_PORT}`;
@@ -7120,6 +10581,8 @@ function thumbnailResponse(
         runtimeAssetMaterializationPreflight: runtimeAssetPreflight,
         runtimeAssetMaterializationDryRun,
         runtimeAssetMaterializationApproval,
+        runtimeAssetMaterializationExecution,
+        bundledSceneBridgeRealScenePng,
         bundledSceneBridgeImportGate,
         bundledSceneBridgeModuleNamespaceImportPreflight,
         bundledSceneBridgeFactoryInvocationPreflight,
@@ -7129,6 +10592,11 @@ function thumbnailResponse(
         bundledSceneBridgeRuntimeRegistryInstallationGate,
         bundledSceneBridgeRuntimeRegistryInstallationPreflight,
         bundledSceneBridgeRuntimeRegistryInstallationExecutionBoundary,
+        bundledSceneBridgeRuntimeRegistryInstallation,
+        bundledSceneBridgeInstalledRuntimeLifecycle,
+        bundledSceneBridgeRealRuntimeValueContract,
+        bundledSceneBridgeRealRuntimeModuleScaffold,
+        bundledSceneBridgeInstalledRuntimeRenderDispatch,
         browserFixtureRuntime,
         request: summary,
         auth,
@@ -9896,6 +13364,287 @@ function validateBundledSceneBridgeRuntimeRegistryInstallationPreflightResponse(
     requireResponseEqual(record.execution ?? null, null, `${field}.execution`);
 }
 
+
+
+function validateBundledSceneBridgeInstalledRuntimeLifecycleResponse(actual: unknown, field: string): void {
+    const record = responseRecord(actual, field);
+    const status = String(record.status ?? "");
+    if (!["not-installed", "installed", "invalid"].includes(status)) {
+        responseInvalid(`${field}.status must be not-installed, installed, or invalid.`, `${field}.status`);
+    }
+    requireResponseEqual(record.diagnosticsVersion, "P26.47", `${field}.diagnosticsVersion`);
+    requireResponseEqual(record.owner, "renderer-service", `${field}.owner`);
+    requireResponseEqual(record.mode, "installed-runtime-lifecycle-diagnostics", `${field}.mode`);
+
+    const installed = status === "installed";
+    const invalid = status === "invalid";
+    const source = responseRecord(record.source, `${field}.source`);
+    requireResponseEqual(source.registryInstallationVersion, "P26.46", `${field}.source.registryInstallationVersion`);
+    requireResponseEqual(source.installedRuntimeLifecycleVersion, "P26.47", `${field}.source.installedRuntimeLifecycleVersion`);
+    requireResponseEqual(source.runtimeInstalled, installed, `${field}.source.runtimeInstalled`);
+
+    const registrySlot = responseRecord(record.registrySlot, `${field}.registrySlot`);
+    requireResponseEqual(registrySlot.runtimeId, BUNDLED_SCENE_BRIDGE_RUNTIME_ID, `${field}.registrySlot.runtimeId`);
+    requireResponseEqual(registrySlot.targetRegistry, BUNDLED_SCENE_BRIDGE_TARGET_REGISTRY, `${field}.registrySlot.targetRegistry`);
+    requireResponseEqual(registrySlot.runtimeAvailableForDispatch, false, `${field}.registrySlot.runtimeAvailableForDispatch`);
+    requireResponseEqual(registrySlot.renderDispatchEnabled, false, `${field}.registrySlot.renderDispatchEnabled`);
+    requireResponseEqual(registrySlot.valuesIncluded, false, `${field}.registrySlot.valuesIncluded`);
+    if (installed) {
+        requireResponseEqual(registrySlot.slotOccupied, true, `${field}.registrySlot.slotOccupied`);
+        requireResponseEqual(registrySlot.runtimeInstalled, true, `${field}.registrySlot.runtimeInstalled`);
+        requireResponseEqual(registrySlot.slotStatus, "occupied", `${field}.registrySlot.slotStatus`);
+    }
+
+    const runtimeAvailability = responseRecord(record.runtimeAvailability, `${field}.runtimeAvailability`);
+    requireResponseEqual(runtimeAvailability.runtimeAvailableForDispatch, false, `${field}.runtimeAvailability.runtimeAvailableForDispatch`);
+    requireResponseEqual(runtimeAvailability.renderDispatchEnabled, false, `${field}.runtimeAvailability.renderDispatchEnabled`);
+    requireResponseEqual(runtimeAvailability.valuesIncluded, false, `${field}.runtimeAvailability.valuesIncluded`);
+    requireResponseEqual(runtimeAvailability.runtimeValueAvailable, false, `${field}.runtimeAvailability.runtimeValueAvailable`);
+
+    const refusalDiagnostics = responseRecord(record.refusalDiagnostics, `${field}.refusalDiagnostics`);
+    requireResponseEqual(refusalDiagnostics.renderDispatchRefused, true, `${field}.refusalDiagnostics.renderDispatchRefused`);
+    requireResponseEqual(refusalDiagnostics.runtimeValueExposureRefused, true, `${field}.refusalDiagnostics.runtimeValueExposureRefused`);
+    requireResponseEqual(refusalDiagnostics.valuesIncluded, false, `${field}.refusalDiagnostics.valuesIncluded`);
+
+    const sideEffects = responseRecord(record.sideEffects, `${field}.sideEffects`);
+    for (const property of [
+        "runtimeRegistration",
+        "runtimeExecutionRegistered",
+        "closeHookInvocation",
+        "duplicateRollback",
+        "renderDispatch",
+        "browserProcessStarted",
+        "browserPageCreated",
+        "runtimeAssetsLoaded",
+        "assetManifestMaterialized",
+        "backendRpcReads",
+        "sourceDataReads",
+        "networkDispatch",
+        "dispatch",
+        "localFileWrites",
+    ]) {
+        requireResponseEqual(sideEffects[property], false, `${field}.sideEffects.${property}`);
+    }
+
+    const redaction = responseRecord(record.redaction, `${field}.redaction`);
+    for (const property of [
+        "modeValuesIncluded",
+        "moduleValuesIncluded",
+        "factoryValuesIncluded",
+        "runtimeOptionsValuesIncluded",
+        "optionValuesIncluded",
+        "runtimeValuesIncluded",
+        "registryValuesIncluded",
+        "lifecycleValuesIncluded",
+        "pathValuesIncluded",
+        "sourceDataValuesIncluded",
+        "pageValuesIncluded",
+        "artifactValuesIncluded",
+        "mediaValuesIncluded",
+        "tokenValuesIncluded",
+    ]) {
+        requireResponseEqual(redaction[property], false, `${field}.redaction.${property}`);
+    }
+
+    const omitted = responseRecord(record.omitted, `${field}.omitted`);
+    for (const property of [
+        "configuredValue",
+        "moduleNamespace",
+        "factoryValue",
+        "runtimeOptionsValue",
+        "optionValues",
+        "runtimeValue",
+        "registryValue",
+        "lifecycleHandles",
+        "workspaceRoot",
+        "cacheRoot",
+        "modulePath",
+        "publicPaths",
+        "cachePaths",
+        "sha256",
+        "playwrightBrowserPath",
+        "runtimeModulePath",
+        "sourceData",
+        "pageData",
+        "artifactBytes",
+        "mediaBytes",
+        "tokenValues",
+    ]) {
+        requireResponseEqual(omitted[property], true, `${field}.omitted.${property}`);
+    }
+
+    if (installed) {
+        const execution = responseRecord(record.execution, `${field}.execution`);
+        requireResponseEqual(execution.renderDispatch, false, `${field}.execution.renderDispatch`);
+        requireResponseEqual(execution.valuesIncluded, false, `${field}.execution.valuesIncluded`);
+        requireResponseEqual(execution.runtimeInstalled, true, `${field}.execution.runtimeInstalled`);
+    } else if (!invalid) {
+        requireResponseEqual(record.execution ?? null, null, `${field}.execution`);
+    }
+}
+
+function validateBundledSceneBridgeRuntimeRegistryInstallationResponse(actual: unknown, field: string): void {
+    const record = responseRecord(actual, field);
+    const status = String(record.status ?? "");
+    if (!["blocked", "executed", "invalid"].includes(status)) {
+        responseInvalid(`${field}.status must be blocked, executed, or invalid.`, `${field}.status`);
+    }
+    requireResponseEqual(record.installationVersion, "P26.46", `${field}.installationVersion`);
+    requireResponseEqual(record.owner, "renderer-service", `${field}.owner`);
+    requireResponseEqual(record.mode, "guarded-runtime-registry-installation-execution", `${field}.mode`);
+
+    const executed = status === "executed";
+    const invalid = status === "invalid";
+    const source = responseRecord(record.source, `${field}.source`);
+    requireResponseEqual(source.runtimeRegistrationPreflightVersion, "P26.40", `${field}.source.runtimeRegistrationPreflightVersion`);
+    requireResponseEqual(source.registryRegistrationBoundaryVersion, "P26.41", `${field}.source.registryRegistrationBoundaryVersion`);
+    requireResponseEqual(source.registryInstallationContractVersion, "P26.42", `${field}.source.registryInstallationContractVersion`);
+    requireResponseEqual(source.registryInstallationGateVersion, "P26.43", `${field}.source.registryInstallationGateVersion`);
+    requireResponseEqual(source.registryInstallationPreflightVersion, "P26.44", `${field}.source.registryInstallationPreflightVersion`);
+    requireResponseEqual(source.registryInstallationExecutionBoundaryVersion, "P26.45", `${field}.source.registryInstallationExecutionBoundaryVersion`);
+    requireResponseEqual(source.registryInstallationVersion, "P26.46", `${field}.source.registryInstallationVersion`);
+    if (typeof source.registryInstallationExecutionBoundaryReady !== "boolean") {
+        responseInvalid(`${field}.source.registryInstallationExecutionBoundaryReady must be a boolean.`, `${field}.source.registryInstallationExecutionBoundaryReady`);
+    }
+    if (executed && source.registryInstallationExecutionBoundaryReady !== true) {
+        responseInvalid(`${field}.source.registryInstallationExecutionBoundaryReady must be true when installation is executed.`, `${field}.source.registryInstallationExecutionBoundaryReady`);
+    }
+
+    const installation = responseRecord(record.installation, `${field}.installation`);
+    for (const property of [
+        "registryInstallationExecutionBoundaryReadyRequired",
+        "duplicateLookupRequired",
+        "runtimeValueCreationRequired",
+        "registryInstallationRequired",
+        "closeHookRegistrationRequired",
+        "rollbackHookRequired",
+        "noDispatchRequired",
+    ]) {
+        requireResponseEqual(installation[property], true, `${field}.installation.${property}`);
+    }
+    for (const property of [
+        "runtimeRegistered",
+        "runtimeRegistration",
+        "runtimeExecutionRegistered",
+        "duplicateRollbackAttempted",
+        "renderDispatch",
+        "browserProcessStarted",
+        "runtimeValuesIncluded",
+        "registryValuesIncluded",
+    ]) {
+        requireResponseEqual(installation[property], false, `${field}.installation.${property}`);
+    }
+    if (executed) {
+        requireResponseEqual(installation.runtimeInstalled, true, `${field}.installation.runtimeInstalled`);
+        requireResponseEqual(installation.registryLookupAttempted, true, `${field}.installation.registryLookupAttempted`);
+        const execution = isRecord(record.execution) ? record.execution : {};
+        if (execution.outcome === "executed") {
+            requireResponseEqual(installation.runtimeValueCreated, true, `${field}.installation.runtimeValueCreated`);
+            requireResponseEqual(installation.registryWriteAttempted, true, `${field}.installation.registryWriteAttempted`);
+        }
+    }
+
+    const runtimeValue = responseRecord(record.runtimeValue, `${field}.runtimeValue`);
+    requireResponseEqual(runtimeValue.runtimeId, BUNDLED_SCENE_BRIDGE_RUNTIME_ID, `${field}.runtimeValue.runtimeId`);
+    requireResponseEqual(runtimeValue.targetRegistry, BUNDLED_SCENE_BRIDGE_TARGET_REGISTRY, `${field}.runtimeValue.targetRegistry`);
+    requireResponseEqual(runtimeValue.renderDispatchEnabledAfterInstallation, false, `${field}.runtimeValue.renderDispatchEnabledAfterInstallation`);
+    requireResponseEqual(runtimeValue.valuesIncluded, false, `${field}.runtimeValue.valuesIncluded`);
+
+    const registrySlot = responseRecord(record.registrySlot, `${field}.registrySlot`);
+    requireResponseEqual(registrySlot.runtimeId, BUNDLED_SCENE_BRIDGE_RUNTIME_ID, `${field}.registrySlot.runtimeId`);
+    requireResponseEqual(registrySlot.targetRegistry, BUNDLED_SCENE_BRIDGE_TARGET_REGISTRY, `${field}.registrySlot.targetRegistry`);
+    requireResponseEqual(registrySlot.runtimeAvailableForDispatch, false, `${field}.registrySlot.runtimeAvailableForDispatch`);
+    requireResponseEqual(registrySlot.renderDispatchEnabled, false, `${field}.registrySlot.renderDispatchEnabled`);
+    requireResponseEqual(registrySlot.valuesIncluded, false, `${field}.registrySlot.valuesIncluded`);
+
+    const sideEffects = responseRecord(record.sideEffects, `${field}.sideEffects`);
+    for (const property of [
+        "runtimeRegistration",
+        "runtimeExecutionRegistered",
+        "duplicateRollback",
+        "renderDispatch",
+        "browserProcessStarted",
+        "browserPageCreated",
+        "runtimeAssetsLoaded",
+        "assetManifestMaterialized",
+        "backendRpcReads",
+        "sourceDataReads",
+        "networkDispatch",
+        "dispatch",
+        "localFileWrites",
+    ]) {
+        requireResponseEqual(sideEffects[property], false, `${field}.sideEffects.${property}`);
+    }
+
+    const redaction = responseRecord(record.redaction, `${field}.redaction`);
+    for (const property of [
+        "modeValuesIncluded",
+        "moduleValuesIncluded",
+        "factoryValuesIncluded",
+        "runtimeOptionsValuesIncluded",
+        "optionValuesIncluded",
+        "runtimeValuesIncluded",
+        "registryValuesIncluded",
+        "lifecycleValuesIncluded",
+        "pathValuesIncluded",
+        "sourceDataValuesIncluded",
+        "pageValuesIncluded",
+        "artifactValuesIncluded",
+        "mediaValuesIncluded",
+        "tokenValuesIncluded",
+    ]) {
+        requireResponseEqual(redaction[property], false, `${field}.redaction.${property}`);
+    }
+
+    const omitted = responseRecord(record.omitted, `${field}.omitted`);
+    for (const property of [
+        "configuredValue",
+        "moduleNamespace",
+        "factoryValue",
+        "runtimeOptionsValue",
+        "optionValues",
+        "runtimeValue",
+        "registryValue",
+        "lifecycleHandles",
+        "workspaceRoot",
+        "cacheRoot",
+        "modulePath",
+        "publicPaths",
+        "cachePaths",
+        "sha256",
+        "playwrightBrowserPath",
+        "runtimeModulePath",
+        "sourceData",
+        "pageData",
+        "artifactBytes",
+        "mediaBytes",
+        "tokenValues",
+    ]) {
+        requireResponseEqual(omitted[property], true, `${field}.omitted.${property}`);
+    }
+
+    const refusalDiagnostics = responseRecord(record.refusalDiagnostics, `${field}.refusalDiagnostics`);
+    requireResponseEqual(refusalDiagnostics.renderDispatchRefused, true, `${field}.refusalDiagnostics.renderDispatchRefused`);
+    requireResponseEqual(refusalDiagnostics.valuesIncluded, false, `${field}.refusalDiagnostics.valuesIncluded`);
+
+    if (executed) {
+        const execution = responseRecord(record.execution, `${field}.execution`);
+        requireResponseEqual(execution.attempted, true, `${field}.execution.attempted`);
+        requireResponseEqual(execution.succeeded, true, `${field}.execution.succeeded`);
+        if (!["executed", "already-installed"].includes(String(execution.outcome ?? ""))) {
+            responseInvalid(`${field}.execution.outcome must be executed or already-installed when status is executed.`, `${field}.execution.outcome`);
+        }
+        requireResponseEqual(execution.renderDispatch, false, `${field}.execution.renderDispatch`);
+        requireResponseEqual(execution.valuesIncluded, false, `${field}.execution.valuesIncluded`);
+    } else if (record.execution !== null && record.execution !== undefined) {
+        const execution = responseRecord(record.execution, `${field}.execution`);
+        requireResponseEqual(execution.renderDispatch, false, `${field}.execution.renderDispatch`);
+        requireResponseEqual(execution.valuesIncluded, false, `${field}.execution.valuesIncluded`);
+    } else {
+        requireResponseEqual(record.execution ?? null, null, `${field}.execution`);
+    }
+}
+
 function validateBundledSceneBridgeRuntimeRegistryInstallationExecutionBoundaryResponse(actual: unknown, field: string): void {
     const record = responseRecord(actual, field);
     const status = String(record.status ?? "");
@@ -11133,6 +14882,16 @@ function validateThumbnailResponseContract(
         record.runtimeAssetMaterializationApproval,
         "runtimeAssetMaterializationApproval"
     );
+
+    validateRuntimeAssetMaterializationExecutionResponse(
+        record.runtimeAssetMaterializationExecution,
+        "runtimeAssetMaterializationExecution"
+    );
+
+    validateBundledSceneBridgeRealScenePngResponse(
+        record.bundledSceneBridgeRealScenePng,
+        "bundledSceneBridgeRealScenePng"
+    );
     validateBundledSceneBridgeContractResponse(record.bundledSceneBridgeContract, "bundledSceneBridgeContract");
     validateBundledSceneBridgeAdapterModuleResponse(record.bundledSceneBridgeAdapterModule, "bundledSceneBridgeAdapterModule");
     validateBundledSceneBridgeImportGateResponse(record.bundledSceneBridgeImportGate, "bundledSceneBridgeImportGate");
@@ -11171,6 +14930,26 @@ function validateThumbnailResponseContract(
     validateBundledSceneBridgeRuntimeRegistryInstallationExecutionBoundaryResponse(
         record.bundledSceneBridgeRuntimeRegistryInstallationExecutionBoundary,
         "bundledSceneBridgeRuntimeRegistryInstallationExecutionBoundary"
+    );
+    validateBundledSceneBridgeRuntimeRegistryInstallationResponse(
+        record.bundledSceneBridgeRuntimeRegistryInstallation,
+        "bundledSceneBridgeRuntimeRegistryInstallation"
+    );
+    validateBundledSceneBridgeInstalledRuntimeLifecycleResponse(
+        record.bundledSceneBridgeInstalledRuntimeLifecycle,
+        "bundledSceneBridgeInstalledRuntimeLifecycle"
+    );
+    validateBundledSceneBridgeRealRuntimeValueContractResponse(
+        record.bundledSceneBridgeRealRuntimeValueContract,
+        "bundledSceneBridgeRealRuntimeValueContract"
+    );
+    validateBundledSceneBridgeRealRuntimeModuleScaffoldResponse(
+        record.bundledSceneBridgeRealRuntimeModuleScaffold,
+        "bundledSceneBridgeRealRuntimeModuleScaffold"
+    );
+    validateBundledSceneBridgeInstalledRuntimeRenderDispatchResponse(
+        record.bundledSceneBridgeInstalledRuntimeRenderDispatch,
+        "bundledSceneBridgeInstalledRuntimeRenderDispatch"
     );
     validateBrowserFixtureRuntimeLifecycleResponse(record.browserFixtureRuntime, "browserFixtureRuntime");
 
@@ -11229,6 +15008,11 @@ async function handleRequest(request: IncomingMessage, response: ServerResponse,
             runtimeAssetMaterializationDryRun,
             options.runtimeAssetMaterializationApproval
         );
+        const runtimeAssetMaterializationExecutionResult = await executeRuntimeAssetMaterialization(
+            runtimeAssetPreflight,
+            runtimeAssetMaterializationDryRun,
+            options.runtimeAssetMaterializationApproval
+        );
         const browserFixtureRuntime = browserFixtureRuntimeLifecycleResponse(options);
         const importGate = bundledSceneBridgeImportGateResponse(options);
         const moduleNamespaceImportPreflight = await bundledSceneBridgeModuleNamespaceImportPreflightResponse(importGate);
@@ -11246,11 +15030,37 @@ async function handleRequest(request: IncomingMessage, response: ServerResponse,
             bundledSceneBridgeRuntimeRegistryInstallationPreflightResponse(runtimeRegistryInstallationGate);
         const runtimeRegistryInstallationExecutionBoundary =
             bundledSceneBridgeRuntimeRegistryInstallationExecutionBoundaryResponse(runtimeRegistryInstallationPreflight);
+        const runtimeRegistryInstallation = await bundledSceneBridgeRuntimeRegistryInstallationResponse(
+            runtimeRegistryInstallationExecutionBoundary,
+            options.bundledSceneBridgeThumbnailRuntimeRegistry,
+            {
+                preferRealRuntime:
+                    bundledSceneBridgeRealRuntimeModuleScaffoldResponse(options).status === "configured-disabled" &&
+                    runtimeAssetMaterializationExecutionResult.status === "executed",
+                materializationExecuted: runtimeAssetMaterializationExecutionResult.status === "executed",
+            }
+        );
+        const installedRuntimeLifecycle = bundledSceneBridgeInstalledRuntimeLifecycleResponse(
+            runtimeRegistryInstallation,
+            options.bundledSceneBridgeThumbnailRuntimeRegistry
+        );
         sendJson(response, 200, {
             ...healthResponse,
             runtimeAssetMaterializationPreflight: runtimeAssetPreflight,
             runtimeAssetMaterializationDryRun,
             runtimeAssetMaterializationApproval,
+            runtimeAssetMaterializationExecution: runtimeAssetMaterializationExecutionResult,
+            bundledSceneBridgeRealScenePng: bundledSceneBridgeRealScenePngResponse({
+                realRuntimeInstalled:
+                    options.bundledSceneBridgeThumbnailRuntimeRegistry.get(BUNDLED_SCENE_BRIDGE_RUNTIME_ID)?.runtimeKind ===
+                    "real",
+                assetsMaterialized: runtimeAssetMaterializationExecutionResult.status === "executed",
+                sourceDataAvailable: false,
+                renderDispatched: false,
+                nonEmptyPngProduced: false,
+                persisted: false,
+                realRuntimeSelected: false,
+            }),
             bundledSceneBridgeImportGate: importGate,
             bundledSceneBridgeModuleNamespaceImportPreflight: moduleNamespaceImportPreflight,
             bundledSceneBridgeFactoryInvocationPreflight: factoryInvocationPreflight,
@@ -11260,6 +15070,14 @@ async function handleRequest(request: IncomingMessage, response: ServerResponse,
             bundledSceneBridgeRuntimeRegistryInstallationGate: runtimeRegistryInstallationGate,
             bundledSceneBridgeRuntimeRegistryInstallationPreflight: runtimeRegistryInstallationPreflight,
             bundledSceneBridgeRuntimeRegistryInstallationExecutionBoundary: runtimeRegistryInstallationExecutionBoundary,
+            bundledSceneBridgeRuntimeRegistryInstallation: runtimeRegistryInstallation,
+            bundledSceneBridgeInstalledRuntimeLifecycle: installedRuntimeLifecycle,
+            bundledSceneBridgeRealRuntimeValueContract,
+            bundledSceneBridgeRealRuntimeModuleScaffold: bundledSceneBridgeRealRuntimeModuleScaffoldResponse(options),
+            bundledSceneBridgeInstalledRuntimeRenderDispatch: bundledSceneBridgeInstalledRuntimeRenderDispatchResponse(
+                options,
+                options.bundledSceneBridgeThumbnailRuntimeRegistry
+            ),
             browserFixtureRuntime,
         });
         return;
@@ -11272,15 +15090,17 @@ async function handleRequest(request: IncomingMessage, response: ServerResponse,
             const auth = summarizeAuthHeaders(request);
             const cacheProbeExecution = await executeThumbnailCacheProbe(request, summary, options.backendRpc);
             const sourceDataReadExecution = await executeThumbnailSourceDataRead(request, summary, options.backendRpc, cacheProbeExecution);
-            const renderExecution = await executeThumbnailRender(summary, sourceDataReadExecution, options.renderer, options.renderedAssets);
-            const persistExecution = await executeThumbnailPersist(request, summary, options.backendRpc, sourceDataReadExecution, renderExecution);
             const runtimeAssetPreflight = await runtimeAssetMaterializationPreflightResponse(options.runtimeAssetPreflight);
             const runtimeAssetMaterializationDryRun = runtimeAssetMaterializationDryRunResponse(runtimeAssetPreflight);
             const runtimeAssetMaterializationApproval = runtimeAssetMaterializationApprovalResponse(
                 runtimeAssetMaterializationDryRun,
                 options.runtimeAssetMaterializationApproval
             );
-            const browserFixtureRuntime = browserFixtureRuntimeLifecycleResponse(options);
+            const runtimeAssetMaterializationExecutionResult = await executeRuntimeAssetMaterialization(
+                runtimeAssetPreflight,
+                runtimeAssetMaterializationDryRun,
+                options.runtimeAssetMaterializationApproval
+            );
             const importGate = bundledSceneBridgeImportGateResponse(options);
             const moduleNamespaceImportPreflight = await bundledSceneBridgeModuleNamespaceImportPreflightResponse(importGate);
             const factoryInvocationPreflight = await bundledSceneBridgeFactoryInvocationPreflightResponse(moduleNamespaceImportPreflight);
@@ -11297,6 +15117,54 @@ async function handleRequest(request: IncomingMessage, response: ServerResponse,
                 bundledSceneBridgeRuntimeRegistryInstallationPreflightResponse(runtimeRegistryInstallationGate);
             const runtimeRegistryInstallationExecutionBoundary =
                 bundledSceneBridgeRuntimeRegistryInstallationExecutionBoundaryResponse(runtimeRegistryInstallationPreflight);
+            const runtimeRegistryInstallation = await bundledSceneBridgeRuntimeRegistryInstallationResponse(
+            runtimeRegistryInstallationExecutionBoundary,
+            options.bundledSceneBridgeThumbnailRuntimeRegistry,
+            {
+                preferRealRuntime:
+                    bundledSceneBridgeRealRuntimeModuleScaffoldResponse(options).status === "configured-disabled" &&
+                    runtimeAssetMaterializationExecutionResult.status === "executed",
+                materializationExecuted: runtimeAssetMaterializationExecutionResult.status === "executed",
+            }
+        );
+            const installedRuntimeLifecycle = bundledSceneBridgeInstalledRuntimeLifecycleResponse(
+                runtimeRegistryInstallation,
+                options.bundledSceneBridgeThumbnailRuntimeRegistry
+            );
+            const realRuntimeModuleScaffold = bundledSceneBridgeRealRuntimeModuleScaffoldResponse(options);
+            const resolvedRenderer = resolveThumbnailRenderer(options, options.bundledSceneBridgeThumbnailRuntimeRegistry);
+            const renderExecution = await executeThumbnailRender(
+                summary,
+                sourceDataReadExecution,
+                resolvedRenderer.renderer,
+                options.renderedAssets
+            );
+            const persistExecution = await executeThumbnailPersist(request, summary, options.backendRpc, sourceDataReadExecution, renderExecution);
+            const browserFixtureRuntime = browserFixtureRuntimeLifecycleResponse(options);
+            const installedRuntimeRenderDispatch = bundledSceneBridgeInstalledRuntimeRenderDispatchResponse(
+                options,
+                options.bundledSceneBridgeThumbnailRuntimeRegistry,
+                {
+                    registryRuntimeSelected: resolvedRenderer.registryRuntimeSelected,
+                    renderThumbnailCalled: renderExecution.executed || resolvedRenderer.registryRuntimeSelected,
+                    renderDispatch: renderExecution.executed,
+                    pngMappedToResourcePipeline: renderExecution.executed && Boolean(renderExecution.mediaId),
+                }
+            );
+            const installedEntry = options.bundledSceneBridgeThumbnailRuntimeRegistry.get(BUNDLED_SCENE_BRIDGE_RUNTIME_ID);
+            const realScenePng = bundledSceneBridgeRealScenePngResponse({
+                realRuntimeInstalled: installedEntry?.runtimeKind === "real",
+                assetsMaterialized: runtimeAssetMaterializationExecutionResult.status === "executed",
+                sourceDataAvailable: sourceDataReadExecution.executed === true && Boolean(sourceDataReadExecution.sourceData),
+                renderDispatched: renderExecution.executed === true,
+                nonEmptyPngProduced:
+                    renderExecution.executed === true &&
+                    typeof renderExecution.artifactByteLength === "number" &&
+                    renderExecution.artifactByteLength > 8,
+                persisted: persistExecution.executed === true,
+                realRuntimeSelected: resolvedRenderer.registryRuntimeSelected && installedEntry?.runtimeKind === "real",
+                targetKind: summary.targetKind,
+            });
             const generatedResponse = thumbnailResponse(
                 request,
                 summary,
@@ -11309,6 +15177,8 @@ async function handleRequest(request: IncomingMessage, response: ServerResponse,
                 runtimeAssetPreflight,
                 runtimeAssetMaterializationDryRun,
                 runtimeAssetMaterializationApproval,
+                runtimeAssetMaterializationExecutionResult,
+                realScenePng,
                 importGate,
                 moduleNamespaceImportPreflight,
                 factoryInvocationPreflight,
@@ -11318,6 +15188,10 @@ async function handleRequest(request: IncomingMessage, response: ServerResponse,
                 runtimeRegistryInstallationGate,
                 runtimeRegistryInstallationPreflight,
                 runtimeRegistryInstallationExecutionBoundary,
+                runtimeRegistryInstallation,
+                installedRuntimeLifecycle,
+                realRuntimeModuleScaffold,
+                installedRuntimeRenderDispatch,
                 browserFixtureRuntime
             );
             const responseBody = options.thumbnailResponseOverride
@@ -11374,6 +15248,8 @@ async function handleRequest(request: IncomingMessage, response: ServerResponse,
     });
 }
 
+const bundledSceneBridgeThumbnailRuntimeRegistryByServer = new WeakMap<Server, BundledSceneBridgeThumbnailRuntimeRegistry>();
+
 export function createRendererService(
     options: Pick<
         RendererServiceOptions,
@@ -11386,10 +15262,13 @@ export function createRendererService(
         | "runtimeAssetMaterializationApproval"
         | "bundledSceneBridgeImportGate"
         | "bundledSceneBridgeRuntimeRegistryInstallationGate"
+        | "bundledSceneBridgeRealRuntimeModuleGate"
+        | "bundledSceneBridgeRenderDispatchGate"
         | "thumbnailResponseOverride"
     > = {}
 ): Server {
     const renderedAssets: RenderedAssetStore = new Map();
+    const bundledSceneBridgeThumbnailRuntimeRegistry: BundledSceneBridgeThumbnailRuntimeRegistry = new Map();
     const runtimeOptions: RendererServiceRuntimeOptions = {
         backendRpc: options.backendRpc,
         renderer: options.renderer,
@@ -11400,11 +15279,14 @@ export function createRendererService(
         runtimeAssetMaterializationApproval: options.runtimeAssetMaterializationApproval,
         bundledSceneBridgeImportGate: options.bundledSceneBridgeImportGate,
         bundledSceneBridgeRuntimeRegistryInstallationGate: options.bundledSceneBridgeRuntimeRegistryInstallationGate,
+        bundledSceneBridgeRealRuntimeModuleGate: options.bundledSceneBridgeRealRuntimeModuleGate,
+        bundledSceneBridgeRenderDispatchGate: options.bundledSceneBridgeRenderDispatchGate,
         thumbnailResponseOverride: options.thumbnailResponseOverride,
         renderedAssets,
+        bundledSceneBridgeThumbnailRuntimeRegistry,
     };
 
-    return createServer((request, response) => {
+    const server = createServer((request, response) => {
         void handleRequest(request, response, runtimeOptions).catch((error: unknown) => {
             sendJson(response, 500, {
                 status: "error",
@@ -11414,6 +15296,8 @@ export function createRendererService(
             });
         });
     });
+    bundledSceneBridgeThumbnailRuntimeRegistryByServer.set(server, bundledSceneBridgeThumbnailRuntimeRegistry);
+    return server;
 }
 
 async function resolveRendererRuntimeOptions(options: RendererServiceOptions): Promise<RendererRuntimeOptions | undefined> {
@@ -11455,6 +15339,8 @@ export async function startRendererService(options: RendererServiceOptions = {})
         runtimeAssetMaterializationApproval: options.runtimeAssetMaterializationApproval,
         bundledSceneBridgeImportGate: options.bundledSceneBridgeImportGate,
         bundledSceneBridgeRuntimeRegistryInstallationGate: options.bundledSceneBridgeRuntimeRegistryInstallationGate,
+        bundledSceneBridgeRealRuntimeModuleGate: options.bundledSceneBridgeRealRuntimeModuleGate,
+        bundledSceneBridgeRenderDispatchGate: options.bundledSceneBridgeRenderDispatchGate,
         thumbnailResponseOverride: options.thumbnailResponseOverride,
     });
 
@@ -11499,6 +15385,9 @@ export async function startRendererService(options: RendererServiceOptions = {})
             } catch (error) {
                 serverError = error;
             }
+            const registry = bundledSceneBridgeThumbnailRuntimeRegistryByServer.get(server);
+            await closeBundledSceneBridgeThumbnailRuntimeRegistry(registry);
+            bundledSceneBridgeThumbnailRuntimeRegistryByServer.delete(server);
             await closeRendererRuntime(renderer);
             if (serverError) {
                 throw serverError;
@@ -11553,12 +15442,13 @@ function hasEnvKey(env: NodeJS.ProcessEnv, key: string): boolean {
 function readRuntimeAssetMaterializationApprovalOptionsFromEnv(
     env: NodeJS.ProcessEnv
 ): RendererRuntimeAssetMaterializationApprovalOptions | undefined {
+    // Keep token/mode/audit values out of options objects returned from env reads so
+    // CLI/MCP/config surfaces stay redacted. Execution resolves secrets from process.env.
     const options: RendererRuntimeAssetMaterializationApprovalOptions = {
         modeConfigured: hasEnvKey(env, RUNTIME_ASSET_MATERIALIZATION_APPROVAL_ENV),
         approvalTokenConfigured: hasEnvKey(env, RUNTIME_ASSET_MATERIALIZATION_APPROVAL_TOKEN_ENV),
         auditConfigured: hasEnvKey(env, RUNTIME_ASSET_MATERIALIZATION_APPROVAL_AUDIT_DIR_ENV),
     };
-
     return options.modeConfigured || options.approvalTokenConfigured || options.auditConfigured ? options : undefined;
 }
 
@@ -11595,6 +15485,30 @@ function readBundledSceneBridgeRuntimeRegistryInstallationGateOptionsFromEnv(
     };
 }
 
+function readBundledSceneBridgeRealRuntimeModuleGateOptionsFromEnv(
+    env: NodeJS.ProcessEnv
+): RendererBundledSceneBridgeRealRuntimeModuleGateOptions | undefined {
+    if (!hasEnvKey(env, BUNDLED_SCENE_BRIDGE_REAL_RUNTIME_MODULE_GATE_ENV)) {
+        return undefined;
+    }
+    return {
+        configured: true,
+        value: optionalString(env[BUNDLED_SCENE_BRIDGE_REAL_RUNTIME_MODULE_GATE_ENV])?.trim() ?? "",
+    };
+}
+
+function readBundledSceneBridgeRenderDispatchGateOptionsFromEnv(
+    env: NodeJS.ProcessEnv
+): RendererBundledSceneBridgeRenderDispatchGateOptions | undefined {
+    if (!hasEnvKey(env, BUNDLED_SCENE_BRIDGE_RENDER_DISPATCH_GATE_ENV)) {
+        return undefined;
+    }
+    return {
+        configured: true,
+        value: optionalString(env[BUNDLED_SCENE_BRIDGE_RENDER_DISPATCH_GATE_ENV])?.trim() ?? "",
+    };
+}
+
 export function readRendererServiceOptionsFromEnv(env: NodeJS.ProcessEnv = process.env): RendererServiceOptions {
     const backendBaseUriInput =
         optionalString(env[BACKEND_RPC_BASE_URI_ENV]) ?? optionalString(env[BACKEND_RPC_BASE_URI_FALLBACK_ENV]) ?? undefined;
@@ -11611,6 +15525,10 @@ export function readRendererServiceOptionsFromEnv(env: NodeJS.ProcessEnv = proce
     const bundledSceneBridgeImportGate = readBundledSceneBridgeImportGateOptionsFromEnv(env);
     const bundledSceneBridgeRuntimeRegistryInstallationGate =
         readBundledSceneBridgeRuntimeRegistryInstallationGateOptionsFromEnv(env);
+    const bundledSceneBridgeRealRuntimeModuleGate =
+        readBundledSceneBridgeRealRuntimeModuleGateOptionsFromEnv(env);
+    const bundledSceneBridgeRenderDispatchGate =
+        readBundledSceneBridgeRenderDispatchGateOptionsFromEnv(env);
 
     return {
         host: env.PENPOT_RENDERER_SERVICE_HOST ?? DEFAULT_HOST,
@@ -11624,6 +15542,8 @@ export function readRendererServiceOptionsFromEnv(env: NodeJS.ProcessEnv = proce
         ...(bundledSceneBridgeRuntimeRegistryInstallationGate
             ? { bundledSceneBridgeRuntimeRegistryInstallationGate }
             : {}),
+        ...(bundledSceneBridgeRealRuntimeModuleGate ? { bundledSceneBridgeRealRuntimeModuleGate } : {}),
+        ...(bundledSceneBridgeRenderDispatchGate ? { bundledSceneBridgeRenderDispatchGate } : {}),
     };
 }
 

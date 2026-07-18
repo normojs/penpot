@@ -783,14 +783,25 @@ Supported backend-command payload:
 - Container row/column gap, uniform padding, align/justify items, and
   align/justify content.
 
-Explicitly unsupported in this slice:
+Supported cell placement slice (post-P26 product gap close-out):
 
-- `layout-grid-cells`.
-- Child cell placement, spans, and moving children into tracks/cells.
-- Any payload that implies a full layout-engine placement mutation.
+- Optional `layout.cells` vector of placements (also accepts `gridCells` /
+  `layout-grid-cells` aliases in headless normalization).
+- Each placement supports 1-indexed `row` / `column`, optional `row-span` /
+  `column-span`, optional `shapes` (child shape uuids), optional `position`
+  (`auto|manual|area`), and optional `align-self` / `justify-self`.
+- Empty `cells: []` clears persisted cell placements for the container.
+- When `cells` is omitted, existing `layout-grid-cells` are preserved while
+  track/gap/padding/alignment updates still apply.
 
-This keeps backend-command useful for generated frame scaffolds while leaving
-cell/child placement to plugin-live or a later stable cell payload contract.
+Still limited / plugin-live:
+
+- Full interactive area editing and complex multi-shape cell area workflows.
+- Automatic free-cell assignment across arbitrary child moves (layout engine
+  `assign-cells` remains available to the live editor and future slices).
+
+CLI surface: `--layout-grid-cells row:column[:rowSpan:columnSpan][:shapeId,...]`
+entries separated by `;`.
 
 ## P17.5 Live-Only Guidance
 
@@ -1045,3 +1056,42 @@ points CLI users back to MCP `file.open`, `file.get_context`,
   and execution, export writes, audit writes, approval, file writes, workspace
   mutation, command execution, build output, package creation, process startup,
   and runtime registration disabled.
+
+
+## Components / Tokens evaluation (post-P26)
+
+Date: 2026-07-19
+
+### Inventory
+
+| Name | Status | Evidence |
+|------|--------|----------|
+| `component.create` | Name only | `ToolNames.ts` / `DesignEditingToolNames`; **not** constructed in `PenpotMcpServer` tool registry |
+| `component.instantiate` | Name only | same |
+| `tokens.list` | Name only | same |
+| `tokens.apply` | Name only | same |
+| command-runtime descriptors | Absent | No `CommandDescriptors` entries for components/tokens |
+| penpot-cli commands | Absent | No `component` / `tokens` command surface |
+| common component helpers | Present (library logic) | `common` has `generate-add-component`, `generate-instantiate-component`, `add-component` change builders, test helpers |
+| common tokens model | Present (file data) | `tokens-lib`, design-tokens feature flags, set/apply change builders |
+| headless/backend-command path | Absent | No headless request helpers for create/instantiate/list/apply |
+
+### Recommendation
+
+1. **Defer executable MCP/CLI tools** until a dedicated wave owns:
+   - library file targeting (main file vs shared library file)
+   - component root shape selection and main-instance page placement
+   - token set/theme identity and apply scope (shape attrs vs styles)
+2. **First useful slice (future):** descriptor-only command-runtime contracts for
+   `component.create` / `component.instantiate` and `tokens.list` (read-only),
+   with explicit `adapters: []` and reason codes, **without** MCP registration.
+3. **Do not** register tools that only wrap plugin-live without a backend-command
+   or library-file contract; agents need headless-capable paths for fork automation.
+4. Product priority after Phase 26 thumbnail close-out: packaging/ops first if
+   distribution is blocked; otherwise start a Phase 27 planning row for
+   components/tokens descriptors only.
+
+### Decision for tracker
+
+- Keep checklist items open as **evaluate/defer** with documented outcome above.
+- No implementation slice opened in this session beyond documentation.

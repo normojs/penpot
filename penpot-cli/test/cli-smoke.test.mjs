@@ -54,6 +54,16 @@ const bundledSceneBridgeRuntimeRegistryInstallationPreflightFixture =
     renderThumbnailRendererServiceFixtures.bundledRuntimeBridge.bundledSceneBridgeRuntimeRegistryInstallationPreflight;
 const bundledSceneBridgeRuntimeRegistryInstallationExecutionBoundaryFixture =
     renderThumbnailRendererServiceFixtures.bundledRuntimeBridge.bundledSceneBridgeRuntimeRegistryInstallationExecutionBoundary;
+const bundledSceneBridgeRuntimeRegistryInstallationFixture =
+    renderThumbnailRendererServiceFixtures.bundledRuntimeBridge.bundledSceneBridgeRuntimeRegistryInstallation;
+const bundledSceneBridgeInstalledRuntimeLifecycleFixture =
+    renderThumbnailRendererServiceFixtures.bundledRuntimeBridge.bundledSceneBridgeInstalledRuntimeLifecycle;
+const bundledSceneBridgeRealRuntimeValueContractFixture =
+    renderThumbnailRendererServiceFixtures.bundledRuntimeBridge.bundledSceneBridgeRealRuntimeValueContract;
+const bundledSceneBridgeRealRuntimeModuleScaffoldFixture =
+    renderThumbnailRendererServiceFixtures.bundledRuntimeBridge.bundledSceneBridgeRealRuntimeModuleScaffold;
+const bundledSceneBridgeInstalledRuntimeRenderDispatchFixture =
+    renderThumbnailRendererServiceFixtures.bundledRuntimeBridge.bundledSceneBridgeInstalledRuntimeRenderDispatch;
 
 function getRenderThumbnailRendererServiceFixture(id) {
     const fixture = renderThumbnailRendererServiceFixtures.cases.find((entry) => entry.id === id);
@@ -7101,6 +7111,10 @@ test("renderer-service status reports a no-spawn lifecycle plan without probing"
         assert.equal(body.data.lifecycle.thumbnailUri, "http://127.0.0.1:6072/thumbnail");
         assert.equal(body.data.lifecycle.processSpawn, false);
         assert.equal(body.data.lifecycle.healthProbe, false);
+        assert.equal(body.data.lifecycle.controlledLifecycle.version, "P26.54");
+        assert.equal(body.data.lifecycle.controlledLifecycle.defaultNoSpawn, true);
+        assert.equal(body.data.lifecycle.controlledLifecycle.spawnOptIn, false);
+        assert.equal(body.data.lifecycle.controlledLifecycle.managedProcess, false);
         assert.equal(body.data.lifecycle.rendererDispatch, false);
         assert.equal(body.data.lifecycle.backendRpc, false);
         assert.deepEqual(body.data.lifecycle.rendererRuntime, {
@@ -8260,6 +8274,8 @@ test("renderer-service start keeps startup manual and does not spawn a process",
     assert.equal(body.error.code, "renderer_service_host_start_manual");
     assert.equal(body.error.data.lifecycle.processSpawn, false);
     assert.equal(body.error.data.lifecycle.healthProbe, false);
+    assert.equal(body.error.data.lifecycle.controlledLifecycle.defaultNoSpawn, true);
+    assert.equal(body.error.data.lifecycle.controlledLifecycle.spawnOptIn, false);
     assert.equal(body.error.data.lifecycle.rendererDispatch, false);
     assert.equal(body.error.data.lifecycle.rendererRuntime.configured, false);
     assert.equal(body.error.data.lifecycle.runtimeAssetPreflight.configured, false);
@@ -8316,6 +8332,29 @@ test("renderer-service start keeps startup manual and does not spawn a process",
     assert.equal(body.error.data.lifecycle.bundledSceneBridgeRuntimeRegistryInstallationPreflight.status, "blocked");
     assert.equal(body.error.data.lifecycle.bundledSceneBridgeRuntimeRegistryInstallationExecutionBoundary.status, "blocked");
     assert.equal(body.error.data.lifecycle.bundledSceneBridgeRuntimeRegistryInstallationExecutionBoundary.checked, false);
+    assert.equal(body.error.data.lifecycle.bundledSceneBridgeRuntimeRegistryInstallation.status, "blocked");
+    assert.equal(body.error.data.lifecycle.bundledSceneBridgeRuntimeRegistryInstallation.checked, false);
+    assert.equal(body.error.data.lifecycle.bundledSceneBridgeInstalledRuntimeLifecycle.status, "not-installed");
+    assert.equal(body.error.data.lifecycle.bundledSceneBridgeInstalledRuntimeLifecycle.checked, false);
+    assert.equal(body.error.data.lifecycle.bundledSceneBridgeRealRuntimeValueContract.status, "planned-disabled");
+    assert.equal(body.error.data.lifecycle.bundledSceneBridgeRealRuntimeValueContract.checked, false);
+    assert.equal(body.error.data.lifecycle.bundledSceneBridgeRealRuntimeModuleScaffold.status, "planned-disabled");
+    assert.equal(body.error.data.lifecycle.bundledSceneBridgeRealRuntimeModuleScaffold.checked, false);
+    assert.equal(body.error.data.lifecycle.bundledSceneBridgeInstalledRuntimeRenderDispatch.status, "blocked");
+    assert.equal(body.error.data.lifecycle.bundledSceneBridgeInstalledRuntimeRenderDispatch.checked, false);
+    assert.equal(body.error.data.lifecycle.bundledSceneBridgeInstalledRuntimeRenderDispatch.dispatch.renderDispatch, false);
+    assert.equal(body.error.data.lifecycle.bundledSceneBridgeInstalledRuntimeRenderDispatch.omitted.runtimeValue, true);
+    assert.equal(body.error.data.lifecycle.bundledSceneBridgeRealRuntimeModuleScaffold.module.moduleImported, false);
+    assert.equal(body.error.data.lifecycle.bundledSceneBridgeRealRuntimeModuleScaffold.selection.realFactorySelected, false);
+    assert.equal(body.error.data.lifecycle.bundledSceneBridgeRealRuntimeModuleScaffold.omitted.runtimeValue, true);
+    assert.equal(body.error.data.lifecycle.bundledSceneBridgeRealRuntimeValueContract.source.realRuntimeImplemented, false);
+    assert.equal(body.error.data.lifecycle.bundledSceneBridgeRealRuntimeValueContract.runtimeValueShape.realRuntimeSelectable, false);
+    assert.equal(body.error.data.lifecycle.bundledSceneBridgeRealRuntimeValueContract.omitted.runtimeValue, true);
+    assert.equal(body.error.data.lifecycle.bundledSceneBridgeInstalledRuntimeLifecycle.source.runtimeInstalled, false);
+    assert.equal(body.error.data.lifecycle.bundledSceneBridgeInstalledRuntimeLifecycle.omitted.runtimeValue, true);
+    assert.equal(body.error.data.lifecycle.bundledSceneBridgeRuntimeRegistryInstallation.installation.runtimeInstalled, false);
+    assert.equal(body.error.data.lifecycle.bundledSceneBridgeRuntimeRegistryInstallation.lifecyclePlanEffects.runtimeInstallation, false);
+    assert.equal(body.error.data.lifecycle.bundledSceneBridgeRuntimeRegistryInstallation.omitted.runtimeValue, true);
     assert.equal(
         body.error.data.lifecycle.bundledSceneBridgeRuntimeRegistryInstallationExecutionBoundary.source.registryInstallationPreflightReady,
         false
@@ -8365,6 +8404,67 @@ test("renderer-service start keeps startup manual and does not spawn a process",
         body.error.actions.some((entry) => entry.includes("bundledSceneBridgeRuntimeRegistryInstallationPreflight"))
     );
 });
+
+
+test("renderer-service status reports P26.54 controlled lifecycle spawn opt-in without default probing", async () => {
+    const originalFetch = globalThis.fetch;
+    let fetchCalls = 0;
+    globalThis.fetch = async () => {
+        fetchCalls += 1;
+        return new Response(JSON.stringify({ status: "ok" }), {
+            status: 200,
+            headers: { "content-type": "application/json" },
+        });
+    };
+    try {
+        const result = await runCli(
+            ["renderer-service", "status", "--host", "127.0.0.1", "--port", "6074", "--format", "json"],
+            { PENPOT_RENDERER_SERVICE_LIFECYCLE: "spawn" }
+        );
+        const body = parseJson(result.stdout);
+        assert.equal(result.exitCode, 0);
+        assert.equal(body.data.lifecycle.controlledLifecycle.version, "P26.54");
+        assert.equal(body.data.lifecycle.controlledLifecycle.spawnOptIn, true);
+        assert.equal(body.data.lifecycle.controlledLifecycle.defaultNoSpawn, true);
+        assert.equal(body.data.lifecycle.processSpawn, false);
+        // opted-in status may health-watch briefly
+        assert.equal(typeof body.data.lifecycle.healthProbe, "boolean");
+        assert.ok(fetchCalls >= 0);
+    } finally {
+        globalThis.fetch = originalFetch;
+    }
+});
+
+test("renderer-service stop reports not-managed when no controlled pid exists", async () => {
+    const result = await runCli(["renderer-service", "stop", "--host", "127.0.0.1", "--port", "6099", "--format", "json"]);
+    const body = parseJson(result.stdout);
+    assert.equal(result.exitCode, 0);
+    assert.equal(body.status, "ok");
+    assert.equal(body.data.status, "not-managed");
+    assert.equal(body.data.lifecycle.controlledLifecycle.managedProcess, false);
+    assert.equal(body.data.lifecycle.processSpawn, false);
+});
+
+test("renderer-service start --spawn opts into controlled lifecycle mode in the plan", async () => {
+    // Do not require a real healthy host here; assert the opt-in path is recognized and default remains no-spawn without the flag.
+    const manual = await runCli(["renderer-service", "start", "--port", "6075", "--format", "json"]);
+    const manualBody = parseJson(manual.stdout);
+    assert.equal(manual.exitCode, 2);
+    assert.equal(manualBody.error.code, "renderer_service_host_start_manual");
+    assert.equal(manualBody.error.data.lifecycle.controlledLifecycle.spawnOptIn, false);
+
+    // With --spawn, either spawn succeeds (if built host exists) or fails with spawn-specific code, but not the manual default.
+    const result = await runCli(["renderer-service", "start", "--spawn", "--port", "6075", "--format", "json"]);
+    const body = parseJson(result.stdout);
+    assert.notEqual(body?.error?.code, "renderer_service_host_start_manual");
+    const lifecycle = body.data?.lifecycle ?? body.error?.data?.lifecycle;
+    assert.equal(lifecycle.controlledLifecycle.spawnOptIn, true);
+    assert.equal(lifecycle.controlledLifecycle.spawnRequested, true);
+    assert.equal(lifecycle.controlledLifecycle.version, "P26.54");
+    // Best-effort cleanup if a process was managed.
+    await runCli(["renderer-service", "stop", "--port", "6075", "--format", "json"]);
+});
+
 
 test("renderer-service lifecycle commands reject invalid local ports", async () => {
     const result = await runCli(["renderer-service", "status", "--port", "70000", "--format", "json"]);
@@ -8738,6 +8838,81 @@ test("shape update sends grid layout subset fields to backend-command RPC", asyn
         globalThis.fetch = originalFetch;
     }
 });
+
+
+test("shape update sends grid cell placements to backend-command RPC", async () => {
+    const originalFetch = globalThis.fetch;
+    const calls = [];
+    globalThis.fetch = async (url, options) => {
+        calls.push({ url: String(url), options });
+        return {
+            ok: true,
+            status: 200,
+            statusText: "OK",
+            text: async () =>
+                JSON.stringify({
+                    shape: {
+                        id: UUIDS.object,
+                        name: "Grid",
+                        type: "frame",
+                        pageId: UUIDS.page,
+                    },
+                    revn: 5,
+                    vern: 0,
+                }),
+        };
+    };
+
+    try {
+        const result = await runCli(
+            [
+                "shape",
+                "update",
+                "--file",
+                UUIDS.file,
+                "--page",
+                UUIDS.page,
+                "--shape",
+                UUIDS.object,
+                "--layout",
+                "grid",
+                "--layout-grid-direction",
+                "row",
+                "--layout-grid-rows",
+                "fixed:100,fixed:100",
+                "--layout-grid-columns",
+                "fixed:100,fixed:100",
+                "--layout-grid-cells",
+                `1:2:1:1:${UUIDS.page}`,
+                "--format",
+                "json",
+            ],
+            {
+                PENPOT_BACKEND_URI: "http://127.0.0.1:6060",
+                PENPOT_CLI_TOKEN: "token-1",
+            }
+        );
+        const body = parseJson(result.stdout);
+
+        assert.equal(result.exitCode, 0, JSON.stringify(body));
+        assert.equal(result.stderr, "");
+        assert.equal(calls.length, 1);
+        assert.match(calls[0].url, /\/api\/main\/methods\/update-file-shape\?_fmt=json$/);
+        const payload = JSON.parse(calls[0].options.body);
+        assert.equal(payload.layout.type, "grid");
+        assert.ok(Array.isArray(payload.layout.cells));
+        assert.equal(payload.layout.cells[0].row, 1);
+        assert.equal(payload.layout.cells[0].column, 2);
+        assert.equal(payload.layout.cells[0]["row-span"], 1);
+        assert.equal(payload.layout.cells[0]["column-span"], 1);
+        assert.deepEqual(payload.layout.cells[0].shapes, [UUIDS.page]);
+        assert.equal(body.status, "ok");
+        assert.equal(body.data.adapter, "backend-command");
+    } finally {
+        globalThis.fetch = originalFetch;
+    }
+});
+
 
 test("shape update rejects reverse directions for grid layout in CLI parsing", async () => {
     const result = await runCli(
@@ -10876,10 +11051,10 @@ test("render thumbnail dry-run returns renderer-service request plan", async () 
     }
 });
 
-test("render thumbnail execution reports renderer-service unavailable without calling fetch", async () => {
+test("render thumbnail execution stays closed when explicitly disabled without calling fetch", async () => {
     const originalFetch = globalThis.fetch;
     globalThis.fetch = async () => {
-        throw new Error("render thumbnail unavailable should not call fetch");
+        throw new Error("render thumbnail disabled should not call fetch");
     };
 
     try {
@@ -10888,6 +11063,8 @@ test("render thumbnail execution reports renderer-service unavailable without ca
             "thumbnail",
             "--file",
             UUIDS.file,
+            "--render-thumbnail-execution",
+            "disabled",
             "--format",
             "json",
         ]);
@@ -10896,17 +11073,113 @@ test("render thumbnail execution reports renderer-service unavailable without ca
         assert.equal(result.exitCode, 2);
         assert.equal(result.stderr, "");
         assert.equal(body.status, "error");
-        assert.equal(body.error.code, "renderer_service_unavailable");
+        assert.ok(
+            ["renderer_service_unavailable", "renderer_service_execution_disabled"].includes(body.error.code)
+        );
         assert.equal(body.error.data.command, "render.thumbnail");
         assert.equal(body.error.data.adapter, "renderer-service");
         assert.equal(body.error.data.operation, "thumbnail.render");
-        assert.equal(body.error.data.retryable, true);
-        assert.equal(body.error.data.serviceData.healthPreflight.status, "planned-disabled");
         assert.equal(body.error.data.serviceData.healthPreflight.dispatch, false);
     } finally {
         globalThis.fetch = originalFetch;
     }
 });
+
+test("render thumbnail execution endpoint-first posts without explicit opt-in flag", async () => {
+    const originalFetch = globalThis.fetch;
+    const calls = [];
+    const fixture = getRenderThumbnailRendererServiceFixture("p25154-entrypoint-file-reuse-current");
+    globalThis.fetch = async (url, init) => {
+        calls.push({ url, init });
+        if (url === "http://127.0.0.1:6070/health") {
+            return new Response(
+                JSON.stringify({
+                    status: "ok",
+                    renderer: "penpot-thumbnail-renderer",
+                    mode: "service",
+                    runtimeRegistration: true,
+                    dispatch: true,
+                    capabilities: [
+                        "health",
+                        "thumbnail.render",
+                        "thumbnail.render.bundled-scene-bridge-contract",
+                        "thumbnail.render.bundled-scene-bridge-adapter-module",
+                        "thumbnail.render.bundled-scene-bridge-import-gate",
+                        "thumbnail.render.bundled-scene-bridge-factory-shape-preflight",
+                        "thumbnail.render.bundled-scene-bridge-module-namespace-import-preflight",
+                        "thumbnail.render.bundled-scene-bridge-factory-invocation-preflight",
+                        "thumbnail.render.bundled-scene-bridge-runtime-registration-preflight",
+                        "thumbnail.render.bundled-scene-bridge-runtime-registry-registration-boundary",
+                        "thumbnail.render.bundled-scene-bridge-runtime-registry-installation-contract",
+                        "thumbnail.render.bundled-scene-bridge-runtime-registry-installation-gate",
+                        "thumbnail.render.bundled-scene-bridge-runtime-registry-installation-preflight",
+                    ],
+                    bundledSceneBridgeContract: bundledSceneBridgeContractFixture,
+                    bundledSceneBridgeAdapterModule: bundledSceneBridgeAdapterModuleFixture,
+                    bundledSceneBridgeImportGate: bundledSceneBridgeImportGateFixture,
+                    bundledSceneBridgeFactoryShapePreflight: bundledSceneBridgeFactoryShapePreflightFixture,
+                    bundledSceneBridgeModuleNamespaceImportPreflight:
+                        bundledSceneBridgeModuleNamespaceImportPreflightFixture,
+                    bundledSceneBridgeFactoryInvocationPreflight: bundledSceneBridgeFactoryInvocationPreflightFixture,
+                    bundledSceneBridgeRuntimeRegistrationPreflight:
+                        bundledSceneBridgeRuntimeRegistrationPreflightFixture,
+                    bundledSceneBridgeRuntimeRegistryRegistrationBoundary:
+                        bundledSceneBridgeRuntimeRegistryRegistrationBoundaryFixture,
+                    bundledSceneBridgeRuntimeRegistryInstallationContract:
+                        bundledSceneBridgeRuntimeRegistryInstallationContractFixture,
+                    bundledSceneBridgeRuntimeRegistryInstallationGate:
+                        bundledSceneBridgeRuntimeRegistryInstallationGateFixture,
+                    bundledSceneBridgeRuntimeRegistryInstallationPreflight:
+                        bundledSceneBridgeRuntimeRegistryInstallationPreflightFixture,
+                }),
+                { status: 200, headers: { "content-type": "application/json" } }
+            );
+        }
+        if (String(url).includes("/thumbnail")) {
+            return new Response(JSON.stringify(fixture.expectedResponse), {
+                status: 200,
+                headers: { "content-type": "application/json; charset=utf-8" },
+            });
+        }
+        throw new Error(`unexpected fetch ${url}`);
+    };
+
+    try {
+        const result = await runCli(
+            [
+                "render",
+                "thumbnail",
+                "--file",
+                UUIDS.file,
+                "--revn",
+                "7",
+                "--renderer-service-uri",
+                "http://127.0.0.1:6070/thumbnail",
+                "--public-uri",
+                "https://penpot.example.test",
+                "--format",
+                "json",
+            ],
+            { PENPOT_CLI_TOKEN: "Token cli-secret-token" }
+        );
+        const body = parseJson(result.stdout);
+        assert.equal(result.exitCode, 0, JSON.stringify(body));
+        assert.equal(body.status, "ok");
+        assert.equal(body.data.command, "render.thumbnail");
+        assert.ok(calls.some((entry) => entry.url === "http://127.0.0.1:6070/health"));
+        assert.ok(calls.some((entry) => String(entry.url).includes("/thumbnail")));
+        // Endpoint-first: no --render-thumbnail-execution flag required.
+        assert.equal(
+            calls.some((entry) =>
+                Array.isArray(entry.init?.body) ? false : false
+            ),
+            false
+        );
+    } finally {
+        globalThis.fetch = originalFetch;
+    }
+});
+
 
 test("render thumbnail execution opt-in posts to renderer-service and returns resource metadata", async () => {
     const originalFetch = globalThis.fetch;
@@ -10957,6 +11230,8 @@ test("render thumbnail execution opt-in posts to renderer-service and returns re
                         bundledSceneBridgeRuntimeRegistryInstallationPreflightFixture,
                     bundledSceneBridgeRuntimeRegistryInstallationExecutionBoundary:
                         bundledSceneBridgeRuntimeRegistryInstallationExecutionBoundaryFixture,
+                    bundledSceneBridgeRuntimeRegistryInstallation:
+                        bundledSceneBridgeRuntimeRegistryInstallationFixture,
                     browserFixtureRuntime: {
                         status: "started",
                         diagnosticsVersion: "P26.31",

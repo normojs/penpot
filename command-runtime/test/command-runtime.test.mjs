@@ -10999,6 +10999,8 @@ test("render.thumbnail renderer-service plan exposes dry-run client request whil
     assert.equal(plan.executionGate.status, "open");
     assert.equal(plan.executionGate.dispatch, true);
     assert.equal(plan.executionGate.optIn.env, "PENPOT_RENDER_THUMBNAIL_EXECUTION");
+    assert.equal(plan.executionGate.optIn.required, false);
+    assert.equal(plan.executionGate.operatorFriction.endpointFirst, true);
     assert.equal(plan.executionGate.optIn.configured, true);
     assert.equal(plan.executionGate.blockers.includes("explicit-opt-in"), false);
     assert.deepEqual(plan.executionGate.blockers, []);
@@ -12924,6 +12926,36 @@ test("render.thumbnail renderer-service opt-in configuration resolves sources wi
     assert.equal(invalid.resolution.valid, false);
     assert.match(invalid.resolution.diagnostics, /unsupported opt-in value/);
 });
+
+
+test("render.thumbnail P26.53 endpoint-first opens gate without explicit opt-in and honors disable", () => {
+    const openGate = createRenderThumbnailRendererServiceExecutionGate({
+        endpoint: "http://127.0.0.1:6070/thumbnail",
+        executionGate: {},
+    });
+    assert.equal(openGate.status, "open");
+    assert.equal(openGate.dispatch, true);
+    assert.equal(openGate.optIn.required, false);
+    assert.equal(openGate.operatorFriction.endpointFirst, true);
+    assert.equal(openGate.blockers.includes("explicit-opt-in"), false);
+    assert.deepEqual(openGate.blockers, []);
+
+    const disabledGate = createRenderThumbnailRendererServiceExecutionGate({
+        endpoint: "http://127.0.0.1:6070/thumbnail",
+        executionGate: { optInValue: "disabled" },
+    });
+    assert.equal(disabledGate.status, "closed");
+    assert.equal(disabledGate.dispatch, false);
+    assert.equal(disabledGate.optIn.explicitlyDisabled, true);
+    assert.ok(disabledGate.blockers.includes("explicit-disable"));
+
+    const missingEndpoint = createRenderThumbnailRendererServiceExecutionGate({
+        executionGate: { optInValue: "renderer-service" },
+    });
+    assert.equal(missingEndpoint.status, "closed");
+    assert.ok(missingEndpoint.blockers.includes("renderer-service-endpoint"));
+});
+
 
 test("render.thumbnail renderer-service health preflight and client harness stay disabled", () => {
     const healthPreflight = createRenderThumbnailRendererServiceHealthPreflight({
@@ -21699,11 +21731,14 @@ test("render.thumbnail renderer-service client request scaffold adds MCP audit h
     const plan = createRenderThumbnailRendererServicePlan({
         fileId: "file-1",
         endpoint: "http://127.0.0.1:6070/thumbnail",
+        // Force closed gate so this remains a no-dispatch header scaffold check.
+        executionGate: { optInValue: "disabled" },
     });
     const request = createRenderThumbnailRendererServiceClientRequest(plan, {
         entrypoint: "mcp",
         mcpToolName: "render.thumbnail",
         mcpSessionId: "session-1",
+        executionGate: plan.executionGate,
     });
 
     assert.equal(request.status, "scaffolded");

@@ -354,6 +354,17 @@ export interface ShapeLayout {
     padding?: number;
     rows?: Array<{ type: "percent" | "flex" | "auto" | "fixed"; value?: number }>;
     columns?: Array<{ type: "percent" | "flex" | "auto" | "fixed"; value?: number }>;
+    cells?: Array<{
+        row: number;
+        column: number;
+        rowSpan?: number;
+        columnSpan?: number;
+        shapes?: string[];
+        position?: "auto" | "manual" | "area";
+        alignSelf?: "auto" | "start" | "center" | "end" | "stretch";
+        justifySelf?: "auto" | "start" | "center" | "end" | "stretch";
+        areaName?: string;
+    }>;
 }
 
 export type ShapeTaskAction = "createFrame" | "createRect" | "createText" | "createImage" | "update" | "delete";

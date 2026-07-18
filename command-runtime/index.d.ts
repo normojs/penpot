@@ -1476,15 +1476,24 @@ export interface RenderThumbnailRendererServiceOptInConfiguration {
 }
 
 export interface RenderThumbnailRendererServiceExecutionGate {
-    status: "closed";
-    dispatch: false;
+    status: "open" | "closed";
+    dispatch: boolean;
     reason: string;
+    operatorFriction?: {
+        version: "P26.53";
+        endpointFirst: boolean;
+        explicitOptInRequired: boolean;
+        explicitDisableSupported: boolean;
+        authModel: "caller-session";
+    };
     optIn: {
-        required: true;
+        required: boolean;
         env: "PENPOT_RENDER_THUMBNAIL_EXECUTION";
         expectedValue: "renderer-service";
+        disableValues?: string[];
         configuredValue: string | null;
         configured: boolean;
+        explicitlyDisabled?: boolean;
     };
     requiredConfig: Array<
         | {
@@ -1503,9 +1512,10 @@ export interface RenderThumbnailRendererServiceExecutionGate {
     readiness: {
         serviceImplemented: boolean;
         integrationTestsReady: boolean;
-        runtimeExecutionRegistered: false;
+        runtimeExecutionRegistered: boolean;
         endpointConfigured: boolean;
         explicitOptInConfigured: boolean;
+        explicitDisableConfigured?: boolean;
         requiredCapabilities: Array<{
             name: string;
             satisfied: boolean;
@@ -3493,6 +3503,416 @@ export interface RenderThumbnailRendererServiceBundledSceneBridgeRuntimeRegistry
     execution: null;
 }
 
+
+export interface RenderThumbnailRendererServiceBundledSceneBridgeRuntimeRegistryInstallationDiagnostic {
+    status: "not-reported" | "blocked" | "executed" | "invalid";
+    installationVersion: "P26.46" | null;
+    checked: boolean;
+    owner: "renderer-service" | null;
+    mode: "guarded-runtime-registry-installation-execution" | null;
+    source: {
+        runtimeRegistrationPreflightVersion: "P26.40" | null;
+        registryRegistrationBoundaryVersion: "P26.41" | null;
+        registryInstallationContractVersion: "P26.42" | null;
+        registryInstallationGateVersion: "P26.43" | null;
+        registryInstallationPreflightVersion: "P26.44" | null;
+        registryInstallationExecutionBoundaryVersion: "P26.45" | null;
+        registryInstallationVersion: "P26.46" | null;
+        registryInstallationExecutionBoundaryReady: boolean;
+        registryInstallationExecutionBoundaryStatus: string | null;
+        registryInstallationExecutionBoundaryReadiness: string | null;
+        reviewedGateOpen: boolean;
+        readiness: string | null;
+    };
+    installation: {
+        registryInstallationExecutionBoundaryReadyRequired: boolean;
+        duplicateLookupRequired: boolean;
+        runtimeValueCreationRequired: boolean;
+        registryInstallationRequired: boolean;
+        closeHookRegistrationRequired: boolean;
+        rollbackHookRequired: boolean;
+        noDispatchRequired: boolean;
+        installationAttemptAllowed: boolean;
+        runtimeInstallationEnabled: boolean;
+        registryLookupAttempted: boolean;
+        registryWriteAttempted: boolean;
+        runtimeValueCreated: boolean;
+        runtimeInstallationAttempted: boolean;
+        runtimeInstalled: boolean;
+        runtimeRegistered: boolean;
+        runtimeRegistration: boolean;
+        runtimeExecutionRegistered: boolean;
+        closeHookRegistered: boolean;
+        rollbackHookRegistered: boolean;
+        duplicateRollbackAttempted: boolean;
+        renderDispatch: boolean;
+        browserProcessStarted: boolean;
+        runtimeValuesIncluded: boolean;
+        registryValuesIncluded: boolean;
+    };
+    runtimeValue: {
+        runtimeId: string | null;
+        targetRegistry: string | null;
+        requiredMethods: string[];
+        optionalMethods: string[];
+        requiredInstallationInputs: string[];
+        runtimeValueCreationPlanned: boolean;
+        runtimeValueCreated: boolean;
+        runtimeValueInstalled: boolean;
+        runtimeRegistered: boolean;
+        runtimeExecutionRegistered: boolean;
+        renderDispatchEnabledAfterInstallation: boolean;
+        valuesIncluded: boolean;
+    };
+    registrySlot: {
+        runtimeId: string | null;
+        targetRegistry: string | null;
+        slotOwner: string | null;
+        slotStatus: string | null;
+        runtimeInstalled: boolean;
+        runtimeAvailableForDispatch: boolean;
+        renderDispatchEnabled: boolean;
+        valuesIncluded: boolean;
+    };
+    duplicateHandling: {
+        duplicateDetectionRequired: boolean;
+        existingRuntimeLookupRequired: boolean;
+        duplicateRegistrationPolicy: string | null;
+        replacementPolicy: string | null;
+        rollbackRequiredOnDuplicate: boolean;
+        rollbackHookRequired: boolean;
+        cleanupOnInstallationFailure: boolean;
+        cleanupOnServiceStop: boolean;
+        existingRuntimeLookupAttempted: boolean;
+        existingRuntimeFound: boolean;
+        duplicateDetected: boolean;
+        rollbackPrepared: boolean;
+        rollbackAttempted: boolean;
+        cleanupAttempted: boolean;
+        valuesIncluded: boolean;
+    };
+    lifecycleOwnership: {
+        lifecycleOwner: string | null;
+        registryOwner: string | null;
+        closeHookOwner: string | null;
+        rollbackOwner: string | null;
+        runtimeId: string | null;
+        targetRegistry: string | null;
+        lifecycleScope: string | null;
+        noDispatchLifecycle: boolean;
+        lifecycleOwnershipVerified: boolean;
+        closeHookRegistered: boolean;
+        rollbackHookRegistered: boolean;
+        runtimeValueOwned: boolean;
+        registrySlotOwned: boolean;
+        valuesIncluded: boolean;
+    };
+    refusalDiagnostics: {
+        refusalRequired: boolean;
+        refusalReason: string | null;
+        invalidBoundaryMetadata: boolean;
+        registryLookupRefused: boolean;
+        registryWriteRefused: boolean;
+        runtimeValueCreationRefused: boolean;
+        runtimeInstallationRefused: boolean;
+        closeHookRegistrationRefused: boolean;
+        duplicateRollbackRefused: boolean;
+        renderDispatchRefused: boolean;
+        valuesIncluded: boolean;
+    };
+    installationOutcomeTaxonomy: Array<{
+        code: string;
+        stage: string | null;
+        severity: string | null;
+        retryable: boolean;
+        dispatch: boolean;
+    }>;
+    diagnostics: Array<{
+        code: string;
+        severity: string | null;
+        field: string | null;
+        env: string | null;
+        valueRead: boolean;
+        valuesIncluded: boolean;
+        message: string | null;
+        nextActions: string[];
+    }>;
+    diagnosticCodes: string[];
+    nextActions: string[];
+    checks: Array<{
+        id: string;
+        status: string;
+        required: boolean;
+        dispatch: boolean;
+    }>;
+    sideEffects: Record<string, boolean>;
+    redaction: Record<string, boolean>;
+    omitted: Record<string, boolean>;
+    execution: Record<string, unknown> | null;
+    unsafeMetadata: {
+        code: string;
+        message: string;
+        nextActions: string[];
+    } | null;
+}
+
+
+export interface RenderThumbnailRendererServiceBundledSceneBridgeInstalledRuntimeLifecycleDiagnostic {
+    status: "not-reported" | "not-installed" | "installed" | "invalid";
+    diagnosticsVersion: "P26.47" | null;
+    checked: boolean;
+    owner: "renderer-service" | null;
+    mode: "installed-runtime-lifecycle-diagnostics" | null;
+    source: {
+        registryInstallationVersion: "P26.46" | null;
+        installedRuntimeLifecycleVersion: "P26.47" | null;
+        registryInstallationStatus: string | null;
+        registryInstallationReady: boolean;
+        runtimeInstalled: boolean;
+        readiness: string | null;
+    };
+    registrySlot: {
+        runtimeId: string | null;
+        targetRegistry: string | null;
+        slotOwner: string | null;
+        slotStatus: string | null;
+        slotOccupied: boolean;
+        runtimeInstalled: boolean;
+        runtimeAvailableForDispatch: boolean;
+        renderDispatchEnabled: boolean;
+        valuesIncluded: boolean;
+    };
+    lifecycleHooks: {
+        closeHookRegistered: boolean;
+        rollbackHookRegistered: boolean;
+        closeHookCallable: boolean;
+        valuesIncluded: boolean;
+    };
+    duplicateReplacementPolicy: {
+        duplicateRegistrationPolicy: string | null;
+        replacementPolicy: string | null;
+        existingRuntimeFound: boolean;
+        duplicateDetected: boolean;
+        replacementSupported: boolean;
+        replacementAttempted: boolean;
+        valuesIncluded: boolean;
+    };
+    rollbackReadiness: {
+        rollbackReady: boolean;
+        rollbackHookRegistered: boolean;
+        cleanupOnServiceStop: boolean;
+        cleanupOnInstallationFailure: boolean;
+        valuesIncluded: boolean;
+    };
+    runtimeAvailability: {
+        status: string | null;
+        runtimeInstalled: boolean;
+        runtimeValueAvailable: boolean;
+        runtimeAvailableForDispatch: boolean;
+        renderDispatchEnabled: boolean;
+        valuesIncluded: boolean;
+    };
+    refusalDiagnostics: {
+        refusalRequired: boolean;
+        refusalReason: string | null;
+        renderDispatchRefused: boolean;
+        runtimeValueExposureRefused: boolean;
+        valuesIncluded: boolean;
+    };
+    diagnosticCodes: string[];
+    nextActions: string[];
+    checks: Array<{ id: string; status: string; required: boolean; dispatch: boolean }>;
+    sideEffects: Record<string, boolean>;
+    redaction: Record<string, boolean>;
+    omitted: Record<string, boolean>;
+    execution: Record<string, unknown> | null;
+    unsafeMetadata: { code: string; message: string; nextActions: string[] } | null;
+}
+
+
+export interface RenderThumbnailRendererServiceBundledSceneBridgeRealRuntimeValueContractDiagnostic {
+    status: "not-reported" | "planned-disabled" | "invalid";
+    contractVersion: "P26.48" | null;
+    checked: boolean;
+    owner: "renderer-service" | null;
+    mode: "real-runtime-value-contract-plan" | null;
+    source: {
+        registryInstallationVersion: "P26.46" | null;
+        installedRuntimeLifecycleVersion: "P26.47" | null;
+        realRuntimeValueContractVersion: "P26.48" | null;
+        stubRuntimeInstalledAllowed: boolean;
+        realRuntimeImplemented: boolean;
+        readiness: string | null;
+    };
+    ownership: {
+        activeEditorTabRequired: boolean;
+        processLocalRegistryRequired: boolean;
+        valuesIncluded: boolean;
+    };
+    runtimeValueShape: {
+        runtimeId: string | null;
+        targetRegistry: string | null;
+        primaryRuntime: string | null;
+        fallbackRuntime: string | null;
+        stubRuntimeSelectable: boolean;
+        realRuntimeSelectable: boolean;
+        valuesIncluded: boolean;
+    };
+    browserPageHandoff: {
+        browserProcessStarted: boolean;
+        pageCreated: boolean;
+        pageValuesIncluded: boolean;
+        playwrightPathIncluded: boolean;
+    };
+    diagnosticCodes: string[];
+    nextActions: string[];
+    checks: Array<{ id: string; status: string; required: boolean; dispatch: boolean }>;
+    sideEffects: Record<string, boolean>;
+    redaction: Record<string, boolean>;
+    omitted: Record<string, boolean>;
+    execution: null;
+    unsafeMetadata: { code: string; message: string; nextActions: string[] } | null;
+}
+
+
+export interface RenderThumbnailRendererServiceBundledSceneBridgeRealRuntimeModuleScaffoldDiagnostic {
+    status: "not-reported" | "planned-disabled" | "configured-disabled" | "invalid";
+    scaffoldVersion: "P26.49" | null;
+    checked: boolean;
+    owner: "renderer-service" | null;
+    mode: "gated-real-runtime-module-scaffold" | null;
+    source: {
+        realRuntimeValueContractVersion: "P26.48" | null;
+        realRuntimeModuleScaffoldVersion: "P26.49" | null;
+        realRuntimeImplemented: boolean;
+        readiness: string | null;
+    };
+    module: {
+        module: string | null;
+        exportName: string | null;
+        moduleDefined: boolean;
+        moduleImported: boolean;
+        factoryInvoked: boolean;
+        valuesIncluded: boolean;
+    };
+    gate: {
+        configured: boolean;
+        accepted: boolean;
+        reviewedScaffoldOpen: boolean;
+        realRuntimeSelectable: boolean;
+        realRuntimeSelected: boolean;
+        valuesIncluded: boolean;
+    };
+    selection: {
+        stubFactoryDefault: boolean;
+        realFactorySelectable: boolean;
+        realFactorySelected: boolean;
+        replacesStubInstallation: boolean;
+        valuesIncluded: boolean;
+    };
+    diagnosticCodes: string[];
+    nextActions: string[];
+    checks: Array<{ id: string; status: string; required: boolean; dispatch: boolean }>;
+    sideEffects: Record<string, boolean>;
+    redaction: Record<string, boolean>;
+    omitted: Record<string, boolean>;
+    execution: null;
+    unsafeMetadata: { code: string; message: string; nextActions: string[] } | null;
+}
+
+
+export interface RenderThumbnailRendererServiceBundledSceneBridgeInstalledRuntimeRenderDispatchDiagnostic {
+    status: "not-reported" | "blocked" | "ready" | "dispatched" | "invalid";
+    dispatchVersion: "P26.50" | null;
+    checked: boolean;
+    owner: "renderer-service" | null;
+    mode: "gated-installed-runtime-render-dispatch" | null;
+    source: {
+        runtimeInstalled: boolean;
+        renderDispatchGateOpen: boolean;
+        readiness: string | null;
+    };
+    gate: {
+        configured: boolean;
+        accepted: boolean;
+        reviewedDispatchOpen: boolean;
+        valuesIncluded: boolean;
+    };
+    dispatch: {
+        registryRuntimeSelectable: boolean;
+        registryRuntimeSelected: boolean;
+        renderThumbnailCalled: boolean;
+        renderDispatch: boolean;
+        pngMappedToResourcePipeline: boolean;
+        valuesIncluded: boolean;
+    };
+    diagnosticCodes: string[];
+    nextActions: string[];
+    sideEffects: Record<string, boolean>;
+    redaction: Record<string, boolean>;
+    omitted: Record<string, boolean>;
+    execution: Record<string, unknown> | null;
+    unsafeMetadata: { code: string; message: string; nextActions: string[] } | null;
+}
+
+
+export interface RenderThumbnailRendererServiceRuntimeAssetMaterializationExecutionDiagnostic {
+    status: "not-reported" | "blocked" | "executed" | "invalid";
+    executionVersion: "P26.51" | null;
+    checked: boolean;
+    owner: "renderer-service" | null;
+    mode: "approved-runtime-asset-cache-materialization" | null;
+    source: {
+        preflightReady: boolean;
+        dryRunReady: boolean;
+        approvalReady: boolean;
+        readiness: string | null;
+    };
+    approval: { approvalGranted: boolean; valuesIncluded: boolean };
+    materialization: {
+        attempted: boolean;
+        succeeded: boolean;
+        assetsCopied: number;
+        assetsVerified: number;
+        assetsRolledBack: number;
+        localFileWrites: boolean;
+        valuesIncluded: boolean;
+    };
+    sideEffects: Record<string, boolean>;
+    redaction: Record<string, boolean>;
+    omitted: Record<string, boolean>;
+    execution: Record<string, unknown> | null;
+    unsafeMetadata: { code: string; message: string; nextActions: string[] } | null;
+}
+
+
+export interface RenderThumbnailRendererServiceBundledSceneBridgeRealScenePngDiagnostic {
+    status: "not-reported" | "blocked" | "produced" | "invalid";
+    productionVersion: "P26.52" | null;
+    checked: boolean;
+    owner: "renderer-service" | null;
+    mode: "minimal-real-scene-png-production" | null;
+    source: {
+        realRuntimeInstalled: boolean;
+        assetsMaterialized: boolean;
+        sourceDataAvailable: boolean;
+        renderDispatched: boolean;
+        readiness: string | null;
+    };
+    production: {
+        multiTargetMatrixEnabled: boolean;
+        realRuntimeSelected: boolean;
+        nonEmptyPngProduced: boolean;
+        persisted: boolean;
+        valuesIncluded: boolean;
+    };
+    sideEffects: Record<string, boolean>;
+    redaction: Record<string, boolean>;
+    omitted: Record<string, boolean>;
+    execution: Record<string, unknown> | null;
+    unsafeMetadata: { code: string; message: string; nextActions: string[] } | null;
+}
+
 export interface RenderThumbnailRendererServiceBrowserFixtureRuntimeDiagnostic {
     status: "not-reported" | "not-configured" | "started" | "closed" | "invalid";
     diagnosticsVersion: "P26.31";
@@ -3595,6 +4015,13 @@ export interface RenderThumbnailRendererServiceHealthPreflight {
     bundledSceneBridgeRuntimeRegistryInstallationGate: RenderThumbnailRendererServiceBundledSceneBridgeRuntimeRegistryInstallationGateDiagnostic;
     bundledSceneBridgeRuntimeRegistryInstallationPreflight: RenderThumbnailRendererServiceBundledSceneBridgeRuntimeRegistryInstallationPreflightDiagnostic;
     bundledSceneBridgeRuntimeRegistryInstallationExecutionBoundary: RenderThumbnailRendererServiceBundledSceneBridgeRuntimeRegistryInstallationExecutionBoundaryDiagnostic;
+    bundledSceneBridgeRuntimeRegistryInstallation: RenderThumbnailRendererServiceBundledSceneBridgeRuntimeRegistryInstallationDiagnostic;
+    bundledSceneBridgeInstalledRuntimeLifecycle: RenderThumbnailRendererServiceBundledSceneBridgeInstalledRuntimeLifecycleDiagnostic;
+    bundledSceneBridgeRealRuntimeValueContract: RenderThumbnailRendererServiceBundledSceneBridgeRealRuntimeValueContractDiagnostic;
+    bundledSceneBridgeRealRuntimeModuleScaffold: RenderThumbnailRendererServiceBundledSceneBridgeRealRuntimeModuleScaffoldDiagnostic;
+    bundledSceneBridgeInstalledRuntimeRenderDispatch: RenderThumbnailRendererServiceBundledSceneBridgeInstalledRuntimeRenderDispatchDiagnostic;
+    runtimeAssetMaterializationExecution: RenderThumbnailRendererServiceRuntimeAssetMaterializationExecutionDiagnostic;
+    bundledSceneBridgeRealScenePng: RenderThumbnailRendererServiceBundledSceneBridgeRealScenePngDiagnostic;
     browserFixtureRuntime: RenderThumbnailRendererServiceBrowserFixtureRuntimeDiagnostic;
     response?: {
         status: number | null;

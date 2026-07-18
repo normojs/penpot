@@ -724,6 +724,131 @@
     (merge grid-layout-defaults (select-keys shape layout-container-attrs))
     grid-layout-defaults))
 
+(defn- layout-cells
+  "Normalize optional headless grid cell placements.
+
+  Payload (vector of maps):
+  - row / column: 1-indexed safe ints
+  - row-span / column-span (optional, default 1)
+  - shapes (optional vector of child shape uuids)
+  - position (optional :auto|:manual|:area)
+  - align-self / justify-self (optional)
+  - id / area-name (optional)
+
+  When omitted, existing cells are preserved. When provided as [], cells are
+  cleared. When provided as a vector, only those placements are set (map keyed by
+  cell id). Full layout-engine auto-assignment remains a later/with-objects slice."
+  [layout default]
+  (let [value (apply layout-param layout [:cells :grid-cells :gridCells :layout-grid-cells :layoutGridCells])]
+    (if (= missing-layout-value value)
+      default
+      (cond
+        (and (map? value) (empty? value))
+        {}
+
+        (map? value)
+        ;; already id->cell map; shallow-validate values
+        (do
+          (doseq [[cell-id cell] value]
+            (when-not (uuid? cell-id)
+              (ex/raise :type :validation
+                        :code :unsupported-grid-cell-id
+                        :hint "Headless grid cell map keys must be uuids."
+                        :value cell-id))
+            (when-not (map? cell)
+              (ex/raise :type :validation
+                        :code :unsupported-grid-cell
+                        :hint "Headless grid cells must be maps."
+                        :value cell)))
+          value)
+
+        (vector? value)
+        (let [cells
+              (mapv
+               (fn [cell]
+                 (when-not (map? cell)
+                   (ex/raise :type :validation
+                             :code :unsupported-grid-cell
+                             :hint "Headless grid cells must be maps."
+                             :value cell))
+                 (let [row    (or (get cell :row) (get cell :row-index) (get cell :rowIndex))
+                       column (or (get cell :column) (get cell :column-index) (get cell :columnIndex))
+                       row-span (or (get cell :row-span) (get cell :rowSpan) 1)
+                       column-span (or (get cell :column-span) (get cell :columnSpan) 1)
+                       shapes (or (get cell :shapes) (get cell :shape-ids) (get cell :shapeIds) [])
+                       position (or (get cell :position) :manual)
+                       align-self (get cell :align-self (get cell :alignSelf :auto))
+                       justify-self (get cell :justify-self (get cell :justifySelf :auto))
+                       cell-id (or (get cell :id) (uuid/next))
+                       area-name (or (get cell :area-name) (get cell :areaName))]
+                   (when-not (int? row)
+                     (ex/raise :type :validation
+                               :code :unsupported-grid-cell-row
+                               :hint "Headless grid cells require an integer :row (1-indexed)."
+                               :value row))
+                   (when-not (int? column)
+                     (ex/raise :type :validation
+                               :code :unsupported-grid-cell-column
+                               :hint "Headless grid cells require an integer :column (1-indexed)."
+                               :value column))
+                   (when-not (and (int? row-span) (pos? row-span))
+                     (ex/raise :type :validation
+                               :code :unsupported-grid-cell-row-span
+                               :hint "Headless grid cell :row-span must be a positive integer."
+                               :value row-span))
+                   (when-not (and (int? column-span) (pos? column-span))
+                     (ex/raise :type :validation
+                               :code :unsupported-grid-cell-column-span
+                               :hint "Headless grid cell :column-span must be a positive integer."
+                               :value column-span))
+                   (when-not (vector? shapes)
+                     (ex/raise :type :validation
+                               :code :unsupported-grid-cell-shapes
+                               :hint "Headless grid cell :shapes must be a vector of shape uuids."
+                               :value shapes))
+                   (doseq [shape-id shapes]
+                     (when-not (uuid? shape-id)
+                       (ex/raise :type :validation
+                                 :code :unsupported-grid-cell-shape-id
+                                 :hint "Headless grid cell shapes must be uuids."
+                                 :value shape-id)))
+                   (let [position (normalize-layout-keyword position)
+                         align-self (normalize-layout-keyword align-self)
+                         justify-self (normalize-layout-keyword justify-self)]
+                     (when-not (contains? ctsl/grid-position-types position)
+                       (ex/raise :type :validation
+                                 :code :unsupported-grid-cell-position
+                                 :hint "Unsupported grid cell position."
+                                 :value position))
+                     (when-not (contains? ctsl/grid-cell-align-self-types align-self)
+                       (ex/raise :type :validation
+                                 :code :unsupported-grid-cell-align-self
+                                 :hint "Unsupported grid cell align-self."
+                                 :value align-self))
+                     (when-not (contains? ctsl/grid-cell-justify-self-types justify-self)
+                       (ex/raise :type :validation
+                                 :code :unsupported-grid-cell-justify-self
+                                 :hint "Unsupported grid cell justify-self."
+                                 :value justify-self))
+                     (cond-> {:id cell-id
+                              :row row
+                              :row-span row-span
+                              :column column
+                              :column-span column-span
+                              :position position
+                              :align-self align-self
+                              :justify-self justify-self
+                              :shapes shapes}
+                       (some? area-name) (assoc :area-name area-name)))))
+               value)]
+          (into {} (map (juxt :id identity) cells)))
+
+        :else
+        (ex/raise :type :validation
+                  :code :unsupported-grid-cells
+                  :hint "Headless grid cells must be a vector of placements or an id->cell map."
+                  :value value)))))
+
 (defn- apply-grid-layout-update
   [shape layout]
   (let [base    (grid-layout-base shape)
@@ -734,6 +859,7 @@
                                (get-in base [:layout-gap :column-gap])
                                [:column-gap :columnGap])
         padding (layout-number layout (get-in base [:layout-padding :p1]) [:padding])
+        cells   (layout-cells layout (:layout-grid-cells base))
         updated (assoc base
                        :layout :grid
                        :layout-grid-dir
@@ -769,7 +895,7 @@
                        (layout-tracks layout (:layout-grid-rows base) [:rows :grid-rows :gridRows])
                        :layout-grid-columns
                        (layout-tracks layout (:layout-grid-columns base) [:columns :grid-columns :gridColumns])
-                       :layout-grid-cells (:layout-grid-cells base))]
+                       :layout-grid-cells cells)]
     (merge (remove-layout-container-data shape) updated)))
 
 (defn- apply-layout-update
@@ -795,7 +921,7 @@
 
           (ex/raise :type :validation
                     :code :unsupported-layout-type
-                    :hint "Headless backend layout updates currently support none, flex, and the grid container track subset."
+                    :hint "Headless backend layout updates currently support none, flex, and grid container tracks plus optional cell placements."
                     :layout-type layout-type
                     :shape-id (:id shape)))))))
 

@@ -114,3 +114,45 @@ pnpm --filter penpot-cli smoke:help
 pnpm cli:install-check
 pnpm cli:package-check
 ```
+
+
+## Fork push and release ops (2026-07-19)
+
+### Portable archive smoke
+
+Verified in this checkout:
+
+```bash
+pnpm cli:package-check
+./tmp/penpot-cli-release/penpot-cli-0.1.0/bin/penpot-cli --help
+```
+
+Artifacts:
+
+- `tmp/penpot-cli-release/penpot-cli-0.1.0.tar.gz`
+- extracted tree at `tmp/penpot-cli-release/penpot-cli-0.1.0/`
+
+Re-verify on a clean machine by copying only the tarball, extracting, and running
+`bin/penpot-cli --help` plus a dry-run command that does not need workspace links.
+
+### Upstream sync policy (fork)
+
+- `upstream` = `https://github.com/penpot/penpot.git` (**fetch only**, push DISABLED)
+- `fork` = `https://github.com/normojs/penpot.git` (push target)
+- Periodically: `git fetch upstream` then decide whether to rebase/merge selected
+  upstream fixes onto local `main` in a dedicated branch; never `git push upstream`.
+- Prefer small, reviewed upstream cherry-picks over bulk merges while the fork
+  carries private MCP/CLI/renderer-service work.
+
+### npm publish
+
+Out of scope. Packages remain private workspace / release-archive artifacts unless
+product explicitly decides to publish.
+
+### Push notes
+
+`git push -u fork main` may still fail under local Clash/fake-ip/TUN TLS issues
+even when HTTPS to github.com returns 200. Retry with a healthy mixed-port proxy
+or direct route; confirm with `git ls-remote fork` before large pushes. Local
+commits for Phase 26+ may still be unpushed until the working tree is committed
+and the network path is stable.

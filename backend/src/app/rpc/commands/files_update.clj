@@ -155,6 +155,20 @@
    [:value {:optional true} [::sm/number {:min 0 :max 10000}]]])
 
 (def ^:private
+  schema:headless-grid-cell
+  [:map {:title "HeadlessGridCell"}
+   [:id {:optional true} ::sm/uuid]
+   [:row ::sm/safe-int]
+   [:column ::sm/safe-int]
+   [:row-span {:optional true} [::sm/int {:min 1 :max 1000}]]
+   [:column-span {:optional true} [::sm/int {:min 1 :max 1000}]]
+   [:shapes {:optional true} [:vector {:max 100} ::sm/uuid]]
+   [:position {:optional true} [::sm/one-of ctsl/grid-position-types]]
+   [:align-self {:optional true} [::sm/one-of ctsl/grid-cell-align-self-types]]
+   [:justify-self {:optional true} [::sm/one-of ctsl/grid-cell-justify-self-types]]
+   [:area-name {:optional true} [:string {:max 200}]]])
+
+(def ^:private
   schema:headless-layout
   [:map {:title "HeadlessShapeLayout"}
    [:type [::sm/one-of #{:none :flex :grid}]]
@@ -171,7 +185,8 @@
    [:column-gap {:optional true} [::sm/number {:min 0 :max 10000}]]
    [:padding {:optional true} [::sm/number {:min 0 :max 10000}]]
    [:rows {:optional true} [:vector {:max 100} schema:headless-grid-track]]
-   [:columns {:optional true} [:vector {:max 100} schema:headless-grid-track]]])
+   [:columns {:optional true} [:vector {:max 100} schema:headless-grid-track]]
+   [:cells {:optional true} [:vector {:max 1000} schema:headless-grid-cell]]])
 
 (def ^:private
   schema:create-file-shape

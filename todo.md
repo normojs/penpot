@@ -414,6 +414,31 @@ lifecycle prerequisites, and command-runtime/CLI/MCP surface ready/blocked/inval
 redacted summaries while no registry lookup, write, runtime installation,
 rollback execution, dispatch, browser startup, asset/backend/source reads,
 writes, or value exposure occurs. P26.45 is complete: renderer-service now reports the planned installation execution boundary after a ready P26.44 preflight without enabling execution.
+P26.46 is complete: renderer-service now executes guarded bundled scene bridge
+runtime registry installation after a planned P26.45 boundary, installing a
+process-local stub runtime with close/rollback hooks while keeping real scene
+rendering, asset materialization writes, and default MCP/CLI paths gated.
+P26.47 is complete: renderer-service now surfaces token-safe installed-runtime
+lifecycle and rollback diagnostics after P26.46 installation without enabling
+render dispatch or value exposure. P26.48 is complete: renderer-service now plans the real bundled scene bridge
+runtime value contract for browser-backed render-wasm and frontend rasterizer
+ownership while keeping implementation disabled. P26.49 is complete: renderer-service now scaffolds the real bundled scene
+bridge runtime module behind a reviewed gate without loading public assets or
+starting a browser by default. P26.50 is complete: renderer-service now wires installed registry runtimes into
+gated thumbnail render dispatch behind a reviewed dispatch gate, preferring
+injected adapters and mapping PNG bytes through the existing resource/persist
+pipeline. P26.51 is complete: renderer-service now executes approved runtime asset cache
+materialization with hash verification, audit metadata, and rollback on failure.
+P26.52 is complete: renderer-service can produce a minimal real-scene PNG through
+the installed real bridge for one file/tagged-frame target and persist it through
+the existing backend thumbnail path. P26.53 is complete: default `render.thumbnail` execution is endpoint-first so a
+configured renderer-service endpoint plus normal auth is enough, while explicit
+disable still closes the gate and diagnostics remain redacted. P26.54 is complete: optional controlled renderer-service process lifecycle is
+available via explicit spawn opt-in, while default start remains no-spawn.
+Phase 26 close-out rows P26.46–P26.54 are complete. Grid cell placement is implemented.
+Components/Tokens evaluated and deferred (names only; no headless path yet). Portable CLI
+package-check re-verified; upstream sync/npm policy documented. Remaining open items are
+mainly `git push` to `fork` (network) and live-only workspace product decisions.
 P25.7 is complete: thumbnail renderer-service API fixtures now define
 future file refresh, file reuse, tagged frame refresh, auth forwarding,
 resource URI normalization, and MCP/CLI test expectations. P25.8 is complete:
@@ -1092,6 +1117,54 @@ process boundary before MCP or CLI execution is enabled.
 | P26.43 | done | Plan guarded bundled scene bridge runtime registry installation gate | `renderer-service`, `command-runtime`, `penpot-cli`, `mcp/docs`, `todo.md`, `CHANGES.md` | Completed 2026-07-17; renderer-service now exposes `bundledSceneBridgeRuntimeRegistryInstallationGate`, links it to P26.42 readiness and the explicit reviewed env gate, reports refusal/ready diagnostics plus rollback preconditions, and command-runtime/CLI/MCP surface valid/invalid redacted summaries | Keeps registry writes, runtime installation, runtime registration, render dispatch, browser startup, asset loading/materialization, backend/source-data reads, local writes, registry/lifecycle/runtime value exposure, and default CLI lifecycle probing gated |
 | P26.44 | done | Execute guarded bundled scene bridge runtime registry installation preflight | `renderer-service`, `command-runtime`, `penpot-cli`, `mcp/docs`, `todo.md`, `CHANGES.md` | Completed 2026-07-17; renderer-service now exposes `bundledSceneBridgeRuntimeRegistryInstallationPreflight`, consumes P26.43 reviewed-gate readiness, reports ready/blocked/invalid outcomes, verifies rollback and lifecycle prerequisites, and command-runtime/CLI/MCP surface redacted summaries while CLI local lifecycle remains no-probe | Keeps registry lookup, registry writes, runtime installation, close-hook registration, rollback execution, runtime registration, render dispatch, browser startup, asset loading/materialization, backend/source-data reads, local writes, registry/lifecycle/runtime value exposure, and default CLI lifecycle probing gated |
 | P26.45 | done | Plan guarded bundled scene bridge runtime registry installation execution boundary | `renderer-service`, `command-runtime`, `penpot-cli`, `mcp/docs`, `todo.md`, `CHANGES.md` | Completed 2026-07-18; renderer-service now exposes `bundledSceneBridgeRuntimeRegistryInstallationExecutionBoundary`, consumes P26.44 ready preflight, reports planned-disabled/blocked/invalid outcomes with duplicate/rollback/close-hook ownership metadata, and command-runtime/CLI/MCP surface redacted summaries while CLI local lifecycle remains no-probe | Keeps registry lookup, registry writes, runtime value creation, runtime installation, close-hook registration, rollback execution, runtime registration, render dispatch, browser startup, asset/backend/source reads, local writes, and value exposure gated |
+
+| P26.46 | done | Execute guarded bundled scene bridge runtime registry installation | `renderer-service`, `command-runtime`, `penpot-cli`, `mcp`, `mcp/docs`, `todo.md`, `CHANGES.md` | Completed 2026-07-19; renderer-service now exposes `bundledSceneBridgeRuntimeRegistryInstallation`, creates and installs a process-local stub runtime after a planned P26.45 boundary, registers close/rollback hooks, reports executed/blocked/invalid redacted summaries, and command-runtime/CLI/MCP surface the result while render dispatch and value exposure remain gated | Keeps real scene rendering, browser startup beyond inert handles, asset materialization writes, backend/source-data reads beyond existing paths, local writes, runtime/option value exposure, and default MCP/CLI enablement gated |
+| P26.47 | done | Surface installed runtime lifecycle and rollback diagnostics | `renderer-service`, `command-runtime`, `penpot-cli`, `mcp`, `mcp/docs`, `todo.md`, `CHANGES.md` | Completed 2026-07-19; renderer-service now exposes `bundledSceneBridgeInstalledRuntimeLifecycle`, reporting not-installed/installed/invalid redacted lifecycle, close/rollback readiness, and duplicate/replacement policy after P26.46 installation through health/thumbnail, command-runtime, CLI, and MCP without render dispatch or value exposure | Keeps render dispatch, real scene bridge assets, asset materialization writes, and value exposure gated |
+| P26.48 | done | Plan real bundled scene bridge runtime value contract | `renderer-service`, `frontend`, `render-wasm`, `command-runtime`, `mcp/docs`, `todo.md`, `CHANGES.md` | Completed 2026-07-19; renderer-service now exposes planned-disabled `bundledSceneBridgeRealRuntimeValueContract` documenting browser-backed render-wasm/frontend rasterizer ownership, page handoff, render I/O, failure taxonomy, and test matrix after P26.46/P26.47, while keeping the real runtime unimplemented and unselected | Keeps browser startup for real assets, asset materialization writes, default MCP/CLI rendering, and value exposure gated |
+| P26.49 | done | Scaffold real bundled scene bridge runtime module behind reviewed gate | `renderer-service`, `frontend`, `render-wasm`, `command-runtime`, `mcp/docs`, `todo.md`, `CHANGES.md` | Completed 2026-07-19; renderer-service now ships service-owned `bundled-scene-bridge-real-runtime` plus `bundledSceneBridgeRealRuntimeModuleScaffold` behind `PENPOT_RENDERER_SERVICE_BUNDLED_SCENE_BRIDGE_REAL_RUNTIME_MODULE_GATE=reviewed-scaffold`, keeping default selection on the stub factory and refusing asset loading, browser startup, render dispatch, materialization writes, and value exposure | Keeps asset loading, browser startup, render dispatch, materialization writes, and value exposure gated until later explicit slices |
+| P26.50 | done | Wire installed runtime into gated thumbnail render dispatch | `renderer-service`, `command-runtime`, `mcp/docs`, `todo.md`, `CHANGES.md` | Completed 2026-07-19; renderer-service now exposes `bundledSceneBridgeInstalledRuntimeRenderDispatch` behind `PENPOT_RENDERER_SERVICE_BUNDLED_SCENE_BRIDGE_RENDER_DISPATCH_GATE=reviewed-dispatch`, prefers injected adapters, can select an installed registry runtime for refresh/miss render paths, and maps PNG bytes into the existing resource/persist pipeline while keeping default MCP/CLI enablement and unreviewed gates disabled | Keeps default MCP/CLI enablement, unreviewed gates, asset materialization writes, and credential/media/source value exposure gated |
+| P26.51 | done | Execute approved runtime asset cache materialization | `renderer-service`, `command-runtime`, `penpot-cli`, `mcp/docs`, `todo.md`, `CHANGES.md` | Completed 2026-07-19; renderer-service now executes approved runtime asset cache materialization (`runtimeAssetMaterializationExecution`) after ready preflight/dry-run and explicit approved mode/token/audit configuration, with hash verification, audit metadata, and rollback on failure while keeping unapproved writes and value exposure gated | Keeps unapproved writes, browser startup before assets are ready, runtime value exposure, and default MCP/CLI enablement gated |
+| P26.52 | done | Produce a minimal real-scene PNG through the installed bridge | `renderer-service`, `frontend`, `render-wasm`, `command-runtime`, `mcp/docs`, `todo.md`, `CHANGES.md` | Completed 2026-07-19; renderer-service now can install the real runtime after approved materialization and reviewed real-runtime scaffold, produce a non-empty PNG for one file/tagged-frame target under reviewed render dispatch, persist through existing backend thumbnail RPCs, and report `bundledSceneBridgeRealScenePng` while keeping multi-target expansion and value exposure gated | Keeps broad default enablement, multi-target matrix expansion, and credential/media/source value exposure gated |
+| P26.53 | done | Reduce default `render.thumbnail` operator friction | `command-runtime`, `penpot-cli`, `mcp`, `renderer-service`, `mcp/docs`, `todo.md`, `CHANGES.md` | Completed 2026-07-19; CLI/MCP thumbnail execution is endpoint-first: a configured renderer-service endpoint opens health preflight and dispatch without requiring a separate opt-in flag, while `disabled`/`off`/`false`/`0`/`no` still closes the gate and diagnostics remain redacted | Keeps unsafe auto-spawn, local-fs side effects, and unreviewed materialization gated |
+| P26.54 | done | Optional controlled renderer-service process lifecycle | `penpot-cli`, `renderer-service`, `mcp/docs`, `todo.md`, `CHANGES.md` | Completed 2026-07-19; `penpot-cli renderer-service start --spawn` / `PENPOT_RENDERER_SERVICE_LIFECYCLE=spawn` can spawn, health-watch, and stop a private-checkout host with pid tracking, while default start remains no-spawn manual | Keeps default no-spawn behavior and avoids background daemons without operator consent |
+
+## Remaining Work Checklist
+
+Incomplete product work after P26.45. Mark items `[x]` only when the matching
+tracker row is `done` and verified. Keep at most one table row `in_progress`.
+
+### Phase 26 close-out (real thumbnails)
+
+- [x] **P26.46** Execute guarded bundled scene bridge runtime registry installation (create/install/register under reviewed gate; stub runtime only)
+- [x] **P26.47** Surface installed-runtime lifecycle, close-hook, and rollback diagnostics (redacted; no render dispatch)
+- [x] **P26.48** Plan real bundled scene bridge runtime value contract (render-wasm / frontend rasterizer ownership)
+- [x] **P26.49** Scaffold real bundled scene bridge runtime module behind reviewed gate
+- [x] **P26.50** Wire installed runtime into gated thumbnail render dispatch + existing persist pipeline
+- [x] **P26.51** Execute approved runtime asset cache materialization (copy + hash + rollback)
+- [x] **P26.52** Produce a minimal real-scene PNG for one file or tagged-frame target
+- [x] **P26.53** Reduce default `render.thumbnail` operator friction (endpoint + auth first)
+- [x] **P26.54** Optional controlled renderer-service spawn/stop lifecycle (default remains no-spawn)
+
+### Headless authoring gaps (post–Phase 26)
+
+- [x] **Grid cell / child placement** — backend-command supports optional `layout.cells` placements (row/column/spans/shapes); complex area auto-assignment remains limited/plugin-live
+- [x] **Components wave** — evaluated 2026-07-19: names only in ToolNames; common library helpers exist; no headless/MCP registration; **defer** executable tools until library-file targeting contract (see `headless-live-gap-audit.md`)
+- [x] **Tokens wave** — evaluated 2026-07-19: names only; tokens-lib/feature flags exist in common; no MCP/CLI/headless path; **defer** until token set/theme apply scope is specified (prefer future read-only `tokens.list` descriptor first)
+- [ ] **Live-only workspace state** — keep current-page / some selection paths plugin-live unless a product decision adds persisted session state
+
+### Packaging, ops, and distribution
+
+- [ ] **Push local `main` to `fork`** — still blocked on this host: `git fetch/push fork` times out / no `fork/main` remote-tracking ref despite HTTPS 200 to github.com (likely Clash fake-ip/TUN). Large Phase 26+ WIP also still uncommitted. Commit, then push when `git ls-remote fork` succeeds
+- [x] **Private release smoke** — re-verified 2026-07-19 via `pnpm cli:package-check`; archive `tmp/penpot-cli-release/penpot-cli-0.1.0.tar.gz` extracts and `bin/penpot-cli --help` works (clean-machine recheck still recommended when distributing)
+- [x] **Upstream sync policy** — fetch-only `upstream`, push only to `fork`; periodic fetch + selective cherry-pick/rebase on a branch; never push upstream (documented in `penpot-cli-build-install-strategy.md`)
+- [x] **npm publish** — confirmed out of scope; private workspace + release archive only unless product decision changes
+
+### Explicitly not open as next work
+
+- [x] Phases 1–25 product slices tracked as complete for their stated scope
+- [x] P26.1–P26.45 gated planning/preflight/boundary slices
+- [x] Maintenance CACHE.1–CACHE.3
+
 
 P26.1 is complete: `@penpot/renderer-service` is a private pnpm workspace
 package with a real no-op HTTP lifecycle. Its TypeScript output is written to

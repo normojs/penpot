@@ -40,7 +40,7 @@ const layoutObjectSchema = z
     .object({
         type: z
             .enum(["none", "flex", "grid"])
-            .describe("Container layout mode. Backend-command supports none, flex, and the grid container track subset."),
+            .describe("Container layout mode. Backend-command supports none, flex, grid tracks, and optional cells placements."),
         direction: z
             .enum(["row", "row-reverse", "column", "column-reverse"])
             .optional()
@@ -68,7 +68,7 @@ const layoutObjectSchema = z
             )
             .max(100)
             .optional()
-            .describe("Backend-command grid row tracks. Child cell placement is not supported."),
+            .describe("Backend-command grid row tracks."),
         columns: z
             .array(
                 z.object({
@@ -78,7 +78,26 @@ const layoutObjectSchema = z
             )
             .max(100)
             .optional()
-            .describe("Backend-command grid column tracks. Child cell placement is not supported."),
+            .describe("Backend-command grid column tracks."),
+        cells: z
+            .array(
+                z.object({
+                    row: z.number().int().min(1).max(1000),
+                    column: z.number().int().min(1).max(1000),
+                    rowSpan: z.number().int().min(1).max(1000).optional(),
+                    columnSpan: z.number().int().min(1).max(1000).optional(),
+                    shapes: z.array(uuidSchema).max(100).optional(),
+                    position: z.enum(["auto", "manual", "area"]).optional(),
+                    alignSelf: z.enum(["auto", "start", "center", "end", "stretch"]).optional(),
+                    justifySelf: z.enum(["auto", "start", "center", "end", "stretch"]).optional(),
+                    areaName: z.string().max(200).optional(),
+                })
+            )
+            .max(1000)
+            .optional()
+            .describe(
+                "Optional backend-command grid cell placements (1-indexed row/column). Complex area editing may still require plugin-live."
+            ),
     });
 const layoutSchema = layoutObjectSchema.optional();
 
@@ -145,6 +164,19 @@ function toBackendShapeLayout(layout?: ShapeTaskParams["layout"]): PenpotRecord 
     if (layout.padding !== undefined) result.padding = layout.padding;
     if (layout.rows !== undefined) result.rows = layout.rows;
     if (layout.columns !== undefined) result.columns = layout.columns;
+    if (layout.cells !== undefined) {
+        result.cells = layout.cells.map((cell) => ({
+            row: cell.row,
+            column: cell.column,
+            ...(cell.rowSpan !== undefined ? { "row-span": cell.rowSpan } : {}),
+            ...(cell.columnSpan !== undefined ? { "column-span": cell.columnSpan } : {}),
+            ...(cell.shapes !== undefined ? { shapes: cell.shapes } : {}),
+            ...(cell.position !== undefined ? { position: cell.position } : {}),
+            ...(cell.alignSelf !== undefined ? { "align-self": cell.alignSelf } : {}),
+            ...(cell.justifySelf !== undefined ? { "justify-self": cell.justifySelf } : {}),
+            ...(cell.areaName !== undefined ? { "area-name": cell.areaName } : {}),
+        }));
+    }
     return result;
 }
 

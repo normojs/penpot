@@ -13668,8 +13668,11 @@ export function createRenderThumbnailRendererServiceDispatchRegistrationPrefligh
         {
             id: "explicit-opt-in",
             source: "executionGate.optIn.configured",
-            required: true,
-            satisfied: Boolean(executionGate.optIn?.configured),
+            required: false,
+            satisfied:
+                Boolean(executionGate.optIn?.configured) ||
+                Boolean(executionGate.operatorFriction?.endpointFirst) ||
+                Boolean(executionGate.readiness?.endpointConfigured),
             blocker: "explicit-opt-in",
         },
         {
@@ -14157,7 +14160,7 @@ export function createRenderThumbnailRendererServiceOptInConfiguration(options =
         status: "planned-disabled",
         dispatch: false,
         entrypoint,
-        reason: "renderer-service opt-in configuration surfaces are documented but cannot enable execution until runtime dispatch is implemented",
+        reason: "renderer-service opt-in surfaces remain available for compatibility; P26.53 endpoint-first mode opens execution from a configured endpoint unless explicitly disabled",
         expectedValue,
         sources,
         resolution: {
@@ -14169,15 +14172,21 @@ export function createRenderThumbnailRendererServiceOptInConfiguration(options =
             precedence: selected?.precedence ?? null,
             diagnostics: valid
                 ? selected
-                    ? "opt-in value is recognized but execution remains disabled"
-                    : "no opt-in source is configured"
+                    ? selectedValue === "renderer-service"
+                        ? "opt-in value is recognized; endpoint-first mode also allows execution when only the endpoint is configured"
+                        : ["disabled", "off", "false", "0", "no"].includes(String(selectedValue).toLowerCase())
+                          ? "explicit disable value is recognized and keeps execution closed"
+                          : "opt-in value is recognized"
+                    : "no opt-in source is configured; endpoint-first mode does not require opt-in"
                 : `unsupported opt-in value '${selectedValue}'`,
         },
         diagnostics: {
             tokenValuesIncluded: false,
             executionEnabledByConfiguration: false,
             gateCanOpenFromConfigurationOnly: false,
-            noDispatchDefault: true,
+            endpointFirstMode: true,
+            explicitOptInRequired: false,
+            noDispatchDefault: false,
         },
         futureSurfaces: {
             cliFlags: ["--render-thumbnail-execution renderer-service"],
@@ -14338,6 +14347,20 @@ export function createRenderThumbnailRendererServiceHealthPreflight(options = EM
             normalizeRendererServiceBundledSceneBridgeRuntimeRegistryInstallationPreflightDiagnostic(null),
         bundledSceneBridgeRuntimeRegistryInstallationExecutionBoundary:
             normalizeRendererServiceBundledSceneBridgeRuntimeRegistryInstallationExecutionBoundaryDiagnostic(null),
+        bundledSceneBridgeRuntimeRegistryInstallation:
+            normalizeRendererServiceBundledSceneBridgeRuntimeRegistryInstallationDiagnostic(null),
+        bundledSceneBridgeInstalledRuntimeLifecycle:
+            normalizeRendererServiceBundledSceneBridgeInstalledRuntimeLifecycleDiagnostic(null),
+        bundledSceneBridgeRealRuntimeValueContract:
+            normalizeRendererServiceBundledSceneBridgeRealRuntimeValueContractDiagnostic(null),
+        bundledSceneBridgeRealRuntimeModuleScaffold:
+            normalizeRendererServiceBundledSceneBridgeRealRuntimeModuleScaffoldDiagnostic(null),
+        bundledSceneBridgeInstalledRuntimeRenderDispatch:
+            normalizeRendererServiceBundledSceneBridgeInstalledRuntimeRenderDispatchDiagnostic(null),
+        runtimeAssetMaterializationExecution:
+            normalizeRendererServiceRuntimeAssetMaterializationExecutionDiagnostic(null),
+        bundledSceneBridgeRealScenePng:
+            normalizeRendererServiceBundledSceneBridgeRealScenePngDiagnostic(null),
         browserFixtureRuntime: normalizeRendererServiceBrowserFixtureRuntimeDiagnostic(null),
     };
 }
@@ -18587,6 +18610,1368 @@ function runtimeAssetPreflightIssueMessage(code, assetId, cacheOutputId) {
     }
 }
 
+function normalizeRendererServiceBundledSceneBridgeRuntimeRegistryInstallationDiagnostic(body) {
+    const bodyRecord = asRecord(body);
+    const present = Object.prototype.hasOwnProperty.call(
+        bodyRecord,
+        "bundledSceneBridgeRuntimeRegistryInstallation"
+    );
+    const summary = asRecord(bodyRecord.bundledSceneBridgeRuntimeRegistryInstallation);
+    const source = asRecord(summary.source);
+    const installation = asRecord(summary.installation);
+    const runtimeValue = asRecord(summary.runtimeValue);
+    const registrySlot = asRecord(summary.registrySlot);
+    const duplicateHandling = asRecord(summary.duplicateHandling);
+    const lifecycleOwnership = asRecord(summary.lifecycleOwnership);
+    const refusalDiagnostics = asRecord(summary.refusalDiagnostics);
+    const sideEffects = asRecord(summary.sideEffects);
+    const redaction = asRecord(summary.redaction);
+    const omitted = asRecord(summary.omitted);
+    const installationOutcomeTaxonomy = normalizeDiagnosticRecordArray(summary.installationOutcomeTaxonomy).map((entry) => ({
+        code:
+            normalizeOptionalString(entry.code) ??
+            "renderer_service_bundled_scene_bridge_runtime_registry_installation_outcome_unknown",
+        stage: normalizeOptionalString(entry.stage),
+        severity: normalizeOptionalString(entry.severity),
+        retryable: entry.retryable === true,
+        dispatch: entry.dispatch === true,
+    }));
+    const diagnostics = normalizeDiagnosticRecordArray(summary.diagnostics).map((entry) => ({
+        code:
+            normalizeOptionalString(entry.code) ??
+            "renderer_service_bundled_scene_bridge_runtime_registry_installation_diagnostic_unknown",
+        severity: normalizeOptionalString(entry.severity),
+        field: normalizeOptionalString(entry.field),
+        env: normalizeOptionalString(entry.env),
+        valueRead: entry.valueRead === true,
+        valuesIncluded: entry.valuesIncluded === true,
+        message: normalizeOptionalString(entry.message),
+        nextActions: normalizeDiagnosticStringArray(entry.nextActions),
+    }));
+    const diagnosticCodes = normalizeDiagnosticStringArray(summary.diagnosticCodes);
+    const nextActions = normalizeDiagnosticStringArray(summary.nextActions);
+    const checks = normalizeDiagnosticRecordArray(summary.checks).map((entry) => ({
+        id: normalizeOptionalString(entry.id) ?? "unknown",
+        status: normalizeOptionalString(entry.status) ?? "unknown",
+        required: entry.required === true,
+        dispatch: entry.dispatch === true,
+    }));
+    const allFalse = (record, fields) => fields.every((field) => record[field] === false);
+    const allTrue = (record, fields) => fields.every((field) => record[field] === true);
+    const equalStringArrays = (actual, expected) =>
+        actual.length === expected.length && actual.every((entry, index) => entry === expected[index]);
+    const statusValue = normalizeOptionalString(summary.status) ?? "not-reported";
+    const statusAllowed = ["blocked", "executed", "invalid"].includes(statusValue);
+    const executed = statusValue === "executed";
+    const invalid = statusValue === "invalid";
+    const expectedDiagnosticCode = executed
+        ? "renderer_service_bundled_scene_bridge_runtime_registry_installation_executed"
+        : invalid
+          ? statusValue === "invalid" && source.readiness === "invalid-installation-execution-boundary"
+            ? "renderer_service_bundled_scene_bridge_runtime_registry_installation_boundary_invalid"
+            : "renderer_service_bundled_scene_bridge_runtime_registry_installation_runtime_invalid"
+          : "renderer_service_bundled_scene_bridge_runtime_registry_installation_boundary_not_planned";
+    const expectedOutcomeCodes = [
+        "renderer_service_bundled_scene_bridge_runtime_registry_installation_boundary_not_planned",
+        "renderer_service_bundled_scene_bridge_runtime_registry_installation_boundary_invalid",
+        "renderer_service_bundled_scene_bridge_runtime_registry_installation_duplicate_rejected",
+        "renderer_service_bundled_scene_bridge_runtime_registry_installation_runtime_invalid",
+        "renderer_service_bundled_scene_bridge_runtime_registry_installation_executed",
+        "renderer_service_bundled_scene_bridge_runtime_registry_installation_unsafe_metadata",
+    ];
+    const expectedCheckIds = [
+        "installation-execution-boundary-planned",
+        "duplicate-lookup",
+        "runtime-value-creation",
+        "registry-installation",
+        "close-hook-registration",
+        "rollback-hook-registration",
+        "runtime-values-redacted",
+    ];
+    const installationTrueFields = [
+        "registryInstallationExecutionBoundaryReadyRequired",
+        "duplicateLookupRequired",
+        "runtimeValueCreationRequired",
+        "registryInstallationRequired",
+        "closeHookRegistrationRequired",
+        "rollbackHookRequired",
+        "noDispatchRequired",
+    ];
+    const installationAlwaysFalse = [
+        "runtimeRegistered",
+        "runtimeRegistration",
+        "runtimeExecutionRegistered",
+        "duplicateRollbackAttempted",
+        "renderDispatch",
+        "browserProcessStarted",
+        "runtimeValuesIncluded",
+        "registryValuesIncluded",
+    ];
+    const sideEffectAlwaysFalse = [
+        "runtimeRegistration",
+        "runtimeExecutionRegistered",
+        "duplicateRollback",
+        "renderDispatch",
+        "browserProcessStarted",
+        "browserPageCreated",
+        "runtimeAssetsLoaded",
+        "assetManifestMaterialized",
+        "backendRpcReads",
+        "sourceDataReads",
+        "networkDispatch",
+        "dispatch",
+        "localFileWrites",
+    ];
+    const redactionFields = [
+        "modeValuesIncluded",
+        "moduleValuesIncluded",
+        "factoryValuesIncluded",
+        "runtimeOptionsValuesIncluded",
+        "optionValuesIncluded",
+        "runtimeValuesIncluded",
+        "registryValuesIncluded",
+        "lifecycleValuesIncluded",
+        "pathValuesIncluded",
+        "sourceDataValuesIncluded",
+        "pageValuesIncluded",
+        "artifactValuesIncluded",
+        "mediaValuesIncluded",
+        "tokenValuesIncluded",
+    ];
+    const omittedFields = [
+        "configuredValue",
+        "moduleNamespace",
+        "factoryValue",
+        "runtimeOptionsValue",
+        "optionValues",
+        "runtimeValue",
+        "registryValue",
+        "lifecycleHandles",
+        "workspaceRoot",
+        "cacheRoot",
+        "modulePath",
+        "publicPaths",
+        "cachePaths",
+        "sha256",
+        "playwrightBrowserPath",
+        "runtimeModulePath",
+        "sourceData",
+        "pageData",
+        "artifactBytes",
+        "mediaBytes",
+        "tokenValues",
+    ];
+    const requiredMethods = normalizeDiagnosticStringArray(runtimeValue.requiredMethods);
+    const optionalMethods = normalizeDiagnosticStringArray(runtimeValue.optionalMethods);
+    const requiredInstallationInputs = normalizeDiagnosticStringArray(runtimeValue.requiredInstallationInputs);
+    const diagnosticNextActions = uniqueStrings(diagnostics.flatMap((entry) => entry.nextActions));
+    const normalizedDiagnosticCodes = diagnosticCodes.length > 0 ? diagnosticCodes : diagnostics.map((entry) => entry.code);
+    const normalizedNextActions = nextActions.length > 0 ? nextActions : diagnosticNextActions;
+    const unsafe =
+        present &&
+        (!statusAllowed ||
+            normalizeOptionalString(summary.installationVersion) !== "P26.46" ||
+            normalizeOptionalString(summary.owner) !== "renderer-service" ||
+            normalizeOptionalString(summary.mode) !== "guarded-runtime-registry-installation-execution" ||
+            normalizeOptionalString(source.registryInstallationVersion) !== "P26.46" ||
+            normalizeOptionalString(source.registryInstallationExecutionBoundaryVersion) !== "P26.45" ||
+            !allTrue(installation, installationTrueFields) ||
+            !allFalse(installation, installationAlwaysFalse) ||
+            runtimeValue.renderDispatchEnabledAfterInstallation === true ||
+            runtimeValue.valuesIncluded === true ||
+            registrySlot.runtimeAvailableForDispatch === true ||
+            registrySlot.renderDispatchEnabled === true ||
+            registrySlot.valuesIncluded === true ||
+            refusalDiagnostics.renderDispatchRefused !== true ||
+            refusalDiagnostics.valuesIncluded === true ||
+            !allFalse(sideEffects, sideEffectAlwaysFalse) ||
+            !allFalse(redaction, redactionFields) ||
+            !omittedFields.every((field) => omitted[field] !== false) ||
+            installationOutcomeTaxonomy.some((entry) => entry.dispatch === true) ||
+            checks.some((entry) => entry.dispatch === true) ||
+            !equalStringArrays(
+                installationOutcomeTaxonomy.map((entry) => entry.code),
+                expectedOutcomeCodes
+            ) ||
+            !equalStringArrays(
+                checks.map((entry) => entry.id),
+                expectedCheckIds
+            ) ||
+            (executed && installation.runtimeInstalled !== true) ||
+            (executed && installation.registryLookupAttempted !== true));
+    const status = !present
+        ? "not-reported"
+        : unsafe
+          ? "invalid"
+          : statusValue;
+    const checked = present && !unsafe;
+    return {
+        status,
+        installationVersion: normalizeOptionalString(summary.installationVersion),
+        checked,
+        owner: normalizeOptionalString(summary.owner),
+        mode: normalizeOptionalString(summary.mode),
+        source: {
+            runtimeRegistrationPreflightVersion: normalizeOptionalString(source.runtimeRegistrationPreflightVersion),
+            registryRegistrationBoundaryVersion: normalizeOptionalString(source.registryRegistrationBoundaryVersion),
+            registryInstallationContractVersion: normalizeOptionalString(source.registryInstallationContractVersion),
+            registryInstallationGateVersion: normalizeOptionalString(source.registryInstallationGateVersion),
+            registryInstallationPreflightVersion: normalizeOptionalString(source.registryInstallationPreflightVersion),
+            registryInstallationExecutionBoundaryVersion: normalizeOptionalString(
+                source.registryInstallationExecutionBoundaryVersion
+            ),
+            registryInstallationVersion: normalizeOptionalString(source.registryInstallationVersion),
+            registryInstallationExecutionBoundaryReady: source.registryInstallationExecutionBoundaryReady === true,
+            registryInstallationExecutionBoundaryStatus: normalizeOptionalString(
+                source.registryInstallationExecutionBoundaryStatus
+            ),
+            registryInstallationExecutionBoundaryReadiness: normalizeOptionalString(
+                source.registryInstallationExecutionBoundaryReadiness
+            ),
+            reviewedGateOpen: source.reviewedGateOpen === true,
+            readiness: normalizeOptionalString(source.readiness),
+        },
+        installation: {
+            registryInstallationExecutionBoundaryReadyRequired:
+                installation.registryInstallationExecutionBoundaryReadyRequired === true,
+            duplicateLookupRequired: installation.duplicateLookupRequired === true,
+            runtimeValueCreationRequired: installation.runtimeValueCreationRequired === true,
+            registryInstallationRequired: installation.registryInstallationRequired === true,
+            closeHookRegistrationRequired: installation.closeHookRegistrationRequired === true,
+            rollbackHookRequired: installation.rollbackHookRequired === true,
+            noDispatchRequired: installation.noDispatchRequired === true,
+            installationAttemptAllowed: installation.installationAttemptAllowed === true,
+            runtimeInstallationEnabled: installation.runtimeInstallationEnabled === true,
+            registryLookupAttempted: installation.registryLookupAttempted === true,
+            registryWriteAttempted: installation.registryWriteAttempted === true,
+            runtimeValueCreated: installation.runtimeValueCreated === true,
+            runtimeInstallationAttempted: installation.runtimeInstallationAttempted === true,
+            runtimeInstalled: installation.runtimeInstalled === true,
+            runtimeRegistered: installation.runtimeRegistered === true,
+            runtimeRegistration: installation.runtimeRegistration === true,
+            runtimeExecutionRegistered: installation.runtimeExecutionRegistered === true,
+            closeHookRegistered: installation.closeHookRegistered === true,
+            rollbackHookRegistered: installation.rollbackHookRegistered === true,
+            duplicateRollbackAttempted: installation.duplicateRollbackAttempted === true,
+            renderDispatch: installation.renderDispatch === true,
+            browserProcessStarted: installation.browserProcessStarted === true,
+            runtimeValuesIncluded: installation.runtimeValuesIncluded === true,
+            registryValuesIncluded: installation.registryValuesIncluded === true,
+        },
+        runtimeValue: {
+            runtimeId: normalizeOptionalString(runtimeValue.runtimeId),
+            targetRegistry: normalizeOptionalString(runtimeValue.targetRegistry),
+            requiredMethods,
+            optionalMethods,
+            requiredInstallationInputs,
+            runtimeValueCreationPlanned: runtimeValue.runtimeValueCreationPlanned === true,
+            runtimeValueCreated: runtimeValue.runtimeValueCreated === true,
+            runtimeValueInstalled: runtimeValue.runtimeValueInstalled === true,
+            runtimeRegistered: runtimeValue.runtimeRegistered === true,
+            runtimeExecutionRegistered: runtimeValue.runtimeExecutionRegistered === true,
+            renderDispatchEnabledAfterInstallation: runtimeValue.renderDispatchEnabledAfterInstallation === true,
+            valuesIncluded: runtimeValue.valuesIncluded === true,
+        },
+        registrySlot: {
+            runtimeId: normalizeOptionalString(registrySlot.runtimeId),
+            targetRegistry: normalizeOptionalString(registrySlot.targetRegistry),
+            slotOwner: normalizeOptionalString(registrySlot.slotOwner),
+            slotStatus: normalizeOptionalString(registrySlot.slotStatus),
+            runtimeInstalled: registrySlot.runtimeInstalled === true,
+            runtimeAvailableForDispatch: registrySlot.runtimeAvailableForDispatch === true,
+            renderDispatchEnabled: registrySlot.renderDispatchEnabled === true,
+            valuesIncluded: registrySlot.valuesIncluded === true,
+        },
+        duplicateHandling: {
+            duplicateDetectionRequired: duplicateHandling.duplicateDetectionRequired === true,
+            existingRuntimeLookupRequired: duplicateHandling.existingRuntimeLookupRequired === true,
+            duplicateRegistrationPolicy: normalizeOptionalString(duplicateHandling.duplicateRegistrationPolicy),
+            replacementPolicy: normalizeOptionalString(duplicateHandling.replacementPolicy),
+            rollbackRequiredOnDuplicate: duplicateHandling.rollbackRequiredOnDuplicate === true,
+            rollbackHookRequired: duplicateHandling.rollbackHookRequired === true,
+            cleanupOnInstallationFailure: duplicateHandling.cleanupOnInstallationFailure === true,
+            cleanupOnServiceStop: duplicateHandling.cleanupOnServiceStop === true,
+            existingRuntimeLookupAttempted: duplicateHandling.existingRuntimeLookupAttempted === true,
+            existingRuntimeFound: duplicateHandling.existingRuntimeFound === true,
+            duplicateDetected: duplicateHandling.duplicateDetected === true,
+            rollbackPrepared: duplicateHandling.rollbackPrepared === true,
+            rollbackAttempted: duplicateHandling.rollbackAttempted === true,
+            cleanupAttempted: duplicateHandling.cleanupAttempted === true,
+            valuesIncluded: duplicateHandling.valuesIncluded === true,
+        },
+        lifecycleOwnership: {
+            lifecycleOwner: normalizeOptionalString(lifecycleOwnership.lifecycleOwner),
+            registryOwner: normalizeOptionalString(lifecycleOwnership.registryOwner),
+            closeHookOwner: normalizeOptionalString(lifecycleOwnership.closeHookOwner),
+            rollbackOwner: normalizeOptionalString(lifecycleOwnership.rollbackOwner),
+            runtimeId: normalizeOptionalString(lifecycleOwnership.runtimeId),
+            targetRegistry: normalizeOptionalString(lifecycleOwnership.targetRegistry),
+            lifecycleScope: normalizeOptionalString(lifecycleOwnership.lifecycleScope),
+            noDispatchLifecycle: lifecycleOwnership.noDispatchLifecycle === true,
+            lifecycleOwnershipVerified: lifecycleOwnership.lifecycleOwnershipVerified === true,
+            closeHookRegistered: lifecycleOwnership.closeHookRegistered === true,
+            rollbackHookRegistered: lifecycleOwnership.rollbackHookRegistered === true,
+            runtimeValueOwned: lifecycleOwnership.runtimeValueOwned === true,
+            registrySlotOwned: lifecycleOwnership.registrySlotOwned === true,
+            valuesIncluded: lifecycleOwnership.valuesIncluded === true,
+        },
+        refusalDiagnostics: {
+            refusalRequired: refusalDiagnostics.refusalRequired === true,
+            refusalReason: normalizeOptionalString(refusalDiagnostics.refusalReason),
+            invalidBoundaryMetadata: refusalDiagnostics.invalidBoundaryMetadata === true,
+            registryLookupRefused: refusalDiagnostics.registryLookupRefused === true,
+            registryWriteRefused: refusalDiagnostics.registryWriteRefused === true,
+            runtimeValueCreationRefused: refusalDiagnostics.runtimeValueCreationRefused === true,
+            runtimeInstallationRefused: refusalDiagnostics.runtimeInstallationRefused === true,
+            closeHookRegistrationRefused: refusalDiagnostics.closeHookRegistrationRefused === true,
+            duplicateRollbackRefused: refusalDiagnostics.duplicateRollbackRefused === true,
+            renderDispatchRefused: refusalDiagnostics.renderDispatchRefused === true,
+            valuesIncluded: refusalDiagnostics.valuesIncluded === true,
+        },
+        installationOutcomeTaxonomy,
+        diagnostics,
+        diagnosticCodes: normalizedDiagnosticCodes,
+        nextActions: normalizedNextActions,
+        checks,
+        sideEffects: {
+            registryLookup: sideEffects.registryLookup === true,
+            registryWrite: sideEffects.registryWrite === true,
+            runtimeValueCreation: sideEffects.runtimeValueCreation === true,
+            runtimeInstallation: sideEffects.runtimeInstallation === true,
+            runtimeRegistration: sideEffects.runtimeRegistration === true,
+            runtimeExecutionRegistered: sideEffects.runtimeExecutionRegistered === true,
+            closeHookRegistration: sideEffects.closeHookRegistration === true,
+            duplicateRollback: sideEffects.duplicateRollback === true,
+            renderDispatch: sideEffects.renderDispatch === true,
+            browserProcessStarted: sideEffects.browserProcessStarted === true,
+            browserPageCreated: sideEffects.browserPageCreated === true,
+            runtimeAdapterImported: sideEffects.runtimeAdapterImported === true,
+            runtimeFactoryInvoked: sideEffects.runtimeFactoryInvoked === true,
+            runtimeOptionsCreated: sideEffects.runtimeOptionsCreated === true,
+            runtimeAssetsLoaded: sideEffects.runtimeAssetsLoaded === true,
+            assetManifestMaterialized: sideEffects.assetManifestMaterialized === true,
+            backendRpcReads: sideEffects.backendRpcReads === true,
+            sourceDataReads: sideEffects.sourceDataReads === true,
+            networkDispatch: sideEffects.networkDispatch === true,
+            dispatch: sideEffects.dispatch === true,
+            localFileWrites: sideEffects.localFileWrites === true,
+        },
+        redaction: {
+            modeValuesIncluded: redaction.modeValuesIncluded === true,
+            moduleValuesIncluded: redaction.moduleValuesIncluded === true,
+            factoryValuesIncluded: redaction.factoryValuesIncluded === true,
+            runtimeOptionsValuesIncluded: redaction.runtimeOptionsValuesIncluded === true,
+            optionValuesIncluded: redaction.optionValuesIncluded === true,
+            runtimeValuesIncluded: redaction.runtimeValuesIncluded === true,
+            registryValuesIncluded: redaction.registryValuesIncluded === true,
+            lifecycleValuesIncluded: redaction.lifecycleValuesIncluded === true,
+            pathValuesIncluded: redaction.pathValuesIncluded === true,
+            sourceDataValuesIncluded: redaction.sourceDataValuesIncluded === true,
+            pageValuesIncluded: redaction.pageValuesIncluded === true,
+            artifactValuesIncluded: redaction.artifactValuesIncluded === true,
+            mediaValuesIncluded: redaction.mediaValuesIncluded === true,
+            tokenValuesIncluded: redaction.tokenValuesIncluded === true,
+        },
+        omitted: {
+            configuredValue: omitted.configuredValue !== false,
+            moduleNamespace: omitted.moduleNamespace !== false,
+            factoryValue: omitted.factoryValue !== false,
+            runtimeOptionsValue: omitted.runtimeOptionsValue !== false,
+            optionValues: omitted.optionValues !== false,
+            runtimeValue: omitted.runtimeValue !== false,
+            registryValue: omitted.registryValue !== false,
+            lifecycleHandles: omitted.lifecycleHandles !== false,
+            workspaceRoot: omitted.workspaceRoot !== false,
+            cacheRoot: omitted.cacheRoot !== false,
+            modulePath: omitted.modulePath !== false,
+            publicPaths: omitted.publicPaths !== false,
+            cachePaths: omitted.cachePaths !== false,
+            sha256: omitted.sha256 !== false,
+            playwrightBrowserPath: omitted.playwrightBrowserPath !== false,
+            runtimeModulePath: omitted.runtimeModulePath !== false,
+            sourceData: omitted.sourceData !== false,
+            pageData: omitted.pageData !== false,
+            artifactBytes: omitted.artifactBytes !== false,
+            mediaBytes: omitted.mediaBytes !== false,
+            tokenValues: omitted.tokenValues !== false,
+        },
+        execution: summary.execution === null || summary.execution === undefined ? null : asRecord(summary.execution),
+        unsafeMetadata: unsafe
+            ? {
+                  code: "renderer_service_bundled_scene_bridge_runtime_registry_installation_unsafe_metadata",
+                  message:
+                      "Renderer-service bundled scene bridge runtime registry installation metadata failed safety checks.",
+                  nextActions: [
+                      "Inspect renderer-service /health bundledSceneBridgeRuntimeRegistryInstallation before trusting bundled scene bridge runtime registry installation metadata.",
+                      "Keep render dispatch, runtime value exposure, and default MCP/CLI enablement gated.",
+                  ],
+              }
+            : null,
+    };
+}
+
+
+function normalizeRendererServiceBundledSceneBridgeInstalledRuntimeLifecycleDiagnostic(body) {
+    const bodyRecord = asRecord(body);
+    const present = Object.prototype.hasOwnProperty.call(bodyRecord, "bundledSceneBridgeInstalledRuntimeLifecycle");
+    const summary = asRecord(bodyRecord.bundledSceneBridgeInstalledRuntimeLifecycle);
+    const source = asRecord(summary.source);
+    const registrySlot = asRecord(summary.registrySlot);
+    const lifecycleHooks = asRecord(summary.lifecycleHooks);
+    const duplicateReplacementPolicy = asRecord(summary.duplicateReplacementPolicy);
+    const rollbackReadiness = asRecord(summary.rollbackReadiness);
+    const runtimeAvailability = asRecord(summary.runtimeAvailability);
+    const refusalDiagnostics = asRecord(summary.refusalDiagnostics);
+    const sideEffects = asRecord(summary.sideEffects);
+    const redaction = asRecord(summary.redaction);
+    const omitted = asRecord(summary.omitted);
+    const lifecycleOutcomeTaxonomy = normalizeDiagnosticRecordArray(summary.lifecycleOutcomeTaxonomy).map((entry) => ({
+        code:
+            normalizeOptionalString(entry.code) ??
+            "renderer_service_bundled_scene_bridge_installed_runtime_lifecycle_outcome_unknown",
+        stage: normalizeOptionalString(entry.stage),
+        severity: normalizeOptionalString(entry.severity),
+        retryable: entry.retryable === true,
+        dispatch: entry.dispatch === true,
+    }));
+    const diagnostics = normalizeDiagnosticRecordArray(summary.diagnostics).map((entry) => ({
+        code:
+            normalizeOptionalString(entry.code) ??
+            "renderer_service_bundled_scene_bridge_installed_runtime_lifecycle_diagnostic_unknown",
+        severity: normalizeOptionalString(entry.severity),
+        field: normalizeOptionalString(entry.field),
+        env: normalizeOptionalString(entry.env),
+        valueRead: entry.valueRead === true,
+        valuesIncluded: entry.valuesIncluded === true,
+        message: normalizeOptionalString(entry.message),
+        nextActions: normalizeDiagnosticStringArray(entry.nextActions),
+    }));
+    const diagnosticCodes = normalizeDiagnosticStringArray(summary.diagnosticCodes);
+    const nextActions = normalizeDiagnosticStringArray(summary.nextActions);
+    const checks = normalizeDiagnosticRecordArray(summary.checks).map((entry) => ({
+        id: normalizeOptionalString(entry.id) ?? "unknown",
+        status: normalizeOptionalString(entry.status) ?? "unknown",
+        required: entry.required === true,
+        dispatch: entry.dispatch === true,
+    }));
+    const allFalse = (record, fields) => fields.every((field) => record[field] === false);
+    const equalStringArrays = (actual, expected) =>
+        actual.length === expected.length && actual.every((entry, index) => entry === expected[index]);
+    const statusValue = normalizeOptionalString(summary.status) ?? "not-reported";
+    const statusAllowed = ["not-installed", "installed", "invalid"].includes(statusValue);
+    const installed = statusValue === "installed";
+    const invalid = statusValue === "invalid";
+    const expectedOutcomeCodes = [
+        "renderer_service_bundled_scene_bridge_installed_runtime_lifecycle_not_installed",
+        "renderer_service_bundled_scene_bridge_installed_runtime_lifecycle_installation_invalid",
+        "renderer_service_bundled_scene_bridge_installed_runtime_lifecycle_reported",
+        "renderer_service_bundled_scene_bridge_installed_runtime_lifecycle_unsafe_metadata",
+    ];
+    const expectedCheckIds = [
+        "registry-installation-executed",
+        "registry-slot-occupied",
+        "close-hook-registered",
+        "rollback-readiness",
+        "duplicate-replacement-policy",
+        "runtime-values-redacted",
+    ];
+    const sideEffectAlwaysFalse = [
+        "runtimeRegistration",
+        "runtimeExecutionRegistered",
+        "closeHookInvocation",
+        "duplicateRollback",
+        "renderDispatch",
+        "browserProcessStarted",
+        "browserPageCreated",
+        "runtimeAssetsLoaded",
+        "assetManifestMaterialized",
+        "backendRpcReads",
+        "sourceDataReads",
+        "networkDispatch",
+        "dispatch",
+        "localFileWrites",
+    ];
+    const redactionFields = [
+        "modeValuesIncluded",
+        "moduleValuesIncluded",
+        "factoryValuesIncluded",
+        "runtimeOptionsValuesIncluded",
+        "optionValuesIncluded",
+        "runtimeValuesIncluded",
+        "registryValuesIncluded",
+        "lifecycleValuesIncluded",
+        "pathValuesIncluded",
+        "sourceDataValuesIncluded",
+        "pageValuesIncluded",
+        "artifactValuesIncluded",
+        "mediaValuesIncluded",
+        "tokenValuesIncluded",
+    ];
+    const omittedFields = [
+        "configuredValue",
+        "moduleNamespace",
+        "factoryValue",
+        "runtimeOptionsValue",
+        "optionValues",
+        "runtimeValue",
+        "registryValue",
+        "lifecycleHandles",
+        "workspaceRoot",
+        "cacheRoot",
+        "modulePath",
+        "publicPaths",
+        "cachePaths",
+        "sha256",
+        "playwrightBrowserPath",
+        "runtimeModulePath",
+        "sourceData",
+        "pageData",
+        "artifactBytes",
+        "mediaBytes",
+        "tokenValues",
+    ];
+    const diagnosticNextActions = uniqueStrings(diagnostics.flatMap((entry) => entry.nextActions));
+    const normalizedDiagnosticCodes = diagnosticCodes.length > 0 ? diagnosticCodes : diagnostics.map((entry) => entry.code);
+    const normalizedNextActions = nextActions.length > 0 ? nextActions : diagnosticNextActions;
+    const unsafe =
+        present &&
+        (!statusAllowed ||
+            normalizeOptionalString(summary.diagnosticsVersion) !== "P26.47" ||
+            normalizeOptionalString(summary.owner) !== "renderer-service" ||
+            normalizeOptionalString(summary.mode) !== "installed-runtime-lifecycle-diagnostics" ||
+            normalizeOptionalString(source.installedRuntimeLifecycleVersion) !== "P26.47" ||
+            normalizeOptionalString(source.registryInstallationVersion) !== "P26.46" ||
+            source.runtimeInstalled !== installed ||
+            registrySlot.runtimeAvailableForDispatch === true ||
+            registrySlot.renderDispatchEnabled === true ||
+            registrySlot.valuesIncluded === true ||
+            runtimeAvailability.runtimeAvailableForDispatch === true ||
+            runtimeAvailability.renderDispatchEnabled === true ||
+            runtimeAvailability.runtimeValueAvailable === true ||
+            runtimeAvailability.valuesIncluded === true ||
+            refusalDiagnostics.renderDispatchRefused !== true ||
+            refusalDiagnostics.runtimeValueExposureRefused !== true ||
+            refusalDiagnostics.valuesIncluded === true ||
+            !allFalse(sideEffects, sideEffectAlwaysFalse) ||
+            !allFalse(redaction, redactionFields) ||
+            !omittedFields.every((field) => omitted[field] !== false) ||
+            lifecycleOutcomeTaxonomy.some((entry) => entry.dispatch === true) ||
+            checks.some((entry) => entry.dispatch === true) ||
+            !equalStringArrays(
+                lifecycleOutcomeTaxonomy.map((entry) => entry.code),
+                expectedOutcomeCodes
+            ) ||
+            !equalStringArrays(
+                checks.map((entry) => entry.id),
+                expectedCheckIds
+            ) ||
+            (installed && registrySlot.slotOccupied !== true) ||
+            (installed && registrySlot.runtimeInstalled !== true));
+    const status = !present ? "not-reported" : unsafe ? "invalid" : statusValue;
+    const checked = present && !unsafe;
+    return {
+        status,
+        diagnosticsVersion: normalizeOptionalString(summary.diagnosticsVersion),
+        checked,
+        owner: normalizeOptionalString(summary.owner),
+        mode: normalizeOptionalString(summary.mode),
+        source: {
+            runtimeRegistrationPreflightVersion: normalizeOptionalString(source.runtimeRegistrationPreflightVersion),
+            registryRegistrationBoundaryVersion: normalizeOptionalString(source.registryRegistrationBoundaryVersion),
+            registryInstallationContractVersion: normalizeOptionalString(source.registryInstallationContractVersion),
+            registryInstallationGateVersion: normalizeOptionalString(source.registryInstallationGateVersion),
+            registryInstallationPreflightVersion: normalizeOptionalString(source.registryInstallationPreflightVersion),
+            registryInstallationExecutionBoundaryVersion: normalizeOptionalString(
+                source.registryInstallationExecutionBoundaryVersion
+            ),
+            registryInstallationVersion: normalizeOptionalString(source.registryInstallationVersion),
+            installedRuntimeLifecycleVersion: normalizeOptionalString(source.installedRuntimeLifecycleVersion),
+            registryInstallationStatus: normalizeOptionalString(source.registryInstallationStatus),
+            registryInstallationReady: source.registryInstallationReady === true,
+            runtimeInstalled: source.runtimeInstalled === true,
+            readiness: normalizeOptionalString(source.readiness),
+        },
+        registrySlot: {
+            runtimeId: normalizeOptionalString(registrySlot.runtimeId),
+            targetRegistry: normalizeOptionalString(registrySlot.targetRegistry),
+            slotOwner: normalizeOptionalString(registrySlot.slotOwner),
+            slotStatus: normalizeOptionalString(registrySlot.slotStatus),
+            slotOccupied: registrySlot.slotOccupied === true,
+            runtimeInstalled: registrySlot.runtimeInstalled === true,
+            runtimeAvailableForDispatch: registrySlot.runtimeAvailableForDispatch === true,
+            renderDispatchEnabled: registrySlot.renderDispatchEnabled === true,
+            valuesIncluded: registrySlot.valuesIncluded === true,
+        },
+        lifecycleHooks: {
+            lifecycleOwner: normalizeOptionalString(lifecycleHooks.lifecycleOwner),
+            closeHookOwner: normalizeOptionalString(lifecycleHooks.closeHookOwner),
+            rollbackOwner: normalizeOptionalString(lifecycleHooks.rollbackOwner),
+            closeHookRegistered: lifecycleHooks.closeHookRegistered === true,
+            rollbackHookRegistered: lifecycleHooks.rollbackHookRegistered === true,
+            closeHookCallable: lifecycleHooks.closeHookCallable === true,
+            closeAttempted: lifecycleHooks.closeAttempted === true,
+            closeSucceeded: lifecycleHooks.closeSucceeded === true,
+            closeFailed: lifecycleHooks.closeFailed === true,
+            valuesIncluded: lifecycleHooks.valuesIncluded === true,
+        },
+        duplicateReplacementPolicy: {
+            duplicateRegistrationPolicy: normalizeOptionalString(duplicateReplacementPolicy.duplicateRegistrationPolicy),
+            replacementPolicy: normalizeOptionalString(duplicateReplacementPolicy.replacementPolicy),
+            existingRuntimeFound: duplicateReplacementPolicy.existingRuntimeFound === true,
+            duplicateDetected: duplicateReplacementPolicy.duplicateDetected === true,
+            replacementSupported: duplicateReplacementPolicy.replacementSupported === true,
+            replacementAttempted: duplicateReplacementPolicy.replacementAttempted === true,
+            valuesIncluded: duplicateReplacementPolicy.valuesIncluded === true,
+        },
+        rollbackReadiness: {
+            rollbackReady: rollbackReadiness.rollbackReady === true,
+            rollbackHookRegistered: rollbackReadiness.rollbackHookRegistered === true,
+            cleanupOnServiceStop: rollbackReadiness.cleanupOnServiceStop === true,
+            cleanupOnInstallationFailure: rollbackReadiness.cleanupOnInstallationFailure === true,
+            rollbackAttempted: rollbackReadiness.rollbackAttempted === true,
+            rollbackSucceeded: rollbackReadiness.rollbackSucceeded === true,
+            rollbackFailed: rollbackReadiness.rollbackFailed === true,
+            valuesIncluded: rollbackReadiness.valuesIncluded === true,
+        },
+        runtimeAvailability: {
+            status: normalizeOptionalString(runtimeAvailability.status),
+            runtimeId: normalizeOptionalString(runtimeAvailability.runtimeId),
+            runtimeInstalled: runtimeAvailability.runtimeInstalled === true,
+            runtimeValueAvailable: runtimeAvailability.runtimeValueAvailable === true,
+            runtimeAvailableForDispatch: runtimeAvailability.runtimeAvailableForDispatch === true,
+            renderDispatchEnabled: runtimeAvailability.renderDispatchEnabled === true,
+            valuesIncluded: runtimeAvailability.valuesIncluded === true,
+        },
+        refusalDiagnostics: {
+            refusalRequired: refusalDiagnostics.refusalRequired === true,
+            refusalReason: normalizeOptionalString(refusalDiagnostics.refusalReason),
+            invalidInstallationMetadata: refusalDiagnostics.invalidInstallationMetadata === true,
+            renderDispatchRefused: refusalDiagnostics.renderDispatchRefused === true,
+            runtimeValueExposureRefused: refusalDiagnostics.runtimeValueExposureRefused === true,
+            valuesIncluded: refusalDiagnostics.valuesIncluded === true,
+        },
+        lifecycleOutcomeTaxonomy,
+        diagnostics,
+        diagnosticCodes: normalizedDiagnosticCodes,
+        nextActions: normalizedNextActions,
+        checks,
+        sideEffects: {
+            registryLookup: sideEffects.registryLookup === true,
+            registryWrite: sideEffects.registryWrite === true,
+            runtimeValueCreation: sideEffects.runtimeValueCreation === true,
+            runtimeInstallation: sideEffects.runtimeInstallation === true,
+            runtimeRegistration: sideEffects.runtimeRegistration === true,
+            runtimeExecutionRegistered: sideEffects.runtimeExecutionRegistered === true,
+            closeHookRegistration: sideEffects.closeHookRegistration === true,
+            closeHookInvocation: sideEffects.closeHookInvocation === true,
+            duplicateRollback: sideEffects.duplicateRollback === true,
+            renderDispatch: sideEffects.renderDispatch === true,
+            browserProcessStarted: sideEffects.browserProcessStarted === true,
+            browserPageCreated: sideEffects.browserPageCreated === true,
+            runtimeAdapterImported: sideEffects.runtimeAdapterImported === true,
+            runtimeFactoryInvoked: sideEffects.runtimeFactoryInvoked === true,
+            runtimeOptionsCreated: sideEffects.runtimeOptionsCreated === true,
+            runtimeAssetsLoaded: sideEffects.runtimeAssetsLoaded === true,
+            assetManifestMaterialized: sideEffects.assetManifestMaterialized === true,
+            backendRpcReads: sideEffects.backendRpcReads === true,
+            sourceDataReads: sideEffects.sourceDataReads === true,
+            networkDispatch: sideEffects.networkDispatch === true,
+            dispatch: sideEffects.dispatch === true,
+            localFileWrites: sideEffects.localFileWrites === true,
+        },
+        redaction: Object.fromEntries(redactionFields.map((field) => [field, redaction[field] === true])),
+        omitted: Object.fromEntries(omittedFields.map((field) => [field, omitted[field] !== false])),
+        execution: summary.execution === null || summary.execution === undefined ? null : asRecord(summary.execution),
+        unsafeMetadata: unsafe
+            ? {
+                  code: "renderer_service_bundled_scene_bridge_installed_runtime_lifecycle_unsafe_metadata",
+                  message:
+                      "Renderer-service bundled scene bridge installed-runtime lifecycle metadata failed safety checks.",
+                  nextActions: [
+                      "Inspect renderer-service /health bundledSceneBridgeInstalledRuntimeLifecycle before trusting installed-runtime lifecycle metadata.",
+                      "Keep render dispatch, runtime value exposure, and default MCP/CLI enablement gated.",
+                  ],
+              }
+            : null,
+    };
+}
+
+
+function normalizeRendererServiceBundledSceneBridgeRealRuntimeValueContractDiagnostic(body) {
+    const bodyRecord = asRecord(body);
+    const present = Object.prototype.hasOwnProperty.call(bodyRecord, "bundledSceneBridgeRealRuntimeValueContract");
+    const summary = asRecord(bodyRecord.bundledSceneBridgeRealRuntimeValueContract);
+    const source = asRecord(summary.source);
+    const ownership = asRecord(summary.ownership);
+    const runtimeValueShape = asRecord(summary.runtimeValueShape);
+    const browserPageHandoff = asRecord(summary.browserPageHandoff);
+    const sideEffects = asRecord(summary.sideEffects);
+    const redaction = asRecord(summary.redaction);
+    const omitted = asRecord(summary.omitted);
+    const diagnostics = normalizeDiagnosticRecordArray(summary.diagnostics).map((entry) => ({
+        code:
+            normalizeOptionalString(entry.code) ??
+            "renderer_service_bundled_scene_bridge_real_runtime_value_contract_diagnostic_unknown",
+        severity: normalizeOptionalString(entry.severity),
+        field: normalizeOptionalString(entry.field),
+        message: normalizeOptionalString(entry.message),
+        nextActions: normalizeDiagnosticStringArray(entry.nextActions),
+    }));
+    const diagnosticCodes = normalizeDiagnosticStringArray(summary.diagnosticCodes);
+    const nextActions = normalizeDiagnosticStringArray(summary.nextActions);
+    const checks = normalizeDiagnosticRecordArray(summary.checks).map((entry) => ({
+        id: normalizeOptionalString(entry.id) ?? "unknown",
+        status: normalizeOptionalString(entry.status) ?? "unknown",
+        required: entry.required === true,
+        dispatch: entry.dispatch === true,
+    }));
+    const failureTaxonomy = normalizeDiagnosticRecordArray(summary.failureTaxonomy).map((entry) => ({
+        code:
+            normalizeOptionalString(entry.code) ??
+            "renderer_service_bundled_scene_bridge_real_runtime_value_contract_failure_unknown",
+        stage: normalizeOptionalString(entry.stage),
+        severity: normalizeOptionalString(entry.severity),
+        retryable: entry.retryable === true,
+        dispatch: entry.dispatch === true,
+    }));
+    const allFalse = (record, fields) => fields.every((field) => record[field] === false);
+    const statusValue = normalizeOptionalString(summary.status) ?? "not-reported";
+    const sideEffectAlwaysFalse = [
+        "registryWrite",
+        "runtimeInstallation",
+        "runtimeRegistration",
+        "runtimeExecutionRegistered",
+        "renderDispatch",
+        "browserProcessStarted",
+        "browserPageCreated",
+        "runtimeAssetsLoaded",
+        "assetManifestMaterialized",
+        "networkDispatch",
+        "dispatch",
+        "localFileWrites",
+    ];
+    const redactionFields = [
+        "runtimeValuesIncluded",
+        "registryValuesIncluded",
+        "lifecycleValuesIncluded",
+        "pathValuesIncluded",
+        "sourceDataValuesIncluded",
+        "pageValuesIncluded",
+        "artifactValuesIncluded",
+        "mediaValuesIncluded",
+        "tokenValuesIncluded",
+    ];
+    const unsafe =
+        present &&
+        (statusValue !== "planned-disabled" ||
+            normalizeOptionalString(summary.contractVersion) !== "P26.48" ||
+            normalizeOptionalString(summary.owner) !== "renderer-service" ||
+            normalizeOptionalString(summary.mode) !== "real-runtime-value-contract-plan" ||
+            normalizeOptionalString(source.realRuntimeValueContractVersion) !== "P26.48" ||
+            source.realRuntimeImplemented === true ||
+            ownership.activeEditorTabRequired === true ||
+            runtimeValueShape.realRuntimeSelectable === true ||
+            runtimeValueShape.valuesIncluded === true ||
+            browserPageHandoff.browserProcessStarted === true ||
+            browserPageHandoff.pageCreated === true ||
+            !allFalse(sideEffects, sideEffectAlwaysFalse) ||
+            !allFalse(redaction, redactionFields) ||
+            failureTaxonomy.some((entry) => entry.dispatch === true) ||
+            checks.some((entry) => entry.dispatch === true));
+    const status = !present ? "not-reported" : unsafe ? "invalid" : statusValue;
+    return {
+        status,
+        contractVersion: normalizeOptionalString(summary.contractVersion),
+        checked: present && !unsafe,
+        owner: normalizeOptionalString(summary.owner),
+        mode: normalizeOptionalString(summary.mode),
+        source: {
+            adapterContractVersion: normalizeOptionalString(source.adapterContractVersion),
+            registryInstallationVersion: normalizeOptionalString(source.registryInstallationVersion),
+            installedRuntimeLifecycleVersion: normalizeOptionalString(source.installedRuntimeLifecycleVersion),
+            realRuntimeValueContractVersion: normalizeOptionalString(source.realRuntimeValueContractVersion),
+            stubRuntimeInstalledAllowed: source.stubRuntimeInstalledAllowed === true,
+            realRuntimeImplemented: source.realRuntimeImplemented === true,
+            readiness: normalizeOptionalString(source.readiness),
+        },
+        ownership: {
+            lifecycleOwner: normalizeOptionalString(ownership.lifecycleOwner),
+            registryOwner: normalizeOptionalString(ownership.registryOwner),
+            browserOwner: normalizeOptionalString(ownership.browserOwner),
+            renderWasmOwner: normalizeOptionalString(ownership.renderWasmOwner),
+            rasterizerOwner: normalizeOptionalString(ownership.rasterizerOwner),
+            activeEditorTabRequired: ownership.activeEditorTabRequired === true,
+            processLocalRegistryRequired: ownership.processLocalRegistryRequired === true,
+            valuesIncluded: ownership.valuesIncluded === true,
+        },
+        runtimeValueShape: {
+            runtimeId: normalizeOptionalString(runtimeValueShape.runtimeId),
+            targetRegistry: normalizeOptionalString(runtimeValueShape.targetRegistry),
+            type: normalizeOptionalString(runtimeValueShape.type),
+            requiredMethods: normalizeDiagnosticStringArray(runtimeValueShape.requiredMethods),
+            optionalMethods: normalizeDiagnosticStringArray(runtimeValueShape.optionalMethods),
+            primaryRuntime: normalizeOptionalString(runtimeValueShape.primaryRuntime),
+            fallbackRuntime: normalizeOptionalString(runtimeValueShape.fallbackRuntime),
+            stubRuntimeSelectable: runtimeValueShape.stubRuntimeSelectable === true,
+            realRuntimeSelectable: runtimeValueShape.realRuntimeSelectable === true,
+            valuesIncluded: runtimeValueShape.valuesIncluded === true,
+        },
+        browserPageHandoff: {
+            engine: normalizeOptionalString(browserPageHandoff.engine),
+            headless: browserPageHandoff.headless === true,
+            pageReusePolicy: normalizeOptionalString(browserPageHandoff.pageReusePolicy),
+            activeEditorTabRequired: browserPageHandoff.activeEditorTabRequired === true,
+            browserProcessStarted: browserPageHandoff.browserProcessStarted === true,
+            pageCreated: browserPageHandoff.pageCreated === true,
+            pageValuesIncluded: browserPageHandoff.pageValuesIncluded === true,
+            playwrightPathIncluded: browserPageHandoff.playwrightPathIncluded === true,
+        },
+        failureTaxonomy,
+        diagnostics,
+        diagnosticCodes: diagnosticCodes.length > 0 ? diagnosticCodes : diagnostics.map((entry) => entry.code),
+        nextActions: nextActions.length > 0 ? nextActions : uniqueStrings(diagnostics.flatMap((entry) => entry.nextActions)),
+        checks,
+        sideEffects: Object.fromEntries(
+            [
+                "registryLookup",
+                "registryWrite",
+                "runtimeValueCreation",
+                "runtimeInstallation",
+                "runtimeRegistration",
+                "runtimeExecutionRegistered",
+                "renderDispatch",
+                "browserProcessStarted",
+                "browserPageCreated",
+                "runtimeAdapterImported",
+                "runtimeFactoryInvoked",
+                "runtimeOptionsCreated",
+                "runtimeAssetsLoaded",
+                "assetManifestMaterialized",
+                "backendRpcReads",
+                "sourceDataReads",
+                "networkDispatch",
+                "dispatch",
+                "localFileWrites",
+            ].map((field) => [field, sideEffects[field] === true])
+        ),
+        redaction: Object.fromEntries(
+            [
+                "modeValuesIncluded",
+                "moduleValuesIncluded",
+                "factoryValuesIncluded",
+                "runtimeOptionsValuesIncluded",
+                "optionValuesIncluded",
+                "runtimeValuesIncluded",
+                "registryValuesIncluded",
+                "lifecycleValuesIncluded",
+                "pathValuesIncluded",
+                "sourceDataValuesIncluded",
+                "pageValuesIncluded",
+                "artifactValuesIncluded",
+                "mediaValuesIncluded",
+                "tokenValuesIncluded",
+            ].map((field) => [field, redaction[field] === true])
+        ),
+        omitted: {
+            runtimeValue: omitted.runtimeValue !== false,
+            registryValue: omitted.registryValue !== false,
+            lifecycleHandles: omitted.lifecycleHandles !== false,
+            playwrightBrowserPath: omitted.playwrightBrowserPath !== false,
+            sourceData: omitted.sourceData !== false,
+            pageData: omitted.pageData !== false,
+            artifactBytes: omitted.artifactBytes !== false,
+            mediaBytes: omitted.mediaBytes !== false,
+            tokenValues: omitted.tokenValues !== false,
+        },
+        execution: summary.execution === null || summary.execution === undefined ? null : asRecord(summary.execution),
+        unsafeMetadata: unsafe
+            ? {
+                  code: "renderer_service_bundled_scene_bridge_real_runtime_value_contract_unsafe_metadata",
+                  message:
+                      "Renderer-service bundled scene bridge real runtime value contract metadata failed safety checks.",
+                  nextActions: [
+                      "Inspect renderer-service /health bundledSceneBridgeRealRuntimeValueContract before trusting real runtime value contract metadata.",
+                      "Keep browser startup, asset materialization writes, default MCP/CLI rendering, and value exposure gated.",
+                  ],
+              }
+            : null,
+    };
+}
+
+
+function normalizeRendererServiceBundledSceneBridgeRealRuntimeModuleScaffoldDiagnostic(body) {
+    const bodyRecord = asRecord(body);
+    const present = Object.prototype.hasOwnProperty.call(bodyRecord, "bundledSceneBridgeRealRuntimeModuleScaffold");
+    const summary = asRecord(bodyRecord.bundledSceneBridgeRealRuntimeModuleScaffold);
+    const source = asRecord(summary.source);
+    const module = asRecord(summary.module);
+    const gate = asRecord(summary.gate);
+    const selection = asRecord(summary.selection);
+    const sideEffects = asRecord(summary.sideEffects);
+    const redaction = asRecord(summary.redaction);
+    const omitted = asRecord(summary.omitted);
+    const diagnostics = normalizeDiagnosticRecordArray(summary.diagnostics).map((entry) => ({
+        code:
+            normalizeOptionalString(entry.code) ??
+            "renderer_service_bundled_scene_bridge_real_runtime_module_scaffold_diagnostic_unknown",
+        severity: normalizeOptionalString(entry.severity),
+        field: normalizeOptionalString(entry.field),
+        env: normalizeOptionalString(entry.env),
+        valueRead: entry.valueRead === true,
+        valuesIncluded: entry.valuesIncluded === true,
+        message: normalizeOptionalString(entry.message),
+        nextActions: normalizeDiagnosticStringArray(entry.nextActions),
+    }));
+    const diagnosticCodes = normalizeDiagnosticStringArray(summary.diagnosticCodes);
+    const nextActions = normalizeDiagnosticStringArray(summary.nextActions);
+    const checks = normalizeDiagnosticRecordArray(summary.checks).map((entry) => ({
+        id: normalizeOptionalString(entry.id) ?? "unknown",
+        status: normalizeOptionalString(entry.status) ?? "unknown",
+        required: entry.required === true,
+        dispatch: entry.dispatch === true,
+    }));
+    const allFalse = (record, fields) => fields.every((field) => record[field] === false);
+    const statusValue = normalizeOptionalString(summary.status) ?? "not-reported";
+    const statusAllowed = ["planned-disabled", "configured-disabled", "invalid"].includes(statusValue);
+    const sideEffectAlwaysFalse = [
+        "runtimeInstallation",
+        "runtimeRegistration",
+        "runtimeExecutionRegistered",
+        "renderDispatch",
+        "browserProcessStarted",
+        "browserPageCreated",
+        "runtimeAdapterImported",
+        "runtimeFactoryInvoked",
+        "runtimeAssetsLoaded",
+        "assetManifestMaterialized",
+        "networkDispatch",
+        "dispatch",
+        "localFileWrites",
+    ];
+    const redactionFields = [
+        "runtimeValuesIncluded",
+        "registryValuesIncluded",
+        "pathValuesIncluded",
+        "sourceDataValuesIncluded",
+        "pageValuesIncluded",
+        "artifactValuesIncluded",
+        "mediaValuesIncluded",
+        "tokenValuesIncluded",
+    ];
+    const unsafe =
+        present &&
+        (!statusAllowed ||
+            normalizeOptionalString(summary.scaffoldVersion) !== "P26.49" ||
+            normalizeOptionalString(summary.owner) !== "renderer-service" ||
+            normalizeOptionalString(summary.mode) !== "gated-real-runtime-module-scaffold" ||
+            normalizeOptionalString(source.realRuntimeModuleScaffoldVersion) !== "P26.49" ||
+            source.realRuntimeImplemented === true ||
+            module.moduleImported === true ||
+            module.factoryInvoked === true ||
+            gate.realRuntimeSelected === true ||
+            selection.realFactorySelected === true ||
+            selection.replacesStubInstallation === true ||
+            !allFalse(sideEffects, sideEffectAlwaysFalse) ||
+            !allFalse(redaction, redactionFields) ||
+            checks.some((entry) => entry.dispatch === true));
+    const status = !present ? "not-reported" : unsafe ? "invalid" : statusValue;
+    return {
+        status,
+        scaffoldVersion: normalizeOptionalString(summary.scaffoldVersion),
+        checked: present && !unsafe,
+        owner: normalizeOptionalString(summary.owner),
+        mode: normalizeOptionalString(summary.mode),
+        source: {
+            realRuntimeValueContractVersion: normalizeOptionalString(source.realRuntimeValueContractVersion),
+            realRuntimeModuleScaffoldVersion: normalizeOptionalString(source.realRuntimeModuleScaffoldVersion),
+            realRuntimeValueContractReady: source.realRuntimeValueContractReady === true,
+            realRuntimeImplemented: source.realRuntimeImplemented === true,
+            readiness: normalizeOptionalString(source.readiness),
+        },
+        module: {
+            module: normalizeOptionalString(module.module),
+            exportName: normalizeOptionalString(module.exportName),
+            primaryRuntime: normalizeOptionalString(module.primaryRuntime),
+            fallbackRuntime: normalizeOptionalString(module.fallbackRuntime),
+            moduleDefined: module.moduleDefined === true,
+            moduleImported: module.moduleImported === true,
+            factoryInvoked: module.factoryInvoked === true,
+            valuesIncluded: module.valuesIncluded === true,
+        },
+        gate: {
+            env: normalizeOptionalString(gate.env),
+            acceptedValue: normalizeOptionalString(gate.acceptedValue),
+            configured: gate.configured === true,
+            accepted: gate.accepted === true,
+            reviewedScaffoldOpen: gate.reviewedScaffoldOpen === true,
+            realRuntimeSelectable: gate.realRuntimeSelectable === true,
+            realRuntimeSelected: gate.realRuntimeSelected === true,
+            valuesIncluded: gate.valuesIncluded === true,
+        },
+        selection: {
+            stubFactoryDefault: selection.stubFactoryDefault === true,
+            realFactorySelectable: selection.realFactorySelectable === true,
+            realFactorySelected: selection.realFactorySelected === true,
+            replacesStubInstallation: selection.replacesStubInstallation === true,
+            valuesIncluded: selection.valuesIncluded === true,
+        },
+        diagnostics,
+        diagnosticCodes: diagnosticCodes.length > 0 ? diagnosticCodes : diagnostics.map((entry) => entry.code),
+        nextActions: nextActions.length > 0 ? nextActions : uniqueStrings(diagnostics.flatMap((entry) => entry.nextActions)),
+        checks,
+        sideEffects: Object.fromEntries(
+            [
+                "registryLookup",
+                "registryWrite",
+                "runtimeValueCreation",
+                "runtimeInstallation",
+                "runtimeRegistration",
+                "runtimeExecutionRegistered",
+                "renderDispatch",
+                "browserProcessStarted",
+                "browserPageCreated",
+                "runtimeAdapterImported",
+                "runtimeFactoryInvoked",
+                "runtimeOptionsCreated",
+                "runtimeAssetsLoaded",
+                "assetManifestMaterialized",
+                "backendRpcReads",
+                "sourceDataReads",
+                "networkDispatch",
+                "dispatch",
+                "localFileWrites",
+            ].map((field) => [field, sideEffects[field] === true])
+        ),
+        redaction: Object.fromEntries(
+            [
+                "modeValuesIncluded",
+                "moduleValuesIncluded",
+                "factoryValuesIncluded",
+                "runtimeOptionsValuesIncluded",
+                "optionValuesIncluded",
+                "runtimeValuesIncluded",
+                "registryValuesIncluded",
+                "lifecycleValuesIncluded",
+                "pathValuesIncluded",
+                "sourceDataValuesIncluded",
+                "pageValuesIncluded",
+                "artifactValuesIncluded",
+                "mediaValuesIncluded",
+                "tokenValuesIncluded",
+            ].map((field) => [field, redaction[field] === true])
+        ),
+        omitted: {
+            configuredValue: omitted.configuredValue !== false,
+            moduleNamespace: omitted.moduleNamespace !== false,
+            factoryValue: omitted.factoryValue !== false,
+            runtimeValue: omitted.runtimeValue !== false,
+            registryValue: omitted.registryValue !== false,
+            playwrightBrowserPath: omitted.playwrightBrowserPath !== false,
+            sourceData: omitted.sourceData !== false,
+            pageData: omitted.pageData !== false,
+            artifactBytes: omitted.artifactBytes !== false,
+            mediaBytes: omitted.mediaBytes !== false,
+            tokenValues: omitted.tokenValues !== false,
+        },
+        execution: summary.execution === null || summary.execution === undefined ? null : asRecord(summary.execution),
+        unsafeMetadata: unsafe
+            ? {
+                  code: "renderer_service_bundled_scene_bridge_real_runtime_module_scaffold_unsafe_metadata",
+                  message:
+                      "Renderer-service bundled scene bridge real runtime module scaffold metadata failed safety checks.",
+                  nextActions: [
+                      "Inspect renderer-service /health bundledSceneBridgeRealRuntimeModuleScaffold before trusting real runtime module scaffold metadata.",
+                      "Keep asset loading, browser startup, render dispatch, materialization writes, and value exposure gated.",
+                  ],
+              }
+            : null,
+    };
+}
+
+
+function normalizeRendererServiceBundledSceneBridgeInstalledRuntimeRenderDispatchDiagnostic(body) {
+    const bodyRecord = asRecord(body);
+    const present = Object.prototype.hasOwnProperty.call(bodyRecord, "bundledSceneBridgeInstalledRuntimeRenderDispatch");
+    const summary = asRecord(bodyRecord.bundledSceneBridgeInstalledRuntimeRenderDispatch);
+    const source = asRecord(summary.source);
+    const gate = asRecord(summary.gate);
+    const dispatch = asRecord(summary.dispatch);
+    const sideEffects = asRecord(summary.sideEffects);
+    const redaction = asRecord(summary.redaction);
+    const omitted = asRecord(summary.omitted);
+    const diagnostics = normalizeDiagnosticRecordArray(summary.diagnostics).map((entry) => ({
+        code:
+            normalizeOptionalString(entry.code) ??
+            "renderer_service_bundled_scene_bridge_installed_runtime_render_dispatch_diagnostic_unknown",
+        severity: normalizeOptionalString(entry.severity),
+        field: normalizeOptionalString(entry.field),
+        env: normalizeOptionalString(entry.env),
+        valueRead: entry.valueRead === true,
+        valuesIncluded: entry.valuesIncluded === true,
+        message: normalizeOptionalString(entry.message),
+        nextActions: normalizeDiagnosticStringArray(entry.nextActions),
+    }));
+    const diagnosticCodes = normalizeDiagnosticStringArray(summary.diagnosticCodes);
+    const nextActions = normalizeDiagnosticStringArray(summary.nextActions);
+    const checks = normalizeDiagnosticRecordArray(summary.checks).map((entry) => ({
+        id: normalizeOptionalString(entry.id) ?? "unknown",
+        status: normalizeOptionalString(entry.status) ?? "unknown",
+        required: entry.required === true,
+        dispatch: entry.dispatch === true,
+    }));
+    const allFalse = (record, fields) => fields.every((field) => record[field] === false);
+    const statusValue = normalizeOptionalString(summary.status) ?? "not-reported";
+    const statusAllowed = ["blocked", "ready", "dispatched", "invalid"].includes(statusValue);
+    const redactionFields = [
+        "runtimeValuesIncluded",
+        "registryValuesIncluded",
+        "pathValuesIncluded",
+        "sourceDataValuesIncluded",
+        "pageValuesIncluded",
+        "artifactValuesIncluded",
+        "mediaValuesIncluded",
+        "tokenValuesIncluded",
+    ];
+    const unsafe =
+        present &&
+        (!statusAllowed ||
+            normalizeOptionalString(summary.dispatchVersion) !== "P26.50" ||
+            normalizeOptionalString(summary.owner) !== "renderer-service" ||
+            normalizeOptionalString(summary.mode) !== "gated-installed-runtime-render-dispatch" ||
+            normalizeOptionalString(source.installedRuntimeRenderDispatchVersion) !== "P26.50" ||
+            gate.valuesIncluded === true ||
+            dispatch.valuesIncluded === true ||
+            !allFalse(redaction, redactionFields) ||
+            omitted.runtimeValue === false ||
+            omitted.registryValue === false ||
+            omitted.tokenValues === false);
+    const status = !present ? "not-reported" : unsafe ? "invalid" : statusValue;
+    return {
+        status,
+        dispatchVersion: normalizeOptionalString(summary.dispatchVersion),
+        checked: present && !unsafe,
+        owner: normalizeOptionalString(summary.owner),
+        mode: normalizeOptionalString(summary.mode),
+        source: {
+            registryInstallationVersion: normalizeOptionalString(source.registryInstallationVersion),
+            installedRuntimeLifecycleVersion: normalizeOptionalString(source.installedRuntimeLifecycleVersion),
+            installedRuntimeRenderDispatchVersion: normalizeOptionalString(source.installedRuntimeRenderDispatchVersion),
+            runtimeInstalled: source.runtimeInstalled === true,
+            renderDispatchGateOpen: source.renderDispatchGateOpen === true,
+            readiness: normalizeOptionalString(source.readiness),
+        },
+        gate: {
+            env: normalizeOptionalString(gate.env),
+            acceptedValue: normalizeOptionalString(gate.acceptedValue),
+            configured: gate.configured === true,
+            accepted: gate.accepted === true,
+            reviewedDispatchOpen: gate.reviewedDispatchOpen === true,
+            valuesIncluded: gate.valuesIncluded === true,
+        },
+        dispatch: {
+            runtimeInstalledRequired: dispatch.runtimeInstalledRequired === true,
+            reviewedDispatchGateRequired: dispatch.reviewedDispatchGateRequired === true,
+            preferInjectedRenderer: dispatch.preferInjectedRenderer === true,
+            registryRuntimeSelectable: dispatch.registryRuntimeSelectable === true,
+            registryRuntimeSelected: dispatch.registryRuntimeSelected === true,
+            renderThumbnailCalled: dispatch.renderThumbnailCalled === true,
+            renderDispatch: dispatch.renderDispatch === true,
+            pngMappedToResourcePipeline: dispatch.pngMappedToResourcePipeline === true,
+            valuesIncluded: dispatch.valuesIncluded === true,
+        },
+        diagnostics,
+        diagnosticCodes: diagnosticCodes.length > 0 ? diagnosticCodes : diagnostics.map((entry) => entry.code),
+        nextActions: nextActions.length > 0 ? nextActions : uniqueStrings(diagnostics.flatMap((entry) => entry.nextActions)),
+        checks,
+        sideEffects: {
+            registryLookup: sideEffects.registryLookup === true,
+            renderDispatch: sideEffects.renderDispatch === true,
+            dispatch: sideEffects.dispatch === true,
+            localFileWrites: sideEffects.localFileWrites === true,
+        },
+        redaction: Object.fromEntries(redactionFields.map((field) => [field, redaction[field] === true])),
+        omitted: {
+            configuredValue: omitted.configuredValue !== false,
+            runtimeValue: omitted.runtimeValue !== false,
+            registryValue: omitted.registryValue !== false,
+            sourceData: omitted.sourceData !== false,
+            pageData: omitted.pageData !== false,
+            artifactBytes: omitted.artifactBytes !== false,
+            mediaBytes: omitted.mediaBytes !== false,
+            tokenValues: omitted.tokenValues !== false,
+        },
+        execution: summary.execution === null || summary.execution === undefined ? null : asRecord(summary.execution),
+        unsafeMetadata: unsafe
+            ? {
+                  code: "renderer_service_bundled_scene_bridge_installed_runtime_render_dispatch_unsafe_metadata",
+                  message:
+                      "Renderer-service bundled scene bridge installed-runtime render dispatch metadata failed safety checks.",
+                  nextActions: [
+                      "Inspect renderer-service /health bundledSceneBridgeInstalledRuntimeRenderDispatch before trusting dispatch metadata.",
+                      "Keep default MCP/CLI enablement, unreviewed gates, and credential/media/source value exposure gated.",
+                  ],
+              }
+            : null,
+    };
+}
+
+
+function normalizeRendererServiceRuntimeAssetMaterializationExecutionDiagnostic(body) {
+    const bodyRecord = asRecord(body);
+    const present = Object.prototype.hasOwnProperty.call(bodyRecord, "runtimeAssetMaterializationExecution");
+    const summary = asRecord(bodyRecord.runtimeAssetMaterializationExecution);
+    const source = asRecord(summary.source);
+    const approval = asRecord(summary.approval);
+    const materialization = asRecord(summary.materialization);
+    const sideEffects = asRecord(summary.sideEffects);
+    const redaction = asRecord(summary.redaction);
+    const omitted = asRecord(summary.omitted);
+    const statusValue = normalizeOptionalString(summary.status) ?? "not-reported";
+    const statusAllowed = ["blocked", "executed", "invalid"].includes(statusValue);
+    const unsafe =
+        present &&
+        (!statusAllowed ||
+            normalizeOptionalString(summary.executionVersion) !== "P26.51" ||
+            normalizeOptionalString(summary.owner) !== "renderer-service" ||
+            normalizeOptionalString(summary.mode) !== "approved-runtime-asset-cache-materialization" ||
+            approval.valuesIncluded === true ||
+            materialization.valuesIncluded === true ||
+            redaction.tokenValuesIncluded === true ||
+            redaction.pathValuesIncluded === true ||
+            omitted.tokenValues === false ||
+            omitted.sha256 === false ||
+            sideEffects.dispatch === true ||
+            sideEffects.browserProcessStarted === true ||
+            sideEffects.runtimeAssetsLoaded === true);
+    return {
+        status: !present ? "not-reported" : unsafe ? "invalid" : statusValue,
+        executionVersion: normalizeOptionalString(summary.executionVersion),
+        checked: present && !unsafe,
+        owner: normalizeOptionalString(summary.owner),
+        mode: normalizeOptionalString(summary.mode),
+        source: {
+            preflightReady: source.preflightReady === true,
+            dryRunReady: source.dryRunReady === true,
+            approvalReady: source.approvalReady === true,
+            readiness: normalizeOptionalString(source.readiness),
+        },
+        approval: {
+            approvalGranted: approval.approvalGranted === true,
+            valuesIncluded: approval.valuesIncluded === true,
+        },
+        materialization: {
+            attempted: materialization.attempted === true,
+            succeeded: materialization.succeeded === true,
+            assetsCopied: Number.isInteger(materialization.assetsCopied) ? materialization.assetsCopied : 0,
+            assetsVerified: Number.isInteger(materialization.assetsVerified) ? materialization.assetsVerified : 0,
+            assetsRolledBack: Number.isInteger(materialization.assetsRolledBack) ? materialization.assetsRolledBack : 0,
+            localFileWrites: materialization.localFileWrites === true,
+            valuesIncluded: materialization.valuesIncluded === true,
+        },
+        sideEffects: {
+            assetManifestMaterialized: sideEffects.assetManifestMaterialized === true,
+            localFileWrites: sideEffects.localFileWrites === true,
+            auditRecordWritten: sideEffects.auditRecordWritten === true,
+            dispatch: sideEffects.dispatch === true,
+        },
+        redaction: {
+            pathValuesIncluded: redaction.pathValuesIncluded === true,
+            tokenValuesIncluded: redaction.tokenValuesIncluded === true,
+        },
+        omitted: {
+            tokenValues: omitted.tokenValues !== false,
+            sha256: omitted.sha256 !== false,
+            approvalAuditPaths: omitted.approvalAuditPaths !== false,
+        },
+        execution: summary.execution === null || summary.execution === undefined ? null : asRecord(summary.execution),
+        unsafeMetadata: unsafe
+            ? {
+                  code: "renderer_service_runtime_asset_materialization_execution_unsafe_metadata",
+                  message: "Renderer-service runtime asset materialization execution metadata failed safety checks.",
+                  nextActions: [
+                      "Inspect renderer-service /health runtimeAssetMaterializationExecution before trusting materialization metadata.",
+                      "Keep unapproved writes, runtime value exposure, and default MCP/CLI enablement gated.",
+                  ],
+              }
+            : null,
+    };
+}
+
+
+function normalizeRendererServiceBundledSceneBridgeRealScenePngDiagnostic(body) {
+    const bodyRecord = asRecord(body);
+    const present = Object.prototype.hasOwnProperty.call(bodyRecord, "bundledSceneBridgeRealScenePng");
+    const summary = asRecord(bodyRecord.bundledSceneBridgeRealScenePng);
+    const source = asRecord(summary.source);
+    const production = asRecord(summary.production);
+    const sideEffects = asRecord(summary.sideEffects);
+    const redaction = asRecord(summary.redaction);
+    const omitted = asRecord(summary.omitted);
+    const statusValue = normalizeOptionalString(summary.status) ?? "not-reported";
+    const statusAllowed = ["blocked", "produced", "invalid"].includes(statusValue);
+    const unsafe =
+        present &&
+        (!statusAllowed ||
+            normalizeOptionalString(summary.productionVersion) !== "P26.52" ||
+            normalizeOptionalString(summary.owner) !== "renderer-service" ||
+            normalizeOptionalString(summary.mode) !== "minimal-real-scene-png-production" ||
+            production.multiTargetMatrixEnabled === true ||
+            production.valuesIncluded === true ||
+            redaction.sourceDataValuesIncluded === true ||
+            redaction.tokenValuesIncluded === true ||
+            omitted.sourceData === false ||
+            omitted.artifactBytes === false ||
+            omitted.tokenValues === false);
+    return {
+        status: !present ? "not-reported" : unsafe ? "invalid" : statusValue,
+        productionVersion: normalizeOptionalString(summary.productionVersion),
+        checked: present && !unsafe,
+        owner: normalizeOptionalString(summary.owner),
+        mode: normalizeOptionalString(summary.mode),
+        source: {
+            realRuntimeInstalled: source.realRuntimeInstalled === true,
+            assetsMaterialized: source.assetsMaterialized === true,
+            sourceDataAvailable: source.sourceDataAvailable === true,
+            renderDispatched: source.renderDispatched === true,
+            readiness: normalizeOptionalString(source.readiness),
+        },
+        production: {
+            multiTargetMatrixEnabled: production.multiTargetMatrixEnabled === true,
+            realRuntimeSelected: production.realRuntimeSelected === true,
+            nonEmptyPngProduced: production.nonEmptyPngProduced === true,
+            persisted: production.persisted === true,
+            valuesIncluded: production.valuesIncluded === true,
+        },
+        sideEffects: {
+            renderDispatch: sideEffects.renderDispatch === true,
+            dispatch: sideEffects.dispatch === true,
+            localFileWrites: sideEffects.localFileWrites === true,
+        },
+        redaction: {
+            sourceDataValuesIncluded: redaction.sourceDataValuesIncluded === true,
+            tokenValuesIncluded: redaction.tokenValuesIncluded === true,
+            artifactValuesIncluded: redaction.artifactValuesIncluded === true,
+        },
+        omitted: {
+            sourceData: omitted.sourceData !== false,
+            artifactBytes: omitted.artifactBytes !== false,
+            tokenValues: omitted.tokenValues !== false,
+        },
+        execution: summary.execution === null || summary.execution === undefined ? null : asRecord(summary.execution),
+        unsafeMetadata: unsafe
+            ? {
+                  code: "renderer_service_bundled_scene_bridge_real_scene_png_unsafe_metadata",
+                  message: "Renderer-service bundled scene bridge real-scene PNG metadata failed safety checks.",
+                  nextActions: [
+                      "Inspect renderer-service /health bundledSceneBridgeRealScenePng before trusting real-scene PNG metadata.",
+                      "Keep multi-target matrix expansion and credential/media/source value exposure gated.",
+                  ],
+              }
+            : null,
+    };
+}
+
+
 function normalizeProvidedRuntimeAssetPreflightIssues(value) {
     const issues = [];
     for (const entry of normalizeRecordArray(value)) {
@@ -19337,19 +20722,20 @@ export async function executeRenderThumbnailRendererServiceHealthPreflight(plan,
     const fetchImpl = options.fetch ?? globalThis.fetch;
     const executionGate = plan?.executionGate ?? EMPTY_OBJECT;
     const optInConfigured = Boolean(executionGate.optIn?.configured);
+    const explicitlyDisabled = Boolean(executionGate.optIn?.explicitlyDisabled);
     const gateOpen = executionGate.status === "open" && executionGate.dispatch === true;
 
-    if (!optInConfigured) {
+    if (explicitlyDisabled) {
         return {
             ...base,
             status: "skipped",
             checked: false,
             dispatch: false,
             networkProbe: false,
-            reason: "renderer-service health preflight requires explicit renderer-service opt-in",
+            reason: "renderer-service health preflight is skipped because operator explicitly disabled thumbnail execution",
             error: {
                 code: "renderer_service_execution_disabled",
-                message: "renderer-service health preflight was skipped because explicit opt-in is missing.",
+                message: "renderer-service health preflight was skipped because execution is explicitly disabled.",
                 retryable: false,
             },
         };
@@ -19521,6 +20907,20 @@ export async function executeRenderThumbnailRendererServiceHealthPreflight(plan,
                 normalizeRendererServiceBundledSceneBridgeRuntimeRegistryInstallationPreflightDiagnostic(bodyRecord),
             bundledSceneBridgeRuntimeRegistryInstallationExecutionBoundary:
                 normalizeRendererServiceBundledSceneBridgeRuntimeRegistryInstallationExecutionBoundaryDiagnostic(bodyRecord),
+            bundledSceneBridgeRuntimeRegistryInstallation:
+                normalizeRendererServiceBundledSceneBridgeRuntimeRegistryInstallationDiagnostic(bodyRecord),
+            bundledSceneBridgeInstalledRuntimeLifecycle:
+                normalizeRendererServiceBundledSceneBridgeInstalledRuntimeLifecycleDiagnostic(bodyRecord),
+            bundledSceneBridgeRealRuntimeValueContract:
+                normalizeRendererServiceBundledSceneBridgeRealRuntimeValueContractDiagnostic(bodyRecord),
+            bundledSceneBridgeRealRuntimeModuleScaffold:
+                normalizeRendererServiceBundledSceneBridgeRealRuntimeModuleScaffoldDiagnostic(bodyRecord),
+            bundledSceneBridgeInstalledRuntimeRenderDispatch:
+                normalizeRendererServiceBundledSceneBridgeInstalledRuntimeRenderDispatchDiagnostic(bodyRecord),
+            runtimeAssetMaterializationExecution:
+                normalizeRendererServiceRuntimeAssetMaterializationExecutionDiagnostic(bodyRecord),
+            bundledSceneBridgeRealScenePng:
+                normalizeRendererServiceBundledSceneBridgeRealScenePngDiagnostic(bodyRecord),
             browserFixtureRuntime: normalizeRendererServiceBrowserFixtureRuntimeDiagnostic(bodyRecord),
             response: {
                 status: httpStatus,
@@ -19607,7 +21007,9 @@ export function createRenderThumbnailRendererServiceExecutionGate(options = EMPT
     const serviceImplemented = gateOptions.serviceImplemented !== false;
     const integrationTestsReady = gateOptions.integrationTestsReady !== false;
     const endpointConfigured = Boolean(endpoint);
+    const explicitDisableValues = new Set(["disabled", "off", "false", "0", "no"]);
     const explicitOptInConfigured = optInValue === "renderer-service";
+    const explicitDisableConfigured = optInValue !== null && explicitDisableValues.has(String(optInValue).toLowerCase());
     const requiredCapabilities = Array.isArray(options.requiredCapabilities)
         ? options.requiredCapabilities.map((item) => normalizeOptionalString(item)).filter(Boolean)
         : [];
@@ -19621,26 +21023,44 @@ export function createRenderThumbnailRendererServiceExecutionGate(options = EMPT
                 : "renderer-service execution capability is not enabled for this plan",
         };
     });
-    const gateOpen = explicitOptInConfigured && endpointConfigured && serviceImplemented && integrationTestsReady;
+    // P26.53 endpoint-first: configured endpoint + normal auth path is enough.
+    // Explicit opt-in remains recognized for compatibility, but is no longer required.
+    // Explicit disable values still close the gate.
+    const gateOpen =
+        endpointConfigured &&
+        serviceImplemented &&
+        integrationTestsReady &&
+        !explicitDisableConfigured;
     const missing = Array.from(new Set([
-        explicitOptInConfigured ? null : "explicit-opt-in",
         endpointConfigured ? null : "renderer-service-endpoint",
         serviceImplemented ? null : "thumbnail-renderer-service-implementation",
         integrationTestsReady ? null : "renderer-service-integration-tests",
+        explicitDisableConfigured ? "explicit-disable" : null,
     ].filter(Boolean)));
 
     return {
         status: gateOpen ? "open" : "closed",
         dispatch: gateOpen,
+        operatorFriction: {
+            version: "P26.53",
+            endpointFirst: true,
+            explicitOptInRequired: false,
+            explicitDisableSupported: true,
+            authModel: "caller-session",
+        },
         reason: gateOpen
-            ? "renderer-service execution gate is open for health preflight and render dispatch"
-            : "renderer-service execution is gated until explicit opt-in, endpoint config, service implementation, and integration tests are all ready",
+            ? "renderer-service execution gate is open for health preflight and render dispatch with a configured endpoint"
+            : explicitDisableConfigured
+              ? "renderer-service execution is explicitly disabled by operator configuration"
+              : "renderer-service execution is gated until a configured endpoint, service implementation, and integration tests are ready",
         optIn: {
-            required: true,
+            required: false,
             env: "PENPOT_RENDER_THUMBNAIL_EXECUTION",
             expectedValue: "renderer-service",
+            disableValues: ["disabled", "off", "false", "0", "no"],
             configuredValue: optInValue,
             configured: explicitOptInConfigured,
+            explicitlyDisabled: explicitDisableConfigured,
         },
         requiredConfig: [
             {
@@ -19662,13 +21082,14 @@ export function createRenderThumbnailRendererServiceExecutionGate(options = EMPT
             runtimeExecutionRegistered: gateOpen,
             endpointConfigured,
             explicitOptInConfigured,
+            explicitDisableConfigured,
             requiredCapabilities: requiredCapabilityChecks,
         },
         blockers: missing,
         failureModes: [
             {
                 code: "renderer_service_execution_disabled",
-                when: "explicit opt-in is absent or not equal to renderer-service",
+                when: "operator set PENPOT_RENDER_THUMBNAIL_EXECUTION / --render-thumbnail-execution to an explicit disable value",
             },
             {
                 code: "renderer_service_not_configured",

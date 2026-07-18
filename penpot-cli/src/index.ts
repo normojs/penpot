@@ -2,7 +2,7 @@
 
 import { spawn } from "node:child_process";
 import { constants } from "node:fs";
-import { access, mkdir, readFile, readdir, stat, writeFile } from "node:fs/promises";
+import { access, mkdir, readFile, readdir, stat, unlink, writeFile } from "node:fs/promises";
 import { createConnection } from "node:net";
 import { basename, delimiter, dirname, extname, isAbsolute, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -48,6 +48,8 @@ const DEFAULT_RENDERER_SERVICE_URI = "http://localhost:6070/thumbnail";
 const DEFAULT_RENDERER_SERVICE_HOST = "127.0.0.1";
 const DEFAULT_RENDERER_SERVICE_PORT = 6070;
 const RENDERER_SERVICE_BUILD_DIR = "/Volumes/fushilu/.caches/penpot/renderer-service";
+const RENDERER_SERVICE_LIFECYCLE_STATE_DIR = join(RENDERER_SERVICE_BUILD_DIR, "lifecycle");
+const RENDERER_SERVICE_CONTROLLED_SPAWN_VALUES = new Set(["spawn", "controlled", "enabled", "true", "1", "yes"]);
 const RENDERER_SERVICE_BROWSER_FIXTURE_RUNTIME_ENV = "PENPOT_RENDERER_SERVICE_BROWSER_FIXTURE_RUNTIME";
 const RENDERER_SERVICE_BUNDLED_SCENE_BRIDGE_RUNTIME_ENV = "PENPOT_RENDERER_SERVICE_BUNDLED_SCENE_BRIDGE_RUNTIME";
 const RENDERER_SERVICE_BUNDLED_SCENE_BRIDGE_RUNTIME_INSTALLATION_GATE_ENV =
@@ -82,7 +84,8 @@ Usage:
   penpot-cli mcp logs [--dir <path>] [--follow] [--format text|json]
   penpot-cli dev up --mcp [--mode devenv|host|hybrid] [--dry-run] [--format text|json]
   penpot-cli renderer-service status [--host <host>] [--port <port>] [--format text|json]
-  penpot-cli renderer-service start [--host <host>] [--port <port>] [--format text|json]
+  penpot-cli renderer-service start [--host <host>] [--port <port>] [--spawn] [--format text|json]
+  penpot-cli renderer-service stop [--host <host>] [--port <port>] [--format text|json]
   penpot-cli file list --project-id <id> [--format text|json]
   penpot-cli file create --project-id <id> [--name <name>] [--format text|json]
   penpot-cli file open <file-id> [--team-id <id>] [--page-id <id>] [--format text|json]
@@ -143,15 +146,19 @@ const RENDERER_SERVICE_HELP_TEXT = `penpot-cli renderer-service
 
 Usage:
   penpot-cli renderer-service status [--host <host>] [--port <port>] [--format text|json]
-  penpot-cli renderer-service start [--host <host>] [--port <port>] [--format text|json]
+  penpot-cli renderer-service start [--host <host>] [--port <port>] [--spawn] [--format text|json]
+  penpot-cli renderer-service stop [--host <host>] [--port <port>] [--format text|json]
 
 Notes:
-  status reports a local no-op host lifecycle plan without probing or starting it.
-  start deliberately returns the explicit manual command and never spawns a process.
+  Default remains no-spawn: status reports a local lifecycle plan and may optionally health-probe when --spawn mode is configured.
+  start without --spawn returns the explicit manual command and does not spawn a process.
+  start --spawn (or PENPOT_RENDERER_SERVICE_LIFECYCLE=spawn) starts a controlled private-checkout host, waits for /health, and records a pid file.
+  stop terminates a previously spawn-managed host from the pid file.
 
 Environment:
   PENPOT_RENDERER_SERVICE_HOST  No-op host bind host, default 127.0.0.1
   PENPOT_RENDERER_SERVICE_PORT  No-op host bind port, default 6070
+  PENPOT_RENDERER_SERVICE_LIFECYCLE  Optional controlled lifecycle mode; set to spawn/controlled/enabled to allow process management
   PENPOT_RENDERER_SERVICE_BACKEND_URI  Optional backend RPC base URI for disabled endpoint planning
   PENPOT_RENDERER_SERVICE_RUNTIME_MODULE  Optional local renderer runtime adapter module
   PENPOT_RENDERER_SERVICE_BUNDLED_SCENE_BRIDGE_RUNTIME  Optional future bundled scene bridge import gate
@@ -204,7 +211,7 @@ Usage:
 Notes:
   Repeat --fill and --stroke to send backend-command fill/stroke stacks.
   Repeated --fill-opacity, --stroke-opacity, --stroke-width, --stroke-style, and --stroke-alignment values align by index.
-  Backend-command layout updates support --layout none, --layout flex, and the grid container track subset.
+  Backend-command layout updates support --layout none, --layout flex, grid container tracks, and optional --layout-grid-cells placements.
 
 Environment:
   PENPOT_BACKEND_URI       Backend RPC base URI, default http://localhost:6060
@@ -263,13 +270,13 @@ Usage:
 Notes:
   Preview rendering uses the exporter adapter and always requests PNG output.
   It requires explicit file, page, and object ids because CLI commands cannot infer live selection state.
-  Thumbnail rendering executes only with an explicit renderer-service opt-in. Use --dry-run to inspect the request shape without contacting the service.
+  Thumbnail rendering executes when a renderer-service endpoint is configured (default http://localhost:6070/thumbnail) and auth is available. Set --render-thumbnail-execution disabled (or PENPOT_RENDER_THUMBNAIL_EXECUTION=disabled) to keep execution closed. Use --dry-run to inspect the request shape without contacting the service.
 
 Environment:
   PENPOT_EXPORTER_URI      Exporter HTTP URI, default http://localhost:6061
   PENPOT_RENDERER_SERVICE_URI  Thumbnail renderer-service URI, default http://localhost:6070/thumbnail
   PENPOT_RENDERER_SERVICE_TIMEOUT_MS  Renderer-service health probe timeout, default 2500
-  PENPOT_RENDER_THUMBNAIL_EXECUTION  Explicit execution gate value, expected renderer-service
+  PENPOT_RENDER_THUMBNAIL_EXECUTION  Optional compatibility/disable flag; renderer-service enables execution when endpoint is configured, disabled/off/false/0/no closes the gate
   PENPOT_BACKEND_URI       Backend RPC base URI used to resolve profile id
   PENPOT_PUBLIC_URI        Public Penpot base URI used for future thumbnail download URI derivation
   PENPOT_PROFILE_ID        Optional profile id for the direct exporter request
@@ -584,6 +591,17 @@ interface ShapeLayoutParams {
     padding?: number;
     rows?: Array<{ type: ShapeLayoutTrackType; value?: number }>;
     columns?: Array<{ type: ShapeLayoutTrackType; value?: number }>;
+    cells?: Array<{
+        row: number;
+        column: number;
+        rowSpan?: number;
+        columnSpan?: number;
+        shapes?: string[];
+        position?: string;
+        alignSelf?: string;
+        justifySelf?: string;
+        areaName?: string;
+    }>;
 }
 
 interface ShapeCreateParams {
@@ -1135,8 +1153,17 @@ function getRendererServiceLifecyclePlan(args: string[], env: NodeJS.ProcessEnv)
     buildDir: string;
     startCommand: string | null;
     invalidPort: string | null;
-    processSpawn: false;
-    healthProbe: false;
+    processSpawn: boolean;
+    healthProbe: boolean;
+    controlledLifecycle: {
+        version: "P26.54";
+        defaultNoSpawn: true;
+        spawnOptIn: boolean;
+        spawnRequested: boolean;
+        pidFile: string | null;
+        managedProcess: boolean;
+        healthWatch: boolean;
+    };
     rendererDispatch: false;
     backendRpc: false;
     rendererRuntime: {
@@ -2342,6 +2369,337 @@ function getRendererServiceLifecyclePlan(args: string[], env: NodeJS.ProcessEnv)
         execution: null;
     };
 
+    bundledSceneBridgeRuntimeRegistryInstallation: {
+        status: "blocked" | "invalid";
+        installationVersion: "P26.46";
+        checked: false;
+        owner: "renderer-service";
+        mode: "guarded-runtime-registry-installation-execution";
+        source: {
+            runtimeRegistrationPreflightVersion: "P26.40";
+            registryRegistrationBoundaryVersion: "P26.41";
+            registryInstallationContractVersion: "P26.42";
+            registryInstallationGateVersion: "P26.43";
+            registryInstallationPreflightVersion: "P26.44";
+            registryInstallationExecutionBoundaryVersion: "P26.45";
+            registryInstallationVersion: "P26.46";
+            registryInstallationExecutionBoundaryReady: false;
+            registryInstallationExecutionBoundaryStatus: "blocked" | "invalid";
+            registryInstallationExecutionBoundaryReadiness:
+                | "blocked-until-installation-execution-boundary-planned"
+                | "invalid-installation-execution-boundary";
+            reviewedGateOpen: false;
+            readiness: "blocked-until-renderer-service-health" | "invalid-installation-execution-boundary";
+        };
+        installation: {
+            registryInstallationExecutionBoundaryReadyRequired: true;
+            duplicateLookupRequired: true;
+            runtimeValueCreationRequired: true;
+            registryInstallationRequired: true;
+            closeHookRegistrationRequired: true;
+            rollbackHookRequired: true;
+            noDispatchRequired: true;
+            installationAttemptAllowed: false;
+            runtimeInstallationEnabled: false;
+            registryLookupAttempted: false;
+            registryWriteAttempted: false;
+            runtimeValueCreated: false;
+            runtimeInstallationAttempted: false;
+            runtimeInstalled: false;
+            runtimeRegistered: false;
+            runtimeRegistration: false;
+            runtimeExecutionRegistered: false;
+            closeHookRegistered: false;
+            rollbackHookRegistered: false;
+            duplicateRollbackAttempted: false;
+            renderDispatch: false;
+            browserProcessStarted: false;
+            runtimeValuesIncluded: false;
+            registryValuesIncluded: false;
+        };
+        diagnosticsVersion: "P26.46";
+        diagnosticCodes: string[];
+        diagnostics: Array<{
+            code:
+                | "renderer_service_bundled_scene_bridge_runtime_registry_installation_boundary_not_planned"
+                | "renderer_service_bundled_scene_bridge_runtime_registry_installation_boundary_invalid";
+            severity: "blocked" | "invalid";
+            field: "source.registryInstallationExecutionBoundaryReady" | "source.registryInstallationExecutionBoundaryStatus";
+            env: typeof RENDERER_SERVICE_BUNDLED_SCENE_BRIDGE_RUNTIME_INSTALLATION_GATE_ENV;
+            valueRead: false;
+            valuesIncluded: false;
+            message: string;
+            nextActions: string[];
+        }>;
+        nextActions: string[];
+        diagnosticsSurface: "healthPreflight.bundledSceneBridgeRuntimeRegistryInstallation";
+        lifecyclePlanEffects: {
+            healthProbe: false;
+            registryLookup: false;
+            registryWrite: false;
+            runtimeValueCreation: false;
+            runtimeInstallation: false;
+            runtimeRegistration: false;
+            runtimeExecutionRegistered: false;
+            closeHookRegistration: false;
+            duplicateRollback: false;
+            renderDispatch: false;
+            browserProcessStarted: false;
+            runtimeAdapterImported: false;
+            runtimeFactoryInvoked: false;
+            runtimeOptionsCreated: false;
+            runtimeAssetsLoaded: false;
+            assetManifestMaterialized: false;
+            backendRpcReads: false;
+            sourceDataReads: false;
+            networkDispatch: false;
+            dispatch: false;
+            localFileWrites: false;
+        };
+        omitted: {
+            configuredValue: true;
+            moduleNamespace: true;
+            factoryValue: true;
+            runtimeOptionsValue: true;
+            optionValues: true;
+            runtimeValue: true;
+            registryValue: true;
+            lifecycleHandles: true;
+            workspaceRoot: true;
+            cacheRoot: true;
+            modulePath: true;
+            publicPaths: true;
+            cachePaths: true;
+            sha256: true;
+            playwrightBrowserPath: true;
+            runtimeModulePath: true;
+            sourceData: true;
+            pageData: true;
+            artifactBytes: true;
+            mediaBytes: true;
+            tokenValues: true;
+        };
+        execution: null;
+    };
+
+    bundledSceneBridgeInstalledRuntimeLifecycle: {
+        status: "not-installed" | "invalid";
+        diagnosticsVersion: "P26.47";
+        checked: false;
+        owner: "renderer-service";
+        mode: "installed-runtime-lifecycle-diagnostics";
+        source: {
+            registryInstallationVersion: "P26.46";
+            installedRuntimeLifecycleVersion: "P26.47";
+            registryInstallationStatus: "blocked" | "invalid";
+            registryInstallationReady: false;
+            runtimeInstalled: false;
+            readiness: "blocked-until-renderer-service-health" | "invalid-runtime-registry-installation";
+        };
+        registrySlot: {
+            runtimeId: "bundled-scene-bridge";
+            targetRegistry: "renderer-service.thumbnail-runtime-registry";
+            slotOwner: "renderer-service";
+            slotStatus: "empty";
+            slotOccupied: false;
+            runtimeInstalled: false;
+            runtimeAvailableForDispatch: false;
+            renderDispatchEnabled: false;
+            valuesIncluded: false;
+        };
+        diagnosticCodes: string[];
+        diagnostics: Array<{
+            code:
+                | "renderer_service_bundled_scene_bridge_installed_runtime_lifecycle_not_installed"
+                | "renderer_service_bundled_scene_bridge_installed_runtime_lifecycle_installation_invalid";
+            severity: "blocked" | "invalid";
+            field: "source.runtimeInstalled" | "source.registryInstallationStatus";
+            env: typeof RENDERER_SERVICE_BUNDLED_SCENE_BRIDGE_RUNTIME_INSTALLATION_GATE_ENV;
+            valueRead: false;
+            valuesIncluded: false;
+            message: string;
+            nextActions: string[];
+        }>;
+        nextActions: string[];
+        diagnosticsSurface: "healthPreflight.bundledSceneBridgeInstalledRuntimeLifecycle";
+        lifecyclePlanEffects: {
+            healthProbe: false;
+            registryLookup: false;
+            renderDispatch: false;
+            closeHookInvocation: false;
+            dispatch: false;
+            localFileWrites: false;
+        };
+        omitted: {
+            runtimeValue: true;
+            registryValue: true;
+            lifecycleHandles: true;
+            tokenValues: true;
+        };
+        execution: null;
+    };
+
+    bundledSceneBridgeRealRuntimeValueContract: {
+        status: "planned-disabled";
+        contractVersion: "P26.48";
+        checked: false;
+        owner: "renderer-service";
+        mode: "real-runtime-value-contract-plan";
+        source: {
+            registryInstallationVersion: "P26.46";
+            installedRuntimeLifecycleVersion: "P26.47";
+            realRuntimeValueContractVersion: "P26.48";
+            stubRuntimeInstalledAllowed: true;
+            realRuntimeImplemented: false;
+            readiness: "blocked-until-renderer-service-health";
+        };
+        runtimeValueShape: {
+            primaryRuntime: "render-wasm-worker";
+            fallbackRuntime: "frontend-rasterizer";
+            realRuntimeSelectable: false;
+            valuesIncluded: false;
+        };
+        diagnosticCodes: string[];
+        diagnostics: Array<{
+            code: "renderer_service_bundled_scene_bridge_real_runtime_value_contract_planned";
+            severity: "info";
+            field: "source.realRuntimeImplemented";
+            message: string;
+            nextActions: string[];
+        }>;
+        nextActions: string[];
+        diagnosticsSurface: "healthPreflight.bundledSceneBridgeRealRuntimeValueContract";
+        lifecyclePlanEffects: {
+            healthProbe: false;
+            browserProcessStarted: false;
+            renderDispatch: false;
+            dispatch: false;
+            localFileWrites: false;
+        };
+        omitted: {
+            runtimeValue: true;
+            playwrightBrowserPath: true;
+            tokenValues: true;
+        };
+        execution: null;
+    };
+
+    bundledSceneBridgeRealRuntimeModuleScaffold: {
+        status: "planned-disabled" | "invalid";
+        scaffoldVersion: "P26.49";
+        checked: false;
+        owner: "renderer-service";
+        mode: "gated-real-runtime-module-scaffold";
+        source: {
+            realRuntimeValueContractVersion: "P26.48";
+            realRuntimeModuleScaffoldVersion: "P26.49";
+            realRuntimeImplemented: false;
+            readiness: "blocked-until-renderer-service-health" | "invalid-real-runtime-module-scaffold-gate";
+        };
+        module: {
+            module: "./bundled-scene-bridge-real-runtime.js";
+            exportName: "createBundledSceneBridgeRealRendererRuntime";
+            moduleDefined: true;
+            moduleImported: false;
+            factoryInvoked: false;
+            valuesIncluded: false;
+        };
+        gate: {
+            configured: boolean;
+            accepted: false;
+            reviewedScaffoldOpen: false;
+            realRuntimeSelected: false;
+            valuesIncluded: false;
+        };
+        selection: {
+            stubFactoryDefault: true;
+            realFactorySelected: false;
+            replacesStubInstallation: false;
+            valuesIncluded: false;
+        };
+        diagnosticCodes: string[];
+        diagnostics: Array<{
+            code:
+                | "renderer_service_bundled_scene_bridge_real_runtime_module_scaffold_planned"
+                | "renderer_service_bundled_scene_bridge_real_runtime_module_scaffold_gate_invalid";
+            severity: "info" | "invalid";
+            field: "gate.reviewedScaffoldOpen" | "gate.accepted";
+            env: "PENPOT_RENDERER_SERVICE_BUNDLED_SCENE_BRIDGE_REAL_RUNTIME_MODULE_GATE";
+            valueRead: false;
+            valuesIncluded: false;
+            message: string;
+            nextActions: string[];
+        }>;
+        nextActions: string[];
+        diagnosticsSurface: "healthPreflight.bundledSceneBridgeRealRuntimeModuleScaffold";
+        lifecyclePlanEffects: {
+            healthProbe: false;
+            browserProcessStarted: false;
+            runtimeAssetsLoaded: false;
+            renderDispatch: false;
+            dispatch: false;
+            localFileWrites: false;
+        };
+        omitted: {
+            configuredValue: true;
+            runtimeValue: true;
+            playwrightBrowserPath: true;
+            tokenValues: true;
+        };
+        execution: null;
+    };
+
+    bundledSceneBridgeInstalledRuntimeRenderDispatch: {
+        status: "blocked" | "invalid";
+        dispatchVersion: "P26.50";
+        checked: false;
+        owner: "renderer-service";
+        mode: "gated-installed-runtime-render-dispatch";
+        source: {
+            runtimeInstalled: false;
+            renderDispatchGateOpen: false;
+            readiness: "blocked-until-renderer-service-health" | "invalid-installed-runtime-render-dispatch-gate";
+        };
+        gate: {
+            configured: boolean;
+            accepted: false;
+            reviewedDispatchOpen: false;
+            valuesIncluded: false;
+        };
+        dispatch: {
+            registryRuntimeSelected: false;
+            renderDispatch: false;
+            valuesIncluded: false;
+        };
+        diagnosticCodes: string[];
+        diagnostics: Array<{
+            code:
+                | "renderer_service_bundled_scene_bridge_installed_runtime_render_dispatch_blocked"
+                | "renderer_service_bundled_scene_bridge_installed_runtime_render_dispatch_gate_invalid";
+            severity: "blocked" | "invalid";
+            field: "source.renderDispatchGateOpen" | "gate.accepted";
+            env: "PENPOT_RENDERER_SERVICE_BUNDLED_SCENE_BRIDGE_RENDER_DISPATCH_GATE";
+            valueRead: false;
+            valuesIncluded: false;
+            message: string;
+            nextActions: string[];
+        }>;
+        nextActions: string[];
+        diagnosticsSurface: "healthPreflight.bundledSceneBridgeInstalledRuntimeRenderDispatch";
+        lifecyclePlanEffects: {
+            healthProbe: false;
+            renderDispatch: false;
+            dispatch: false;
+            localFileWrites: false;
+        };
+        omitted: {
+            configuredValue: true;
+            runtimeValue: true;
+            tokenValues: true;
+        };
+        execution: null;
+    };
+
     runtimeAssetPreflight: {
         configured: boolean;
         executeReadOnly: boolean;
@@ -2769,6 +3127,172 @@ function getRendererServiceLifecyclePlan(args: string[], env: NodeJS.ProcessEnv)
                   nextActions: bundledSceneBridgeRuntimeRegistryInstallationExecutionBoundaryNextActions,
               };
 
+    const bundledSceneBridgeRuntimeRegistryInstallationInvalid =
+        bundledSceneBridgeRuntimeRegistryInstallationExecutionBoundaryInvalid;
+    const bundledSceneBridgeRuntimeRegistryInstallationNextActions =
+        bundledSceneBridgeRuntimeRegistryInstallationInvalid
+            ? bundledSceneBridgeRuntimeRegistryInstallationExecutionBoundaryNextActions
+            : [
+                  "Start renderer-service and query /health to verify whether bundledSceneBridgeRuntimeRegistryInstallation reports executed after the planned P26.45 boundary.",
+              ];
+    const bundledSceneBridgeRuntimeRegistryInstallationDiagnostic =
+        bundledSceneBridgeRuntimeRegistryInstallationInvalid
+            ? {
+                  code: "renderer_service_bundled_scene_bridge_runtime_registry_installation_boundary_invalid" as const,
+                  severity: "invalid" as const,
+                  field: "source.registryInstallationExecutionBoundaryStatus" as const,
+                  env: RENDERER_SERVICE_BUNDLED_SCENE_BRIDGE_RUNTIME_INSTALLATION_GATE_ENV,
+                  valueRead: false as const,
+                  valuesIncluded: false as const,
+                  message:
+                      "The local CLI lifecycle plan rejected invalid bundled scene bridge runtime registry installation gate configuration.",
+                  nextActions: bundledSceneBridgeRuntimeRegistryInstallationNextActions,
+              }
+            : {
+                  code: "renderer_service_bundled_scene_bridge_runtime_registry_installation_boundary_not_planned" as const,
+                  severity: "blocked" as const,
+                  field: "source.registryInstallationExecutionBoundaryReady" as const,
+                  env: RENDERER_SERVICE_BUNDLED_SCENE_BRIDGE_RUNTIME_INSTALLATION_GATE_ENV,
+                  valueRead: false as const,
+                  valuesIncluded: false as const,
+                  message:
+                      "The local CLI lifecycle plan keeps bundled scene bridge runtime registry installation blocked until renderer-service /health is checked.",
+                  nextActions: bundledSceneBridgeRuntimeRegistryInstallationNextActions,
+              };
+
+    const bundledSceneBridgeInstalledRuntimeLifecycleInvalid =
+        bundledSceneBridgeRuntimeRegistryInstallationInvalid;
+    const bundledSceneBridgeInstalledRuntimeLifecycleNextActions =
+        bundledSceneBridgeInstalledRuntimeLifecycleInvalid
+            ? bundledSceneBridgeRuntimeRegistryInstallationNextActions
+            : [
+                  "Start renderer-service and query /health to verify whether bundledSceneBridgeInstalledRuntimeLifecycle reports installed after P26.46 installation.",
+              ];
+    const bundledSceneBridgeInstalledRuntimeLifecycleDiagnostic =
+        bundledSceneBridgeInstalledRuntimeLifecycleInvalid
+            ? {
+                  code: "renderer_service_bundled_scene_bridge_installed_runtime_lifecycle_installation_invalid" as const,
+                  severity: "invalid" as const,
+                  field: "source.registryInstallationStatus" as const,
+                  env: RENDERER_SERVICE_BUNDLED_SCENE_BRIDGE_RUNTIME_INSTALLATION_GATE_ENV,
+                  valueRead: false as const,
+                  valuesIncluded: false as const,
+                  message:
+                      "The local CLI lifecycle plan rejected invalid bundled scene bridge installed-runtime lifecycle gate configuration.",
+                  nextActions: bundledSceneBridgeInstalledRuntimeLifecycleNextActions,
+              }
+            : {
+                  code: "renderer_service_bundled_scene_bridge_installed_runtime_lifecycle_not_installed" as const,
+                  severity: "blocked" as const,
+                  field: "source.runtimeInstalled" as const,
+                  env: RENDERER_SERVICE_BUNDLED_SCENE_BRIDGE_RUNTIME_INSTALLATION_GATE_ENV,
+                  valueRead: false as const,
+                  valuesIncluded: false as const,
+                  message:
+                      "The local CLI lifecycle plan keeps installed-runtime lifecycle diagnostics blocked until renderer-service /health is checked.",
+                  nextActions: bundledSceneBridgeInstalledRuntimeLifecycleNextActions,
+              };
+
+    const bundledSceneBridgeRealRuntimeValueContractNextActions = [
+        "Start renderer-service and query /health to verify whether bundledSceneBridgeRealRuntimeValueContract reports planned-disabled.",
+    ] as const;
+    const bundledSceneBridgeRealRuntimeValueContractDiagnostic = {
+        code: "renderer_service_bundled_scene_bridge_real_runtime_value_contract_planned" as const,
+        severity: "info" as const,
+        field: "source.realRuntimeImplemented" as const,
+        message:
+            "The local CLI lifecycle plan reports the real bundled scene bridge runtime value contract as planned-disabled until renderer-service /health is checked.",
+        nextActions: [...bundledSceneBridgeRealRuntimeValueContractNextActions],
+    };
+
+    const bundledSceneBridgeRealRuntimeModuleGateConfigured = hasEnvKey(
+        env,
+        "PENPOT_RENDERER_SERVICE_BUNDLED_SCENE_BRIDGE_REAL_RUNTIME_MODULE_GATE"
+    );
+    const bundledSceneBridgeRealRuntimeModuleGateValue = bundledSceneBridgeRealRuntimeModuleGateConfigured
+        ? env.PENPOT_RENDERER_SERVICE_BUNDLED_SCENE_BRIDGE_REAL_RUNTIME_MODULE_GATE?.trim() ?? ""
+        : null;
+    const bundledSceneBridgeRealRuntimeModuleGateAccepted =
+        bundledSceneBridgeRealRuntimeModuleGateValue === "reviewed-scaffold";
+    const bundledSceneBridgeRealRuntimeModuleGateInvalid =
+        bundledSceneBridgeRealRuntimeModuleGateConfigured && !bundledSceneBridgeRealRuntimeModuleGateAccepted;
+    const bundledSceneBridgeRealRuntimeModuleScaffoldNextActions = bundledSceneBridgeRealRuntimeModuleGateInvalid
+        ? [
+              "Set PENPOT_RENDERER_SERVICE_BUNDLED_SCENE_BRIDGE_REAL_RUNTIME_MODULE_GATE=reviewed-scaffold only after reviewing the P26.48 contract, or leave it unset.",
+              "Start renderer-service and query /health to verify bundledSceneBridgeRealRuntimeModuleScaffold.",
+          ]
+        : [
+              "Start renderer-service and query /health to verify whether bundledSceneBridgeRealRuntimeModuleScaffold reports planned or reviewed-disabled.",
+          ];
+    const bundledSceneBridgeRealRuntimeModuleScaffoldDiagnostic = bundledSceneBridgeRealRuntimeModuleGateInvalid
+        ? {
+              code: "renderer_service_bundled_scene_bridge_real_runtime_module_scaffold_gate_invalid" as const,
+              severity: "invalid" as const,
+              field: "gate.accepted" as const,
+              env: "PENPOT_RENDERER_SERVICE_BUNDLED_SCENE_BRIDGE_REAL_RUNTIME_MODULE_GATE" as const,
+              valueRead: false as const,
+              valuesIncluded: false as const,
+              message:
+                  "The local CLI lifecycle plan rejected an invalid real runtime module scaffold gate value.",
+              nextActions: bundledSceneBridgeRealRuntimeModuleScaffoldNextActions,
+          }
+        : {
+              code: "renderer_service_bundled_scene_bridge_real_runtime_module_scaffold_planned" as const,
+              severity: "info" as const,
+              field: "gate.reviewedScaffoldOpen" as const,
+              env: "PENPOT_RENDERER_SERVICE_BUNDLED_SCENE_BRIDGE_REAL_RUNTIME_MODULE_GATE" as const,
+              valueRead: false as const,
+              valuesIncluded: false as const,
+              message:
+                  "The local CLI lifecycle plan reports the real runtime module scaffold as planned-disabled until renderer-service /health is checked.",
+              nextActions: bundledSceneBridgeRealRuntimeModuleScaffoldNextActions,
+          };
+
+    const bundledSceneBridgeRenderDispatchGateConfigured = hasEnvKey(
+        env,
+        "PENPOT_RENDERER_SERVICE_BUNDLED_SCENE_BRIDGE_RENDER_DISPATCH_GATE"
+    );
+    const bundledSceneBridgeRenderDispatchGateValue = bundledSceneBridgeRenderDispatchGateConfigured
+        ? env.PENPOT_RENDERER_SERVICE_BUNDLED_SCENE_BRIDGE_RENDER_DISPATCH_GATE?.trim() ?? ""
+        : null;
+    const bundledSceneBridgeRenderDispatchGateAccepted =
+        bundledSceneBridgeRenderDispatchGateValue === "reviewed-dispatch";
+    const bundledSceneBridgeRenderDispatchGateInvalid =
+        bundledSceneBridgeRenderDispatchGateConfigured && !bundledSceneBridgeRenderDispatchGateAccepted;
+    const bundledSceneBridgeInstalledRuntimeRenderDispatchNextActions =
+        bundledSceneBridgeRenderDispatchGateInvalid
+            ? [
+                  "Set PENPOT_RENDERER_SERVICE_BUNDLED_SCENE_BRIDGE_RENDER_DISPATCH_GATE=reviewed-dispatch only after reviewing installed-runtime dispatch, or leave it unset.",
+                  "Start renderer-service and query /health to verify bundledSceneBridgeInstalledRuntimeRenderDispatch.",
+              ]
+            : [
+                  "Start renderer-service and query /health to verify whether bundledSceneBridgeInstalledRuntimeRenderDispatch reports blocked/ready after installation and the reviewed dispatch gate.",
+              ];
+    const bundledSceneBridgeInstalledRuntimeRenderDispatchDiagnostic =
+        bundledSceneBridgeRenderDispatchGateInvalid
+            ? {
+                  code: "renderer_service_bundled_scene_bridge_installed_runtime_render_dispatch_gate_invalid" as const,
+                  severity: "invalid" as const,
+                  field: "gate.accepted" as const,
+                  env: "PENPOT_RENDERER_SERVICE_BUNDLED_SCENE_BRIDGE_RENDER_DISPATCH_GATE" as const,
+                  valueRead: false as const,
+                  valuesIncluded: false as const,
+                  message:
+                      "The local CLI lifecycle plan rejected an invalid installed-runtime render-dispatch gate value.",
+                  nextActions: bundledSceneBridgeInstalledRuntimeRenderDispatchNextActions,
+              }
+            : {
+                  code: "renderer_service_bundled_scene_bridge_installed_runtime_render_dispatch_blocked" as const,
+                  severity: "blocked" as const,
+                  field: "source.renderDispatchGateOpen" as const,
+                  env: "PENPOT_RENDERER_SERVICE_BUNDLED_SCENE_BRIDGE_RENDER_DISPATCH_GATE" as const,
+                  valueRead: false as const,
+                  valuesIncluded: false as const,
+                  message:
+                      "The local CLI lifecycle plan keeps installed-runtime render dispatch blocked until renderer-service /health is checked.",
+                  nextActions: bundledSceneBridgeInstalledRuntimeRenderDispatchNextActions,
+              };
+
     const runtimeAssetPreflightValue = env[RENDERER_SERVICE_RUNTIME_ASSET_PREFLIGHT_ENV]?.trim() || null;
     const runtimeAssetPreflightWorkspaceRoot = env[RENDERER_SERVICE_RUNTIME_ASSET_PREFLIGHT_WORKSPACE_ROOT_ENV]?.trim() || null;
     const runtimeAssetPreflightCacheRoot = env[RENDERER_SERVICE_RUNTIME_ASSET_PREFLIGHT_CACHE_ROOT_ENV]?.trim() || null;
@@ -2965,6 +3489,12 @@ function getRendererServiceLifecyclePlan(args: string[], env: NodeJS.ProcessEnv)
             : []),
     ];
     const startPrefix = startEnv.length ? `${startEnv.join(" ")} ` : "";
+    const lifecycleModeValue = env.PENPOT_RENDERER_SERVICE_LIFECYCLE?.trim() ?? null;
+    const spawnOptIn =
+        hasFlag(args, "--spawn") ||
+        (lifecycleModeValue !== null && RENDERER_SERVICE_CONTROLLED_SPAWN_VALUES.has(lifecycleModeValue.toLowerCase()));
+    const pidFile =
+        portIsValid ? join(RENDERER_SERVICE_LIFECYCLE_STATE_DIR, `renderer-service-${host.replace(/[:/]/g, "_")}-${port}.pid`) : null;
 
     return {
         host,
@@ -2977,6 +3507,15 @@ function getRendererServiceLifecyclePlan(args: string[], env: NodeJS.ProcessEnv)
         invalidPort: portIsValid ? null : portValue,
         processSpawn: false,
         healthProbe: false,
+        controlledLifecycle: {
+            version: "P26.54",
+            defaultNoSpawn: true,
+            spawnOptIn,
+            spawnRequested: hasFlag(args, "--spawn"),
+            pidFile,
+            managedProcess: false,
+            healthWatch: false,
+        },
         rendererDispatch: false,
         backendRpc: false,
         rendererRuntime: {
@@ -4199,6 +4738,292 @@ function getRendererServiceLifecyclePlan(args: string[], env: NodeJS.ProcessEnv)
             },
             execution: null,
         },
+        bundledSceneBridgeRuntimeRegistryInstallation: {
+            status: bundledSceneBridgeRuntimeRegistryInstallationInvalid ? "invalid" : "blocked",
+            installationVersion: "P26.46",
+            checked: false,
+            owner: "renderer-service",
+            mode: "guarded-runtime-registry-installation-execution",
+            source: {
+                runtimeRegistrationPreflightVersion: "P26.40",
+                registryRegistrationBoundaryVersion: "P26.41",
+                registryInstallationContractVersion: "P26.42",
+                registryInstallationGateVersion: "P26.43",
+                registryInstallationPreflightVersion: "P26.44",
+                registryInstallationExecutionBoundaryVersion: "P26.45",
+                registryInstallationVersion: "P26.46",
+                registryInstallationExecutionBoundaryReady: false,
+                registryInstallationExecutionBoundaryStatus: bundledSceneBridgeRuntimeRegistryInstallationInvalid
+                    ? "invalid"
+                    : "blocked",
+                registryInstallationExecutionBoundaryReadiness: bundledSceneBridgeRuntimeRegistryInstallationInvalid
+                    ? "invalid-installation-execution-boundary"
+                    : "blocked-until-installation-execution-boundary-planned",
+                reviewedGateOpen: false,
+                readiness: bundledSceneBridgeRuntimeRegistryInstallationInvalid
+                    ? "invalid-installation-execution-boundary"
+                    : "blocked-until-renderer-service-health",
+            },
+            installation: {
+                registryInstallationExecutionBoundaryReadyRequired: true,
+                duplicateLookupRequired: true,
+                runtimeValueCreationRequired: true,
+                registryInstallationRequired: true,
+                closeHookRegistrationRequired: true,
+                rollbackHookRequired: true,
+                noDispatchRequired: true,
+                installationAttemptAllowed: false,
+                runtimeInstallationEnabled: false,
+                registryLookupAttempted: false,
+                registryWriteAttempted: false,
+                runtimeValueCreated: false,
+                runtimeInstallationAttempted: false,
+                runtimeInstalled: false,
+                runtimeRegistered: false,
+                runtimeRegistration: false,
+                runtimeExecutionRegistered: false,
+                closeHookRegistered: false,
+                rollbackHookRegistered: false,
+                duplicateRollbackAttempted: false,
+                renderDispatch: false,
+                browserProcessStarted: false,
+                runtimeValuesIncluded: false,
+                registryValuesIncluded: false,
+            },
+            diagnosticsVersion: "P26.46",
+            diagnosticCodes: [bundledSceneBridgeRuntimeRegistryInstallationDiagnostic.code],
+            diagnostics: [bundledSceneBridgeRuntimeRegistryInstallationDiagnostic],
+            nextActions: bundledSceneBridgeRuntimeRegistryInstallationNextActions,
+            diagnosticsSurface: "healthPreflight.bundledSceneBridgeRuntimeRegistryInstallation",
+            lifecyclePlanEffects: {
+                healthProbe: false,
+                registryLookup: false,
+                registryWrite: false,
+                runtimeValueCreation: false,
+                runtimeInstallation: false,
+                runtimeRegistration: false,
+                runtimeExecutionRegistered: false,
+                closeHookRegistration: false,
+                duplicateRollback: false,
+                renderDispatch: false,
+                browserProcessStarted: false,
+                runtimeAdapterImported: false,
+                runtimeFactoryInvoked: false,
+                runtimeOptionsCreated: false,
+                runtimeAssetsLoaded: false,
+                assetManifestMaterialized: false,
+                backendRpcReads: false,
+                sourceDataReads: false,
+                networkDispatch: false,
+                dispatch: false,
+                localFileWrites: false,
+            },
+            omitted: {
+                configuredValue: true,
+                moduleNamespace: true,
+                factoryValue: true,
+                runtimeOptionsValue: true,
+                optionValues: true,
+                runtimeValue: true,
+                registryValue: true,
+                lifecycleHandles: true,
+                workspaceRoot: true,
+                cacheRoot: true,
+                modulePath: true,
+                publicPaths: true,
+                cachePaths: true,
+                sha256: true,
+                playwrightBrowserPath: true,
+                runtimeModulePath: true,
+                sourceData: true,
+                pageData: true,
+                artifactBytes: true,
+                mediaBytes: true,
+                tokenValues: true,
+            },
+            execution: null,
+        },
+        bundledSceneBridgeInstalledRuntimeLifecycle: {
+            status: bundledSceneBridgeInstalledRuntimeLifecycleInvalid ? "invalid" : "not-installed",
+            diagnosticsVersion: "P26.47",
+            checked: false,
+            owner: "renderer-service",
+            mode: "installed-runtime-lifecycle-diagnostics",
+            source: {
+                registryInstallationVersion: "P26.46",
+                installedRuntimeLifecycleVersion: "P26.47",
+                registryInstallationStatus: bundledSceneBridgeInstalledRuntimeLifecycleInvalid ? "invalid" : "blocked",
+                registryInstallationReady: false,
+                runtimeInstalled: false,
+                readiness: bundledSceneBridgeInstalledRuntimeLifecycleInvalid
+                    ? "invalid-runtime-registry-installation"
+                    : "blocked-until-renderer-service-health",
+            },
+            registrySlot: {
+                runtimeId: "bundled-scene-bridge",
+                targetRegistry: "renderer-service.thumbnail-runtime-registry",
+                slotOwner: "renderer-service",
+                slotStatus: "empty",
+                slotOccupied: false,
+                runtimeInstalled: false,
+                runtimeAvailableForDispatch: false,
+                renderDispatchEnabled: false,
+                valuesIncluded: false,
+            },
+            diagnosticCodes: [bundledSceneBridgeInstalledRuntimeLifecycleDiagnostic.code],
+            diagnostics: [bundledSceneBridgeInstalledRuntimeLifecycleDiagnostic],
+            nextActions: bundledSceneBridgeInstalledRuntimeLifecycleNextActions,
+            diagnosticsSurface: "healthPreflight.bundledSceneBridgeInstalledRuntimeLifecycle",
+            lifecyclePlanEffects: {
+                healthProbe: false,
+                registryLookup: false,
+                renderDispatch: false,
+                closeHookInvocation: false,
+                dispatch: false,
+                localFileWrites: false,
+            },
+            omitted: {
+                runtimeValue: true,
+                registryValue: true,
+                lifecycleHandles: true,
+                tokenValues: true,
+            },
+            execution: null,
+        },
+        bundledSceneBridgeRealRuntimeValueContract: {
+            status: "planned-disabled",
+            contractVersion: "P26.48",
+            checked: false,
+            owner: "renderer-service",
+            mode: "real-runtime-value-contract-plan",
+            source: {
+                registryInstallationVersion: "P26.46",
+                installedRuntimeLifecycleVersion: "P26.47",
+                realRuntimeValueContractVersion: "P26.48",
+                stubRuntimeInstalledAllowed: true,
+                realRuntimeImplemented: false,
+                readiness: "blocked-until-renderer-service-health",
+            },
+            runtimeValueShape: {
+                primaryRuntime: "render-wasm-worker",
+                fallbackRuntime: "frontend-rasterizer",
+                realRuntimeSelectable: false,
+                valuesIncluded: false,
+            },
+            diagnosticCodes: [bundledSceneBridgeRealRuntimeValueContractDiagnostic.code],
+            diagnostics: [bundledSceneBridgeRealRuntimeValueContractDiagnostic],
+            nextActions: [...bundledSceneBridgeRealRuntimeValueContractNextActions],
+            diagnosticsSurface: "healthPreflight.bundledSceneBridgeRealRuntimeValueContract",
+            lifecyclePlanEffects: {
+                healthProbe: false,
+                browserProcessStarted: false,
+                renderDispatch: false,
+                dispatch: false,
+                localFileWrites: false,
+            },
+            omitted: {
+                runtimeValue: true,
+                playwrightBrowserPath: true,
+                tokenValues: true,
+            },
+            execution: null,
+        },
+        bundledSceneBridgeRealRuntimeModuleScaffold: {
+            status: bundledSceneBridgeRealRuntimeModuleGateInvalid ? "invalid" : "planned-disabled",
+            scaffoldVersion: "P26.49",
+            checked: false,
+            owner: "renderer-service",
+            mode: "gated-real-runtime-module-scaffold",
+            source: {
+                realRuntimeValueContractVersion: "P26.48",
+                realRuntimeModuleScaffoldVersion: "P26.49",
+                realRuntimeImplemented: false,
+                readiness: bundledSceneBridgeRealRuntimeModuleGateInvalid
+                    ? "invalid-real-runtime-module-scaffold-gate"
+                    : "blocked-until-renderer-service-health",
+            },
+            module: {
+                module: "./bundled-scene-bridge-real-runtime.js",
+                exportName: "createBundledSceneBridgeRealRendererRuntime",
+                moduleDefined: true,
+                moduleImported: false,
+                factoryInvoked: false,
+                valuesIncluded: false,
+            },
+            gate: {
+                configured: bundledSceneBridgeRealRuntimeModuleGateConfigured,
+                accepted: false,
+                reviewedScaffoldOpen: false,
+                realRuntimeSelected: false,
+                valuesIncluded: false,
+            },
+            selection: {
+                stubFactoryDefault: true,
+                realFactorySelected: false,
+                replacesStubInstallation: false,
+                valuesIncluded: false,
+            },
+            diagnosticCodes: [bundledSceneBridgeRealRuntimeModuleScaffoldDiagnostic.code],
+            diagnostics: [bundledSceneBridgeRealRuntimeModuleScaffoldDiagnostic],
+            nextActions: bundledSceneBridgeRealRuntimeModuleScaffoldNextActions,
+            diagnosticsSurface: "healthPreflight.bundledSceneBridgeRealRuntimeModuleScaffold",
+            lifecyclePlanEffects: {
+                healthProbe: false,
+                browserProcessStarted: false,
+                runtimeAssetsLoaded: false,
+                renderDispatch: false,
+                dispatch: false,
+                localFileWrites: false,
+            },
+            omitted: {
+                configuredValue: true,
+                runtimeValue: true,
+                playwrightBrowserPath: true,
+                tokenValues: true,
+            },
+            execution: null,
+        },
+        bundledSceneBridgeInstalledRuntimeRenderDispatch: {
+            status: bundledSceneBridgeRenderDispatchGateInvalid ? "invalid" : "blocked",
+            dispatchVersion: "P26.50",
+            checked: false,
+            owner: "renderer-service",
+            mode: "gated-installed-runtime-render-dispatch",
+            source: {
+                runtimeInstalled: false,
+                renderDispatchGateOpen: false,
+                readiness: bundledSceneBridgeRenderDispatchGateInvalid
+                    ? "invalid-installed-runtime-render-dispatch-gate"
+                    : "blocked-until-renderer-service-health",
+            },
+            gate: {
+                configured: bundledSceneBridgeRenderDispatchGateConfigured,
+                accepted: false,
+                reviewedDispatchOpen: false,
+                valuesIncluded: false,
+            },
+            dispatch: {
+                registryRuntimeSelected: false,
+                renderDispatch: false,
+                valuesIncluded: false,
+            },
+            diagnosticCodes: [bundledSceneBridgeInstalledRuntimeRenderDispatchDiagnostic.code],
+            diagnostics: [bundledSceneBridgeInstalledRuntimeRenderDispatchDiagnostic],
+            nextActions: bundledSceneBridgeInstalledRuntimeRenderDispatchNextActions,
+            diagnosticsSurface: "healthPreflight.bundledSceneBridgeInstalledRuntimeRenderDispatch",
+            lifecyclePlanEffects: {
+                healthProbe: false,
+                renderDispatch: false,
+                dispatch: false,
+                localFileWrites: false,
+            },
+            omitted: {
+                configuredValue: true,
+                runtimeValue: true,
+                tokenValues: true,
+            },
+            execution: null,
+        },
         runtimeAssetPreflight: {
             configured: runtimeAssetPreflightConfigured,
             executeReadOnly: runtimeAssetPreflightExecuteReadOnly,
@@ -5254,6 +6079,82 @@ function validateLayoutNumber(
     return value;
 }
 
+
+function parseShapeGridCells(args: string[], io: CliIO, format: Format): Array<{
+    row: number;
+    column: number;
+    rowSpan?: number;
+    columnSpan?: number;
+    shapes?: string[];
+    position?: string;
+    alignSelf?: string;
+    justifySelf?: string;
+    areaName?: string;
+}> | undefined | null {
+    const raw = readOption(args, ["--layout-grid-cells", "--grid-cells"]);
+    if (raw === undefined) {
+        return undefined;
+    }
+    if (raw.trim() === "") {
+        return [];
+    }
+    const placements: Array<{
+        row: number;
+        column: number;
+        rowSpan?: number;
+        columnSpan?: number;
+        shapes?: string[];
+        position?: string;
+        alignSelf?: string;
+        justifySelf?: string;
+        areaName?: string;
+    }> = [];
+    for (const part of raw.split(";")) {
+        const token = part.trim();
+        if (!token) {
+            continue;
+        }
+        const segments = token.split(":").map((entry) => entry.trim()).filter(Boolean);
+        if (segments.length < 2) {
+            writeError(io, format, "shape_layout_grid_cell_invalid", `Invalid --layout-grid-cells entry: ${token}.`, [
+                "Use row:column[:rowSpan:columnSpan][:shapeId,...] entries separated by ';'.",
+            ]);
+            return null;
+        }
+        const row = Number(segments[0]);
+        const column = Number(segments[1]);
+        if (!Number.isInteger(row) || row < 1 || !Number.isInteger(column) || column < 1) {
+            writeError(io, format, "shape_layout_grid_cell_invalid", `Invalid grid cell row/column in: ${token}.`, [
+                "Row and column must be 1-indexed integers.",
+            ]);
+            return null;
+        }
+        let index = 2;
+        let rowSpan: number | undefined;
+        let columnSpan: number | undefined;
+        if (segments.length >= 4 && Number.isInteger(Number(segments[2])) && Number.isInteger(Number(segments[3]))) {
+            rowSpan = Number(segments[2]);
+            columnSpan = Number(segments[3]);
+            index = 4;
+            if (rowSpan < 1 || columnSpan < 1) {
+                writeError(io, format, "shape_layout_grid_cell_invalid", `Invalid grid cell spans in: ${token}.`, [
+                    "rowSpan and columnSpan must be positive integers.",
+                ]);
+                return null;
+            }
+        }
+        const shapes = segments.slice(index);
+        placements.push({
+            row,
+            column,
+            ...(rowSpan !== undefined ? { rowSpan } : {}),
+            ...(columnSpan !== undefined ? { columnSpan } : {}),
+            ...(shapes.length ? { shapes, position: "manual" } : { position: "manual" }),
+        });
+    }
+    return placements;
+}
+
 function parseShapeGridTracks(
     args: string[],
     names: string[],
@@ -5449,6 +6350,11 @@ function parseShapeLayoutParams(args: string[], io: CliIO, format: Format): Shap
         return null;
     }
 
+    const cells = parseShapeGridCells(args, io, format);
+    if (cells === null) {
+        return null;
+    }
+
     return {
         type,
         ...(direction ? { direction } : {}),
@@ -5462,6 +6368,7 @@ function parseShapeLayoutParams(args: string[], io: CliIO, format: Format): Shap
         ...(padding !== undefined ? { padding } : {}),
         ...(rows ? { rows } : {}),
         ...(columns ? { columns } : {}),
+        ...(cells ? { cells } : {}),
     };
 }
 
@@ -5482,6 +6389,21 @@ function toRpcShapeLayout(layout: ShapeLayoutParams | undefined): Record<string,
         ...(layout.padding !== undefined ? { padding: layout.padding } : {}),
         ...(layout.rows ? { rows: layout.rows } : {}),
         ...(layout.columns ? { columns: layout.columns } : {}),
+        ...(layout.cells
+            ? {
+                  cells: layout.cells.map((cell) => ({
+                      row: cell.row,
+                      column: cell.column,
+                      ...(cell.rowSpan !== undefined ? { "row-span": cell.rowSpan } : {}),
+                      ...(cell.columnSpan !== undefined ? { "column-span": cell.columnSpan } : {}),
+                      ...(cell.shapes ? { shapes: cell.shapes } : {}),
+                      ...(cell.position ? { position: cell.position } : {}),
+                      ...(cell.alignSelf ? { "align-self": cell.alignSelf } : {}),
+                      ...(cell.justifySelf ? { "justify-self": cell.justifySelf } : {}),
+                      ...(cell.areaName ? { "area-name": cell.areaName } : {}),
+                  })),
+              }
+            : {}),
     };
 }
 
@@ -7421,12 +8343,16 @@ async function executeRenderThumbnailPlan(
     plan: RenderThumbnailPlan,
     authHeaders: Record<string, string> = {}
 ): Promise<RenderThumbnailResult> {
-    const healthPreflight = plan.executionGate.optIn.configured
+    const shouldProbeHealth =
+        plan.executionGate.status === "open" ||
+        Boolean(plan.client?.configured) ||
+        Boolean(plan.executionGate.optIn?.configured);
+    const healthPreflight = shouldProbeHealth
         ? await executeRenderThumbnailRendererServiceHealthPreflight(plan)
         : plan.healthPreflight;
 
     if (healthPreflight.status !== "ok") {
-        const code = plan.executionGate.optIn.configured
+        const code = shouldProbeHealth
             ? healthPreflight.error?.code ?? "renderer_service_health_unavailable"
             : "renderer_service_unavailable";
         throw createRenderThumbnailRendererServiceErrorPayload(plan, {
@@ -7440,7 +8366,7 @@ async function executeRenderThumbnailPlan(
     if (!plan.clientRequest.dispatch || !plan.clientRequest.endpoint) {
         throw createRenderThumbnailRendererServiceErrorPayload(plan, {
             code: "renderer_service_execution_disabled",
-            message: "renderer-service render dispatch requires explicit opt-in and a configured endpoint.",
+            message: "renderer-service render dispatch requires a configured endpoint (or remains closed when explicitly disabled).",
             status: 0,
             data: { healthPreflight, clientRequest: plan.clientRequest },
         });
@@ -8354,6 +9280,104 @@ async function handleDevCommand(args: string[], io: CliIO, env: NodeJS.ProcessEn
     }
 }
 
+
+function isProcessAlive(pid: number): boolean {
+    try {
+        process.kill(pid, 0);
+        return true;
+    } catch {
+        return false;
+    }
+}
+
+async function readManagedRendererServicePid(pidFile: string | null): Promise<number | null> {
+    if (!pidFile) {
+        return null;
+    }
+    try {
+        const raw = (await readFile(pidFile, "utf8")).trim();
+        const pid = Number(raw);
+        if (!Number.isInteger(pid) || pid <= 0) {
+            return null;
+        }
+        return isProcessAlive(pid) ? pid : null;
+    } catch {
+        return null;
+    }
+}
+
+async function writeManagedRendererServicePid(pidFile: string, pid: number): Promise<void> {
+    await mkdir(dirname(pidFile), { recursive: true });
+    await writeFile(pidFile, `${pid}\n`, "utf8");
+}
+
+async function clearManagedRendererServicePid(pidFile: string | null): Promise<void> {
+    if (!pidFile) {
+        return;
+    }
+    try {
+        await writeFile(pidFile, "", "utf8");
+    } catch {
+        // best-effort cleanup
+    }
+    try {
+        await unlink(pidFile);
+    } catch {
+        // ignore missing pid file
+    }
+}
+
+async function waitForRendererServiceHealth(healthUri: string, timeoutMs = 15000): Promise<{
+    ok: boolean;
+    status: number | null;
+    error: string | null;
+}> {
+    const started = Date.now();
+    let lastError: string | null = null;
+    while (Date.now() - started < timeoutMs) {
+        try {
+            const response = await fetch(healthUri, { method: "GET" });
+            if (response.ok) {
+                return { ok: true, status: response.status, error: null };
+            }
+            lastError = `health status ${response.status}`;
+        } catch (error) {
+            lastError = error instanceof Error ? error.message : String(error);
+        }
+        await new Promise((resolveWait) => setTimeout(resolveWait, 250));
+    }
+    return { ok: false, status: null, error: lastError };
+}
+
+async function spawnControlledRendererService(plan: ReturnType<typeof getRendererServiceLifecyclePlan>): Promise<{
+    pid: number;
+    health: { ok: boolean; status: number | null; error: string | null };
+}> {
+    const pidFile = plan.controlledLifecycle.pidFile;
+    if (!plan.startCommand || !pidFile || !plan.healthUri || plan.port === null) {
+        throw new Error("Controlled renderer-service spawn requires a valid start command, pid file, and health URI.");
+    }
+    await mkdir(RENDERER_SERVICE_LIFECYCLE_STATE_DIR, { recursive: true });
+    // Prefer the already-built host entry when present to avoid nested rebuild races.
+    const builtEntry = join(RENDERER_SERVICE_BUILD_DIR, "index.js");
+    const child = spawn(process.execPath, [builtEntry], {
+        detached: true,
+        stdio: "ignore",
+        env: {
+            ...process.env,
+            PENPOT_RENDERER_SERVICE_HOST: plan.host,
+            PENPOT_RENDERER_SERVICE_PORT: String(plan.port),
+        },
+    });
+    if (typeof child.pid !== "number") {
+        throw new Error("Controlled renderer-service spawn did not return a pid.");
+    }
+    child.unref();
+    await writeManagedRendererServicePid(pidFile, child.pid);
+    const health = await waitForRendererServiceHealth(plan.healthUri);
+    return { pid: child.pid, health };
+}
+
 async function handleRendererServiceStatus(args: string[], io: CliIO, env: NodeJS.ProcessEnv): Promise<number> {
     const format = parseFormat(args, io);
     if (!format) {
@@ -8368,12 +9392,56 @@ async function handleRendererServiceStatus(args: string[], io: CliIO, env: NodeJ
         return 2;
     }
 
+    const managedPid = await readManagedRendererServicePid(plan.controlledLifecycle.pidFile);
+    let healthProbe: {
+        attempted: boolean;
+        ok: boolean;
+        status: number | null;
+        error: string | null;
+    } = { attempted: false, ok: false, status: null, error: null };
+    // Health-watch only when controlled lifecycle is opted in; default remains no-probe.
+    if (plan.controlledLifecycle.spawnOptIn && plan.healthUri) {
+        healthProbe = {
+            attempted: true,
+            ...(await waitForRendererServiceHealth(plan.healthUri, 1500)),
+        };
+    }
+    const lifecycle = {
+        ...plan,
+        processSpawn: false,
+        healthProbe: healthProbe.attempted,
+        controlledLifecycle: {
+            ...plan.controlledLifecycle,
+            managedProcess: managedPid !== null,
+            healthWatch: healthProbe.attempted,
+        },
+        managedPid,
+        healthWatch: healthProbe,
+    };
+    const status =
+        managedPid !== null
+            ? healthProbe.ok
+                ? "running"
+                : "managed-unhealthy"
+            : plan.controlledLifecycle.spawnOptIn
+              ? "spawn-opt-in-idle"
+              : "manual-start-required";
+    const nextActions =
+        status === "running"
+            ? [`Stop with: penpot-cli renderer-service stop --host ${plan.host} --port ${plan.port}`]
+            : plan.controlledLifecycle.spawnOptIn
+              ? [
+                    `Start controlled host: penpot-cli renderer-service start --spawn --host ${plan.host} --port ${plan.port}`,
+                    plan.startCommand,
+                ]
+              : [plan.startCommand, "Stop the manually started host with Ctrl-C or SIGTERM."];
+
     writeOk(io, format, {
-        status: "manual-start-required",
-        lifecycle: plan,
-        nextActions: [plan.startCommand, "Stop the manually started host with Ctrl-C or SIGTERM."],
+        status,
+        lifecycle,
+        nextActions,
     }, () => {
-        writeLine(io.stdout, "Renderer-service lifecycle: manual-start-required");
+        writeLine(io.stdout, `Renderer-service lifecycle: ${status}`);
         writeLine(io.stdout, `Host: ${plan.host}:${plan.port}`);
         writeLine(io.stdout, `Health endpoint: ${plan.healthUri}`);
         writeLine(io.stdout, `Thumbnail endpoint: ${plan.thumbnailUri}`);
@@ -8578,24 +9646,190 @@ async function handleRendererServiceStart(args: string[], io: CliIO, env: NodeJS
         return 2;
     }
 
-    writeError(
+    // Default remains no-spawn unless operator explicitly opts into controlled lifecycle.
+    if (!plan.controlledLifecycle.spawnOptIn) {
+        writeError(
+            io,
+            format,
+            "renderer_service_host_start_manual",
+            "renderer-service host startup remains an explicit manual developer action by default.",
+            [
+                `Run: ${plan.startCommand}`,
+                "Or opt into controlled spawn with --spawn / PENPOT_RENDERER_SERVICE_LIFECYCLE=spawn.",
+                "Stop a manual host with Ctrl-C or SIGTERM.",
+                ...plan.bundledSceneBridgeRuntimeRegistryInstallationGate.nextActions,
+                ...plan.bundledSceneBridgeRuntimeRegistryInstallationPreflight.nextActions,
+                ...plan.runtimeAssetPreflight.nextActions,
+            ],
+            {
+                lifecycle: {
+                    ...plan,
+                    processSpawn: false,
+                    healthProbe: false,
+                },
+            }
+        );
+        return 2;
+    }
+
+    const existingPid = await readManagedRendererServicePid(plan.controlledLifecycle.pidFile);
+    if (existingPid !== null) {
+        const health = plan.healthUri ? await waitForRendererServiceHealth(plan.healthUri, 1500) : { ok: false, status: null, error: "missing health uri" };
+        writeOk(
+            io,
+            format,
+            {
+                status: health.ok ? "already-running" : "managed-unhealthy",
+                lifecycle: {
+                    ...plan,
+                    processSpawn: false,
+                    healthProbe: true,
+                    controlledLifecycle: {
+                        ...plan.controlledLifecycle,
+                        managedProcess: true,
+                        healthWatch: true,
+                    },
+                    managedPid: existingPid,
+                    healthWatch: { attempted: true, ...health },
+                },
+            },
+            () => {
+                writeLine(io.stdout, `Renderer-service already managed at pid ${existingPid}`);
+                writeLine(io.stdout, `Health: ${health.ok ? "ok" : health.error ?? "unavailable"}`);
+            }
+        );
+        return health.ok ? 0 : 2;
+    }
+
+    try {
+        const spawned = await spawnControlledRendererService(plan);
+        const lifecycle = {
+            ...plan,
+            processSpawn: true,
+            healthProbe: true,
+            controlledLifecycle: {
+                ...plan.controlledLifecycle,
+                managedProcess: true,
+                healthWatch: true,
+            },
+            managedPid: spawned.pid,
+            healthWatch: { attempted: true, ...spawned.health },
+        };
+        if (!spawned.health.ok) {
+            writeError(
+                io,
+                format,
+                "renderer_service_host_spawn_unhealthy",
+                "Controlled renderer-service process was spawned but health watch did not become ready.",
+                [
+                    `Inspect pid ${spawned.pid} and ${plan.healthUri}.`,
+                    `Stop with: penpot-cli renderer-service stop --host ${plan.host} --port ${plan.port}`,
+                ],
+                { lifecycle }
+            );
+            return 2;
+        }
+        writeOk(
+            io,
+            format,
+            {
+                status: "spawned",
+                lifecycle,
+                nextActions: [
+                    `Stop with: penpot-cli renderer-service stop --host ${plan.host} --port ${plan.port}`,
+                ],
+            },
+            () => {
+                writeLine(io.stdout, `Renderer-service spawned with pid ${spawned.pid}`);
+                writeLine(io.stdout, `Health endpoint ready: ${plan.healthUri}`);
+            }
+        );
+        return 0;
+    } catch (error) {
+        writeError(
+            io,
+            format,
+            "renderer_service_host_spawn_failed",
+            error instanceof Error ? error.message : "Controlled renderer-service spawn failed.",
+            [
+                `Fallback manual start: ${plan.startCommand}`,
+                "Default remains no-spawn without --spawn / PENPOT_RENDERER_SERVICE_LIFECYCLE=spawn.",
+            ],
+            { lifecycle: plan }
+        );
+        return 2;
+    }
+}
+
+async function handleRendererServiceStop(args: string[], io: CliIO, env: NodeJS.ProcessEnv): Promise<number> {
+    const format = parseFormat(args, io);
+    if (!format) {
+        return 2;
+    }
+
+    const plan = getRendererServiceLifecyclePlan(args, env);
+    if (plan.invalidPort) {
+        writeError(io, format, "renderer_service_port_invalid", "Renderer-service port must be an integer between 1 and 65535.", [
+            "Pass --port <port> or set PENPOT_RENDERER_SERVICE_PORT.",
+        ], { port: plan.invalidPort });
+        return 2;
+    }
+
+    const managedPid = await readManagedRendererServicePid(plan.controlledLifecycle.pidFile);
+    if (managedPid === null) {
+        writeOk(
+            io,
+            format,
+            {
+                status: "not-managed",
+                lifecycle: {
+                    ...plan,
+                    processSpawn: false,
+                    healthProbe: false,
+                    controlledLifecycle: {
+                        ...plan.controlledLifecycle,
+                        managedProcess: false,
+                        healthWatch: false,
+                    },
+                    managedPid: null,
+                },
+            },
+            () => {
+                writeLine(io.stdout, "No controlled renderer-service process is managed for this host/port.");
+            }
+        );
+        return 0;
+    }
+
+    try {
+        process.kill(managedPid, "SIGTERM");
+    } catch {
+        // process may already be gone
+    }
+    await clearManagedRendererServicePid(plan.controlledLifecycle.pidFile);
+    writeOk(
         io,
         format,
-        "renderer_service_host_start_manual",
-        "renderer-service host startup remains an explicit manual developer action.",
-        [
-            `Run: ${plan.startCommand}`,
-            "Stop the host with Ctrl-C or SIGTERM.",
-            "MCP and CLI render.thumbnail execution still requires explicit renderer-service opt-in after the host starts.",
-            ...plan.bundledSceneBridgeRuntimeRegistryInstallationGate.nextActions,
-            ...plan.bundledSceneBridgeRuntimeRegistryInstallationPreflight.nextActions,
-            ...plan.runtimeAssetPreflight.nextActions,
-        ],
         {
-            lifecycle: plan,
+            status: "stopped",
+            lifecycle: {
+                ...plan,
+                processSpawn: false,
+                healthProbe: false,
+                controlledLifecycle: {
+                    ...plan.controlledLifecycle,
+                    managedProcess: false,
+                    healthWatch: false,
+                },
+                managedPid: null,
+                stoppedPid: managedPid,
+            },
+        },
+        () => {
+            writeLine(io.stdout, `Stopped controlled renderer-service pid ${managedPid}`);
         }
     );
-    return 2;
+    return 0;
 }
 
 async function handleRendererServiceCommand(args: string[], io: CliIO, env: NodeJS.ProcessEnv): Promise<number> {
@@ -8611,6 +9845,8 @@ async function handleRendererServiceCommand(args: string[], io: CliIO, env: Node
             return await handleRendererServiceStatus(rest, io, env);
         case "start":
             return await handleRendererServiceStart(rest, io, env);
+        case "stop":
+            return await handleRendererServiceStop(rest, io, env);
         default:
             writeLine(io.stderr, `Unknown renderer-service command: ${subcommand}`);
             writeLine(io.stderr, 'Run "penpot-cli renderer-service --help" for usage.');
