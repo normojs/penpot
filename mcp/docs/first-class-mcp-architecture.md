@@ -4330,30 +4330,28 @@ P26.54 adds optional controlled renderer-service process lifecycle. `penpot-cli 
 ### 8.6 Advanced Tools
 
 ```text
-execute_code                 # executable only when explicitly enabled
-debug.get_plugin_state       # descriptor-only planned (Phase 28)
-debug.get_agent_logs         # descriptor-only planned (Phase 28)
+execute_code                 # executable only when PENPOT_MCP_ENABLE_EXECUTE_CODE=true
+debug.get_plugin_state       # executable only when PENPOT_MCP_ENABLE_DEBUG_TOOLS=true
+debug.get_agent_logs         # descriptor-only planned (empty adapters)
 ```
 
 `execute_code` remains useful for development and emergency fallback, but the
 MCP server only runs it when `PENPOT_MCP_ENABLE_EXECUTE_CODE=true` is set.
 Normal agent workflows should prefer typed tools.
 
-`debug.get_plugin_state` and `debug.get_agent_logs` are **not** currently
-available as MCP tools even when advanced tools are considered. Phase 28 lands
-them as command-runtime **descriptor-only** planned diagnostics
-(`DebugDiagnosticsCommandDescriptors`, `adapters: []`, reserved CLI names
-`debug plugin-state` / `debug agent-logs`). They project existing
-`mcp.get_status` plugin/session fields and `mcp logs` metadata (see
-`mcp/docs/debug-diagnostics-descriptor-boundaries.md`). Prefer:
+`debug.get_plugin_state` is a gated local projection of `mcp.get_status`
+plugin/session/file-context fields (`DebugDiagnosticsCommandDescriptors`,
+adapter `local`). When disabled it returns structured `debug_tools_disabled`.
+CLI `penpot-cli debug plugin-state` projects the public status endpoint for
+operators. Prefer:
 
-- agents: `mcp.get_status` / `file.get_context` / `file.bind_context`
-- operators: `penpot-cli mcp status` / `penpot-cli mcp logs`
+- agents (default): `mcp.get_status` / `file.get_context` / `file.bind_context`
+- agents (advanced, gated): `debug.get_plugin_state`
+- operators: `penpot-cli mcp status` / `penpot-cli debug plugin-state` /
+  `penpot-cli mcp logs`
 
-A future executable wave may register thin local projections behind
-`PENPOT_MCP_ENABLE_DEBUG_TOOLS=true` (proposed; not implemented), with
-session scoping and log redaction fixtures. Until then, treat Advanced tool
-name presence as catalog discovery only—not runtime support.
+`debug.get_agent_logs` stays non-executable until redaction fixtures exist.
+See `mcp/docs/debug-diagnostics-descriptor-boundaries.md`.
 
 ## 9. Development Order
 

@@ -4,6 +4,8 @@
 
 ### :sparkles: New features & Enhancements
 
+- Make gated `debug.get_plugin_state` executable: local projection of `mcp.get_status` plugin/session/file-context fields behind `PENPOT_MCP_ENABLE_DEBUG_TOOLS=true`, MCP tool with structured `debug_tools_disabled` when off, CLI `penpot-cli debug plugin-state`, command-runtime `local` adapter, and focused tests. `debug.get_agent_logs` stays descriptor-only.
+- Fix remaining MCP server root ESM import extensions (`PenpotMcpServer`, `PluginBridge`, `index`, `ReplServer`) so ts-node test loading resolves relative modules consistently.
 - Fix remaining MCP tool ESM import extensions for `GlobalReadTools` and `FileContextTools` so ts-node test loading can resolve relative modules consistently.
 - Add focused MCP tool tests for legacy `export_shape` (filePath schema gating, bound file-context requirement, absolute path validation, selection/page/shape export codes, and optional PNG file write) and fix ESM import extensions on the tool module for ts-node test loading.
 - Add focused MCP tool tests for gated legacy `import_image` (bound file-context requirement, absolute path/missing file/unsupported format validation, and plugin executeCode happy path) and fix ESM import extensions on the tool module for ts-node test loading.

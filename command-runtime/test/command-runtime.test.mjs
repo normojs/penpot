@@ -9741,14 +9741,14 @@ test("components/tokens descriptors remain empty-adapter planned boundaries", ()
     }
 });
 
-test("debug diagnostics descriptors remain empty-adapter planned boundaries", () => {
+test("debug diagnostics descriptors document plugin-state local adapter and agent-logs empty adapters", () => {
     assert.equal(CommandDescriptors.DEBUG_GET_PLUGIN_STATE.mcpToolName, "debug.get_plugin_state");
     assert.equal(CommandDescriptors.DEBUG_GET_PLUGIN_STATE.cliCommand, "debug plugin-state");
-    assert.deepEqual(CommandDescriptors.DEBUG_GET_PLUGIN_STATE.adapters, []);
-    assert.match(CommandDescriptors.DEBUG_GET_PLUGIN_STATE.description, /descriptor-only/);
+    assert.deepEqual(CommandDescriptors.DEBUG_GET_PLUGIN_STATE.adapters, ["local"]);
+    assert.match(CommandDescriptors.DEBUG_GET_PLUGIN_STATE.description, /PENPOT_MCP_ENABLE_DEBUG_TOOLS/);
     assert.match(CommandDescriptors.DEBUG_GET_PLUGIN_STATE.description, /mcp\.get_status/);
-    assert.match(CommandDescriptors.DEBUG_GET_PLUGIN_STATE.responseShape, /not executable yet/);
     assert.match(CommandDescriptors.DEBUG_GET_PLUGIN_STATE.responseShape, /plugin counts/);
+    assert.match(CommandDescriptors.DEBUG_GET_PLUGIN_STATE.responseShape, /enablement metadata/);
 
     assert.equal(CommandDescriptors.DEBUG_GET_AGENT_LOGS.mcpToolName, "debug.get_agent_logs");
     assert.equal(CommandDescriptors.DEBUG_GET_AGENT_LOGS.cliCommand, "debug agent-logs");
@@ -9762,8 +9762,9 @@ test("debug diagnostics descriptors remain empty-adapter planned boundaries", ()
         assert.equal(getCommandDescriptor(descriptor.id), descriptor);
         assert.equal(getCommandDescriptor(descriptor.mcpToolName), descriptor);
         assert.equal(getCommandDescriptor(descriptor.cliCommand), descriptor);
-        assert.deepEqual(descriptor.adapters, [], descriptor.id);
     }
+    assert.deepEqual(CommandDescriptors.DEBUG_GET_PLUGIN_STATE.adapters, ["local"]);
+    assert.deepEqual(CommandDescriptors.DEBUG_GET_AGENT_LOGS.adapters, []);
 });
 
 test("export.file contract maps CLI binary archive requests to backend RPC semantics", () => {

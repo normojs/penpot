@@ -1,9 +1,9 @@
 import express from "express";
 import path from "path";
 import { fileURLToPath } from "url";
-import { PluginBridge } from "./PluginBridge";
-import { ExecuteCodePluginTask } from "./tasks/ExecuteCodePluginTask";
-import { createLogger } from "./logger";
+import { PluginBridge } from "./PluginBridge.js";
+import { ExecuteCodePluginTask } from "./tasks/ExecuteCodePluginTask.js";
+import { createLogger } from "./logger.js";
 
 /**
  * Web-based REPL server for executing code through the PluginBridge.

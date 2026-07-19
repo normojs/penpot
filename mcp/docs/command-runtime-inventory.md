@@ -42,8 +42,9 @@ Descriptor catalog:
   `render.thumbnail`
 - components/tokens descriptors: `component.create`, `component.instantiate`,
   `tokens.list`, `tokens.apply`
-- debug diagnostics descriptors (empty adapters): `debug.get_plugin_state`,
-  `debug.get_agent_logs`
+- debug diagnostics descriptors: `debug.get_plugin_state` (`local` adapter;
+  MCP gated by `PENPOT_MCP_ENABLE_DEBUG_TOOLS`), `debug.get_agent_logs`
+  (empty adapters, still planned)
 - lookup helper: `getCommandDescriptor(id)` by internal id, MCP tool name, or
   CLI command string
 - descriptor groups: `LowRiskCommandDescriptors`,
@@ -849,16 +850,12 @@ not register yet:
   countersignature policy
   and P25.85 package materialization approval audit countersignature revocation appeal resolution enforcement evidence attestation notarization certification endorsement countersignature verification revocation appeal resolution enforcement evidence attestation notarization certification endorsement countersignature verification policy
   while runtime execution remains unavailable
-- debug: `debug.get_plugin_state` and `debug.get_agent_logs` are
-  **descriptor-only planned** command-runtime entries
-  (`DebugDiagnosticsCommandDescriptors`, `adapters: []`) with reserved CLI
-  names `debug plugin-state` / `debug agent-logs`. They project planned
-  contracts onto existing `mcp.get_status` / `mcp logs` surfaces
-  (`mcp/docs/debug-diagnostics-descriptor-boundaries.md`). MCP tools and CLI
-  execution remain unregistered; prefer `mcp.get_status` and
-  `penpot-cli mcp logs` until a future enablement gate
-  (`PENPOT_MCP_ENABLE_DEBUG_TOOLS`) and redaction fixtures land. Name presence
-  in `ToolNames.ts` / Advanced tools is **not** executable support.
+- debug: `debug.get_plugin_state` is executable as a gated local projection of
+  `mcp.get_status` plugin/session fields (`DebugGetPluginStateTool`, CLI
+  `debug plugin-state`). MCP requires `PENPOT_MCP_ENABLE_DEBUG_TOOLS=true`.
+  `debug.get_agent_logs` remains **descriptor-only planned** with empty
+  adapters; prefer `penpot-cli mcp logs` for operator log listing/follow
+  (`mcp/docs/debug-diagnostics-descriptor-boundaries.md`).
 
 Do not migrate these as executable descriptors until their implementation is
 registered or the descriptor explicitly marks them as planned/unavailable.

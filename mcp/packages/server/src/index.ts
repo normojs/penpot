@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 
-import { PenpotMcpServer } from "./PenpotMcpServer";
-import { createLogger, logActiveTransports } from "./logger";
+import { PenpotMcpServer } from "./PenpotMcpServer.js";
+import { createLogger, logActiveTransports } from "./logger.js";
 
 /**
  * Entry point for Penpot MCP Server

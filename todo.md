@@ -1242,7 +1242,9 @@ row `in_progress`.
 - [x] Maintenance CACHE.1–CACHE.3
 - [x] Executable components/tokens tools (deferred past Phase 27 descriptors)
 - [x] Plugin-live-only component/token wrappers without a headless contract
-- [x] Executable debug diagnostics tools (deferred past Phase 28 descriptors; use `mcp.get_status` / `mcp logs` until enablement/redaction gates exist)
+- [x] **Executable debug diagnostics tools (deferred past Phase 28 descriptors; use `mcp.get_status` / `mcp logs` until enablement/redaction gates exist)**
+- [x] **Gated `debug.get_plugin_state` executable path** — completed 2026-07-19; MCP `DebugGetPluginStateTool` + CLI `debug plugin-state` behind `PENPOT_MCP_ENABLE_DEBUG_TOOLS`; `debug.get_agent_logs` still deferred
+- [x] **MCP server root ESM `.js` import suffixes** — completed 2026-07-19 for `PenpotMcpServer` / `PluginBridge` / `index` / `ReplServer` (and tools)
 
 
 P26.1 is complete: `@penpot/renderer-service` is a private pnpm workspace

@@ -2,23 +2,24 @@ import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { AsyncLocalStorage } from "async_hooks";
 import { SSEServerTransport } from "@modelcontextprotocol/sdk/server/sse.js";
 import { StreamableHTTPServerTransport } from "@modelcontextprotocol/sdk/server/streamableHttp.js";
-import { ExecuteCodeTool } from "./tools/ExecuteCodeTool";
+import { ExecuteCodeTool } from "./tools/ExecuteCodeTool.js";
 import {
     ExportFileTool,
     ExportPageTool,
     ExportShapeDataTool,
     RenderPreviewTool,
     RenderThumbnailTool,
-} from "./tools/ExportTools";
-import { PluginBridge } from "./PluginBridge";
-import { ConfigurationLoader } from "./ConfigurationLoader";
-import { createLogger, getLogStatus } from "./logger";
-import { Tool } from "./Tool";
-import { HighLevelOverviewTool } from "./tools/HighLevelOverviewTool";
-import { PenpotApiInfoTool } from "./tools/PenpotApiInfoTool";
-import { ExportShapeTool } from "./tools/ExportShapeTool";
-import { ImportImageTool } from "./tools/ImportImageTool";
-import { McpStatusTool } from "./tools/McpStatusTool";
+} from "./tools/ExportTools.js";
+import { PluginBridge } from "./PluginBridge.js";
+import { ConfigurationLoader } from "./ConfigurationLoader.js";
+import { createLogger, getLogStatus } from "./logger.js";
+import { Tool } from "./Tool.js";
+import { HighLevelOverviewTool } from "./tools/HighLevelOverviewTool.js";
+import { PenpotApiInfoTool } from "./tools/PenpotApiInfoTool.js";
+import { ExportShapeTool } from "./tools/ExportShapeTool.js";
+import { ImportImageTool } from "./tools/ImportImageTool.js";
+import { McpStatusTool } from "./tools/McpStatusTool.js";
+import { DebugGetPluginStateTool } from "./tools/DebugTools.js";
 import {
     AccountGetCurrentUserTool,
     FileGetRecentTool,
@@ -26,13 +27,13 @@ import {
     FileSearchTool,
     ProjectListTool,
     TeamListTool,
-} from "./tools/GlobalReadTools";
-import { FileCreateTool } from "./tools/FileCreateTool";
-import { FileDuplicateTool } from "./tools/FileDuplicateTool";
-import { FileOpenTool } from "./tools/FileOpenTool";
-import { TokenGetMcpStatusTool } from "./tools/TokenTools";
-import { FileBindContextTool, FileGetContextTool, FileReleaseContextTool } from "./tools/FileContextTools";
-import { PageCreateTool, PageListTool, PageRenameTool, PageSetCurrentTool } from "./tools/PageTools";
+} from "./tools/GlobalReadTools.js";
+import { FileCreateTool } from "./tools/FileCreateTool.js";
+import { FileDuplicateTool } from "./tools/FileDuplicateTool.js";
+import { FileOpenTool } from "./tools/FileOpenTool.js";
+import { TokenGetMcpStatusTool } from "./tools/TokenTools.js";
+import { FileBindContextTool, FileGetContextTool, FileReleaseContextTool } from "./tools/FileContextTools.js";
+import { PageCreateTool, PageListTool, PageRenameTool, PageSetCurrentTool } from "./tools/PageTools.js";
 import {
     PrototypeCreateFlowTool,
     PrototypeCreateInteractionTool,
@@ -42,10 +43,10 @@ import {
     PrototypeListInteractionsTool,
     PrototypeReorderInteractionTool,
     PrototypeUpdateInteractionTool,
-} from "./tools/PrototypeTools";
-import { TokensApplyTool, TokensListTool } from "./tools/TokensTools";
-import { ComponentCreateTool, ComponentInstantiateTool } from "./tools/ComponentTools";
-import { SelectionGetTool, SelectionSetTool } from "./tools/SelectionTools";
+} from "./tools/PrototypeTools.js";
+import { TokensApplyTool, TokensListTool } from "./tools/TokensTools.js";
+import { ComponentCreateTool, ComponentInstantiateTool } from "./tools/ComponentTools.js";
+import { SelectionGetTool, SelectionSetTool } from "./tools/SelectionTools.js";
 import {
     ShapeDeleteTool,
     ShapeCreateFrameTool,
@@ -55,13 +56,13 @@ import {
     ShapeSetLayoutTool,
     ShapeSetStyleTool,
     ShapeUpdateTool,
-} from "./tools/ShapeCreateTools";
-import { ShapeGroupTool, ShapeUngroupTool } from "./tools/ShapeGroupTools";
-import { PenpotRpcClient } from "./PenpotRpcClient";
-import { ReplServer } from "./ReplServer";
-import { ApiDocs } from "./ApiDocs";
-import { FileContextRegistry } from "./FileContextRegistry";
-import { McpWriteLimiter } from "./McpWriteLimiter";
+} from "./tools/ShapeCreateTools.js";
+import { ShapeGroupTool, ShapeUngroupTool } from "./tools/ShapeGroupTools.js";
+import { PenpotRpcClient } from "./PenpotRpcClient.js";
+import { ReplServer } from "./ReplServer.js";
+import { ApiDocs } from "./ApiDocs.js";
+import { FileContextRegistry } from "./FileContextRegistry.js";
+import { McpWriteLimiter } from "./McpWriteLimiter.js";
 
 /**
  * Session context for request-scoped data.
@@ -214,6 +215,14 @@ export class PenpotMcpServer {
     }
 
     /**
+     * Indicates whether gated advanced debug tools such as debug.get_plugin_state
+     * may execute. Prefer mcp.get_status for normal agent diagnostics.
+     */
+    public isDebugToolsEnabled(): boolean {
+        return process.env.PENPOT_MCP_ENABLE_DEBUG_TOOLS === "true";
+    }
+
+    /**
      * Indicates whether destructive MCP tools require an explicit tool-call
      * confirmation before mutating Penpot data.
      *
@@ -243,6 +252,7 @@ export class PenpotMcpServer {
                 remoteMode: this.isRemoteMode(),
                 fileSystemAccessEnabled: this.isFileSystemAccessEnabled(),
                 executeCodeEnabled: this.isExecuteCodeEnabled(),
+                debugToolsEnabled: this.isDebugToolsEnabled(),
                 destructiveConfirmationRequired: this.isDestructiveConfirmationRequired(),
                 registeredTools: this.tools.length,
                 sessionTimeoutMinutes: PenpotMcpServer.SESSION_TIMEOUT_MINUTES,
@@ -324,6 +334,7 @@ export class PenpotMcpServer {
             new RenderPreviewTool(this),
             new RenderThumbnailTool(this),
             new ExecuteCodeTool(this),
+            new DebugGetPluginStateTool(this),
             new HighLevelOverviewTool(this),
             new PenpotApiInfoTool(this, this.apiDocs),
             new ExportShapeTool(this),

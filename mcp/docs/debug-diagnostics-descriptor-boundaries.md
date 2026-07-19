@@ -1,8 +1,8 @@
 # Debug Diagnostics Descriptor Boundaries
 
-Status: Phase 28 complete (P28.1–P28.3). Descriptor-only entries exist with
-empty adapters in `DebugDiagnosticsCommandDescriptors`; no MCP tools, CLI
-handlers, or executable adapters are registered for the debug command names.
+Status: Phase 28 complete; post-28 executable slice for `debug.get_plugin_state`
+is implemented behind `PENPOT_MCP_ENABLE_DEBUG_TOOLS=true`. `debug.get_agent_logs`
+remains descriptor-only with empty adapters.
 
 This document turns the residual unregistered MCP tool names in `ToolNames.ts`
 and the guidance in [`headless-live-gap-audit.md`](./headless-live-gap-audit.md)
@@ -172,20 +172,28 @@ Rules:
   cookies, and long base64 blobs).
 - Do not implement log follow over MCP; follow stays CLI/`tail -f` only.
 
-## Enablement Gate (Future Executable Phase Only)
+## Enablement Gate (debug.get_plugin_state)
 
-Mirror the `execute_code` pattern. Proposed env (not implemented in Phase 28):
+Mirror the `execute_code` pattern:
 
 ```text
 PENPOT_MCP_ENABLE_DEBUG_TOOLS=true
 ```
 
-Until that gate exists and is documented:
+When unset/false:
 
-- descriptors keep `adapters: []`
-- MCP registration stays off
-- CLI execution stays off
-- agents should call `mcp.get_status` and operators should use `mcp logs`
+- MCP `debug.get_plugin_state` returns structured `debug_tools_disabled`
+- agents should call `mcp.get_status`
+- CLI `penpot-cli debug plugin-state` still projects the public status endpoint
+  (operator convenience; does not bypass server enablement for the MCP tool)
+
+When true:
+
+- MCP tool returns the token-safe local projection (plugin counts/status,
+  session flags, fileContext summary; no raw tokens; no client token dumps)
+
+`debug.get_agent_logs` remains non-executable (`adapters: []`); operators use
+`penpot-cli mcp logs`.
 
 ## Adapter Decision
 

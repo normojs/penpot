@@ -1,6 +1,6 @@
 import { WebSocket, WebSocketServer } from "ws";
 import * as http from "http";
-import { PluginTask } from "./PluginTask";
+import { PluginTask } from "./PluginTask.js";
 import {
     PluginClientInfo,
     PluginFileContextBindRequestMessage,
@@ -14,9 +14,9 @@ import {
     ServerPluginCompatibilityMessage,
     WrappedPluginTaskResponse,
 } from "@penpot/mcp-common";
-import { getPluginClientInfo, negotiatePluginCompatibility } from "./PluginCompatibility";
-import { createLogger } from "./logger";
-import type { PenpotMcpServer } from "./PenpotMcpServer";
+import { getPluginClientInfo, negotiatePluginCompatibility } from "./PluginCompatibility.js";
+import { createLogger } from "./logger.js";
+import type { PenpotMcpServer } from "./PenpotMcpServer.js";
 import { CommandErrorCodes } from "@penpot/command-runtime";
 
 const KEEP_ALIVE_TIME = 30000; // 30 seconds

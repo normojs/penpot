@@ -634,11 +634,11 @@ export const CommandDescriptors = Object.freeze({
         cliCommand: "debug plugin-state",
         title: "Get plugin state",
         description:
-            "Planned token-safe snapshot of plugin-bridge connectivity and session file-context as a projection of mcp.get_status plugin/session fields; descriptor-only with empty adapters until an enablement gate and MCP/CLI registration land.",
+            "Returns a token-safe snapshot of plugin-bridge connectivity and the current session file-context as a local projection of mcp.get_status plugin/session fields. MCP execution requires PENPOT_MCP_ENABLE_DEBUG_TOOLS=true; prefer mcp.get_status for normal agent diagnostics.",
         inputSchema: "empty",
-        adapters: Object.freeze([]),
+        adapters: Object.freeze(["local"]),
         responseShape:
-            "planned status envelope with plugin counts/status, session scope flags, fileContext summary, and nextActions; no raw tokens; not executable yet",
+            "status envelope with plugin counts/status (no raw client tokens), session scope flags, fileContext summary, enablement metadata, and nextActions",
     }),
     DEBUG_GET_AGENT_LOGS: Object.freeze({
         id: "debug.get_agent_logs",

@@ -6737,7 +6737,7 @@ test("command runtime exposes components/tokens descriptor-only boundaries", () 
     assert.equal(getCommandDescriptor("tokens apply").id, "tokens.apply");
 });
 
-test("command runtime exposes debug diagnostics descriptor-only boundaries", () => {
+test("command runtime exposes debug diagnostics descriptors", () => {
     assert.deepEqual(
         DebugDiagnosticsCommandDescriptors.map((descriptor) => descriptor.id),
         ["debug.get_plugin_state", "debug.get_agent_logs"]
@@ -6745,8 +6745,8 @@ test("command runtime exposes debug diagnostics descriptor-only boundaries", () 
     assert.equal(MigratedCommandDescriptors.length, 47);
     assert.equal(CommandDescriptors.DEBUG_GET_PLUGIN_STATE.mcpToolName, "debug.get_plugin_state");
     assert.equal(CommandDescriptors.DEBUG_GET_PLUGIN_STATE.cliCommand, "debug plugin-state");
-    assert.deepEqual(CommandDescriptors.DEBUG_GET_PLUGIN_STATE.adapters, []);
-    assert.match(CommandDescriptors.DEBUG_GET_PLUGIN_STATE.description, /descriptor-only/);
+    assert.deepEqual(CommandDescriptors.DEBUG_GET_PLUGIN_STATE.adapters, ["local"]);
+    assert.match(CommandDescriptors.DEBUG_GET_PLUGIN_STATE.description, /PENPOT_MCP_ENABLE_DEBUG_TOOLS/);
     assert.equal(CommandDescriptors.DEBUG_GET_AGENT_LOGS.mcpToolName, "debug.get_agent_logs");
     assert.equal(CommandDescriptors.DEBUG_GET_AGENT_LOGS.cliCommand, "debug agent-logs");
     assert.deepEqual(CommandDescriptors.DEBUG_GET_AGENT_LOGS.adapters, []);
@@ -6755,9 +6755,6 @@ test("command runtime exposes debug diagnostics descriptor-only boundaries", () 
     assert.equal(getCommandDescriptor("debug plugin-state").id, "debug.get_plugin_state");
     assert.equal(getCommandDescriptor("debug.get_agent_logs").id, "debug.get_agent_logs");
     assert.equal(getCommandDescriptor("debug agent-logs").id, "debug.get_agent_logs");
-    for (const descriptor of DebugDiagnosticsCommandDescriptors) {
-        assert.deepEqual(descriptor.adapters, [], descriptor.id);
-    }
 });
 
 test("command runtime creates token-safe request and result envelopes", () => {
@@ -7157,6 +7154,57 @@ test("mcp status reports unreachable status endpoints", async () => {
     } finally {
         globalThis.fetch = originalFetch;
     }
+});
+
+test("debug plugin-state projects plugin counts from the status endpoint", async () => {
+    const originalFetch = globalThis.fetch;
+    globalThis.fetch = async (url) => {
+        assert.equal(String(url), "http://127.0.0.1:4401/status");
+        return {
+            ok: true,
+            status: 200,
+            statusText: "OK",
+            json: async () => ({
+                status: "ok",
+                server: { multiUserMode: false, debugToolsEnabled: false },
+                transports: {
+                    webSocket: {
+                        connectedClients: 1,
+                        authenticatedClients: 1,
+                        compatibleClients: 1,
+                        incompatibleClients: 0,
+                        pendingNegotiationClients: 0,
+                        pendingTasks: 2,
+                        clients: [{ userToken: "should-not-leak" }],
+                    },
+                },
+                fileContexts: { totalContexts: 0, boundContexts: 0 },
+            }),
+        };
+    };
+
+    try {
+        const result = await runCli(["debug", "plugin-state", "--format", "json"], {
+            PENPOT_MCP_STATUS_URI: "http://127.0.0.1:4401/status",
+        });
+        const body = parseJson(result.stdout);
+        assert.equal(result.exitCode, 0);
+        assert.equal(body.status, "ok");
+        assert.equal(body.data.adapter, "local");
+        assert.equal(body.data.plugin.status, "connected");
+        assert.equal(body.data.plugin.pendingTasks, 2);
+        assert.equal(body.data.session.mode, "single-user");
+        assert.equal("clients" in body.data.plugin, false);
+        assert.equal(JSON.stringify(body).includes("should-not-leak"), false);
+    } finally {
+        globalThis.fetch = originalFetch;
+    }
+});
+
+test("debug agent-logs remains non-executable", async () => {
+    const result = await runCli(["debug", "agent-logs"]);
+    assert.equal(result.exitCode, 2);
+    assert.match(result.stdout + result.stderr, /debug_agent_logs_not_implemented|descriptor-only|mcp logs/i);
 });
 
 test("mcp logs lists configured log files without following", async () => {

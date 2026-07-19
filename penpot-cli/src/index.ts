@@ -83,6 +83,7 @@ Usage:
   penpot-cli mcp config [--mode builtin|custom|local] [--profile-source off|auto|backend] [--format text|json]
   penpot-cli mcp logs [--dir <path>] [--follow] [--format text|json]
   penpot-cli token status [--format text|json]
+  penpot-cli debug plugin-state [--url <status-url>] [--format text|json]
   penpot-cli account me [--format text|json]
   penpot-cli team list [--format text|json]
   penpot-cli project list [--team-id <id>] [--format text|json]
@@ -196,6 +197,22 @@ Environment:
   PENPOT_RENDERER_SERVICE_RUNTIME_ASSET_PREFLIGHT_WORKSPACE_ROOT  Absolute workspace root for read-only preflight
   PENPOT_RENDERER_SERVICE_RUNTIME_ASSET_PREFLIGHT_CACHE_ROOT  Optional absolute cache root for read-only preflight
   PENPOT_BACKEND_URI           Fallback backend RPC base URI for disabled endpoint planning`;
+
+const DEBUG_HELP_TEXT = `penpot-cli debug
+
+Usage:
+  penpot-cli debug plugin-state [--url <status-url>] [--format text|json]
+
+Notes:
+  Projects a token-safe plugin/session snapshot from the MCP status endpoint
+  (same data shape as debug.get_plugin_state when enabled on the server).
+  Prefer penpot-cli mcp status for full ops diagnostics.
+  debug agent-logs remains planned/non-executable; use mcp logs for operators.
+
+Environment:
+  PENPOT_MCP_STATUS_URI      Explicit MCP status URL
+  PENPOT_MCP_PUBLIC_URI      Public Penpot base URL used to derive status URL
+`;
 
 const ACCOUNT_HELP_TEXT = `penpot-cli account
 
@@ -9423,6 +9440,169 @@ function formatStatusText(io: CliIO, statusUrl: string, data: unknown): void {
     writeLine(io.stdout, `fileContexts: ${String(fileContexts.totalContexts ?? "unknown")}`);
 }
 
+
+function writeDebugPluginStateText(io: CliIO, statusUrl: string, data: Record<string, unknown>): void {
+    const plugin = asRecord(data.plugin);
+    const session = asRecord(data.session);
+    const fileContext = asRecord(data.fileContext);
+    writeLine(io.stdout, `${CommandDescriptors.DEBUG_GET_PLUGIN_STATE.title}`);
+    writeLine(io.stdout, `statusUrl: ${statusUrl}`);
+    writeLine(io.stdout, `adapter: ${String(data.adapter ?? "local")}`);
+    writeLine(io.stdout, `plugin.status: ${String(plugin.status ?? "unknown")}`);
+    writeLine(io.stdout, `plugin.connectedClients: ${String(plugin.connectedClients ?? "unknown")}`);
+    writeLine(io.stdout, `plugin.compatibleClients: ${String(plugin.compatibleClients ?? "unknown")}`);
+    writeLine(io.stdout, `plugin.pendingTasks: ${String(plugin.pendingTasks ?? "unknown")}`);
+    writeLine(io.stdout, `session.mode: ${String(session.mode ?? "unknown")}`);
+    writeLine(io.stdout, `session.userTokenPresent: ${String(session.userTokenPresent ?? "unknown")}`);
+    writeLine(io.stdout, `fileContext.status: ${String(fileContext.status ?? "unknown")}`);
+    writeLine(io.stdout, `fileContext.boundFileId: ${String(fileContext.boundFileId ?? "null")}`);
+    const nextActions = Array.isArray(data.nextActions) ? data.nextActions : [];
+    if (nextActions.length > 0) {
+        writeLine(io.stdout, "nextActions:");
+        for (const action of nextActions) {
+            writeLine(io.stdout, `  ${String(action)}`);
+        }
+    }
+}
+
+function projectPluginStateFromStatus(data: unknown): Record<string, unknown> {
+    const body = asRecord(data);
+    const server = asRecord(body.server);
+    const transports = asRecord(body.transports);
+    const webSocket = asRecord(transports.webSocket);
+    const fileContexts = asRecord(body.fileContexts);
+    // Status endpoint exposes aggregate fileContexts; bound file id is not always present.
+    // Prefer nested fileContext when a richer status payload is available.
+    const fileContext = asRecord(body.fileContext);
+    const compatibleClients = Number(webSocket.compatibleClients ?? 0);
+    const incompatibleClients = Number(webSocket.incompatibleClients ?? 0);
+    const pendingNegotiationClients = Number(webSocket.pendingNegotiationClients ?? 0);
+    const pluginStatus =
+        compatibleClients > 0
+            ? "connected"
+            : incompatibleClients > 0
+              ? "incompatible"
+              : pendingNegotiationClients > 0
+                ? "negotiating"
+                : "disconnected";
+    const multiUserMode = Boolean(server.multiUserMode);
+    const boundFileId =
+        fileContext.boundFileId ??
+        asRecord(fileContext.boundContext).fileId ??
+        null;
+    return {
+        adapter: "local",
+        enabled: true,
+        enablement: {
+            env: "PENPOT_MCP_ENABLE_DEBUG_TOOLS",
+            enabledValue: "true",
+            note: "CLI projects status endpoint data; MCP tool still requires the enablement env on the server.",
+        },
+        plugin: {
+            status: pluginStatus,
+            connectedClients: Number(webSocket.connectedClients ?? 0),
+            authenticatedClients: Number(webSocket.authenticatedClients ?? 0),
+            compatibleClients,
+            incompatibleClients,
+            pendingNegotiationClients,
+            pendingTasks: Number(webSocket.pendingTasks ?? 0),
+        },
+        session: {
+            mode: multiUserMode ? "multi-user" : "single-user",
+            userTokenPresent: false,
+            scopedToCurrentSession: true,
+        },
+        fileContext: {
+            status: String(fileContext.status ?? (Number(fileContexts.boundContexts ?? 0) > 0 ? "bound" : "unbound")),
+            boundFileId,
+        },
+        nextActions: ["mcp.get_status", "file.get_context", "file.bind_context"],
+    };
+}
+
+async function handleDebugPluginState(args: string[], io: CliIO, env: NodeJS.ProcessEnv): Promise<number> {
+    const format = parseFormat(args, io);
+    if (!format) {
+        return 2;
+    }
+
+    const config = getMcpConfig(args, env);
+    const requestEnvelope = createCliRequest(CommandDescriptors.DEBUG_GET_PLUGIN_STATE, {
+        target: { statusUri: config.statusUri },
+        auth: { userTokenPresent: false, source: "status-endpoint" },
+        adapter: "local",
+        diagnostics: { mode: config.mode, projectedFrom: "mcp.status" },
+    });
+    try {
+        const response = await fetch(config.statusUri, {
+            headers: {
+                accept: "application/json",
+            },
+        });
+        if (!response.ok) {
+            throw new Error(`HTTP ${response.status} ${response.statusText}`);
+        }
+        const data = (await response.json()) as unknown;
+        const projection = projectPluginStateFromStatus(data);
+        const resultEnvelope = createCliResult(requestEnvelope, projection, {
+            diagnostics: { statusUri: config.statusUri },
+        });
+        if (format === "json") {
+            writeJson(io.stdout, {
+                status: "ok",
+                source: {
+                    statusUri: config.statusUri,
+                },
+                data: resultEnvelope.data,
+            });
+        } else {
+            writeDebugPluginStateText(io, config.statusUri, resultEnvelope.data as Record<string, unknown>);
+        }
+        return 0;
+    } catch (cause) {
+        writeError(
+            io,
+            format,
+            "mcp_status_unreachable",
+            `Unable to project plugin state from ${config.statusUri}: ${String(cause)}`,
+            [
+                "Start the Penpot MCP server.",
+                "Use --url or PENPOT_MCP_STATUS_URI to point at a different status endpoint.",
+                "Prefer penpot-cli mcp status for the full ops snapshot.",
+            ],
+            {
+                statusUri: config.statusUri,
+            }
+        );
+        return 2;
+    }
+}
+
+async function handleDebugCommand(args: string[], io: CliIO, env: NodeJS.ProcessEnv): Promise<number> {
+    const [subcommand, ...rest] = args;
+    if (!subcommand || isHelpFlag(subcommand)) {
+        writeLine(io.stdout, DEBUG_HELP_TEXT);
+        return 0;
+    }
+    switch (subcommand) {
+        case "plugin-state":
+            return await handleDebugPluginState(rest, io, env);
+        case "agent-logs":
+            writeError(
+                io,
+                "text",
+                "debug_agent_logs_not_implemented",
+                "debug agent-logs is still descriptor-only. Use penpot-cli mcp logs for operator log listing/follow.",
+                ["penpot-cli mcp logs --dir <path>", "penpot-cli mcp status"]
+            );
+            return 2;
+        default:
+            writeLine(io.stderr, `Unknown debug command: ${subcommand}`);
+            writeLine(io.stderr, 'Run "penpot-cli debug --help" for usage.');
+            return 2;
+    }
+}
+
 async function handleMcpStatus(args: string[], io: CliIO, env: NodeJS.ProcessEnv): Promise<number> {
     const format = parseFormat(args, io);
     if (!format) {
@@ -12812,6 +12992,10 @@ export async function run(
 
     if (first === "token") {
         return await handleTokenCommand(argv.slice(1), io, env);
+    }
+
+    if (first === "debug") {
+        return await handleDebugCommand(argv.slice(1), io, env);
     }
 
     if (first === "account") {
