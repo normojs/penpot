@@ -4,7 +4,8 @@
 
 ### :sparkles: New features & Enhancements
 
-- P29.1 private release gate on tip `a073398fcd`: CLI types/tests (114), MCP focused tool tests (status/token/debug/legacy), command-runtime descriptor checks, and `pnpm cli:package-check` producing `tmp/penpot-cli-release/penpot-cli-0.1.0.tar.gz` with extracted `bin/penpot-cli --help`.
+- Phase 29 private fork release graduation for `penpot-cli` 0.1.0: tip release gate, clean-machine extracted-archive smoke, known-limits notes in `mcp/docs/private-release-0.1.0.md`, and git tag `cli-v0.1.0` (archive-only; not npm; not upstream GA).
+- P29.1 private release gate: CLI types/tests (114), MCP focused tool tests (status/token/debug/legacy), command-runtime descriptor checks, and `pnpm cli:package-check` producing `tmp/penpot-cli-release/penpot-cli-0.1.0.tar.gz` with extracted `bin/penpot-cli --help`.
 - Make gated `debug.get_plugin_state` executable: local projection of `mcp.get_status` plugin/session/file-context fields behind `PENPOT_MCP_ENABLE_DEBUG_TOOLS=true`, MCP tool with structured `debug_tools_disabled` when off, CLI `penpot-cli debug plugin-state`, command-runtime `local` adapter, and focused tests. `debug.get_agent_logs` stays descriptor-only.
 - Fix remaining MCP server root ESM import extensions (`PenpotMcpServer`, `PluginBridge`, `index`, `ReplServer`) so ts-node test loading resolves relative modules consistently.
 - Fix remaining MCP tool ESM import extensions for `GlobalReadTools` and `FileContextTools` so ts-node test loading can resolve relative modules consistently.

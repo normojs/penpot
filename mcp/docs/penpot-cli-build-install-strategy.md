@@ -120,7 +120,7 @@ pnpm cli:package-check
 
 ### Portable archive smoke
 
-Verified in this checkout:
+Verified in this checkout (P29.1 / P29.2):
 
 ```bash
 pnpm cli:package-check
@@ -132,8 +132,38 @@ Artifacts:
 - `tmp/penpot-cli-release/penpot-cli-0.1.0.tar.gz`
 - extracted tree at `tmp/penpot-cli-release/penpot-cli-0.1.0/`
 
-Re-verify on a clean machine by copying only the tarball, extracting, and running
-`bin/penpot-cli --help` plus a dry-run command that does not need workspace links.
+### Clean-machine / extracted-archive smoke (P29.2)
+
+Copy **only** the tarball to a directory outside the monorepo (or another host
+with Node ≥ 18), then:
+
+```bash
+tar -xzf penpot-cli-0.1.0.tar.gz
+cd penpot-cli-0.1.0
+./bin/penpot-cli --version          # 0.1.0
+./bin/penpot-cli --help             # includes debug plugin-state
+./bin/penpot-cli debug --help       # offline group help
+./bin/penpot-cli mcp config --format text
+test -f node_modules/@penpot/command-runtime/index.js
+```
+
+Expected:
+
+- No `workspace:` dependency protocol in archive `package.json`
+- `@penpot/command-runtime` is vendored under `node_modules/`
+- Offline help/config work without the git checkout
+
+Use `debug --help` (not `debug plugin-state --help`) for offline smoke;
+subcommand `--help` may attempt network/status calls.
+
+Full private release notes and known limits:
+[`private-release-0.1.0.md`](./private-release-0.1.0.md).
+
+### Packaging tip and tag (P29.4)
+
+- Git remote push target: `fork` → `https://github.com/normojs/penpot.git`
+- Private CLI tag: **`cli-v0.1.0`** on the packaging tip commit
+- Re-run `pnpm cli:package-check` on the tagged SHA if the tip moves after docs
 
 ### Upstream sync policy (fork)
 
@@ -146,13 +176,12 @@ Re-verify on a clean machine by copying only the tarball, extracting, and runnin
 
 ### npm publish
 
-Out of scope. Packages remain private workspace / release-archive artifacts unless
-product explicitly decides to publish.
+Out of scope for 0.1.0. Packages remain private workspace / release-archive
+artifacts unless Phase 30 product decision changes (see `todo.md` P30.1).
 
 ### Push notes
 
 `git push -u fork main` may still fail under local Clash/fake-ip/TUN TLS issues
 even when HTTPS to github.com returns 200. Retry with a healthy mixed-port proxy
-or direct route; confirm with `git ls-remote fork` before large pushes. Local
-commits for Phase 26+ may still be unpushed until the working tree is committed
-and the network path is stable.
+or direct route; confirm with `git ls-remote fork` before large pushes.
+
