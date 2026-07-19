@@ -30,7 +30,9 @@ release archive distribution.
 **Open path to general product** is Phase 29–34 / F37–F42: private release
 graduation, distribution/versioning, default thumbnail experience, multi-user
 hardening, remaining debug diagnostics (`debug.get_agent_logs`), and product
-positioning. Next executable slice: **P29.1** release gate on current tip.
+positioning. **P29.1 release gate passed on tip `a073398fcd` (2026-07-19).**
+Next: **P29.2** clean-machine / extracted-archive smoke documentation, then
+**P29.3** known-limits notes and **P29.4** tag.
 
 Completed baseline (not re-listed as open tasks):
 
@@ -40,6 +42,7 @@ Completed baseline (not re-listed as open tasks):
 - Server ESM `.js` import suffixes for tools + root modules
 - Private packaging path: `pnpm cli:package-check` → `tmp/penpot-cli-release/`
 - Upstream policy: fetch-only `upstream`, push only to `fork`
+- **P29.1** tip release gate on `a073398fcd`
 
 ## Feature Roadmap
 
@@ -64,7 +67,7 @@ claiming general public GA.
 
 | ID | Status | Task | Modules | Verification | Notes |
 | --- | --- | --- | --- | --- | --- |
-| P29.1 | todo | Re-run release gate on current tip | `penpot-cli`, `mcp/packages/server`, root | `types:check`, CLI smoke, MCP focused tests for status/token/debug, `pnpm cli:package-check` | Must pass on the same SHA that is tagged/pushed |
+| P29.1 | done | Re-run release gate on current tip | `penpot-cli`, `mcp/packages/server`, root | Completed 2026-07-19 on `a073398fcd`: `penpot-cli types:check` + full CLI tests 114/114; MCP focused tests 31/31; command-runtime descriptor tests; `pnpm cli:package-check` → `tmp/penpot-cli-release/penpot-cli-0.1.0.tar.gz`; extracted `bin/penpot-cli --help` / `debug --help` / `mcp config` work | Must re-run if tip moves before P29.4 tag |
 | P29.2 | todo | Clean-machine / extracted-archive smoke | release archive | Extract tar; `bin/penpot-cli --help`; `debug plugin-state --help`; `mcp config --help` | Confirms archive is not checkout-coupled |
 | P29.3 | todo | Known-limits and private release notes | `mcp/docs`, `CHANGES.md`, `todo.md` | Document live-only tools, gated debug/execute_code, thumbnail operator path, no npm | Prevents over-claiming “general product” |
 | P29.4 | todo | Tag and record packaging tip | git, `todo.md`, build-install strategy | Tag (e.g. `cli-v0.1.0` or dated fork tag); tip SHA matches `fork/main` | Private release only |
@@ -139,7 +142,7 @@ Keep at most one roadmap feature `in_progress`.
 
 ### Phase 29: Private fork release graduation
 
-- [ ] **P29.1** Re-run release gate on current tip (`types:check`, CLI tests/smokes, MCP focused tests, `pnpm cli:package-check`)
+- [x] **P29.1** Re-run release gate on tip `a073398fcd` (`types:check`, CLI 114 tests, MCP focused 31 tests, `pnpm cli:package-check`, extracted archive `--help`)
 - [ ] **P29.2** Clean-machine / extracted-archive smoke (`bin/penpot-cli --help`, `debug plugin-state --help`, `mcp config --help`)
 - [ ] **P29.3** Known-limits + private release notes (live-only, gated tools, thumbnail operator path, no public npm claim)
 - [ ] **P29.4** Tag private release and record packaging tip SHA on `fork/main`
