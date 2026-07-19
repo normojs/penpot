@@ -4,6 +4,7 @@
 
 ### :sparkles: New features & Enhancements
 
+- Add CLI smoke coverage for `penpot-cli page list` and `page create` over backend-command `get-file-pages` / `create-file-page`, including file-id validation.
 - Add CLI smoke coverage for `penpot-cli file list` and `file create` over backend-rpc `get-project-files` / `create-file`, including project-id and auth validation.
 - Add shared command-runtime descriptors and CLI parity for global discovery: `account me`, `team list`, `project list`, and `file recent` over existing `get-profile` / `get-teams` / `get-projects` / `get-team-recent-files` RPCs; MCP tools now emit the same envelopes.
 - Make `token.get_mcp_status` executable through backend-rpc: shared command-runtime descriptor, MCP tool, and `penpot-cli token status` over existing `get-current-mcp-token`, returning only token-safe presence/expiry metadata.

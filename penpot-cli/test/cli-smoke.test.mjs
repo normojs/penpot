@@ -9157,6 +9157,133 @@ test("file duplicate calls backend-rpc duplicate-file", async () => {
     }
 });
 
+test("page list calls backend-command get-file-pages", async () => {
+    const originalFetch = globalThis.fetch;
+    const calls = [];
+    globalThis.fetch = async (url, options) => {
+        calls.push({ url: String(url), options });
+        return {
+            ok: true,
+            status: 200,
+            statusText: "OK",
+            text: async () =>
+                JSON.stringify({
+                    pages: [
+                        { id: UUIDS.page, name: "Home" },
+                        { id: "00000000-0000-0000-0000-0000000000cc", name: "About" },
+                    ],
+                }),
+        };
+    };
+
+    try {
+        const result = await runCli(
+            ["page", "list", "--file", UUIDS.file, "--format", "json"],
+            {
+                PENPOT_BACKEND_URI: "http://127.0.0.1:6060",
+                PENPOT_CLI_TOKEN: "token-1",
+            }
+        );
+        const body = parseJson(result.stdout);
+
+        assert.equal(result.exitCode, 0);
+        assert.equal(result.stderr, "");
+        assert.equal(calls.length, 1);
+        assert.match(calls[0].url, /\/api\/main\/methods\/get-file-pages\?/);
+        assert.match(calls[0].url, /id=00000000-0000-0000-0000-000000000001/);
+        assert.equal(body.status, "ok");
+        assert.equal(body.data.adapter, "backend-command");
+        assert.equal(body.data.adapterSelection.command, "page.list");
+        assert.equal(body.data.fileId, UUIDS.file);
+        assert.equal(body.data.pages.length, 2);
+        assert.equal(body.data.pages[0].name, "Home");
+    } finally {
+        globalThis.fetch = originalFetch;
+    }
+});
+
+test("page list requires file id", async () => {
+    const missingFile = await runCli(["page", "list", "--format", "json"], {
+        PENPOT_BACKEND_URI: "http://127.0.0.1:6060",
+        PENPOT_CLI_TOKEN: "token-1",
+    });
+    assert.equal(missingFile.exitCode, 2);
+    assert.equal(parseJson(missingFile.stdout).error.code, "file_id_required");
+});
+
+test("page create calls backend-command create-file-page", async () => {
+    const originalFetch = globalThis.fetch;
+    const calls = [];
+    globalThis.fetch = async (url, options) => {
+        calls.push({ url: String(url), options });
+        return {
+            ok: true,
+            status: 200,
+            statusText: "OK",
+            text: async () =>
+                JSON.stringify({
+                    page: { id: "00000000-0000-0000-0000-0000000000dd", name: "Marketing" },
+                    revn: 4,
+                    vern: 1,
+                }),
+        };
+    };
+
+    try {
+        const result = await runCli(
+            [
+                "page",
+                "create",
+                "--file",
+                UUIDS.file,
+                "--name",
+                "Marketing",
+                "--page-id",
+                "00000000-0000-0000-0000-0000000000dd",
+                "--format",
+                "json",
+            ],
+            {
+                PENPOT_BACKEND_URI: "http://127.0.0.1:6060",
+                PENPOT_CLI_TOKEN: "token-1",
+            }
+        );
+        const body = parseJson(result.stdout);
+
+        assert.equal(result.exitCode, 0);
+        assert.equal(result.stderr, "");
+        assert.equal(calls.length, 1);
+        assert.match(calls[0].url, /\/api\/main\/methods\/create-file-page\?_fmt=json$/);
+        assert.equal(calls[0].options.method, "POST");
+        assert.deepEqual(JSON.parse(calls[0].options.body), {
+            id: UUIDS.file,
+            "page-id": "00000000-0000-0000-0000-0000000000dd",
+            name: "Marketing",
+        });
+        assert.equal(body.status, "ok");
+        assert.equal(body.data.adapter, "backend-command");
+        assert.equal(body.data.adapterSelection.command, "page.create");
+        assert.equal(body.data.fileId, UUIDS.file);
+        assert.deepEqual(body.data.page, {
+            id: "00000000-0000-0000-0000-0000000000dd",
+            name: "Marketing",
+        });
+        assert.equal(body.data.revn, 4);
+        assert.equal(body.data.vern, 1);
+    } finally {
+        globalThis.fetch = originalFetch;
+    }
+});
+
+test("page create requires file id", async () => {
+    const missingFile = await runCli(["page", "create", "--name", "X", "--format", "json"], {
+        PENPOT_BACKEND_URI: "http://127.0.0.1:6060",
+        PENPOT_CLI_TOKEN: "token-1",
+    });
+    assert.equal(missingFile.exitCode, 2);
+    assert.equal(parseJson(missingFile.stdout).error.code, "file_id_required");
+});
+
 test("page rename calls backend-command RPC with trimmed name", async () => {
     const originalFetch = globalThis.fetch;
     const calls = [];

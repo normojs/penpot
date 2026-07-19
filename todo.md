@@ -1189,6 +1189,7 @@ row `in_progress`.
 - [x] **token.get_mcp_status backend-rpc path** — `get-current-mcp-token` token-safe summary via MCP tool and `penpot-cli token status`
 - [x] **Global discovery CLI parity** — `account me`, `team list`, `project list`, `file recent` via shared descriptors + backend-rpc
 - [x] **file list / file create CLI smoke** — RPC smoke coverage for `get-project-files` / `create-file` plus auth/project validation
+- [x] **page list / page create CLI smoke** — RPC smoke coverage for `get-file-pages` / `create-file-page` plus file-id validation
 - [x] **Live-only workspace state** — product decision 2026-07-19: keep `page.set_current` / `selection.get` / `selection.set` plugin-live/editor-local; no persisted agent session state (see `headless-live-gap-audit.md`)
 
 ### Phase 27: Components/Tokens descriptor boundaries
