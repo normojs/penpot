@@ -17,6 +17,7 @@ Related:
 - [`self-hosted-mcp-gateway.md`](./self-hosted-mcp-gateway.md) — gateway notes  
 - [`multi-user-mode.md`](./multi-user-mode.md) — multi-user mode  
 - [`production-multi-user-hardening.md`](./production-multi-user-hardening.md) — production defaults  
+- [`product-positioning.md`](./product-positioning.md) — capability matrix & support boundary  
 - [`thumbnail-and-preview-experience.md`](./thumbnail-and-preview-experience.md) — visuals policy  
 
 ## Prerequisites

@@ -11,6 +11,11 @@ paths so agents and scripts can inspect accounts and files, create or edit
 supported objects, bind live file context, and export results — without treating
 MCP as a hidden debug feature or a project-local plugin hack.
 
+**Positioning (private 0.1.x):** private self-hosted fork + MCP/`penpot-cli`
+toolkit — **not** official Penpot GA, **not** npm-published general product.
+Capability matrix, support boundary, and 1.0 exit criteria:
+[`mcp/docs/product-positioning.md`](mcp/docs/product-positioning.md).
+
 Repository: <https://github.com/normojs/penpot>
 
 Upstream Penpot: <https://github.com/penpot/penpot>

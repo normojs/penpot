@@ -27,9 +27,12 @@ removed 2026-07-19; recover from git history if needed. Product changelog:
 inventory/test coverage). CLI package version remains `0.1.0` with private
 release archive distribution.
 
-**Phase 29–33 core complete.** Remaining: optional **P31.5** thumbnail matrix,
-**Phase 34** positioning / 1.0 exit criteria. Gated debug tools:
-`debug.get_plugin_state` + metadata-only `debug.get_agent_logs`.
+**Phase 29–34 documentation program complete for private 0.1.x.**  
+Product is positioned as a **private fork automation toolkit** (not official
+Penpot GA, not npm). Remaining optional engineering: **P31.5** multi-target
+thumbnail matrix. **1.0** remains blocked on process boxes in
+`mcp/docs/product-positioning.md` §P34.5 (pilot, public audience decision,
+tip re-gate).
 
 Completed baseline (not re-listed as open tasks):
 
@@ -44,7 +47,9 @@ Completed baseline (not re-listed as open tasks):
 - **Phase 31 P31.1–P31.4** thumbnail/preview product policy docs + error actions
 - **Phase 32** multi-user production hardening docs + multi-token isolation test
 - **Phase 33** agent-logs metadata-only executable path + redaction fixtures
+- **Phase 34** positioning, support boundary, upstream decision, branding, 1.0 checklist
 - **P31.5** remains optional multi-target thumbnail matrix
+- **cli-v1.0.0** not opened until P34.5 process gates are green
 
 ## Feature Roadmap
 
@@ -59,7 +64,7 @@ detail.
 | F39 | done | Default thumbnail and preview experience | Phase 31 | Agents can rely on a documented default path for file/frame thumbnails without undocumented gate spelunking | Completed 2026-07-19 for docs policy P31.1–P31.4; thumbnail remains operator endpoint-first, not default agent GA; P31.5 matrix optional |
 | F40 | done | Production multi-user hardening | Phase 32 | Self-hosted multi-user deployments have explicit security defaults, token guidance, and diagnostics redaction | Completed 2026-07-19; production-multi-user-hardening.md + multi-token isolation fixture |
 | F41 | done | Completing debug diagnostics | Phase 33 | Operators and gated agents can inspect log metadata safely; raw tail stays explicit | Completed 2026-07-19; metadata-only debug.get_agent_logs + CLI + redaction fixtures; follow stays mcp logs |
-| F42 | todo | General product positioning and support boundary | Phase 34 | Users understand whether this is a private fork product, early access, or candidate for upstream | Capability matrix, support boundary, upstream sync policy for consumers |
+| F42 | done | General product positioning and support boundary | Phase 34 | Users understand whether this is a private fork product, early access, or candidate for upstream | Completed 2026-07-19; product-positioning.md (matrix, support, upstream stay-fork, branding, 1.0 checklist) |
 
 ## Phase 29: Private Fork Release Graduation
 
@@ -131,11 +136,11 @@ of scope (including upstream).
 
 | ID | Status | Task | Modules | Verification | Notes |
 | --- | --- | --- | --- | --- | --- |
-| P34.1 | todo | Capability matrix (guaranteed / gated / live-only / unsupported) | docs | One page agents and operators can trust | Source of truth for sales/support claims |
-| P34.2 | todo | Support boundary and issue triage | docs | What bugs are accepted; env required for repro | Prevents unbounded support load |
-| P34.3 | todo | Upstream relationship decision | docs, git remotes policy | Stay fork product vs pursue upstream contribution path | Fetch-only upstream remains default until decided |
-| P34.4 | todo | Naming / branding review | docs, package metadata | Avoid implying official Penpot GA unless true | Especially if npm ever opens |
-| P34.5 | todo | 1.0 exit criteria checklist | `todo.md` | Explicit gates linking P29–P33 done rows | No 1.0 tag until checklist green |
+| P34.1 | done | Capability matrix (guaranteed / gated / live-only / unsupported) | docs | Completed 2026-07-19; matrix in product-positioning.md | Source of truth for claims |
+| P34.2 | done | Support boundary and issue triage | docs | Completed 2026-07-19; in/out scope + repro fields + severity | Prevents unbounded support load |
+| P34.3 | done | Upstream relationship decision | docs, git remotes policy | Completed 2026-07-19; remain private fork product; upstream fetch-only | Contribution path deferred |
+| P34.4 | done | Naming / branding review | docs, package metadata | Completed 2026-07-19; disallowed “official Penpot GA” / npm claims | private package.json |
+| P34.5 | done | 1.0 exit criteria checklist | `todo.md`, docs | Completed 2026-07-19; explicit checklist published; many process boxes intentionally open | No 1.0 tag until review |
 
 ## Remaining Work Checklist
 
@@ -183,15 +188,16 @@ Keep at most one roadmap feature `in_progress`.
 
 ### Phase 34: Product positioning and support boundary
 
-- [ ] **P34.1** Capability matrix page (guaranteed / gated / live-only / unsupported)
-- [ ] **P34.2** Support boundary and issue triage rules
-- [ ] **P34.3** Upstream relationship decision (remain fork product vs pursue upstream path)
-- [ ] **P34.4** Naming / branding review (no false “official Penpot GA” claim)
-- [ ] **P34.5** Explicit 1.0 exit criteria checklist linking P29–P33
+- [x] **P34.1** Capability matrix page (`mcp/docs/product-positioning.md`)
+- [x] **P34.2** Support boundary and issue triage rules
+- [x] **P34.3** Upstream relationship decision (remain private fork; fetch-only upstream)
+- [x] **P34.4** Naming / branding review (no false official Penpot GA claim)
+- [x] **P34.5** Explicit 1.0 exit criteria checklist (process boxes remain open by design)
 
 ### Explicitly not open (policy)
 
-- [ ] **Public npm publish as default distribution** — still not open unless P30.1 explicitly chooses npm
-- [ ] **Official upstream Penpot merge / first-party GA claim** — blocked on P34.3 product decision
+- [ ] **Public npm publish as default distribution** — still not open unless P30.1 decision is reversed
+- [ ] **Official upstream Penpot merge / first-party GA claim** — rejected for 0.1.x (P34.3); re-open only with explicit decision
 - [ ] **Persisted agent session state replacing live-only page/selection tools** — product decision remains plugin-live/editor-local (2026-07-19)
-- [ ] **Ungated raw log body streaming over MCP** — rejected; metadata-only default + optional gated tail only (Phase 33)
+- [ ] **Ungated raw log body streaming over MCP** — rejected; metadata-only default; follow is CLI-only (Phase 33)
+- [ ] **cli-v1.0.0 / general public 1.0 claim** — blocked on open process boxes in product-positioning.md §P34.5

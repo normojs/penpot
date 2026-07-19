@@ -9,7 +9,7 @@ Not a public npm package. Not an official Penpot upstream GA claim.
 | Distribution | Private release archive only |
 | Packaging tip (git) | `23b918e3bb` / tag `cli-v0.1.0` on `fork/main` |
 | Artifact | `tmp/penpot-cli-release/penpot-cli-0.1.0.tar.gz` (generated) |
-| Related docs | [`penpot-cli-build-install-strategy.md`](./penpot-cli-build-install-strategy.md), [`debug-diagnostics-descriptor-boundaries.md`](./debug-diagnostics-descriptor-boundaries.md), [`headless-live-gap-audit.md`](./headless-live-gap-audit.md) |
+| Related docs | [`penpot-cli-build-install-strategy.md`](./penpot-cli-build-install-strategy.md), [`product-positioning.md`](./product-positioning.md), [`debug-diagnostics-descriptor-boundaries.md`](./debug-diagnostics-descriptor-boundaries.md), [`headless-live-gap-audit.md`](./headless-live-gap-audit.md) |
 
 ## What This Release Is
 

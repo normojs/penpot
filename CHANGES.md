@@ -4,6 +4,7 @@
 
 ### :sparkles: New features & Enhancements
 
+- Phase 34 product positioning: publish capability matrix, support/triage boundary, upstream stay-fork decision, branding rules, and explicit 1.0 exit checklist (`mcp/docs/product-positioning.md`); README points at the positioning page. Private 0.1.x remains the supported release; `cli-v1.0.0` is not auto-opened.
 - Phase 33 completes gated debug diagnostics: executable metadata-only `debug.get_agent_logs` (MCP + `penpot-cli debug agent-logs`), redaction fixtures for auth/token patterns, local adapter in command-runtime, and docs alignment. Log bodies and MCP follow remain out of scope; operators use `mcp logs --follow`.
 - Phase 32 production multi-user hardening docs: security defaults matrix, token lifecycle, rate/write limit operator manual, deploy runbook, compatibility matrix (`mcp/docs/production-multi-user-hardening.md`), plus FileContextRegistry multi-token isolation test and multi-user-mode warning update.
 - Phase 31 thumbnail/preview product policy: document agent vs operator defaults (thumbnail not default agent GA; endpoint-first operator path), file-target happy path, preview vs thumbnail narrative (`mcp/docs/thumbnail-and-preview-experience.md`), and expand shared `renderer_service_unavailable` actions to point at dry-run, config, preview/export, and the policy doc.
