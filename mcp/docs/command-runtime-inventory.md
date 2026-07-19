@@ -89,7 +89,7 @@ MCP server tool classes and `penpot-cli`.
 | `account.get_current_user` | `EmptyToolArgs` | backend RPC `get-profile` | JSON `{profile,adapter}` | CLI smoke covers `account me` |
 | `team.list` | `EmptyToolArgs` | backend RPC `get-teams` | JSON `{teams,adapter}` | CLI smoke covers `team list` |
 | `project.list` | `ProjectListArgs` | backend RPC `get-projects`, optionally after `get-teams` | JSON `{teamId,projects,adapter}` or `{teams:[{team,projects}],adapter}` | CLI smoke covers `project list` |
-| `file.list` | `FileListArgs` | backend RPC `get-project-files` | JSON `{projectId,files}` | gap: no focused tool test |
+| `file.list` | `FileListArgs` | backend RPC `get-project-files` | JSON `{projectId,files}` | CLI smoke covers `file list` |
 | `file.get_recent` | `FileGetRecentArgs` | backend RPC `get-team-recent-files` | JSON `{teamId,limit?,files,adapter}` | CLI smoke covers `file recent` |
 | `file.create` | `FileCreateArgs` | backend-command write RPC `create-file` | JSON `{file,nextActions}` plus warnings | `FileCreateTool.test.ts` |
 | `file.open` | `FileOpenArgs` | browser-url generation | JSON `{fileId,workspaceUrl,handoff,adapter,boundContext:false}` | `FileOpenTool.test.ts` |
@@ -858,10 +858,10 @@ registered or the descriptor explicitly marks them as planned/unavailable.
 | `team list` | `team.list` | backend-rpc `get-teams` | JSON/text `{teams,adapter}` | RPC smoke test |
 | `project list` | `project.list` | backend-rpc `get-projects` (+ `get-teams` when team omitted) | JSON/text `{teamId,projects,adapter}` or `{teams:[{team,projects}],adapter}` | RPC smoke test |
 | `dev up --mcp` | `dev.up` | local process orchestration | JSON/text dry-run plan or `manage.sh start-devenv` result | dry-run smoke test |
-| `file list` | `file.list` | backend-rpc `get-project-files` | JSON/text `{projectId,files,adapter}` | gap: auth/path only implicit |
+| `file list` | `file.list` | backend-rpc `get-project-files` | JSON/text `{projectId,files,adapter}` | RPC smoke test |
 | `file search` | `file.search` | backend-rpc `search-files` | JSON/text `{teamId,searchTerm,files,adapter}` | RPC smoke test |
 | `file recent` | `file.get_recent` | backend-rpc `get-team-recent-files` | JSON/text `{teamId,limit?,files,adapter}` | RPC smoke test |
-| `file create` | `file.create` | backend-rpc `create-file` | JSON/text `{file,url,adapter,nextActions}` | gap: no smoke test |
+| `file create` | `file.create` | backend-rpc `create-file` | JSON/text `{file,url,adapter,nextActions}` | RPC smoke test |
 | `file duplicate` | `file.duplicate` | backend-rpc `duplicate-file` | JSON/text `{file,sourceFileId,url,adapter,nextActions}` | RPC smoke test |
 | `file open` | `file.open` | browser-url generation | JSON/text `{fileId,url,workspaceUrl,handoff,adapter,boundContext:false}` | smoke test |
 | `page list` | `page.list` | backend-command RPC `get-file-pages` | JSON/text `{fileId,pages,adapter,adapterSelection}` | gap: no smoke test |

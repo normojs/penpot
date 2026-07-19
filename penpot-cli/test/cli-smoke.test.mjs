@@ -8960,6 +8960,144 @@ test("file search requires team id and query", async () => {
     assert.equal(parseJson(missingQuery.stdout).error.code, "search_term_required");
 });
 
+test("file list calls backend-rpc get-project-files", async () => {
+    const originalFetch = globalThis.fetch;
+    const calls = [];
+    globalThis.fetch = async (url, options) => {
+        calls.push({ url: String(url), options });
+        return {
+            ok: true,
+            status: 200,
+            statusText: "OK",
+            text: async () =>
+                JSON.stringify([
+                    {
+                        id: UUIDS.file,
+                        name: "Dashboard",
+                        "project-id": "00000000-0000-0000-0000-000000000099",
+                        revn: 3,
+                    },
+                ]),
+        };
+    };
+
+    try {
+        const result = await runCli(
+            [
+                "file",
+                "list",
+                "--project-id",
+                "00000000-0000-0000-0000-000000000099",
+                "--format",
+                "json",
+            ],
+            {
+                PENPOT_BACKEND_URI: "http://127.0.0.1:6060",
+                PENPOT_CLI_TOKEN: "token-1",
+            }
+        );
+        const body = parseJson(result.stdout);
+
+        assert.equal(result.exitCode, 0);
+        assert.equal(result.stderr, "");
+        assert.equal(body.status, "ok");
+        assert.equal(body.data.adapter, "backend-rpc");
+        assert.equal(body.data.projectId, "00000000-0000-0000-0000-000000000099");
+        assert.equal(body.data.files.length, 1);
+        assert.equal(body.data.files[0].name, "Dashboard");
+        assert.equal(calls.length, 1);
+        assert.match(calls[0].url, /\/api\/main\/methods\/get-project-files\?/);
+        assert.match(calls[0].url, /project-id=00000000-0000-0000-0000-000000000099/);
+    } finally {
+        globalThis.fetch = originalFetch;
+    }
+});
+
+test("file list requires project id and auth token", async () => {
+    const missingProject = await runCli(["file", "list", "--format", "json"]);
+    assert.equal(missingProject.exitCode, 2);
+    assert.equal(parseJson(missingProject.stdout).error.code, "project_id_required");
+
+    const missingToken = await runCli(
+        ["file", "list", "--project-id", "00000000-0000-0000-0000-000000000099", "--format", "json"],
+        {
+            PENPOT_BACKEND_URI: "http://127.0.0.1:6060",
+        }
+    );
+    assert.equal(missingToken.exitCode, 2);
+    assert.equal(parseJson(missingToken.stdout).error.code, "authentication_required");
+});
+
+test("file create calls backend-rpc create-file", async () => {
+    const originalFetch = globalThis.fetch;
+    const calls = [];
+    globalThis.fetch = async (url, options) => {
+        calls.push({ url: String(url), options });
+        return {
+            ok: true,
+            status: 200,
+            statusText: "OK",
+            text: async () =>
+                JSON.stringify({
+                    id: "00000000-0000-0000-0000-0000000000bb",
+                    name: "New Board",
+                    "project-id": "00000000-0000-0000-0000-000000000099",
+                    revn: 0,
+                    "is-shared": true,
+                }),
+        };
+    };
+
+    try {
+        const result = await runCli(
+            [
+                "file",
+                "create",
+                "--project-id",
+                "00000000-0000-0000-0000-000000000099",
+                "--name",
+                "New Board",
+                "--shared",
+                "--format",
+                "json",
+            ],
+            {
+                PENPOT_BACKEND_URI: "http://127.0.0.1:6060",
+                PENPOT_PUBLIC_URI: "https://penpot.example.test",
+                PENPOT_CLI_TOKEN: "token-1",
+            }
+        );
+        const body = parseJson(result.stdout);
+
+        assert.equal(result.exitCode, 0);
+        assert.equal(result.stderr, "");
+        assert.equal(body.status, "ok");
+        assert.equal(body.data.adapter, "backend-rpc");
+        assert.equal(body.data.file.id, "00000000-0000-0000-0000-0000000000bb");
+        assert.equal(body.data.file.name, "New Board");
+        assert.equal(body.data.file.projectId, "00000000-0000-0000-0000-000000000099");
+        assert.equal(body.data.file.isShared, true);
+        assert.match(String(body.data.url), /https:\/\/penpot\.example\.test\/#\/workspace\?file-id=00000000-0000-0000-0000-0000000000bb/);
+        assert.equal(calls.length, 1);
+        assert.match(calls[0].url, /\/api\/main\/methods\/create-file\?/);
+        const requestBody = JSON.parse(String(calls[0].options.body));
+        assert.equal(requestBody.name, "New Board");
+        assert.equal(requestBody["project-id"], "00000000-0000-0000-0000-000000000099");
+        assert.equal(requestBody["is-shared"], true);
+    } finally {
+        globalThis.fetch = originalFetch;
+    }
+});
+
+test("file create requires project id", async () => {
+    const missingProject = await runCli(["file", "create", "--name", "X", "--format", "json"], {
+        PENPOT_BACKEND_URI: "http://127.0.0.1:6060",
+        PENPOT_CLI_TOKEN: "token-1",
+    });
+    assert.equal(missingProject.exitCode, 2);
+    assert.equal(parseJson(missingProject.stdout).error.code, "project_id_required");
+});
+
 test("file duplicate calls backend-rpc duplicate-file", async () => {
     const originalFetch = globalThis.fetch;
     const calls = [];
