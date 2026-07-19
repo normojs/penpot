@@ -511,8 +511,11 @@ P17.1 audit result:
   `render.thumbnail` as descriptor-only planned boundaries. Phase 27 selects
   `component.create`, `component.instantiate`, `tokens.list`, and
   `tokens.apply` as descriptor-only planned boundaries
-  (`components-tokens-descriptor-boundaries.md`); debug names remain planned or
-  unsupported unless a later wave selects them.
+  (`components-tokens-descriptor-boundaries.md`). Phase 28 selects
+  `debug.get_plugin_state` and `debug.get_agent_logs` as descriptor-only
+  planned diagnostics with empty adapters
+  (`debug-diagnostics-descriptor-boundaries.md`); they stay non-executable
+  until enablement/redaction gates exist.
 - Grid container layout can move to backend-command once backend/common owns a
   persisted track contract; grid cells and child placement need a later
   dedicated payload contract.
@@ -4326,26 +4329,31 @@ P26.54 adds optional controlled renderer-service process lifecycle. `penpot-cli 
 
 ### 8.6 Advanced Tools
 
-Available only when explicitly enabled:
-
 ```text
-execute_code
-debug.get_plugin_state
-debug.get_agent_logs
+execute_code                 # executable only when explicitly enabled
+debug.get_plugin_state       # descriptor-only planned (Phase 28)
+debug.get_agent_logs         # descriptor-only planned (Phase 28)
 ```
 
 `execute_code` remains useful for development and emergency fallback, but the
 MCP server only runs it when `PENPOT_MCP_ENABLE_EXECUTE_CODE=true` is set.
 Normal agent workflows should prefer typed tools.
 
-`debug.get_plugin_state` and `debug.get_agent_logs` are command-runtime
-descriptor-only planned diagnostics (`DebugDiagnosticsCommandDescriptors`,
-empty adapters). Phase 28 reserves them as non-executable projections of
-existing `mcp.get_status` plugin/session fields and `mcp logs` metadata (see
-`mcp/docs/debug-diagnostics-descriptor-boundaries.md`). MCP tools and CLI
-execution stay unregistered until an explicit enablement gate lands; agents
-should use `mcp.get_status` and operators should use `penpot-cli mcp status` /
-`penpot-cli mcp logs`.
+`debug.get_plugin_state` and `debug.get_agent_logs` are **not** currently
+available as MCP tools even when advanced tools are considered. Phase 28 lands
+them as command-runtime **descriptor-only** planned diagnostics
+(`DebugDiagnosticsCommandDescriptors`, `adapters: []`, reserved CLI names
+`debug plugin-state` / `debug agent-logs`). They project existing
+`mcp.get_status` plugin/session fields and `mcp logs` metadata (see
+`mcp/docs/debug-diagnostics-descriptor-boundaries.md`). Prefer:
+
+- agents: `mcp.get_status` / `file.get_context` / `file.bind_context`
+- operators: `penpot-cli mcp status` / `penpot-cli mcp logs`
+
+A future executable wave may register thin local projections behind
+`PENPOT_MCP_ENABLE_DEBUG_TOOLS=true` (proposed; not implemented), with
+session scoping and log redaction fixtures. Until then, treat Advanced tool
+name presence as catalog discovery only—not runtime support.
 
 ## 9. Development Order
 

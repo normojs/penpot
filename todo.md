@@ -450,13 +450,12 @@ MCP tool, and `penpot-cli token status` (token-safe presence/expiry only).
 Global discovery now has CLI parity for `account.get_current_user`,
 `team.list`, `project.list`, and `file.get_recent` through shared descriptors
 and `penpot-cli account me|team list|project list|file recent`.
-Phase 28 debug diagnostics planning is open: P28.1 documents
-`debug.get_plugin_state` / `debug.get_agent_logs` as descriptor-only
+Phase 28 debug diagnostics descriptor boundaries are complete (P28.1–P28.3):
+`debug.get_plugin_state` / `debug.get_agent_logs` are descriptor-only
 projections of existing `mcp.get_status` / `mcp logs` surfaces
-(`mcp/docs/debug-diagnostics-descriptor-boundaries.md`); P28.2 landed
-empty-adapter `DebugDiagnosticsCommandDescriptors` (Migrated 47); P28.3
-remains for residual inventory/architecture wording. Executable debug
-tools stay deferred behind a future enablement gate.
+(`mcp/docs/debug-diagnostics-descriptor-boundaries.md`) with empty-adapter
+`DebugDiagnosticsCommandDescriptors` (Migrated 47). Executable debug tools
+stay deferred behind a future enablement/redaction gate.
 P25.7 is complete: thumbnail renderer-service API fixtures now define
 future file refresh, file reuse, tagged frame refresh, auth forwarding,
 resource URI normalization, and MCP/CLI test expectations. P25.8 is complete:
@@ -1171,7 +1170,7 @@ adapters until enablement and redaction gates are explicit.
 | --- | --- | --- | --- | --- | --- |
 | P28.1 | done | Plan debug diagnostics descriptor-only boundaries | `mcp/docs`, `todo.md`, `CHANGES.md` | Completed 2026-07-19; `debug-diagnostics-descriptor-boundaries.md` reserves both names, maps them onto status/log surfaces, documents response contracts, enablement gate, and empty-adapter policy | No command-runtime, MCP, CLI, backend, or common behavior changes in P28.1 |
 | P28.2 | done | Add descriptor-only debug command-runtime entries | `command-runtime`, `penpot-cli`, `mcp/docs`, `todo.md` | Completed 2026-07-19; empty-adapter `DebugDiagnosticsCommandDescriptors`; lookup by id/mcpToolName/cliCommand; Migrated 47; runtime + CLI smoke tests | MCP tools and CLI execution handlers remain unregistered |
-| P28.3 | todo | Align residual inventory/architecture wording | `mcp/docs`, `todo.md`, `CHANGES.md` | Inventory advanced-tools and declared-but-not-registered sections mark both names descriptor-only | Prefer `debug.get_plugin_state` as first post-descriptor executable candidate behind enablement gate |
+| P28.3 | done | Align residual inventory/architecture wording | `mcp/docs`, `todo.md`, `CHANGES.md` | Completed 2026-07-19; inventory declared-but-not-registered, architecture §8.6, and live-gap audit mark both names descriptor-only with empty adapters and no MCP/CLI execution | Prefer `debug.get_plugin_state` as first post-descriptor executable candidate behind enablement gate |
 
 ## Remaining Work Checklist
 
@@ -1215,7 +1214,7 @@ row `in_progress`.
 - [x] **Live-only workspace state** — product decision 2026-07-19: keep `page.set_current` / `selection.get` / `selection.set` plugin-live/editor-local; no persisted agent session state (see `headless-live-gap-audit.md`)
 - [x] **P28.1** Plan debug diagnostics descriptor-only boundaries (`mcp/docs/debug-diagnostics-descriptor-boundaries.md`)
 - [x] **P28.2** Add descriptor-only `debug.get_plugin_state` / `debug.get_agent_logs` entries with empty adapters
-- [ ] **P28.3** Align residual inventory/architecture wording without registering MCP tools or CLI execution
+- [x] **P28.3** Align residual inventory/architecture wording without registering MCP tools or CLI execution
 
 ### Phase 27: Components/Tokens descriptor boundaries
 
@@ -1227,7 +1226,7 @@ row `in_progress`.
 
 - [x] **P28.1** Plan debug diagnostics descriptor-only boundaries (`mcp/docs/debug-diagnostics-descriptor-boundaries.md`)
 - [x] **P28.2** Add descriptor-only debug command-runtime entries (`DebugDiagnosticsCommandDescriptors`, empty adapters)
-- [ ] **P28.3** Align residual inventory/architecture wording without registering MCP tools or CLI execution
+- [x] **P28.3** Align residual inventory/architecture wording without registering MCP tools or CLI execution
 
 ### Packaging, ops, and distribution
 

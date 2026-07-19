@@ -40,6 +40,10 @@ Descriptor catalog:
   `shape.create_text`, `shape.create_image`, `shape.update`, `shape.delete`,
   `export.shape`, `export.page`, `export.file`, `render.preview`,
   `render.thumbnail`
+- components/tokens descriptors: `component.create`, `component.instantiate`,
+  `tokens.list`, `tokens.apply`
+- debug diagnostics descriptors (empty adapters): `debug.get_plugin_state`,
+  `debug.get_agent_logs`
 - lookup helper: `getCommandDescriptor(id)` by internal id, MCP tool name, or
   CLI command string
 - descriptor groups: `LowRiskCommandDescriptors`,
@@ -47,6 +51,7 @@ Descriptor catalog:
   `ShapeExportCommandDescriptors`, `LiveGapCommandDescriptors`,
   `ComponentsTokensCommandDescriptors`,
   `DebugDiagnosticsCommandDescriptors`, and `MigratedCommandDescriptors`
+  (47 migrated entries as of P28.2)
 
 Envelope helpers:
 
@@ -843,15 +848,16 @@ not register yet:
   countersignature policy
   and P25.85 package materialization approval audit countersignature revocation appeal resolution enforcement evidence attestation notarization certification endorsement countersignature verification revocation appeal resolution enforcement evidence attestation notarization certification endorsement countersignature verification policy
   while runtime execution remains unavailable
-- debug: `debug.get_plugin_state` and `debug.get_agent_logs` are now
-  command-runtime descriptor-only entries
-  (`DebugDiagnosticsCommandDescriptors`) with empty adapters and reserved CLI
+- debug: `debug.get_plugin_state` and `debug.get_agent_logs` are
+  **descriptor-only planned** command-runtime entries
+  (`DebugDiagnosticsCommandDescriptors`, `adapters: []`) with reserved CLI
   names `debug plugin-state` / `debug agent-logs`. They project planned
   contracts onto existing `mcp.get_status` / `mcp logs` surfaces
   (`mcp/docs/debug-diagnostics-descriptor-boundaries.md`). MCP tools and CLI
   execution remain unregistered; prefer `mcp.get_status` and
-  `penpot-cli mcp logs` until an enablement gate lands (P28.3 wording alignment
-  still open).
+  `penpot-cli mcp logs` until a future enablement gate
+  (`PENPOT_MCP_ENABLE_DEBUG_TOOLS`) and redaction fixtures land. Name presence
+  in `ToolNames.ts` / Advanced tools is **not** executable support.
 
 Do not migrate these as executable descriptors until their implementation is
 registered or the descriptor explicitly marks them as planned/unavailable.

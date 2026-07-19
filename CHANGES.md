@@ -4,6 +4,7 @@
 
 ### :sparkles: New features & Enhancements
 
+- P28.3 aligns inventory/architecture/live-gap docs so `debug.get_plugin_state` and `debug.get_agent_logs` are explicitly descriptor-only planned diagnostics (empty adapters; Advanced-tools name presence is not executable support).
 - P28.2 adds empty-adapter command-runtime descriptors for `debug.get_plugin_state` and `debug.get_agent_logs` (`DebugDiagnosticsCommandDescriptors`) with runtime and CLI smoke coverage while MCP tools and CLI execution remain unregistered.
 - Open Phase 28 debug diagnostics descriptor-only planning: document planned `debug.get_plugin_state` and `debug.get_agent_logs` boundaries as projections of existing `mcp.get_status` / `mcp logs` surfaces, with empty adapters and no MCP/CLI registration.
 - Add CLI smoke coverage for `penpot-cli mcp status` and `mcp logs`, covering status endpoint fetch and local log-directory listing/validation.

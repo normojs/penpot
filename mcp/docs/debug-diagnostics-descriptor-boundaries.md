@@ -1,13 +1,13 @@
 # Debug Diagnostics Descriptor Boundaries
 
-Status: P28.2 complete for command-runtime catalog. Descriptor-only entries
-exist with empty adapters; no MCP tools, CLI handlers, or executable adapters
-are registered yet for the debug command names.
+Status: Phase 28 complete (P28.1–P28.3). Descriptor-only entries exist with
+empty adapters in `DebugDiagnosticsCommandDescriptors`; no MCP tools, CLI
+handlers, or executable adapters are registered for the debug command names.
 
-This document turns the residual unregistered names in `ToolNames.ts` and the
-guidance in [`headless-live-gap-audit.md`](./headless-live-gap-audit.md) into an
-explicit Phase 28 contract. It reserves public command names, maps them onto
-diagnostics that already exist, and keeps adapters empty until redaction,
+This document turns the residual unregistered MCP tool names in `ToolNames.ts`
+and the guidance in [`headless-live-gap-audit.md`](./headless-live-gap-audit.md)
+into an explicit Phase 28 contract. It reserves public command names, maps them
+onto diagnostics that already exist, and keeps adapters empty until redaction,
 session scoping, and enablement gates are specified.
 
 ## Product Intent
@@ -214,7 +214,7 @@ Until that gate exists and is documented:
 | --- | --- | --- | --- |
 | **P28.1** | done | Plan debug diagnostics descriptor boundaries (this document) | `mcp/docs`, `todo.md`, `CHANGES.md` | Names mapped to existing status/log surfaces; non-goals and response contracts explicit; adapters empty by policy |
 | **P28.2** | done | Add descriptor-only `debug.get_plugin_state` / `debug.get_agent_logs` entries | `command-runtime`, tests, inventory | `DebugDiagnosticsCommandDescriptors` group; empty adapters; lookup by id / mcpToolName / cliCommand; Migrated 47 |
-| **P28.3** | todo | Align residual inventory/architecture wording | `mcp/docs`, `todo.md` | “Declared but not registered” section marks both as descriptor-only planned; advanced-tools section references this doc |
+| **P28.3** | done | Align residual inventory/architecture wording | `mcp/docs`, `todo.md`, `CHANGES.md` | Inventory “Declared but not registered” + architecture §8.6 + live-gap audit mark both names descriptor-only planned; prefer `debug.get_plugin_state` as first post-descriptor executable candidate behind enablement gate |
 
 ### First post-descriptor executable candidate (not Phase 28)
 
