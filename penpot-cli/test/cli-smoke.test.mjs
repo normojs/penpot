@@ -1,5 +1,5 @@
 import assert from "node:assert/strict";
-import { mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import { mkdtempSync, readFileSync, rmSync, utimesSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import test from "node:test";
@@ -7073,6 +7073,107 @@ test("mcp config auto profile source skips backend when token is missing", async
     } finally {
         globalThis.fetch = originalFetch;
     }
+});
+
+test("mcp status reads the configured status endpoint", async () => {
+    const originalFetch = globalThis.fetch;
+    const calls = [];
+    globalThis.fetch = async (url, options) => {
+        calls.push({ url: String(url), options });
+        return {
+            ok: true,
+            status: 200,
+            statusText: "OK",
+            json: async () => ({
+                server: { version: "test" },
+                session: { connected: true },
+            }),
+            text: async () =>
+                JSON.stringify({
+                    server: { version: "test" },
+                    session: { connected: true },
+                }),
+        };
+    };
+
+    try {
+        const result = await runCli(["mcp", "status", "--format", "json"], {
+            PENPOT_MCP_STATUS_URI: "http://127.0.0.1:4401/status",
+        });
+        const body = parseJson(result.stdout);
+
+        assert.equal(result.exitCode, 0);
+        assert.equal(result.stderr, "");
+        assert.equal(body.status, "ok");
+        assert.equal(body.source.statusUri, "http://127.0.0.1:4401/status");
+        assert.equal(body.data.server.version, "test");
+        assert.equal(body.data.session.connected, true);
+        assert.equal(calls.length, 1);
+        assert.equal(calls[0].url, "http://127.0.0.1:4401/status");
+        assert.equal(calls[0].options.headers.accept, "application/json");
+    } finally {
+        globalThis.fetch = originalFetch;
+    }
+});
+
+test("mcp status reports unreachable status endpoints", async () => {
+    const originalFetch = globalThis.fetch;
+    globalThis.fetch = async () => {
+        throw new Error("ECONNREFUSED");
+    };
+
+    try {
+        const result = await runCli(["mcp", "status", "--url", "http://127.0.0.1:9/status", "--format", "json"]);
+        const body = parseJson(result.stdout);
+
+        assert.equal(result.exitCode, 2);
+        assert.equal(result.stderr, "");
+        assert.equal(body.status, "error");
+        assert.equal(body.error.code, "mcp_status_unreachable");
+        assert.equal(body.error.data.statusUri, "http://127.0.0.1:9/status");
+    } finally {
+        globalThis.fetch = originalFetch;
+    }
+});
+
+test("mcp logs lists configured log files without following", async () => {
+    const tempDir = mkdtempSync(join(tmpdir(), "penpot-cli-mcp-logs-"));
+    const olderPath = join(tempDir, "older.log");
+    const newerPath = join(tempDir, "newer.log");
+    writeFileSync(olderPath, "old");
+    writeFileSync(newerPath, "new");
+    // Ensure deterministic modifiedAt ordering for the list sort.
+    const now = Date.now();
+    utimesSync(olderPath, new Date(now - 2000), new Date(now - 2000));
+    utimesSync(newerPath, new Date(now), new Date(now));
+
+    try {
+        const result = await runCli(["mcp", "logs", "--dir", tempDir, "--format", "json"]);
+        const body = parseJson(result.stdout);
+
+        assert.equal(result.exitCode, 0);
+        assert.equal(result.stderr, "");
+        assert.equal(body.status, "ok");
+        assert.equal(body.data.logDir, tempDir);
+        assert.equal(body.data.files.length, 2);
+        assert.equal(body.data.files[0].name, "newer.log");
+        assert.equal(body.data.files[1].name, "older.log");
+        assert.equal(body.data.files[0].path, newerPath);
+    } finally {
+        rmSync(tempDir, { recursive: true, force: true });
+    }
+});
+
+test("mcp logs requires a configured log directory", async () => {
+    const result = await runCli(["mcp", "logs", "--format", "json"], {
+        PENPOT_MCP_LOG_DIR: undefined,
+    });
+    const body = parseJson(result.stdout);
+
+    assert.equal(result.exitCode, 2);
+    assert.equal(result.stderr, "");
+    assert.equal(body.status, "error");
+    assert.equal(body.error.code, "mcp_log_dir_not_configured");
 });
 
 test("mcp config auto profile source falls back on backend failure", async () => {

@@ -850,9 +850,9 @@ registered or the descriptor explicitly marks them as planned/unavailable.
 
 | CLI command | Internal command name | Adapter path | Response shape | Coverage |
 | --- | --- | --- | --- | --- |
-| `mcp status` | `mcp.status` | HTTP GET status URL | JSON/text MCP status snapshot | gap: no smoke test |
+| `mcp status` | `mcp.status` | HTTP GET status URL | JSON/text MCP status snapshot | RPC/status smoke test |
 | `mcp config` | `mcp.config` | local env/runtime derivation | JSON/text mode, endpoints, log dir, profile-prop preview | `cli-smoke.test.mjs` |
-| `mcp logs` | `mcp.logs` | local filesystem log directory | JSON/text log file summaries or follow stream | gap: no smoke test |
+| `mcp logs` | `mcp.logs` | local filesystem log directory | JSON/text log file summaries or follow stream | local log-dir smoke test |
 | `token status` | `token.get_mcp_status` | backend-rpc `get-current-mcp-token` | JSON/text `{present,expiresAt,session,rawTokenPresent,adapter}` (no raw token) | RPC smoke test |
 | `account me` | `account.get_current_user` | backend-rpc `get-profile` | JSON/text `{profile,adapter}` | RPC smoke test |
 | `team list` | `team.list` | backend-rpc `get-teams` | JSON/text `{teams,adapter}` | RPC smoke test |

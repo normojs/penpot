@@ -1191,6 +1191,7 @@ row `in_progress`.
 - [x] **file list / file create CLI smoke** — RPC smoke coverage for `get-project-files` / `create-file` plus auth/project validation
 - [x] **page list / page create CLI smoke** — RPC smoke coverage for `get-file-pages` / `create-file-page` plus file-id validation
 - [x] **shape create-frame/rect/text + delete CLI smoke** — RPC smoke coverage for `create-file-shape` / `delete-file-shape`
+- [x] **mcp status / mcp logs CLI smoke** — status endpoint fetch + log-dir listing/validation coverage
 - [x] **Live-only workspace state** — product decision 2026-07-19: keep `page.set_current` / `selection.get` / `selection.set` plugin-live/editor-local; no persisted agent session state (see `headless-live-gap-audit.md`)
 
 ### Phase 27: Components/Tokens descriptor boundaries
