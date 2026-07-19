@@ -127,7 +127,7 @@ MCP server tool classes and `penpot-cli`.
 | `high_level_overview` | `EmptyToolArgs` | local static overview | text overview | `HighLevelOverviewTool.test.ts` |
 | `penpot_api_info` | `PenpotApiInfoArgs` | local API docs index | text API type/member docs | `PenpotApiInfoTool.test.ts` |
 | `export_shape` | `ExportShapeArgs` | legacy plugin-live export task | base64/text export data | gap: covered indirectly by legacy flow only |
-| `import_image` | `ImportImageArgs` | optional local-fs plus plugin-live task, gated by file-system access | text/JSON import result | gap: no focused test in default run |
+| `import_image` | `ImportImageArgs` | optional local-fs plus plugin-live task, gated by file-system access | text/JSON import result | `ImportImageTool.test.ts` (file-context guard, path/format validation, plugin executeCode happy path) |
 
 P25.47 extends the `render.thumbnail` renderer-service planning payload with
 `packageMaterializationApprovalOperatorConfirmationPolicy`. MCP and CLI dry-run
