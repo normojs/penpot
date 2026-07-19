@@ -4,6 +4,7 @@
 
 ### :sparkles: New features & Enhancements
 
+- Phase 32 production multi-user hardening docs: security defaults matrix, token lifecycle, rate/write limit operator manual, deploy runbook, compatibility matrix (`mcp/docs/production-multi-user-hardening.md`), plus FileContextRegistry multi-token isolation test and multi-user-mode warning update.
 - Phase 31 thumbnail/preview product policy: document agent vs operator defaults (thumbnail not default agent GA; endpoint-first operator path), file-target happy path, preview vs thumbnail narrative (`mcp/docs/thumbnail-and-preview-experience.md`), and expand shared `renderer_service_unavailable` actions to point at dry-run, config, preview/export, and the policy doc.
 - Phase 30 distribution and versioning: decide archive-only portable CLI + fork checkout for MCP (no npm), add `mcp/docs/distribution-and-versioning.md` and `mcp/docs/standalone-install.md`, document CLI semver graduation, portable bundling review, and 0.1.0 migration notes; README pointers updated.
 - Phase 29 private fork release graduation for `penpot-cli` 0.1.0: tip release gate, clean-machine extracted-archive smoke, known-limits notes in `mcp/docs/private-release-0.1.0.md`, and git tag `cli-v0.1.0` (archive-only; not npm; not upstream GA).

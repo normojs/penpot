@@ -174,3 +174,49 @@ test("FileContextRegistry upsert keeps bound status for the active context", () 
     assert.deepEqual(updated.selectionIds, ["shape-1"]);
     assert.equal(registry.getSessionSummary("token-1").status, "bound");
 });
+
+test("FileContextRegistry isolates contexts across user tokens", () => {
+    const registry = new FileContextRegistry();
+    const userA = context({
+        contextId: "tab-a:file-a",
+        ownerTabId: "tab-a",
+        fileId: "00000000-0000-0000-0000-0000000000aa",
+        fileName: "User A File",
+    });
+    const userB = context({
+        contextId: "tab-b:file-b",
+        ownerTabId: "tab-b",
+        fileId: "00000000-0000-0000-0000-0000000000bb",
+        fileName: "User B File",
+    });
+
+    registry.upsertContext("token-1", userA);
+    registry.upsertContext("token-2", userB);
+    registry.bindContext("token-1", userA.contextId);
+    registry.bindContext("token-2", userB.contextId);
+
+    const summaryA = registry.getSessionSummary("token-1");
+    const summaryB = registry.getSessionSummary("token-2");
+
+    assert.equal(summaryA.status, "bound");
+    assert.equal(summaryA.boundContext?.fileId, userA.fileId);
+    assert.equal(summaryA.contextCount, 1);
+    assert.equal(
+        summaryA.availableContexts.concat(summaryA.staleContexts).some((ctx) => ctx.fileId === userB.fileId),
+        false
+    );
+
+    assert.equal(summaryB.status, "bound");
+    assert.equal(summaryB.boundContext?.fileId, userB.fileId);
+    assert.equal(summaryB.contextCount, 1);
+    assert.equal(
+        summaryB.availableContexts.concat(summaryB.staleContexts).some((ctx) => ctx.fileId === userA.fileId),
+        false
+    );
+
+    // Releasing A must not affect B.
+    registry.releaseContext("token-1");
+    assert.equal(registry.getSessionSummary("token-1").status, "available");
+    assert.equal(registry.getSessionSummary("token-2").status, "bound");
+    assert.equal(registry.getSessionSummary("token-2").boundContext?.fileId, userB.fileId);
+});

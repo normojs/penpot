@@ -16,6 +16,8 @@ Related:
 - [`penpot-cli-build-install-strategy.md`](./penpot-cli-build-install-strategy.md) — packaging  
 - [`self-hosted-mcp-gateway.md`](./self-hosted-mcp-gateway.md) — gateway notes  
 - [`multi-user-mode.md`](./multi-user-mode.md) — multi-user mode  
+- [`production-multi-user-hardening.md`](./production-multi-user-hardening.md) — production defaults  
+- [`thumbnail-and-preview-experience.md`](./thumbnail-and-preview-experience.md) — visuals policy  
 
 ## Prerequisites
 

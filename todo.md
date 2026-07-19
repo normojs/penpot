@@ -27,11 +27,10 @@ removed 2026-07-19; recover from git history if needed. Product changelog:
 inventory/test coverage). CLI package version remains `0.1.0` with private
 release archive distribution.
 
-**Phase 29–30 complete.** **Phase 31 docs complete (P31.1–P31.4):** agent vs
-operator thumbnail policy, file-target happy path, unavailable-renderer actions,
-preview vs thumbnail narrative in `mcp/docs/thumbnail-and-preview-experience.md`.
-**P31.5** multi-target matrix remains optional. Next: **Phase 32** multi-user
-hardening, **Phase 33** agent-logs, or **Phase 34** positioning.
+**Phase 29–31 core docs complete.** **Phase 32 complete:** production multi-user
+hardening matrix, token lifecycle, isolation fixture, rate-limit manual, deploy
+runbook, compatibility matrix (`mcp/docs/production-multi-user-hardening.md`).
+Next: **Phase 33** `debug.get_agent_logs`, or **Phase 34** positioning / 1.0.
 
 Completed baseline (not re-listed as open tasks):
 
@@ -44,6 +43,8 @@ Completed baseline (not re-listed as open tasks):
 - **Phase 29** private 0.1.0 release graduation (`cli-v0.1.0`)
 - **Phase 30** distribution + versioning docs (archive-only; no npm)
 - **Phase 31 P31.1–P31.4** thumbnail/preview product policy docs + error actions
+- **Phase 32** multi-user production hardening docs + multi-token isolation test
+- **P31.5** remains optional multi-target thumbnail matrix
 
 ## Feature Roadmap
 
@@ -56,7 +57,7 @@ detail.
 | F37 | done | Private fork release graduation | Phase 29 | Operators can install a verified private `penpot-cli` archive from current `main` with documented smoke checks | Completed 2026-07-19; P29.1–P29.4: tip gate, clean extract smoke, `private-release-0.1.0.md`, tag `cli-v0.1.0` |
 | F38 | done | General distribution and versioning | Phase 30 | Non-checkout users can install MCP/CLI without a full fork tree under an explicit packaging policy | Completed 2026-07-19; archive-only default, fork checkout for MCP, no npm; docs in distribution-and-versioning + standalone-install |
 | F39 | done | Default thumbnail and preview experience | Phase 31 | Agents can rely on a documented default path for file/frame thumbnails without undocumented gate spelunking | Completed 2026-07-19 for docs policy P31.1–P31.4; thumbnail remains operator endpoint-first, not default agent GA; P31.5 matrix optional |
-| F40 | todo | Production multi-user hardening | Phase 32 | Self-hosted multi-user deployments have explicit security defaults, token guidance, and diagnostics redaction | Multi-user defaults, destructive confirmation, rate limits, log redaction fixtures, deploy runbook |
+| F40 | done | Production multi-user hardening | Phase 32 | Self-hosted multi-user deployments have explicit security defaults, token guidance, and diagnostics redaction | Completed 2026-07-19; production-multi-user-hardening.md + multi-token isolation fixture |
 | F41 | todo | Completing debug diagnostics | Phase 33 | Operators and gated agents can inspect log metadata safely; raw tail stays explicit | Executable `debug.get_agent_logs` metadata-only default; redaction fixtures; optional gated tail |
 | F42 | todo | General product positioning and support boundary | Phase 34 | Users understand whether this is a private fork product, early access, or candidate for upstream | Capability matrix, support boundary, upstream sync policy for consumers |
 
@@ -105,12 +106,12 @@ Goal: self-hosted multi-user / remote deployments have explicit, testable defaul
 
 | ID | Status | Task | Modules | Verification | Notes |
 | --- | --- | --- | --- | --- | --- |
-| P32.1 | todo | Multi-user / remote default security matrix | MCP server, docs | Table of defaults for tokens, destructive confirm, FS access, execute_code, debug tools | Align with `multi-user-mode.md` / gateway docs |
-| P32.2 | todo | Token lifecycle and rotation guidance | docs, token tools | Document create/regenerate/expiry; never log raw tokens | Builds on `token.get_mcp_status` |
-| P32.3 | todo | Session isolation fixtures | MCP tests | Session A cannot observe session B file contexts / debug projections | Critical for multi-user claims |
-| P32.4 | todo | Rate limit / write limit operator docs | MCP write limiter, docs | How to tune and how limits appear in errors | Already implemented; needs operator manual |
-| P32.5 | todo | Deploy runbook (single-user local + multi-user) | `mcp/docs` | Step-by-step start, health, plugin connect, first agent call | Gateway + devenv + host modes |
-| P32.6 | todo | Compatibility matrix | docs | Penpot version, Node, browser plugin negotiation | Version skew is a GA blocker |
+| P32.1 | done | Multi-user / remote default security matrix | MCP server, docs | Completed 2026-07-19; matrix in production-multi-user-hardening.md | Aligns with multi-user-mode + gateway docs |
+| P32.2 | done | Token lifecycle and rotation guidance | docs, token tools | Completed 2026-07-19; create/regenerate/expiry/never-log-raw documented | Builds on token.get_mcp_status |
+| P32.3 | done | Session isolation fixtures | MCP tests | Completed 2026-07-19; FileContextRegistry multi-token isolation test | Critical for multi-user claims |
+| P32.4 | done | Rate limit / write limit operator docs | MCP write limiter, docs | Completed 2026-07-19; env defaults and error codes documented | Already implemented |
+| P32.5 | done | Deploy runbook (single-user local + multi-user) | `mcp/docs` | Completed 2026-07-19; runbook sections A/B/C in hardening doc | Gateway + devenv + host modes |
+| P32.6 | done | Compatibility matrix | docs | Completed 2026-07-19; Penpot 2.15.4 fork / Node≥18 / CLI 0.1.0 matrix | Version skew is a GA blocker |
 
 ## Phase 33: Completing Debug Diagnostics
 
@@ -166,12 +167,12 @@ Keep at most one roadmap feature `in_progress`.
 
 ### Phase 32: Production multi-user hardening
 
-- [ ] **P32.1** Multi-user / remote default security matrix (tokens, destructive confirm, FS, execute_code, debug tools)
-- [ ] **P32.2** Token lifecycle and rotation guidance (create/regenerate/expiry; never log raw tokens)
-- [ ] **P32.3** Session isolation fixtures (session A cannot observe session B contexts/debug projections)
-- [ ] **P32.4** Rate/write limit operator documentation
-- [ ] **P32.5** Deploy runbook (local single-user + multi-user/gateway)
-- [ ] **P32.6** Compatibility matrix (Penpot / Node / plugin negotiation)
+- [x] **P32.1** Multi-user / remote default security matrix
+- [x] **P32.2** Token lifecycle and rotation guidance
+- [x] **P32.3** Session isolation fixtures (multi-token FileContextRegistry test)
+- [x] **P32.4** Rate/write limit operator documentation
+- [x] **P32.5** Deploy runbook (local single-user + multi-user/gateway)
+- [x] **P32.6** Compatibility matrix (Penpot / Node / plugin negotiation)
 
 ### Phase 33: Completing debug diagnostics
 
