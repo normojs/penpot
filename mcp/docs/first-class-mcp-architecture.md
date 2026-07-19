@@ -1976,6 +1976,15 @@ tools.
 `token.get_mcp_status` never returns the raw MCP token string. It reports only
 whether a non-expired profile MCP token exists and its optional `expiresAt`.
 
+CLI parity for the same backend-rpc discovery surface:
+
+| CLI command | MCP / descriptor id | Backend RPC |
+| --- | --- | --- |
+| `penpot-cli account me` | `account.get_current_user` | `get-profile` |
+| `penpot-cli team list` | `team.list` | `get-teams` |
+| `penpot-cli project list [--team-id]` | `project.list` | `get-projects` (+ `get-teams` when team omitted) |
+| `penpot-cli file recent --team-id [--limit]` | `file.get_recent` | `get-team-recent-files` |
+
 ### 8.2 File Context Tools
 
 Require a bound file:

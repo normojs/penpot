@@ -4,6 +4,7 @@
 
 ### :sparkles: New features & Enhancements
 
+- Add shared command-runtime descriptors and CLI parity for global discovery: `account me`, `team list`, `project list`, and `file recent` over existing `get-profile` / `get-teams` / `get-projects` / `get-team-recent-files` RPCs; MCP tools now emit the same envelopes.
 - Make `token.get_mcp_status` executable through backend-rpc: shared command-runtime descriptor, MCP tool, and `penpot-cli token status` over existing `get-current-mcp-token`, returning only token-safe presence/expiry metadata.
 - Make `file.search` and `file.duplicate` executable through backend-rpc: shared command-runtime descriptors, MCP tools, and `penpot-cli file search|duplicate` over existing `search-files` / `duplicate-file` RPCs.
 - Add headless `shape.group` / `shape.ungroup` through backend-command: common group/ungroup requests, backend `group-file-shapes` / `ungroup-file-shapes`, MCP tools, and `penpot-cli shape group|ungroup`.

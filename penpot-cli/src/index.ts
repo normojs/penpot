@@ -83,12 +83,16 @@ Usage:
   penpot-cli mcp config [--mode builtin|custom|local] [--profile-source off|auto|backend] [--format text|json]
   penpot-cli mcp logs [--dir <path>] [--follow] [--format text|json]
   penpot-cli token status [--format text|json]
+  penpot-cli account me [--format text|json]
+  penpot-cli team list [--format text|json]
+  penpot-cli project list [--team-id <id>] [--format text|json]
   penpot-cli dev up --mcp [--mode devenv|host|hybrid] [--dry-run] [--format text|json]
   penpot-cli renderer-service status [--host <host>] [--port <port>] [--format text|json]
   penpot-cli renderer-service start [--host <host>] [--port <port>] [--spawn] [--format text|json]
   penpot-cli renderer-service stop [--host <host>] [--port <port>] [--format text|json]
   penpot-cli file list --project-id <id> [--format text|json]
   penpot-cli file search --team-id <id> --query <term> [--format text|json]
+  penpot-cli file recent --team-id <id> [--limit <n>] [--format text|json]
   penpot-cli file create --project-id <id> [--name <name>] [--format text|json]
   penpot-cli file duplicate --file <file-id> [--name <name>] [--format text|json]
   penpot-cli file open <file-id> [--team-id <id>] [--page-id <id>] [--format text|json]
@@ -193,11 +197,54 @@ Environment:
   PENPOT_RENDERER_SERVICE_RUNTIME_ASSET_PREFLIGHT_CACHE_ROOT  Optional absolute cache root for read-only preflight
   PENPOT_BACKEND_URI           Fallback backend RPC base URI for disabled endpoint planning`;
 
+const ACCOUNT_HELP_TEXT = `penpot-cli account
+
+Usage:
+  penpot-cli account me [--backend-uri <uri>] [--token <token>] [--format text|json]
+
+Notes:
+  Returns the current Penpot profile for the authenticated CLI token via backend-rpc get-profile.
+
+Environment:
+  PENPOT_BACKEND_URI       Backend RPC base URI, default http://localhost:6060
+  PENPOT_PUBLIC_URI        Public Penpot base URI used as backend fallback
+  PENPOT_CLI_TOKEN         Penpot access token for backend RPC
+  PENPOT_MCP_USER_TOKEN    Penpot MCP user token fallback for backend RPC
+  PENPOT_ACCESS_TOKEN      Generic Penpot access token fallback`;
+
+const TEAM_HELP_TEXT = `penpot-cli team
+
+Usage:
+  penpot-cli team list [--backend-uri <uri>] [--token <token>] [--format text|json]
+
+Environment:
+  PENPOT_BACKEND_URI       Backend RPC base URI, default http://localhost:6060
+  PENPOT_PUBLIC_URI        Public Penpot base URI used as backend fallback
+  PENPOT_CLI_TOKEN         Penpot access token for backend RPC
+  PENPOT_MCP_USER_TOKEN    Penpot MCP user token fallback for backend RPC
+  PENPOT_ACCESS_TOKEN      Generic Penpot access token fallback`;
+
+const PROJECT_HELP_TEXT = `penpot-cli project
+
+Usage:
+  penpot-cli project list [--team-id <id>] [--backend-uri <uri>] [--token <token>] [--format text|json]
+
+Notes:
+  Without --team-id, projects are listed for every team available to the authenticated user.
+
+Environment:
+  PENPOT_BACKEND_URI       Backend RPC base URI, default http://localhost:6060
+  PENPOT_PUBLIC_URI        Public Penpot base URI used as backend fallback
+  PENPOT_CLI_TOKEN         Penpot access token for backend RPC
+  PENPOT_MCP_USER_TOKEN    Penpot MCP user token fallback for backend RPC
+  PENPOT_ACCESS_TOKEN      Generic Penpot access token fallback`;
+
 const FILE_HELP_TEXT = `penpot-cli file
 
 Usage:
   penpot-cli file list --project-id <id> [--backend-uri <uri>] [--token <token>] [--format text|json]
   penpot-cli file search --team-id <id> --query <term> [--backend-uri <uri>] [--token <token>] [--format text|json]
+  penpot-cli file recent --team-id <id> [--limit <n>] [--backend-uri <uri>] [--token <token>] [--format text|json]
   penpot-cli file create --project-id <id> [--name <name>] [--shared] [--backend-uri <uri>] [--token <token>] [--format text|json]
   penpot-cli file duplicate --file <file-id> [--name <name>] [--backend-uri <uri>] [--token <token>] [--format text|json]
   penpot-cli file open <file-id> [--team-id <id>] [--page-id <id>] [--public-uri <uri>] [--format text|json]
@@ -8849,6 +8896,88 @@ function writeFileSearchText(io: CliIO, teamId: string, searchTerm: string, file
     }
 }
 
+function writeAccountMeText(io: CliIO, profile: Record<string, unknown>): void {
+    writeLine(io.stdout, "Current account");
+    writeLine(io.stdout, `id: ${String(profile.id ?? "<unknown>")}`);
+    writeLine(io.stdout, `fullname: ${String(profile.fullname ?? "<unknown>")}`);
+    writeLine(io.stdout, `email: ${String(profile.email ?? "<unknown>")}`);
+    writeLine(
+        io.stdout,
+        `fullname: ${String(profile.fullname ?? profile["fullname-name"] ?? profile.fullnameName ?? "<unnamed>")}`
+    );
+}
+
+function writeTeamsText(io: CliIO, teams: unknown): void {
+    writeLine(io.stdout, "Teams");
+    if (!Array.isArray(teams) || teams.length === 0) {
+        writeLine(io.stdout, "No teams found.");
+        return;
+    }
+
+    for (const team of teams) {
+        const record = asRecord(team);
+        writeLine(io.stdout, `${String(record.id ?? "<unknown>")}  ${String(record.name ?? "<unnamed>")}`);
+    }
+}
+
+function writeProjectsText(io: CliIO, teamId: string | undefined, payload: Record<string, unknown>): void {
+    if (teamId) {
+        writeLine(io.stdout, `Projects for team ${teamId}`);
+        const projects = payload.projects;
+        if (!Array.isArray(projects) || projects.length === 0) {
+            writeLine(io.stdout, "No projects found.");
+            return;
+        }
+        for (const project of projects) {
+            const record = asRecord(project);
+            writeLine(io.stdout, `${String(record.id ?? "<unknown>")}  ${String(record.name ?? "<unnamed>")}`);
+        }
+        return;
+    }
+
+    writeLine(io.stdout, "Projects by team");
+    const teams = payload.teams;
+    if (!Array.isArray(teams) || teams.length === 0) {
+        writeLine(io.stdout, "No teams/projects found.");
+        return;
+    }
+
+    for (const entry of teams) {
+        const record = asRecord(entry);
+        const team = asRecord(record.team);
+        writeLine(io.stdout, `team ${String(team.id ?? "<unknown>")}  ${String(team.name ?? "<unnamed>")}`);
+        const projects = record.projects;
+        if (!Array.isArray(projects) || projects.length === 0) {
+            writeLine(io.stdout, "  (no projects)");
+            continue;
+        }
+        for (const project of projects) {
+            const projectRecord = asRecord(project);
+            writeLine(
+                io.stdout,
+                `  ${String(projectRecord.id ?? "<unknown>")}  ${String(projectRecord.name ?? "<unnamed>")}`
+            );
+        }
+    }
+}
+
+function writeRecentFilesText(io: CliIO, teamId: string, files: unknown, limit?: number): void {
+    writeLine(io.stdout, `Recent files for team ${teamId}${limit ? ` (limit ${limit})` : ""}`);
+    if (!Array.isArray(files) || files.length === 0) {
+        writeLine(io.stdout, "No files found.");
+        return;
+    }
+
+    for (const file of files) {
+        const record = asRecord(file);
+        const projectId = String(record.projectId ?? record["project-id"] ?? "<unknown-project>");
+        writeLine(
+            io.stdout,
+            `${String(record.id ?? "<unknown>")}  ${String(record.name ?? "<unnamed>")}  project=${projectId}`
+        );
+    }
+}
+
 function summarizeFile(file: unknown, projectId: string, fallbackName: string): Record<string, unknown> {
     const record = asRecord(file);
     return {
@@ -10341,6 +10470,194 @@ async function handleRendererServiceCommand(args: string[], io: CliIO, env: Node
     }
 }
 
+async function handleAccountMe(args: string[], io: CliIO, env: NodeJS.ProcessEnv): Promise<number> {
+    const format = parseFormat(args, io);
+    if (!format) {
+        return 2;
+    }
+
+    const rpc = getRpcConfig(args, env);
+    if (!rpc.token) {
+        return rpcAuthenticationRequired(io, format);
+    }
+
+    const requestEnvelope = createCliRequest(CommandDescriptors.ACCOUNT_GET_CURRENT_USER, {
+        input: {},
+        target: { backendUri: rpc.backendUri },
+        auth: { userTokenPresent: true, source: "cli-token" },
+        adapter: "backend-rpc",
+    });
+
+    try {
+        const profile = asRecord(
+            await rpcRequest<unknown>("GET", rpc.backendUri, "get-profile", {}, rpc.token)
+        );
+        const resultEnvelope = createCliResult(requestEnvelope, {
+            profile,
+            adapter: "backend-rpc",
+        });
+        writeOkEnvelope(io, format, resultEnvelope, () => writeAccountMeText(io, profile));
+        return 0;
+    } catch (cause) {
+        return rpcErrorResponse(io, format, "get-profile", rpc.backendUri, cause);
+    }
+}
+
+async function handleAccountCommand(args: string[], io: CliIO, env: NodeJS.ProcessEnv): Promise<number> {
+    const [subcommand, ...rest] = args;
+
+    if (isHelpFlag(subcommand)) {
+        writeLine(io.stdout, ACCOUNT_HELP_TEXT);
+        return 0;
+    }
+
+    switch (subcommand) {
+        case "me":
+        case "current":
+            return await handleAccountMe(rest, io, env);
+        default:
+            writeLine(io.stderr, `Unknown account command: ${subcommand}`);
+            writeLine(io.stderr, 'Run "penpot-cli account --help" for usage.');
+            return 2;
+    }
+}
+
+async function handleTeamList(args: string[], io: CliIO, env: NodeJS.ProcessEnv): Promise<number> {
+    const format = parseFormat(args, io);
+    if (!format) {
+        return 2;
+    }
+
+    const rpc = getRpcConfig(args, env);
+    if (!rpc.token) {
+        return rpcAuthenticationRequired(io, format);
+    }
+
+    const requestEnvelope = createCliRequest(CommandDescriptors.TEAM_LIST, {
+        input: {},
+        target: { backendUri: rpc.backendUri },
+        auth: { userTokenPresent: true, source: "cli-token" },
+        adapter: "backend-rpc",
+    });
+
+    try {
+        const teams = await rpcRequest<unknown[]>("GET", rpc.backendUri, "get-teams", {}, rpc.token);
+        const resultEnvelope = createCliResult(requestEnvelope, {
+            teams,
+            adapter: "backend-rpc",
+        });
+        writeOkEnvelope(io, format, resultEnvelope, () => writeTeamsText(io, teams));
+        return 0;
+    } catch (cause) {
+        return rpcErrorResponse(io, format, "get-teams", rpc.backendUri, cause);
+    }
+}
+
+async function handleTeamCommand(args: string[], io: CliIO, env: NodeJS.ProcessEnv): Promise<number> {
+    const [subcommand, ...rest] = args;
+
+    if (isHelpFlag(subcommand)) {
+        writeLine(io.stdout, TEAM_HELP_TEXT);
+        return 0;
+    }
+
+    switch (subcommand) {
+        case "list":
+            return await handleTeamList(rest, io, env);
+        default:
+            writeLine(io.stderr, `Unknown team command: ${subcommand}`);
+            writeLine(io.stderr, 'Run "penpot-cli team --help" for usage.');
+            return 2;
+    }
+}
+
+async function handleProjectList(args: string[], io: CliIO, env: NodeJS.ProcessEnv): Promise<number> {
+    const format = parseFormat(args, io);
+    if (!format) {
+        return 2;
+    }
+
+    const teamId = readOption(args, ["--team-id", "--team"]);
+    const rpc = getRpcConfig(args, env);
+    if (!rpc.token) {
+        return rpcAuthenticationRequired(io, format);
+    }
+
+    const requestEnvelope = createCliRequest(CommandDescriptors.PROJECT_LIST, {
+        input: { teamId },
+        target: teamId ? { teamId, backendUri: rpc.backendUri } : { backendUri: rpc.backendUri },
+        auth: { userTokenPresent: true, source: "cli-token" },
+        adapter: "backend-rpc",
+    });
+
+    try {
+        if (teamId) {
+            const projects = await rpcRequest<unknown[]>(
+                "GET",
+                rpc.backendUri,
+                "get-projects",
+                { "team-id": teamId },
+                rpc.token
+            );
+            const resultEnvelope = createCliResult(requestEnvelope, {
+                teamId,
+                projects,
+                adapter: "backend-rpc",
+            });
+            writeOkEnvelope(io, format, resultEnvelope, () =>
+                writeProjectsText(io, teamId, { projects })
+            );
+            return 0;
+        }
+
+        const teams = await rpcRequest<unknown[]>("GET", rpc.backendUri, "get-teams", {}, rpc.token);
+        const teamsWithProjects: Array<{ team: Record<string, unknown>; projects: unknown[] }> = [];
+        for (const team of teams) {
+            const teamRecord = asRecord(team);
+            const id = String(teamRecord.id ?? "");
+            const projects = id
+                ? await rpcRequest<unknown[]>(
+                      "GET",
+                      rpc.backendUri,
+                      "get-projects",
+                      { "team-id": id },
+                      rpc.token
+                  )
+                : [];
+            teamsWithProjects.push({ team: teamRecord, projects });
+        }
+
+        const resultEnvelope = createCliResult(requestEnvelope, {
+            teams: teamsWithProjects,
+            adapter: "backend-rpc",
+        });
+        writeOkEnvelope(io, format, resultEnvelope, () =>
+            writeProjectsText(io, undefined, { teams: teamsWithProjects })
+        );
+        return 0;
+    } catch (cause) {
+        return rpcErrorResponse(io, format, teamId ? "get-projects" : "get-teams", rpc.backendUri, cause);
+    }
+}
+
+async function handleProjectCommand(args: string[], io: CliIO, env: NodeJS.ProcessEnv): Promise<number> {
+    const [subcommand, ...rest] = args;
+
+    if (isHelpFlag(subcommand)) {
+        writeLine(io.stdout, PROJECT_HELP_TEXT);
+        return 0;
+    }
+
+    switch (subcommand) {
+        case "list":
+            return await handleProjectList(rest, io, env);
+        default:
+            writeLine(io.stderr, `Unknown project command: ${subcommand}`);
+            writeLine(io.stderr, 'Run "penpot-cli project --help" for usage.');
+            return 2;
+    }
+}
+
 async function handleFileList(args: string[], io: CliIO, env: NodeJS.ProcessEnv): Promise<number> {
     const format = parseFormat(args, io);
     if (!format) {
@@ -10351,7 +10668,7 @@ async function handleFileList(args: string[], io: CliIO, env: NodeJS.ProcessEnv)
     if (!projectId) {
         writeError(io, format, "project_id_required", "file list requires --project-id <id>.", [
             "Use penpot-cli mcp config to inspect local service URLs.",
-            "Use MCP project.list or the Penpot UI to choose a project id.",
+            "Use penpot-cli project list or the Penpot UI to choose a project id.",
         ]);
         return 2;
     }
@@ -10393,7 +10710,7 @@ async function handleFileCreate(args: string[], io: CliIO, env: NodeJS.ProcessEn
     const projectId = readOption(args, ["--project-id", "--project"]);
     if (!projectId) {
         writeError(io, format, "project_id_required", "file create requires --project-id <id>.", [
-            "Use MCP project.list or the Penpot UI to choose a project id.",
+            "Use penpot-cli project list or the Penpot UI to choose a project id.",
         ]);
         return 2;
     }
@@ -10457,7 +10774,7 @@ async function handleFileSearch(args: string[], io: CliIO, env: NodeJS.ProcessEn
     const teamId = readOption(args, ["--team-id", "--team"]);
     if (!teamId) {
         writeError(io, format, "team_id_required", "file search requires --team-id <id>.", [
-            "Use MCP team.list or the Penpot UI to choose a team id.",
+            "Use penpot-cli team list or the Penpot UI to choose a team id.",
         ]);
         return 2;
     }
@@ -10510,6 +10827,67 @@ async function handleFileSearch(args: string[], io: CliIO, env: NodeJS.ProcessEn
     }
 }
 
+async function handleFileRecent(args: string[], io: CliIO, env: NodeJS.ProcessEnv): Promise<number> {
+    const format = parseFormat(args, io);
+    if (!format) {
+        return 2;
+    }
+
+    const teamId = readOption(args, ["--team-id", "--team"]);
+    if (!teamId) {
+        writeError(io, format, "team_id_required", "file recent requires --team-id <id>.", [
+            "Use penpot-cli team list or the Penpot UI to choose a team id.",
+        ]);
+        return 2;
+    }
+
+    const limitRaw = readOption(args, ["--limit"]);
+    let limit: number | undefined;
+    if (limitRaw !== undefined) {
+        const parsed = Number(limitRaw);
+        if (!Number.isInteger(parsed) || parsed < 1 || parsed > 100) {
+            writeError(io, format, "invalid_limit", "file recent --limit must be an integer from 1 to 100.", [
+                "Omit --limit to return the full backend recent-files list.",
+            ]);
+            return 2;
+        }
+        limit = parsed;
+    }
+
+    const rpc = getRpcConfig(args, env);
+    if (!rpc.token) {
+        return rpcAuthenticationRequired(io, format);
+    }
+
+    const requestEnvelope = createCliRequest(CommandDescriptors.FILE_GET_RECENT, {
+        input: { teamId, limit },
+        target: { teamId, backendUri: rpc.backendUri },
+        auth: { userTokenPresent: true, source: "cli-token" },
+        adapter: "backend-rpc",
+    });
+
+    try {
+        const files = await rpcRequest<unknown[]>(
+            "GET",
+            rpc.backendUri,
+            "get-team-recent-files",
+            { "team-id": teamId },
+            rpc.token
+        );
+        const limitedFiles = limit ? files.slice(0, limit) : files;
+        const resultEnvelope = createCliResult(requestEnvelope, {
+            teamId,
+            limit,
+            files: limitedFiles,
+            adapter: "backend-rpc",
+        });
+        writeOkEnvelope(io, format, resultEnvelope, () => writeRecentFilesText(io, teamId, limitedFiles, limit));
+        return 0;
+    } catch (cause) {
+        return rpcErrorResponse(io, format, "get-team-recent-files", rpc.backendUri, cause);
+    }
+}
+
 async function handleFileDuplicate(args: string[], io: CliIO, env: NodeJS.ProcessEnv): Promise<number> {
     const format = parseFormat(args, io);
     if (!format) {
@@ -10519,7 +10897,7 @@ async function handleFileDuplicate(args: string[], io: CliIO, env: NodeJS.Proces
     const fileId = readOption(args, ["--file-id", "--file"]) ?? readFirstPositional(args);
     if (!fileId) {
         writeError(io, format, "file_id_required", "file duplicate requires --file <file-id>.", [
-            "Use penpot-cli file list or file search first, then pass --file <file-id>.",
+            "Use penpot-cli file list, file search, or file recent first, then pass --file <file-id>.",
         ]);
         return 2;
     }
@@ -10632,6 +11010,8 @@ async function handleFileCommand(args: string[], io: CliIO, env: NodeJS.ProcessE
             return await handleFileList(rest, io, env);
         case "search":
             return await handleFileSearch(rest, io, env);
+        case "recent":
+            return await handleFileRecent(rest, io, env);
         case "create":
             return await handleFileCreate(rest, io, env);
         case "duplicate":
@@ -12432,6 +12812,18 @@ export async function run(
 
     if (first === "token") {
         return await handleTokenCommand(argv.slice(1), io, env);
+    }
+
+    if (first === "account") {
+        return await handleAccountCommand(argv.slice(1), io, env);
+    }
+
+    if (first === "team") {
+        return await handleTeamCommand(argv.slice(1), io, env);
+    }
+
+    if (first === "project") {
+        return await handleProjectCommand(argv.slice(1), io, env);
     }
 
     if (first === "dev") {

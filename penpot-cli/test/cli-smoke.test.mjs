@@ -6518,8 +6518,12 @@ test("top-level help lists first-class MCP, shape, and export commands", async (
     assert.equal(result.stderr, "");
     assert.match(result.stdout, /penpot-cli mcp config/);
     assert.match(result.stdout, /penpot-cli token status/);
+    assert.match(result.stdout, /penpot-cli account me/);
+    assert.match(result.stdout, /penpot-cli team list/);
+    assert.match(result.stdout, /penpot-cli project list/);
     assert.match(result.stdout, /penpot-cli file open/);
     assert.match(result.stdout, /penpot-cli file search/);
+    assert.match(result.stdout, /penpot-cli file recent/);
     assert.match(result.stdout, /penpot-cli file duplicate/);
     assert.match(result.stdout, /penpot-cli page rename/);
     assert.match(result.stdout, /penpot-cli shape delete/);
@@ -6550,11 +6554,15 @@ test("command runtime exposes low-risk command descriptors", () => {
             "mcp.status",
             "mcp.config",
             "token.get_mcp_status",
+            "account.get_current_user",
+            "team.list",
+            "project.list",
             "file.list",
             "file.search",
             "file.create",
             "file.duplicate",
             "file.open",
+            "file.get_recent",
             "page.list",
             "page.create",
         ]
@@ -6566,6 +6574,16 @@ test("command runtime exposes low-risk command descriptors", () => {
     assert.deepEqual(CommandDescriptors.TOKEN_GET_MCP_STATUS.adapters, ["backend-rpc"]);
     assert.equal(getCommandDescriptor("token.get_mcp_status").id, "token.get_mcp_status");
     assert.equal(getCommandDescriptor("token status").id, "token.get_mcp_status");
+    assert.equal(CommandDescriptors.ACCOUNT_GET_CURRENT_USER.cliCommand, "account me");
+    assert.deepEqual(CommandDescriptors.ACCOUNT_GET_CURRENT_USER.adapters, ["backend-rpc"]);
+    assert.equal(CommandDescriptors.TEAM_LIST.cliCommand, "team list");
+    assert.equal(CommandDescriptors.PROJECT_LIST.cliCommand, "project list");
+    assert.equal(CommandDescriptors.FILE_GET_RECENT.cliCommand, "file recent");
+    assert.deepEqual(CommandDescriptors.FILE_GET_RECENT.adapters, ["backend-rpc"]);
+    assert.equal(getCommandDescriptor("account me").id, "account.get_current_user");
+    assert.equal(getCommandDescriptor("team list").id, "team.list");
+    assert.equal(getCommandDescriptor("project list").id, "project.list");
+    assert.equal(getCommandDescriptor("file recent").id, "file.get_recent");
     assert.equal(CommandDescriptors.FILE_SEARCH.cliCommand, "file search");
     assert.deepEqual(CommandDescriptors.FILE_SEARCH.adapters, ["backend-rpc"]);
     assert.equal(CommandDescriptors.FILE_DUPLICATE.cliCommand, "file duplicate");
@@ -6610,7 +6628,7 @@ test("command runtime exposes migrated shape and export descriptors", () => {
             "render.thumbnail",
         ]
     );
-    assert.equal(MigratedCommandDescriptors.length, 41);
+    assert.equal(MigratedCommandDescriptors.length, 45);
     assert.equal(CommandDescriptors.SHAPE_DELETE.cliCommand, "shape delete");
     assert.equal(CommandDescriptors.SHAPE_GROUP.cliCommand, "shape group");
     assert.equal(CommandDescriptors.SHAPE_UNGROUP.cliCommand, "shape ungroup");
@@ -6657,7 +6675,7 @@ test("command runtime exposes live-gap descriptor boundaries", () => {
             "shape.set_style",
         ]
     );
-    assert.equal(MigratedCommandDescriptors.length, 41);
+    assert.equal(MigratedCommandDescriptors.length, 45);
     assert.equal(CommandDescriptors.PAGE_SET_CURRENT.mcpToolName, "page.set_current");
     assert.equal(CommandDescriptors.PAGE_SET_CURRENT.cliCommand, undefined);
     assert.equal(getCommandDescriptor("selection.get").adapters[0], "plugin-live");
@@ -6698,7 +6716,7 @@ test("command runtime exposes components/tokens descriptor-only boundaries", () 
         ComponentsTokensCommandDescriptors.map((descriptor) => descriptor.id),
         ["component.create", "component.instantiate", "tokens.list", "tokens.apply"]
     );
-    assert.equal(MigratedCommandDescriptors.length, 41);
+    assert.equal(MigratedCommandDescriptors.length, 45);
     assert.equal(CommandDescriptors.COMPONENT_CREATE.mcpToolName, "component.create");
     assert.equal(CommandDescriptors.COMPONENT_CREATE.cliCommand, "component create");
     assert.deepEqual(CommandDescriptors.COMPONENT_CREATE.adapters, ["backend-command"]);
@@ -8648,6 +8666,222 @@ test("token status reports missing MCP token without leaking fields", async () =
         assert.equal(body.data.expiresAt, null);
         assert.equal(body.data.rawTokenPresent, false);
         assert.equal(body.data.token, undefined);
+    } finally {
+        globalThis.fetch = originalFetch;
+    }
+});
+
+test("account me calls backend-rpc get-profile", async () => {
+    const originalFetch = globalThis.fetch;
+    const calls = [];
+    globalThis.fetch = async (url, options) => {
+        calls.push({ url: String(url), options });
+        return {
+            ok: true,
+            status: 200,
+            statusText: "OK",
+            text: async () =>
+                JSON.stringify({
+                    id: "profile-1",
+                    email: "agent@example.com",
+                    fullname: "Agent User",
+                }),
+        };
+    };
+
+    try {
+        const result = await runCli(["account", "me", "--format", "json"], {
+            PENPOT_BACKEND_URI: "http://127.0.0.1:6060",
+            PENPOT_CLI_TOKEN: "token-1",
+        });
+        const body = parseJson(result.stdout);
+
+        assert.equal(result.exitCode, 0);
+        assert.equal(result.stderr, "");
+        assert.equal(body.status, "ok");
+        assert.equal(body.data.adapter, "backend-rpc");
+        assert.equal(body.data.profile.id, "profile-1");
+        assert.equal(body.data.profile.email, "agent@example.com");
+        assert.equal(calls.length, 1);
+        assert.match(calls[0].url, /\/api\/main\/methods\/get-profile\?/);
+    } finally {
+        globalThis.fetch = originalFetch;
+    }
+});
+
+test("team list calls backend-rpc get-teams", async () => {
+    const originalFetch = globalThis.fetch;
+    const calls = [];
+    globalThis.fetch = async (url, options) => {
+        calls.push({ url: String(url), options });
+        return {
+            ok: true,
+            status: 200,
+            statusText: "OK",
+            text: async () =>
+                JSON.stringify([
+                    { id: "team-1", name: "Design" },
+                    { id: "team-2", name: "Product" },
+                ]),
+        };
+    };
+
+    try {
+        const result = await runCli(["team", "list", "--format", "json"], {
+            PENPOT_BACKEND_URI: "http://127.0.0.1:6060",
+            PENPOT_CLI_TOKEN: "token-1",
+        });
+        const body = parseJson(result.stdout);
+
+        assert.equal(result.exitCode, 0);
+        assert.equal(body.status, "ok");
+        assert.equal(body.data.adapter, "backend-rpc");
+        assert.equal(body.data.teams.length, 2);
+        assert.equal(body.data.teams[0].id, "team-1");
+        assert.equal(calls.length, 1);
+        assert.match(calls[0].url, /\/api\/main\/methods\/get-teams\?/);
+    } finally {
+        globalThis.fetch = originalFetch;
+    }
+});
+
+test("project list with team-id calls backend-rpc get-projects", async () => {
+    const originalFetch = globalThis.fetch;
+    const calls = [];
+    globalThis.fetch = async (url, options) => {
+        calls.push({ url: String(url), options });
+        return {
+            ok: true,
+            status: 200,
+            statusText: "OK",
+            text: async () => JSON.stringify([{ id: "project-1", name: "Brand" }]),
+        };
+    };
+
+    try {
+        const result = await runCli(
+            ["project", "list", "--team-id", "11111111-1111-1111-1111-111111111111", "--format", "json"],
+            {
+                PENPOT_BACKEND_URI: "http://127.0.0.1:6060",
+                PENPOT_CLI_TOKEN: "token-1",
+            }
+        );
+        const body = parseJson(result.stdout);
+
+        assert.equal(result.exitCode, 0);
+        assert.equal(body.status, "ok");
+        assert.equal(body.data.adapter, "backend-rpc");
+        assert.equal(body.data.teamId, "11111111-1111-1111-1111-111111111111");
+        assert.equal(body.data.projects[0].id, "project-1");
+        assert.equal(calls.length, 1);
+        assert.match(calls[0].url, /\/api\/main\/methods\/get-projects\?/);
+        assert.match(calls[0].url, /team-id=11111111-1111-1111-1111-111111111111/);
+    } finally {
+        globalThis.fetch = originalFetch;
+    }
+});
+
+test("project list without team-id lists projects for every team", async () => {
+    const originalFetch = globalThis.fetch;
+    const calls = [];
+    globalThis.fetch = async (url, options) => {
+        const href = String(url);
+        calls.push({ url: href, options });
+        if (href.includes("get-teams")) {
+            return {
+                ok: true,
+                status: 200,
+                statusText: "OK",
+                text: async () =>
+                    JSON.stringify([
+                        { id: "team-1", name: "Design" },
+                        { id: "team-2", name: "Product" },
+                    ]),
+            };
+        }
+        if (href.includes("team-id=team-1")) {
+            return {
+                ok: true,
+                status: 200,
+                statusText: "OK",
+                text: async () => JSON.stringify([{ id: "project-a", name: "A" }]),
+            };
+        }
+        return {
+            ok: true,
+            status: 200,
+            statusText: "OK",
+            text: async () => JSON.stringify([{ id: "project-b", name: "B" }]),
+        };
+    };
+
+    try {
+        const result = await runCli(["project", "list", "--format", "json"], {
+            PENPOT_BACKEND_URI: "http://127.0.0.1:6060",
+            PENPOT_CLI_TOKEN: "token-1",
+        });
+        const body = parseJson(result.stdout);
+
+        assert.equal(result.exitCode, 0);
+        assert.equal(body.status, "ok");
+        assert.equal(body.data.adapter, "backend-rpc");
+        assert.equal(body.data.teams.length, 2);
+        assert.equal(body.data.teams[0].team.id, "team-1");
+        assert.equal(body.data.teams[0].projects[0].id, "project-a");
+        assert.equal(body.data.teams[1].projects[0].id, "project-b");
+        assert.equal(calls.length, 3);
+        assert.match(calls[0].url, /get-teams/);
+    } finally {
+        globalThis.fetch = originalFetch;
+    }
+});
+
+test("file recent calls backend-rpc get-team-recent-files and applies limit", async () => {
+    const originalFetch = globalThis.fetch;
+    const calls = [];
+    globalThis.fetch = async (url, options) => {
+        calls.push({ url: String(url), options });
+        return {
+            ok: true,
+            status: 200,
+            statusText: "OK",
+            text: async () =>
+                JSON.stringify([
+                    { id: "file-1", name: "One", "project-id": "project-1" },
+                    { id: "file-2", name: "Two", "project-id": "project-1" },
+                    { id: "file-3", name: "Three", "project-id": "project-2" },
+                ]),
+        };
+    };
+
+    try {
+        const result = await runCli(
+            [
+                "file",
+                "recent",
+                "--team-id",
+                "11111111-1111-1111-1111-111111111111",
+                "--limit",
+                "2",
+                "--format",
+                "json",
+            ],
+            {
+                PENPOT_BACKEND_URI: "http://127.0.0.1:6060",
+                PENPOT_CLI_TOKEN: "token-1",
+            }
+        );
+        const body = parseJson(result.stdout);
+
+        assert.equal(result.exitCode, 0);
+        assert.equal(body.status, "ok");
+        assert.equal(body.data.adapter, "backend-rpc");
+        assert.equal(body.data.teamId, "11111111-1111-1111-1111-111111111111");
+        assert.equal(body.data.limit, 2);
+        assert.equal(body.data.files.length, 2);
+        assert.equal(body.data.files[0].id, "file-1");
+        assert.equal(calls.length, 1);
+        assert.match(calls[0].url, /\/api\/main\/methods\/get-team-recent-files\?/);
     } finally {
         globalThis.fetch = originalFetch;
     }

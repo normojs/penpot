@@ -12343,6 +12343,17 @@ export interface LowRiskCommandDescriptorCatalog {
         mcpToolName: "token.get_mcp_status";
         cliCommand: "token status";
     };
+    ACCOUNT_GET_CURRENT_USER: CommandDescriptor & {
+        id: "account.get_current_user";
+        mcpToolName: "account.get_current_user";
+        cliCommand: "account me";
+    };
+    TEAM_LIST: CommandDescriptor & { id: "team.list"; mcpToolName: "team.list"; cliCommand: "team list" };
+    PROJECT_LIST: CommandDescriptor & {
+        id: "project.list";
+        mcpToolName: "project.list";
+        cliCommand: "project list";
+    };
     FILE_LIST: CommandDescriptor & { id: "file.list"; mcpToolName: "file.list"; cliCommand: "file list" };
     FILE_SEARCH: CommandDescriptor & { id: "file.search"; mcpToolName: "file.search"; cliCommand: "file search" };
     FILE_CREATE: CommandDescriptor & { id: "file.create"; mcpToolName: "file.create"; cliCommand: "file create" };
@@ -12352,6 +12363,11 @@ export interface LowRiskCommandDescriptorCatalog {
         cliCommand: "file duplicate";
     };
     FILE_OPEN: CommandDescriptor & { id: "file.open"; mcpToolName: "file.open"; cliCommand: "file open" };
+    FILE_GET_RECENT: CommandDescriptor & {
+        id: "file.get_recent";
+        mcpToolName: "file.get_recent";
+        cliCommand: "file recent";
+    };
     PAGE_LIST: CommandDescriptor & { id: "page.list"; mcpToolName: "page.list"; cliCommand: "page list" };
     PAGE_CREATE: CommandDescriptor & { id: "page.create"; mcpToolName: "page.create"; cliCommand: "page create" };
 }

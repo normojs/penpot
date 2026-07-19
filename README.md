@@ -82,6 +82,8 @@ Already in good shape for private checkout use:
   `duplicate-file`)
 - `token.get_mcp_status` through backend-rpc (`get-current-mcp-token`,
   token-safe summary only)
+- Global discovery CLI parity: `account me`, `team list`, `project list`,
+  `file recent` (same backend-rpc paths as the MCP tools)
 - File context bind/release and live selection commands when a workspace is bound
 - `export.file` through backend binary export
 - Portable private `penpot-cli` release archive packaging

@@ -166,11 +166,15 @@ const LOW_RISK_IDS = [
     "mcp.status",
     "mcp.config",
     "token.get_mcp_status",
+    "account.get_current_user",
+    "team.list",
+    "project.list",
     "file.list",
     "file.search",
     "file.create",
     "file.duplicate",
     "file.open",
+    "file.get_recent",
     "page.list",
     "page.create",
 ];
@@ -9562,6 +9566,14 @@ test("descriptor lookup supports internal, MCP, and CLI command names", () => {
     assert.equal(getCommandDescriptor("mcp.get_status"), CommandDescriptors.MCP_STATUS);
     assert.equal(getCommandDescriptor("token.get_mcp_status"), CommandDescriptors.TOKEN_GET_MCP_STATUS);
     assert.equal(getCommandDescriptor("token status"), CommandDescriptors.TOKEN_GET_MCP_STATUS);
+    assert.equal(getCommandDescriptor("account.get_current_user"), CommandDescriptors.ACCOUNT_GET_CURRENT_USER);
+    assert.equal(getCommandDescriptor("account me"), CommandDescriptors.ACCOUNT_GET_CURRENT_USER);
+    assert.equal(getCommandDescriptor("team.list"), CommandDescriptors.TEAM_LIST);
+    assert.equal(getCommandDescriptor("team list"), CommandDescriptors.TEAM_LIST);
+    assert.equal(getCommandDescriptor("project.list"), CommandDescriptors.PROJECT_LIST);
+    assert.equal(getCommandDescriptor("project list"), CommandDescriptors.PROJECT_LIST);
+    assert.equal(getCommandDescriptor("file.get_recent"), CommandDescriptors.FILE_GET_RECENT);
+    assert.equal(getCommandDescriptor("file recent"), CommandDescriptors.FILE_GET_RECENT);
     assert.equal(getCommandDescriptor("file.open"), CommandDescriptors.FILE_OPEN);
     assert.equal(getCommandDescriptor("file.search"), CommandDescriptors.FILE_SEARCH);
     assert.equal(getCommandDescriptor("file search"), CommandDescriptors.FILE_SEARCH);

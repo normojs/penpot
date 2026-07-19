@@ -144,6 +144,39 @@ export const CommandDescriptors = Object.freeze({
         responseShape:
             "status envelope with present/expiresAt/session.userTokenPresent and next actions; raw token redacted",
     }),
+    ACCOUNT_GET_CURRENT_USER: Object.freeze({
+        id: "account.get_current_user",
+        mcpToolName: "account.get_current_user",
+        cliCommand: "account me",
+        title: "Current account profile",
+        description:
+            "Returns the current Penpot profile for the authenticated token through backend-rpc get-profile.",
+        inputSchema: "empty",
+        adapters: Object.freeze(["backend-rpc"]),
+        responseShape: "status envelope with profile summary and adapter metadata",
+    }),
+    TEAM_LIST: Object.freeze({
+        id: "team.list",
+        mcpToolName: "team.list",
+        cliCommand: "team list",
+        title: "List teams",
+        description: "Lists teams available to the current Penpot user through backend-rpc get-teams.",
+        inputSchema: "empty",
+        adapters: Object.freeze(["backend-rpc"]),
+        responseShape: "status envelope with teams and adapter metadata",
+    }),
+    PROJECT_LIST: Object.freeze({
+        id: "project.list",
+        mcpToolName: "project.list",
+        cliCommand: "project list",
+        title: "List projects",
+        description:
+            "Lists projects for a Penpot team through backend-rpc get-projects, or for all teams when no teamId is provided.",
+        inputSchema: "teamId?",
+        adapters: Object.freeze(["backend-rpc"]),
+        responseShape:
+            "status envelope with teamId/projects when teamId is set, or teams[{team,projects}] when omitted",
+    }),
     FILE_LIST: Object.freeze({
         id: "file.list",
         mcpToolName: "file.list",
@@ -195,6 +228,17 @@ export const CommandDescriptors = Object.freeze({
         inputSchema: "fileId, teamId?, pageId?, publicUri?, adapter?",
         adapters: Object.freeze(["browser-url"]),
         responseShape: "status envelope with fileId, workspaceUrl, handoff actions, adapter, and boundContext=false",
+    }),
+    FILE_GET_RECENT: Object.freeze({
+        id: "file.get_recent",
+        mcpToolName: "file.get_recent",
+        cliCommand: "file recent",
+        title: "List recent files",
+        description:
+            "Lists recently modified files for a Penpot team through backend-rpc get-team-recent-files.",
+        inputSchema: "teamId, limit?",
+        adapters: Object.freeze(["backend-rpc"]),
+        responseShape: "status envelope with teamId, optional limit, files, and adapter metadata",
     }),
     PAGE_LIST: Object.freeze({
         id: "page.list",
@@ -590,11 +634,15 @@ export const LowRiskCommandDescriptors = Object.freeze([
     CommandDescriptors.MCP_STATUS,
     CommandDescriptors.MCP_CONFIG,
     CommandDescriptors.TOKEN_GET_MCP_STATUS,
+    CommandDescriptors.ACCOUNT_GET_CURRENT_USER,
+    CommandDescriptors.TEAM_LIST,
+    CommandDescriptors.PROJECT_LIST,
     CommandDescriptors.FILE_LIST,
     CommandDescriptors.FILE_SEARCH,
     CommandDescriptors.FILE_CREATE,
     CommandDescriptors.FILE_DUPLICATE,
     CommandDescriptors.FILE_OPEN,
+    CommandDescriptors.FILE_GET_RECENT,
     CommandDescriptors.PAGE_LIST,
     CommandDescriptors.PAGE_CREATE,
 ]);

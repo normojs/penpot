@@ -14,22 +14,33 @@ export class AccountGetCurrentUserTool extends PenpotRpcTool<EmptyToolArgs> {
     }
 
     public getToolName(): string {
-        return ToolNames.ACCOUNT_GET_CURRENT_USER;
+        return CommandDescriptors.ACCOUNT_GET_CURRENT_USER.mcpToolName!;
     }
 
     public getToolDescription(): string {
-        return "Returns the current Penpot profile for the MCP access token.";
+        return CommandDescriptors.ACCOUNT_GET_CURRENT_USER.description;
     }
 
-    protected async executeCore(args: EmptyToolArgs): Promise<ToolResponse> {
+    protected async executeCore(_args: EmptyToolArgs): Promise<ToolResponse> {
         const userToken = this.getUserToken();
         if (!userToken) {
             return this.authenticationRequired();
         }
 
+        const requestEnvelope = createCommandRequestEnvelope(CommandDescriptors.ACCOUNT_GET_CURRENT_USER, {
+            transport: "mcp",
+            input: {},
+            auth: { userTokenPresent: true, source: "mcp-session" },
+            adapter: "backend-rpc",
+        });
+
         try {
             const profile = await this.rpcGet<PenpotRecord>("get-profile", {}, userToken);
-            return this.ok({ profile });
+            const resultEnvelope = createCommandResultEnvelope(requestEnvelope, {
+                profile,
+                adapter: "backend-rpc",
+            });
+            return this.ok(resultEnvelope.data, resultEnvelope.warnings);
         } catch (cause) {
             return this.rpcFailure(cause);
         }
@@ -42,22 +53,33 @@ export class TeamListTool extends PenpotRpcTool<EmptyToolArgs> {
     }
 
     public getToolName(): string {
-        return ToolNames.TEAM_LIST;
+        return CommandDescriptors.TEAM_LIST.mcpToolName!;
     }
 
     public getToolDescription(): string {
-        return "Lists teams available to the current Penpot user.";
+        return CommandDescriptors.TEAM_LIST.description;
     }
 
-    protected async executeCore(args: EmptyToolArgs): Promise<ToolResponse> {
+    protected async executeCore(_args: EmptyToolArgs): Promise<ToolResponse> {
         const userToken = this.getUserToken();
         if (!userToken) {
             return this.authenticationRequired();
         }
 
+        const requestEnvelope = createCommandRequestEnvelope(CommandDescriptors.TEAM_LIST, {
+            transport: "mcp",
+            input: {},
+            auth: { userTokenPresent: true, source: "mcp-session" },
+            adapter: "backend-rpc",
+        });
+
         try {
             const teams = await this.rpcGet<PenpotRecord[]>("get-teams", {}, userToken);
-            return this.ok({ teams });
+            const resultEnvelope = createCommandResultEnvelope(requestEnvelope, {
+                teams,
+                adapter: "backend-rpc",
+            });
+            return this.ok(resultEnvelope.data, resultEnvelope.warnings);
         } catch (cause) {
             return this.rpcFailure(cause);
         }
@@ -82,11 +104,11 @@ export class ProjectListTool extends PenpotRpcTool<ProjectListArgs> {
     }
 
     public getToolName(): string {
-        return ToolNames.PROJECT_LIST;
+        return CommandDescriptors.PROJECT_LIST.mcpToolName!;
     }
 
     public getToolDescription(): string {
-        return "Lists projects for a Penpot team, or for all teams when no teamId is provided.";
+        return CommandDescriptors.PROJECT_LIST.description;
     }
 
     protected async executeCore(args: ProjectListArgs): Promise<ToolResponse> {
@@ -95,6 +117,14 @@ export class ProjectListTool extends PenpotRpcTool<ProjectListArgs> {
             return this.authenticationRequired();
         }
 
+        const requestEnvelope = createCommandRequestEnvelope(CommandDescriptors.PROJECT_LIST, {
+            transport: "mcp",
+            input: { teamId: args.teamId },
+            target: args.teamId ? { teamId: args.teamId } : undefined,
+            auth: { userTokenPresent: true, source: "mcp-session" },
+            adapter: "backend-rpc",
+        });
+
         try {
             if (args.teamId) {
                 const projects = await this.rpcGet<PenpotRecord[]>(
@@ -102,7 +132,12 @@ export class ProjectListTool extends PenpotRpcTool<ProjectListArgs> {
                     { "team-id": args.teamId },
                     userToken
                 );
-                return this.ok({ teamId: args.teamId, projects });
+                const resultEnvelope = createCommandResultEnvelope(requestEnvelope, {
+                    teamId: args.teamId,
+                    projects,
+                    adapter: "backend-rpc",
+                });
+                return this.ok(resultEnvelope.data, resultEnvelope.warnings);
             }
 
             const teams = await this.rpcGet<PenpotRecord[]>("get-teams", {}, userToken);
@@ -118,7 +153,11 @@ export class ProjectListTool extends PenpotRpcTool<ProjectListArgs> {
                 })
             );
 
-            return this.ok({ teams: teamsWithProjects });
+            const resultEnvelope = createCommandResultEnvelope(requestEnvelope, {
+                teams: teamsWithProjects,
+                adapter: "backend-rpc",
+            });
+            return this.ok(resultEnvelope.data, resultEnvelope.warnings);
         } catch (cause) {
             return this.rpcFailure(cause);
         }
@@ -268,11 +307,11 @@ export class FileGetRecentTool extends PenpotRpcTool<FileGetRecentArgs> {
     }
 
     public getToolName(): string {
-        return ToolNames.FILE_GET_RECENT;
+        return CommandDescriptors.FILE_GET_RECENT.mcpToolName!;
     }
 
     public getToolDescription(): string {
-        return "Lists recently modified files for a Penpot team.";
+        return CommandDescriptors.FILE_GET_RECENT.description;
     }
 
     protected async executeCore(args: FileGetRecentArgs): Promise<ToolResponse> {
@@ -281,6 +320,14 @@ export class FileGetRecentTool extends PenpotRpcTool<FileGetRecentArgs> {
             return this.authenticationRequired();
         }
 
+        const requestEnvelope = createCommandRequestEnvelope(CommandDescriptors.FILE_GET_RECENT, {
+            transport: "mcp",
+            input: { teamId: args.teamId, limit: args.limit },
+            target: { teamId: args.teamId },
+            auth: { userTokenPresent: true, source: "mcp-session" },
+            adapter: "backend-rpc",
+        });
+
         try {
             const files = await this.rpcGet<PenpotRecord[]>(
                 "get-team-recent-files",
@@ -288,7 +335,13 @@ export class FileGetRecentTool extends PenpotRpcTool<FileGetRecentArgs> {
                 userToken
             );
             const limitedFiles = args.limit ? files.slice(0, args.limit) : files;
-            return this.ok({ teamId: args.teamId, files: limitedFiles });
+            const resultEnvelope = createCommandResultEnvelope(requestEnvelope, {
+                teamId: args.teamId,
+                limit: args.limit,
+                files: limitedFiles,
+                adapter: "backend-rpc",
+            });
+            return this.ok(resultEnvelope.data, resultEnvelope.warnings);
         } catch (cause) {
             return this.rpcFailure(cause);
         }
