@@ -1190,6 +1190,7 @@ row `in_progress`.
 - [x] **Global discovery CLI parity** — `account me`, `team list`, `project list`, `file recent` via shared descriptors + backend-rpc
 - [x] **file list / file create CLI smoke** — RPC smoke coverage for `get-project-files` / `create-file` plus auth/project validation
 - [x] **page list / page create CLI smoke** — RPC smoke coverage for `get-file-pages` / `create-file-page` plus file-id validation
+- [x] **shape create-frame/rect/text + delete CLI smoke** — RPC smoke coverage for `create-file-shape` / `delete-file-shape`
 - [x] **Live-only workspace state** — product decision 2026-07-19: keep `page.set_current` / `selection.get` / `selection.set` plugin-live/editor-local; no persisted agent session state (see `headless-live-gap-audit.md`)
 
 ### Phase 27: Components/Tokens descriptor boundaries

@@ -9915,6 +9915,326 @@ test("shape alias commands reject fields outside their alias contract", async ()
     assert.equal(styleBody.error.code, "shape_alias_option_invalid");
 });
 
+test("shape create-frame calls backend-command create-file-shape", async () => {
+    const originalFetch = globalThis.fetch;
+    const calls = [];
+    globalThis.fetch = async (url, options) => {
+        calls.push({ url: String(url), options });
+        return {
+            ok: true,
+            status: 200,
+            statusText: "OK",
+            text: async () =>
+                JSON.stringify({
+                    shape: {
+                        id: "00000000-0000-0000-0000-0000000000f1",
+                        name: "Frame 1",
+                        type: "frame",
+                        pageId: UUIDS.page,
+                    },
+                    revn: 7,
+                    vern: 0,
+                }),
+        };
+    };
+
+    try {
+        const result = await runCli(
+            [
+                "shape",
+                "create-frame",
+                "--file",
+                UUIDS.file,
+                "--page",
+                UUIDS.page,
+                "--x",
+                "10",
+                "--y",
+                "20",
+                "--width",
+                "320",
+                "--height",
+                "240",
+                "--name",
+                "Frame 1",
+                "--shape-id",
+                "00000000-0000-0000-0000-0000000000f1",
+                "--format",
+                "json",
+            ],
+            {
+                PENPOT_BACKEND_URI: "http://127.0.0.1:6060",
+                PENPOT_CLI_TOKEN: "token-1",
+            }
+        );
+        const body = parseJson(result.stdout);
+
+        assert.equal(result.exitCode, 0);
+        assert.equal(result.stderr, "");
+        assert.equal(calls.length, 1);
+        assert.match(calls[0].url, /\/api\/main\/methods\/create-file-shape\?_fmt=json$/);
+        assert.equal(calls[0].options.method, "POST");
+        assert.deepEqual(JSON.parse(calls[0].options.body), {
+            id: UUIDS.file,
+            "page-id": UUIDS.page,
+            "shape-id": "00000000-0000-0000-0000-0000000000f1",
+            type: "frame",
+            name: "Frame 1",
+            x: 10,
+            y: 20,
+            width: 320,
+            height: 240,
+        });
+        assert.equal(body.status, "ok");
+        assert.equal(body.data.adapter, "backend-command");
+        assert.equal(body.data.adapterSelection.command, "shape.create_frame");
+        assert.equal(body.data.shape.type, "frame");
+        assert.equal(body.data.revn, 7);
+    } finally {
+        globalThis.fetch = originalFetch;
+    }
+});
+
+test("shape create-rect calls backend-command create-file-shape", async () => {
+    const originalFetch = globalThis.fetch;
+    const calls = [];
+    globalThis.fetch = async (url, options) => {
+        calls.push({ url: String(url), options });
+        return {
+            ok: true,
+            status: 200,
+            statusText: "OK",
+            text: async () =>
+                JSON.stringify({
+                    shape: {
+                        id: "00000000-0000-0000-0000-0000000000f2",
+                        name: "Rect 1",
+                        type: "rect",
+                        pageId: UUIDS.page,
+                        parentId: "00000000-0000-0000-0000-0000000000f1",
+                    },
+                    revn: 8,
+                    vern: 0,
+                }),
+        };
+    };
+
+    try {
+        const result = await runCli(
+            [
+                "shape",
+                "create-rect",
+                "--file",
+                UUIDS.file,
+                "--page",
+                UUIDS.page,
+                "--parent",
+                "00000000-0000-0000-0000-0000000000f1",
+                "--x",
+                "12",
+                "--y",
+                "24",
+                "--width",
+                "100",
+                "--height",
+                "50",
+                "--fill",
+                "#3366ff",
+                "--border-radius",
+                "8",
+                "--name",
+                "Rect 1",
+                "--shape-id",
+                "00000000-0000-0000-0000-0000000000f2",
+                "--format",
+                "json",
+            ],
+            {
+                PENPOT_BACKEND_URI: "http://127.0.0.1:6060",
+                PENPOT_CLI_TOKEN: "token-1",
+            }
+        );
+        const body = parseJson(result.stdout);
+
+        assert.equal(result.exitCode, 0);
+        assert.equal(result.stderr, "");
+        assert.equal(calls.length, 1);
+        assert.match(calls[0].url, /\/api\/main\/methods\/create-file-shape\?_fmt=json$/);
+        assert.deepEqual(JSON.parse(calls[0].options.body), {
+            id: UUIDS.file,
+            "page-id": UUIDS.page,
+            "shape-id": "00000000-0000-0000-0000-0000000000f2",
+            "parent-id": "00000000-0000-0000-0000-0000000000f1",
+            type: "rect",
+            name: "Rect 1",
+            x: 12,
+            y: 24,
+            width: 100,
+            height: 50,
+            fill: { color: "#3366ff" },
+            "border-radius": 8,
+        });
+        assert.equal(body.status, "ok");
+        assert.equal(body.data.adapter, "backend-command");
+        assert.equal(body.data.adapterSelection.command, "shape.create_rect");
+        assert.equal(body.data.shape.type, "rect");
+    } finally {
+        globalThis.fetch = originalFetch;
+    }
+});
+
+test("shape create-text calls backend-command create-file-shape", async () => {
+    const originalFetch = globalThis.fetch;
+    const calls = [];
+    globalThis.fetch = async (url, options) => {
+        calls.push({ url: String(url), options });
+        return {
+            ok: true,
+            status: 200,
+            statusText: "OK",
+            text: async () =>
+                JSON.stringify({
+                    shape: {
+                        id: "00000000-0000-0000-0000-0000000000f3",
+                        name: "Title",
+                        type: "text",
+                        pageId: UUIDS.page,
+                        parentId: "00000000-0000-0000-0000-0000000000f1",
+                    },
+                    revn: 9,
+                    vern: 0,
+                }),
+        };
+    };
+
+    try {
+        const result = await runCli(
+            [
+                "shape",
+                "create-text",
+                "--file",
+                UUIDS.file,
+                "--page",
+                UUIDS.page,
+                "--parent",
+                "00000000-0000-0000-0000-0000000000f1",
+                "--x",
+                "16",
+                "--y",
+                "32",
+                "--width",
+                "200",
+                "--height",
+                "40",
+                "--content",
+                "Hello",
+                "--font-size",
+                "24",
+                "--name",
+                "Title",
+                "--shape-id",
+                "00000000-0000-0000-0000-0000000000f3",
+                "--format",
+                "json",
+            ],
+            {
+                PENPOT_BACKEND_URI: "http://127.0.0.1:6060",
+                PENPOT_CLI_TOKEN: "token-1",
+            }
+        );
+        const body = parseJson(result.stdout);
+
+        assert.equal(result.exitCode, 0);
+        assert.equal(result.stderr, "");
+        assert.equal(calls.length, 1);
+        assert.match(calls[0].url, /\/api\/main\/methods\/create-file-shape\?_fmt=json$/);
+        assert.deepEqual(JSON.parse(calls[0].options.body), {
+            id: UUIDS.file,
+            "page-id": UUIDS.page,
+            "shape-id": "00000000-0000-0000-0000-0000000000f3",
+            "parent-id": "00000000-0000-0000-0000-0000000000f1",
+            type: "text",
+            name: "Title",
+            x: 16,
+            y: 32,
+            width: 200,
+            height: 40,
+            content: "Hello",
+            "font-size": 24,
+        });
+        assert.equal(body.status, "ok");
+        assert.equal(body.data.adapter, "backend-command");
+        assert.equal(body.data.adapterSelection.command, "shape.create_text");
+        assert.equal(body.data.shape.type, "text");
+    } finally {
+        globalThis.fetch = originalFetch;
+    }
+});
+
+test("shape delete calls backend-command delete-file-shape", async () => {
+    const originalFetch = globalThis.fetch;
+    const calls = [];
+    globalThis.fetch = async (url, options) => {
+        calls.push({ url: String(url), options });
+        return {
+            ok: true,
+            status: 200,
+            statusText: "OK",
+            text: async () =>
+                JSON.stringify({
+                    shape: {
+                        id: UUIDS.object,
+                        name: "Rect 1",
+                        type: "rect",
+                        pageId: UUIDS.page,
+                    },
+                    revn: 10,
+                    vern: 0,
+                }),
+        };
+    };
+
+    try {
+        const result = await runCli(
+            [
+                "shape",
+                "delete",
+                "--file",
+                UUIDS.file,
+                "--page",
+                UUIDS.page,
+                "--shape",
+                UUIDS.object,
+                "--format",
+                "json",
+            ],
+            {
+                PENPOT_BACKEND_URI: "http://127.0.0.1:6060",
+                PENPOT_CLI_TOKEN: "token-1",
+            }
+        );
+        const body = parseJson(result.stdout);
+
+        assert.equal(result.exitCode, 0);
+        assert.equal(result.stderr, "");
+        assert.equal(calls.length, 1);
+        assert.match(calls[0].url, /\/api\/main\/methods\/delete-file-shape\?_fmt=json$/);
+        assert.equal(calls[0].options.method, "POST");
+        assert.deepEqual(JSON.parse(calls[0].options.body), {
+            id: UUIDS.file,
+            "page-id": UUIDS.page,
+            "shape-id": UUIDS.object,
+        });
+        assert.equal(body.status, "ok");
+        assert.equal(body.data.adapter, "backend-command");
+        assert.equal(body.data.adapterSelection.command, "shape.delete");
+        assert.equal(body.data.deleted, true);
+        assert.equal(body.data.shape.id, UUIDS.object);
+    } finally {
+        globalThis.fetch = originalFetch;
+    }
+});
+
 test("shape create-image reads a local image and sends backend-command RPC", async () => {
     const originalFetch = globalThis.fetch;
     const calls = [];
