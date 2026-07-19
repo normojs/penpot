@@ -1,9 +1,9 @@
-import { EmptyToolArgs, Tool } from "../Tool";
+import { EmptyToolArgs, Tool } from "../Tool.js";
 import "reflect-metadata";
-import type { ToolResponse } from "../ToolResponse";
-import { TextResponse } from "../ToolResponse";
-import { PenpotMcpServer } from "../PenpotMcpServer";
-import { ToolNames } from "../ToolNames";
+import type { ToolResponse } from "../ToolResponse.js";
+import { TextResponse } from "../ToolResponse.js";
+import { PenpotMcpServer } from "../PenpotMcpServer.js";
+import { ToolNames } from "../ToolNames.js";
 
 export class HighLevelOverviewTool extends Tool<EmptyToolArgs> {
     constructor(mcpServer: PenpotMcpServer) {

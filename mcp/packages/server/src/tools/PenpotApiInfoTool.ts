@@ -1,11 +1,11 @@
 import { z } from "zod";
-import { Tool } from "../Tool";
+import { Tool } from "../Tool.js";
 import "reflect-metadata";
-import type { ToolResponse } from "../ToolResponse";
-import { TextResponse } from "../ToolResponse";
-import { PenpotMcpServer } from "../PenpotMcpServer";
-import { ToolNames } from "../ToolNames";
-import { ApiDocs } from "../ApiDocs";
+import type { ToolResponse } from "../ToolResponse.js";
+import { TextResponse } from "../ToolResponse.js";
+import { PenpotMcpServer } from "../PenpotMcpServer.js";
+import { ToolNames } from "../ToolNames.js";
+import { ApiDocs } from "../ApiDocs.js";
 
 /**
  * Arguments class for the PenpotApiInfoTool

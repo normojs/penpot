@@ -4,6 +4,7 @@
 
 ### :sparkles: New features & Enhancements
 
+- Add focused MCP tool tests for legacy `high_level_overview` and `penpot_api_info` (overview text, short/long type docs, member lookup, missing type/member failure text) and fix ESM import extensions on those modules for ts-node test loading.
 - Add focused MCP tool tests for `mcp.get_status` and `token.get_mcp_status`, covering token-safe envelopes, plugin status mapping, unbound warnings, auth/RPC failures, and raw-token redaction; fix ESM import extensions on those tool modules for ts-node test loading.
 - P28.3 aligns inventory/architecture/live-gap docs so `debug.get_plugin_state` and `debug.get_agent_logs` are explicitly descriptor-only planned diagnostics (empty adapters; Advanced-tools name presence is not executable support).
 - P28.2 adds empty-adapter command-runtime descriptors for `debug.get_plugin_state` and `debug.get_agent_logs` (`DebugDiagnosticsCommandDescriptors`) with runtime and CLI smoke coverage while MCP tools and CLI execution remain unregistered.
