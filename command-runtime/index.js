@@ -628,6 +628,30 @@ export const CommandDescriptors = Object.freeze({
         responseShape:
             "status envelope with shape summaries, token identity, applied attributes, applied-tokens map, materialization flag, revision metadata, and adapterSelection metadata",
     }),
+    DEBUG_GET_PLUGIN_STATE: Object.freeze({
+        id: "debug.get_plugin_state",
+        mcpToolName: "debug.get_plugin_state",
+        cliCommand: "debug plugin-state",
+        title: "Get plugin state",
+        description:
+            "Planned token-safe snapshot of plugin-bridge connectivity and session file-context as a projection of mcp.get_status plugin/session fields; descriptor-only with empty adapters until an enablement gate and MCP/CLI registration land.",
+        inputSchema: "empty",
+        adapters: Object.freeze([]),
+        responseShape:
+            "planned status envelope with plugin counts/status, session scope flags, fileContext summary, and nextActions; no raw tokens; not executable yet",
+    }),
+    DEBUG_GET_AGENT_LOGS: Object.freeze({
+        id: "debug.get_agent_logs",
+        mcpToolName: "debug.get_agent_logs",
+        cliCommand: "debug agent-logs",
+        title: "Get agent logs",
+        description:
+            "Planned token-safe summary of MCP server log configuration and log-file metadata as a projection of status.logging and mcp logs listing; descriptor-only with empty adapters; default content is metadata-only until redaction fixtures and enablement exist.",
+        inputSchema: "empty (future: tailLines?, level? behind enablement gate)",
+        adapters: Object.freeze([]),
+        responseShape:
+            "planned status envelope with logging flags, file metadata list, content=null, contentPolicy=metadata-only-default, and nextActions; raw log bodies and absolute paths deferred; not executable yet",
+    }),
 });
 
 export const LowRiskCommandDescriptors = Object.freeze([
@@ -690,12 +714,18 @@ export const ComponentsTokensCommandDescriptors = Object.freeze([
     CommandDescriptors.TOKENS_APPLY,
 ]);
 
+export const DebugDiagnosticsCommandDescriptors = Object.freeze([
+    CommandDescriptors.DEBUG_GET_PLUGIN_STATE,
+    CommandDescriptors.DEBUG_GET_AGENT_LOGS,
+]);
+
 export const MigratedCommandDescriptors = Object.freeze([
     ...LowRiskCommandDescriptors,
     ...HeadlessAuthoringCommandDescriptors,
     ...ShapeExportCommandDescriptors,
     ...LiveGapCommandDescriptors,
     ...ComponentsTokensCommandDescriptors,
+    ...DebugDiagnosticsCommandDescriptors,
 ]);
 
 export function getCommandDescriptor(id) {

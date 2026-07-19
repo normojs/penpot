@@ -1,7 +1,8 @@
 # Debug Diagnostics Descriptor Boundaries
 
-Status: planning only. No command-runtime descriptors, MCP tools, CLI
-handlers, or adapters are registered yet for the debug command names.
+Status: P28.2 complete for command-runtime catalog. Descriptor-only entries
+exist with empty adapters; no MCP tools, CLI handlers, or executable adapters
+are registered yet for the debug command names.
 
 This document turns the residual unregistered names in `ToolNames.ts` and the
 guidance in [`headless-live-gap-audit.md`](./headless-live-gap-audit.md) into an
@@ -21,9 +22,11 @@ debug.get_agent_logs
 Today those names are:
 
 - present in `ToolNames.ts` and `AdvancedToolNames`
+- present in `command-runtime` as `DEBUG_GET_PLUGIN_STATE` /
+  `DEBUG_GET_AGENT_LOGS` inside `DebugDiagnosticsCommandDescriptors`
+  with `adapters: []`
 - **not** registered in `PenpotMcpServer.initTools()`
-- **not** present in `command-runtime` descriptors
-- **not** exposed as `penpot-cli` commands
+- **not** exposed as executable `penpot-cli` commands
 
 Agents must not treat name presence as executable support.
 
@@ -209,9 +212,9 @@ Until that gate exists and is documented:
 
 | ID | Task | Modules | Exit criteria |
 | --- | --- | --- | --- |
-| **P28.1** | Plan debug diagnostics descriptor boundaries (this document) | `mcp/docs`, `todo.md`, `CHANGES.md` | Names mapped to existing status/log surfaces; non-goals and response contracts explicit; adapters empty by policy |
-| **P28.2** | Add descriptor-only `debug.get_plugin_state` / `debug.get_agent_logs` entries | `command-runtime`, tests, inventory | `DebugDiagnosticsCommandDescriptors` group; empty adapters; lookup by id / mcpToolName / cliCommand; Migrated count updated |
-| **P28.3** | Align residual inventory/architecture wording | `mcp/docs`, `todo.md` | “Declared but not registered” section marks both as descriptor-only planned; advanced-tools section references this doc |
+| **P28.1** | done | Plan debug diagnostics descriptor boundaries (this document) | `mcp/docs`, `todo.md`, `CHANGES.md` | Names mapped to existing status/log surfaces; non-goals and response contracts explicit; adapters empty by policy |
+| **P28.2** | done | Add descriptor-only `debug.get_plugin_state` / `debug.get_agent_logs` entries | `command-runtime`, tests, inventory | `DebugDiagnosticsCommandDescriptors` group; empty adapters; lookup by id / mcpToolName / cliCommand; Migrated 47 |
+| **P28.3** | todo | Align residual inventory/architecture wording | `mcp/docs`, `todo.md` | “Declared but not registered” section marks both as descriptor-only planned; advanced-tools section references this doc |
 
 ### First post-descriptor executable candidate (not Phase 28)
 

@@ -8,6 +8,7 @@ import {
     CommandDescriptors,
     CommandErrorCodes,
     ComponentsTokensCommandDescriptors,
+    DebugDiagnosticsCommandDescriptors,
     HeadlessAuthoringCommandDescriptors,
     LiveGapCommandDescriptors,
     LowRiskCommandDescriptors,
@@ -6628,7 +6629,7 @@ test("command runtime exposes migrated shape and export descriptors", () => {
             "render.thumbnail",
         ]
     );
-    assert.equal(MigratedCommandDescriptors.length, 45);
+    assert.equal(MigratedCommandDescriptors.length, 47);
     assert.equal(CommandDescriptors.SHAPE_DELETE.cliCommand, "shape delete");
     assert.equal(CommandDescriptors.SHAPE_GROUP.cliCommand, "shape group");
     assert.equal(CommandDescriptors.SHAPE_UNGROUP.cliCommand, "shape ungroup");
@@ -6675,7 +6676,7 @@ test("command runtime exposes live-gap descriptor boundaries", () => {
             "shape.set_style",
         ]
     );
-    assert.equal(MigratedCommandDescriptors.length, 45);
+    assert.equal(MigratedCommandDescriptors.length, 47);
     assert.equal(CommandDescriptors.PAGE_SET_CURRENT.mcpToolName, "page.set_current");
     assert.equal(CommandDescriptors.PAGE_SET_CURRENT.cliCommand, undefined);
     assert.equal(getCommandDescriptor("selection.get").adapters[0], "plugin-live");
@@ -6716,7 +6717,6 @@ test("command runtime exposes components/tokens descriptor-only boundaries", () 
         ComponentsTokensCommandDescriptors.map((descriptor) => descriptor.id),
         ["component.create", "component.instantiate", "tokens.list", "tokens.apply"]
     );
-    assert.equal(MigratedCommandDescriptors.length, 45);
     assert.equal(CommandDescriptors.COMPONENT_CREATE.mcpToolName, "component.create");
     assert.equal(CommandDescriptors.COMPONENT_CREATE.cliCommand, "component create");
     assert.deepEqual(CommandDescriptors.COMPONENT_CREATE.adapters, ["backend-command"]);
@@ -6735,6 +6735,29 @@ test("command runtime exposes components/tokens descriptor-only boundaries", () 
     assert.equal(getCommandDescriptor("tokens list").id, "tokens.list");
     assert.equal(getCommandDescriptor("tokens.apply").id, "tokens.apply");
     assert.equal(getCommandDescriptor("tokens apply").id, "tokens.apply");
+});
+
+test("command runtime exposes debug diagnostics descriptor-only boundaries", () => {
+    assert.deepEqual(
+        DebugDiagnosticsCommandDescriptors.map((descriptor) => descriptor.id),
+        ["debug.get_plugin_state", "debug.get_agent_logs"]
+    );
+    assert.equal(MigratedCommandDescriptors.length, 47);
+    assert.equal(CommandDescriptors.DEBUG_GET_PLUGIN_STATE.mcpToolName, "debug.get_plugin_state");
+    assert.equal(CommandDescriptors.DEBUG_GET_PLUGIN_STATE.cliCommand, "debug plugin-state");
+    assert.deepEqual(CommandDescriptors.DEBUG_GET_PLUGIN_STATE.adapters, []);
+    assert.match(CommandDescriptors.DEBUG_GET_PLUGIN_STATE.description, /descriptor-only/);
+    assert.equal(CommandDescriptors.DEBUG_GET_AGENT_LOGS.mcpToolName, "debug.get_agent_logs");
+    assert.equal(CommandDescriptors.DEBUG_GET_AGENT_LOGS.cliCommand, "debug agent-logs");
+    assert.deepEqual(CommandDescriptors.DEBUG_GET_AGENT_LOGS.adapters, []);
+    assert.match(CommandDescriptors.DEBUG_GET_AGENT_LOGS.description, /metadata-only/);
+    assert.equal(getCommandDescriptor("debug.get_plugin_state").id, "debug.get_plugin_state");
+    assert.equal(getCommandDescriptor("debug plugin-state").id, "debug.get_plugin_state");
+    assert.equal(getCommandDescriptor("debug.get_agent_logs").id, "debug.get_agent_logs");
+    assert.equal(getCommandDescriptor("debug agent-logs").id, "debug.get_agent_logs");
+    for (const descriptor of DebugDiagnosticsCommandDescriptors) {
+        assert.deepEqual(descriptor.adapters, [], descriptor.id);
+    }
 });
 
 test("command runtime creates token-safe request and result envelopes", () => {

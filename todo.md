@@ -453,8 +453,9 @@ and `penpot-cli account me|team list|project list|file recent`.
 Phase 28 debug diagnostics planning is open: P28.1 documents
 `debug.get_plugin_state` / `debug.get_agent_logs` as descriptor-only
 projections of existing `mcp.get_status` / `mcp logs` surfaces
-(`mcp/docs/debug-diagnostics-descriptor-boundaries.md`); P28.2/P28.3 remain
-for empty-adapter catalog entries and wording alignment. Executable debug
+(`mcp/docs/debug-diagnostics-descriptor-boundaries.md`); P28.2 landed
+empty-adapter `DebugDiagnosticsCommandDescriptors` (Migrated 47); P28.3
+remains for residual inventory/architecture wording. Executable debug
 tools stay deferred behind a future enablement gate.
 P25.7 is complete: thumbnail renderer-service API fixtures now define
 future file refresh, file reuse, tagged frame refresh, auth forwarding,
@@ -1169,7 +1170,7 @@ adapters until enablement and redaction gates are explicit.
 | ID | Status | Task | Modules | Verification | Notes |
 | --- | --- | --- | --- | --- | --- |
 | P28.1 | done | Plan debug diagnostics descriptor-only boundaries | `mcp/docs`, `todo.md`, `CHANGES.md` | Completed 2026-07-19; `debug-diagnostics-descriptor-boundaries.md` reserves both names, maps them onto status/log surfaces, documents response contracts, enablement gate, and empty-adapter policy | No command-runtime, MCP, CLI, backend, or common behavior changes in P28.1 |
-| P28.2 | todo | Add descriptor-only debug command-runtime entries | `command-runtime`, `penpot-cli`, `mcp/docs`, `todo.md` | Empty-adapter `DebugDiagnosticsCommandDescriptors`; lookup by id/mcpToolName/cliCommand; tests keep adapters empty | MCP tools and CLI execution handlers remain unregistered |
+| P28.2 | done | Add descriptor-only debug command-runtime entries | `command-runtime`, `penpot-cli`, `mcp/docs`, `todo.md` | Completed 2026-07-19; empty-adapter `DebugDiagnosticsCommandDescriptors`; lookup by id/mcpToolName/cliCommand; Migrated 47; runtime + CLI smoke tests | MCP tools and CLI execution handlers remain unregistered |
 | P28.3 | todo | Align residual inventory/architecture wording | `mcp/docs`, `todo.md`, `CHANGES.md` | Inventory advanced-tools and declared-but-not-registered sections mark both names descriptor-only | Prefer `debug.get_plugin_state` as first post-descriptor executable candidate behind enablement gate |
 
 ## Remaining Work Checklist
@@ -1213,7 +1214,7 @@ row `in_progress`.
 - [x] **mcp status / mcp logs CLI smoke** — status endpoint fetch + log-dir listing/validation coverage
 - [x] **Live-only workspace state** — product decision 2026-07-19: keep `page.set_current` / `selection.get` / `selection.set` plugin-live/editor-local; no persisted agent session state (see `headless-live-gap-audit.md`)
 - [x] **P28.1** Plan debug diagnostics descriptor-only boundaries (`mcp/docs/debug-diagnostics-descriptor-boundaries.md`)
-- [ ] **P28.2** Add descriptor-only `debug.get_plugin_state` / `debug.get_agent_logs` entries with empty adapters
+- [x] **P28.2** Add descriptor-only `debug.get_plugin_state` / `debug.get_agent_logs` entries with empty adapters
 - [ ] **P28.3** Align residual inventory/architecture wording without registering MCP tools or CLI execution
 
 ### Phase 27: Components/Tokens descriptor boundaries
@@ -1225,7 +1226,7 @@ row `in_progress`.
 ### Phase 28: Debug diagnostics descriptor boundaries
 
 - [x] **P28.1** Plan debug diagnostics descriptor-only boundaries (`mcp/docs/debug-diagnostics-descriptor-boundaries.md`)
-- [ ] **P28.2** Add descriptor-only debug command-runtime entries (`DebugDiagnosticsCommandDescriptors`, empty adapters)
+- [x] **P28.2** Add descriptor-only debug command-runtime entries (`DebugDiagnosticsCommandDescriptors`, empty adapters)
 - [ ] **P28.3** Align residual inventory/architecture wording without registering MCP tools or CLI execution
 
 ### Packaging, ops, and distribution

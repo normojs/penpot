@@ -12508,6 +12508,16 @@ export interface CommandDescriptorCatalog extends LowRiskCommandDescriptorCatalo
         mcpToolName: "tokens.apply";
         cliCommand: "tokens apply";
     };
+    DEBUG_GET_PLUGIN_STATE: CommandDescriptor & {
+        id: "debug.get_plugin_state";
+        mcpToolName: "debug.get_plugin_state";
+        cliCommand: "debug plugin-state";
+    };
+    DEBUG_GET_AGENT_LOGS: CommandDescriptor & {
+        id: "debug.get_agent_logs";
+        mcpToolName: "debug.get_agent_logs";
+        cliCommand: "debug agent-logs";
+    };
 }
 
 export const CommandErrorCodes: CommandErrorCodeCatalog;
@@ -12523,6 +12533,7 @@ export const HeadlessAuthoringCommandDescriptors: readonly CommandDescriptor[];
 export const LiveGapCommandDescriptors: readonly CommandDescriptor[];
 export const ShapeExportCommandDescriptors: readonly CommandDescriptor[];
 export const ComponentsTokensCommandDescriptors: readonly CommandDescriptor[];
+export const DebugDiagnosticsCommandDescriptors: readonly CommandDescriptor[];
 export const MigratedCommandDescriptors: readonly CommandDescriptor[];
 export function getCommandDescriptor(id: string): CommandDescriptor | undefined;
 export function createCommandRequestEnvelope<TInput = unknown>(

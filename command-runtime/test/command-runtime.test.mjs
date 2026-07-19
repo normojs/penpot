@@ -9,6 +9,7 @@ import {
     RenderThumbnailCachePolicies,
     RenderThumbnailTargets,
     ComponentsTokensCommandDescriptors,
+    DebugDiagnosticsCommandDescriptors,
     HeadlessAuthoringCommandDescriptors,
     LiveGapCommandDescriptors,
     LowRiskCommandDescriptors,
@@ -216,6 +217,10 @@ const COMPONENTS_TOKENS_IDS = [
     "component.instantiate",
     "tokens.list",
     "tokens.apply",
+];
+const DEBUG_DIAGNOSTICS_IDS = [
+    "debug.get_plugin_state",
+    "debug.get_agent_logs",
 ];
 const exportFileContractFixtures = JSON.parse(
     readFileSync(new URL("../../mcp/docs/export-file-contract-fixtures.json", import.meta.url), "utf8")
@@ -9551,6 +9556,10 @@ test("descriptor groups expose stable command ids", () => {
         COMPONENTS_TOKENS_IDS
     );
     assert.deepEqual(
+        DebugDiagnosticsCommandDescriptors.map((descriptor) => descriptor.id),
+        DEBUG_DIAGNOSTICS_IDS
+    );
+    assert.deepEqual(
         MigratedCommandDescriptors.map((descriptor) => descriptor.id),
         [
             ...LOW_RISK_IDS,
@@ -9558,6 +9567,7 @@ test("descriptor groups expose stable command ids", () => {
             ...SHAPE_EXPORT_IDS,
             ...LIVE_GAP_IDS,
             ...COMPONENTS_TOKENS_IDS,
+            ...DEBUG_DIAGNOSTICS_IDS,
         ]
     );
 });
@@ -9611,6 +9621,10 @@ test("descriptor lookup supports internal, MCP, and CLI command names", () => {
     assert.equal(getCommandDescriptor("tokens list"), CommandDescriptors.TOKENS_LIST);
     assert.equal(getCommandDescriptor("tokens.apply"), CommandDescriptors.TOKENS_APPLY);
     assert.equal(getCommandDescriptor("tokens apply"), CommandDescriptors.TOKENS_APPLY);
+    assert.equal(getCommandDescriptor("debug.get_plugin_state"), CommandDescriptors.DEBUG_GET_PLUGIN_STATE);
+    assert.equal(getCommandDescriptor("debug plugin-state"), CommandDescriptors.DEBUG_GET_PLUGIN_STATE);
+    assert.equal(getCommandDescriptor("debug.get_agent_logs"), CommandDescriptors.DEBUG_GET_AGENT_LOGS);
+    assert.equal(getCommandDescriptor("debug agent-logs"), CommandDescriptors.DEBUG_GET_AGENT_LOGS);
     assert.equal(getCommandDescriptor("missing.command"), undefined);
 });
 
@@ -9724,6 +9738,31 @@ test("components/tokens descriptors remain empty-adapter planned boundaries", ()
         assert.equal(getCommandDescriptor(descriptor.mcpToolName), descriptor);
         assert.equal(getCommandDescriptor(descriptor.cliCommand), descriptor);
         assert.ok(descriptor.adapters.length > 0, descriptor.id);
+    }
+});
+
+test("debug diagnostics descriptors remain empty-adapter planned boundaries", () => {
+    assert.equal(CommandDescriptors.DEBUG_GET_PLUGIN_STATE.mcpToolName, "debug.get_plugin_state");
+    assert.equal(CommandDescriptors.DEBUG_GET_PLUGIN_STATE.cliCommand, "debug plugin-state");
+    assert.deepEqual(CommandDescriptors.DEBUG_GET_PLUGIN_STATE.adapters, []);
+    assert.match(CommandDescriptors.DEBUG_GET_PLUGIN_STATE.description, /descriptor-only/);
+    assert.match(CommandDescriptors.DEBUG_GET_PLUGIN_STATE.description, /mcp\.get_status/);
+    assert.match(CommandDescriptors.DEBUG_GET_PLUGIN_STATE.responseShape, /not executable yet/);
+    assert.match(CommandDescriptors.DEBUG_GET_PLUGIN_STATE.responseShape, /plugin counts/);
+
+    assert.equal(CommandDescriptors.DEBUG_GET_AGENT_LOGS.mcpToolName, "debug.get_agent_logs");
+    assert.equal(CommandDescriptors.DEBUG_GET_AGENT_LOGS.cliCommand, "debug agent-logs");
+    assert.deepEqual(CommandDescriptors.DEBUG_GET_AGENT_LOGS.adapters, []);
+    assert.match(CommandDescriptors.DEBUG_GET_AGENT_LOGS.description, /metadata-only/);
+    assert.match(CommandDescriptors.DEBUG_GET_AGENT_LOGS.description, /mcp logs/);
+    assert.match(CommandDescriptors.DEBUG_GET_AGENT_LOGS.responseShape, /contentPolicy=metadata-only-default/);
+    assert.match(CommandDescriptors.DEBUG_GET_AGENT_LOGS.responseShape, /not executable yet/);
+
+    for (const descriptor of DebugDiagnosticsCommandDescriptors) {
+        assert.equal(getCommandDescriptor(descriptor.id), descriptor);
+        assert.equal(getCommandDescriptor(descriptor.mcpToolName), descriptor);
+        assert.equal(getCommandDescriptor(descriptor.cliCommand), descriptor);
+        assert.deepEqual(descriptor.adapters, [], descriptor.id);
     }
 });
 

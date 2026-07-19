@@ -44,7 +44,9 @@ Descriptor catalog:
   CLI command string
 - descriptor groups: `LowRiskCommandDescriptors`,
   `HeadlessAuthoringCommandDescriptors`,
-  `ShapeExportCommandDescriptors`, and `MigratedCommandDescriptors`
+  `ShapeExportCommandDescriptors`, `LiveGapCommandDescriptors`,
+  `ComponentsTokensCommandDescriptors`,
+  `DebugDiagnosticsCommandDescriptors`, and `MigratedCommandDescriptors`
 
 Envelope helpers:
 
@@ -841,12 +843,15 @@ not register yet:
   countersignature policy
   and P25.85 package materialization approval audit countersignature revocation appeal resolution enforcement evidence attestation notarization certification endorsement countersignature verification revocation appeal resolution enforcement evidence attestation notarization certification endorsement countersignature verification policy
   while runtime execution remains unavailable
-- debug: `debug.get_plugin_state` and `debug.get_agent_logs` remain unregistered
-  names; Phase 28 P28.1 plans them as descriptor-only projections of existing
-  `mcp.get_status` / `mcp logs` surfaces in
-  `mcp/docs/debug-diagnostics-descriptor-boundaries.md` (empty adapters, no
-  MCP/CLI execution yet). Prefer `mcp.get_status` and `penpot-cli mcp logs`
-  until P28.2/P28.3 land descriptors and wording alignment.
+- debug: `debug.get_plugin_state` and `debug.get_agent_logs` are now
+  command-runtime descriptor-only entries
+  (`DebugDiagnosticsCommandDescriptors`) with empty adapters and reserved CLI
+  names `debug plugin-state` / `debug agent-logs`. They project planned
+  contracts onto existing `mcp.get_status` / `mcp logs` surfaces
+  (`mcp/docs/debug-diagnostics-descriptor-boundaries.md`). MCP tools and CLI
+  execution remain unregistered; prefer `mcp.get_status` and
+  `penpot-cli mcp logs` until an enablement gate lands (P28.3 wording alignment
+  still open).
 
 Do not migrate these as executable descriptors until their implementation is
 registered or the descriptor explicitly marks them as planned/unavailable.

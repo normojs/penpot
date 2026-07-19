@@ -4338,12 +4338,13 @@ debug.get_agent_logs
 MCP server only runs it when `PENPOT_MCP_ENABLE_EXECUTE_CODE=true` is set.
 Normal agent workflows should prefer typed tools.
 
-`debug.get_plugin_state` and `debug.get_agent_logs` are still unregistered
-names. Phase 28 P28.1 reserves them as planned, non-executable diagnostics that
-project existing `mcp.get_status` plugin/session fields and `mcp logs`
-metadata (see `mcp/docs/debug-diagnostics-descriptor-boundaries.md`). Until
-descriptor registration and an explicit enablement gate land, agents should use
-`mcp.get_status` and operators should use `penpot-cli mcp status` /
+`debug.get_plugin_state` and `debug.get_agent_logs` are command-runtime
+descriptor-only planned diagnostics (`DebugDiagnosticsCommandDescriptors`,
+empty adapters). Phase 28 reserves them as non-executable projections of
+existing `mcp.get_status` plugin/session fields and `mcp logs` metadata (see
+`mcp/docs/debug-diagnostics-descriptor-boundaries.md`). MCP tools and CLI
+execution stay unregistered until an explicit enablement gate lands; agents
+should use `mcp.get_status` and operators should use `penpot-cli mcp status` /
 `penpot-cli mcp logs`.
 
 ## 9. Development Order
