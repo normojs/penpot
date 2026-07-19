@@ -420,6 +420,30 @@ export const CommandDescriptors = Object.freeze({
         adapters: Object.freeze(["backend-command", "plugin-live"]),
         responseShape: "status envelope with deleted shape summary, revision metadata, and adapterSelection metadata",
     }),
+    SHAPE_GROUP: Object.freeze({
+        id: "shape.group",
+        mcpToolName: "shape.group",
+        cliCommand: "shape group",
+        title: "Group shapes",
+        description:
+            "Groups one or more shapes under a new group shape through backend-command. All shapes must share the same parent and frame.",
+        inputSchema: "fileId, pageId?, shapeIds[1..100], name?, groupId?, adapter?",
+        adapters: Object.freeze(["backend-command"]),
+        responseShape:
+            "status envelope with group shape summary, children summaries, optional deleted empty group ids, revision metadata, and adapterSelection metadata",
+    }),
+    SHAPE_UNGROUP: Object.freeze({
+        id: "shape.ungroup",
+        mcpToolName: "shape.ungroup",
+        cliCommand: "shape ungroup",
+        title: "Ungroup shapes",
+        description:
+            "Ungroups one or more group shapes through backend-command, reparenting children to the former group parent.",
+        inputSchema: "fileId, pageId?, shapeId OR shapeIds[1..100], adapter?",
+        adapters: Object.freeze(["backend-command"]),
+        responseShape:
+            "status envelope with ungrouped group summaries, child summaries, revision metadata, and adapterSelection metadata",
+    }),
     EXPORT_SHAPE: Object.freeze({
         id: "export.shape",
         mcpToolName: "export.shape",
@@ -477,6 +501,55 @@ export const CommandDescriptors = Object.freeze({
         responseShape:
             "dry-run/client plan with PNG thumbnail artifact metadata, cache key, backend thumbnail data/persist RPC boundaries, and renderer-service request shape; runtime execution unavailable until service implementation exists",
     }),
+    COMPONENT_CREATE: Object.freeze({
+        id: "component.create",
+        mcpToolName: "component.create",
+        cliCommand: "component create",
+        title: "Create component",
+        description:
+            "Creates a local-file component from one non-component frame, or wraps multiple shapes in a new frame component, through backend-command.",
+        inputSchema: "fileId, pageId, shapeId OR shapeIds[1..100], name?, adapter?",
+        adapters: Object.freeze(["backend-command"]),
+        responseShape:
+            "status envelope with component summary, root shape summary, optional wrapped/sourceShapeIds, revision metadata, and adapterSelection metadata",
+    }),
+    COMPONENT_INSTANTIATE: Object.freeze({
+        id: "component.instantiate",
+        mcpToolName: "component.instantiate",
+        cliCommand: "component instantiate",
+        title: "Instantiate component",
+        description:
+            "Places a local or linked-library component instance on a page at an explicit x/y position through backend-command.",
+        inputSchema: "fileId, pageId, componentId, componentFileId?, x, y, parentId?, shapeId?, adapter?",
+        adapters: Object.freeze(["backend-command"]),
+        responseShape:
+            "status envelope with instance shape summary, component summary, revision metadata, and adapterSelection metadata",
+    }),
+    TOKENS_LIST: Object.freeze({
+        id: "tokens.list",
+        mcpToolName: "tokens.list",
+        cliCommand: "tokens list",
+        title: "List design tokens",
+        description:
+            "Lists design token sets, tokens, and themes for a file through backend-command headless read summaries.",
+        inputSchema: "fileId, setId?, includeValues=false?, adapter?",
+        adapters: Object.freeze(["backend-command"]),
+        responseShape:
+            "status envelope with token sets, tokens, themes, active theme paths, empty/present flags, and adapterSelection metadata",
+    }),
+    TOKENS_APPLY: Object.freeze({
+        id: "tokens.apply",
+        mcpToolName: "tokens.apply",
+        cliCommand: "tokens apply",
+        title: "Apply design token",
+        description:
+            "Applies a design token to one or more shapes for explicit token attributes through backend-command; binds applied-tokens and best-effort materializes plain/resolved color, number, spacing, and typography values.",
+        inputSchema:
+            "fileId, pageId?, shapeId OR shapeIds[1..100], attributes[], tokenName OR setId+tokenId OR setName+tokenName, adapter?",
+        adapters: Object.freeze(["backend-command"]),
+        responseShape:
+            "status envelope with shape summaries, token identity, applied attributes, applied-tokens map, materialization flag, revision metadata, and adapterSelection metadata",
+    }),
 });
 
 export const LowRiskCommandDescriptors = Object.freeze([
@@ -516,6 +589,8 @@ export const ShapeExportCommandDescriptors = Object.freeze([
     CommandDescriptors.SHAPE_CREATE_IMAGE,
     CommandDescriptors.SHAPE_UPDATE,
     CommandDescriptors.SHAPE_DELETE,
+    CommandDescriptors.SHAPE_GROUP,
+    CommandDescriptors.SHAPE_UNGROUP,
     CommandDescriptors.EXPORT_SHAPE,
     CommandDescriptors.EXPORT_PAGE,
     CommandDescriptors.EXPORT_FILE,
@@ -523,11 +598,19 @@ export const ShapeExportCommandDescriptors = Object.freeze([
     CommandDescriptors.RENDER_THUMBNAIL,
 ]);
 
+export const ComponentsTokensCommandDescriptors = Object.freeze([
+    CommandDescriptors.COMPONENT_CREATE,
+    CommandDescriptors.COMPONENT_INSTANTIATE,
+    CommandDescriptors.TOKENS_LIST,
+    CommandDescriptors.TOKENS_APPLY,
+]);
+
 export const MigratedCommandDescriptors = Object.freeze([
     ...LowRiskCommandDescriptors,
     ...HeadlessAuthoringCommandDescriptors,
     ...ShapeExportCommandDescriptors,
     ...LiveGapCommandDescriptors,
+    ...ComponentsTokensCommandDescriptors,
 ]);
 
 export function getCommandDescriptor(id) {

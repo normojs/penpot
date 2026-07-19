@@ -4,6 +4,15 @@
 
 ### :sparkles: New features & Enhancements
 
+- Add headless `shape.group` / `shape.ungroup` through backend-command: common group/ungroup requests, backend `group-file-shapes` / `ungroup-file-shapes`, MCP tools, and `penpot-cli shape group|ungroup`.
+- Open Phase 27 Components/Tokens descriptor-only planning: document planned `component.create`, `component.instantiate`, `tokens.list`, and `tokens.apply` boundaries without MCP registration, CLI execution, or adapters.
+- P27.2 adds empty-adapter command-runtime descriptors for `component.create`, `component.instantiate`, `tokens.list`, and `tokens.apply` (`ComponentsTokensCommandDescriptors`) with runtime and CLI smoke coverage while MCP tools and CLI execution remain unregistered.
+- P27.3 aligns inventory/architecture/live-gap docs so the four Components/Tokens names are explicitly descriptor-only and non-executable.
+- Make `tokens.list` executable through backend-command: common `tokens-summary`, backend `get-file-tokens` RPC, MCP `TokensListTool`, and `penpot-cli tokens list` while `component.create`, `component.instantiate`, and `tokens.apply` remain empty-adapter planned commands.
+- Make `component.create` executable through backend-command for local-file single-frame roots: common `create-component-request`, backend `create-file-component` RPC, MCP `ComponentCreateTool`, and `penpot-cli component create`; multi-shape wrap and remote libraries stay out of scope.
+- Make `component.instantiate` executable through backend-command for local-file instances at explicit x/y: common `instantiate-component-request`, backend `create-file-component-instance` RPC, MCP `ComponentInstantiateTool`, and `penpot-cli component instantiate`.
+- Make `tokens.apply` executable through backend-command for a single shape and explicit attributes: common `apply-token-request`, backend `apply-file-token` RPC, MCP `TokensApplyTool`, and `penpot-cli tokens apply`; binds applied-tokens and best-effort materializes plain color/number values.
+- Expand Components/Tokens headless coverage: multi-shape `tokens.apply`, simple `{token}` reference resolution plus spacing/typography materialization, multi-shape `component.create` wrap, and linked-library `component.instantiate`.
 - Record product decision to keep page/selection live-only tools plugin-live without persisted agent session state.
 - Document Components/Tokens evaluation (defer executable tools) and fork packaging/upstream ops notes after Phase 26 close-out.
 - Add backend-command/headless grid cell placement via optional `layout.cells` (CLI `--layout-grid-cells`, MCP layout.cells) while keeping complex area editing plugin-live.
@@ -357,6 +366,7 @@
 
 ### :sparkles: New features & Enhancements
 
+- Add headless `shape.group` / `shape.ungroup` through backend-command: common group/ungroup requests, backend `group-file-shapes` / `ungroup-file-shapes`, MCP tools, and `penpot-cli shape group|ungroup`.
 - Add support for chunked uploading of fonts [Github #9560](https://github.com/penpot/penpot/issues/9560)
 
 
@@ -364,6 +374,7 @@
 
 ### :sparkles: New features & Enhancements
 
+- Add headless `shape.group` / `shape.ungroup` through backend-command: common group/ungroup requests, backend `group-file-shapes` / `ungroup-file-shapes`, MCP tools, and `penpot-cli shape group|ungroup`.
 - Add MCP server integration [Github #9174](https://github.com/penpot/penpot/issues/9174)
   (PR: [#9032](https://github.com/penpot/penpot/pull/9032), [#9321](https://github.com/penpot/penpot/pull/9321))
 - Add chunked upload API for large media and binary files (removes previous upload size limits) [Github #9516](https://github.com/penpot/penpot/issues/9516)
@@ -429,6 +440,7 @@
 
 ### :sparkles: New features & Enhancements
 
+- Add headless `shape.group` / `shape.ungroup` through backend-command: common group/ungroup requests, backend `group-file-shapes` / `ungroup-file-shapes`, MCP tools, and `penpot-cli shape group|ungroup`.
 - Add webp export format to plugin types [Github #8870](https://github.com/penpot/penpot/pull/8870)
 - Use shared singleton containers for React portals to reduce DOM growth [Github #8957](https://github.com/penpot/penpot/pull/8957)
 
@@ -459,6 +471,7 @@
 
 ### :sparkles: New features & Enhancements
 
+- Add headless `shape.group` / `shape.ungroup` through backend-command: common group/ungroup requests, backend `group-file-shapes` / `ungroup-file-shapes`, MCP tools, and `penpot-cli shape group|ungroup`.
 - Add protection for stale JS asset cache to force reload on version mismatch [Github #8638](https://github.com/penpot/penpot/pull/8638)
 - Normalize newsletter opt-in checkbox across different register flows [Github #8839](https://github.com/penpot/penpot/pull/8839)
 
@@ -481,6 +494,7 @@
 
 ### :sparkles: New features & Enhancements
 
+- Add headless `shape.group` / `shape.ungroup` through backend-command: common group/ungroup requests, backend `group-file-shapes` / `ungroup-file-shapes`, MCP tools, and `penpot-cli shape group|ungroup`.
 - Add automatic retry with backoff for idempotent RPC requests on network failures [Github #8792](https://github.com/penpot/penpot/pull/8792)
 - Add scroll and zoom throttling to one state update per animation frame [Github #8812](https://github.com/penpot/penpot/pull/8812)
 - Improve error handling and exception formatting [Github #8757](https://github.com/penpot/penpot/pull/8757)
@@ -508,6 +522,7 @@
 
 ### :sparkles: New features & Enhancements
 
+- Add headless `shape.group` / `shape.ungroup` through backend-command: common group/ungroup requests, backend `group-file-shapes` / `ungroup-file-shapes`, MCP tools, and `penpot-cli shape group|ungroup`.
 - Access to design tokens in Penpot Plugins [Taiga #8990](https://tree.taiga.io/project/penpot/us/8990)
 - Remap references when renaming tokens [Taiga #10202](https://tree.taiga.io/project/penpot/us/10202)
 - Tokens panel nested path view [Taiga #9966](https://tree.taiga.io/project/penpot/us/9966)
@@ -568,6 +583,7 @@
 
 ### :sparkles: New features & Enhancements
 
+- Add headless `shape.group` / `shape.ungroup` through backend-command: common group/ungroup requests, backend `group-file-shapes` / `ungroup-file-shapes`, MCP tools, and `penpot-cli shape group|ungroup`.
 - Add new Box Shadow Tokens [Taiga #10201](https://tree.taiga.io/project/penpot/us/10201)
 - Make i18n translation files load on-demand [Taiga #11474](https://tree.taiga.io/project/penpot/us/11474)
 - Add deleted files to dashboard [Taiga #8149](https://tree.taiga.io/project/penpot/us/8149)
@@ -668,6 +684,7 @@ example. It's still usable as before, we just removed the example.
 
 ### :sparkles: New features & Enhancements
 
+- Add headless `shape.group` / `shape.ungroup` through backend-command: common group/ungroup requests, backend `group-file-shapes` / `ungroup-file-shapes`, MCP tools, and `penpot-cli shape group|ungroup`.
 - Add the ability to select boards to export as PDF [Taiga #12320](https://tree.taiga.io/project/penpot/issue/12320)
 - Add toggle for switching boolean property values [Taiga #12341](https://tree.taiga.io/project/penpot/us/12341)
 - Make the file export process more reliable [Taiga #12555](https://tree.taiga.io/project/penpot/us/12555)
@@ -731,6 +748,7 @@ example. It's still usable as before, we just removed the example.
 
 ### :sparkles: New features & Enhancements
 
+- Add headless `shape.group` / `shape.ungroup` through backend-command: common group/ungroup requests, backend `group-file-shapes` / `ungroup-file-shapes`, MCP tools, and `penpot-cli shape group|ungroup`.
 - New composite token: Typography [Taiga #10200](https://tree.taiga.io/project/penpot/us/10200)
 - Show current Penpot version [Taiga #11603](https://tree.taiga.io/project/penpot/us/11603)
 - Switch several variant copies at the same time [Taiga #11411](https://tree.taiga.io/project/penpot/us/11411)
@@ -781,6 +799,7 @@ example. It's still usable as before, we just removed the example.
 
 ### :sparkles: New features & Enhancements
 
+- Add headless `shape.group` / `shape.ungroup` through backend-command: common group/ungroup requests, backend `group-file-shapes` / `ungroup-file-shapes`, MCP tools, and `penpot-cli shape group|ungroup`.
 - Improve workpace file loading [Github 7366](https://github.com/penpot/penpot/pull/7366)
 
 ### :bug: Bugs fixed
@@ -799,6 +818,7 @@ example. It's still usable as before, we just removed the example.
 
 ### :sparkles: New features & Enhancements
 
+- Add headless `shape.group` / `shape.ungroup` through backend-command: common group/ungroup requests, backend `group-file-shapes` / `ungroup-file-shapes`, MCP tools, and `penpot-cli shape group|ungroup`.
 - Add efficiency enhancements to right sidebar [Github #7182](https://github.com/penpot/penpot/pull/7182)
 - Add defaults for artboard drawing [Taiga #494](https://tree.taiga.io/project/penpot/us/494?milestone=465047)
 - Continuous display of distances between elements when moving a layer with the keyboard [Taiga #1780](https://tree.taiga.io/project/penpot/us/1780)
@@ -866,6 +886,7 @@ example. It's still usable as before, we just removed the example.
 
 ### :sparkles: New features & Enhancements
 
+- Add headless `shape.group` / `shape.ungroup` through backend-command: common group/ungroup requests, backend `group-file-shapes` / `ungroup-file-shapes`, MCP tools, and `penpot-cli shape group|ungroup`.
 - Add visual indicator for new comments in the workspace [Taiga #11328](https://tree.taiga.io/project/penpot/issue/11328)
 - On components overrides, separate the content of the text from the rest of properties [Taiga #7434](https://tree.taiga.io/project/penpot/us/7434)
 - Improve dashboard's sidebar [Taiga #10700](https://tree.taiga.io/project/penpot/us/10700)
@@ -947,6 +968,7 @@ on-premises instances** that want to keep up to date.
 
 ### :sparkles: New features & Enhancements
 
+- Add headless `shape.group` / `shape.ungroup` through backend-command: common group/ungroup requests, backend `group-file-shapes` / `ungroup-file-shapes`, MCP tools, and `penpot-cli shape group|ungroup`.
 - Optimize profile setup flow for better user experience [Taiga #10028](https://tree.taiga.io/project/penpot/us/10028)
 - Rewrite path shape data PathData encoding [Taiga #8542](https://tree.taiga.io/project/penpot/us/8542?milestone=441308)
 - Update base image for Docker Backend and Exporter to Ubuntu 24.04

@@ -8,6 +8,7 @@ import {
     ExportFileLibraryModes,
     RenderThumbnailCachePolicies,
     RenderThumbnailTargets,
+    ComponentsTokensCommandDescriptors,
     HeadlessAuthoringCommandDescriptors,
     LiveGapCommandDescriptors,
     LowRiskCommandDescriptors,
@@ -175,6 +176,8 @@ const SHAPE_EXPORT_IDS = [
     "shape.create_image",
     "shape.update",
     "shape.delete",
+    "shape.group",
+    "shape.ungroup",
     "export.shape",
     "export.page",
     "export.file",
@@ -192,6 +195,12 @@ const LIVE_GAP_IDS = [
     "prototype.duplicate_interaction",
     "shape.set_layout",
     "shape.set_style",
+];
+const COMPONENTS_TOKENS_IDS = [
+    "component.create",
+    "component.instantiate",
+    "tokens.list",
+    "tokens.apply",
 ];
 const exportFileContractFixtures = JSON.parse(
     readFileSync(new URL("../../mcp/docs/export-file-contract-fixtures.json", import.meta.url), "utf8")
@@ -9523,8 +9532,18 @@ test("descriptor groups expose stable command ids", () => {
         LIVE_GAP_IDS
     );
     assert.deepEqual(
+        ComponentsTokensCommandDescriptors.map((descriptor) => descriptor.id),
+        COMPONENTS_TOKENS_IDS
+    );
+    assert.deepEqual(
         MigratedCommandDescriptors.map((descriptor) => descriptor.id),
-        [...LOW_RISK_IDS, ...HEADLESS_AUTHORING_IDS, ...SHAPE_EXPORT_IDS, ...LIVE_GAP_IDS]
+        [
+            ...LOW_RISK_IDS,
+            ...HEADLESS_AUTHORING_IDS,
+            ...SHAPE_EXPORT_IDS,
+            ...LIVE_GAP_IDS,
+            ...COMPONENTS_TOKENS_IDS,
+        ]
     );
 });
 
@@ -9555,6 +9574,14 @@ test("descriptor lookup supports internal, MCP, and CLI command names", () => {
     assert.equal(getCommandDescriptor("shape set-layout"), CommandDescriptors.SHAPE_SET_LAYOUT);
     assert.equal(getCommandDescriptor("shape.set_style"), CommandDescriptors.SHAPE_SET_STYLE);
     assert.equal(getCommandDescriptor("shape set-style"), CommandDescriptors.SHAPE_SET_STYLE);
+    assert.equal(getCommandDescriptor("component.create"), CommandDescriptors.COMPONENT_CREATE);
+    assert.equal(getCommandDescriptor("component create"), CommandDescriptors.COMPONENT_CREATE);
+    assert.equal(getCommandDescriptor("component.instantiate"), CommandDescriptors.COMPONENT_INSTANTIATE);
+    assert.equal(getCommandDescriptor("component instantiate"), CommandDescriptors.COMPONENT_INSTANTIATE);
+    assert.equal(getCommandDescriptor("tokens.list"), CommandDescriptors.TOKENS_LIST);
+    assert.equal(getCommandDescriptor("tokens list"), CommandDescriptors.TOKENS_LIST);
+    assert.equal(getCommandDescriptor("tokens.apply"), CommandDescriptors.TOKENS_APPLY);
+    assert.equal(getCommandDescriptor("tokens apply"), CommandDescriptors.TOKENS_APPLY);
     assert.equal(getCommandDescriptor("missing.command"), undefined);
 });
 
@@ -9633,6 +9660,42 @@ test("shape/export descriptors document planned file and thumbnail boundaries", 
     assert.match(CommandDescriptors.RENDER_THUMBNAIL.description, /tagged frame thumbnails/);
     assert.match(CommandDescriptors.RENDER_THUMBNAIL.inputSchema, /cachePolicy=reuse\|refresh/);
     assert.match(CommandDescriptors.RENDER_THUMBNAIL.responseShape, /renderer-service request shape/);
+});
+
+test("components/tokens descriptors remain empty-adapter planned boundaries", () => {
+    assert.equal(CommandDescriptors.COMPONENT_CREATE.mcpToolName, "component.create");
+    assert.equal(CommandDescriptors.COMPONENT_CREATE.cliCommand, "component create");
+    assert.deepEqual(CommandDescriptors.COMPONENT_CREATE.adapters, ["backend-command"]);
+    assert.match(CommandDescriptors.COMPONENT_CREATE.description, /local-file component/);
+    assert.match(CommandDescriptors.COMPONENT_CREATE.inputSchema, /shapeId OR shapeIds\[1\.\.100\]/);
+    assert.match(CommandDescriptors.COMPONENT_CREATE.responseShape, /component summary/);
+
+    assert.equal(CommandDescriptors.COMPONENT_INSTANTIATE.mcpToolName, "component.instantiate");
+    assert.equal(CommandDescriptors.COMPONENT_INSTANTIATE.cliCommand, "component instantiate");
+    assert.deepEqual(CommandDescriptors.COMPONENT_INSTANTIATE.adapters, ["backend-command"]);
+    assert.match(CommandDescriptors.COMPONENT_INSTANTIATE.inputSchema, /componentId/);
+    assert.match(CommandDescriptors.COMPONENT_INSTANTIATE.description, /linked-library component instance/);
+
+    assert.equal(CommandDescriptors.TOKENS_LIST.mcpToolName, "tokens.list");
+    assert.equal(CommandDescriptors.TOKENS_LIST.cliCommand, "tokens list");
+    assert.deepEqual(CommandDescriptors.TOKENS_LIST.adapters, ["backend-command"]);
+    assert.match(CommandDescriptors.TOKENS_LIST.description, /backend-command headless/);
+    assert.match(CommandDescriptors.TOKENS_LIST.inputSchema, /includeValues=false/);
+    assert.match(CommandDescriptors.TOKENS_LIST.responseShape, /token sets/);
+
+    assert.equal(CommandDescriptors.TOKENS_APPLY.mcpToolName, "tokens.apply");
+    assert.equal(CommandDescriptors.TOKENS_APPLY.cliCommand, "tokens apply");
+    assert.deepEqual(CommandDescriptors.TOKENS_APPLY.adapters, ["backend-command"]);
+    assert.match(CommandDescriptors.TOKENS_APPLY.description, /backend-command/);
+    assert.match(CommandDescriptors.TOKENS_APPLY.inputSchema, /attributes\[\]/);
+    assert.match(CommandDescriptors.TOKENS_APPLY.responseShape, /applied-tokens/);
+
+    for (const descriptor of ComponentsTokensCommandDescriptors) {
+        assert.equal(getCommandDescriptor(descriptor.id), descriptor);
+        assert.equal(getCommandDescriptor(descriptor.mcpToolName), descriptor);
+        assert.equal(getCommandDescriptor(descriptor.cliCommand), descriptor);
+        assert.ok(descriptor.adapters.length > 0, descriptor.id);
+    }
 });
 
 test("export.file contract maps CLI binary archive requests to backend RPC semantics", () => {

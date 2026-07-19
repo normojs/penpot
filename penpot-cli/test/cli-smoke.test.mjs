@@ -7,6 +7,7 @@ import {
     AdapterSelectionReasonCodes,
     CommandDescriptors,
     CommandErrorCodes,
+    ComponentsTokensCommandDescriptors,
     HeadlessAuthoringCommandDescriptors,
     LiveGapCommandDescriptors,
     LowRiskCommandDescriptors,
@@ -6518,6 +6519,8 @@ test("top-level help lists first-class MCP, shape, and export commands", async (
     assert.match(result.stdout, /penpot-cli mcp config/);
     assert.match(result.stdout, /penpot-cli page rename/);
     assert.match(result.stdout, /penpot-cli shape delete/);
+    assert.match(result.stdout, /penpot-cli shape group/);
+    assert.match(result.stdout, /penpot-cli shape ungroup/);
     assert.match(result.stdout, /penpot-cli shape set-layout/);
     assert.match(result.stdout, /penpot-cli shape set-style/);
     assert.match(result.stdout, /penpot-cli prototype create-flow/);
@@ -6526,6 +6529,10 @@ test("top-level help lists first-class MCP, shape, and export commands", async (
     assert.match(result.stdout, /penpot-cli prototype update-interaction/);
     assert.match(result.stdout, /penpot-cli prototype reorder-interaction/);
     assert.match(result.stdout, /penpot-cli prototype duplicate-interaction/);
+    assert.match(result.stdout, /penpot-cli tokens list/);
+    assert.match(result.stdout, /penpot-cli tokens apply/);
+    assert.match(result.stdout, /penpot-cli component create/);
+    assert.match(result.stdout, /penpot-cli component instantiate/);
     assert.match(result.stdout, /penpot-cli export page/);
     assert.match(result.stdout, /penpot-cli export file/);
     assert.match(result.stdout, /penpot-cli render preview/);
@@ -6567,6 +6574,8 @@ test("command runtime exposes migrated shape and export descriptors", () => {
             "shape.create_image",
             "shape.update",
             "shape.delete",
+            "shape.group",
+            "shape.ungroup",
             "export.shape",
             "export.page",
             "export.file",
@@ -6574,8 +6583,12 @@ test("command runtime exposes migrated shape and export descriptors", () => {
             "render.thumbnail",
         ]
     );
-    assert.equal(MigratedCommandDescriptors.length, 32);
+    assert.equal(MigratedCommandDescriptors.length, 38);
     assert.equal(CommandDescriptors.SHAPE_DELETE.cliCommand, "shape delete");
+    assert.equal(CommandDescriptors.SHAPE_GROUP.cliCommand, "shape group");
+    assert.equal(CommandDescriptors.SHAPE_UNGROUP.cliCommand, "shape ungroup");
+    assert.deepEqual(CommandDescriptors.SHAPE_GROUP.adapters, ["backend-command"]);
+    assert.deepEqual(CommandDescriptors.SHAPE_UNGROUP.adapters, ["backend-command"]);
     assert.equal(CommandDescriptors.SHAPE_CREATE_IMAGE.cliCommand, "shape create-image");
     assert.equal(CommandDescriptors.SHAPE_SET_LAYOUT.cliCommand, "shape set-layout");
     assert.equal(CommandDescriptors.SHAPE_SET_STYLE.cliCommand, "shape set-style");
@@ -6617,7 +6630,7 @@ test("command runtime exposes live-gap descriptor boundaries", () => {
             "shape.set_style",
         ]
     );
-    assert.equal(MigratedCommandDescriptors.length, 32);
+    assert.equal(MigratedCommandDescriptors.length, 38);
     assert.equal(CommandDescriptors.PAGE_SET_CURRENT.mcpToolName, "page.set_current");
     assert.equal(CommandDescriptors.PAGE_SET_CURRENT.cliCommand, undefined);
     assert.equal(getCommandDescriptor("selection.get").adapters[0], "plugin-live");
@@ -6651,6 +6664,32 @@ test("command runtime exposes live-gap descriptor boundaries", () => {
         getAdapterSelectionReason(AdapterSelectionReasonCodes.CLI_LIVE_WORKSPACE_STATE_UNSUPPORTED),
         "CLI commands do not read or mutate editor-local workspace state; use MCP file.open, file.get_context, and file.bind_context before retrying the live-only tool."
     );
+});
+
+test("command runtime exposes components/tokens descriptor-only boundaries", () => {
+    assert.deepEqual(
+        ComponentsTokensCommandDescriptors.map((descriptor) => descriptor.id),
+        ["component.create", "component.instantiate", "tokens.list", "tokens.apply"]
+    );
+    assert.equal(MigratedCommandDescriptors.length, 38);
+    assert.equal(CommandDescriptors.COMPONENT_CREATE.mcpToolName, "component.create");
+    assert.equal(CommandDescriptors.COMPONENT_CREATE.cliCommand, "component create");
+    assert.deepEqual(CommandDescriptors.COMPONENT_CREATE.adapters, ["backend-command"]);
+    assert.equal(CommandDescriptors.COMPONENT_INSTANTIATE.cliCommand, "component instantiate");
+    assert.deepEqual(CommandDescriptors.COMPONENT_INSTANTIATE.adapters, ["backend-command"]);
+    assert.equal(CommandDescriptors.TOKENS_LIST.cliCommand, "tokens list");
+    assert.deepEqual(CommandDescriptors.TOKENS_LIST.adapters, ["backend-command"]);
+    assert.match(CommandDescriptors.TOKENS_LIST.description, /backend-command headless/);
+    assert.equal(CommandDescriptors.TOKENS_APPLY.cliCommand, "tokens apply");
+    assert.deepEqual(CommandDescriptors.TOKENS_APPLY.adapters, ["backend-command"]);
+    assert.equal(getCommandDescriptor("component.create").id, "component.create");
+    assert.equal(getCommandDescriptor("component create").id, "component.create");
+    assert.equal(getCommandDescriptor("component.instantiate").id, "component.instantiate");
+    assert.equal(getCommandDescriptor("component instantiate").id, "component.instantiate");
+    assert.equal(getCommandDescriptor("tokens.list").id, "tokens.list");
+    assert.equal(getCommandDescriptor("tokens list").id, "tokens.list");
+    assert.equal(getCommandDescriptor("tokens.apply").id, "tokens.apply");
+    assert.equal(getCommandDescriptor("tokens apply").id, "tokens.apply");
 });
 
 test("command runtime creates token-safe request and result envelopes", () => {

@@ -508,9 +508,11 @@ P17.1 audit result:
   deletion, and backend-command creation.
 - `prototype.create_overlay`, `shape.set_layout`, and `shape.set_style` have
   since been selected by later waves. P25.1 selects `export.file` and
-  `render.thumbnail` as descriptor-only planned boundaries; component, token,
-  and debug names remain planned or unsupported descriptor gaps unless a later
-  wave selects them.
+  `render.thumbnail` as descriptor-only planned boundaries. Phase 27 selects
+  `component.create`, `component.instantiate`, `tokens.list`, and
+  `tokens.apply` as descriptor-only planned boundaries
+  (`components-tokens-descriptor-boundaries.md`); debug names remain planned or
+  unsupported unless a later wave selects them.
 - Grid container layout can move to backend-command once backend/common owns a
   persisted track contract; grid cells and child placement need a later
   dedicated payload contract.
@@ -2010,6 +2012,27 @@ tokens.apply
 `shape set-style` commands for scripts. They forward to the same
 backend-command/plugin-live shape update paths and preserve the alias name only
 in command/tool audit metadata.
+
+`shape.group` and `shape.ungroup` are executable through backend-command
+`group-file-shapes` / `ungroup-file-shapes`, MCP `ShapeGroupTool` /
+`ShapeUngroupTool`, and `penpot-cli shape group|ungroup`. Grouping requires
+sibling shapes under the same parent/frame; ungrouping supports group shapes
+only.
+
+`component.create` is executable through backend-command
+`create-file-component`, MCP `ComponentCreateTool`, and
+`penpot-cli component create` for a single local-file non-component frame or a
+multi-shape wrap into a new frame component.
+`component.instantiate` is executable through backend-command
+`create-file-component-instance`, MCP `ComponentInstantiateTool`, and
+`penpot-cli component instantiate` for local or linked-library components at
+explicit x/y.
+`tokens.list` is executable through backend-command `get-file-tokens`, MCP
+`TokensListTool`, and `penpot-cli tokens list`. `tokens.apply` is executable
+through backend-command `apply-file-token`, MCP `TokensApplyTool`, and
+`penpot-cli tokens apply` for one or more shapes and explicit attributes,
+including simple token-reference resolution and spacing/typography
+materialization. See `components-tokens-descriptor-boundaries.md`.
 
 ### 8.4 Prototype Tools
 

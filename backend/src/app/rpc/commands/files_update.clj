@@ -214,7 +214,7 @@
   [:map {:title "HeadlessShapeSummary"}
    [:id ::sm/uuid]
    [:name [:string {:max 250}]]
-   [:type [::sm/one-of headless/supported-shape-types]]
+   [:type [::sm/one-of headless/summarized-shape-types]]
    [:page-id ::sm/uuid]
    [:parent-id ::sm/uuid]
    [:frame-id ::sm/uuid]
@@ -589,6 +589,198 @@
    [:file-id ::sm/uuid]
    [:flows [:vector schema:prototype-flow-summary]]
    [:interactions [:vector schema:prototype-interaction-summary]]])
+
+(def ^:private
+  schema:token-summary
+  [:map {:title "token-summary"}
+   [:id ::sm/uuid]
+   [:name :string]
+   [:type [:or :keyword :string]]
+   [:set-id ::sm/uuid]
+   [:description {:optional true} :string]
+   [:value {:optional true} any?]])
+
+(def ^:private
+  schema:token-set-summary
+  [:map {:title "token-set-summary"}
+   [:id ::sm/uuid]
+   [:name :string]
+   [:description {:optional true} :string]
+   [:token-count {:min 0} ::sm/int]
+   [:tokens [:vector schema:token-summary]]])
+
+(def ^:private
+  schema:token-theme-summary
+  [:map {:title "token-theme-summary"}
+   [:id ::sm/uuid]
+   [:name :string]
+   [:group {:optional true} :string]
+   [:description {:optional true} :string]
+   [:path :string]
+   [:sets [:vector :string]]
+   [:is-source {:optional true} :boolean]
+   [:hidden? {:optional true} :boolean]])
+
+(def ^:private
+  schema:get-file-tokens
+  [:map {:title "get-file-tokens"}
+   [:id ::sm/uuid]
+   [:set-id {:optional true} ::sm/uuid]
+   [:include-values {:optional true} :boolean]
+   [:features {:optional true} ::cfeat/features]])
+
+(def ^:private
+  schema:get-file-tokens-result
+  [:map {:title "get-file-tokens-result"}
+   [:file-id ::sm/uuid]
+   [:present :boolean]
+   [:empty :boolean]
+   [:include-values :boolean]
+   [:set-count {:min 0} ::sm/int]
+   [:token-count {:min 0} ::sm/int]
+   [:theme-count {:min 0} ::sm/int]
+   [:active-theme-paths [:vector :string]]
+   [:sets [:vector schema:token-set-summary]]
+   [:tokens [:vector schema:token-summary]]
+   [:themes [:vector schema:token-theme-summary]]])
+
+(def ^:private
+  schema:component-summary
+  [:map {:title "component-summary"}
+   [:id ::sm/uuid]
+   [:name :string]
+   [:path {:optional true} :string]
+   [:main-instance-id ::sm/uuid]
+   [:main-instance-page ::sm/uuid]
+   [:root-shape-id ::sm/uuid]
+   [:root-shape-name {:optional true} :string]
+   [:page-id ::sm/uuid]
+   [:component-file-id {:optional true} ::sm/uuid]
+   [:remote? {:optional true} :boolean]])
+
+(def ^:private
+  schema:create-file-component
+  [:map {:title "create-file-component"}
+   [:id ::sm/uuid]
+   [:page-id ::sm/uuid]
+   [:shape-id {:optional true} ::sm/uuid]
+   [:shape-ids {:optional true} [:vector {:min 1 :max 100} ::sm/uuid]]
+   [:name {:optional true} :string]
+   [:session-id {:optional true} ::sm/uuid]
+   [:features {:optional true} ::cfeat/features]])
+
+(def ^:private
+  schema:create-file-component-result
+  [:map {:title "create-file-component-result"}
+   [:file-id ::sm/uuid]
+   [:component schema:component-summary]
+   [:shape schema:shape-summary]
+   [:wrapped {:optional true} :boolean]
+   [:source-shape-ids {:optional true} [:vector ::sm/uuid]]
+   [:revn {:min 0} ::sm/int]
+   [:vern {:min 0} ::sm/int]])
+
+(def ^:private
+  schema:create-file-component-instance
+  [:map {:title "create-file-component-instance"}
+   [:id ::sm/uuid]
+   [:page-id ::sm/uuid]
+   [:component-id ::sm/uuid]
+   [:component-file-id {:optional true} ::sm/uuid]
+   [:x [::sm/number {:min -100000 :max 100000}]]
+   [:y [::sm/number {:min -100000 :max 100000}]]
+   [:parent-id {:optional true} ::sm/uuid]
+   [:shape-id {:optional true} ::sm/uuid]
+   [:session-id {:optional true} ::sm/uuid]
+   [:features {:optional true} ::cfeat/features]])
+
+(def ^:private
+  schema:create-file-component-instance-result
+  [:map {:title "create-file-component-instance-result"}
+   [:file-id ::sm/uuid]
+   [:component schema:component-summary]
+   [:shape schema:shape-summary]
+   [:shapes {:optional true} [:vector schema:shape-summary]]
+   [:revn {:min 0} ::sm/int]
+   [:vern {:min 0} ::sm/int]])
+
+(def ^:private
+  schema:token-identity
+  [:map {:title "token-identity"}
+   [:id ::sm/uuid]
+   [:name :string]
+   [:type [:or :keyword :string]]
+   [:set-id {:optional true} [:maybe ::sm/uuid]]
+   [:description {:optional true} :string]
+   [:resolved-value {:optional true} any?]])
+
+(def ^:private
+  schema:apply-file-token
+  [:map {:title "apply-file-token"}
+   [:id ::sm/uuid]
+   [:page-id {:optional true} ::sm/uuid]
+   [:shape-id {:optional true} ::sm/uuid]
+   [:shape-ids {:optional true} [:vector {:min 1 :max 100} ::sm/uuid]]
+   [:token-id {:optional true} ::sm/uuid]
+   [:token-name {:optional true} :string]
+   [:set-id {:optional true} ::sm/uuid]
+   [:set-name {:optional true} :string]
+   [:attributes [:vector {:min 1 :max 40} [:or :keyword :string]]]
+   [:session-id {:optional true} ::sm/uuid]
+   [:features {:optional true} ::cfeat/features]])
+
+(def ^:private
+  schema:apply-file-token-result
+  [:map {:title "apply-file-token-result"}
+   [:file-id ::sm/uuid]
+   [:shape schema:shape-summary]
+   [:shapes {:optional true} [:vector schema:shape-summary]]
+   [:token schema:token-identity]
+   [:attributes [:vector [:or :keyword :string]]]
+   [:applied-tokens {:optional true} [:map-of :keyword :string]]
+   [:materialized :boolean]
+   [:revn {:min 0} ::sm/int]
+   [:vern {:min 0} ::sm/int]])
+
+(def ^:private
+  schema:group-file-shapes
+  [:map {:title "group-file-shapes"}
+   [:id ::sm/uuid]
+   [:page-id {:optional true} ::sm/uuid]
+   [:shape-ids [:vector {:min 1 :max 100} ::sm/uuid]]
+   [:name {:optional true} :string]
+   [:group-id {:optional true} ::sm/uuid]
+   [:session-id {:optional true} ::sm/uuid]
+   [:features {:optional true} ::cfeat/features]])
+
+(def ^:private
+  schema:group-file-shapes-result
+  [:map {:title "group-file-shapes-result"}
+   [:file-id ::sm/uuid]
+   [:shape schema:shape-summary]
+   [:children {:optional true} [:vector schema:shape-summary]]
+   [:deleted-ids {:optional true} [:vector ::sm/uuid]]
+   [:revn {:min 0} ::sm/int]
+   [:vern {:min 0} ::sm/int]])
+
+(def ^:private
+  schema:ungroup-file-shapes
+  [:map {:title "ungroup-file-shapes"}
+   [:id ::sm/uuid]
+   [:page-id {:optional true} ::sm/uuid]
+   [:shape-id {:optional true} ::sm/uuid]
+   [:shape-ids {:optional true} [:vector {:min 1 :max 100} ::sm/uuid]]
+   [:session-id {:optional true} ::sm/uuid]
+   [:features {:optional true} ::cfeat/features]])
+
+(def ^:private
+  schema:ungroup-file-shapes-result
+  [:map {:title "ungroup-file-shapes-result"}
+   [:file-id ::sm/uuid]
+   [:groups [:vector schema:shape-summary]]
+   [:children {:optional true} [:vector schema:shape-summary]]
+   [:revn {:min 0} ::sm/int]
+   [:vern {:min 0} ::sm/int]])
 
 ;; --- HELPERS
 
@@ -1391,6 +1583,339 @@
     {:file-id id
      :flows (:flows summary)
      :interactions (:interactions summary)}))
+
+(sv/defmethod ::get-file-tokens
+  "Get a read-only summary of design tokens, token sets, and themes for the specified file."
+  {::sm/params schema:get-file-tokens
+   ::sm/result schema:get-file-tokens-result
+   ::doc/module :files
+   ::doc/added "2.15.4"
+   ::db/transaction true}
+  [{:keys [::db/conn] :as cfg} {:keys [::rpc/profile-id id] :as params}]
+
+  (files/check-read-permissions! conn profile-id id)
+
+  (let [file    (get-file cfg id)
+        team    (teams/get-team conn
+                                :profile-id profile-id
+                                :team-id (:team-id file))
+        _       (-> (cfeat/get-team-enabled-features cf/flags team)
+                    (cfeat/check-client-features! (:features params))
+                    (cfeat/check-file-features! (:features file)))
+        summary (headless/tokens-summary (blob/decode (:data file)) params)]
+    (assoc summary :file-id id)))
+
+(sv/defmethod ::create-file-component
+  "Create a local-file component from one non-component frame, or wrap multiple shapes."
+  {::climit/id [[:update-file/by-profile ::rpc/profile-id]
+                [:update-file/global]]
+
+   ::webhooks/event? true
+   ::webhooks/batch-timeout (ct/duration "2m")
+   ::webhooks/batch-key (webhooks/key-fn ::rpc/profile-id :id)
+
+   ::sm/params schema:create-file-component
+   ::sm/result schema:create-file-component-result
+   ::doc/module :files
+   ::doc/added "2.15.4"
+   ::db/transaction true}
+  [{:keys [::mtx/metrics ::db/conn] :as cfg}
+   {:keys [::rpc/profile-id id session-id] :as params}]
+
+  (files/check-edition-permissions! conn profile-id id)
+  (db/xact-lock! conn id)
+
+  (let [file              (get-file cfg id)
+        team              (teams/get-team conn
+                                          :profile-id profile-id
+                                          :team-id (:team-id file))
+        features          (-> (cfeat/get-team-enabled-features cf/flags team)
+                              (cfeat/check-client-features! (:features params))
+                              (cfeat/check-file-features! (:features file)))
+        component-request (headless/create-component-request
+                           (blob/decode (:data file))
+                           (assoc params :file-id id))
+        changes           (:changes component-request)
+        session-id        (or session-id (uuid/next))
+        cfg               (assoc cfg ::timestamp (ct/now))
+        update-args       {:id id
+                           :revn (:revn file)
+                           :vern (:vern file)
+                           :file file
+                           :team team
+                           :features (set/difference features cfeat/frontend-only-features)
+                           :changes changes
+                           :session-id session-id
+                           :profile-id profile-id}]
+
+    (mtx/run! metrics {:id :update-file-changes :inc (count changes)})
+    (update-file* cfg update-args)
+
+    (with-meta (cond-> {:file-id id
+                        :component (:component component-request)
+                        :shape (:shape component-request)
+                        :revn (inc (:revn file))
+                        :vern (:vern file)}
+                 (contains? component-request :wrapped)
+                 (assoc :wrapped (:wrapped component-request))
+                 (contains? component-request :source-shape-ids)
+                 (assoc :source-shape-ids (:source-shape-ids component-request)))
+      {::audit/replace-props
+       {:id         (:id file)
+        :name       (:name file)
+        :features   (:features file)
+        :project-id (:project-id file)
+        :team-id    (:team-id file)}})))
+
+(sv/defmethod ::create-file-component-instance
+  "Create a component instance copy at an explicit page position (local or linked library)."
+  {::climit/id [[:update-file/by-profile ::rpc/profile-id]
+                [:update-file/global]]
+
+   ::webhooks/event? true
+   ::webhooks/batch-timeout (ct/duration "2m")
+   ::webhooks/batch-key (webhooks/key-fn ::rpc/profile-id :id)
+
+   ::sm/params schema:create-file-component-instance
+   ::sm/result schema:create-file-component-instance-result
+   ::doc/module :files
+   ::doc/added "2.15.4"
+   ::db/transaction true}
+  [{:keys [::mtx/metrics ::db/conn] :as cfg}
+   {:keys [::rpc/profile-id id session-id component-file-id] :as params}]
+
+  (files/check-edition-permissions! conn profile-id id)
+  (db/xact-lock! conn id)
+
+  (let [file              (get-file cfg id)
+        team              (teams/get-team conn
+                                          :profile-id profile-id
+                                          :team-id (:team-id file))
+        features          (-> (cfeat/get-team-enabled-features cf/flags team)
+                              (cfeat/check-client-features! (:features params))
+                              (cfeat/check-file-features! (:features file)))
+        component-file-id (or component-file-id id)
+        libraries
+        (when (not= component-file-id id)
+          (let [linked (->> (bfc/get-file-libraries conn id)
+                            (into #{} (map :id)))]
+            (when-not (contains? linked component-file-id)
+              (ex/raise :type :validation
+                        :code :component-library-not-linked
+                        :hint "component-file-id must be the current file or a library linked to it."
+                        :file-id id
+                        :component-file-id component-file-id))
+            (files/check-read-permissions! conn profile-id component-file-id)
+            (let [library-file (get-file cfg component-file-id)]
+              {component-file-id {:id component-file-id
+                                  :data (blob/decode (:data library-file))}})))
+        instance-request  (headless/instantiate-component-request
+                           (blob/decode (:data file))
+                           (cond-> (assoc params :file-id id)
+                             (some? libraries)
+                             (assoc :libraries libraries)))
+        changes           (:changes instance-request)
+        session-id        (or session-id (uuid/next))
+        cfg               (assoc cfg ::timestamp (ct/now))
+        update-args       {:id id
+                           :revn (:revn file)
+                           :vern (:vern file)
+                           :file file
+                           :team team
+                           :features (set/difference features cfeat/frontend-only-features)
+                           :changes changes
+                           :session-id session-id
+                           :profile-id profile-id}]
+
+    (mtx/run! metrics {:id :update-file-changes :inc (count changes)})
+    (update-file* cfg update-args)
+
+    (with-meta {:file-id id
+                :component (:component instance-request)
+                :shape (:shape instance-request)
+                :shapes (:shapes instance-request)
+                :revn (inc (:revn file))
+                :vern (:vern file)}
+      {::audit/replace-props
+       {:id         (:id file)
+        :name       (:name file)
+        :features   (:features file)
+        :project-id (:project-id file)
+        :team-id    (:team-id file)}})))
+
+(sv/defmethod ::apply-file-token
+  "Apply a design token to one or more shapes for explicit token attributes."
+  {::climit/id [[:update-file/by-profile ::rpc/profile-id]
+                [:update-file/global]]
+
+   ::webhooks/event? true
+   ::webhooks/batch-timeout (ct/duration "2m")
+   ::webhooks/batch-key (webhooks/key-fn ::rpc/profile-id :id)
+
+   ::sm/params schema:apply-file-token
+   ::sm/result schema:apply-file-token-result
+   ::doc/module :files
+   ::doc/added "2.15.4"
+   ::db/transaction true}
+  [{:keys [::mtx/metrics ::db/conn] :as cfg}
+   {:keys [::rpc/profile-id id session-id] :as params}]
+
+  (files/check-edition-permissions! conn profile-id id)
+  (db/xact-lock! conn id)
+
+  (let [file           (get-file cfg id)
+        team           (teams/get-team conn
+                                       :profile-id profile-id
+                                       :team-id (:team-id file))
+        features       (-> (cfeat/get-team-enabled-features cf/flags team)
+                           (cfeat/check-client-features! (:features params))
+                           (cfeat/check-file-features! (:features file)))
+        apply-request  (headless/apply-token-request (blob/decode (:data file)) params)
+        changes        (:changes apply-request)
+        session-id     (or session-id (uuid/next))
+        cfg            (assoc cfg ::timestamp (ct/now))
+        update-args    {:id id
+                        :revn (:revn file)
+                        :vern (:vern file)
+                        :file file
+                        :team team
+                        :features (set/difference features cfeat/frontend-only-features)
+                        :changes changes
+                        :session-id session-id
+                        :profile-id profile-id}]
+
+    (mtx/run! metrics {:id :update-file-changes :inc (count changes)})
+    (update-file* cfg update-args)
+
+    (with-meta {:file-id id
+                :shape (:shape apply-request)
+                :shapes (:shapes apply-request)
+                :token (:token apply-request)
+                :attributes (:attributes apply-request)
+                :applied-tokens (:applied-tokens apply-request)
+                :materialized (:materialized apply-request)
+                :revn (inc (:revn file))
+                :vern (:vern file)}
+      {::audit/replace-props
+       {:id         (:id file)
+        :name       (:name file)
+        :features   (:features file)
+        :project-id (:project-id file)
+        :team-id    (:team-id file)}})))
+
+
+(sv/defmethod ::group-file-shapes
+  "Group one or more shapes under a new group shape."
+  {::climit/id [[:update-file/by-profile ::rpc/profile-id]
+                [:update-file/global]]
+
+   ::webhooks/event? true
+   ::webhooks/batch-timeout (ct/duration "2m")
+   ::webhooks/batch-key (webhooks/key-fn ::rpc/profile-id :id)
+
+   ::sm/params schema:group-file-shapes
+   ::sm/result schema:group-file-shapes-result
+   ::doc/module :files
+   ::doc/added "2.15.4"
+   ::db/transaction true}
+  [{:keys [::mtx/metrics ::db/conn] :as cfg}
+   {:keys [::rpc/profile-id id session-id] :as params}]
+
+  (files/check-edition-permissions! conn profile-id id)
+  (db/xact-lock! conn id)
+
+  (let [file           (get-file cfg id)
+        team           (teams/get-team conn
+                                       :profile-id profile-id
+                                       :team-id (:team-id file))
+        features       (-> (cfeat/get-team-enabled-features cf/flags team)
+                           (cfeat/check-client-features! (:features params))
+                           (cfeat/check-file-features! (:features file)))
+        group-request  (headless/group-shapes-request (blob/decode (:data file)) params)
+        changes        (:changes group-request)
+        session-id     (or session-id (uuid/next))
+        cfg            (assoc cfg ::timestamp (ct/now))
+        update-args    {:id id
+                        :revn (:revn file)
+                        :vern (:vern file)
+                        :file file
+                        :team team
+                        :features (set/difference features cfeat/frontend-only-features)
+                        :changes changes
+                        :session-id session-id
+                        :profile-id profile-id}]
+
+    (mtx/run! metrics {:id :update-file-changes :inc (count changes)})
+    (update-file* cfg update-args)
+
+    (with-meta {:file-id id
+                :shape (:shape group-request)
+                :children (:children group-request)
+                :deleted-ids (:deleted-ids group-request)
+                :revn (inc (:revn file))
+                :vern (:vern file)}
+      {::audit/replace-props
+       {:id         (:id file)
+        :name       (:name file)
+        :features   (:features file)
+        :project-id (:project-id file)
+        :team-id    (:team-id file)}})))
+
+(sv/defmethod ::ungroup-file-shapes
+  "Ungroup one or more group shapes."
+  {::climit/id [[:update-file/by-profile ::rpc/profile-id]
+                [:update-file/global]]
+
+   ::webhooks/event? true
+   ::webhooks/batch-timeout (ct/duration "2m")
+   ::webhooks/batch-key (webhooks/key-fn ::rpc/profile-id :id)
+
+   ::sm/params schema:ungroup-file-shapes
+   ::sm/result schema:ungroup-file-shapes-result
+   ::doc/module :files
+   ::doc/added "2.15.4"
+   ::db/transaction true}
+  [{:keys [::mtx/metrics ::db/conn] :as cfg}
+   {:keys [::rpc/profile-id id session-id] :as params}]
+
+  (files/check-edition-permissions! conn profile-id id)
+  (db/xact-lock! conn id)
+
+  (let [file             (get-file cfg id)
+        team             (teams/get-team conn
+                                         :profile-id profile-id
+                                         :team-id (:team-id file))
+        features         (-> (cfeat/get-team-enabled-features cf/flags team)
+                             (cfeat/check-client-features! (:features params))
+                             (cfeat/check-file-features! (:features file)))
+        ungroup-request  (headless/ungroup-shapes-request (blob/decode (:data file)) params)
+        changes          (:changes ungroup-request)
+        session-id       (or session-id (uuid/next))
+        cfg              (assoc cfg ::timestamp (ct/now))
+        update-args      {:id id
+                          :revn (:revn file)
+                          :vern (:vern file)
+                          :file file
+                          :team team
+                          :features (set/difference features cfeat/frontend-only-features)
+                          :changes changes
+                          :session-id session-id
+                          :profile-id profile-id}]
+
+    (mtx/run! metrics {:id :update-file-changes :inc (count changes)})
+    (update-file* cfg update-args)
+
+    (with-meta {:file-id id
+                :groups (:groups ungroup-request)
+                :children (:children ungroup-request)
+                :revn (inc (:revn file))
+                :vern (:vern file)}
+      {::audit/replace-props
+       {:id         (:id file)
+        :name       (:name file)
+        :features   (:features file)
+        :project-id (:project-id file)
+        :team-id    (:team-id file)}})))
 
 (defn- update-file*
   "Internal function, part of the update-file process, that encapsulates

@@ -40,6 +40,8 @@ import {
     PrototypeReorderInteractionTool,
     PrototypeUpdateInteractionTool,
 } from "./tools/PrototypeTools";
+import { TokensApplyTool, TokensListTool } from "./tools/TokensTools";
+import { ComponentCreateTool, ComponentInstantiateTool } from "./tools/ComponentTools";
 import { SelectionGetTool, SelectionSetTool } from "./tools/SelectionTools";
 import {
     ShapeDeleteTool,
@@ -51,6 +53,7 @@ import {
     ShapeSetStyleTool,
     ShapeUpdateTool,
 } from "./tools/ShapeCreateTools";
+import { ShapeGroupTool, ShapeUngroupTool } from "./tools/ShapeGroupTools";
 import { PenpotRpcClient } from "./PenpotRpcClient";
 import { ReplServer } from "./ReplServer";
 import { ApiDocs } from "./ApiDocs";
@@ -295,6 +298,8 @@ export class PenpotMcpServer {
             new ShapeSetLayoutTool(this),
             new ShapeSetStyleTool(this),
             new ShapeDeleteTool(this),
+            new ShapeGroupTool(this),
+            new ShapeUngroupTool(this),
             new PrototypeCreateFlowTool(this),
             new PrototypeCreateInteractionTool(this),
             new PrototypeCreateOverlayTool(this),
@@ -303,6 +308,10 @@ export class PenpotMcpServer {
             new PrototypeUpdateInteractionTool(this),
             new PrototypeReorderInteractionTool(this),
             new PrototypeDuplicateInteractionTool(this),
+            new TokensListTool(this),
+            new TokensApplyTool(this),
+            new ComponentCreateTool(this),
+            new ComponentInstantiateTool(this),
             new ExportShapeDataTool(this),
             new ExportPageTool(this),
             new ExportFileTool(this),

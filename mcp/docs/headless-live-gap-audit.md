@@ -117,7 +117,7 @@ state for them.
 | `shape.update` with `layout.type = grid` | Registered MCP tool and descriptor; backend-command supports the container track subset with explicit `fileId`, plugin-live remains available for live workspace convenience. | Backend-safe persisted data for container direction/tracks/gaps/padding/alignment; plugin-live or future contract for cell/child placement. | Persisted grid container fields are stable enough for headless updates, while `layout-grid-cells` needs a separate payload contract. | Keep backend-command subset; do not add cell placement until the contract is defined. |
 | `shape.set_layout` | Registered MCP tool, command-runtime descriptor, and `penpot-cli shape set-layout`. | Alias over `shape.update.layout`; backend-command with explicit targets, plugin-live otherwise. | Behavior overlaps with `shape.update.layout`; a thin alias avoids a second layout mutation contract. | Keep forwarding to the same update paths and preserve alias names only in command/tool audit metadata. |
 | `shape.set_style` | Registered MCP tool, command-runtime descriptor, and `penpot-cli shape set-style`. | Alias over `shape.update` fill/stroke/text/corner fields; backend-command with explicit targets, plugin-live otherwise for supported fields. | Behavior overlaps with `shape.update` style fields; a thin alias avoids a second style mutation contract. | Keep forwarding to the same update paths and preserve alias names only in command/tool audit metadata. |
-| `shape.group`, `shape.ungroup` | Names exist in `ToolNames.ts`, not registered. | Unsupported or descriptor-only. | No backend/common or plugin task implementation found. | Leave out of P17.2 unless a separate grouping wave is selected. |
+| `shape.group`, `shape.ungroup` | Registered MCP tools, command-runtime descriptors (`backend-command`), and `penpot-cli shape group/ungroup`. | Backend-safe persisted mutation. | Common `group-shapes-request` / `ungroup-shapes-request` + backend `group-file-shapes` / `ungroup-file-shapes`. | Group requires same parent/frame; ungroup supports group shapes only. |
 | `prototype.create_flow` | Registered MCP tool and descriptor; backend-command with `fileId`, plugin-live otherwise. | Backend-safe persisted data plus plugin-live convenience. | Flow data persists on the page. | Keep behavior. |
 | `prototype.create_interaction` | Registered MCP tool and descriptor; backend-command with `fileId`, plugin-live otherwise. | Backend-safe persisted data plus plugin-live convenience. | Navigate interaction data persists on source shape. | Keep behavior. |
 | `prototype.list_interactions` | Registered MCP tool, backend/common read helper, and CLI command. | Backend-safe persisted read. | Flows and interactions are persisted in file data. | Keep as the discovery/read path; P22.2 adds optional `interactionId` plus explicit `identity.kind` metadata while preserving source-shape/index fields. |
@@ -148,7 +148,10 @@ P25.72 defines the package materialization approval audit countersignature revoc
 P25.81 defines the package materialization approval audit countersignature revocation appeal resolution enforcement evidence attestation notarization certification endorsement countersignature verification revocation appeal resolution enforcement evidence attestation notarization policy. | Dashboard thumbnail contract with `renderer-service` planning adapter; runtime execution still unavailable. | Dry-run and unavailable execution payloads expose countersignature revocation appeal resolution enforcement evidence attestation notarization certification endorsement countersignature verification revocation appeal resolution enforcement evidence attestation notarization policy metadata without notarizing attestations, reading attestations, evidence, enforcement, or audit records, storing notarization records, writing files, starting processes, or registering dispatch. | Keep runtime execution disabled until opt-in config surfaces, renderer-service implementation, workspace wiring, health preflight, cache probe, tagged-frame source data, resource normalization, auth, integration tests, and runtime registration exist. |
 P25.82 defines the package materialization approval audit countersignature revocation appeal resolution enforcement evidence attestation notarization certification endorsement countersignature verification revocation appeal resolution enforcement evidence attestation notarization certification policy. | Dashboard thumbnail contract with `renderer-service` planning adapter; runtime execution still unavailable. | Dry-run and unavailable execution payloads expose countersignature revocation appeal resolution enforcement evidence attestation notarization certification endorsement countersignature verification revocation appeal resolution enforcement evidence attestation notarization certification policy metadata without certifying notarizations, reading notarizations, attestations, evidence, enforcement, or audit records, storing certification records, writing files, starting processes, or registering dispatch. | Keep runtime execution disabled until opt-in config surfaces, renderer-service implementation, workspace wiring, health preflight, cache probe, tagged-frame source data, resource normalization, auth, integration tests, and runtime registration exist. |
 P25.83 defines the package materialization approval audit countersignature revocation appeal resolution enforcement evidence attestation notarization certification endorsement countersignature verification revocation appeal resolution enforcement evidence attestation notarization certification endorsement policy. | Dashboard thumbnail contract with `renderer-service` planning adapter; runtime execution still unavailable. | Dry-run and unavailable execution payloads expose countersignature revocation appeal resolution enforcement evidence attestation notarization certification endorsement countersignature verification revocation appeal resolution enforcement evidence attestation notarization certification endorsement policy metadata without endorsing certifications, reading certifications, notarizations, attestations, evidence, enforcement, or audit records, storing endorsement records, writing files, starting processes, or registering dispatch. | Keep runtime execution disabled until opt-in config surfaces, renderer-service implementation, workspace wiring, health preflight, cache probe, tagged-frame source data, resource normalization, auth, integration tests, and runtime registration exist. |
-| `component.create`, `component.instantiate`, `tokens.list`, `tokens.apply` | Names exist in `ToolNames.ts`, not registered. | Unsupported or descriptor-only. | No runtime task or backend helper found. | Leave for a future components/tokens wave. |
+| `component.create` | Registered MCP tool, command-runtime descriptor (`backend-command`), and `penpot-cli component create`. | Backend-safe persisted mutation for local-file single-frame roots or multi-shape wrap. | Common `create-component-request` + backend `create-file-component`. | Multi-shape wrap creates a new frame around the selection first. |
+| `component.instantiate` | Registered MCP tool, command-runtime descriptor (`backend-command`), and `penpot-cli component instantiate`. | Backend-safe persisted mutation for local or linked-library instances with explicit x/y. | Common `instantiate-component-request` + backend `create-file-component-instance`. | Remote libraries must be linked; backend loads library data and enforces read permissions. |
+| `tokens.apply` | Registered MCP tool, command-runtime descriptor (`backend-command`), and `penpot-cli tokens apply`. | Backend-safe persisted mutation for 1..100 shapes with explicit attributes. | Common `apply-token-request` + backend `apply-file-token`. | Binds `applied-tokens`; best-effort materializes plain/simple-ref color/number/spacing/typography values. |
+| `tokens.list` | Registered MCP tool, command-runtime descriptor (`backend-command`), and `penpot-cli tokens list`. | Backend-safe persisted read. | Common `tokens-summary` + backend `get-file-tokens`. | Keep backend-command-only for explicit `fileId`. |
 | `debug.get_plugin_state`, `debug.get_agent_logs` | Names exist in `ToolNames.ts`, not registered. | Unsupported or descriptor-only. | Diagnostics exist through status/log paths, not these tools. | Keep out of P17.2 unless diagnostics naming is explicitly selected. |
 | Legacy `execute_code`, `export_shape`, `import_image` | Registered legacy tools. | Legacy live/plugin or local filesystem behavior. | They are compatibility surfaces, not the typed headless path. | Do not expand; keep gated/legacy behavior. |
 
@@ -1060,41 +1063,38 @@ points CLI users back to MCP `file.open`, `file.get_context`,
 
 ## Components / Tokens evaluation (post-P26)
 
-Date: 2026-07-19
+Date: 2026-07-19  
+Updated: 2026-07-19 after Phase 27 executable close-out.
 
 ### Inventory
 
 | Name | Status | Evidence |
 |------|--------|----------|
-| `component.create` | Name only | `ToolNames.ts` / `DesignEditingToolNames`; **not** constructed in `PenpotMcpServer` tool registry |
-| `component.instantiate` | Name only | same |
-| `tokens.list` | Name only | same |
-| `tokens.apply` | Name only | same |
-| command-runtime descriptors | Absent | No `CommandDescriptors` entries for components/tokens |
-| penpot-cli commands | Absent | No `component` / `tokens` command surface |
-| common component helpers | Present (library logic) | `common` has `generate-add-component`, `generate-instantiate-component`, `add-component` change builders, test helpers |
-| common tokens model | Present (file data) | `tokens-lib`, design-tokens feature flags, set/apply change builders |
-| headless/backend-command path | Absent | No headless request helpers for create/instantiate/list/apply |
+| `component.create` | Executable backend-command | common `create-component-request`, backend `create-file-component`, MCP `ComponentCreateTool`, CLI `component create` (single frame or multi-shape wrap) |
+| `component.instantiate` | Executable backend-command | common `instantiate-component-request`, backend `create-file-component-instance`, MCP/CLI; local or linked library with explicit x/y |
+| `tokens.list` | Executable backend-command | common `tokens-summary`, backend `get-file-tokens`, MCP/CLI |
+| `tokens.apply` | Executable backend-command | common `apply-token-request`, backend `apply-file-token`, MCP/CLI; multi-shape + spacing/typography/simple refs |
+| command-runtime descriptors | Present | `ComponentsTokensCommandDescriptors` with `backend-command` adapters |
+| penpot-cli commands | Present | `component create|instantiate`, `tokens list|apply` |
+| common component helpers | Present | library helpers plus headless request wrappers |
+| common tokens model | Present | tokens-lib + headless list/apply helpers |
+| headless/backend-command path | Present | create/instantiate/list/apply all have headless + RPC paths |
 
 ### Recommendation
 
-1. **Defer executable MCP/CLI tools** until a dedicated wave owns:
-   - library file targeting (main file vs shared library file)
-   - component root shape selection and main-instance page placement
-   - token set/theme identity and apply scope (shape attrs vs styles)
-2. **First useful slice (future):** descriptor-only command-runtime contracts for
-   `component.create` / `component.instantiate` and `tokens.list` (read-only),
-   with explicit `adapters: []` and reason codes, **without** MCP registration.
-3. **Do not** register tools that only wrap plugin-live without a backend-command
-   or library-file contract; agents need headless-capable paths for fork automation.
-4. Product priority after Phase 26 thumbnail close-out: packaging/ops first if
-   distribution is blocked; otherwise start a Phase 27 planning row for
-   components/tokens descriptors only.
+1. Keep the current local/linked-library and explicit-id contracts; do not invent
+   session/selection shortcuts.
+2. Future optional expansions only if product priority returns:
+   - richer typography composite resolution
+   - remote library create/publish flows
+   - bool-shape ungroup and masked-group edge cases beyond current group/ungroup
+3. Do not register plugin-live-only substitutes for these commands.
 
 ### Decision for tracker
 
-- Keep checklist items open as **evaluate/defer** with documented outcome above.
-- No implementation slice opened in this session beyond documentation.
+- Phase 27 planning and executable first wave are complete.
+- Components/Tokens and shape.group/ungroup are no longer deferred.
+  Executable tools remain deferred.
 
 
 ## Live-only workspace state decision (2026-07-19)

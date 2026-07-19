@@ -100,6 +100,8 @@ Usage:
   penpot-cli shape set-layout --file <file-id> --shape <shape-id> --layout none|flex|grid [--page <page-id>] [--format text|json]
   penpot-cli shape set-style --file <file-id> --shape <shape-id> [--page <page-id>] [--fill <hex>] [--stroke <hex>] [--content <text>] [--font-size <n>] [--format text|json]
   penpot-cli shape delete --file <file-id> --shape <shape-id> [--page <page-id>] [--format text|json]
+  penpot-cli shape group --file <file-id> --shapes <id,id,...> [--page <page-id>] [--name <name>] [--format text|json]
+  penpot-cli shape ungroup --file <file-id> --shape <group-id> [--page <page-id>] [--format text|json]
   penpot-cli prototype create-flow --file <file-id> --name <name> --starting-board <frame-id> [--page <page-id>] [--flow-id <id>] [--format text|json]
   penpot-cli prototype create-interaction --file <file-id> --source <shape-id> --destination <frame-id> [--page <page-id>] [--trigger click|mouse-enter|mouse-leave|after-delay] [--format text|json]
   penpot-cli prototype create-overlay --file <file-id> --page <page-id> --source <shape-id> --action open-overlay|toggle-overlay|close-overlay [--destination <frame-id>] [--position center|manual|top-left|top-right|top-center|bottom-left|bottom-right|bottom-center] [--format text|json]
@@ -108,6 +110,10 @@ Usage:
   penpot-cli prototype update-interaction --file <file-id> [--interaction-id <id>] [--source <shape-id> --index <n>] [--destination <frame-id>] [--trigger click|mouse-enter|mouse-leave|after-delay] [--format text|json]
   penpot-cli prototype reorder-interaction --file <file-id> [--interaction-id <id>] [--source <shape-id> --index <n>] --to-index <n> [--format text|json]
   penpot-cli prototype duplicate-interaction --file <file-id> [--interaction-id <id>] [--source <shape-id> --index <n>] [--insertion-index <n>] [--format text|json]
+  penpot-cli tokens list --file <file-id> [--set-id <id>] [--include-values] [--adapter auto|backend-command] [--format text|json]
+  penpot-cli tokens apply --file <file-id> --shape <shape-id> --attributes <attrs> --token-name <name> [--page <page-id>] [--adapter auto|backend-command] [--format text|json]
+  penpot-cli component create --file <file-id> --page <page-id> --shape <frame-id> [--name <name>] [--adapter auto|backend-command] [--format text|json]
+  penpot-cli component instantiate --file <file-id> --page <page-id> --component <component-id> --x <n> --y <n> [--parent <frame-id>] [--adapter auto|backend-command] [--format text|json]
   penpot-cli export page --file <file-id> --page <page-id> --object <object-id> [--adapter auto|exporter] [--output <path>] [--dry-run] [--format text|json]
   penpot-cli export file --file <file-id> [--library-mode all|merge|detach] [--adapter auto|backend-rpc] [--output <path>] [--dry-run] [--format text|json]
   penpot-cli render preview --file <file-id> --page <page-id> --object <object-id> [--adapter auto|exporter] [--output <path>] [--dry-run] [--format text|json]
@@ -207,6 +213,8 @@ Usage:
   penpot-cli shape set-layout --file <file-id> --shape <shape-id> [--page <page-id>] --layout none|flex|grid [--layout-direction row|row-reverse|column|column-reverse] [--layout-grid-direction row|column] [--layout-grid-rows fixed:120,flex:1,auto] [--layout-grid-columns percent:50,percent:50] [--layout-wrap wrap|nowrap] [--layout-align-items start|center|end|stretch] [--layout-justify-items start|center|end|stretch] [--layout-align-content start|center|end|space-between|space-around|space-evenly|stretch] [--layout-justify-content start|center|end|space-between|space-around|space-evenly|stretch] [--layout-gap <n>] [--layout-row-gap <n>] [--layout-column-gap <n>] [--layout-padding <n>] [--format text|json]
   penpot-cli shape set-style --file <file-id> --shape <shape-id> [--page <page-id>] [--fill <hex>] [--stroke <hex>] [--border-radius <n>] [--r1 <n>] [--r2 <n>] [--r3 <n>] [--r4 <n>] [--content <text>] [--font-size <n>] [--format text|json]
   penpot-cli shape delete --file <file-id> --shape <shape-id> [--page <page-id>] [--format text|json]
+  penpot-cli shape group --file <file-id> --shapes <id,id,...> [--page <page-id>] [--name <name>] [--format text|json]
+  penpot-cli shape ungroup --file <file-id> --shape <group-id> [--page <page-id>] [--format text|json]
 
 Notes:
   Repeat --fill and --stroke to send backend-command fill/stroke stacks.
@@ -235,6 +243,47 @@ Usage:
 Notes:
   Backend-command prototype helpers currently support basic flows, navigate-to interaction creation, open/toggle/close overlay creation, persisted navigate/overlay listing, stable-id deletion/update/reorder/duplicate, and source-shape/index fallback.
   Overlay creation requires --destination for open-overlay and toggle-overlay; close-overlay can omit it.
+
+Environment:
+  PENPOT_BACKEND_URI       Backend RPC base URI, default http://localhost:6060
+  PENPOT_PUBLIC_URI        Public Penpot base URI used as backend fallback
+  PENPOT_CLI_TOKEN         Penpot access token for backend RPC
+  PENPOT_MCP_USER_TOKEN    Penpot MCP user token fallback for backend RPC
+  PENPOT_ACCESS_TOKEN      Generic Penpot access token fallback`;
+
+const TOKENS_HELP_TEXT = `penpot-cli tokens
+
+Usage:
+  penpot-cli tokens list --file <file-id> [--set-id <id>] [--include-values] [--adapter auto|backend-command] [--format text|json]
+  penpot-cli tokens apply --file <file-id> --shape <shape-id[,shape-id...]> --attributes fill,width --token-name <name> [--page <page-id>] [--set-id <id>] [--token-id <id>] [--set-name <name>] [--adapter auto|backend-command] [--format text|json]
+
+Notes:
+  tokens list is a backend-command read of the file tokens library (sets, tokens, themes).
+  Token values are omitted by default; pass --include-values to include stored values.
+  tokens apply binds applied-tokens on one or more shapes for explicit attributes.
+  Supported attributes: fill, stroke-color, width, height, opacity, r1-r4, rotation, stroke-width,
+  row-gap, column-gap, p1-p4, m1-m4, font-size, font-weight, letter-spacing, line-height, font-family,
+  text-case, text-decoration, typography.
+  Plain and simply-resolved color/number/spacing/typography values are best-effort materialized.
+
+Environment:
+  PENPOT_BACKEND_URI       Backend RPC base URI, default http://localhost:6060
+  PENPOT_PUBLIC_URI        Public Penpot base URI used as backend fallback
+  PENPOT_CLI_TOKEN         Penpot access token for backend RPC
+  PENPOT_MCP_USER_TOKEN    Penpot MCP user token fallback for backend RPC
+  PENPOT_ACCESS_TOKEN      Generic Penpot access token fallback`;
+
+const COMPONENT_HELP_TEXT = `penpot-cli component
+
+Usage:
+  penpot-cli component create --file <file-id> --page <page-id> --shape <frame-id> [--name <name>] [--adapter auto|backend-command] [--format text|json]
+  penpot-cli component create --file <file-id> --page <page-id> --shapes <id,id,...> [--name <name>] [--adapter auto|backend-command] [--format text|json]
+  penpot-cli component instantiate --file <file-id> --page <page-id> --component <component-id> --x <n> --y <n> [--component-file <library-id>] [--parent <frame-id>] [--shape-id <id>] [--adapter auto|backend-command] [--format text|json]
+
+Notes:
+  component create turns one non-component frame into a local-file component main, or wraps multiple shapes in a new frame first.
+  component instantiate places a local or linked-library component copy at explicit x/y coordinates.
+  Remote libraries must already be linked to the target file.
 
 Environment:
   PENPOT_BACKEND_URI       Backend RPC base URI, default http://localhost:6060
@@ -7222,6 +7271,236 @@ function parsePrototypeListInteractionsParams(
     };
 }
 
+type TokensListParams = {
+    fileId: string;
+    setId: string | null;
+    includeValues: boolean;
+};
+
+function parseTokensListParams(args: string[], io: CliIO, format: Format): TokensListParams | null {
+    const fileId = readOption(args, ["--file", "--file-id"]);
+    if (!fileId) {
+        writeError(io, format, "file_id_required", "tokens list requires --file <file-id>.", [
+            "Use penpot-cli file list first, then pass --file <file-id>.",
+        ]);
+        return null;
+    }
+
+    return {
+        fileId,
+        setId: readOption(args, ["--set-id", "--set"]) ?? null,
+        includeValues: hasFlag(args, "--include-values"),
+    };
+}
+
+type TokensApplyParams = {
+    fileId: string;
+    pageId: string | null;
+    shapeIds: string[];
+    tokenId: string | null;
+    tokenName: string | null;
+    setId: string | null;
+    setName: string | null;
+    attributes: string[];
+};
+
+function parseTokensApplyParams(args: string[], io: CliIO, format: Format): TokensApplyParams | null {
+    const fileId = readOption(args, ["--file", "--file-id"]);
+    if (!fileId) {
+        writeError(io, format, "file_id_required", "tokens apply requires --file <file-id>.", [
+            "Use penpot-cli file list first, then pass --file <file-id>.",
+        ]);
+        return null;
+    }
+
+    const shapeRaw = readOption(args, ["--shape", "--shape-id", "--shapes", "--shape-ids"]);
+    if (!shapeRaw) {
+        writeError(io, format, "shape_id_required", "tokens apply requires --shape <shape-id>[,shape-id...].", [
+            "Pass one or more target shape ids (comma-separated).",
+        ]);
+        return null;
+    }
+    const shapeIds = shapeRaw
+        .split(",")
+        .map((part) => part.trim())
+        .filter(Boolean);
+    if (shapeIds.length === 0) {
+        writeError(io, format, "shape_id_required", "tokens apply requires at least one shape id.", [
+            "Pass --shape <shape-id>.",
+        ]);
+        return null;
+    }
+
+    const attributesRaw = readOption(args, ["--attributes", "--attrs"]);
+    if (!attributesRaw) {
+        writeError(
+            io,
+            format,
+            "token_attributes_required",
+            "tokens apply requires --attributes <comma-separated-attrs>.",
+            ["Example: --attributes fill or --attributes width,height,font-size."]
+        );
+        return null;
+    }
+    const attributes = attributesRaw
+        .split(",")
+        .map((part) => part.trim())
+        .filter(Boolean);
+    if (attributes.length === 0) {
+        writeError(io, format, "token_attributes_required", "tokens apply requires at least one attribute.", [
+            "Example: --attributes fill.",
+        ]);
+        return null;
+    }
+
+    const tokenId = readOption(args, ["--token-id"]) ?? null;
+    const tokenName = readOption(args, ["--token-name", "--token"]) ?? null;
+    const setId = readOption(args, ["--set-id", "--set"]) ?? null;
+    const setName = readOption(args, ["--set-name"]) ?? null;
+    if (!tokenName && !(setId && tokenId) && !(setName && tokenName)) {
+        if (!tokenId && !tokenName) {
+            writeError(
+                io,
+                format,
+                "token_identity_required",
+                "tokens apply requires --token-name, or --set-id with --token-id, or --set-name with --token-name.",
+                ["Use penpot-cli tokens list first to discover token names."]
+            );
+            return null;
+        }
+    }
+
+    return {
+        fileId,
+        pageId: readOption(args, ["--page", "--page-id"]) ?? null,
+        shapeIds,
+        tokenId,
+        tokenName,
+        setId,
+        setName,
+        attributes,
+    };
+}
+
+type ComponentCreateParams = {
+    fileId: string;
+    pageId: string;
+    shapeIds: string[];
+    name: string | null;
+};
+
+function parseComponentCreateParams(args: string[], io: CliIO, format: Format): ComponentCreateParams | null {
+    const fileId = readOption(args, ["--file", "--file-id"]);
+    if (!fileId) {
+        writeError(io, format, "file_id_required", "component create requires --file <file-id>.", [
+            "Use penpot-cli file list first, then pass --file <file-id>.",
+        ]);
+        return null;
+    }
+
+    const pageId = readOption(args, ["--page", "--page-id"]);
+    if (!pageId) {
+        writeError(io, format, "page_id_required", "component create requires --page <page-id>.", [
+            "Use penpot-cli page list first, then pass --page <page-id>.",
+        ]);
+        return null;
+    }
+
+    const shapeRaw = readOption(args, ["--shape", "--shape-id", "--shapes", "--shape-ids", "--frame", "--frame-id"]);
+    if (!shapeRaw) {
+        writeError(
+            io,
+            format,
+            "shape_id_required",
+            "component create requires --shape <frame-id> or --shapes <id,id,...>.",
+            ["Pass one non-component frame, or multiple shapes to wrap into a component."]
+        );
+        return null;
+    }
+    const shapeIds = shapeRaw
+        .split(",")
+        .map((part) => part.trim())
+        .filter(Boolean);
+    if (shapeIds.length === 0) {
+        writeError(io, format, "shape_id_required", "component create requires at least one shape id.", [
+            "Pass --shape <frame-id>.",
+        ]);
+        return null;
+    }
+
+    return {
+        fileId,
+        pageId,
+        shapeIds,
+        name: readOption(args, ["--name"]) ?? null,
+    };
+}
+
+type ComponentInstantiateParams = {
+    fileId: string;
+    pageId: string;
+    componentId: string;
+    componentFileId: string | null;
+    x: number;
+    y: number;
+    parentId: string | null;
+    shapeId: string | null;
+};
+
+function parseComponentInstantiateParams(
+    args: string[],
+    io: CliIO,
+    format: Format
+): ComponentInstantiateParams | null {
+    const fileId = readOption(args, ["--file", "--file-id"]);
+    if (!fileId) {
+        writeError(io, format, "file_id_required", "component instantiate requires --file <file-id>.", [
+            "Use penpot-cli file list first, then pass --file <file-id>.",
+        ]);
+        return null;
+    }
+
+    const pageId = readOption(args, ["--page", "--page-id"]);
+    if (!pageId) {
+        writeError(io, format, "page_id_required", "component instantiate requires --page <page-id>.", [
+            "Use penpot-cli page list first, then pass --page <page-id>.",
+        ]);
+        return null;
+    }
+
+    const componentId = readOption(args, ["--component", "--component-id"]);
+    if (!componentId) {
+        writeError(
+            io,
+            format,
+            "component_id_required",
+            "component instantiate requires --component <component-id>.",
+            ["Use component create first, then pass --component <component-id>."]
+        );
+        return null;
+    }
+
+    const x = readNumberOption(args, ["--x"]);
+    const y = readNumberOption(args, ["--y"]);
+    if (x === undefined || y === undefined) {
+        writeError(io, format, "component_position_required", "component instantiate requires --x and --y.", [
+            "Pass explicit coordinates for the instance root.",
+        ]);
+        return null;
+    }
+
+    return {
+        fileId,
+        pageId,
+        componentId,
+        componentFileId: readOption(args, ["--component-file", "--component-file-id"]) ?? null,
+        x,
+        y,
+        parentId: readOption(args, ["--parent", "--parent-id", "--frame", "--frame-id"]) ?? null,
+        shapeId: readOption(args, ["--shape-id", "--instance-id"]) ?? null,
+    };
+}
+
 function parsePrototypeInteractionTargetParams(
     args: string[],
     io: CliIO,
@@ -8699,6 +8978,61 @@ function writePrototypeInteractionsText(
             record["destination-board-id"];
         writeLine(io.stdout, `- ${String(source ?? "<unknown>")} -> ${String(destination ?? "<unknown>")}`);
     }
+}
+
+function writeTokensListText(io: CliIO, fileId: string, data: Record<string, unknown>): void {
+    const sets = Array.isArray(data.sets) ? data.sets : [];
+    const tokens = Array.isArray(data.tokens) ? data.tokens : [];
+    const themes = Array.isArray(data.themes) ? data.themes : [];
+    writeLine(io.stdout, "Design tokens");
+    writeLine(io.stdout, `fileId: ${fileId}`);
+    writeLine(io.stdout, `present: ${String(data.present ?? false)}`);
+    writeLine(io.stdout, `empty: ${String(data.empty ?? true)}`);
+    writeLine(io.stdout, `sets: ${sets.length}`);
+    writeLine(io.stdout, `tokens: ${tokens.length}`);
+    writeLine(io.stdout, `themes: ${themes.length}`);
+    for (const set of sets) {
+        const record = asRecord(set);
+        writeLine(
+            io.stdout,
+            `- set ${String(record.name ?? record.id ?? "<unknown>")} (${String(record.tokenCount ?? record["token-count"] ?? 0)} tokens)`
+        );
+    }
+}
+
+function writeTokensAppliedText(io: CliIO, fileId: string, data: Record<string, unknown>): void {
+    const shape = asRecord(data.shape);
+    const token = asRecord(data.token);
+    const attributes = Array.isArray(data.attributes) ? data.attributes : [];
+    writeLine(io.stdout, "Token applied");
+    writeLine(io.stdout, `fileId: ${fileId}`);
+    writeLine(io.stdout, `shapeId: ${String(shape.id ?? "<unknown>")}`);
+    writeLine(io.stdout, `token: ${String(token.name ?? token.id ?? "<unknown>")}`);
+    writeLine(io.stdout, `attributes: ${attributes.join(",")}`);
+    writeLine(io.stdout, `materialized: ${String(data.materialized ?? false)}`);
+}
+
+function writeComponentCreatedText(io: CliIO, fileId: string, component: unknown, shape: unknown): void {
+    const componentRecord = asRecord(component);
+    const shapeRecord = asRecord(shape);
+    writeLine(io.stdout, "Component created");
+    writeLine(io.stdout, `fileId: ${fileId}`);
+    writeLine(io.stdout, `componentId: ${String(componentRecord.id ?? "<unknown>")}`);
+    writeLine(io.stdout, `name: ${String(componentRecord.name ?? "<unknown>")}`);
+    writeLine(io.stdout, `mainInstanceId: ${String(componentRecord.mainInstanceId ?? componentRecord["main-instance-id"] ?? shapeRecord.id ?? "<unknown>")}`);
+    writeLine(io.stdout, `pageId: ${String(componentRecord.pageId ?? componentRecord["page-id"] ?? shapeRecord.pageId ?? shapeRecord["page-id"] ?? "<unknown>")}`);
+}
+
+function writeComponentInstantiatedText(io: CliIO, fileId: string, component: unknown, shape: unknown): void {
+    const componentRecord = asRecord(component);
+    const shapeRecord = asRecord(shape);
+    writeLine(io.stdout, "Component instance created");
+    writeLine(io.stdout, `fileId: ${fileId}`);
+    writeLine(io.stdout, `componentId: ${String(componentRecord.id ?? "<unknown>")}`);
+    writeLine(io.stdout, `instanceId: ${String(shapeRecord.id ?? "<unknown>")}`);
+    writeLine(io.stdout, `pageId: ${String(shapeRecord.pageId ?? shapeRecord["page-id"] ?? "<unknown>")}`);
+    writeLine(io.stdout, `x: ${String(shapeRecord.x ?? "<unknown>")}`);
+    writeLine(io.stdout, `y: ${String(shapeRecord.y ?? "<unknown>")}`);
 }
 
 function writeExportPlanText(io: CliIO, plan: ExportPagePlan): void {
@@ -10547,6 +10881,133 @@ async function handleShapeDelete(args: string[], io: CliIO, env: NodeJS.ProcessE
     }
 }
 
+
+async function handleShapeGroup(args: string[], io: CliIO, env: NodeJS.ProcessEnv): Promise<number> {
+    const format = parseFormat(args, io);
+    if (!format) return 2;
+    const adapterSelection = selectCliShapeAdapter(CommandDescriptors.SHAPE_GROUP.id, args);
+    if (adapterSelection.status !== "selected" || adapterSelection.selected !== "backend-command") {
+        return adapterSelectionFailure(io, format, adapterSelection);
+    }
+    const fileId = readOption(args, ["--file", "--file-id"]);
+    if (!fileId) {
+        writeError(io, format, "file_id_required", "shape group requires --file <file-id>.", [
+            "Use penpot-cli file list first, then pass --file <file-id>.",
+        ]);
+        return 2;
+    }
+    const shapesRaw = readOption(args, ["--shapes", "--shape-ids", "--shape", "--shape-id"]);
+    if (!shapesRaw) {
+        writeError(io, format, "shape_ids_required", "shape group requires --shapes <id,id,...>.", [
+            "Pass two or more sibling shape ids when possible.",
+        ]);
+        return 2;
+    }
+    const shapeIds = shapesRaw.split(",").map((s) => s.trim()).filter(Boolean);
+    if (shapeIds.length === 0) {
+        writeError(io, format, "shape_ids_required", "shape group requires at least one shape id.", []);
+        return 2;
+    }
+    const rpc = getRpcConfig(args, env);
+    if (!rpc.token) return rpcAuthenticationRequired(io, format);
+    try {
+        const requestParams: RpcParams = {
+            id: fileId,
+            "shape-ids": shapeIds,
+        };
+        const pageId = readOption(args, ["--page", "--page-id"]);
+        const name = readOption(args, ["--name"]);
+        const groupId = readOption(args, ["--group-id"]);
+        if (pageId) requestParams["page-id"] = pageId;
+        if (name) requestParams.name = name;
+        if (groupId) requestParams["group-id"] = groupId;
+        const result = await rpcRequest<Record<string, unknown>>("POST", rpc.backendUri, "group-file-shapes", requestParams, rpc.token);
+        writeOk(
+            io,
+            format,
+            {
+                fileId,
+                shape: result.shape,
+                children: result.children ?? [],
+                deletedIds: result["deleted-ids"] ?? result.deletedIds ?? [],
+                revn: result.revn,
+                vern: result.vern,
+                adapter: adapterSelection.selected,
+                adapterSelection,
+            },
+            () => {
+                const shape = asRecord(result.shape);
+                writeLine(io.stdout, "Shapes grouped");
+                writeLine(io.stdout, `fileId: ${fileId}`);
+                writeLine(io.stdout, `groupId: ${String(shape.id ?? "<unknown>")}`);
+                writeLine(io.stdout, `name: ${String(shape.name ?? "Group")}`);
+                writeLine(io.stdout, `children: ${shapeIds.length}`);
+            }
+        );
+        return 0;
+    } catch (cause) {
+        return rpcErrorResponse(io, format, "group-file-shapes", rpc.backendUri, cause);
+    }
+}
+
+async function handleShapeUngroup(args: string[], io: CliIO, env: NodeJS.ProcessEnv): Promise<number> {
+    const format = parseFormat(args, io);
+    if (!format) return 2;
+    const adapterSelection = selectCliShapeAdapter(CommandDescriptors.SHAPE_UNGROUP.id, args);
+    if (adapterSelection.status !== "selected" || adapterSelection.selected !== "backend-command") {
+        return adapterSelectionFailure(io, format, adapterSelection);
+    }
+    const fileId = readOption(args, ["--file", "--file-id"]);
+    if (!fileId) {
+        writeError(io, format, "file_id_required", "shape ungroup requires --file <file-id>.", [
+            "Use penpot-cli file list first, then pass --file <file-id>.",
+        ]);
+        return 2;
+    }
+    const shapesRaw = readOption(args, ["--shape", "--shape-id", "--shapes", "--shape-ids", "--group", "--group-id"]);
+    if (!shapesRaw) {
+        writeError(io, format, "shape_id_required", "shape ungroup requires --shape <group-id>[,group-id...].", []);
+        return 2;
+    }
+    const shapeIds = shapesRaw.split(",").map((s) => s.trim()).filter(Boolean);
+    if (shapeIds.length === 0) {
+        writeError(io, format, "shape_id_required", "shape ungroup requires at least one group id.", []);
+        return 2;
+    }
+    const rpc = getRpcConfig(args, env);
+    if (!rpc.token) return rpcAuthenticationRequired(io, format);
+    try {
+        const requestParams: RpcParams = { id: fileId };
+        if (shapeIds.length === 1) requestParams["shape-id"] = shapeIds[0];
+        else requestParams["shape-ids"] = shapeIds;
+        const pageId = readOption(args, ["--page", "--page-id"]);
+        if (pageId) requestParams["page-id"] = pageId;
+        const result = await rpcRequest<Record<string, unknown>>("POST", rpc.backendUri, "ungroup-file-shapes", requestParams, rpc.token);
+        const groups = Array.isArray(result.groups) ? result.groups : [];
+        writeOk(
+            io,
+            format,
+            {
+                fileId,
+                groups,
+                children: result.children ?? [],
+                revn: result.revn,
+                vern: result.vern,
+                adapter: adapterSelection.selected,
+                adapterSelection,
+            },
+            () => {
+                writeLine(io.stdout, "Shapes ungrouped");
+                writeLine(io.stdout, `fileId: ${fileId}`);
+                writeLine(io.stdout, `groups: ${groups.length}`);
+            }
+        );
+        return 0;
+    } catch (cause) {
+        return rpcErrorResponse(io, format, "ungroup-file-shapes", rpc.backendUri, cause);
+    }
+}
+
 async function handleShapeCommand(args: string[], io: CliIO, env: NodeJS.ProcessEnv): Promise<number> {
     const [subcommand, ...rest] = args;
 
@@ -10572,6 +11033,10 @@ async function handleShapeCommand(args: string[], io: CliIO, env: NodeJS.Process
             return await handleShapeUpdate(CommandDescriptors.SHAPE_SET_STYLE, "set-style", rest, io, env);
         case "delete":
             return await handleShapeDelete(rest, io, env);
+        case "group":
+            return await handleShapeGroup(rest, io, env);
+        case "ungroup":
+            return await handleShapeUngroup(rest, io, env);
         default:
             writeLine(io.stderr, `Unknown shape command: ${subcommand}`);
             writeLine(io.stderr, 'Run "penpot-cli shape --help" for usage.');
@@ -11091,6 +11556,300 @@ async function handlePrototypeCommand(args: string[], io: CliIO, env: NodeJS.Pro
     }
 }
 
+async function handleTokensList(args: string[], io: CliIO, env: NodeJS.ProcessEnv): Promise<number> {
+    const format = parseFormat(args, io);
+    if (!format) {
+        return 2;
+    }
+
+    const adapterSelection = selectCliBackendCommandAdapter(CommandDescriptors.TOKENS_LIST.id, args);
+    if (adapterSelection.status !== "selected" || adapterSelection.selected !== "backend-command") {
+        return adapterSelectionFailure(io, format, adapterSelection);
+    }
+
+    const tokensParams = parseTokensListParams(args, io, format);
+    if (!tokensParams) {
+        return 2;
+    }
+
+    const rpc = getRpcConfig(args, env);
+    if (!rpc.token) {
+        return rpcAuthenticationRequired(io, format);
+    }
+
+    try {
+        const requestParams: RpcParams = {
+            id: tokensParams.fileId,
+            "include-values": tokensParams.includeValues,
+        };
+        if (tokensParams.setId) {
+            requestParams["set-id"] = tokensParams.setId;
+        }
+        const result = await rpcRequest<Record<string, unknown>>(
+            "GET",
+            rpc.backendUri,
+            "get-file-tokens",
+            requestParams,
+            rpc.token
+        );
+        const sets = Array.isArray(result.sets) ? result.sets : [];
+        const tokens = Array.isArray(result.tokens) ? result.tokens : [];
+        const themes = Array.isArray(result.themes) ? result.themes : [];
+        const payload = {
+            fileId: tokensParams.fileId,
+            setId: tokensParams.setId,
+            includeValues: Boolean(result["include-values"] ?? result.includeValues ?? tokensParams.includeValues),
+            present: Boolean(result.present),
+            empty: Boolean(result.empty),
+            setCount: result["set-count"] ?? result.setCount ?? sets.length,
+            tokenCount: result["token-count"] ?? result.tokenCount ?? tokens.length,
+            themeCount: result["theme-count"] ?? result.themeCount ?? themes.length,
+            activeThemePaths: result["active-theme-paths"] ?? result.activeThemePaths ?? [],
+            sets,
+            tokens,
+            themes,
+            adapter: adapterSelection.selected,
+            adapterSelection,
+        };
+        writeOk(io, format, payload, () => writeTokensListText(io, tokensParams.fileId, payload));
+        return 0;
+    } catch (cause) {
+        return rpcErrorResponse(io, format, "get-file-tokens", rpc.backendUri, cause);
+    }
+}
+
+async function handleTokensCommand(args: string[], io: CliIO, env: NodeJS.ProcessEnv): Promise<number> {
+    const [subcommand, ...rest] = args;
+
+    if (isHelpFlag(subcommand)) {
+        writeLine(io.stdout, TOKENS_HELP_TEXT);
+        return 0;
+    }
+
+    switch (subcommand) {
+        case "list":
+            return await handleTokensList(rest, io, env);
+        case "apply":
+            return await handleTokensApply(rest, io, env);
+        default:
+            writeLine(io.stderr, `Unknown tokens command: ${subcommand}`);
+            writeLine(io.stderr, 'Run "penpot-cli tokens --help" for usage.');
+            return 2;
+    }
+}
+
+async function handleTokensApply(args: string[], io: CliIO, env: NodeJS.ProcessEnv): Promise<number> {
+    const format = parseFormat(args, io);
+    if (!format) {
+        return 2;
+    }
+
+    const adapterSelection = selectCliBackendCommandAdapter(CommandDescriptors.TOKENS_APPLY.id, args);
+    if (adapterSelection.status !== "selected" || adapterSelection.selected !== "backend-command") {
+        return adapterSelectionFailure(io, format, adapterSelection);
+    }
+
+    const tokensParams = parseTokensApplyParams(args, io, format);
+    if (!tokensParams) {
+        return 2;
+    }
+
+    const rpc = getRpcConfig(args, env);
+    if (!rpc.token) {
+        return rpcAuthenticationRequired(io, format);
+    }
+
+    try {
+        const requestParams: RpcParams = {
+            id: tokensParams.fileId,
+            attributes: tokensParams.attributes,
+        };
+        if (tokensParams.shapeIds.length === 1) {
+            requestParams["shape-id"] = tokensParams.shapeIds[0];
+        } else {
+            requestParams["shape-ids"] = tokensParams.shapeIds;
+        }
+        if (tokensParams.pageId) requestParams["page-id"] = tokensParams.pageId;
+        if (tokensParams.tokenId) requestParams["token-id"] = tokensParams.tokenId;
+        if (tokensParams.tokenName) requestParams["token-name"] = tokensParams.tokenName;
+        if (tokensParams.setId) requestParams["set-id"] = tokensParams.setId;
+        if (tokensParams.setName) requestParams["set-name"] = tokensParams.setName;
+
+        const result = await rpcRequest<Record<string, unknown>>(
+            "POST",
+            rpc.backendUri,
+            "apply-file-token",
+            requestParams,
+            rpc.token
+        );
+        const payload = {
+            fileId: tokensParams.fileId,
+            pageId: tokensParams.pageId,
+            shape: result.shape,
+            shapes: result.shapes ?? [result.shape],
+            token: result.token,
+            attributes: result.attributes ?? tokensParams.attributes,
+            appliedTokens: result["applied-tokens"] ?? result.appliedTokens ?? {},
+            materialized: Boolean(result.materialized),
+            revn: result.revn,
+            vern: result.vern,
+            adapter: adapterSelection.selected,
+            adapterSelection,
+        };
+        writeOk(io, format, payload, () => writeTokensAppliedText(io, tokensParams.fileId, payload));
+        return 0;
+    } catch (cause) {
+        return rpcErrorResponse(io, format, "apply-file-token", rpc.backendUri, cause);
+    }
+}
+
+async function handleComponentCreate(args: string[], io: CliIO, env: NodeJS.ProcessEnv): Promise<number> {
+    const format = parseFormat(args, io);
+    if (!format) {
+        return 2;
+    }
+
+    const adapterSelection = selectCliBackendCommandAdapter(CommandDescriptors.COMPONENT_CREATE.id, args);
+    if (adapterSelection.status !== "selected" || adapterSelection.selected !== "backend-command") {
+        return adapterSelectionFailure(io, format, adapterSelection);
+    }
+
+    const componentParams = parseComponentCreateParams(args, io, format);
+    if (!componentParams) {
+        return 2;
+    }
+
+    const rpc = getRpcConfig(args, env);
+    if (!rpc.token) {
+        return rpcAuthenticationRequired(io, format);
+    }
+
+    try {
+        const requestParams: RpcParams = {
+            id: componentParams.fileId,
+            "page-id": componentParams.pageId,
+        };
+        if (componentParams.shapeIds.length === 1) {
+            requestParams["shape-id"] = componentParams.shapeIds[0];
+        } else {
+            requestParams["shape-ids"] = componentParams.shapeIds;
+        }
+        if (componentParams.name) {
+            requestParams.name = componentParams.name;
+        }
+        const result = await rpcRequest<Record<string, unknown>>(
+            "POST",
+            rpc.backendUri,
+            "create-file-component",
+            requestParams,
+            rpc.token
+        );
+        const payload = {
+            fileId: componentParams.fileId,
+            pageId: componentParams.pageId,
+            component: result.component,
+            shape: result.shape,
+            wrapped: Boolean(result.wrapped),
+            sourceShapeIds: result["source-shape-ids"] ?? result.sourceShapeIds ?? componentParams.shapeIds,
+            revn: result.revn,
+            vern: result.vern,
+            adapter: adapterSelection.selected,
+            adapterSelection,
+        };
+        writeOk(io, format, payload, () =>
+            writeComponentCreatedText(io, componentParams.fileId, result.component, result.shape)
+        );
+        return 0;
+    } catch (cause) {
+        return rpcErrorResponse(io, format, "create-file-component", rpc.backendUri, cause);
+    }
+}
+
+async function handleComponentCommand(args: string[], io: CliIO, env: NodeJS.ProcessEnv): Promise<number> {
+    const [subcommand, ...rest] = args;
+
+    if (isHelpFlag(subcommand)) {
+        writeLine(io.stdout, COMPONENT_HELP_TEXT);
+        return 0;
+    }
+
+    switch (subcommand) {
+        case "create":
+            return await handleComponentCreate(rest, io, env);
+        case "instantiate":
+            return await handleComponentInstantiate(rest, io, env);
+        default:
+            writeLine(io.stderr, `Unknown component command: ${subcommand}`);
+            writeLine(io.stderr, 'Run "penpot-cli component --help" for usage.');
+            return 2;
+    }
+}
+
+async function handleComponentInstantiate(args: string[], io: CliIO, env: NodeJS.ProcessEnv): Promise<number> {
+    const format = parseFormat(args, io);
+    if (!format) {
+        return 2;
+    }
+
+    const adapterSelection = selectCliBackendCommandAdapter(CommandDescriptors.COMPONENT_INSTANTIATE.id, args);
+    if (adapterSelection.status !== "selected" || adapterSelection.selected !== "backend-command") {
+        return adapterSelectionFailure(io, format, adapterSelection);
+    }
+
+    const componentParams = parseComponentInstantiateParams(args, io, format);
+    if (!componentParams) {
+        return 2;
+    }
+
+    const rpc = getRpcConfig(args, env);
+    if (!rpc.token) {
+        return rpcAuthenticationRequired(io, format);
+    }
+
+    try {
+        const requestParams: RpcParams = {
+            id: componentParams.fileId,
+            "page-id": componentParams.pageId,
+            "component-id": componentParams.componentId,
+            x: componentParams.x,
+            y: componentParams.y,
+        };
+        if (componentParams.componentFileId) {
+            requestParams["component-file-id"] = componentParams.componentFileId;
+        }
+        if (componentParams.parentId) {
+            requestParams["parent-id"] = componentParams.parentId;
+        }
+        if (componentParams.shapeId) {
+            requestParams["shape-id"] = componentParams.shapeId;
+        }
+        const result = await rpcRequest<Record<string, unknown>>(
+            "POST",
+            rpc.backendUri,
+            "create-file-component-instance",
+            requestParams,
+            rpc.token
+        );
+        const payload = {
+            fileId: componentParams.fileId,
+            pageId: componentParams.pageId,
+            component: result.component,
+            shape: result.shape,
+            shapes: result.shapes ?? [],
+            revn: result.revn,
+            vern: result.vern,
+            adapter: adapterSelection.selected,
+            adapterSelection,
+        };
+        writeOk(io, format, payload, () =>
+            writeComponentInstantiatedText(io, componentParams.fileId, result.component, result.shape)
+        );
+        return 0;
+    } catch (cause) {
+        return rpcErrorResponse(io, format, "create-file-component-instance", rpc.backendUri, cause);
+    }
+}
+
 async function handleExportPage(args: string[], io: CliIO, env: NodeJS.ProcessEnv): Promise<number> {
     const format = parseFormat(args, io);
     if (!format) {
@@ -11418,6 +12177,14 @@ export async function run(
 
     if (first === "prototype") {
         return await handlePrototypeCommand(argv.slice(1), io, env);
+    }
+
+    if (first === "tokens") {
+        return await handleTokensCommand(argv.slice(1), io, env);
+    }
+
+    if (first === "component") {
+        return await handleComponentCommand(argv.slice(1), io, env);
     }
 
     if (first === "export") {

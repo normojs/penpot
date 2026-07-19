@@ -725,10 +725,17 @@ not register yet:
 - global/file: `file.search`, `file.duplicate`, `file.open`,
   `token.get_mcp_status`
 - file context: `page.set_current`, `selection.get`, and `selection.set` are implemented but remain plugin-live and now share live-only recovery metadata with the same binding flow
-- design editing: `shape.group`, `shape.ungroup`, `component.create`,
-  `component.instantiate`, `tokens.list`, `tokens.apply`; `shape.set_layout`
-  and `shape.set_style` are registered MCP aliases over `shape.update` with
-  matching `shape set-layout` and `shape set-style` CLI aliases
+- design editing: `shape.group`/`shape.ungroup` are executable through backend-command (`group-file-shapes`/`ungroup-file-shapes`) with MCP and CLI registration; `component.create` is executable through backend-command
+  (`create-file-component`) with MCP tool and `penpot-cli component create`
+  for single-frame or multi-shape wrap; `component.instantiate` is executable
+  through backend-command (`create-file-component-instance`) with MCP tool and
+  `penpot-cli component instantiate` for local or linked libraries;
+  `tokens.list` is executable through backend-command (`get-file-tokens`) with
+  MCP tool and `penpot-cli tokens list`; `tokens.apply` is executable through
+  backend-command (`apply-file-token`) with MCP tool and `penpot-cli tokens apply`
+  for multi-shape explicit attributes; `shape.set_layout` and `shape.set_style`
+  are registered MCP aliases over `shape.update` with matching
+  `shape set-layout` and `shape set-style` CLI aliases
 - prototype/export: `prototype.create_overlay` and
   `prototype.delete_interaction` are registered backend-command mutations for
   explicit persisted prototype targets. P22.2 adds optional `interactionId`

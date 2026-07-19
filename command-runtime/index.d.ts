@@ -12430,6 +12430,16 @@ export interface CommandDescriptorCatalog extends LowRiskCommandDescriptorCatalo
         mcpToolName: "shape.delete";
         cliCommand: "shape delete";
     };
+    SHAPE_GROUP: CommandDescriptor & {
+        id: "shape.group";
+        mcpToolName: "shape.group";
+        cliCommand: "shape group";
+    };
+    SHAPE_UNGROUP: CommandDescriptor & {
+        id: "shape.ungroup";
+        mcpToolName: "shape.ungroup";
+        cliCommand: "shape ungroup";
+    };
     EXPORT_SHAPE: CommandDescriptor & { id: "export.shape"; mcpToolName: "export.shape" };
     EXPORT_PAGE: CommandDescriptor & {
         id: "export.page";
@@ -12451,6 +12461,26 @@ export interface CommandDescriptorCatalog extends LowRiskCommandDescriptorCatalo
         mcpToolName: "render.thumbnail";
         cliCommand: "render thumbnail";
     };
+    COMPONENT_CREATE: CommandDescriptor & {
+        id: "component.create";
+        mcpToolName: "component.create";
+        cliCommand: "component create";
+    };
+    COMPONENT_INSTANTIATE: CommandDescriptor & {
+        id: "component.instantiate";
+        mcpToolName: "component.instantiate";
+        cliCommand: "component instantiate";
+    };
+    TOKENS_LIST: CommandDescriptor & {
+        id: "tokens.list";
+        mcpToolName: "tokens.list";
+        cliCommand: "tokens list";
+    };
+    TOKENS_APPLY: CommandDescriptor & {
+        id: "tokens.apply";
+        mcpToolName: "tokens.apply";
+        cliCommand: "tokens apply";
+    };
 }
 
 export const CommandErrorCodes: CommandErrorCodeCatalog;
@@ -12465,6 +12495,7 @@ export const LowRiskCommandDescriptors: readonly CommandDescriptor[];
 export const HeadlessAuthoringCommandDescriptors: readonly CommandDescriptor[];
 export const LiveGapCommandDescriptors: readonly CommandDescriptor[];
 export const ShapeExportCommandDescriptors: readonly CommandDescriptor[];
+export const ComponentsTokensCommandDescriptors: readonly CommandDescriptor[];
 export const MigratedCommandDescriptors: readonly CommandDescriptor[];
 export function getCommandDescriptor(id: string): CommandDescriptor | undefined;
 export function createCommandRequestEnvelope<TInput = unknown>(

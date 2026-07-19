@@ -86,6 +86,11 @@ Still gated / in progress:
 
 - Full bundled scene-bridge path inside `renderer-service` (Phase 26; thumbnail
   rendering is opt-in and not yet a default “real scene” path)
+- Components/Tokens wave is backend-command executable:
+  `tokens.list`, multi-shape `tokens.apply` (simple ref + spacing/typography
+  materialization), multi-shape-wrap `component.create`, and local/linked-library
+  `component.instantiate` (explicit x/y)
+- Shape grouping is backend-command executable: `shape.group` / `shape.ungroup`
 - Some editor-local or layout-edge operations remain plugin-live only
 - Packages are private workspace artifacts (not published to npm)
 

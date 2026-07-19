@@ -9,11 +9,13 @@
    [app.common.exceptions :as ex]
    [app.common.files.changes :as cpc]
    [app.common.files.headless :as headless]
+   [app.common.files.helpers :as cfh]
    [app.common.geom.point :as gpt]
    [app.common.types.file :as ctf]
    [app.common.types.pages-list :as ctpl]
    [app.common.types.shape.interactions :as ctsi]
    [app.common.types.text :as cttx]
+   [app.common.types.tokens-lib :as ctob]
    [app.common.uuid :as uuid]
    [clojure.test :as t]))
 
@@ -573,6 +575,363 @@
     (t/is (= {:flows [] :interactions []}
              (headless/prototype-interactions-summary data {:flow-id (uuid/next)
                                                             :source-shape-id (uuid/next)})))))
+
+(t/deftest tokens-summary-returns-empty-when-tokens-lib-missing
+  (let [file-id (uuid/next)
+        page-id (uuid/next)
+        data    (ctf/make-file-data file-id page-id)
+        summary (headless/tokens-summary data {})]
+    (t/is (= false (:present summary)))
+    (t/is (= true (:empty summary)))
+    (t/is (= false (:include-values summary)))
+    (t/is (= 0 (:set-count summary)))
+    (t/is (= 0 (:token-count summary)))
+    (t/is (= 0 (:theme-count summary)))
+    (t/is (= [] (:sets summary)))
+    (t/is (= [] (:tokens summary)))
+    (t/is (= [] (:themes summary)))
+    (t/is (= [] (:active-theme-paths summary)))))
+
+(t/deftest tokens-summary-lists-sets-tokens-and-themes
+  (let [file-id  (uuid/next)
+        page-id  (uuid/next)
+        set-id   (uuid/next)
+        token-id (uuid/next)
+        theme-id (uuid/next)
+        data     (ctf/make-file-data file-id page-id)
+        tokens-lib (-> (ctob/make-tokens-lib)
+                       (ctob/add-set (ctob/make-token-set :id set-id
+                                                          :name "Colors"
+                                                          :description "Brand colors"))
+                       (ctob/add-token set-id (ctob/make-token :id token-id
+                                                               :name "color.primary"
+                                                               :type :color
+                                                               :value "#112233"
+                                                               :description "Primary brand"))
+                       (ctob/add-theme (ctob/make-token-theme :id theme-id
+                                                              :name "Light"
+                                                              :group "Brand"
+                                                              :sets #{"Colors"}))
+                       (ctob/activate-theme theme-id))
+        data     (assoc data :tokens-lib tokens-lib)
+        summary  (headless/tokens-summary data {})
+        with-values (headless/tokens-summary data {:include-values true})
+        filtered (headless/tokens-summary data {:set-id set-id})
+        missing  (ex/try! (headless/tokens-summary data {:set-id (uuid/next)}))]
+    (t/is (= true (:present summary)))
+    (t/is (= false (:empty summary)))
+    (t/is (= 1 (:set-count summary)))
+    (t/is (= 1 (:token-count summary)))
+    (t/is (= 1 (:theme-count summary)))
+    (t/is (= [{:id set-id
+               :name "Colors"
+               :description "Brand colors"
+               :token-count 1
+               :tokens [{:id token-id
+                         :name "color.primary"
+                         :type :color
+                         :set-id set-id
+                         :description "Primary brand"}]}]
+             (:sets summary)))
+    (t/is (nil? (get-in summary [:sets 0 :tokens 0 :value])))
+    (t/is (= "#112233" (get-in with-values [:sets 0 :tokens 0 :value])))
+    (t/is (= [{:id theme-id
+               :name "Light"
+               :group "Brand"
+               :description ""
+               :path "Brand/Light"
+               :sets ["Colors"]
+               :is-source false
+               :hidden? false}]
+             (:themes summary)))
+    (t/is (= ["Brand/Light"] (:active-theme-paths summary)))
+    (t/is (= 1 (:set-count filtered)))
+    (t/is (= set-id (get-in filtered [:sets 0 :id])))
+    (t/is (ex/exception? missing))
+    (t/is (= :token-set-not-found (:code (ex-data missing))))))
+
+(t/deftest create-component-request-creates-local-component-from-single-frame
+  (let [file-id  (uuid/next)
+        page-id  (uuid/next)
+        frame-id (uuid/next)
+        data     (ctf/make-file-data file-id page-id)
+        frame    (headless/create-shape-request data {:page-id page-id
+                                                      :shape-id frame-id
+                                                      :type :frame
+                                                      :name "Button"
+                                                      :x 0
+                                                      :y 0
+                                                      :width 120
+                                                      :height 40})
+        data     (cpc/process-changes data (:changes frame))
+        result   (headless/create-component-request data {:file-id file-id
+                                                          :page-id page-id
+                                                          :shape-id frame-id})
+        data'    (cpc/process-changes data (:changes result))
+        page'    (ctpl/get-page data' page-id)
+        root'    (get-in page' [:objects frame-id])
+        component (get-in data' [:components (get-in result [:component :id])])]
+    (t/is (= "Button" (get-in result [:component :name])))
+    (t/is (= frame-id (get-in result [:component :main-instance-id])))
+    (t/is (= page-id (get-in result [:component :main-instance-page])))
+    (t/is (some? component))
+    (t/is (= true (:main-instance root')))
+    (t/is (= true (:component-root root')))
+    (t/is (= (get-in result [:component :id]) (:component-id root')))
+    (t/is (= file-id (:component-file root')))
+    (t/is (= :shape-already-component
+             (thrown-code #(headless/create-component-request data' {:file-id file-id
+                                                                     :page-id page-id
+                                                                     :shape-id frame-id}))))
+    (t/is (= :shape-not-found
+             (thrown-code #(headless/create-component-request data {:file-id file-id
+                                                                    :page-id page-id
+                                                                    :shape-ids [frame-id (uuid/next)]}))))))
+
+(t/deftest create-component-request-wraps-multiple-shapes
+  (let [file-id (uuid/next)
+        page-id (uuid/next)
+        a-id    (uuid/next)
+        b-id    (uuid/next)
+        data    (ctf/make-file-data file-id page-id)
+        a       (headless/create-shape-request data {:page-id page-id
+                                                     :shape-id a-id
+                                                     :type :rect
+                                                     :name "A"
+                                                     :x 10
+                                                     :y 20
+                                                     :width 30
+                                                     :height 40})
+        data    (cpc/process-changes data (:changes a))
+        b       (headless/create-shape-request data {:page-id page-id
+                                                     :shape-id b-id
+                                                     :type :rect
+                                                     :name "B"
+                                                     :x 50
+                                                     :y 60
+                                                     :width 20
+                                                     :height 10})
+        data    (cpc/process-changes data (:changes b))
+        result  (headless/create-component-request data {:file-id file-id
+                                                         :page-id page-id
+                                                         :shape-ids [a-id b-id]
+                                                         :name "Group Comp"})
+        data'   (cpc/process-changes data (:changes result))
+        page'   (ctpl/get-page data' page-id)
+        wrap-id (get-in result [:shape :id])
+        wrap'   (get-in page' [:objects wrap-id])
+        a'      (get-in page' [:objects a-id])
+        b'      (get-in page' [:objects b-id])]
+    (t/is (= true (:wrapped result)))
+    (t/is (= "Group Comp" (get-in result [:component :name])))
+    (t/is (= wrap-id (get-in result [:component :main-instance-id])))
+    (t/is (cfh/frame-shape? wrap'))
+    (t/is (= true (:main-instance wrap')))
+    (t/is (= wrap-id (:parent-id a')))
+    (t/is (= wrap-id (:parent-id b')))
+    (t/is (= :scale (:constraints-h a')))))
+
+(t/deftest instantiate-component-request-places-local-instance
+  (let [file-id  (uuid/next)
+        page-id  (uuid/next)
+        frame-id (uuid/next)
+        data     (ctf/make-file-data file-id page-id)
+        frame    (headless/create-shape-request data {:page-id page-id
+                                                      :shape-id frame-id
+                                                      :type :frame
+                                                      :name "Button"
+                                                      :x 0
+                                                      :y 0
+                                                      :width 120
+                                                      :height 40})
+        data     (cpc/process-changes data (:changes frame))
+        created  (headless/create-component-request data {:file-id file-id
+                                                          :page-id page-id
+                                                          :shape-id frame-id})
+        data     (cpc/process-changes data (:changes created))
+        component-id (get-in created [:component :id])
+        instance (headless/instantiate-component-request data {:file-id file-id
+                                                               :page-id page-id
+                                                               :component-id component-id
+                                                               :x 240
+                                                               :y 80})
+        data'    (cpc/process-changes data (:changes instance))
+        page'    (ctpl/get-page data' page-id)
+        root-id  (get-in instance [:shape :id])
+        root'    (get-in page' [:objects root-id])]
+    (t/is (= component-id (get-in instance [:component :id])))
+    (t/is (some? root'))
+    (t/is (= component-id (:component-id root')))
+    (t/is (= file-id (:component-file root')))
+    (t/is (= true (:component-root root')))
+    (t/is (nil? (:main-instance root')))
+    (t/is (= 240.0 (double (:x root'))))
+    (t/is (= 80.0 (double (:y root'))))
+    (t/is (= :component-not-found
+             (thrown-code #(headless/instantiate-component-request data {:file-id file-id
+                                                                         :page-id page-id
+                                                                         :component-id (uuid/next)
+                                                                         :x 0
+                                                                         :y 0}))))
+    (t/is (= :component-library-not-found
+             (thrown-code #(headless/instantiate-component-request data {:file-id file-id
+                                                                         :page-id page-id
+                                                                         :component-id component-id
+                                                                         :component-file-id (uuid/next)
+                                                                         :x 0
+                                                                         :y 0}))))
+    (t/is (= :component-position-required
+             (thrown-code #(headless/instantiate-component-request data {:file-id file-id
+                                                                         :page-id page-id
+                                                                         :component-id component-id}))))))
+
+(t/deftest instantiate-component-request-supports-remote-library-data
+  (let [file-id     (uuid/next)
+        library-id  (uuid/next)
+        page-id     (uuid/next)
+        lib-page-id (uuid/next)
+        frame-id    (uuid/next)
+        library-data (ctf/make-file-data library-id lib-page-id)
+        lib-frame   (headless/create-shape-request library-data {:page-id lib-page-id
+                                                                 :shape-id frame-id
+                                                                 :type :frame
+                                                                 :name "LibButton"
+                                                                 :x 0
+                                                                 :y 0
+                                                                 :width 80
+                                                                 :height 40})
+        library-data (cpc/process-changes library-data (:changes lib-frame))
+        created     (headless/create-component-request library-data {:file-id library-id
+                                                                     :page-id lib-page-id
+                                                                     :shape-id frame-id})
+        library-data (cpc/process-changes library-data (:changes created))
+        component-id (get-in created [:component :id])
+        data        (ctf/make-file-data file-id page-id)
+        libraries   {library-id {:id library-id :data (assoc library-data :id library-id)}}
+        instance    (headless/instantiate-component-request data {:file-id file-id
+                                                                  :page-id page-id
+                                                                  :component-id component-id
+                                                                  :component-file-id library-id
+                                                                  :libraries libraries
+                                                                  :x 12
+                                                                  :y 24})
+        data'       (cpc/process-changes data (:changes instance))
+        page'       (ctpl/get-page data' page-id)
+        root'       (get-in page' [:objects (get-in instance [:shape :id])])]
+    (t/is (= true (get-in instance [:component :remote?])))
+    (t/is (= library-id (get-in instance [:component :component-file-id])))
+    (t/is (= library-id (:component-file root')))
+    (t/is (= component-id (:component-id root')))
+    (t/is (= 12.0 (double (:x root'))))
+    (t/is (= 24.0 (double (:y root'))))))
+
+(t/deftest apply-token-request-binds-applied-tokens-and-materializes-plain-color
+  (let [file-id  (uuid/next)
+        page-id  (uuid/next)
+        frame-id (uuid/next)
+        set-id   (uuid/next)
+        token-id (uuid/next)
+        data     (ctf/make-file-data file-id page-id)
+        frame    (headless/create-shape-request data {:page-id page-id
+                                                      :shape-id frame-id
+                                                      :type :frame
+                                                      :name "Card"
+                                                      :x 0
+                                                      :y 0
+                                                      :width 200
+                                                      :height 100
+                                                      :fill {:color "#000000" :opacity 1}})
+        data     (cpc/process-changes data (:changes frame))
+        tokens-lib (-> (ctob/make-tokens-lib)
+                       (ctob/add-set (ctob/make-token-set :id set-id :name "Colors"))
+                       (ctob/add-token set-id (ctob/make-token :id token-id
+                                                               :name "color.primary"
+                                                               :type :color
+                                                               :value "#112233")))
+        data     (assoc data :tokens-lib tokens-lib)
+        result   (headless/apply-token-request data {:page-id page-id
+                                                     :shape-id frame-id
+                                                     :token-name "color.primary"
+                                                     :attributes [:fill]})
+        data'    (cpc/process-changes data (:changes result))
+        page'    (ctpl/get-page data' page-id)
+        shape'   (get-in page' [:objects frame-id])]
+    (t/is (= "color.primary" (get-in result [:token :name])))
+    (t/is (= [:fill] (:attributes result)))
+    (t/is (= true (:materialized result)))
+    (t/is (= "color.primary" (get-in shape' [:applied-tokens :fill])))
+    (t/is (= "#112233" (get-in shape' [:fills 0 :fill-color])))
+    (t/is (= :token-attributes-required
+             (thrown-code #(headless/apply-token-request data {:page-id page-id
+                                                               :shape-id frame-id
+                                                               :token-name "color.primary"
+                                                               :attributes []}))))
+    (t/is (= :unsupported-token-attributes
+             (thrown-code #(headless/apply-token-request data {:page-id page-id
+                                                               :shape-id frame-id
+                                                               :token-name "color.primary"
+                                                               :attributes [:shadow]}))))
+    (t/is (= :token-not-found
+             (thrown-code #(headless/apply-token-request data {:page-id page-id
+                                                               :shape-id frame-id
+                                                               :token-name "missing.token"
+                                                               :attributes [:fill]}))))))
+
+(t/deftest apply-token-request-supports-multi-shape-and-resolved-refs
+  (let [file-id  (uuid/next)
+        page-id  (uuid/next)
+        a-id     (uuid/next)
+        b-id     (uuid/next)
+        set-id   (uuid/next)
+        base-id  (uuid/next)
+        alias-id (uuid/next)
+        data     (ctf/make-file-data file-id page-id)
+        a        (headless/create-shape-request data {:page-id page-id
+                                                      :shape-id a-id
+                                                      :type :frame
+                                                      :name "A"
+                                                      :x 0
+                                                      :y 0
+                                                      :width 100
+                                                      :height 50
+                                                      :fill {:color "#000000" :opacity 1}})
+        data     (cpc/process-changes data (:changes a))
+        b        (headless/create-shape-request data {:page-id page-id
+                                                      :shape-id b-id
+                                                      :type :frame
+                                                      :name "B"
+                                                      :x 20
+                                                      :y 20
+                                                      :width 80
+                                                      :height 40
+                                                      :fill {:color "#111111" :opacity 1}})
+        data     (cpc/process-changes data (:changes b))
+        tokens-lib (-> (ctob/make-tokens-lib)
+                       (ctob/add-set (ctob/make-token-set :id set-id :name "Colors"))
+                       (ctob/add-token set-id (ctob/make-token :id base-id
+                                                               :name "color.base"
+                                                               :type :color
+                                                               :value "#abcdef"))
+                       (ctob/add-token set-id (ctob/make-token :id alias-id
+                                                               :name "color.alias"
+                                                               :type :color
+                                                               :value "{color.base}")))
+        data     (assoc data :tokens-lib tokens-lib)
+        result   (headless/apply-token-request data {:page-id page-id
+                                                     :shape-ids [a-id b-id]
+                                                     :token-name "color.alias"
+                                                     :attributes [:fill]})
+        data'    (cpc/process-changes data (:changes result))
+        page'    (ctpl/get-page data' page-id)
+        a'       (get-in page' [:objects a-id])
+        b'       (get-in page' [:objects b-id])]
+    (t/is (= 2 (count (:shapes result))))
+    (t/is (= 2 (count (:changes result))))
+    (t/is (= "#abcdef" (get-in result [:token :resolved-value])))
+    (t/is (= "color.alias" (get-in a' [:applied-tokens :fill])))
+    (t/is (= "color.alias" (get-in b' [:applied-tokens :fill])))
+    (t/is (= "#abcdef" (get-in a' [:fills 0 :fill-color])))
+    (t/is (= "#abcdef" (get-in b' [:fills 0 :fill-color])))))
 
 (t/deftest prototype-overlay-create-contract-defines-supported-payload
   (t/is (= #{:open-overlay :toggle-overlay :close-overlay}
@@ -1576,3 +1935,69 @@
                                                         :y 0
                                                         :width 10
                                                         :height 10})))))
+
+(t/deftest group-shapes-request-groups-sibling-shapes
+  (let [file-id (uuid/next)
+        page-id (uuid/next)
+        a-id (uuid/next)
+        b-id (uuid/next)
+        data (ctf/make-file-data file-id page-id)
+        a (headless/create-shape-request data {:page-id page-id
+                                               :shape-id a-id
+                                               :type :rect
+                                               :name "A"
+                                               :x 0 :y 0 :width 20 :height 20})
+        data (cpc/process-changes data (:changes a))
+        b (headless/create-shape-request data {:page-id page-id
+                                               :shape-id b-id
+                                               :type :rect
+                                               :name "B"
+                                               :x 30 :y 0 :width 20 :height 20})
+        data (cpc/process-changes data (:changes b))
+        result (headless/group-shapes-request data {:page-id page-id
+                                                    :shape-ids [a-id b-id]
+                                                    :name "Pair"})
+        data' (cpc/process-changes data (:changes result))
+        page' (ctpl/get-page data' page-id)
+        group-id (get-in result [:shape :id])
+        group' (get-in page' [:objects group-id])
+        a' (get-in page' [:objects a-id])]
+    (t/is (= "Pair" (get-in result [:shape :name])))
+    (t/is (= :group (:type group')))
+    (t/is (= group-id (:parent-id a')))
+    (t/is (= 2 (count (:children result))))))
+
+(t/deftest ungroup-shapes-request-reparents-children
+  (let [file-id (uuid/next)
+        page-id (uuid/next)
+        a-id (uuid/next)
+        b-id (uuid/next)
+        data (ctf/make-file-data file-id page-id)
+        a (headless/create-shape-request data {:page-id page-id
+                                               :shape-id a-id
+                                               :type :rect
+                                               :name "A"
+                                               :x 0 :y 0 :width 20 :height 20})
+        data (cpc/process-changes data (:changes a))
+        b (headless/create-shape-request data {:page-id page-id
+                                               :shape-id b-id
+                                               :type :rect
+                                               :name "B"
+                                               :x 30 :y 0 :width 20 :height 20})
+        data (cpc/process-changes data (:changes b))
+        grouped (headless/group-shapes-request data {:page-id page-id
+                                                     :shape-ids [a-id b-id]})
+        data (cpc/process-changes data (:changes grouped))
+        group-id (get-in grouped [:shape :id])
+        result (headless/ungroup-shapes-request data {:page-id page-id
+                                                      :shape-id group-id})
+        data' (cpc/process-changes data (:changes result))
+        page' (ctpl/get-page data' page-id)
+        a' (get-in page' [:objects a-id])]
+    (t/is (nil? (get-in page' [:objects group-id])))
+    (t/is (= uuid/zero (:parent-id a')))
+    (t/is (= 1 (count (:groups result))))
+    (t/is (= 2 (count (:children result))))
+    (t/is (= :unsupported-ungroup-target
+             (thrown-code #(headless/ungroup-shapes-request data' {:page-id page-id
+                                                                   :shape-id a-id}))))))

@@ -435,10 +435,14 @@ the existing backend thumbnail path. P26.53 is complete: default `render.thumbna
 configured renderer-service endpoint plus normal auth is enough, while explicit
 disable still closes the gate and diagnostics remain redacted. P26.54 is complete: optional controlled renderer-service process lifecycle is
 available via explicit spawn opt-in, while default start remains no-spawn.
-Phase 26 close-out rows P26.46–P26.54 are complete. Tracker status: no open product checklist rows remain after the 2026-07-19 live-only decision and fork push. Grid cell placement is implemented.
-Components/Tokens evaluated and deferred (names only; no headless path yet). Portable CLI
-package-check re-verified; upstream sync/npm policy documented. Remaining open items are
-closed: fork push succeeded; live-only workspace state stays plugin-live by product decision. No open product checklist rows remain for post-26 close-out.
+Phase 26 close-out rows P26.46–P26.54 are complete. Grid cell placement is implemented.
+Components/Tokens were evaluated and deferred for executable tools (names only; no
+headless path yet). Portable CLI package-check re-verified; upstream sync/npm policy
+documented. Fork push succeeded; live-only workspace state stays plugin-live by product
+decision. Phase 27 Components/Tokens wave is complete and expanded:
+`tokens.list`, multi-shape `tokens.apply` (with simple ref resolution +
+spacing/typography attrs), multi-shape-wrap `component.create`, and
+local/linked-library `component.instantiate` are backend-command executable.
 P25.7 is complete: thumbnail renderer-service API fixtures now define
 future file refresh, file reuse, tagged frame refresh, auth forwarding,
 resource URI normalization, and MCP/CLI test expectations. P25.8 is complete:
@@ -1063,6 +1067,7 @@ remain the execution plan.
 | F33 | done | Thumbnail render contract | Phase 25 | Agents can request thumbnail rendering only after target/cache/artifact semantics are explicit | Completed 2026-06-29; P25.4 defines descriptor-only `render.thumbnail` target, cache, artifact, renderer, and backend persistence contracts |
 | F34 | done | MCP file export resource return | Phase 25 | Agents can export a `.penpot` archive through MCP once backend-rpc resource handling is explicit | Completed 2026-06-29; P25.5 registers MCP `export.file` around the existing backend `export-binfile` SSE/resource contract and returns resource metadata plus `downloadUri` |
 | F35 | done | Thumbnail runtime execution boundary | Phase 25 | Agents can render thumbnails only after the renderer owner and resource return semantics are explicit | Completed 2026-07-04; P25.6 selects a future dedicated thumbnail renderer service, P25.7 defines service API fixtures, P25.8 adds the CLI dry-run/client boundary, P25.9 registers MCP planning-only dry-run, P25.10 adds metadata-only availability probes, P25.11 defines response/error normalization, P25.12 adds disabled client request scaffolding, P25.13 adds a closed execution gate plus integration-test plan, P25.14 adds disabled health preflight and executable client harness plans, P25.15 adds a disabled dispatch adapter boundary, P25.16 adds opt-in configuration surfaces, P25.17 adds unavailable error taxonomy, P25.18 adds integration fixture harness, P25.19 adds dispatch registration preflight, P25.20 adds disabled executable adapter registration scaffold, P25.21 adds disabled adapter registry manifest, P25.22 adds final disabled enablement checklist, P25.23 audits the concrete implementation slice, P25.24 adds health/no-op contract fixtures, P25.25 adds a no-op service host scaffold, P25.26 adds host lifecycle test fixtures, P25.27 adds package manifest scaffold metadata, P25.28 adds package creation guardrails, P25.29 adds package file templates, P25.30 adds package workspace wiring, P25.31 adds package build verification, P25.32 adds package materialization checklist, P25.33 adds package creation dry-run summary, P25.34 adds package creation file manifest, P25.35 adds package materialization approval gate, P25.36 adds package materialization execution dry-run, P25.37 adds package materialization write contract, P25.38 adds package materialization rollback contract, P25.39 adds package materialization verification manifest, P25.40 adds package materialization final approval checklist, P25.41 adds package materialization explicit approval token, P25.42 adds package materialization approval audit trail, P25.43 adds package materialization approval replay guard, P25.44 adds package materialization approval expiry policy, P25.45 adds package materialization approval revocation policy, P25.46 adds package materialization approval scope binding policy, P25.47 adds package materialization approval operator confirmation policy, P25.48 adds package materialization approval emergency stop policy, P25.49 adds package materialization approval readiness verdict policy, P25.50 adds package materialization approval execution handoff policy, P25.51 adds package materialization approval post-handoff audit policy, P25.52 adds package materialization approval audit retention policy, P25.53 adds package materialization approval audit access policy, P25.54 adds package materialization approval audit integrity policy, P25.55 adds package materialization approval audit provenance policy, P25.56 adds package materialization approval audit custody policy, P25.57 adds package materialization approval audit evidence policy, P25.58 adds package materialization approval audit attestation policy, P25.59 adds package materialization approval audit notarization policy, P25.60 adds package materialization approval audit certification policy, P25.61 adds package materialization approval audit endorsement policy, P25.62 adds package materialization approval audit countersignature policy, P25.63 adds package materialization approval audit countersignature verification policy, P25.64 adds package materialization approval audit countersignature revocation policy, P25.65 adds package materialization approval audit countersignature revocation appeal policy, P25.66 adds package materialization approval audit countersignature revocation appeal resolution policy, P25.67 adds package materialization approval audit countersignature revocation appeal resolution enforcement policy, P25.68 adds package materialization approval audit countersignature revocation appeal resolution enforcement evidence policy, P25.69 adds package materialization approval audit countersignature revocation appeal resolution enforcement evidence attestation policy, P25.70 adds package materialization approval audit countersignature revocation appeal resolution enforcement evidence attestation notarization policy, P25.71 adds package materialization approval audit countersignature revocation appeal resolution enforcement evidence attestation notarization certification policy, P25.72 adds package materialization approval audit countersignature revocation appeal resolution enforcement evidence attestation notarization certification endorsement policy, P25.73 adds package materialization approval audit countersignature revocation appeal resolution enforcement evidence attestation notarization certification endorsement countersignature policy, P25.74 adds package materialization approval audit countersignature revocation appeal resolution enforcement evidence attestation notarization certification endorsement countersignature verification policy, P25.75 adds package materialization approval audit countersignature revocation appeal resolution enforcement evidence attestation notarization certification endorsement countersignature verification revocation policy, P25.76 adds package materialization approval audit countersignature revocation appeal resolution enforcement evidence attestation notarization certification endorsement countersignature verification revocation appeal policy, P25.77 adds package materialization approval audit countersignature revocation appeal resolution enforcement evidence attestation notarization certification endorsement countersignature verification revocation appeal resolution policy, P25.78 adds package materialization approval audit countersignature revocation appeal resolution enforcement evidence attestation notarization certification endorsement countersignature verification revocation appeal resolution enforcement policy, P25.79 adds package materialization approval audit countersignature revocation appeal resolution enforcement evidence attestation notarization certification endorsement countersignature verification revocation appeal resolution enforcement evidence policy, P25.80 adds package materialization approval audit countersignature revocation appeal resolution enforcement evidence attestation notarization certification endorsement countersignature verification revocation appeal resolution enforcement evidence attestation policy, P25.81 adds package materialization approval audit countersignature revocation appeal resolution enforcement evidence attestation notarization certification endorsement countersignature verification revocation appeal resolution enforcement evidence attestation notarization policy, P25.82 adds package materialization approval audit countersignature revocation appeal resolution enforcement evidence attestation notarization certification endorsement countersignature verification revocation appeal resolution enforcement evidence attestation notarization certification policy, P25.83 adds package materialization approval audit countersignature revocation appeal resolution enforcement evidence attestation notarization certification endorsement countersignature verification revocation appeal resolution enforcement evidence attestation notarization certification endorsement policy, P25.84 adds package materialization approval audit countersignature revocation appeal resolution enforcement evidence attestation notarization certification endorsement countersignature verification revocation appeal resolution enforcement evidence attestation notarization certification endorsement countersignature policy, P25.85 adds package materialization approval audit countersignature revocation appeal resolution enforcement evidence attestation notarization certification endorsement countersignature verification revocation appeal resolution enforcement evidence attestation notarization certification endorsement countersignature verification policy, and P25.86 adds package materialization approval audit countersignature revocation appeal resolution enforcement evidence attestation notarization certification endorsement countersignature verification revocation appeal resolution enforcement evidence attestation notarization certification endorsement countersignature verification revocation policy while runtime execution remains blocked |
+| F36 | done | Components/Tokens descriptor boundaries | Phase 27 | Agents can discover planned component and token command names without mistaking them for executable tools | Completed 2026-07-19; P27.1 planning, P27.2 empty-adapter descriptors, and P27.3 inventory/architecture alignment keep the four names discoverable without MCP/CLI execution; executable tools stay deferred until library-file targeting and token apply scope are explicit |
 
 ## Phase 26: Activate Thumbnail Renderer Service
 
@@ -1128,10 +1133,24 @@ process boundary before MCP or CLI execution is enabled.
 | P26.53 | done | Reduce default `render.thumbnail` operator friction | `command-runtime`, `penpot-cli`, `mcp`, `renderer-service`, `mcp/docs`, `todo.md`, `CHANGES.md` | Completed 2026-07-19; CLI/MCP thumbnail execution is endpoint-first: a configured renderer-service endpoint opens health preflight and dispatch without requiring a separate opt-in flag, while `disabled`/`off`/`false`/`0`/`no` still closes the gate and diagnostics remain redacted | Keeps unsafe auto-spawn, local-fs side effects, and unreviewed materialization gated |
 | P26.54 | done | Optional controlled renderer-service process lifecycle | `penpot-cli`, `renderer-service`, `mcp/docs`, `todo.md`, `CHANGES.md` | Completed 2026-07-19; `penpot-cli renderer-service start --spawn` / `PENPOT_RENDERER_SERVICE_LIFECYCLE=spawn` can spawn, health-watch, and stop a private-checkout host with pid tracking, while default start remains no-spawn manual | Keeps default no-spawn behavior and avoids background daemons without operator consent |
 
+## Phase 27: Components And Tokens Descriptor Boundaries
+
+Goal: make planned component and token tool names visible in the shared command
+catalog before adding executable MCP, CLI, or backend-command behavior. Follow
+the slim P22.4 / P25.1 descriptor-only pattern: empty adapters, no tool
+registration, no policy-metadata chains.
+
+| ID | Status | Task | Modules | Verification | Notes |
+| --- | --- | --- | --- | --- | --- |
+| P27.1 | done | Plan components/tokens descriptor-only boundaries | `mcp/docs`, `todo.md`, `CHANGES.md` | Completed 2026-07-19; `components-tokens-descriptor-boundaries.md` reserves `component.create`, `component.instantiate`, `tokens.list`, and `tokens.apply`, documents open library-file and token-apply contracts, and keeps adapters empty | No command-runtime, MCP, CLI, backend, or common behavior changes in P27.1 |
+| P27.2 | done | Add descriptor-only component/token command-runtime entries | `command-runtime`, `penpot-cli`, `mcp/docs`, `todo.md` | Completed 2026-07-19; `ComponentsTokensCommandDescriptors` expose four empty-adapter entries; runtime and CLI smoke tests resolve id/mcpToolName/cliCommand lookups and keep adapters empty | MCP tools and CLI execution handlers remain unregistered |
+| P27.3 | done | Align residual inventory/architecture wording | `mcp/docs`, `todo.md`, `CHANGES.md` | Completed 2026-07-19; inventory, architecture, and live-gap audit mark the four names as descriptor-only with empty adapters and no MCP/CLI execution | Prefer read-only `tokens.list` fixtures as the first post-descriptor executable candidate |
+
 ## Remaining Work Checklist
 
-Incomplete product work after P26.45. Mark items `[x]` only when the matching
-tracker row is `done` and verified. Keep at most one table row `in_progress`.
+Incomplete product work after Phase 26 close-out. Mark items `[x]` only when the
+matching tracker row is `done` and verified. Keep at most one roadmap feature
+row `in_progress`.
 
 ### Phase 26 close-out (real thumbnails)
 
@@ -1148,9 +1167,24 @@ tracker row is `done` and verified. Keep at most one table row `in_progress`.
 ### Headless authoring gaps (post–Phase 26)
 
 - [x] **Grid cell / child placement** — backend-command supports optional `layout.cells` placements (row/column/spans/shapes); complex area auto-assignment remains limited/plugin-live
-- [x] **Components wave** — evaluated 2026-07-19: names only in ToolNames; common library helpers exist; no headless/MCP registration; **defer** executable tools until library-file targeting contract (see `headless-live-gap-audit.md`)
-- [x] **Tokens wave** — evaluated 2026-07-19: names only; tokens-lib/feature flags exist in common; no MCP/CLI/headless path; **defer** until token set/theme apply scope is specified (prefer future read-only `tokens.list` descriptor first)
+- [x] **Components / Tokens evaluation** — evaluated 2026-07-19: names only in ToolNames; common library helpers exist; no headless/MCP registration; executable tools deferred until library-file targeting and token apply scope are specified (see `headless-live-gap-audit.md`)
+- [x] **Phase 27 Components/Tokens descriptor-only wave** — P27.1–P27.3 complete; empty-adapter descriptors only; no MCP registration or executable adapters
+- [x] **`tokens.list` executable backend-command path** — common `tokens-summary`, backend `get-file-tokens`, MCP tool, CLI `tokens list`
+- [x] **`component.create` executable backend-command path** — single frame or multi-shape wrap (`create-component-request` / `create-file-component`)
+- [x] **`component.instantiate` executable backend-command path** — local or linked library with explicit x/y (`instantiate-component-request` / `create-file-component-instance`)
+- [x] **`tokens.apply` executable backend-command path** — multi-shape + explicit attributes with simple ref/spacing/typography materialization (`apply-token-request` / `apply-file-token`)
+- [x] **Multi-shape tokens.apply**
+- [x] **Typography/spacing token materialization**
+- [x] **Remote/linked-library component.instantiate**
+- [x] **Multi-shape component.create wrap**
+- [x] **shape.group / shape.ungroup headless path** — same-parent grouping and group ungroup via backend-command
 - [x] **Live-only workspace state** — product decision 2026-07-19: keep `page.set_current` / `selection.get` / `selection.set` plugin-live/editor-local; no persisted agent session state (see `headless-live-gap-audit.md`)
+
+### Phase 27: Components/Tokens descriptor boundaries
+
+- [x] **P27.1** Plan components/tokens descriptor-only boundaries (`mcp/docs/components-tokens-descriptor-boundaries.md`)
+- [x] **P27.2** Add descriptor-only `component.create` / `component.instantiate` / `tokens.list` / `tokens.apply` entries with empty adapters
+- [x] **P27.3** Align residual inventory/architecture wording without registering MCP tools or CLI execution
 
 ### Packaging, ops, and distribution
 
@@ -1162,8 +1196,10 @@ tracker row is `done` and verified. Keep at most one table row `in_progress`.
 ### Explicitly not open as next work
 
 - [x] Phases 1–25 product slices tracked as complete for their stated scope
-- [x] P26.1–P26.45 gated planning/preflight/boundary slices
+- [x] P26.1–P26.54 thumbnail renderer-service activation and close-out
 - [x] Maintenance CACHE.1–CACHE.3
+- [x] Executable components/tokens tools (deferred past Phase 27 descriptors)
+- [x] Plugin-live-only component/token wrappers without a headless contract
 
 
 P26.1 is complete: `@penpot/renderer-service` is a private pnpm workspace

@@ -6,19 +6,32 @@
 
 (ns app.common.files.headless
   (:require
+   [app.common.data :as d]
    [app.common.data.macros :as dm]
    [app.common.exceptions :as ex]
    [app.common.files.helpers :as cfh]
    [app.common.geom.point :as gpt]
+   [app.common.geom.shapes :as gsh]
+   [app.common.path-names :as cpn]
+   [app.common.types.component :as ctk]
+   [app.common.types.components-list :as ctkl]
+   [app.common.types.container :as ctn]
    [app.common.types.shape :as cts]
    [app.common.types.shape.interactions :as ctsi]
    [app.common.types.shape.layout :as ctsl]
    [app.common.types.text :as cttx]
+   [app.common.types.token :as cto]
+   [app.common.types.tokens-lib :as ctob]
    [app.common.uuid :as uuid]
+   [clojure.set :as set]
    [cuerdas.core :as str]))
 
 (def supported-shape-types
   #{:frame :rect :text})
+
+(def summarized-shape-types
+  "Shape types that can appear in headless summaries (includes groups)."
+  #{:frame :rect :text :group})
 
 (defn page-summary
   [file-data page-id]
@@ -1879,3 +1892,967 @@
                 :id shape-id
                 :page-id page-id
                 :ignore-touched true}]}))
+
+(defn- token-summary
+  [token set-id include-values?]
+  (cond-> {:id (ctob/get-id token)
+           :name (ctob/get-name token)
+           :type (:type token)
+           :set-id set-id
+           :description (or (ctob/get-description token) "")}
+    include-values?
+    (assoc :value (:value token))))
+
+(defn- token-set-summary
+  [token-set include-values?]
+  (let [set-id (ctob/get-id token-set)
+        tokens (->> (vals (ctob/get-tokens- token-set))
+                    (map #(token-summary % set-id include-values?))
+                    (sort-by :name)
+                    (vec))]
+    {:id set-id
+     :name (ctob/get-name token-set)
+     :description (or (ctob/get-description token-set) "")
+     :token-count (count tokens)
+     :tokens tokens}))
+
+(defn- token-theme-summary
+  [theme]
+  {:id (ctob/get-id theme)
+   :name (ctob/get-name theme)
+   :group (or (:group theme) "")
+   :description (or (ctob/get-description theme) "")
+   :path (ctob/get-theme-path theme)
+   :sets (vec (sort (or (:sets theme) #{})))
+   :is-source (boolean (:is-source theme))
+   :hidden? (boolean (ctob/hidden-theme? theme))})
+
+(defn tokens-summary
+  "Return a headless read-only summary of the file tokens library.
+
+  Params:
+  - `:set-id` optional token set filter
+  - `:include-values` when true, include raw stored token values (default false)"
+  [file-data {:keys [set-id include-values]}]
+  (let [include-values? (boolean include-values)
+        tokens-lib (:tokens-lib file-data)
+        present? (some? tokens-lib)
+        empty? (or (not present?) (ctob/empty-lib? tokens-lib))
+        all-sets (if empty?
+                   []
+                   (->> (ctob/get-sets tokens-lib)
+                        (map #(token-set-summary % include-values?))
+                        (sort-by :name)
+                        (vec)))
+        sets (if (some? set-id)
+               (let [matched (filterv #(= set-id (:id %)) all-sets)]
+                 (when (and present? (not empty?) (empty? matched))
+                   (ex/raise :type :not-found
+                             :code :token-set-not-found
+                             :hint "The requested token set does not exist in this file."
+                             :set-id set-id))
+                 matched)
+               all-sets)
+        themes (if empty?
+                 []
+                 (->> (ctob/get-themes tokens-lib)
+                      (remove ctob/hidden-theme?)
+                      (map token-theme-summary)
+                      (sort-by (juxt :group :name))
+                      (vec)))
+        active-theme-paths (if empty?
+                             []
+                             (->> (ctob/get-active-theme-paths tokens-lib)
+                                  (remove #(= % ctob/hidden-theme-path))
+                                  (sort)
+                                  (vec)))
+        tokens (->> sets (mapcat :tokens) (sort-by (juxt :set-id :name)) (vec))]
+    {:present present?
+     :empty empty?
+     :include-values include-values?
+     :set-count (count sets)
+     :token-count (count tokens)
+     :theme-count (count themes)
+     :active-theme-paths active-theme-paths
+     :sets sets
+     :tokens tokens
+     :themes themes}))
+
+(defn- component-summary
+  [component root page-id]
+  {:id (:id component)
+   :name (:name component)
+   :path (or (:path component) "")
+   :main-instance-id (:main-instance-id component)
+   :main-instance-page (:main-instance-page component)
+   :root-shape-id (:id root)
+   :root-shape-name (:name root)
+   :page-id page-id})
+
+(defn- shape-bounds
+  [shape]
+  (or (try
+        (gsh/shapes->rect [shape])
+        (catch #?(:clj Throwable :cljs :default) _ nil))
+      (let [x (or (:x shape) 0)
+            y (or (:y shape) 0)
+            w (or (:width shape) 0)
+            h (or (:height shape) 0)]
+        {:x x :y y :width w :height h
+         :x1 x :y1 y :x2 (+ x w) :y2 (+ y h)})))
+
+(defn- bounds-union
+  [shapes]
+  (let [rects (map shape-bounds shapes)
+        x1 (apply min (map :x1 rects))
+        y1 (apply min (map :y1 rects))
+        x2 (apply max (map :x2 rects))
+        y2 (apply max (map :y2 rects))]
+    {:x x1
+     :y y1
+     :width (max 1 (- x2 x1))
+     :height (max 1 (- y2 y1))}))
+
+(defn- component-from-root
+  [file-id page-id objects root component-name]
+  (let [[path final-name] (cpn/split-group-name component-name)
+        [root-shape updated-shapes] (ctn/convert-shape-in-component root objects file-id)
+        component-id (:id root-shape)
+        main-instance-id (:id root)
+        main-root (first updated-shapes)
+        shape-mod-changes
+        (mapv (fn [shape]
+                {:type :mod-obj
+                 :page-id page-id
+                 :id (:id shape)
+                 :operations [{:type :set :attr :component-id :val (:component-id shape)}
+                              {:type :set :attr :component-file :val (:component-file shape)}
+                              {:type :set :attr :component-root :val (:component-root shape)}
+                              {:type :set :attr :main-instance :val (:main-instance shape)}
+                              {:type :set :attr :shape-ref :val (:shape-ref shape)}
+                              {:type :set :attr :touched :val (:touched shape)}]})
+              updated-shapes)
+        component {:id component-id
+                   :name final-name
+                   :path path
+                   :main-instance-id main-instance-id
+                   :main-instance-page page-id}
+        changes (into [{:type :add-component
+                        :id component-id
+                        :path path
+                        :name final-name
+                        :main-instance-id main-instance-id
+                        :main-instance-page page-id}]
+                      shape-mod-changes)]
+    {:component (component-summary component main-root page-id)
+     :shape (shape-summary (or main-root root) page-id)
+     :changes changes}))
+
+(defn create-component-request
+  "Create a local-file component from one non-component frame, or wrap multiple
+  shapes in a new frame and convert that frame into a component.
+
+  Params:
+  - `:file-id` owning file id (local library only)
+  - `:page-id` page that contains the source shapes
+  - `:shape-id` or `:shape-ids` one or more shape ids
+  - `:name` optional component name override"
+  [file-data {:keys [file-id page-id shape-id shape-ids name]}]
+  (let [shape-ids (cond
+                    (some? shape-id) [shape-id]
+                    (sequential? shape-ids) (vec shape-ids)
+                    :else [])
+        _ (when (empty? shape-ids)
+            (ex/raise :type :validation
+                      :code :component-root-required
+                      :hint "Headless component.create requires at least one shape id."))
+        _ (when (> (count shape-ids) 100)
+            (ex/raise :type :validation
+                      :code :too-many-component-shapes
+                      :hint "Headless component.create supports at most 100 source shapes."
+                      :count (count shape-ids)))
+        file-id (or file-id (:id file-data))]
+    (when-not file-id
+      (ex/raise :type :validation
+                :code :file-id-required
+                :hint "Headless component.create requires an explicit file id."))
+    (when (some #(= % uuid/zero) shape-ids)
+      (ex/raise :type :validation
+                :code :unsupported-root-shape
+                :hint "Headless component.create cannot target the page root frame."))
+    (if (= 1 (count shape-ids))
+      (let [root-shape-id (first shape-ids)
+            [page-id page root] (require-shape file-data page-id root-shape-id)
+            objects (:objects page)]
+        (when-not (cfh/frame-shape? root)
+          (ex/raise :type :validation
+                    :code :unsupported-component-root-type
+                    :hint "Single-shape component.create requires a frame root. Pass multiple shapes to wrap them in a new frame."
+                    :shape-type (:type root)
+                    :shape-id root-shape-id))
+        (when (ctk/instance-head? root)
+          (ex/raise :type :validation
+                    :code :shape-already-component
+                    :hint "The target frame is already a component instance head."
+                    :shape-id root-shape-id
+                    :component-id (:component-id root)))
+        (let [component-name (let [raw (some-> name str/trim)]
+                               (if (seq raw) raw (:name root)))]
+          (component-from-root file-id page-id objects root component-name)))
+      ;; Multi-shape wrap: create a board frame around the selection, reparent, convert.
+      (let [resolved (mapv #(require-shape file-data page-id %) shape-ids)
+            page-id (ffirst resolved)
+            page (second (first resolved))
+            shapes (mapv #(nth % 2) resolved)
+            objects (:objects page)
+            _ (when (some ctk/instance-head? shapes)
+                (ex/raise :type :validation
+                          :code :shape-already-component
+                          :hint "Multi-shape component.create cannot include existing component instance heads."))
+            bounds (bounds-union shapes)
+            parent-id (or (:parent-id (first shapes)) uuid/zero)
+            wrap-id (uuid/next)
+            wrap-name (let [raw (some-> name str/trim)]
+                        (if (seq raw) raw "Component 1"))
+            wrap-frame (cts/check-shape
+                        (cts/setup-shape
+                         {:id wrap-id
+                          :type :frame
+                          :parent-id parent-id
+                          :frame-id (if (= parent-id uuid/zero) uuid/zero parent-id)
+                          :name wrap-name
+                          :x (:x bounds)
+                          :y (:y bounds)
+                          :width (:width bounds)
+                          :height (:height bounds)
+                          :shapes []}))
+            add-wrap {:type :add-obj
+                      :id wrap-id
+                      :page-id page-id
+                      :parent-id parent-id
+                      :frame-id (:frame-id wrap-frame)
+                      :ignore-touched true
+                      :obj wrap-frame}
+            reparent-changes
+            (mapv (fn [shape]
+                    {:type :mov-objects
+                     :page-id page-id
+                     :parent-id wrap-id
+                     :shapes [(:id shape)]
+                     :ignore-touched true})
+                  shapes)
+            objects' (-> objects
+                         (assoc wrap-id (assoc wrap-frame :shapes (mapv :id shapes)))
+                         (as-> $
+                           (reduce (fn [objs shape]
+                                     (-> objs
+                                         (assoc-in [(:id shape) :parent-id] wrap-id)
+                                         (assoc-in [(:id shape) :frame-id] wrap-id)
+                                         (assoc-in [(:id shape) :constraints-h] :scale)
+                                         (assoc-in [(:id shape) :constraints-v] :scale)))
+                                   $
+                                   shapes)))
+            wrap-root (get objects' wrap-id)
+            created (component-from-root file-id page-id objects' wrap-root wrap-name)
+            constraint-ops
+            (mapcat (fn [shape]
+                      [{:type :mod-obj
+                        :page-id page-id
+                        :id (:id shape)
+                        :operations [{:type :set :attr :constraints-h :val :scale}
+                                     {:type :set :attr :constraints-v :val :scale}]}])
+                    shapes)]
+        (assoc created
+               :changes (into [add-wrap]
+                              (concat reparent-changes
+                                      constraint-ops
+                                      (:changes created)))
+               :wrapped true
+               :source-shape-ids (mapv :id shapes))))))
+
+(defn instantiate-component-request
+  "Create a component instance copy at an explicit position.
+
+  Params:
+  - `:file-id` destination file id
+  - `:page-id` destination page
+  - `:component-id` component id
+  - `:component-file-id` optional library file id; defaults to `:file-id`
+  - `:libraries` optional map of library-id -> library (`{:id :data}`) for remote components
+  - `:x` / `:y` placement point
+  - `:parent-id` optional frame parent; defaults to page root
+  - `:shape-id` optional forced id for the instance root"
+  [file-data {:keys [file-id page-id component-id component-file-id libraries x y parent-id shape-id]}]
+  (let [file-id (or file-id (:id file-data))
+        component-file-id (or component-file-id file-id)
+        libraries (or libraries {})]
+    (when-not file-id
+      (ex/raise :type :validation
+                :code :file-id-required
+                :hint "Headless component.instantiate requires an explicit file id."))
+    (when-not component-id
+      (ex/raise :type :validation
+                :code :component-id-required
+                :hint "Headless component.instantiate requires component-id."))
+    (when (or (nil? x) (nil? y))
+      (ex/raise :type :validation
+                :code :component-position-required
+                :hint "Headless component.instantiate requires explicit x and y coordinates."))
+    (let [local? (= component-file-id file-id)
+          library (if local?
+                    {:id file-id :data (assoc file-data :id file-id)}
+                    (get libraries component-file-id))
+          library-data (if local?
+                         (:data library)
+                         (or (:data library) library))
+          component (if local?
+                      (ctkl/get-component file-data component-id)
+                      (ctkl/get-component library-data component-id))]
+      (when-not local?
+        (when-not library
+          (ex/raise :type :not-found
+                    :code :component-library-not-found
+                    :hint "Remote component library data was not provided or not found."
+                    :component-file-id component-file-id
+                    :component-id component-id)))
+      (when-not component
+        (ex/raise :type :not-found
+                  :code :component-not-found
+                  :hint "The requested component does not exist in the target library."
+                  :component-id component-id
+                  :component-file-id component-file-id))
+      (when (:deleted component)
+        (ex/raise :type :validation
+                  :code :component-deleted
+                  :hint "Cannot instantiate a deleted component."
+                  :component-id component-id))
+      (let [[page-id page] (require-page file-data page-id)
+            objects (:objects page)
+            parent-id (or parent-id uuid/zero)
+            parent (get objects parent-id)]
+        (when-not parent
+          (ex/raise :type :validation
+                    :code :parent-shape-not-found
+                    :hint "The target parent shape does not exist."
+                    :parent-id parent-id))
+        (when-not (cfh/frame-shape? parent)
+          (ex/raise :type :validation
+                    :code :unsupported-parent-shape
+                    :hint "Headless component.instantiate currently supports frame parents only."
+                    :parent-id parent-id
+                    :parent-type (:type parent)))
+        (let [frame-id (if (cfh/frame-shape? parent)
+                         (:id parent)
+                         (:frame-id parent))
+              library-data' (assoc library-data :id component-file-id)
+              position (gpt/point x y)
+              opts (cond-> {:force-frame-id frame-id
+                            :force-parent-id parent-id}
+                     (some? shape-id)
+                     (assoc :force-id shape-id))
+              [instance-root instance-shapes]
+              (ctn/make-component-instance page component library-data' position opts)
+              instance-root (cond-> instance-root
+                              (some? parent-id)
+                              (assoc :parent-id parent-id)
+
+                              (some? frame-id)
+                              (assoc :frame-id frame-id)
+
+                              (and (some? parent) (ctn/in-any-component? objects parent))
+                              (dissoc :component-root)
+
+                              :always
+                              (assoc :component-file component-file-id))
+              instance-shapes (into [instance-root] (rest instance-shapes))
+              changes
+              (mapv (fn [shape]
+                      {:type :add-obj
+                       :id (:id shape)
+                       :page-id page-id
+                       :parent-id (or (:parent-id shape) parent-id)
+                       :frame-id (or (:frame-id shape) frame-id)
+                       :ignore-touched true
+                       :obj shape})
+                    instance-shapes)]
+          {:component (assoc (component-summary component instance-root page-id)
+                             :component-file-id component-file-id
+                             :remote? (not local?))
+           :shape (shape-summary instance-root page-id)
+           :shapes (mapv #(shape-summary % page-id) instance-shapes)
+           :changes changes})))))
+
+(def ^:private headless-token-apply-attrs
+  "Token attributes supported by headless tokens.apply."
+  #{:fill :stroke-color :width :height :opacity
+    :r1 :r2 :r3 :r4 :rotation :stroke-width
+    ;; spacing
+    :row-gap :column-gap :p1 :p2 :p3 :p4 :m1 :m2 :m3 :m4
+    ;; typography
+    :font-size :font-weight :letter-spacing :line-height :font-family
+    :text-case :text-decoration :typography})
+
+(defn- normalize-token-attrs
+  [attributes]
+  (let [attrs (->> attributes
+                   (map (fn [attr]
+                          (cond
+                            (keyword? attr) attr
+                            (string? attr) (keyword attr)
+                            :else nil)))
+                   (remove nil?)
+                   (into []))]
+    (when (empty? attrs)
+      (ex/raise :type :validation
+                :code :token-attributes-required
+                :hint "Headless tokens.apply requires at least one token attribute (for example fill or width)."))
+    (when-let [invalid (seq (remove headless-token-apply-attrs attrs))]
+      (ex/raise :type :validation
+                :code :unsupported-token-attributes
+                :hint "Headless tokens.apply currently supports only a fixed attribute subset."
+                :attributes (vec invalid)
+                :supported (vec (sort headless-token-apply-attrs))))
+    (when-let [unknown (seq (remove cto/token-attr? attrs))]
+      (ex/raise :type :validation
+                :code :invalid-token-attributes
+                :hint "One or more token attributes are not valid Penpot token attributes."
+                :attributes (vec unknown)))
+    (set attrs)))
+
+(defn- resolve-apply-token
+  [tokens-lib {:keys [token-id token-name set-id set-name]}]
+  (cond
+    (and token-id set-id)
+    (or (ctob/get-token tokens-lib set-id token-id)
+        (ex/raise :type :not-found
+                  :code :token-not-found
+                  :hint "The requested token does not exist in the given set."
+                  :set-id set-id
+                  :token-id token-id))
+
+    (and token-name set-id)
+    (let [set (ctob/get-set tokens-lib set-id)]
+      (or (and set (ctob/get-token-by-name- set token-name))
+          (ex/raise :type :not-found
+                    :code :token-not-found
+                    :hint "The requested token name does not exist in the given set."
+                    :set-id set-id
+                    :token-name token-name)))
+
+    (and token-name set-name)
+    (or (ctob/get-token-by-name tokens-lib set-name token-name)
+        (ex/raise :type :not-found
+                  :code :token-not-found
+                  :hint "The requested token name does not exist in the given set name."
+                  :set-name set-name
+                  :token-name token-name))
+
+    token-name
+    (or (get (ctob/get-all-tokens-map tokens-lib) token-name)
+        (ex/raise :type :not-found
+                  :code :token-not-found
+                  :hint "The requested token name does not exist in this file."
+                  :token-name token-name))
+
+    :else
+    (ex/raise :type :validation
+              :code :token-identity-required
+              :hint "Headless tokens.apply requires tokenName, or setId+tokenId, or setName+tokenName.")))
+
+(defn- find-token-set-id
+  [tokens-lib token]
+  (some (fn [token-set]
+          (when (some #(= (ctob/get-id %) (ctob/get-id token))
+                      (vals (ctob/get-tokens- token-set)))
+            (ctob/get-id token-set)))
+        (ctob/get-sets tokens-lib)))
+
+(defn- resolve-token-value*
+  "Best-effort resolve of token values including simple {name} references.
+  Composite map/vector values are returned as-is after recursive resolve.
+  Unresolved/cyclic refs return nil."
+  [tokens-lib token visited]
+  (let [name (ctob/get-name token)]
+    (if (contains? visited name)
+      nil
+      (let [visited (conj visited name)
+            value (:value token)
+            resolve-ref
+            (fn [ref-name]
+              (when-let [ref-token (get (ctob/get-all-tokens-map tokens-lib) ref-name)]
+                (resolve-token-value* tokens-lib ref-token visited)))]
+        (cond
+          (nil? value) nil
+
+          (string? value)
+          (if-let [refs (seq (cto/find-token-value-references value))]
+            (if (and (= 1 (count refs))
+                     (re-matches #"^\s*\{[^}]+\}\s*$" value))
+              (resolve-ref (first refs))
+              ;; partial/mixed refs: leave unresolved for materialization
+              value)
+            value)
+
+          (map? value)
+          (into {}
+                (map (fn [[k v]]
+                       [k (if (string? v)
+                            (if-let [refs (seq (cto/find-token-value-references v))]
+                              (if (and (= 1 (count refs))
+                                       (re-matches #"^\s*\{[^}]+\}\s*$" v))
+                                (or (resolve-ref (first refs)) v)
+                                v)
+                              v)
+                            v)]))
+                value)
+
+          :else value)))))
+
+(defn- resolve-token-value
+  [tokens-lib token]
+  (resolve-token-value* tokens-lib token #{}))
+
+(defn- parse-token-number
+  [value]
+  (cond
+    (number? value) (double value)
+    (string? value)
+    (let [trimmed (str/trim value)
+          ;; strip common unit suffixes for spacing/typography
+          cleaned (str/replace trimmed #"(?i)(px|pt|em|rem)$" "")]
+      (d/parse-double cleaned))
+    :else nil))
+
+(defn- ensure-layout-map
+  [shape attr]
+  (update shape attr #(if (map? %) % {})))
+
+(defn- apply-resolved-token-value
+  "Materialize resolved token values onto shape attrs."
+  [shape attributes token resolved]
+  (let [type (:type token)]
+    (if (nil? resolved)
+      shape
+      (reduce
+       (fn [shape attr]
+         (case attr
+           :fill
+           (if (and (or (= type :color) (string? resolved))
+                    (string? resolved)
+                    (seq (str/trim resolved))
+                    (not (cto/find-token-value-references resolved)))
+             (let [fills (if (seq (:fills shape))
+                           (:fills shape)
+                           [{:fill-color "#000000" :fill-opacity 1}])]
+               (assoc shape :fills (update fills 0 assoc :fill-color (str/trim resolved))))
+             shape)
+
+           :stroke-color
+           (if (and (string? resolved)
+                    (seq (str/trim resolved))
+                    (not (cto/find-token-value-references resolved)))
+             (let [strokes (if (seq (:strokes shape))
+                             (:strokes shape)
+                             [{:stroke-style :solid
+                               :stroke-alignment :inner
+                               :stroke-width 1
+                               :stroke-color "#000000"
+                               :stroke-opacity 1}])]
+               (assoc shape :strokes (update strokes 0 assoc :stroke-color (str/trim resolved))))
+             shape)
+
+           :stroke-width
+           (if-let [n (parse-token-number resolved)]
+             (let [strokes (if (seq (:strokes shape))
+                             (:strokes shape)
+                             [{:stroke-style :solid
+                               :stroke-alignment :inner
+                               :stroke-width 1
+                               :stroke-color "#000000"
+                               :stroke-opacity 1}])]
+               (assoc shape :strokes (update strokes 0 assoc :stroke-width (max 0 n))))
+             shape)
+
+           (:width :height :opacity :rotation :r1 :r2 :r3 :r4)
+           (if-let [n (parse-token-number resolved)]
+             (case attr
+               :opacity (assoc shape :opacity (min 1 (max 0 n)))
+               :rotation (assoc shape :rotation n)
+               (assoc shape attr (max 0 n)))
+             shape)
+
+           (:row-gap :column-gap)
+           (if-let [n (parse-token-number resolved)]
+             (-> shape
+                 (ensure-layout-map :layout-gap)
+                 (assoc-in [:layout-gap (if (= attr :row-gap) :row-gap :column-gap)] (max 0 n)))
+             shape)
+
+           (:p1 :p2 :p3 :p4)
+           (if-let [n (parse-token-number resolved)]
+             (-> shape
+                 (ensure-layout-map :layout-padding)
+                 (assoc-in [:layout-padding attr] n))
+             shape)
+
+           (:m1 :m2 :m3 :m4)
+           (if-let [n (parse-token-number resolved)]
+             (-> shape
+                 (ensure-layout-map :layout-item-margin)
+                 (assoc-in [:layout-item-margin attr] n))
+             shape)
+
+           (:font-size :letter-spacing :line-height)
+           (if-let [n (parse-token-number resolved)]
+             (assoc shape attr n)
+             (if (and (string? resolved) (not (cto/find-token-value-references resolved)))
+               (assoc shape attr resolved)
+               shape))
+
+           (:font-weight :font-family :text-case :text-decoration)
+           (if (and (or (string? resolved) (number? resolved))
+                    (not (and (string? resolved) (cto/find-token-value-references resolved))))
+             (assoc shape attr resolved)
+             shape)
+
+           ;; composite typography map applied via :typography attr
+           :typography
+           (if (map? resolved)
+             (reduce (fn [shape [k v]]
+                       (let [attr' (keyword k)]
+                         (if (contains? #{:font-size :font-weight :letter-spacing :line-height
+                                          :font-family :text-case :text-decoration}
+                                        attr')
+                           (apply-resolved-token-value shape #{attr'} token v)
+                           shape)))
+                     shape
+                     resolved)
+             shape)
+
+           shape))
+       shape
+       attributes))))
+
+(defn- shape-attr-operations
+  [before after attrs]
+  (->> attrs
+       (keep (fn [attr]
+               (let [b (get before attr)
+                     a (get after attr)]
+                 (when (not= b a)
+                   {:type :set
+                    :attr attr
+                    :val a
+                    :ignore-touched true}))))
+       (vec)))
+
+(defn- apply-token-to-one-shape
+  [file-data page-id shape-id attributes token tokens-lib resolved]
+  (when (= shape-id uuid/zero)
+    (ex/raise :type :validation
+              :code :unsupported-root-shape
+              :hint "Headless tokens.apply cannot target the page root shape."
+              :shape-id shape-id))
+  (let [[page-id _page shape] (require-shape file-data page-id shape-id)
+        tokenized (into {} (map (fn [attr] [attr (ctob/get-name token)]) attributes))
+        shape' (-> shape
+                   (update :applied-tokens #(merge (or % {}) tokenized))
+                   (apply-resolved-token-value attributes token resolved))
+        shape-attrs (cond-> #{:applied-tokens}
+                      (contains? attributes :fill) (conj :fills)
+                      (or (contains? attributes :stroke-color)
+                          (contains? attributes :stroke-width)) (conj :strokes)
+                      (contains? attributes :width) (conj :width)
+                      (contains? attributes :height) (conj :height)
+                      (contains? attributes :opacity) (conj :opacity)
+                      (contains? attributes :rotation) (conj :rotation)
+                      (contains? attributes :r1) (conj :r1)
+                      (contains? attributes :r2) (conj :r2)
+                      (contains? attributes :r3) (conj :r3)
+                      (contains? attributes :r4) (conj :r4)
+                      (or (contains? attributes :row-gap)
+                          (contains? attributes :column-gap)) (conj :layout-gap)
+                      (some attributes [:p1 :p2 :p3 :p4]) (conj :layout-padding)
+                      (some attributes [:m1 :m2 :m3 :m4]) (conj :layout-item-margin)
+                      (contains? attributes :font-size) (conj :font-size)
+                      (contains? attributes :font-weight) (conj :font-weight)
+                      (contains? attributes :letter-spacing) (conj :letter-spacing)
+                      (contains? attributes :line-height) (conj :line-height)
+                      (contains? attributes :font-family) (conj :font-family)
+                      (contains? attributes :text-case) (conj :text-case)
+                      (contains? attributes :text-decoration) (conj :text-decoration)
+                      (contains? attributes :typography)
+                      (into #{:font-size :font-weight :letter-spacing :line-height
+                              :font-family :text-case :text-decoration}))
+        operations (shape-attr-operations shape shape' shape-attrs)]
+    (when (empty? operations)
+      (ex/raise :type :validation
+                :code :empty-token-apply
+                :hint "Token apply produced no shape changes for at least one shape."
+                :shape-id shape-id))
+    {:shape (shape-summary shape' page-id)
+     :applied-tokens (:applied-tokens shape')
+     :materialized (boolean (some #(not= (:attr %) :applied-tokens) operations))
+     :change {:type :mod-obj
+              :page-id page-id
+              :id (:id shape)
+              :operations operations}}))
+
+(defn apply-token-request
+  "Apply a design token to one or more shapes for explicit token attributes.
+
+  Params:
+  - `:page-id` optional page that contains the shapes
+  - `:shape-id` or `:shape-ids` one or more shape ids (max 100)
+  - `:attributes` required non-empty list of token attributes
+  - token identity via `:token-name`, or `:set-id` + `:token-id`, or `:set-name` + `:token-name`
+
+  Updates `:applied-tokens` and best-effort materializes plain and simply-resolved
+  color/number/spacing/typography values. Unresolved references stay bound-only."
+  [file-data {:keys [page-id shape-id shape-ids attributes] :as params}]
+  (let [shape-ids (cond
+                    (some? shape-id) [shape-id]
+                    (sequential? shape-ids) (vec shape-ids)
+                    :else [])
+        _ (when (empty? shape-ids)
+            (ex/raise :type :validation
+                      :code :token-shape-required
+                      :hint "Headless tokens.apply requires at least one shape id."))
+        _ (when (> (count shape-ids) 100)
+            (ex/raise :type :validation
+                      :code :too-many-token-shapes
+                      :hint "Headless tokens.apply supports at most 100 shapes."
+                      :count (count shape-ids)))
+        attributes (normalize-token-attrs attributes)
+        tokens-lib (:tokens-lib file-data)
+        _ (when (or (nil? tokens-lib) (ctob/empty-lib? tokens-lib))
+            (ex/raise :type :validation
+                      :code :tokens-lib-empty
+                      :hint "This file has no design tokens library to apply."))
+        token (resolve-apply-token tokens-lib params)
+        resolved (resolve-token-value tokens-lib token)
+        results (mapv #(apply-token-to-one-shape file-data page-id % attributes token tokens-lib resolved)
+                      shape-ids)
+        set-id (or (:set-id params)
+                   (find-token-set-id tokens-lib token))]
+    {:shape (:shape (first results))
+     :shapes (mapv :shape results)
+     :token {:id (ctob/get-id token)
+             :name (ctob/get-name token)
+             :type (:type token)
+             :set-id set-id
+             :description (or (ctob/get-description token) "")
+             :resolved-value resolved}
+     :attributes (vec (sort attributes))
+     :applied-tokens (:applied-tokens (first results))
+     :materialized (boolean (some :materialized results))
+     :changes (mapv :change results)}))
+
+(defn- empty-groups-after-group-creation
+  [objects parent-id shapes]
+  (let [ids (cfh/clean-loops objects (into #{} (map :id) shapes))
+        parents (into #{} (map #(cfh/get-parent-id objects %)) ids)]
+    (loop [current-id (first parents)
+           to-check (rest parents)
+           removed-id? ids
+           result #{}]
+      (if-not current-id
+        result
+        (let [group (get objects current-id)]
+          (if (and (not= :frame (:type group))
+                   (not= current-id parent-id)
+                   (empty? (remove removed-id? (:shapes group))))
+            (let [to-check (concat to-check [(cfh/get-parent-id objects current-id)])]
+              (recur (first to-check)
+                     (rest to-check)
+                     (conj removed-id? current-id)
+                     (conj result current-id)))
+            (recur (first to-check)
+                   (rest to-check)
+                   removed-id?
+                   result)))))))
+
+(defn group-shapes-request
+  "Group one or more shapes under a new group shape.
+
+  Params:
+  - `:page-id` optional page id
+  - `:shape-ids` required non-empty vector of shape ids (max 100)
+  - `:name` optional group name (default \"Group\")
+  - `:group-id` optional forced group id"
+  [file-data {:keys [page-id shape-ids name group-id]}]
+  (let [shape-ids (vec (or shape-ids []))
+        _ (when (empty? shape-ids)
+            (ex/raise :type :validation
+                      :code :group-shapes-required
+                      :hint "Headless shape.group requires at least one shape id."))
+        _ (when (> (count shape-ids) 100)
+            (ex/raise :type :validation
+                      :code :too-many-group-shapes
+                      :hint "Headless shape.group supports at most 100 shapes."
+                      :count (count shape-ids)))
+        _ (when (some #(= % uuid/zero) shape-ids)
+            (ex/raise :type :validation
+                      :code :unsupported-root-shape
+                      :hint "Headless shape.group cannot include the page root shape."))
+        resolved (mapv #(require-shape file-data page-id %) shape-ids)
+        page-id (ffirst resolved)
+        page (second (first resolved))
+        objects (:objects page)
+        ordered-ids (->> shape-ids
+                         (cfh/clean-loops objects)
+                         (cfh/order-by-indexed-shapes objects)
+                         reverse
+                         vec)
+        shapes (->> ordered-ids
+                    (map #(get objects %))
+                    (remove nil?)
+                    (remove ctk/is-variant?)
+                    (remove #(ctn/has-any-copy-parent? objects %))
+                    vec)
+        _ (when (empty? shapes)
+            (ex/raise :type :validation
+                      :code :group-shapes-empty
+                      :hint "No groupable shapes remained after filtering component-copy children and variants."))
+        parent-ids (into #{} (map :parent-id) shapes)
+        _ (when-not (= 1 (count parent-ids))
+            (ex/raise :type :validation
+                      :code :group-shapes-different-parents
+                      :hint "Headless shape.group currently requires all shapes to share the same parent."
+                      :parent-ids (vec parent-ids)))
+        frame-ids (into #{} (map :frame-id) shapes)
+        _ (when-not (= 1 (count frame-ids))
+            (ex/raise :type :validation
+                      :code :group-shapes-different-frames
+                      :hint "Headless shape.group currently requires all shapes to share the same frame."
+                      :frame-ids (vec frame-ids)))
+        parent-id (first parent-ids)
+        frame-id (first frame-ids)
+        group-id (or group-id (uuid/next))
+        group-name (let [raw (some-> name str/trim)]
+                     (if (seq raw) raw "Group"))
+        bounds (bounds-union shapes)
+        group-idx (->> shapes
+                       last
+                       :id
+                       (cfh/get-position-on-parent objects)
+                       inc)
+        group (cts/check-shape
+               (cts/setup-shape
+                {:id group-id
+                 :type :group
+                 :name group-name
+                 :shapes (mapv :id shapes)
+                 :x (:x bounds)
+                 :y (:y bounds)
+                 :width (:width bounds)
+                 :height (:height bounds)
+                 :parent-id parent-id
+                 :frame-id frame-id}))
+        ids-to-delete (empty-groups-after-group-creation objects parent-id shapes)
+        add-group {:type :add-obj
+                   :id group-id
+                   :page-id page-id
+                   :parent-id parent-id
+                   :frame-id frame-id
+                   :index group-idx
+                   :ignore-touched true
+                   :obj group}
+        child-ops
+        (mapv (fn [shape]
+                {:type :mod-obj
+                 :page-id page-id
+                 :id (:id shape)
+                 :operations [{:type :set :attr :constraints-h :val :scale}
+                              {:type :set :attr :constraints-v :val :scale}]})
+              shapes)
+        reparent {:type :mov-objects
+                  :page-id page-id
+                  :parent-id group-id
+                  :shapes (->> shapes reverse (mapv :id))
+                  :ignore-touched true}
+        deletes (mapv (fn [id]
+                        {:type :del-obj
+                         :page-id page-id
+                         :id id
+                         :ignore-touched true})
+                      ids-to-delete)
+        changes (into [add-group] (concat child-ops [reparent] deletes))]
+    {:shape (shape-summary group page-id)
+     :children (mapv #(shape-summary % page-id) shapes)
+     :deleted-ids (vec ids-to-delete)
+     :changes changes}))
+
+(defn ungroup-shapes-request
+  "Ungroup one or more group shapes, reparenting children to the group parent.
+
+  Params:
+  - `:page-id` optional page id
+  - `:shape-id` or `:shape-ids` group ids to ungroup (max 100)"
+  [file-data {:keys [page-id shape-id shape-ids]}]
+  (let [shape-ids (cond
+                    (some? shape-id) [shape-id]
+                    (sequential? shape-ids) (vec shape-ids)
+                    :else [])
+        _ (when (empty? shape-ids)
+            (ex/raise :type :validation
+                      :code :ungroup-shapes-required
+                      :hint "Headless shape.ungroup requires at least one group shape id."))
+        _ (when (> (count shape-ids) 100)
+            (ex/raise :type :validation
+                      :code :too-many-ungroup-shapes
+                      :hint "Headless shape.ungroup supports at most 100 groups."
+                      :count (count shape-ids)))
+        results
+        (mapv
+         (fn [group-id]
+           (let [[page-id page group] (require-shape file-data page-id group-id)
+                 objects (:objects page)]
+             (when-not (cfh/group-shape? group)
+               (ex/raise :type :validation
+                         :code :unsupported-ungroup-target
+                         :hint "Headless shape.ungroup currently supports group shapes only."
+                         :shape-id group-id
+                         :shape-type (:type group)))
+             (when (ctk/instance-head? group)
+               (ex/raise :type :validation
+                         :code :component-cannot-ungroup
+                         :hint "Component instance heads cannot be ungrouped."
+                         :shape-id group-id))
+             (when (ctn/has-any-copy-parent? objects group)
+               (ex/raise :type :validation
+                         :code :nested-copy-cannot-ungroup
+                         :hint "Shapes nested under component copies cannot be ungrouped."
+                         :shape-id group-id))
+             (let [children (->> (:shapes group)
+                                 (cfh/order-by-indexed-shapes objects)
+                                 (mapv #(get objects %))
+                                 (remove nil?)
+                                 vec)
+                   parent-id (:parent-id group)
+                   parent (get objects parent-id)
+                   index-in-parent
+                   (->> (:shapes parent)
+                        (map-indexed vector)
+                        (filter #(= group-id (second %)))
+                        (ffirst)
+                        (some-> inc))
+                   reparent {:type :mov-objects
+                             :page-id page-id
+                             :parent-id parent-id
+                             :shapes (mapv :id children)
+                             :ignore-touched true}
+                   reparent (cond-> reparent
+                              (some? index-in-parent)
+                              (assoc :index index-in-parent))
+                   delete {:type :del-obj
+                           :page-id page-id
+                           :id group-id
+                           :ignore-touched true}]
+               {:group (shape-summary group page-id)
+                :children (mapv #(shape-summary % page-id) children)
+                :changes [reparent delete]})))
+         shape-ids)]
+    {:groups (mapv :group results)
+     :children (vec (mapcat :children results))
+     :changes (vec (mapcat :changes results))}))
