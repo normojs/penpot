@@ -84,6 +84,7 @@ Usage:
   penpot-cli mcp logs [--dir <path>] [--follow] [--format text|json]
   penpot-cli token status [--format text|json]
   penpot-cli debug plugin-state [--url <status-url>] [--format text|json]
+  penpot-cli debug agent-logs [--dir <path>] [--format text|json]
   penpot-cli account me [--format text|json]
   penpot-cli team list [--format text|json]
   penpot-cli project list [--team-id <id>] [--format text|json]
@@ -202,12 +203,13 @@ const DEBUG_HELP_TEXT = `penpot-cli debug
 
 Usage:
   penpot-cli debug plugin-state [--url <status-url>] [--format text|json]
+  penpot-cli debug agent-logs [--dir <path>] [--format text|json]
 
 Notes:
   Projects a token-safe plugin/session snapshot from the MCP status endpoint
   (same data shape as debug.get_plugin_state when enabled on the server).
   Prefer penpot-cli mcp status for full ops diagnostics.
-  debug agent-logs remains planned/non-executable; use mcp logs for operators.
+  agent-logs lists metadata-only log files; use mcp logs --follow for operator tail.
 
 Environment:
   PENPOT_MCP_STATUS_URI      Explicit MCP status URL
@@ -9578,6 +9580,112 @@ async function handleDebugPluginState(args: string[], io: CliIO, env: NodeJS.Pro
     }
 }
 
+
+function writeDebugAgentLogsText(io: CliIO, data: Record<string, unknown>): void {
+    const logging = asRecord(data.logging);
+    writeLine(io.stdout, `${CommandDescriptors.DEBUG_GET_AGENT_LOGS.title}`);
+    writeLine(io.stdout, `adapter: ${String(data.adapter ?? "local")}`);
+    writeLine(io.stdout, `contentPolicy: ${String(data.contentPolicy ?? "metadata-only-default")}`);
+    writeLine(io.stdout, `fileLoggingEnabled: ${String(logging.fileLoggingEnabled ?? false)}`);
+    writeLine(io.stdout, `logDirConfigured: ${String(logging.logDirConfigured ?? false)}`);
+    const files = Array.isArray(data.files) ? data.files : [];
+    writeLine(io.stdout, `files: ${files.length}`);
+    for (const file of files.slice(0, 20)) {
+        const row = asRecord(file);
+        writeLine(io.stdout, `  ${String(row.modifiedAt ?? "")} ${String(row.sizeBytes ?? 0)} ${String(row.name ?? "")}`);
+    }
+    if (data.content !== null && data.content !== undefined) {
+        writeLine(io.stdout, "content: <unexpected non-null; treat as error>");
+    }
+}
+
+async function handleDebugAgentLogs(args: string[], io: CliIO, env: NodeJS.ProcessEnv): Promise<number> {
+    const format = parseFormat(args, io);
+    if (!format) {
+        return 2;
+    }
+
+    const config = getMcpConfig(args, env);
+    const logDirFlag = readOption(args, ["--dir", "--log-dir"]);
+    const logDir = logDirFlag ? resolve(logDirFlag) : config.logDir ? resolve(config.logDir) : null;
+
+    const requestEnvelope = createCliRequest(CommandDescriptors.DEBUG_GET_AGENT_LOGS, {
+        target: { logDir },
+        auth: { userTokenPresent: false, source: "local-fs" },
+        adapter: "local",
+        diagnostics: { contentPolicy: "metadata-only-default" },
+    });
+
+    if (!logDir) {
+        writeError(
+            io,
+            format,
+            "mcp_log_dir_not_configured",
+            "MCP file logging directory is not configured for debug agent-logs.",
+            ["Set PENPOT_MCP_LOG_DIR or pass --dir <path>.", "Use penpot-cli mcp logs for the same listing."]
+        );
+        return 2;
+    }
+
+    try {
+        const files = await listLogFiles(logDir);
+        const metadataOnly = files.map((file) => ({
+            name: file.name,
+            sizeBytes: file.sizeBytes,
+            modifiedAt: file.modifiedAt,
+        }));
+        const data = {
+            adapter: "local",
+            enabled: true,
+            enablement: {
+                env: "PENPOT_MCP_ENABLE_DEBUG_TOOLS",
+                enabledValue: "true",
+                note: "CLI metadata listing does not require the MCP enablement env; MCP tool does.",
+            },
+            logging: {
+                fileLoggingEnabled: true,
+                logDirConfigured: true,
+                activeLogFilePresent: metadataOnly.length > 0,
+                activeLogFileName: metadataOnly[0]?.name ?? null,
+            },
+            files: metadataOnly,
+            content: null,
+            contentPolicy: "metadata-only-default",
+            nextActions: [
+                "mcp.get_status",
+                "Use penpot-cli mcp logs --dir <path> for operator listing",
+                "Use penpot-cli mcp logs --dir <path> --follow for operator tail",
+            ],
+        };
+        // Never include absolute paths in the primary payload.
+        const serialized = JSON.stringify(data);
+        if (serialized.includes(logDir)) {
+            throw new Error("absolute logDir leaked into debug agent-logs payload");
+        }
+        const resultEnvelope = createCliResult(requestEnvelope, data, {
+            diagnostics: { logDirConfigured: true },
+        });
+        if (format === "json") {
+            writeJson(io.stdout, {
+                status: "ok",
+                data: resultEnvelope.data,
+            });
+        } else {
+            writeDebugAgentLogsText(io, resultEnvelope.data as Record<string, unknown>);
+        }
+        return 0;
+    } catch (cause) {
+        writeError(
+            io,
+            format,
+            "mcp_log_dir_unreadable",
+            `Unable to list MCP log metadata from ${logDir}: ${String(cause)}`,
+            ["Check PENPOT_MCP_LOG_DIR or --dir.", "Use penpot-cli mcp logs for operator listing."]
+        );
+        return 2;
+    }
+}
+
 async function handleDebugCommand(args: string[], io: CliIO, env: NodeJS.ProcessEnv): Promise<number> {
     const [subcommand, ...rest] = args;
     if (!subcommand || isHelpFlag(subcommand)) {
@@ -9588,14 +9696,7 @@ async function handleDebugCommand(args: string[], io: CliIO, env: NodeJS.Process
         case "plugin-state":
             return await handleDebugPluginState(rest, io, env);
         case "agent-logs":
-            writeError(
-                io,
-                "text",
-                "debug_agent_logs_not_implemented",
-                "debug agent-logs is still descriptor-only. Use penpot-cli mcp logs for operator log listing/follow.",
-                ["penpot-cli mcp logs --dir <path>", "penpot-cli mcp status"]
-            );
-            return 2;
+            return await handleDebugAgentLogs(rest, io, env);
         default:
             writeLine(io.stderr, `Unknown debug command: ${subcommand}`);
             writeLine(io.stderr, 'Run "penpot-cli debug --help" for usage.');

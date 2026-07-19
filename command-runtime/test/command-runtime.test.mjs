@@ -9743,7 +9743,7 @@ test("components/tokens descriptors remain empty-adapter planned boundaries", ()
     }
 });
 
-test("debug diagnostics descriptors document plugin-state local adapter and agent-logs empty adapters", () => {
+test("debug diagnostics descriptors document plugin-state and agent-logs local adapters", () => {
     assert.equal(CommandDescriptors.DEBUG_GET_PLUGIN_STATE.mcpToolName, "debug.get_plugin_state");
     assert.equal(CommandDescriptors.DEBUG_GET_PLUGIN_STATE.cliCommand, "debug plugin-state");
     assert.deepEqual(CommandDescriptors.DEBUG_GET_PLUGIN_STATE.adapters, ["local"]);
@@ -9754,11 +9754,11 @@ test("debug diagnostics descriptors document plugin-state local adapter and agen
 
     assert.equal(CommandDescriptors.DEBUG_GET_AGENT_LOGS.mcpToolName, "debug.get_agent_logs");
     assert.equal(CommandDescriptors.DEBUG_GET_AGENT_LOGS.cliCommand, "debug agent-logs");
-    assert.deepEqual(CommandDescriptors.DEBUG_GET_AGENT_LOGS.adapters, []);
+    assert.deepEqual(CommandDescriptors.DEBUG_GET_AGENT_LOGS.adapters, ["local"]);
     assert.match(CommandDescriptors.DEBUG_GET_AGENT_LOGS.description, /metadata-only/);
-    assert.match(CommandDescriptors.DEBUG_GET_AGENT_LOGS.description, /mcp logs/);
+    assert.match(CommandDescriptors.DEBUG_GET_AGENT_LOGS.description, /PENPOT_MCP_ENABLE_DEBUG_TOOLS/);
     assert.match(CommandDescriptors.DEBUG_GET_AGENT_LOGS.responseShape, /contentPolicy=metadata-only-default/);
-    assert.match(CommandDescriptors.DEBUG_GET_AGENT_LOGS.responseShape, /not executable yet/);
+    assert.match(CommandDescriptors.DEBUG_GET_AGENT_LOGS.responseShape, /no raw log bodies by default/);
 
     for (const descriptor of DebugDiagnosticsCommandDescriptors) {
         assert.equal(getCommandDescriptor(descriptor.id), descriptor);
@@ -9766,7 +9766,7 @@ test("debug diagnostics descriptors document plugin-state local adapter and agen
         assert.equal(getCommandDescriptor(descriptor.cliCommand), descriptor);
     }
     assert.deepEqual(CommandDescriptors.DEBUG_GET_PLUGIN_STATE.adapters, ["local"]);
-    assert.deepEqual(CommandDescriptors.DEBUG_GET_AGENT_LOGS.adapters, []);
+    assert.deepEqual(CommandDescriptors.DEBUG_GET_AGENT_LOGS.adapters, ["local"]);
 });
 
 test("export.file contract maps CLI binary archive requests to backend RPC semantics", () => {

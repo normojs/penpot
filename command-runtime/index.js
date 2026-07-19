@@ -646,11 +646,11 @@ export const CommandDescriptors = Object.freeze({
         cliCommand: "debug agent-logs",
         title: "Get agent logs",
         description:
-            "Planned token-safe summary of MCP server log configuration and log-file metadata as a projection of status.logging and mcp logs listing; descriptor-only with empty adapters; default content is metadata-only until redaction fixtures and enablement exist.",
-        inputSchema: "empty (future: tailLines?, level? behind enablement gate)",
-        adapters: Object.freeze([]),
+            "Returns a token-safe summary of MCP server log configuration and log-file metadata (name/size/mtime only). MCP execution requires PENPOT_MCP_ENABLE_DEBUG_TOOLS=true. Default content is metadata-only; raw bodies and follow stay on penpot-cli mcp logs. See mcp/docs/debug-diagnostics-descriptor-boundaries.md.",
+        inputSchema: "empty (optional future: tailLines?, level? behind extra redaction gate)",
+        adapters: Object.freeze(["local"]),
         responseShape:
-            "planned status envelope with logging flags, file metadata list, content=null, contentPolicy=metadata-only-default, and nextActions; raw log bodies and absolute paths deferred; not executable yet",
+            "status envelope with logging flags, file metadata list, content=null, contentPolicy=metadata-only-default, enablement metadata, and nextActions; no raw log bodies by default",
     }),
 });
 

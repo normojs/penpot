@@ -4332,26 +4332,20 @@ P26.54 adds optional controlled renderer-service process lifecycle. `penpot-cli 
 ```text
 execute_code                 # executable only when PENPOT_MCP_ENABLE_EXECUTE_CODE=true
 debug.get_plugin_state       # executable only when PENPOT_MCP_ENABLE_DEBUG_TOOLS=true
-debug.get_agent_logs         # descriptor-only planned (empty adapters)
+debug.get_agent_logs         # metadata-only when PENPOT_MCP_ENABLE_DEBUG_TOOLS=true
 ```
 
 `execute_code` remains useful for development and emergency fallback, but the
 MCP server only runs it when `PENPOT_MCP_ENABLE_EXECUTE_CODE=true` is set.
 Normal agent workflows should prefer typed tools.
 
-`debug.get_plugin_state` is a gated local projection of `mcp.get_status`
-plugin/session/file-context fields (`DebugDiagnosticsCommandDescriptors`,
-adapter `local`). When disabled it returns structured `debug_tools_disabled`.
-CLI `penpot-cli debug plugin-state` projects the public status endpoint for
-operators. Prefer:
-
-- agents (default): `mcp.get_status` / `file.get_context` / `file.bind_context`
-- agents (advanced, gated): `debug.get_plugin_state`
-- operators: `penpot-cli mcp status` / `penpot-cli debug plugin-state` /
-  `penpot-cli mcp logs`
-
-`debug.get_agent_logs` stays non-executable until redaction fixtures exist.
-See `mcp/docs/debug-diagnostics-descriptor-boundaries.md`.
+`debug.get_plugin_state` and `debug.get_agent_logs` are gated local projections
+(`DebugDiagnosticsCommandDescriptors`, adapter `local`). When disabled they
+return structured `debug_tools_disabled`. Agent-logs never returns bodies by
+default (`contentPolicy: metadata-only-default`). CLI:
+`penpot-cli debug plugin-state` / `debug agent-logs`; follow stays
+`penpot-cli mcp logs --follow`. See
+`mcp/docs/debug-diagnostics-descriptor-boundaries.md`.
 
 ## 9. Development Order
 

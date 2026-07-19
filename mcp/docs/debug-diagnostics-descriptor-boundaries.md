@@ -1,8 +1,10 @@
 # Debug Diagnostics Descriptor Boundaries
 
-Status: Phase 28 complete; post-28 executable slice for `debug.get_plugin_state`
-is implemented behind `PENPOT_MCP_ENABLE_DEBUG_TOOLS=true`. `debug.get_agent_logs`
-remains descriptor-only with empty adapters.
+Status: Phase 28 complete; post-28 executable slices:
+- `debug.get_plugin_state` behind `PENPOT_MCP_ENABLE_DEBUG_TOOLS=true`
+- `debug.get_agent_logs` metadata-only behind the same enablement env (MCP);
+  CLI `debug agent-logs` lists metadata without requiring the env
+Raw log bodies / MCP follow remain out of scope; use `penpot-cli mcp logs --follow`.
 
 This document turns the residual unregistered MCP tool names in `ToolNames.ts`
 and the guidance in [`headless-live-gap-audit.md`](./headless-live-gap-audit.md)
@@ -172,28 +174,25 @@ Rules:
   cookies, and long base64 blobs).
 - Do not implement log follow over MCP; follow stays CLI/`tail -f` only.
 
-## Enablement Gate (debug.get_plugin_state)
-
-Mirror the `execute_code` pattern:
+## Enablement Gate
 
 ```text
 PENPOT_MCP_ENABLE_DEBUG_TOOLS=true
 ```
 
-When unset/false:
+| Tool | Disabled | Enabled |
+| --- | --- | --- |
+| `debug.get_plugin_state` | `debug_tools_disabled` | Token-safe plugin/session/fileContext projection |
+| `debug.get_agent_logs` | `debug_tools_disabled` | Metadata-only log file list (`content: null`) |
 
-- MCP `debug.get_plugin_state` returns structured `debug_tools_disabled`
-- agents should call `mcp.get_status`
-- CLI `penpot-cli debug plugin-state` still projects the public status endpoint
-  (operator convenience; does not bypass server enablement for the MCP tool)
+CLI:
 
-When true:
+- `penpot-cli debug plugin-state` — projects public status endpoint  
+- `penpot-cli debug agent-logs --dir <path>` — metadata listing (no bodies)  
+- Follow/tail: **`penpot-cli mcp logs --dir <path> --follow` only**
 
-- MCP tool returns the token-safe local projection (plugin counts/status,
-  session flags, fileContext summary; no raw tokens; no client token dumps)
-
-`debug.get_agent_logs` remains non-executable (`adapters: []`); operators use
-`penpot-cli mcp logs`.
+Redaction: any future body/tail path must pass `redactLogLine` /
+`assertNoSensitiveLogPayload` fixtures (Authorization, Bearer, userToken=, cookies, long base64).
 
 ## Adapter Decision
 

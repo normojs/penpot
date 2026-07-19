@@ -4,6 +4,7 @@
 
 ### :sparkles: New features & Enhancements
 
+- Phase 33 completes gated debug diagnostics: executable metadata-only `debug.get_agent_logs` (MCP + `penpot-cli debug agent-logs`), redaction fixtures for auth/token patterns, local adapter in command-runtime, and docs alignment. Log bodies and MCP follow remain out of scope; operators use `mcp logs --follow`.
 - Phase 32 production multi-user hardening docs: security defaults matrix, token lifecycle, rate/write limit operator manual, deploy runbook, compatibility matrix (`mcp/docs/production-multi-user-hardening.md`), plus FileContextRegistry multi-token isolation test and multi-user-mode warning update.
 - Phase 31 thumbnail/preview product policy: document agent vs operator defaults (thumbnail not default agent GA; endpoint-first operator path), file-target happy path, preview vs thumbnail narrative (`mcp/docs/thumbnail-and-preview-experience.md`), and expand shared `renderer_service_unavailable` actions to point at dry-run, config, preview/export, and the policy doc.
 - Phase 30 distribution and versioning: decide archive-only portable CLI + fork checkout for MCP (no npm), add `mcp/docs/distribution-and-versioning.md` and `mcp/docs/standalone-install.md`, document CLI semver graduation, portable bundling review, and 0.1.0 migration notes; README pointers updated.

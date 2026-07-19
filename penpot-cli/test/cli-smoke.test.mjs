@@ -6749,7 +6749,7 @@ test("command runtime exposes debug diagnostics descriptors", () => {
     assert.match(CommandDescriptors.DEBUG_GET_PLUGIN_STATE.description, /PENPOT_MCP_ENABLE_DEBUG_TOOLS/);
     assert.equal(CommandDescriptors.DEBUG_GET_AGENT_LOGS.mcpToolName, "debug.get_agent_logs");
     assert.equal(CommandDescriptors.DEBUG_GET_AGENT_LOGS.cliCommand, "debug agent-logs");
-    assert.deepEqual(CommandDescriptors.DEBUG_GET_AGENT_LOGS.adapters, []);
+    assert.deepEqual(CommandDescriptors.DEBUG_GET_AGENT_LOGS.adapters, ["local"]);
     assert.match(CommandDescriptors.DEBUG_GET_AGENT_LOGS.description, /metadata-only/);
     assert.equal(getCommandDescriptor("debug.get_plugin_state").id, "debug.get_plugin_state");
     assert.equal(getCommandDescriptor("debug plugin-state").id, "debug.get_plugin_state");
@@ -7201,10 +7201,24 @@ test("debug plugin-state projects plugin counts from the status endpoint", async
     }
 });
 
-test("debug agent-logs remains non-executable", async () => {
-    const result = await runCli(["debug", "agent-logs"]);
-    assert.equal(result.exitCode, 2);
-    assert.match(result.stdout + result.stderr, /debug_agent_logs_not_implemented|descriptor-only|mcp logs/i);
+test("debug agent-logs lists metadata-only log files", async () => {
+    const tempDir = mkdtempSync(join(tmpdir(), "penpot-cli-debug-agent-logs-"));
+    try {
+        writeFileSync(join(tempDir, "run.log"), "Authorization: Bearer secret-token\n");
+        writeFileSync(join(tempDir, "notes.txt"), "ignore");
+        const result = await runCli(["debug", "agent-logs", "--dir", tempDir, "--format", "json"]);
+        const body = parseJson(result.stdout);
+        assert.equal(result.exitCode, 0);
+        assert.equal(body.status, "ok");
+        assert.equal(body.data.content, null);
+        assert.equal(body.data.contentPolicy, "metadata-only-default");
+        assert.equal(body.data.files.length, 1);
+        assert.equal(body.data.files[0].name, "run.log");
+        assert.equal(JSON.stringify(body).includes("secret-token"), false);
+        assert.equal(JSON.stringify(body).includes(tempDir), false);
+    } finally {
+        rmSync(tempDir, { recursive: true, force: true });
+    }
 });
 
 test("mcp logs lists configured log files without following", async () => {

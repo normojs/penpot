@@ -42,9 +42,9 @@ Descriptor catalog:
   `render.thumbnail`
 - components/tokens descriptors: `component.create`, `component.instantiate`,
   `tokens.list`, `tokens.apply`
-- debug diagnostics descriptors: `debug.get_plugin_state` (`local` adapter;
-  MCP gated by `PENPOT_MCP_ENABLE_DEBUG_TOOLS`), `debug.get_agent_logs`
-  (empty adapters, still planned)
+- debug diagnostics descriptors: `debug.get_plugin_state` and
+  `debug.get_agent_logs` (`local` adapters; MCP gated by
+  `PENPOT_MCP_ENABLE_DEBUG_TOOLS`; agent-logs contentPolicy metadata-only)
 - lookup helper: `getCommandDescriptor(id)` by internal id, MCP tool name, or
   CLI command string
 - descriptor groups: `LowRiskCommandDescriptors`,
@@ -855,12 +855,12 @@ not register yet:
   countersignature policy
   and P25.85 package materialization approval audit countersignature revocation appeal resolution enforcement evidence attestation notarization certification endorsement countersignature verification revocation appeal resolution enforcement evidence attestation notarization certification endorsement countersignature verification policy
   while runtime execution remains unavailable
-- debug: `debug.get_plugin_state` is executable as a gated local projection of
-  `mcp.get_status` plugin/session fields (`DebugGetPluginStateTool`, CLI
-  `debug plugin-state`). MCP requires `PENPOT_MCP_ENABLE_DEBUG_TOOLS=true`.
-  `debug.get_agent_logs` remains **descriptor-only planned** with empty
-  adapters; prefer `penpot-cli mcp logs` for operator log listing/follow
-  (`mcp/docs/debug-diagnostics-descriptor-boundaries.md`).
+- debug: `debug.get_plugin_state` and `debug.get_agent_logs` are executable as
+  gated local projections (`DebugGetPluginStateTool`, `DebugGetAgentLogsTool`,
+  CLI `debug plugin-state` / `debug agent-logs`). MCP requires
+  `PENPOT_MCP_ENABLE_DEBUG_TOOLS=true`. Agent-logs default is **metadata-only**
+  (`content: null`); operators use `penpot-cli mcp logs --follow` for tail.
+  See `mcp/docs/debug-diagnostics-descriptor-boundaries.md`.
 
 Do not migrate these as executable descriptors until their implementation is
 registered or the descriptor explicitly marks them as planned/unavailable.

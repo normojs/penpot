@@ -19,7 +19,7 @@ import { PenpotApiInfoTool } from "./tools/PenpotApiInfoTool.js";
 import { ExportShapeTool } from "./tools/ExportShapeTool.js";
 import { ImportImageTool } from "./tools/ImportImageTool.js";
 import { McpStatusTool } from "./tools/McpStatusTool.js";
-import { DebugGetPluginStateTool } from "./tools/DebugTools.js";
+import { DebugGetPluginStateTool, DebugGetAgentLogsTool } from "./tools/DebugTools.js";
 import {
     AccountGetCurrentUserTool,
     FileGetRecentTool,
@@ -335,6 +335,7 @@ export class PenpotMcpServer {
             new RenderThumbnailTool(this),
             new ExecuteCodeTool(this),
             new DebugGetPluginStateTool(this),
+            new DebugGetAgentLogsTool(this),
             new HighLevelOverviewTool(this),
             new PenpotApiInfoTool(this, this.apiDocs),
             new ExportShapeTool(this),

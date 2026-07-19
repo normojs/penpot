@@ -27,15 +27,14 @@ removed 2026-07-19; recover from git history if needed. Product changelog:
 inventory/test coverage). CLI package version remains `0.1.0` with private
 release archive distribution.
 
-**Phase 29–31 core docs complete.** **Phase 32 complete:** production multi-user
-hardening matrix, token lifecycle, isolation fixture, rate-limit manual, deploy
-runbook, compatibility matrix (`mcp/docs/production-multi-user-hardening.md`).
-Next: **Phase 33** `debug.get_agent_logs`, or **Phase 34** positioning / 1.0.
+**Phase 29–33 core complete.** Remaining: optional **P31.5** thumbnail matrix,
+**Phase 34** positioning / 1.0 exit criteria. Gated debug tools:
+`debug.get_plugin_state` + metadata-only `debug.get_agent_logs`.
 
 Completed baseline (not re-listed as open tasks):
 
 - Phases 1–28 product slices (see git history / `CHANGES.md`)
-- Gated `debug.get_plugin_state` (MCP + CLI; `PENPOT_MCP_ENABLE_DEBUG_TOOLS`)
+- Gated `debug.get_plugin_state` + metadata-only `debug.get_agent_logs`
 - MCP/CLI smoke and focused tool tests for status/token/debug/legacy tools
 - Server ESM `.js` import suffixes for tools + root modules
 - Private packaging path: `pnpm cli:package-check` → `tmp/penpot-cli-release/`
@@ -44,6 +43,7 @@ Completed baseline (not re-listed as open tasks):
 - **Phase 30** distribution + versioning docs (archive-only; no npm)
 - **Phase 31 P31.1–P31.4** thumbnail/preview product policy docs + error actions
 - **Phase 32** multi-user production hardening docs + multi-token isolation test
+- **Phase 33** agent-logs metadata-only executable path + redaction fixtures
 - **P31.5** remains optional multi-target thumbnail matrix
 
 ## Feature Roadmap
@@ -58,7 +58,7 @@ detail.
 | F38 | done | General distribution and versioning | Phase 30 | Non-checkout users can install MCP/CLI without a full fork tree under an explicit packaging policy | Completed 2026-07-19; archive-only default, fork checkout for MCP, no npm; docs in distribution-and-versioning + standalone-install |
 | F39 | done | Default thumbnail and preview experience | Phase 31 | Agents can rely on a documented default path for file/frame thumbnails without undocumented gate spelunking | Completed 2026-07-19 for docs policy P31.1–P31.4; thumbnail remains operator endpoint-first, not default agent GA; P31.5 matrix optional |
 | F40 | done | Production multi-user hardening | Phase 32 | Self-hosted multi-user deployments have explicit security defaults, token guidance, and diagnostics redaction | Completed 2026-07-19; production-multi-user-hardening.md + multi-token isolation fixture |
-| F41 | todo | Completing debug diagnostics | Phase 33 | Operators and gated agents can inspect log metadata safely; raw tail stays explicit | Executable `debug.get_agent_logs` metadata-only default; redaction fixtures; optional gated tail |
+| F41 | done | Completing debug diagnostics | Phase 33 | Operators and gated agents can inspect log metadata safely; raw tail stays explicit | Completed 2026-07-19; metadata-only debug.get_agent_logs + CLI + redaction fixtures; follow stays mcp logs |
 | F42 | todo | General product positioning and support boundary | Phase 34 | Users understand whether this is a private fork product, early access, or candidate for upstream | Capability matrix, support boundary, upstream sync policy for consumers |
 
 ## Phase 29: Private Fork Release Graduation
@@ -119,10 +119,10 @@ Goal: finish the diagnostics story after gated `debug.get_plugin_state`.
 
 | ID | Status | Task | Modules | Verification | Notes |
 | --- | --- | --- | --- | --- | --- |
-| P33.1 | todo | Executable `debug.get_agent_logs` metadata-only | command-runtime, MCP, CLI | Empty → `local` adapter; list log files sizes/mtimes; `content: null` by default | Project `mcp logs` / `getLogStatus()` |
-| P33.2 | todo | Log redaction fixtures | MCP, CLI tests | Synthetic lines with tokens never appear in JSON | Required before any tail API |
-| P33.3 | todo | Optional gated log tail | MCP (optional), CLI | Env-gated tailLines; still no follow over MCP | Follow stays CLI/`tail -f` |
-| P33.4 | todo | Inventory/architecture alignment after agent-logs lands | docs | Remove “descriptor-only” for agent-logs when executable | Mirror Phase 28/post-28 pattern |
+| P33.1 | done | Executable `debug.get_agent_logs` metadata-only | command-runtime, MCP, CLI | Completed 2026-07-19; local adapter; list name/size/mtime; content null | Project mcp logs / getLogStatus |
+| P33.2 | done | Log redaction fixtures | MCP, CLI tests | Completed 2026-07-19; redactLogLine + assertNoSensitiveLogPayload tests | Required before any tail API |
+| P33.3 | done | Optional gated log tail | MCP (optional), CLI | Follow remains CLI `mcp logs --follow` only; MCP intentionally no follow | No MCP follow |
+| P33.4 | done | Inventory/architecture alignment after agent-logs lands | docs | Completed 2026-07-19; inventory + architecture + boundaries doc updated | Mirror Phase 28/post-28 pattern |
 
 ## Phase 34: Product Positioning And Support Boundary
 
@@ -176,10 +176,10 @@ Keep at most one roadmap feature `in_progress`.
 
 ### Phase 33: Completing debug diagnostics
 
-- [ ] **P33.1** Executable `debug.get_agent_logs` metadata-only (`local` adapter; no raw body by default)
-- [ ] **P33.2** Log redaction fixtures (tokens never leak in JSON)
-- [ ] **P33.3** Optional gated log tail (no MCP follow; CLI follow remains `mcp logs --follow`)
-- [ ] **P33.4** Docs alignment after agent-logs becomes executable
+- [x] **P33.1** Executable `debug.get_agent_logs` metadata-only (`local` adapter; no raw body by default)
+- [x] **P33.2** Log redaction fixtures (tokens never leak in JSON)
+- [x] **P33.3** Follow/tail remains CLI `mcp logs --follow` only (no MCP follow)
+- [x] **P33.4** Docs alignment after agent-logs becomes executable
 
 ### Phase 34: Product positioning and support boundary
 
