@@ -443,6 +443,8 @@ decision. Phase 27 Components/Tokens wave is complete and expanded:
 `tokens.list`, multi-shape `tokens.apply` (with simple ref resolution +
 spacing/typography attrs), multi-shape-wrap `component.create`, and
 local/linked-library `component.instantiate` are backend-command executable.
+`file.search` and `file.duplicate` are backend-rpc executable through shared
+descriptors, MCP tools, and `penpot-cli file search|duplicate`.
 P25.7 is complete: thumbnail renderer-service API fixtures now define
 future file refresh, file reuse, tagged frame refresh, auth forwarding,
 resource URI normalization, and MCP/CLI test expectations. P25.8 is complete:
@@ -1178,6 +1180,7 @@ row `in_progress`.
 - [x] **Remote/linked-library component.instantiate**
 - [x] **Multi-shape component.create wrap**
 - [x] **shape.group / shape.ungroup headless path** — same-parent grouping and group ungroup via backend-command
+- [x] **file.search / file.duplicate backend-rpc path** — `search-files` / `duplicate-file` via shared descriptors, MCP tools, and CLI
 - [x] **Live-only workspace state** — product decision 2026-07-19: keep `page.set_current` / `selection.get` / `selection.set` plugin-live/editor-local; no persisted agent session state (see `headless-live-gap-audit.md`)
 
 ### Phase 27: Components/Tokens descriptor boundaries

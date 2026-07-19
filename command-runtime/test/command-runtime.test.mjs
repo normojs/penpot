@@ -162,7 +162,17 @@ import {
     selectCommandAdapter,
 } from "../index.js";
 
-const LOW_RISK_IDS = ["mcp.status", "mcp.config", "file.list", "file.create", "file.open", "page.list", "page.create"];
+const LOW_RISK_IDS = [
+    "mcp.status",
+    "mcp.config",
+    "file.list",
+    "file.search",
+    "file.create",
+    "file.duplicate",
+    "file.open",
+    "page.list",
+    "page.create",
+];
 const HEADLESS_AUTHORING_IDS = [
     "page.rename",
     "prototype.create_flow",
@@ -9550,6 +9560,10 @@ test("descriptor groups expose stable command ids", () => {
 test("descriptor lookup supports internal, MCP, and CLI command names", () => {
     assert.equal(getCommandDescriptor("mcp.get_status"), CommandDescriptors.MCP_STATUS);
     assert.equal(getCommandDescriptor("file.open"), CommandDescriptors.FILE_OPEN);
+    assert.equal(getCommandDescriptor("file.search"), CommandDescriptors.FILE_SEARCH);
+    assert.equal(getCommandDescriptor("file search"), CommandDescriptors.FILE_SEARCH);
+    assert.equal(getCommandDescriptor("file.duplicate"), CommandDescriptors.FILE_DUPLICATE);
+    assert.equal(getCommandDescriptor("file duplicate"), CommandDescriptors.FILE_DUPLICATE);
     assert.equal(getCommandDescriptor("page rename"), CommandDescriptors.PAGE_RENAME);
     assert.equal(getCommandDescriptor("prototype create-flow"), CommandDescriptors.PROTOTYPE_CREATE_FLOW);
     assert.equal(getCommandDescriptor("prototype.create_interaction"), CommandDescriptors.PROTOTYPE_CREATE_INTERACTION);

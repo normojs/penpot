@@ -87,7 +87,9 @@ Usage:
   penpot-cli renderer-service start [--host <host>] [--port <port>] [--spawn] [--format text|json]
   penpot-cli renderer-service stop [--host <host>] [--port <port>] [--format text|json]
   penpot-cli file list --project-id <id> [--format text|json]
+  penpot-cli file search --team-id <id> --query <term> [--format text|json]
   penpot-cli file create --project-id <id> [--name <name>] [--format text|json]
+  penpot-cli file duplicate --file <file-id> [--name <name>] [--format text|json]
   penpot-cli file open <file-id> [--team-id <id>] [--page-id <id>] [--format text|json]
   penpot-cli page list --file <file-id> [--adapter auto|backend-command] [--format text|json]
   penpot-cli page create --file <file-id> [--name <name>] [--adapter auto|backend-command] [--format text|json]
@@ -178,7 +180,9 @@ const FILE_HELP_TEXT = `penpot-cli file
 
 Usage:
   penpot-cli file list --project-id <id> [--backend-uri <uri>] [--token <token>] [--format text|json]
+  penpot-cli file search --team-id <id> --query <term> [--backend-uri <uri>] [--token <token>] [--format text|json]
   penpot-cli file create --project-id <id> [--name <name>] [--shared] [--backend-uri <uri>] [--token <token>] [--format text|json]
+  penpot-cli file duplicate --file <file-id> [--name <name>] [--backend-uri <uri>] [--token <token>] [--format text|json]
   penpot-cli file open <file-id> [--team-id <id>] [--page-id <id>] [--public-uri <uri>] [--format text|json]
 
 Environment:
@@ -8811,6 +8815,23 @@ function writeFilesText(io: CliIO, projectId: string, files: unknown): void {
     }
 }
 
+function writeFileSearchText(io: CliIO, teamId: string, searchTerm: string, files: unknown): void {
+    writeLine(io.stdout, `Search in team ${teamId} for "${searchTerm}"`);
+    if (!Array.isArray(files) || files.length === 0) {
+        writeLine(io.stdout, "No files found.");
+        return;
+    }
+
+    for (const file of files) {
+        const record = asRecord(file);
+        const projectId = String(record.projectId ?? record["project-id"] ?? "<unknown-project>");
+        writeLine(
+            io.stdout,
+            `${String(record.id ?? "<unknown>")}  ${String(record.name ?? "<unnamed>")}  project=${projectId}`
+        );
+    }
+}
+
 function summarizeFile(file: unknown, projectId: string, fallbackName: string): Record<string, unknown> {
     const record = asRecord(file);
     return {
@@ -8830,6 +8851,20 @@ function writeFileCreatedText(io: CliIO, file: Record<string, unknown>, url: str
     writeLine(io.stdout, "File created");
     writeLine(io.stdout, `id: ${String(file.id ?? "<unknown>")}`);
     writeLine(io.stdout, `name: ${String(file.name ?? "<unnamed>")}`);
+    writeLine(io.stdout, `projectId: ${String(file.projectId ?? "<unknown>")}`);
+    writeLine(io.stdout, `url: ${url}`);
+}
+
+function writeFileDuplicatedText(
+    io: CliIO,
+    file: Record<string, unknown>,
+    sourceFileId: string,
+    url: string
+): void {
+    writeLine(io.stdout, "File duplicated");
+    writeLine(io.stdout, `id: ${String(file.id ?? "<unknown>")}`);
+    writeLine(io.stdout, `name: ${String(file.name ?? "<unnamed>")}`);
+    writeLine(io.stdout, `sourceFileId: ${sourceFileId}`);
     writeLine(io.stdout, `projectId: ${String(file.projectId ?? "<unknown>")}`);
     writeLine(io.stdout, `url: ${url}`);
 }
@@ -10295,6 +10330,124 @@ async function handleFileCreate(args: string[], io: CliIO, env: NodeJS.ProcessEn
     }
 }
 
+async function handleFileSearch(args: string[], io: CliIO, env: NodeJS.ProcessEnv): Promise<number> {
+    const format = parseFormat(args, io);
+    if (!format) {
+        return 2;
+    }
+
+    const teamId = readOption(args, ["--team-id", "--team"]);
+    if (!teamId) {
+        writeError(io, format, "team_id_required", "file search requires --team-id <id>.", [
+            "Use MCP team.list or the Penpot UI to choose a team id.",
+        ]);
+        return 2;
+    }
+
+    const searchTerm =
+        readOption(args, ["--query", "--search-term", "--term", "--q"])?.trim() ||
+        readFirstPositional(args)?.trim() ||
+        "";
+    if (!searchTerm) {
+        writeError(io, format, "search_term_required", "file search requires --query <term>.", [
+            "Pass a case-insensitive name substring, for example --query dashboard.",
+        ]);
+        return 2;
+    }
+
+    const rpc = getRpcConfig(args, env);
+    if (!rpc.token) {
+        return rpcAuthenticationRequired(io, format);
+    }
+
+    const requestEnvelope = createCliRequest(CommandDescriptors.FILE_SEARCH, {
+        input: { teamId, searchTerm },
+        target: { teamId, backendUri: rpc.backendUri },
+        auth: { userTokenPresent: true, source: "cli-token" },
+        adapter: "backend-rpc",
+    });
+
+    try {
+        const files =
+            (await rpcRequest<unknown[] | null>(
+                "GET",
+                rpc.backendUri,
+                "search-files",
+                {
+                    "team-id": teamId,
+                    "search-term": searchTerm,
+                },
+                rpc.token
+            )) ?? [];
+        const resultEnvelope = createCliResult(requestEnvelope, {
+            teamId,
+            searchTerm,
+            files,
+            adapter: "backend-rpc",
+        });
+        writeOkEnvelope(io, format, resultEnvelope, () => writeFileSearchText(io, teamId, searchTerm, files));
+        return 0;
+    } catch (cause) {
+        return rpcErrorResponse(io, format, "search-files", rpc.backendUri, cause);
+    }
+}
+
+async function handleFileDuplicate(args: string[], io: CliIO, env: NodeJS.ProcessEnv): Promise<number> {
+    const format = parseFormat(args, io);
+    if (!format) {
+        return 2;
+    }
+
+    const fileId = readOption(args, ["--file-id", "--file"]) ?? readFirstPositional(args);
+    if (!fileId) {
+        writeError(io, format, "file_id_required", "file duplicate requires --file <file-id>.", [
+            "Use penpot-cli file list or file search first, then pass --file <file-id>.",
+        ]);
+        return 2;
+    }
+
+    const rpc = getRpcConfig(args, env);
+    if (!rpc.token) {
+        return rpcAuthenticationRequired(io, format);
+    }
+
+    const name = readOption(args, ["--name"])?.trim() || undefined;
+    const requestEnvelope = createCliRequest(CommandDescriptors.FILE_DUPLICATE, {
+        input: { fileId, name },
+        target: { fileId, backendUri: rpc.backendUri },
+        auth: { userTokenPresent: true, source: "cli-token" },
+        adapter: "backend-rpc",
+    });
+
+    try {
+        const params: RpcParams = {
+            "file-id": fileId,
+        };
+        if (name) {
+            params.name = name;
+        }
+
+        const created = await rpcRequest<unknown>("POST", rpc.backendUri, "duplicate-file", params, rpc.token);
+        const file = summarizeFile(created, "", name ?? "Copy");
+        const duplicatedFileId = typeof file.id === "string" ? file.id : "";
+        const url = duplicatedFileId ? createWorkspaceUrl(args, env, duplicatedFileId) : "";
+        const resultEnvelope = createCliResult(requestEnvelope, {
+            file,
+            sourceFileId: fileId,
+            url,
+            adapter: "backend-rpc",
+            nextActions: [
+                "Open the workspace URL before using file-scoped MCP tools.",
+                CommandDescriptors.FILE_OPEN.id,
+            ],
+        });
+        writeOkEnvelope(io, format, resultEnvelope, () => writeFileDuplicatedText(io, file, fileId, url));
+        return 0;
+    } catch (cause) {
+        return rpcErrorResponse(io, format, "duplicate-file", rpc.backendUri, cause);
+    }
+}
+
 function handleFileOpen(args: string[], io: CliIO, env: NodeJS.ProcessEnv): number {
     const format = parseFormat(args, io);
     if (!format) {
@@ -10359,8 +10512,12 @@ async function handleFileCommand(args: string[], io: CliIO, env: NodeJS.ProcessE
     switch (subcommand) {
         case "list":
             return await handleFileList(rest, io, env);
+        case "search":
+            return await handleFileSearch(rest, io, env);
         case "create":
             return await handleFileCreate(rest, io, env);
+        case "duplicate":
+            return await handleFileDuplicate(rest, io, env);
         case "open":
             return handleFileOpen(rest, io, env);
         default:

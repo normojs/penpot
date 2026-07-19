@@ -173,6 +173,78 @@ export class FileListTool extends PenpotRpcTool<FileListArgs> {
     }
 }
 
+export class FileSearchArgs {
+    static schema = {
+        teamId: z.string().uuid().describe("Team id returned by team.list."),
+        searchTerm: z
+            .string()
+            .min(1)
+            .describe("Case-insensitive name substring to match against accessible team files."),
+    };
+
+    teamId!: string;
+
+    searchTerm!: string;
+}
+
+export class FileSearchTool extends PenpotRpcTool<FileSearchArgs> {
+    constructor(mcpServer: PenpotMcpServer) {
+        super(mcpServer, FileSearchArgs.schema);
+    }
+
+    public getToolName(): string {
+        return CommandDescriptors.FILE_SEARCH.mcpToolName;
+    }
+
+    public getToolDescription(): string {
+        return CommandDescriptors.FILE_SEARCH.description;
+    }
+
+    protected async executeCore(args: FileSearchArgs): Promise<ToolResponse> {
+        const userToken = this.getUserToken();
+        if (!userToken) {
+            return this.authenticationRequired();
+        }
+
+        const searchTerm = typeof args.searchTerm === "string" ? args.searchTerm.trim() : "";
+        if (!searchTerm) {
+            return this.error(
+                "search_term_required",
+                "file.search requires a non-empty searchTerm. Use a name substring that appears in accessible team files.",
+                [ToolNames.TEAM_LIST, ToolNames.FILE_LIST]
+            );
+        }
+
+        try {
+            const files =
+                (await this.rpcGet<PenpotRecord[] | null>(
+                    "search-files",
+                    {
+                        "team-id": args.teamId,
+                        "search-term": searchTerm,
+                    },
+                    userToken
+                )) ?? [];
+            const requestEnvelope = createCommandRequestEnvelope(CommandDescriptors.FILE_SEARCH, {
+                transport: "mcp",
+                input: { teamId: args.teamId, searchTerm },
+                target: { teamId: args.teamId },
+                auth: { userTokenPresent: true, source: "mcp-session" },
+                adapter: "backend-rpc",
+            });
+            const resultEnvelope = createCommandResultEnvelope(requestEnvelope, {
+                teamId: args.teamId,
+                searchTerm,
+                files,
+                adapter: "backend-rpc",
+            });
+            return this.ok(resultEnvelope.data, resultEnvelope.warnings);
+        } catch (cause) {
+            return this.rpcFailure(cause);
+        }
+    }
+}
+
 export class FileGetRecentArgs {
     static schema = {
         teamId: z.string().uuid().describe("Team id returned by team.list."),

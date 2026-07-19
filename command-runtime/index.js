@@ -142,6 +142,17 @@ export const CommandDescriptors = Object.freeze({
         adapters: Object.freeze(["backend-rpc"]),
         responseShape: "status envelope with projectId and files",
     }),
+    FILE_SEARCH: Object.freeze({
+        id: "file.search",
+        mcpToolName: "file.search",
+        cliCommand: "file search",
+        title: "Search files",
+        description:
+            "Searches accessible files in a Penpot team by name substring using backend-rpc search-files and the current user's permissions.",
+        inputSchema: "teamId, searchTerm",
+        adapters: Object.freeze(["backend-rpc"]),
+        responseShape: "status envelope with teamId, searchTerm, and matching files",
+    }),
     FILE_CREATE: Object.freeze({
         id: "file.create",
         mcpToolName: "file.create",
@@ -151,6 +162,17 @@ export const CommandDescriptors = Object.freeze({
         inputSchema: "projectId, name?, isShared?",
         adapters: Object.freeze(["backend-rpc", "backend-command"]),
         responseShape: "status envelope with file summary and next actions",
+    }),
+    FILE_DUPLICATE: Object.freeze({
+        id: "file.duplicate",
+        mcpToolName: "file.duplicate",
+        cliCommand: "file duplicate",
+        title: "Duplicate file",
+        description:
+            "Duplicates a Penpot file in the same project using backend-rpc duplicate-file and the current user's edition permissions; resets the shared flag on the copy.",
+        inputSchema: "fileId, name?",
+        adapters: Object.freeze(["backend-rpc"]),
+        responseShape: "status envelope with duplicated file summary and next actions",
     }),
     FILE_OPEN: Object.freeze({
         id: "file.open",
@@ -556,7 +578,9 @@ export const LowRiskCommandDescriptors = Object.freeze([
     CommandDescriptors.MCP_STATUS,
     CommandDescriptors.MCP_CONFIG,
     CommandDescriptors.FILE_LIST,
+    CommandDescriptors.FILE_SEARCH,
     CommandDescriptors.FILE_CREATE,
+    CommandDescriptors.FILE_DUPLICATE,
     CommandDescriptors.FILE_OPEN,
     CommandDescriptors.PAGE_LIST,
     CommandDescriptors.PAGE_CREATE,

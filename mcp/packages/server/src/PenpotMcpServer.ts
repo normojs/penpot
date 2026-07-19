@@ -23,10 +23,12 @@ import {
     AccountGetCurrentUserTool,
     FileGetRecentTool,
     FileListTool,
+    FileSearchTool,
     ProjectListTool,
     TeamListTool,
 } from "./tools/GlobalReadTools";
 import { FileCreateTool } from "./tools/FileCreateTool";
+import { FileDuplicateTool } from "./tools/FileDuplicateTool";
 import { FileOpenTool } from "./tools/FileOpenTool";
 import { FileBindContextTool, FileGetContextTool, FileReleaseContextTool } from "./tools/FileContextTools";
 import { PageCreateTool, PageListTool, PageRenameTool, PageSetCurrentTool } from "./tools/PageTools";
@@ -278,8 +280,10 @@ export class PenpotMcpServer {
             new TeamListTool(this),
             new ProjectListTool(this),
             new FileListTool(this),
+            new FileSearchTool(this),
             new FileGetRecentTool(this),
             new FileCreateTool(this),
+            new FileDuplicateTool(this),
             new FileOpenTool(this),
             new FileGetContextTool(this),
             new FileBindContextTool(this),

@@ -6517,6 +6517,9 @@ test("top-level help lists first-class MCP, shape, and export commands", async (
     assert.equal(result.exitCode, 0);
     assert.equal(result.stderr, "");
     assert.match(result.stdout, /penpot-cli mcp config/);
+    assert.match(result.stdout, /penpot-cli file open/);
+    assert.match(result.stdout, /penpot-cli file search/);
+    assert.match(result.stdout, /penpot-cli file duplicate/);
     assert.match(result.stdout, /penpot-cli page rename/);
     assert.match(result.stdout, /penpot-cli shape delete/);
     assert.match(result.stdout, /penpot-cli shape group/);
@@ -6542,11 +6545,29 @@ test("top-level help lists first-class MCP, shape, and export commands", async (
 test("command runtime exposes low-risk command descriptors", () => {
     assert.deepEqual(
         LowRiskCommandDescriptors.map((descriptor) => descriptor.id),
-        ["mcp.status", "mcp.config", "file.list", "file.create", "file.open", "page.list", "page.create"]
+        [
+            "mcp.status",
+            "mcp.config",
+            "file.list",
+            "file.search",
+            "file.create",
+            "file.duplicate",
+            "file.open",
+            "page.list",
+            "page.create",
+        ]
     );
     assert.equal(CommandDescriptors.MCP_STATUS.mcpToolName, "mcp.get_status");
     assert.equal(getCommandDescriptor("mcp.get_status").id, "mcp.status");
     assert.equal(getCommandDescriptor("page.list").cliCommand, "page list");
+    assert.equal(CommandDescriptors.FILE_SEARCH.cliCommand, "file search");
+    assert.deepEqual(CommandDescriptors.FILE_SEARCH.adapters, ["backend-rpc"]);
+    assert.equal(CommandDescriptors.FILE_DUPLICATE.cliCommand, "file duplicate");
+    assert.deepEqual(CommandDescriptors.FILE_DUPLICATE.adapters, ["backend-rpc"]);
+    assert.equal(getCommandDescriptor("file.search").id, "file.search");
+    assert.equal(getCommandDescriptor("file search").id, "file.search");
+    assert.equal(getCommandDescriptor("file.duplicate").id, "file.duplicate");
+    assert.equal(getCommandDescriptor("file duplicate").id, "file.duplicate");
 });
 
 test("command runtime exposes headless authoring descriptors", () => {
@@ -6583,7 +6604,7 @@ test("command runtime exposes migrated shape and export descriptors", () => {
             "render.thumbnail",
         ]
     );
-    assert.equal(MigratedCommandDescriptors.length, 38);
+    assert.equal(MigratedCommandDescriptors.length, 40);
     assert.equal(CommandDescriptors.SHAPE_DELETE.cliCommand, "shape delete");
     assert.equal(CommandDescriptors.SHAPE_GROUP.cliCommand, "shape group");
     assert.equal(CommandDescriptors.SHAPE_UNGROUP.cliCommand, "shape ungroup");
@@ -6630,7 +6651,7 @@ test("command runtime exposes live-gap descriptor boundaries", () => {
             "shape.set_style",
         ]
     );
-    assert.equal(MigratedCommandDescriptors.length, 38);
+    assert.equal(MigratedCommandDescriptors.length, 40);
     assert.equal(CommandDescriptors.PAGE_SET_CURRENT.mcpToolName, "page.set_current");
     assert.equal(CommandDescriptors.PAGE_SET_CURRENT.cliCommand, undefined);
     assert.equal(getCommandDescriptor("selection.get").adapters[0], "plugin-live");
@@ -6671,7 +6692,7 @@ test("command runtime exposes components/tokens descriptor-only boundaries", () 
         ComponentsTokensCommandDescriptors.map((descriptor) => descriptor.id),
         ["component.create", "component.instantiate", "tokens.list", "tokens.apply"]
     );
-    assert.equal(MigratedCommandDescriptors.length, 38);
+    assert.equal(MigratedCommandDescriptors.length, 40);
     assert.equal(CommandDescriptors.COMPONENT_CREATE.mcpToolName, "component.create");
     assert.equal(CommandDescriptors.COMPONENT_CREATE.cliCommand, "component create");
     assert.deepEqual(CommandDescriptors.COMPONENT_CREATE.adapters, ["backend-command"]);
@@ -8556,6 +8577,138 @@ test("file open text guidance names live-only selection MCP tools", async () => 
     assert.match(result.stdout, /selection\.set/);
     assert.match(result.stdout, /file\.get_context/);
     assert.match(result.stdout, /file\.bind_context/);
+});
+
+test("file search calls backend-rpc search-files", async () => {
+    const originalFetch = globalThis.fetch;
+    const calls = [];
+    globalThis.fetch = async (url, options) => {
+        calls.push({ url: String(url), options });
+        return {
+            ok: true,
+            status: 200,
+            statusText: "OK",
+            text: async () =>
+                JSON.stringify([
+                    {
+                        id: UUIDS.file,
+                        name: "Dashboard",
+                        "project-id": "00000000-0000-0000-0000-000000000099",
+                        revn: 3,
+                    },
+                ]),
+        };
+    };
+
+    try {
+        const result = await runCli(
+            [
+                "file",
+                "search",
+                "--team-id",
+                UUIDS.profile,
+                "--query",
+                "Dash",
+                "--format",
+                "json",
+            ],
+            {
+                PENPOT_BACKEND_URI: "http://127.0.0.1:6060",
+                PENPOT_CLI_TOKEN: "token-1",
+            }
+        );
+        const body = parseJson(result.stdout);
+
+        assert.equal(result.exitCode, 0);
+        assert.equal(result.stderr, "");
+        assert.equal(body.status, "ok");
+        assert.equal(body.data.adapter, "backend-rpc");
+        assert.equal(body.data.teamId, UUIDS.profile);
+        assert.equal(body.data.searchTerm, "Dash");
+        assert.equal(body.data.files.length, 1);
+        assert.equal(body.data.files[0].name, "Dashboard");
+        assert.equal(calls.length, 1);
+        assert.match(calls[0].url, /\/api\/main\/methods\/search-files\?/);
+        assert.match(calls[0].url, /team-id=00000000-0000-0000-0000-000000000004/);
+        assert.match(calls[0].url, /search-term=Dash/);
+    } finally {
+        globalThis.fetch = originalFetch;
+    }
+});
+
+test("file search requires team id and query", async () => {
+    const missingTeam = await runCli(["file", "search", "--query", "x", "--format", "json"]);
+    assert.equal(missingTeam.exitCode, 2);
+    assert.equal(parseJson(missingTeam.stdout).error.code, "team_id_required");
+
+    const missingQuery = await runCli(
+        ["file", "search", "--team-id", UUIDS.profile, "--format", "json"],
+        {
+            PENPOT_BACKEND_URI: "http://127.0.0.1:6060",
+            PENPOT_CLI_TOKEN: "token-1",
+        }
+    );
+    assert.equal(missingQuery.exitCode, 2);
+    assert.equal(parseJson(missingQuery.stdout).error.code, "search_term_required");
+});
+
+test("file duplicate calls backend-rpc duplicate-file", async () => {
+    const originalFetch = globalThis.fetch;
+    const calls = [];
+    globalThis.fetch = async (url, options) => {
+        calls.push({ url: String(url), options });
+        return {
+            ok: true,
+            status: 200,
+            statusText: "OK",
+            text: async () =>
+                JSON.stringify({
+                    id: "00000000-0000-0000-0000-0000000000aa",
+                    name: "Dashboard copy",
+                    "project-id": "00000000-0000-0000-0000-000000000099",
+                    revn: 1,
+                    "is-shared": false,
+                }),
+        };
+    };
+
+    try {
+        const result = await runCli(
+            [
+                "file",
+                "duplicate",
+                "--file",
+                UUIDS.file,
+                "--name",
+                "Dashboard copy",
+                "--format",
+                "json",
+            ],
+            {
+                PENPOT_BACKEND_URI: "http://127.0.0.1:6060",
+                PENPOT_PUBLIC_URI: "https://penpot.example.test",
+                PENPOT_CLI_TOKEN: "token-1",
+            }
+        );
+        const body = parseJson(result.stdout);
+
+        assert.equal(result.exitCode, 0);
+        assert.equal(result.stderr, "");
+        assert.equal(body.status, "ok");
+        assert.equal(body.data.adapter, "backend-rpc");
+        assert.equal(body.data.sourceFileId, UUIDS.file);
+        assert.equal(body.data.file.id, "00000000-0000-0000-0000-0000000000aa");
+        assert.equal(body.data.file.name, "Dashboard copy");
+        assert.equal(body.data.file.isShared, false);
+        assert.match(body.data.url, /file-id=00000000-0000-0000-0000-0000000000aa/);
+        assert.equal(calls.length, 1);
+        assert.match(calls[0].url, /\/api\/main\/methods\/duplicate-file\?_fmt=json$/);
+        const requestBody = JSON.parse(String(calls[0].options.body));
+        assert.equal(requestBody["file-id"], UUIDS.file);
+        assert.equal(requestBody.name, "Dashboard copy");
+    } finally {
+        globalThis.fetch = originalFetch;
+    }
 });
 
 test("page rename calls backend-command RPC with trimmed name", async () => {

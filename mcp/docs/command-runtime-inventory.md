@@ -31,8 +31,8 @@ Adapter-selection helpers:
 
 Descriptor catalog:
 
-- descriptors: `mcp.status`, `mcp.config`, `file.list`, `file.create`,
-  `file.open`, `page.list`, `page.create`
+- descriptors: `mcp.status`, `mcp.config`, `file.list`, `file.search`,
+  `file.create`, `file.duplicate`, `file.open`, `page.list`, `page.create`
 - headless authoring descriptors: `page.rename`
 - shape/export descriptors: `shape.create_frame`, `shape.create_rect`,
   `shape.create_text`, `shape.create_image`, `shape.update`, `shape.delete`,
@@ -722,8 +722,10 @@ command execution, build output, process startup, and runtime dispatch disabled.
 `ToolNames.ts` already names several planned tools that `PenpotMcpServer` does
 not register yet:
 
-- global/file: `file.search`, `file.duplicate`, `file.open`,
-  `token.get_mcp_status`
+- global/file: `file.search` and `file.duplicate` are executable through
+  backend-rpc (`search-files` / `duplicate-file`) with MCP tools and
+  `penpot-cli file search|duplicate`; `token.get_mcp_status` remains
+  unregistered
 - file context: `page.set_current`, `selection.get`, and `selection.set` are implemented but remain plugin-live and now share live-only recovery metadata with the same binding flow
 - design editing: `shape.group`/`shape.ungroup` are executable through backend-command (`group-file-shapes`/`ungroup-file-shapes`) with MCP and CLI registration; `component.create` is executable through backend-command
   (`create-file-component`) with MCP tool and `penpot-cli component create`
@@ -850,7 +852,9 @@ registered or the descriptor explicitly marks them as planned/unavailable.
 | `mcp logs` | `mcp.logs` | local filesystem log directory | JSON/text log file summaries or follow stream | gap: no smoke test |
 | `dev up --mcp` | `dev.up` | local process orchestration | JSON/text dry-run plan or `manage.sh start-devenv` result | dry-run smoke test |
 | `file list` | `file.list` | backend-rpc `get-project-files` | JSON/text `{projectId,files,adapter}` | gap: auth/path only implicit |
+| `file search` | `file.search` | backend-rpc `search-files` | JSON/text `{teamId,searchTerm,files,adapter}` | RPC smoke test |
 | `file create` | `file.create` | backend-rpc `create-file` | JSON/text `{file,url,adapter,nextActions}` | gap: no smoke test |
+| `file duplicate` | `file.duplicate` | backend-rpc `duplicate-file` | JSON/text `{file,sourceFileId,url,adapter,nextActions}` | RPC smoke test |
 | `file open` | `file.open` | browser-url generation | JSON/text `{fileId,url,workspaceUrl,handoff,adapter,boundContext:false}` | smoke test |
 | `page list` | `page.list` | backend-command RPC `get-file-pages` | JSON/text `{fileId,pages,adapter,adapterSelection}` | gap: no smoke test |
 | `page create` | `page.create` | backend-command RPC `create-file-page` | JSON/text `{fileId,page,revn,vern,adapter,adapterSelection}` | gap: no smoke test |

@@ -12339,7 +12339,13 @@ export interface LowRiskCommandDescriptorCatalog {
     MCP_STATUS: CommandDescriptor & { id: "mcp.status"; mcpToolName: "mcp.get_status"; cliCommand: "mcp status" };
     MCP_CONFIG: CommandDescriptor & { id: "mcp.config"; cliCommand: "mcp config" };
     FILE_LIST: CommandDescriptor & { id: "file.list"; mcpToolName: "file.list"; cliCommand: "file list" };
+    FILE_SEARCH: CommandDescriptor & { id: "file.search"; mcpToolName: "file.search"; cliCommand: "file search" };
     FILE_CREATE: CommandDescriptor & { id: "file.create"; mcpToolName: "file.create"; cliCommand: "file create" };
+    FILE_DUPLICATE: CommandDescriptor & {
+        id: "file.duplicate";
+        mcpToolName: "file.duplicate";
+        cliCommand: "file duplicate";
+    };
     FILE_OPEN: CommandDescriptor & { id: "file.open"; mcpToolName: "file.open"; cliCommand: "file open" };
     PAGE_LIST: CommandDescriptor & { id: "page.list"; mcpToolName: "page.list"; cliCommand: "page list" };
     PAGE_CREATE: CommandDescriptor & { id: "page.create"; mcpToolName: "page.create"; cliCommand: "page create" };
