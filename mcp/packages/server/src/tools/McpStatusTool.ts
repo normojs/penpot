@@ -1,8 +1,8 @@
-import { EmptyToolArgs, Tool } from "../Tool";
+import { EmptyToolArgs, Tool } from "../Tool.js";
 import "reflect-metadata";
-import type { ToolResponse } from "../ToolResponse";
-import { JsonResponse } from "../ToolResponse";
-import { PenpotMcpServer } from "../PenpotMcpServer";
+import type { ToolResponse } from "../ToolResponse.js";
+import { JsonResponse } from "../ToolResponse.js";
+import { PenpotMcpServer } from "../PenpotMcpServer.js";
 import { CommandDescriptors, createCommandRequestEnvelope, createCommandResultEnvelope } from "@penpot/command-runtime";
 
 export class McpStatusTool extends Tool<EmptyToolArgs> {

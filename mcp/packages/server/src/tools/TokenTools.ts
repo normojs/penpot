@@ -1,8 +1,8 @@
-import { EmptyToolArgs } from "../Tool";
-import type { ToolResponse } from "../ToolResponse";
-import { PenpotMcpServer } from "../PenpotMcpServer";
-import { ToolNames } from "../ToolNames";
-import { PenpotRpcTool } from "./PenpotRpcTool";
+import { EmptyToolArgs } from "../Tool.js";
+import type { ToolResponse } from "../ToolResponse.js";
+import { PenpotMcpServer } from "../PenpotMcpServer.js";
+import { ToolNames } from "../ToolNames.js";
+import { PenpotRpcTool } from "./PenpotRpcTool.js";
 import { CommandDescriptors, createCommandRequestEnvelope, createCommandResultEnvelope } from "@penpot/command-runtime";
 
 type PenpotRecord = Record<string, unknown>;
