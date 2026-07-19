@@ -841,7 +841,12 @@ not register yet:
   countersignature policy
   and P25.85 package materialization approval audit countersignature revocation appeal resolution enforcement evidence attestation notarization certification endorsement countersignature verification revocation appeal resolution enforcement evidence attestation notarization certification endorsement countersignature verification policy
   while runtime execution remains unavailable
-- debug: `debug.get_plugin_state`, `debug.get_agent_logs`
+- debug: `debug.get_plugin_state` and `debug.get_agent_logs` remain unregistered
+  names; Phase 28 P28.1 plans them as descriptor-only projections of existing
+  `mcp.get_status` / `mcp logs` surfaces in
+  `mcp/docs/debug-diagnostics-descriptor-boundaries.md` (empty adapters, no
+  MCP/CLI execution yet). Prefer `mcp.get_status` and `penpot-cli mcp logs`
+  until P28.2/P28.3 land descriptors and wording alignment.
 
 Do not migrate these as executable descriptors until their implementation is
 registered or the descriptor explicitly marks them as planned/unavailable.

@@ -4,6 +4,7 @@
 
 ### :sparkles: New features & Enhancements
 
+- Open Phase 28 debug diagnostics descriptor-only planning: document planned `debug.get_plugin_state` and `debug.get_agent_logs` boundaries as projections of existing `mcp.get_status` / `mcp logs` surfaces, with empty adapters and no MCP/CLI registration.
 - Add CLI smoke coverage for `penpot-cli mcp status` and `mcp logs`, covering status endpoint fetch and local log-directory listing/validation.
 - Add CLI smoke coverage for `penpot-cli shape create-frame|create-rect|create-text|delete` over backend-command `create-file-shape` / `delete-file-shape`.
 - Add CLI smoke coverage for `penpot-cli page list` and `page create` over backend-command `get-file-pages` / `create-file-page`, including file-id validation.
