@@ -4,6 +4,7 @@
 
 ### :sparkles: New features & Enhancements
 
+- Make `token.get_mcp_status` executable through backend-rpc: shared command-runtime descriptor, MCP tool, and `penpot-cli token status` over existing `get-current-mcp-token`, returning only token-safe presence/expiry metadata.
 - Make `file.search` and `file.duplicate` executable through backend-rpc: shared command-runtime descriptors, MCP tools, and `penpot-cli file search|duplicate` over existing `search-files` / `duplicate-file` RPCs.
 - Add headless `shape.group` / `shape.ungroup` through backend-command: common group/ungroup requests, backend `group-file-shapes` / `ungroup-file-shapes`, MCP tools, and `penpot-cli shape group|ungroup`.
 - Open Phase 27 Components/Tokens descriptor-only planning: document planned `component.create`, `component.instantiate`, `tokens.list`, and `tokens.apply` boundaries without MCP registration, CLI execution, or adapters.

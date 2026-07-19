@@ -165,6 +165,7 @@ import {
 const LOW_RISK_IDS = [
     "mcp.status",
     "mcp.config",
+    "token.get_mcp_status",
     "file.list",
     "file.search",
     "file.create",
@@ -9559,6 +9560,8 @@ test("descriptor groups expose stable command ids", () => {
 
 test("descriptor lookup supports internal, MCP, and CLI command names", () => {
     assert.equal(getCommandDescriptor("mcp.get_status"), CommandDescriptors.MCP_STATUS);
+    assert.equal(getCommandDescriptor("token.get_mcp_status"), CommandDescriptors.TOKEN_GET_MCP_STATUS);
+    assert.equal(getCommandDescriptor("token status"), CommandDescriptors.TOKEN_GET_MCP_STATUS);
     assert.equal(getCommandDescriptor("file.open"), CommandDescriptors.FILE_OPEN);
     assert.equal(getCommandDescriptor("file.search"), CommandDescriptors.FILE_SEARCH);
     assert.equal(getCommandDescriptor("file search"), CommandDescriptors.FILE_SEARCH);

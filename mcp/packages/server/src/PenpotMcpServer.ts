@@ -30,6 +30,7 @@ import {
 import { FileCreateTool } from "./tools/FileCreateTool";
 import { FileDuplicateTool } from "./tools/FileDuplicateTool";
 import { FileOpenTool } from "./tools/FileOpenTool";
+import { TokenGetMcpStatusTool } from "./tools/TokenTools";
 import { FileBindContextTool, FileGetContextTool, FileReleaseContextTool } from "./tools/FileContextTools";
 import { PageCreateTool, PageListTool, PageRenameTool, PageSetCurrentTool } from "./tools/PageTools";
 import {
@@ -276,6 +277,7 @@ export class PenpotMcpServer {
     private initTools(): ToolInfo[] {
         const toolInstances: Tool<any>[] = [
             new McpStatusTool(this),
+            new TokenGetMcpStatusTool(this),
             new AccountGetCurrentUserTool(this),
             new TeamListTool(this),
             new ProjectListTool(this),

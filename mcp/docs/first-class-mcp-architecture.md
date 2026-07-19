@@ -1961,6 +1961,7 @@ endpoints and do not require a workspace tab:
 | `file.get_recent` | `get-team-recent-files` | `teamId`; optional response `limit` |
 | `file.create` | `create-file` | `projectId`; optional `name` and `isShared` |
 | `file.duplicate` | `duplicate-file` | `fileId`; optional `name` (copy resets shared flag) |
+| `token.get_mcp_status` | `get-current-mcp-token` | Current MCP `userToken`; returns token-safe presence/expiry only |
 
 These tools call the backend through `PENPOT_BACKEND_URI`, falling back to
 `PENPOT_PUBLIC_URI` and then `http://localhost:6060`. They send the MCP
@@ -1971,6 +1972,9 @@ authentication and permissions apply.
 summary and do not bind the new or duplicated file as the active file context.
 Use `file.open` plus `file.bind_context` before calling live-only file-scoped
 tools.
+
+`token.get_mcp_status` never returns the raw MCP token string. It reports only
+whether a non-expired profile MCP token exists and its optional `expiresAt`.
 
 ### 8.2 File Context Tools
 

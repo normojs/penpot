@@ -82,6 +82,7 @@ Usage:
   penpot-cli mcp status [--url <status-url>] [--format text|json]
   penpot-cli mcp config [--mode builtin|custom|local] [--profile-source off|auto|backend] [--format text|json]
   penpot-cli mcp logs [--dir <path>] [--follow] [--format text|json]
+  penpot-cli token status [--format text|json]
   penpot-cli dev up --mcp [--mode devenv|host|hybrid] [--dry-run] [--format text|json]
   penpot-cli renderer-service status [--host <host>] [--port <port>] [--format text|json]
   penpot-cli renderer-service start [--host <host>] [--port <port>] [--spawn] [--format text|json]
@@ -139,6 +140,22 @@ Environment:
   PENPOT_MCP_PROFILE_SOURCE  Profile config source: off, auto, or backend
   PENPOT_BACKEND_URI         Backend RPC base URI for profile-source backend/auto
   PENPOT_CLI_TOKEN           Penpot auth-token/session token for profile reads`;
+
+const TOKEN_HELP_TEXT = `penpot-cli token
+
+Usage:
+  penpot-cli token status [--backend-uri <uri>] [--token <token>] [--format text|json]
+
+Notes:
+  Returns a token-safe summary of the profile MCP access token via backend-rpc get-current-mcp-token.
+  Never prints the raw token value.
+
+Environment:
+  PENPOT_BACKEND_URI       Backend RPC base URI, default http://localhost:6060
+  PENPOT_PUBLIC_URI        Public Penpot base URI used as backend fallback
+  PENPOT_CLI_TOKEN         Penpot access token for backend RPC
+  PENPOT_MCP_USER_TOKEN    Penpot MCP user token fallback for backend RPC
+  PENPOT_ACCESS_TOKEN      Generic Penpot access token fallback`;
 
 const DEV_HELP_TEXT = `penpot-cli dev
 
@@ -9554,6 +9571,107 @@ async function handleMcpCommand(args: string[], io: CliIO, env: NodeJS.ProcessEn
     }
 }
 
+function summarizeMcpTokenStatus(row: unknown, sessionUserTokenPresent: boolean): Record<string, unknown> {
+    if (row == null) {
+        return {
+            present: false,
+            expiresAt: null,
+            session: { userTokenPresent: sessionUserTokenPresent },
+            rawTokenPresent: false,
+            nextActions: [
+                "Create or regenerate an MCP token in Penpot Settings → Integrations.",
+                CommandDescriptors.MCP_STATUS.id,
+            ],
+        };
+    }
+
+    const record = asRecord(row);
+    const expiresAt = record.expiresAt ?? record["expires-at"] ?? null;
+    const rawTokenPresent = typeof record.token === "string" && record.token.length > 0;
+    const present = rawTokenPresent || expiresAt !== null || Boolean(record.id);
+
+    return {
+        present,
+        expiresAt,
+        session: { userTokenPresent: sessionUserTokenPresent },
+        rawTokenPresent,
+        nextActions: present
+            ? [
+                  CommandDescriptors.MCP_STATUS.id,
+                  "Use the MCP stream URL with ?userToken=... from Settings when reconnecting.",
+              ]
+            : [
+                  "Create or regenerate an MCP token in Penpot Settings → Integrations.",
+                  CommandDescriptors.MCP_STATUS.id,
+              ],
+    };
+}
+
+function writeTokenStatusText(io: CliIO, summary: Record<string, unknown>): void {
+    writeLine(io.stdout, "MCP token status");
+    writeLine(io.stdout, `present: ${String(summary.present ?? false)}`);
+    writeLine(io.stdout, `expiresAt: ${String(summary.expiresAt ?? "<none>")}`);
+    writeLine(io.stdout, `sessionUserTokenPresent: ${String(asRecord(summary.session).userTokenPresent ?? false)}`);
+    writeLine(io.stdout, `rawTokenPresent: ${String(summary.rawTokenPresent ?? false)}`);
+    writeLine(io.stdout, "note: raw token values are never printed");
+}
+
+async function handleTokenStatus(args: string[], io: CliIO, env: NodeJS.ProcessEnv): Promise<number> {
+    const format = parseFormat(args, io);
+    if (!format) {
+        return 2;
+    }
+
+    const rpc = getRpcConfig(args, env);
+    if (!rpc.token) {
+        return rpcAuthenticationRequired(io, format);
+    }
+
+    const requestEnvelope = createCliRequest(CommandDescriptors.TOKEN_GET_MCP_STATUS, {
+        input: {},
+        target: { backendUri: rpc.backendUri },
+        auth: { userTokenPresent: true, source: "cli-token" },
+        adapter: "backend-rpc",
+    });
+
+    try {
+        const row = await rpcRequest<unknown | null>("GET", rpc.backendUri, "get-current-mcp-token", {}, rpc.token);
+        const summary = summarizeMcpTokenStatus(row, true);
+        // Defense in depth: never let a token field leak into the envelope.
+        const safeSummary = {
+            present: summary.present,
+            expiresAt: summary.expiresAt,
+            session: summary.session,
+            rawTokenPresent: summary.rawTokenPresent,
+            nextActions: summary.nextActions,
+            adapter: "backend-rpc",
+        };
+        const resultEnvelope = createCliResult(requestEnvelope, safeSummary);
+        writeOkEnvelope(io, format, resultEnvelope, () => writeTokenStatusText(io, safeSummary));
+        return 0;
+    } catch (cause) {
+        return rpcErrorResponse(io, format, "get-current-mcp-token", rpc.backendUri, cause);
+    }
+}
+
+async function handleTokenCommand(args: string[], io: CliIO, env: NodeJS.ProcessEnv): Promise<number> {
+    const [subcommand, ...rest] = args;
+
+    if (isHelpFlag(subcommand)) {
+        writeLine(io.stdout, TOKEN_HELP_TEXT);
+        return 0;
+    }
+
+    switch (subcommand) {
+        case "status":
+            return await handleTokenStatus(rest, io, env);
+        default:
+            writeLine(io.stderr, `Unknown token command: ${subcommand}`);
+            writeLine(io.stderr, 'Run "penpot-cli token --help" for usage.');
+            return 2;
+    }
+}
+
 async function handleDevUp(args: string[], io: CliIO, env: NodeJS.ProcessEnv): Promise<number> {
     const format = parseFormat(args, io);
     if (!format) {
@@ -12310,6 +12428,10 @@ export async function run(
 
     if (first === "mcp") {
         return await handleMcpCommand(argv.slice(1), io, env);
+    }
+
+    if (first === "token") {
+        return await handleTokenCommand(argv.slice(1), io, env);
     }
 
     if (first === "dev") {

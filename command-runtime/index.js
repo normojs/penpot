@@ -132,6 +132,18 @@ export const CommandDescriptors = Object.freeze({
         adapters: Object.freeze(["local"]),
         responseShape: "status envelope with mode, endpoint, log, and profile-prop preview data",
     }),
+    TOKEN_GET_MCP_STATUS: Object.freeze({
+        id: "token.get_mcp_status",
+        mcpToolName: "token.get_mcp_status",
+        cliCommand: "token status",
+        title: "MCP token status",
+        description:
+            "Returns a token-safe summary of the current profile MCP access token through backend-rpc get-current-mcp-token; never returns the raw token value.",
+        inputSchema: "empty",
+        adapters: Object.freeze(["backend-rpc"]),
+        responseShape:
+            "status envelope with present/expiresAt/session.userTokenPresent and next actions; raw token redacted",
+    }),
     FILE_LIST: Object.freeze({
         id: "file.list",
         mcpToolName: "file.list",
@@ -577,6 +589,7 @@ export const CommandDescriptors = Object.freeze({
 export const LowRiskCommandDescriptors = Object.freeze([
     CommandDescriptors.MCP_STATUS,
     CommandDescriptors.MCP_CONFIG,
+    CommandDescriptors.TOKEN_GET_MCP_STATUS,
     CommandDescriptors.FILE_LIST,
     CommandDescriptors.FILE_SEARCH,
     CommandDescriptors.FILE_CREATE,

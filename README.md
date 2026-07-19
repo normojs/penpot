@@ -80,6 +80,8 @@ Already in good shape for private checkout use:
 - Shared CLI/MCP paths for many create/update/delete/export operations
 - `file.search` / `file.duplicate` through backend-rpc (`search-files` /
   `duplicate-file`)
+- `token.get_mcp_status` through backend-rpc (`get-current-mcp-token`,
+  token-safe summary only)
 - File context bind/release and live selection commands when a workspace is bound
 - `export.file` through backend binary export
 - Portable private `penpot-cli` release archive packaging

@@ -31,8 +31,9 @@ Adapter-selection helpers:
 
 Descriptor catalog:
 
-- descriptors: `mcp.status`, `mcp.config`, `file.list`, `file.search`,
-  `file.create`, `file.duplicate`, `file.open`, `page.list`, `page.create`
+- descriptors: `mcp.status`, `mcp.config`, `token.get_mcp_status`, `file.list`,
+  `file.search`, `file.create`, `file.duplicate`, `file.open`, `page.list`,
+  `page.create`
 - headless authoring descriptors: `page.rename`
 - shape/export descriptors: `shape.create_frame`, `shape.create_rect`,
   `shape.create_text`, `shape.create_image`, `shape.update`, `shape.delete`,
@@ -724,8 +725,9 @@ not register yet:
 
 - global/file: `file.search` and `file.duplicate` are executable through
   backend-rpc (`search-files` / `duplicate-file`) with MCP tools and
-  `penpot-cli file search|duplicate`; `token.get_mcp_status` remains
-  unregistered
+  `penpot-cli file search|duplicate`; `token.get_mcp_status` is executable
+  through backend-rpc (`get-current-mcp-token`) with MCP tool and
+  `penpot-cli token status` (token-safe summary only)
 - file context: `page.set_current`, `selection.get`, and `selection.set` are implemented but remain plugin-live and now share live-only recovery metadata with the same binding flow
 - design editing: `shape.group`/`shape.ungroup` are executable through backend-command (`group-file-shapes`/`ungroup-file-shapes`) with MCP and CLI registration; `component.create` is executable through backend-command
   (`create-file-component`) with MCP tool and `penpot-cli component create`
@@ -850,6 +852,7 @@ registered or the descriptor explicitly marks them as planned/unavailable.
 | `mcp status` | `mcp.status` | HTTP GET status URL | JSON/text MCP status snapshot | gap: no smoke test |
 | `mcp config` | `mcp.config` | local env/runtime derivation | JSON/text mode, endpoints, log dir, profile-prop preview | `cli-smoke.test.mjs` |
 | `mcp logs` | `mcp.logs` | local filesystem log directory | JSON/text log file summaries or follow stream | gap: no smoke test |
+| `token status` | `token.get_mcp_status` | backend-rpc `get-current-mcp-token` | JSON/text `{present,expiresAt,session,rawTokenPresent,adapter}` (no raw token) | RPC smoke test |
 | `dev up --mcp` | `dev.up` | local process orchestration | JSON/text dry-run plan or `manage.sh start-devenv` result | dry-run smoke test |
 | `file list` | `file.list` | backend-rpc `get-project-files` | JSON/text `{projectId,files,adapter}` | gap: auth/path only implicit |
 | `file search` | `file.search` | backend-rpc `search-files` | JSON/text `{teamId,searchTerm,files,adapter}` | RPC smoke test |

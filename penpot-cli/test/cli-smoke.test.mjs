@@ -6517,6 +6517,7 @@ test("top-level help lists first-class MCP, shape, and export commands", async (
     assert.equal(result.exitCode, 0);
     assert.equal(result.stderr, "");
     assert.match(result.stdout, /penpot-cli mcp config/);
+    assert.match(result.stdout, /penpot-cli token status/);
     assert.match(result.stdout, /penpot-cli file open/);
     assert.match(result.stdout, /penpot-cli file search/);
     assert.match(result.stdout, /penpot-cli file duplicate/);
@@ -6548,6 +6549,7 @@ test("command runtime exposes low-risk command descriptors", () => {
         [
             "mcp.status",
             "mcp.config",
+            "token.get_mcp_status",
             "file.list",
             "file.search",
             "file.create",
@@ -6560,6 +6562,10 @@ test("command runtime exposes low-risk command descriptors", () => {
     assert.equal(CommandDescriptors.MCP_STATUS.mcpToolName, "mcp.get_status");
     assert.equal(getCommandDescriptor("mcp.get_status").id, "mcp.status");
     assert.equal(getCommandDescriptor("page.list").cliCommand, "page list");
+    assert.equal(CommandDescriptors.TOKEN_GET_MCP_STATUS.cliCommand, "token status");
+    assert.deepEqual(CommandDescriptors.TOKEN_GET_MCP_STATUS.adapters, ["backend-rpc"]);
+    assert.equal(getCommandDescriptor("token.get_mcp_status").id, "token.get_mcp_status");
+    assert.equal(getCommandDescriptor("token status").id, "token.get_mcp_status");
     assert.equal(CommandDescriptors.FILE_SEARCH.cliCommand, "file search");
     assert.deepEqual(CommandDescriptors.FILE_SEARCH.adapters, ["backend-rpc"]);
     assert.equal(CommandDescriptors.FILE_DUPLICATE.cliCommand, "file duplicate");
@@ -6604,7 +6610,7 @@ test("command runtime exposes migrated shape and export descriptors", () => {
             "render.thumbnail",
         ]
     );
-    assert.equal(MigratedCommandDescriptors.length, 40);
+    assert.equal(MigratedCommandDescriptors.length, 41);
     assert.equal(CommandDescriptors.SHAPE_DELETE.cliCommand, "shape delete");
     assert.equal(CommandDescriptors.SHAPE_GROUP.cliCommand, "shape group");
     assert.equal(CommandDescriptors.SHAPE_UNGROUP.cliCommand, "shape ungroup");
@@ -6651,7 +6657,7 @@ test("command runtime exposes live-gap descriptor boundaries", () => {
             "shape.set_style",
         ]
     );
-    assert.equal(MigratedCommandDescriptors.length, 40);
+    assert.equal(MigratedCommandDescriptors.length, 41);
     assert.equal(CommandDescriptors.PAGE_SET_CURRENT.mcpToolName, "page.set_current");
     assert.equal(CommandDescriptors.PAGE_SET_CURRENT.cliCommand, undefined);
     assert.equal(getCommandDescriptor("selection.get").adapters[0], "plugin-live");
@@ -6692,7 +6698,7 @@ test("command runtime exposes components/tokens descriptor-only boundaries", () 
         ComponentsTokensCommandDescriptors.map((descriptor) => descriptor.id),
         ["component.create", "component.instantiate", "tokens.list", "tokens.apply"]
     );
-    assert.equal(MigratedCommandDescriptors.length, 40);
+    assert.equal(MigratedCommandDescriptors.length, 41);
     assert.equal(CommandDescriptors.COMPONENT_CREATE.mcpToolName, "component.create");
     assert.equal(CommandDescriptors.COMPONENT_CREATE.cliCommand, "component create");
     assert.deepEqual(CommandDescriptors.COMPONENT_CREATE.adapters, ["backend-command"]);
@@ -8577,6 +8583,74 @@ test("file open text guidance names live-only selection MCP tools", async () => 
     assert.match(result.stdout, /selection\.set/);
     assert.match(result.stdout, /file\.get_context/);
     assert.match(result.stdout, /file\.bind_context/);
+});
+
+test("token status calls backend-rpc get-current-mcp-token and redacts raw token", async () => {
+    const originalFetch = globalThis.fetch;
+    const calls = [];
+    globalThis.fetch = async (url, options) => {
+        calls.push({ url: String(url), options });
+        return {
+            ok: true,
+            status: 200,
+            statusText: "OK",
+            text: async () =>
+                JSON.stringify({
+                    token: "secret-mcp-token-value",
+                    "expires-at": "2099-01-01T00:00:00Z",
+                }),
+        };
+    };
+
+    try {
+        const result = await runCli(["token", "status", "--format", "json"], {
+            PENPOT_BACKEND_URI: "http://127.0.0.1:6060",
+            PENPOT_CLI_TOKEN: "token-1",
+        });
+        const body = parseJson(result.stdout);
+
+        assert.equal(result.exitCode, 0);
+        assert.equal(result.stderr, "");
+        assert.equal(body.status, "ok");
+        assert.equal(body.data.adapter, "backend-rpc");
+        assert.equal(body.data.present, true);
+        assert.equal(body.data.expiresAt, "2099-01-01T00:00:00Z");
+        assert.equal(body.data.rawTokenPresent, true);
+        assert.equal(body.data.session.userTokenPresent, true);
+        assert.equal(body.data.token, undefined);
+        assert.equal(JSON.stringify(body).includes("secret-mcp-token-value"), false);
+        assert.equal(calls.length, 1);
+        assert.match(calls[0].url, /\/api\/main\/methods\/get-current-mcp-token\?/);
+    } finally {
+        globalThis.fetch = originalFetch;
+    }
+});
+
+test("token status reports missing MCP token without leaking fields", async () => {
+    const originalFetch = globalThis.fetch;
+    globalThis.fetch = async () => ({
+        ok: true,
+        status: 200,
+        statusText: "OK",
+        text: async () => "null",
+    });
+
+    try {
+        const result = await runCli(["token", "status", "--format", "json"], {
+            PENPOT_BACKEND_URI: "http://127.0.0.1:6060",
+            PENPOT_CLI_TOKEN: "token-1",
+        });
+        const body = parseJson(result.stdout);
+
+        assert.equal(result.exitCode, 0);
+        assert.equal(body.status, "ok");
+        assert.equal(body.data.present, false);
+        assert.equal(body.data.expiresAt, null);
+        assert.equal(body.data.rawTokenPresent, false);
+        assert.equal(body.data.token, undefined);
+    } finally {
+        globalThis.fetch = originalFetch;
+    }
 });
 
 test("file search calls backend-rpc search-files", async () => {
