@@ -9901,6 +9901,104 @@ test("render.thumbnail contract matches the documented fixture matrix", async (t
     }
 });
 
+test("render.thumbnail multi-target matrix covers file and tagged-frame cache policies", () => {
+    const fileId = "00000000-0000-0000-0000-000000000001";
+    const pageId = "00000000-0000-0000-0000-000000000002";
+    const objectId = "00000000-0000-0000-0000-000000000003";
+    const matrix = [
+        {
+            id: "file-reuse",
+            input: { fileId, target: "file", cachePolicy: "reuse" },
+            expected: {
+                kind: "file",
+                objectKey: null,
+                cacheScope: "file-thumbnail",
+                dataCommand: "get-file-data-for-thumbnail",
+                persistCommand: "create-file-thumbnail",
+            },
+        },
+        {
+            id: "file-refresh",
+            input: { fileId, target: "file", cachePolicy: "refresh" },
+            expected: {
+                kind: "file",
+                objectKey: null,
+                cacheScope: "file-thumbnail",
+                dataCommand: "get-file-data-for-thumbnail",
+                persistCommand: "create-file-thumbnail",
+            },
+        },
+        {
+            id: "frame-reuse",
+            input: {
+                fileId,
+                pageId,
+                objectId,
+                target: "frame",
+                tag: "component",
+                cachePolicy: "reuse",
+            },
+            expected: {
+                kind: "frame",
+                objectKey: `${fileId}/${pageId}/${objectId}/component`,
+                cacheScope: "file-object-thumbnail",
+                dataCommand: "get-file-frame-data-for-thumbnail",
+                persistCommand: "create-file-object-thumbnail",
+            },
+        },
+        {
+            id: "frame-refresh",
+            input: {
+                fileId,
+                pageId,
+                objectId,
+                target: "frame",
+                tag: "component",
+                cachePolicy: "refresh",
+            },
+            expected: {
+                kind: "frame",
+                objectKey: `${fileId}/${pageId}/${objectId}/component`,
+                cacheScope: "file-object-thumbnail",
+                dataCommand: "get-file-frame-data-for-thumbnail",
+                persistCommand: "create-file-object-thumbnail",
+            },
+        },
+    ];
+
+    for (const entry of matrix) {
+        const plan = createRenderThumbnailRendererServicePlan({
+            ...entry.input,
+            endpoint: "http://127.0.0.1:6070/thumbnail",
+        });
+        assert.equal(plan.command, "render.thumbnail", entry.id);
+        assert.equal(plan.adapter, "renderer-service", entry.id);
+        assert.equal(plan.target.kind, entry.expected.kind, entry.id);
+        assert.equal(plan.target.objectKey, entry.expected.objectKey, entry.id);
+        assert.equal(plan.cache.policy, entry.input.cachePolicy, entry.id);
+        assert.equal(plan.cache.scope, entry.expected.cacheScope, entry.id);
+        assert.equal(plan.serviceRequest.backendRpc.data.command, entry.expected.dataCommand, entry.id);
+        const persistCommand =
+            plan.serviceRequest.backendRpc.persist?.command ??
+            plan.serviceRequest.backendRpc.cacheMissPersist?.command ??
+            plan.contract.backendRpc.persist.command;
+        assert.equal(persistCommand, entry.expected.persistCommand, entry.id);
+        assert.equal(plan.serviceRequest.cache.policy, entry.input.cachePolicy, entry.id);
+        // Dry-run/planning remains network-free regardless of target matrix cell.
+        assert.equal(plan.client.networkProbe, false, entry.id);
+    }
+
+    // Incomplete frame identity remains incomplete in the contract requires list.
+    const incomplete = createRenderThumbnailContract({
+        fileId,
+        target: "frame",
+        cachePolicy: "reuse",
+    });
+    assert.equal(incomplete.target.kind, "frame");
+    assert.ok(incomplete.requires.includes("pageId"));
+    assert.ok(incomplete.requires.includes("objectId"));
+});
+
 test("render.thumbnail contract validates target, format, cache, and dimensions", () => {
     assert.throws(
         () => createRenderThumbnailContract({ fileId: "file-1", target: "selection" }),

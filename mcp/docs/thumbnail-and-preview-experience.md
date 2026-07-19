@@ -178,15 +178,34 @@ and surface the operator setup doc mcp/docs/thumbnail-and-preview-experience.md.
 Never treat ToolNames presence as full thumbnail GA.
 ```
 
-## P31.5 Multi-Target Matrix (Optional, Non-Blocking)
+## P31.5 Multi-Target Matrix
 
-Out of scope for private 0.1.x “done”:
+### Scope (what “done” means)
 
-- Exhaustive tagged-frame + file cache matrix in CI  
-- Multi-object batch thumbnails  
-- Auto-spawn renderer for every MCP process  
+A **planning/contract matrix** for the four primary cells:
 
-Track as optional hardening after the file-target happy path is trusted.
+| Target | cachePolicy | Data RPC | Persist RPC / cache-miss persist | objectKey |
+| --- | --- | --- | --- | --- |
+| `file` | `reuse` | `get-file-data-for-thumbnail` | `create-file-thumbnail` | `null` |
+| `file` | `refresh` | `get-file-data-for-thumbnail` | `create-file-thumbnail` | `null` |
+| `frame` | `reuse` | `get-file-frame-data-for-thumbnail` | `create-file-object-thumbnail` | `fileId/pageId/objectId/tag` |
+| `frame` | `refresh` | `get-file-frame-data-for-thumbnail` | `create-file-object-thumbnail` | `fileId/pageId/objectId/tag` |
+
+Automated coverage: command-runtime test
+`render.thumbnail multi-target matrix covers file and tagged-frame cache policies`
+plus existing fixture cases in:
+
+- `render-thumbnail-contract-fixtures.json`  
+- `render-thumbnail-renderer-service-fixtures.json`  
+
+### Still optional / non-blocking for private 0.1.x
+
+- Exhaustive CI execution against a live renderer for every matrix cell  
+- Multi-object batch thumbnails in one tool call  
+- Auto-spawn renderer-service for every MCP process  
+
+Operators should still validate the **file-target happy path** (P31.2) on a real
+service before relying on frame cells in production.
 
 ## Phase 31 Exit Criteria
 

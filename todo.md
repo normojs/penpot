@@ -28,11 +28,10 @@ inventory/test coverage). CLI package version remains `0.1.0` with private
 release archive distribution.
 
 **Phase 29–34 documentation program complete for private 0.1.x.**  
-Product is positioned as a **private fork automation toolkit** (not official
-Penpot GA, not npm). Remaining optional engineering: **P31.5** multi-target
-thumbnail matrix. **1.0** remains blocked on process boxes in
-`mcp/docs/product-positioning.md` §P34.5 (pilot, public audience decision,
-tip re-gate).
+**P31.5 multi-target thumbnail matrix** covered by command-runtime planning
+tests (file/frame × reuse/refresh). Product is a **private fork automation
+toolkit** (not official Penpot GA, not npm). **1.0** remains blocked on process
+boxes in `mcp/docs/product-positioning.md` §P34.5.
 
 Completed baseline (not re-listed as open tasks):
 
@@ -42,13 +41,9 @@ Completed baseline (not re-listed as open tasks):
 - Server ESM `.js` import suffixes for tools + root modules
 - Private packaging path: `pnpm cli:package-check` → `tmp/penpot-cli-release/`
 - Upstream policy: fetch-only `upstream`, push only to `fork`
-- **Phase 29** private 0.1.0 release graduation (`cli-v0.1.0`)
-- **Phase 30** distribution + versioning docs (archive-only; no npm)
-- **Phase 31 P31.1–P31.4** thumbnail/preview product policy docs + error actions
-- **Phase 32** multi-user production hardening docs + multi-token isolation test
-- **Phase 33** agent-logs metadata-only executable path + redaction fixtures
-- **Phase 34** positioning, support boundary, upstream decision, branding, 1.0 checklist
-- **P31.5** remains optional multi-target thumbnail matrix
+- **Phase 29–34** private product path (release, distribution, thumbnail policy,
+  multi-user hardening, debug diagnostics, positioning)
+- **P31.5** multi-target thumbnail planning matrix test
 - **cli-v1.0.0** not opened until P34.5 process gates are green
 
 ## Feature Roadmap
@@ -61,7 +56,7 @@ detail.
 | --- | --- | --- | --- | --- | --- |
 | F37 | done | Private fork release graduation | Phase 29 | Operators can install a verified private `penpot-cli` archive from current `main` with documented smoke checks | Completed 2026-07-19; P29.1–P29.4: tip gate, clean extract smoke, `private-release-0.1.0.md`, tag `cli-v0.1.0` |
 | F38 | done | General distribution and versioning | Phase 30 | Non-checkout users can install MCP/CLI without a full fork tree under an explicit packaging policy | Completed 2026-07-19; archive-only default, fork checkout for MCP, no npm; docs in distribution-and-versioning + standalone-install |
-| F39 | done | Default thumbnail and preview experience | Phase 31 | Agents can rely on a documented default path for file/frame thumbnails without undocumented gate spelunking | Completed 2026-07-19 for docs policy P31.1–P31.4; thumbnail remains operator endpoint-first, not default agent GA; P31.5 matrix optional |
+| F39 | done | Default thumbnail and preview experience | Phase 31 | Agents can rely on a documented default path for file/frame thumbnails without undocumented gate spelunking | Completed 2026-07-19; P31.1–P31.5 policy + multi-target planning matrix; thumbnail not default agent GA |
 | F40 | done | Production multi-user hardening | Phase 32 | Self-hosted multi-user deployments have explicit security defaults, token guidance, and diagnostics redaction | Completed 2026-07-19; production-multi-user-hardening.md + multi-token isolation fixture |
 | F41 | done | Completing debug diagnostics | Phase 33 | Operators and gated agents can inspect log metadata safely; raw tail stays explicit | Completed 2026-07-19; metadata-only debug.get_agent_logs + CLI + redaction fixtures; follow stays mcp logs |
 | F42 | done | General product positioning and support boundary | Phase 34 | Users understand whether this is a private fork product, early access, or candidate for upstream | Completed 2026-07-19; product-positioning.md (matrix, support, upstream stay-fork, branding, 1.0 checklist) |
@@ -103,7 +98,7 @@ Goal: make visual output promises honest and, where chosen, default-usable.
 | P31.2 | done | Reduce remaining operator-only friction for one happy path | `renderer-service`, CLI, MCP | Completed 2026-07-19; file-target happy path env/flags documented | Prefer file target before multi-frame matrix |
 | P31.3 | done | Failure UX for unavailable renderer | MCP, CLI | Completed 2026-07-19; shared error actions point to dry-run, config, preview/export, and policy doc | `createRenderThumbnailRendererServiceErrorPayload` |
 | P31.4 | done | Preview vs thumbnail product narrative | docs, inventory | Completed 2026-07-19; narrative in policy doc + inventory pointer | Avoid export/render confusion |
-| P31.5 | todo | Optional: multi-target thumbnail matrix (post-happy-path) | renderer-service | Tagged-frame + file matrix tests | Explicitly non-blocking for private 0.1.x |
+| P31.5 | done | Optional: multi-target thumbnail matrix (post-happy-path) | renderer-service, command-runtime tests | Completed 2026-07-19; file/frame × reuse/refresh planning matrix test + fixture coverage; live multi-object batch still non-GA | Planning matrix done; live batch optional |
 
 ## Phase 32: Production Multi-User Hardening
 
@@ -168,7 +163,7 @@ Keep at most one roadmap feature `in_progress`.
 - [x] **P31.2** One documented file-target thumbnail happy path (env/flags, expected failures)
 - [x] **P31.3** Harden unavailable-renderer user-facing actions/docs
 - [x] **P31.4** Preview vs thumbnail product narrative in inventory/docs
-- [ ] **P31.5** Optional multi-target thumbnail matrix (post happy-path; non-blocking for 0.1.x)
+- [x] **P31.5** Multi-target thumbnail planning matrix (file/frame × reuse/refresh; live batch still non-GA)
 
 ### Phase 32: Production multi-user hardening
 
