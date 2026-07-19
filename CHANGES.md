@@ -4,6 +4,7 @@
 
 ### :sparkles: New features & Enhancements
 
+- Private CLI packaging now emits a `sha256sum`-compatible checksum beside the release archive (`penpot-cli-<ver>.tar.gz.sha256` from `pnpm cli:package-check`) and documents verification in packaging/private-release docs.
 - Tip release gate re-run on `660abece3d` lineage: fix CLI smoke assertion for updated `render.thumbnail` descriptor wording; CLI types/tests 114/114; MCP focused tools + file-context isolation 47/47; command-runtime descriptor/matrix checks; `pnpm cli:package-check` + clean extract smoke (`--version`/`--help`/`debug --help`; archive has no `workspace:` deps).
 - P31.5 multi-target `render.thumbnail` planning matrix: command-runtime coverage for file/frame × reuse/refresh (objectKey, cache scope, data/persist RPC mapping) and docs update in `thumbnail-and-preview-experience.md`. Live multi-object batch thumbnails remain non-GA.
 - Phase 34 product positioning: publish capability matrix, support/triage boundary, upstream stay-fork decision, branding rules, and explicit 1.0 exit checklist (`mcp/docs/product-positioning.md`); README points at the positioning page. Private 0.1.x remains the supported release; `cli-v1.0.0` is not auto-opened.

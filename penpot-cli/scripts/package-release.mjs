@@ -1,7 +1,8 @@
+import { createHash } from "node:crypto";
 import { execFile } from "node:child_process";
 import { constants } from "node:fs";
 import { access, chmod, cp, mkdir, readFile, rm, stat, writeFile } from "node:fs/promises";
-import { dirname, join, resolve } from "node:path";
+import { basename, dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { promisify } from "node:util";
 
@@ -171,8 +172,20 @@ async function verifyReleasePackage(release) {
     }
 }
 
+async function writeArchiveChecksum(archivePath) {
+    const bytes = await readFile(archivePath);
+    const digest = createHash("sha256").update(bytes).digest("hex");
+    const checksumPath = `${archivePath}.sha256`;
+    // coreutils-compatible: "<hash>  <filename>"
+    await writeFile(checksumPath, `${digest}  ${basename(archivePath)}\n`);
+    return { checksumPath, digest };
+}
+
 const release = await createReleasePackage();
 await verifyReleasePackage(release);
+const checksum = await writeArchiveChecksum(release.archivePath);
 
 console.log(`penpot-cli release archive: ${release.archivePath}`);
 console.log(`penpot-cli release directory: ${release.packageDir}`);
+console.log(`penpot-cli release checksum: ${checksum.checksumPath}`);
+console.log(`penpot-cli release sha256: ${checksum.digest}`);

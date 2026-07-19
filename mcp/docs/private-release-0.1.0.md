@@ -8,7 +8,7 @@ Not a public npm package. Not an official Penpot upstream GA claim.
 | CLI package version | `0.1.0` |
 | Distribution | Private release archive only |
 | Packaging tip (git) | `23b918e3bb` / tag `cli-v0.1.0` on `fork/main` |
-| Artifact | `tmp/penpot-cli-release/penpot-cli-0.1.0.tar.gz` (generated) |
+| Artifact | `tmp/penpot-cli-release/penpot-cli-0.1.0.tar.gz` (+ `.sha256`) |
 | Related docs | [`penpot-cli-build-install-strategy.md`](./penpot-cli-build-install-strategy.md), [`product-positioning.md`](./product-positioning.md), [`debug-diagnostics-descriptor-boundaries.md`](./debug-diagnostics-descriptor-boundaries.md), [`headless-live-gap-audit.md`](./headless-live-gap-audit.md) |
 
 ## What This Release Is
@@ -32,6 +32,10 @@ Prerequisites: **Node.js ≥ 18**. No monorepo checkout required for the CLI bin
 # 1) Obtain the tarball produced by the packaging tip:
 #    pnpm cli:package-check
 #    → tmp/penpot-cli-release/penpot-cli-0.1.0.tar.gz
+#    → tmp/penpot-cli-release/penpot-cli-0.1.0.tar.gz.sha256
+
+# optional integrity check (copy both files together)
+# shasum -a 256 -c penpot-cli-0.1.0.tar.gz.sha256
 
 tar -xzf penpot-cli-0.1.0.tar.gz
 cd penpot-cli-0.1.0

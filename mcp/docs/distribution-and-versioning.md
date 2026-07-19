@@ -83,7 +83,8 @@ Script: `penpot-cli/scripts/package-release.mjs`.
 | --- | --- | --- |
 | MCP server **not** in CLI tar | Operators may expect full stack in one file | Documented in private release notes + standalone install |
 | Runtime copy uses `runtimePackage.files` only | New runtime files omitted if not listed | Keep `command-runtime/package.json` `files` accurate; package-check asserts `index.js` / `index.d.ts` |
-| No checksum/signature step | Supply-chain for private distro | Optional later: SHA256SUMS next to tar |
+| Checksum next to tar | Private integrity check | `pnpm cli:package-check` writes `penpot-cli-<ver>.tar.gz.sha256` (`sha256sum`-compatible) |
+| Cryptographic signature / provenance | Not yet | Optional later: cosign/GPG if public distribution opens |
 | No multi-platform native deps today | Low | Revisit if CLI gains native modules |
 
 ### Review checklist (run each packaging tip)

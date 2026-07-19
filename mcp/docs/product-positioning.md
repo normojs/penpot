@@ -234,7 +234,8 @@ below are intentionally checked in a release review (not by implication).
 - [x] Standalone install docs  
 - [x] Semver graduation rules  
 - [ ] If public 1.0: npm or multi-artifact decision **re-opened and implemented**  
-- [ ] If public 1.0: signed checksums / release attestation process  
+- [x] Private archive checksum file next to tar (`.sha256` from `package-check`)
+- [ ] If public 1.0: signed checksums / release attestation process (cosign/GPG)  
 
 ### Capability honesty (Phases 31–33)
 

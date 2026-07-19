@@ -138,7 +138,16 @@ pnpm cli:package-check
 Artifacts:
 
 - `tmp/penpot-cli-release/penpot-cli-0.1.0.tar.gz`
+- `tmp/penpot-cli-release/penpot-cli-0.1.0.tar.gz.sha256` (`sha256sum`-compatible)
 - extracted tree at `tmp/penpot-cli-release/penpot-cli-0.1.0/`
+
+Verify archive integrity:
+
+```bash
+cd tmp/penpot-cli-release
+shasum -a 256 -c penpot-cli-0.1.0.tar.gz.sha256
+# or: sha256sum -c penpot-cli-0.1.0.tar.gz.sha256
+```
 
 ### Clean-machine / extracted-archive smoke (P29.2)
 
