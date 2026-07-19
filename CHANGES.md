@@ -4,6 +4,7 @@
 
 ### :sparkles: New features & Enhancements
 
+- Fix remaining MCP tool ESM import extensions for `GlobalReadTools` and `FileContextTools` so ts-node test loading can resolve relative modules consistently.
 - Add focused MCP tool tests for legacy `export_shape` (filePath schema gating, bound file-context requirement, absolute path validation, selection/page/shape export codes, and optional PNG file write) and fix ESM import extensions on the tool module for ts-node test loading.
 - Add focused MCP tool tests for gated legacy `import_image` (bound file-context requirement, absolute path/missing file/unsupported format validation, and plugin executeCode happy path) and fix ESM import extensions on the tool module for ts-node test loading.
 - Add focused MCP tool tests for legacy `high_level_overview` and `penpot_api_info` (overview text, short/long type docs, member lookup, missing type/member failure text) and fix ESM import extensions on those modules for ts-node test loading.

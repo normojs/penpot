@@ -1,15 +1,15 @@
 import { z } from "zod";
-import { EmptyToolArgs } from "../Tool";
-import type { ToolResponse } from "../ToolResponse";
-import { PenpotMcpServer } from "../PenpotMcpServer";
-import { ToolNames } from "../ToolNames";
+import { EmptyToolArgs } from "../Tool.js";
+import type { ToolResponse } from "../ToolResponse.js";
+import { PenpotMcpServer } from "../PenpotMcpServer.js";
+import { ToolNames } from "../ToolNames.js";
 import {
     FileContextErrorCodes,
     FileContextLookupError,
     FileContextSelector,
     StoredFileContext,
-} from "../FileContextRegistry";
-import { PenpotRpcTool } from "./PenpotRpcTool";
+} from "../FileContextRegistry.js";
+import { PenpotRpcTool } from "./PenpotRpcTool.js";
 
 type PenpotRecord = Record<string, unknown>;
 
