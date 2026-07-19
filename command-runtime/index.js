@@ -572,7 +572,7 @@ export const CommandDescriptors = Object.freeze({
         cliCommand: "render thumbnail",
         title: "Render thumbnail",
         description:
-            "Planned thumbnail render command contract for dashboard file thumbnails and tagged frame thumbnails; CLI dry-run can print the renderer-service request shape, but no rendering runtime is executable yet.",
+            "Renders dashboard-style file or tagged-frame thumbnails through renderer-service when an endpoint is configured (endpoint-first). Not default agent GA — prefer render.preview/export for ordinary visuals. CLI dry-run prints the request shape without contacting the service. See mcp/docs/thumbnail-and-preview-experience.md.",
         inputSchema:
             "fileId, target=file|frame?, pageId?, objectId?/frameId?/shapeId?, tag=frame?, revn?, width/size=252?, cachePolicy=reuse|refresh?, format=png?, output?, adapter?",
         adapters: Object.freeze(["renderer-service"]),
@@ -37874,7 +37874,11 @@ export function createRenderThumbnailRendererServiceErrorPayload(plan, cause = E
 
     return createCommandErrorPayload(code, message, {
         actions: [
-            "Inspect renderer-service health and logs before retrying.",
+            "Use render.thumbnail --dry-run (CLI) or dry-run/planning mode to inspect the request without contacting renderer-service.",
+            "Configure PENPOT_RENDERER_SERVICE_URI or --renderer-service-uri; ensure renderer-service health is OK.",
+            "Prefer render.preview or export.page for exporter-backed visuals when thumbnails are not required.",
+            "See mcp/docs/thumbnail-and-preview-experience.md for agent vs operator defaults (thumbnail is not default agent GA).",
+            "Inspect renderer-service health and logs before retrying execution.",
             "Keep MCP resource returns metadata-only; CLI --output may download only after execution succeeds.",
         ],
         data: {

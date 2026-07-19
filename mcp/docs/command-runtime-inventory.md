@@ -89,6 +89,11 @@ It still does not own executable input schemas, CLI help metadata, transport
 edge formatting, or RPC method names. Those fields remain duplicated between
 MCP server tool classes and `penpot-cli`.
 
+
+- Product policy for visuals: `mcp/docs/thumbnail-and-preview-experience.md`
+  (`render.preview` / export for agents; `render.thumbnail` operator endpoint-first,
+  not default agent GA).
+
 ## MCP Registered Tool Inventory
 
 | Tool | Input schema owner | Adapter path | Response shape | Coverage |

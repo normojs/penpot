@@ -86,7 +86,7 @@ pnpm cli:package-check
 | --- | --- |
 | Headless authoring (file/page/shape/prototype/component/token) | Supported for documented contracts |
 | `page.set_current` / `selection.*` | **Live-only** (plugin-live / editor-local); no persisted agent session state |
-| `render.thumbnail` | Operator / gated renderer-service path; **not** default agent GA |
+| `render.thumbnail` | Operator / gated renderer-service path; **not** default agent GA (see `thumbnail-and-preview-experience.md`) |
 | `render.preview` / export | Supported for explicit targets; see inventory |
 | `execute_code` | Disabled unless `PENPOT_MCP_ENABLE_EXECUTE_CODE=true` |
 | `debug.get_plugin_state` | MCP requires `PENPOT_MCP_ENABLE_DEBUG_TOOLS=true`; CLI projects status URL |
