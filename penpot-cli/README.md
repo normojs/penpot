@@ -5,10 +5,13 @@ and automation work. It lives at the top level of the Penpot monorepo because it
 coordinates frontend, backend, exporter, MCP, and future shared command runtime
 surfaces.
 
-The current package is private and intended for private fork checkout usage.
-It is not published to npm yet, but the workspace can generate a private
-portable release archive that includes the built CLI and the
-`@penpot/command-runtime` runtime files.
+The current package is private and intended for private fork checkout usage
+or the **portable release archive**. It is **not** published to npm. See:
+
+- [`mcp/docs/standalone-install.md`](../mcp/docs/standalone-install.md)
+- [`mcp/docs/distribution-and-versioning.md`](../mcp/docs/distribution-and-versioning.md)
+- [`mcp/docs/private-release-0.1.0.md`](../mcp/docs/private-release-0.1.0.md)
+- [`mcp/docs/penpot-cli-build-install-strategy.md`](../mcp/docs/penpot-cli-build-install-strategy.md)
 
 ## Quick Start
 

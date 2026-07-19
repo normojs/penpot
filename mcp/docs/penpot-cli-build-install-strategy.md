@@ -6,18 +6,26 @@ fork and the P16.5 portable archive path.
 ## Decision
 
 `penpot-cli` remains a private top-level workspace package. It is not published
-to npm, but the workspace now has a private portable release archive for fork
-distribution.
+to npm. The supported portable path is a **private release archive** for fork
+distribution. Full MCP/server still requires the fork checkout or an equivalent
+self-hosted deploy of this fork.
 
 | Topic | Decision |
 | --- | --- |
 | Package name | Keep `penpot-cli` in `penpot-cli/package.json`. |
 | Binary name | Keep the public binary name `penpot-cli`. |
-| Package visibility | Keep `"private": true`; do not publish to npm yet. |
-| Versioning | Keep the CLI package version independent from the Penpot product version; use package semver for CLI interface changes and git tags/changelog entries for fork releases. |
-| Runtime dependency boundary | Keep depending on workspace `@penpot/command-runtime` during development; copy the runtime package files into the private release archive. |
-| Primary install mode | Build and run from a private fork checkout. |
+| Package visibility | Keep `"private": true`; **do not publish to npm** unless Phase 30 decision is explicitly reversed (see `distribution-and-versioning.md`). |
+| Versioning | CLI semver independent of Penpot product version; private tags `cli-v<semver>`; graduation rules in `distribution-and-versioning.md`. |
+| Runtime dependency boundary | Depend on workspace `@penpot/command-runtime` in monorepo; **vendor** it into the private release archive. |
+| Primary install mode (CLI portable) | Extract `penpot-cli-<ver>.tar.gz` on Node ≥ 18. |
+| Primary install mode (MCP/full stack) | Private fork checkout + `pnpm` / existing self-hosted fork deploy. |
 | Portable artifact | Generate `tmp/penpot-cli-release/penpot-cli-<version>.tar.gz` with `pnpm cli:package-check`. |
+
+**Phase 30.1 decision (2026-07-19):** archive-only + fork checkout — **not** npm,
+**not** a multi-artifact public GA set. Details:
+[`distribution-and-versioning.md`](./distribution-and-versioning.md).
+Operator install:
+[`standalone-install.md`](./standalone-install.md).
 
 The important constraint is the workspace dependency on
 `@penpot/command-runtime`. Publishing or installing a generic npm tarball while

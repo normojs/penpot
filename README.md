@@ -98,7 +98,10 @@ Still gated / in progress:
   `component.instantiate` (explicit x/y)
 - Shape grouping is backend-command executable: `shape.group` / `shape.ungroup`
 - Some editor-local or layout-edge operations remain plugin-live only
-- Packages are private workspace artifacts (not published to npm)
+- Packages are private workspace artifacts (not published to npm). Portable CLI
+install uses the release archive; see
+[`mcp/docs/standalone-install.md`](mcp/docs/standalone-install.md) and
+[`mcp/docs/distribution-and-versioning.md`](mcp/docs/distribution-and-versioning.md).
 
 Track day-to-day status in [`todo.md`](todo.md).
 
@@ -116,6 +119,8 @@ pnpm install
 
 ### CLI
 
+Checkout:
+
 ```bash
 pnpm cli:build
 node penpot-cli/dist/index.js --help
@@ -126,6 +131,15 @@ pnpm cli:install-check
 pnpm cli:package-check
 ```
 
+Portable archive (no monorepo on the target machine):
+
+```bash
+pnpm cli:package-check
+# copy tmp/penpot-cli-release/penpot-cli-0.1.0.tar.gz elsewhere
+tar -xzf penpot-cli-0.1.0.tar.gz
+./penpot-cli-0.1.0/bin/penpot-cli --help
+```
+
 Common diagnostics:
 
 ```bash
@@ -133,7 +147,8 @@ node penpot-cli/dist/index.js mcp status
 node penpot-cli/dist/index.js mcp config --format json
 ```
 
-More detail: [`penpot-cli/README.md`](penpot-cli/README.md).
+More detail: [`penpot-cli/README.md`](penpot-cli/README.md),
+[`mcp/docs/standalone-install.md`](mcp/docs/standalone-install.md).
 
 ### MCP package
 

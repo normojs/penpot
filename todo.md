@@ -27,11 +27,12 @@ removed 2026-07-19; recover from git history if needed. Product changelog:
 inventory/test coverage). CLI package version remains `0.1.0` with private
 release archive distribution.
 
-**Open path to general product** is Phase 30–34 / F38–F42 after private 0.1.0
-graduation. **Phase 29 complete:** P29.1 gate, P29.2 clean-archive smoke,
-P29.3 known-limits (`mcp/docs/private-release-0.1.0.md`), P29.4 tag
-`cli-v0.1.0` on packaging tip. Next executable product slice: **P30.1**
-distribution decision (or P31.1 thumbnail policy if packaging stays archive-only).
+**Phase 29 complete** (private `cli-v0.1.0`). **Phase 30 complete:** archive-only
+distribution decision, standalone install docs, version graduation policy,
+portable bundling review, and 0.1.0 migration notes
+(`mcp/docs/distribution-and-versioning.md`, `mcp/docs/standalone-install.md`).
+Next product slices: **Phase 31** thumbnail defaults, **Phase 32** multi-user
+hardening, **Phase 33** agent-logs, **Phase 34** positioning / 1.0 criteria.
 
 Completed baseline (not re-listed as open tasks):
 
@@ -42,6 +43,7 @@ Completed baseline (not re-listed as open tasks):
 - Private packaging path: `pnpm cli:package-check` → `tmp/penpot-cli-release/`
 - Upstream policy: fetch-only `upstream`, push only to `fork`
 - **Phase 29** private 0.1.0 release graduation (`cli-v0.1.0`)
+- **Phase 30** distribution + versioning docs (archive-only; no npm)
 
 ## Feature Roadmap
 
@@ -52,7 +54,7 @@ detail.
 | ID | Status | Capability | Target phases | User outcome | First acceptance check |
 | --- | --- | --- | --- | --- | --- |
 | F37 | done | Private fork release graduation | Phase 29 | Operators can install a verified private `penpot-cli` archive from current `main` with documented smoke checks | Completed 2026-07-19; P29.1–P29.4: tip gate, clean extract smoke, `private-release-0.1.0.md`, tag `cli-v0.1.0` |
-| F38 | todo | General distribution and versioning | Phase 30 | Non-checkout users can install MCP/CLI without a full fork tree under an explicit packaging policy | Product decision on archive-only vs npm; install docs; CLI version graduation rules beyond `0.1.0` |
+| F38 | done | General distribution and versioning | Phase 30 | Non-checkout users can install MCP/CLI without a full fork tree under an explicit packaging policy | Completed 2026-07-19; archive-only default, fork checkout for MCP, no npm; docs in distribution-and-versioning + standalone-install |
 | F39 | todo | Default thumbnail and preview experience | Phase 31 | Agents can rely on a documented default path for file/frame thumbnails without undocumented gate spelunking | Default enablement policy for `render.thumbnail`; operator vs agent matrix; known-limits page |
 | F40 | todo | Production multi-user hardening | Phase 32 | Self-hosted multi-user deployments have explicit security defaults, token guidance, and diagnostics redaction | Multi-user defaults, destructive confirmation, rate limits, log redaction fixtures, deploy runbook |
 | F41 | todo | Completing debug diagnostics | Phase 33 | Operators and gated agents can inspect log metadata safely; raw tail stays explicit | Executable `debug.get_agent_logs` metadata-only default; redaction fixtures; optional gated tail |
@@ -78,11 +80,11 @@ checkout. Blocks “general product” even when features are complete.
 
 | ID | Status | Task | Modules | Verification | Notes |
 | --- | --- | --- | --- | --- | --- |
-| P30.1 | todo | Product decision: archive-only vs npm vs multi-artifact | root docs, packaging | Written decision in build-install strategy | npm remains optional; decision must be explicit |
-| P30.2 | todo | Standalone install documentation | `mcp/docs`, README pointers | Fresh user can install MCP server + CLI from docs alone | Include Node version, env vars, token setup |
-| P30.3 | todo | CLI version graduation policy | `penpot-cli/package.json`, CHANGES | Rules for 0.1 → 0.2 / 1.0; breaking-change notes | Keep CLI semver independent of Penpot product version |
-| P30.4 | todo | Portable dependency bundling review | release script, command-runtime | Archive includes runtime deps; no workspace: protocol left unresolved | Revisit package-release.mjs assumptions |
-| P30.5 | todo | Upgrade / migration notes for CLI consumers | `mcp/docs` | Document config env renames and command additions since 0.1.0 | Required before calling anything 1.0 |
+| P30.1 | done | Product decision: archive-only vs npm vs multi-artifact | root docs, packaging | Completed 2026-07-19; archive-only + fork checkout accepted; npm rejected for now (`distribution-and-versioning.md`) | npm remains optional future decision |
+| P30.2 | done | Standalone install documentation | `mcp/docs`, README pointers | Completed 2026-07-19; `standalone-install.md` covers CLI archive, fork MCP path, env vars, token setup | Fresh user path documented |
+| P30.3 | done | CLI version graduation policy | `penpot-cli/package.json`, CHANGES | Completed 2026-07-19; 0.1.x / 0.2 / 1.0 rules in distribution-and-versioning | CLI semver independent of Penpot product version |
+| P30.4 | done | Portable dependency bundling review | release script, command-runtime | Completed 2026-07-19; package-release.mjs assumptions, required files, gaps recorded | No workspace: in archive package.json |
+| P30.5 | done | Upgrade / migration notes for CLI consumers | `mcp/docs` | Completed 2026-07-19; env/command notes for 0.1.0 consumers in distribution-and-versioning | Required before calling anything 1.0 |
 
 ## Phase 31: Default Thumbnail And Preview Experience
 
@@ -148,11 +150,11 @@ Keep at most one roadmap feature `in_progress`.
 
 ### Phase 30: General distribution and versioning
 
-- [ ] **P30.1** Product decision: archive-only vs npm vs multi-artifact distribution
-- [ ] **P30.2** Standalone install documentation (MCP server + CLI without full fork checkout narrative)
-- [ ] **P30.3** CLI version graduation policy (0.1.x → 0.2 / 1.0 rules, breaking-change notes)
-- [ ] **P30.4** Portable dependency bundling review for release archive
-- [ ] **P30.5** Upgrade / migration notes for CLI/MCP consumers
+- [x] **P30.1** Product decision: archive-only + fork checkout; npm rejected for now
+- [x] **P30.2** Standalone install documentation (`mcp/docs/standalone-install.md` + README pointers)
+- [x] **P30.3** CLI version graduation policy (0.1.x / 0.2 / 1.0)
+- [x] **P30.4** Portable dependency bundling review (`package-release.mjs`)
+- [x] **P30.5** Upgrade / migration notes for 0.1.0 consumers
 
 ### Phase 31: Default thumbnail and preview experience
 
