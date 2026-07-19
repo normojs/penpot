@@ -1230,7 +1230,7 @@ row `in_progress`.
 
 ### Packaging, ops, and distribution
 
-- [x] **Push local `main` to `fork`** — succeeded 2026-07-19; `main` tracks `fork/main` at `af187d7e6d` (Phase 26 close-out + post-26 gaps)
+- [x] **Push local `main` to `fork`** — re-pushed 2026-07-19; `main` tracks `fork/main` at `fe2a4f50a5` (Phase 28 debug diagnostics descriptor boundaries complete)
 - [x] **Private release smoke** — re-verified 2026-07-19 via `pnpm cli:package-check`; archive `tmp/penpot-cli-release/penpot-cli-0.1.0.tar.gz` extracts and `bin/penpot-cli --help` works (clean-machine recheck still recommended when distributing)
 - [x] **Upstream sync policy** — fetch-only `upstream`, push only to `fork`; periodic fetch + selective cherry-pick/rebase on a branch; never push upstream (documented in `penpot-cli-build-install-strategy.md`)
 - [x] **npm publish** — confirmed out of scope; private workspace + release archive only unless product decision changes
