@@ -126,7 +126,7 @@ MCP server tool classes and `penpot-cli`.
 | `execute_code` | `ExecuteCodeArgs` | plugin-live task, disabled unless `PENPOT_MCP_ENABLE_EXECUTE_CODE=true` | JSON disabled error or text execution result | `ExecuteCodeTool.test.ts` |
 | `high_level_overview` | `EmptyToolArgs` | local static overview | text overview | `HighLevelOverviewTool.test.ts` |
 | `penpot_api_info` | `PenpotApiInfoArgs` | local API docs index | text API type/member docs | `PenpotApiInfoTool.test.ts` |
-| `export_shape` | `ExportShapeArgs` | legacy plugin-live export task | base64/text export data | gap: covered indirectly by legacy flow only |
+| `export_shape` | `ExportShapeArgs` | legacy plugin-live export task | base64/text export data | `ExportShapeTool.test.ts` (schema gating, file-context guard, path validation, selection/page/shape export codes, optional file write) |
 | `import_image` | `ImportImageArgs` | optional local-fs plus plugin-live task, gated by file-system access | text/JSON import result | `ImportImageTool.test.ts` (file-context guard, path/format validation, plugin executeCode happy path) |
 
 P25.47 extends the `render.thumbnail` renderer-service planning payload with

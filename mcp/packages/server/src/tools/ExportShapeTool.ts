@@ -1,12 +1,12 @@
 import { z } from "zod";
-import { Tool } from "../Tool";
-import { ImageContent, PNGImageContent, PNGResponse, TextContent, TextResponse, ToolResponse } from "../ToolResponse";
+import { Tool } from "../Tool.js";
+import { ImageContent, PNGImageContent, PNGResponse, TextContent, TextResponse, ToolResponse } from "../ToolResponse.js";
 import "reflect-metadata";
-import { PenpotMcpServer } from "../PenpotMcpServer";
-import { ToolNames } from "../ToolNames";
-import { ExecuteCodePluginTask } from "../tasks/ExecuteCodePluginTask";
-import { FileUtils } from "../utils/FileUtils";
-import { requireBoundFileContext } from "./FileContextGuard";
+import { PenpotMcpServer } from "../PenpotMcpServer.js";
+import { ToolNames } from "../ToolNames.js";
+import { ExecuteCodePluginTask } from "../tasks/ExecuteCodePluginTask.js";
+import { FileUtils } from "../utils/FileUtils.js";
+import { requireBoundFileContext } from "./FileContextGuard.js";
 import sharp from "sharp";
 
 /**
