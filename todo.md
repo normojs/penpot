@@ -32,6 +32,7 @@ release archive distribution.
 tests (file/frame × reuse/refresh). Product is a **private fork automation
 toolkit** (not official Penpot GA, not npm). **1.0** remains blocked on process
 boxes in `mcp/docs/product-positioning.md` §P34.5.
+Tip release gate re-verified after P31.5 (CLI 114, MCP focused 47, package-check).
 
 Completed baseline (not re-listed as open tasks):
 
