@@ -465,6 +465,12 @@
     ;; module requires the migrations to run before initialize.
     ::migrations (ig/ref :app.migrations/migrations)}
 
+   ;; Optional first-deploy login bootstrap (PENPOT_DEFAULT_ADMIN_*).
+   ;; Runs after migrations/props; idempotent if the email already exists.
+   ::setup/default-admin
+   {::db/pool    (ig/ref ::db/pool)
+    ::setup/props (ig/ref ::setup/props)}
+
    ::setup/shared-keys
    {::setup/props (ig/ref ::setup/props)
     :nexus        (cf/get :nexus-shared-key)

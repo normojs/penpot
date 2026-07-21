@@ -17,6 +17,7 @@
    [app.main :as-alias main]
    [app.setup.keys :as keys]
    [app.setup.templates]
+   [app.setup.default-admin]
    [buddy.core.codecs :as bc]
    [buddy.core.nonce :as bn]
    [cuerdas.core :as str]

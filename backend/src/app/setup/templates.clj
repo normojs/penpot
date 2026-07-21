@@ -57,9 +57,13 @@
 
       (if (fs/exists? path)
         (io/input-stream path)
-        (let [resp (http/req cfg
-                             {:method :get :uri (:file-uri template)}
-                             {:response-type :input-stream :sync? true})]
+        ;; Single-file download only (never clone/snapshot a whole git repo).
+        ;; :file-uri points at one kit binary (e.g. ModelScope resolve URL or a
+        ;; static CDN). Shared HTTP client has follow-redirects disabled, so
+        ;; follow 3xx explicitly for CDNs / object storage.
+        (let [resp (http/req-with-redirects cfg
+                                            {:method :get :uri (:file-uri template)}
+                                            {:response-type :input-stream :sync? true})]
           (when-not (= 200 (:status resp))
             (ex/raise :type :internal
                       :code :unexpected-status-code

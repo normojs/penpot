@@ -137,6 +137,14 @@ services:
       PENPOT_DATABASE_USERNAME: penpot
       PENPOT_DATABASE_PASSWORD: penpot
 
+      ## First-deploy default login (optional, idempotent).
+      ## When both email and password are set, backend creates the profile once
+      ## on startup if it does not exist. Change the password after first login.
+      # PENPOT_DEFAULT_ADMIN_EMAIL: admin@example.com
+      # PENPOT_DEFAULT_ADMIN_PASSWORD: change-me-now
+      # PENPOT_DEFAULT_ADMIN_FULLNAME: Administrator
+      ## Optional: also list the same email in PENPOT_ADMINS for instance-admin UI.
+
       ## Valkey (or previously redis) is used for the websockets notifications. Don't touch
       ## unless the valkey container has different parameters or different name.
 

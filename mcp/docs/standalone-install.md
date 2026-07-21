@@ -170,13 +170,41 @@ High level (details in gateway / multi-user docs):
 
 | Env | Effect |
 | --- | --- |
-| Multi-user / remote mode | Session scoping; FS access typically off when remote |
-| `PENPOT_MCP_REQUIRE_DESTRUCTIVE_CONFIRMATION` | Force confirm for destructive tools |
-| `PENPOT_MCP_ENABLE_EXECUTE_CODE=true` | Enable legacy JS execution (**off by default**) |
-| `PENPOT_MCP_ENABLE_DEBUG_TOOLS=true` | Enable `debug.get_plugin_state` (**off by default**) |
+| `PENPOT_MCP_MULTI_USER` / remote mode | Isolation and FS policy |
+| `PENPOT_MCP_ENABLE_EXECUTE_CODE` | Off by default |
+| `PENPOT_MCP_ENABLE_DEBUG_TOOLS` | Off by default |
 
-Do not enable execute_code or debug tools on shared production hosts without a
-policy.
+5. Issue **user access tokens** for CLI/agents; never put raw MCP tokens in tool JSON.
+
+## D. First-Deploy Default Login (Backend)
+
+On a **fresh** database, operators can set a default account that is created
+once at backend startup (idempotent if the email already exists).
+
+| Env | Required | Purpose |
+| --- | --- | --- |
+| `PENPOT_DEFAULT_ADMIN_EMAIL` | yes (with password) | Login email |
+| `PENPOT_DEFAULT_ADMIN_PASSWORD` | yes (with email) | Login password (**≥ 8 chars**) |
+| `PENPOT_DEFAULT_ADMIN_FULLNAME` | no | Display name (default `Administrator`) |
+
+Also ensure password login is enabled, e.g. `PENPOT_FLAGS` includes
+`enable-login-with-password`. For production, set a strong password and change
+it after first login. Optionally put the same email in `PENPOT_ADMINS` for
+instance-admin tooling; when the default admin email is set, it is automatically
+included in the effective admins set.
+
+Example (`docker/images/docker-compose.yaml` comments mirror this):
+
+```bash
+export PENPOT_DEFAULT_ADMIN_EMAIL=admin@example.com
+export PENPOT_DEFAULT_ADMIN_PASSWORD='change-me-now'
+# optional
+export PENPOT_DEFAULT_ADMIN_FULLNAME=Administrator
+```
+
+Users open the Penpot UI and sign in with that email/password. No git or CLI is
+required for this path. If either email or password is unset, bootstrap is
+skipped (open registration / demo-users still apply if you enable those flags).
 
 ## Environment Reference (CLI + MCP)
 
@@ -203,6 +231,18 @@ policy.
 | `PENPOT_MCP_ENABLE_DEBUG_TOOLS` | Gate `debug.get_plugin_state` |
 | `PENPOT_MCP_REQUIRE_DESTRUCTIVE_CONFIRMATION` | `true` / `false` override |
 | `PENPOT_MCP_LOG_DIR` | File logging |
+
+Do not enable execute_code or debug tools on shared production hosts without a
+policy.
+
+### Backend first-deploy login (selected)
+
+| Variable | Purpose |
+| --- | --- |
+| `PENPOT_DEFAULT_ADMIN_EMAIL` | Bootstrap login email (with password) |
+| `PENPOT_DEFAULT_ADMIN_PASSWORD` | Bootstrap password ≥ 8 chars |
+| `PENPOT_DEFAULT_ADMIN_FULLNAME` | Optional display name |
+| `PENPOT_ADMINS` | Instance-admin email set (bootstrap email is auto-included) |
 
 Renderer-service variables are separate; thumbnail is **not** a default-GA path
 in 0.1.0 — see render-thumbnail docs and Phase 31.

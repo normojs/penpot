@@ -72,6 +72,7 @@
 /penpot-cli/*.tsbuildinfo
 /scripts/*
 !/scripts/link-node-modules-cache.mjs
+!/scripts/start-full-client-devenv.sh
 /nexus/
 /tmp/
 /vendor/**/target
@@ -90,3 +91,4 @@
 /**/.yarn/*
 /.pnpm-store
 /tools/__pycache__
+.env

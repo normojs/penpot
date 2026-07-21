@@ -127,6 +127,12 @@
     [:telemetry-enabled {:optional true} ::sm/boolean]
     [:default-blob-version {:optional true} ::sm/int]
     [:allow-demo-users {:optional true} ::sm/boolean]
+    ;; First-deploy bootstrap login (optional). When both email and password
+    ;; are set, backend creates the profile once if missing (see
+    ;; app.setup.default-admin). Prefer strong unique passwords in production.
+    [:default-admin-email {:optional true} :string]
+    [:default-admin-password {:optional true} :string]
+    [:default-admin-fullname {:optional true} :string]
     [:error-report-webhook {:optional true} :string]
     [:user-feedback-destination {:optional true} :string]
 
@@ -294,13 +300,22 @@
 (def explain-config
   (sm/explainer schema:config))
 
+(defn- with-default-admin-as-admin
+  "If a bootstrap admin email is configured, ensure it is treated as an
+  instance admin (`PENPOT_ADMINS` / `:is-admin`)."
+  [config]
+  (if-let [email (some-> (:default-admin-email config) str/lower str/trim not-empty)]
+    (update config :admins (fnil conj #{}) email)
+    config))
+
 (defn read-config
   "Reads the configuration from enviroment variables and decodes all
   known values."
   [& {:keys [prefix default] :or {prefix "penpot"}}]
   (->> (read-env prefix)
        (merge default)
-       (decode-config)))
+       (decode-config)
+       (with-default-admin-as-admin)))
 
 (def version
   (v/parse (or (some-> (io/resource "version.txt")
