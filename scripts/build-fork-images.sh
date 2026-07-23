@@ -81,8 +81,11 @@ for t in "${TARGETS[@]}"; do
   build_one "$t"
 done
 
-log "done. Start fork stack with:"
+log "done. Start options:"
+log "  # lite (core only):"
 log "  cd docker/images && cp -n .env.fork.example .env.fork"
+log "  docker compose --env-file .env.fork -f docker-compose.lite.yaml -f docker-compose.lite.fork.yaml up -d"
+log "  # full (+ exporter/mcp/mailcatch):"
 log "  docker compose --env-file .env.fork -f docker-compose.yaml -f docker-compose.fork.yaml up -d"
 log "Images:"
 docker images "local/penpot-*" --format '  {{.Repository}}:{{.Tag}}  {{.ID}}  {{.Size}}' 2>/dev/null || true

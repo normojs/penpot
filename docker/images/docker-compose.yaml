@@ -32,11 +32,14 @@
 #   - ModelScope single-file template URIs (onboarding.edn)
 #   - first-class MCP packaging from this monorepo
 # To use those features you must build and pin **this repo's** images.
-# Easiest path:
+# Easiest path (full stack):
 #   ./scripts/build-fork-images.sh
 #   cd docker/images && cp -n .env.fork.example .env.fork
 #   docker compose --env-file .env.fork -f docker-compose.yaml -f docker-compose.fork.yaml up -d
-# See docker-compose.fork.yaml and docs/zh/部署与使用教程.md.
+# Lightweight core only (no exporter / mcp / mailcatch):
+#   ./scripts/build-fork-images.sh backend frontend
+#   docker compose --env-file .env.fork -f docker-compose.lite.yaml -f docker-compose.lite.fork.yaml up -d
+# See docker-compose.fork.yaml, docker-compose.lite.yaml, docs/zh/部署与使用教程.md.
 # Setting DEFAULT_ADMIN_* on stock penpotapp/backend is a silent no-op.
 # ---------------------------------------------------------------------------
 x-flags: &penpot-flags

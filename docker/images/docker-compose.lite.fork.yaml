@@ -1,0 +1,24 @@
+# Fork overlay for the **lite** stack (core services only).
+#
+#   ./scripts/build-fork-images.sh backend frontend
+#   cd docker/images
+#   cp -n .env.fork.example .env.fork
+#   docker compose --env-file .env.fork \
+#     -f docker-compose.lite.yaml -f docker-compose.lite.fork.yaml up -d
+#
+# For MCP as well, build mcp and use full compose + docker-compose.fork.yaml instead,
+# or add a third overlay later.
+
+services:
+  penpot-frontend:
+    image: "local/penpot-frontend:${FORK_IMAGE_TAG:-dev}"
+    pull_policy: never
+
+  penpot-backend:
+    image: "local/penpot-backend:${FORK_IMAGE_TAG:-dev}"
+    pull_policy: never
+    environment:
+      PENPOT_DEFAULT_ADMIN_EMAIL: ${PENPOT_DEFAULT_ADMIN_EMAIL:-admin@example.com}
+      PENPOT_DEFAULT_ADMIN_PASSWORD: ${PENPOT_DEFAULT_ADMIN_PASSWORD:-changeme123}
+      PENPOT_DEFAULT_ADMIN_FULLNAME: ${PENPOT_DEFAULT_ADMIN_FULLNAME:-Administrator}
+      PENPOT_SECRET_KEY: ${PENPOT_SECRET_KEY:-change-this-insecure-key}

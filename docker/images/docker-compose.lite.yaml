@@ -1,0 +1,130 @@
+# Lightweight deploy profile for this Penpot fork.
+#
+# Includes only the core runtime:
+#   frontend + backend + postgres + valkey
+#
+# Omits (vs full docker-compose.yaml):
+#   - penpot-exporter  (server-side export/preview; heaviest)
+#   - penpot-mcp       (AI automation; add with docker-compose.fork.yaml + build)
+#   - penpot-mailcatch (dev SMTP catcher)
+#
+# Usage (from docker/images):
+#   # Upstream-ish images (no fork features):
+#   docker compose -f docker-compose.lite.yaml up -d
+#
+#   # This fork (default admin + ModelScope templates):
+#   ./scripts/build-fork-images.sh backend frontend   # from monorepo root
+#   cp -n .env.fork.example .env.fork
+#   docker compose --env-file .env.fork \
+#     -f docker-compose.lite.yaml -f docker-compose.lite.fork.yaml up -d
+#
+# See docs/zh/部署与使用教程.md §「轻量部署」.
+
+x-flags: &penpot-flags
+  # No SMTP service in lite — emails are not delivered unless you configure a real SMTP later.
+  # enable-login-with-password required for default-admin login on fork builds.
+  PENPOT_FLAGS: disable-email-verification enable-login-with-password enable-prepl-server disable-secure-session-cookies
+
+x-uri: &penpot-public-uri
+  PENPOT_PUBLIC_URI: ${PENPOT_PUBLIC_URI:-http://localhost:9001}
+
+x-body-size: &penpot-http-body-size
+  PENPOT_HTTP_SERVER_MAX_BODY_SIZE: 367001600
+  PENPOT_HTTP_SERVER_MAX_MULTIPART_BODY_SIZE: 367001600
+
+x-secret-key: &penpot-secret-key
+  PENPOT_SECRET_KEY: ${PENPOT_SECRET_KEY:-change-this-insecure-key}
+
+networks:
+  penpot:
+
+volumes:
+  penpot_postgres_v15:
+  penpot_assets:
+
+services:
+  penpot-frontend:
+    image: "penpotapp/frontend:${PENPOT_VERSION:-2.15}"
+    restart: always
+    ports:
+      - "${PENPOT_HTTP_PORT:-9001}:8080"
+    volumes:
+      - penpot_assets:/opt/data/assets
+    depends_on:
+      - penpot-backend
+    networks:
+      - penpot
+    environment:
+      <<: [*penpot-flags, *penpot-http-body-size, *penpot-public-uri]
+
+  penpot-backend:
+    image: "penpotapp/backend:${PENPOT_VERSION:-2.15}"
+    restart: always
+    volumes:
+      - penpot_assets:/opt/data/assets
+    depends_on:
+      penpot-postgres:
+        condition: service_healthy
+      penpot-valkey:
+        condition: service_healthy
+    networks:
+      - penpot
+    environment:
+      <<: [*penpot-flags, *penpot-public-uri, *penpot-http-body-size, *penpot-secret-key]
+      PENPOT_DATABASE_URI: postgresql://penpot-postgres/penpot
+      PENPOT_DATABASE_USERNAME: penpot
+      PENPOT_DATABASE_PASSWORD: penpot
+      PENPOT_REDIS_URI: redis://penpot-valkey/0
+      PENPOT_OBJECTS_STORAGE_BACKEND: fs
+      PENPOT_OBJECTS_STORAGE_FS_DIRECTORY: /opt/data/assets
+      PENPOT_TELEMETRY_ENABLED: ${PENPOT_TELEMETRY_ENABLED:-false}
+      # Real SMTP optional — without mailcatch, leave host empty or set your provider.
+      PENPOT_SMTP_DEFAULT_FROM: ${PENPOT_SMTP_DEFAULT_FROM:-no-reply@example.com}
+      PENPOT_SMTP_DEFAULT_REPLY_TO: ${PENPOT_SMTP_DEFAULT_REPLY_TO:-no-reply@example.com}
+      PENPOT_SMTP_HOST: ${PENPOT_SMTP_HOST:-}
+      PENPOT_SMTP_PORT: ${PENPOT_SMTP_PORT:-587}
+      PENPOT_SMTP_TLS: ${PENPOT_SMTP_TLS:-true}
+      PENPOT_SMTP_SSL: ${PENPOT_SMTP_SSL:-false}
+
+  penpot-postgres:
+    image: "postgres:15"
+    restart: always
+    stop_signal: SIGINT
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U penpot"]
+      interval: 2s
+      timeout: 10s
+      retries: 5
+      start_period: 2s
+    volumes:
+      - penpot_postgres_v15:/var/lib/postgresql/data
+    networks:
+      - penpot
+    environment:
+      - POSTGRES_INITDB_ARGS=--data-checksums
+      - POSTGRES_DB=penpot
+      - POSTGRES_USER=penpot
+      - POSTGRES_PASSWORD=penpot
+    # Modest defaults for small hosts (override via command if needed).
+    command:
+      - postgres
+      - -c
+      - shared_buffers=128MB
+      - -c
+      - max_connections=100
+      - -c
+      - effective_cache_size=512MB
+
+  penpot-valkey:
+    image: valkey/valkey:8.1
+    restart: always
+    healthcheck:
+      test: ["CMD-SHELL", "valkey-cli ping | grep PONG"]
+      interval: 1s
+      timeout: 3s
+      retries: 5
+      start_period: 3s
+    networks:
+      - penpot
+    environment:
+      - VALKEY_EXTRA_FLAGS=--maxmemory 64mb --maxmemory-policy volatile-lfu
