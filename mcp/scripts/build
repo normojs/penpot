@@ -1,11 +1,16 @@
 #!/usr/bin/env bash
-# NOTE: this script should be called from the parent directory to
-# properly work
+# NOTE: this script should be called from the parent directory (mcp/) to
+# properly work.
+#
+# Produces ./dist suitable for docker/images/Dockerfile.mcp:
+#   - esbuild-bundled index.js (+ data/static)
+#   - package.json with only runtime (non-workspace) dependencies
+#   - setup script: pnpm install -P
 
 SCRIPT_DIR=$(dirname $0);
 URL=${1:-http://localhost:9090}
 
-echo "Preparing bundle for types from $URL"
+echo "Preparing MCP docker bundle (types from $URL)"
 
 set -ex
 
@@ -17,6 +22,7 @@ rm -rf dist;
 rm -rf node_modules;
 rm -rf packages/server/dist;
 rm -rf packages/server/node_modules;
+rm -rf packages/common/node_modules;
 
 pushd $SCRIPT_DIR;
 set +e
@@ -25,21 +31,49 @@ set -e
 popd
 
 pnpm -r --filter "!mcp-plugin" install;
+# common must build before server (workspace package name @penpot/mcp-common)
+pnpm -r --filter "@penpot/mcp-common" run build;
 pnpm -r --filter "mcp-server" run build;
 
 rsync -avr packages/server/dist/ ./dist/;
 
-cp packages/server/package.json ./dist/;
-cp pnpm-lock.yaml ./dist/;
+# Production package.json: drop monorepo-only deps (already inlined by esbuild).
+# Keep packages that esbuild left external.
+python3 - <<'PY'
+import json
+from pathlib import Path
+src = Path("packages/server/package.json")
+dst = Path("dist/package.json")
+data = json.loads(src.read_text())
+deps = data.get("dependencies") or {}
+for key, val in list(deps.items()):
+    if isinstance(val, str) and (val.startswith("workspace:") or val.startswith("file:")):
+        deps.pop(key)
+data["dependencies"] = deps
+data["scripts"] = {
+    "start": "node index.js",
+    "start:multi-user": "node index.js --multi-user",
+}
+# Avoid accidental workspace protocol in image install
+data.pop("packageManager", None)
+dst.write_text(json.dumps(data, indent=2) + "\n")
+print("production deps:", sorted(deps))
+PY
+
+if [ -f pnpm-lock.yaml ]; then
+  cp pnpm-lock.yaml ./dist/ || true
+fi
 
 touch ./dist/pnpm-workspace.yaml;
 
-cat <<EOF | tee ./dist/setup
-#/usr/bin/env bash
-set -e;
-corepack enable;
-corepack install;
+cat <<'EOF' | tee ./dist/setup
+#!/usr/bin/env bash
+set -e
+corepack enable
+corepack install
 pnpm install -P
 EOF
 
 chmod +x ./dist/setup;
+
+echo "MCP bundle ready at mcp/dist (manage.sh build-mcp-bundle copies to bundles/mcp)"

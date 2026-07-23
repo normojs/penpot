@@ -74,6 +74,7 @@
 !/scripts/link-node-modules-cache.mjs
 !/scripts/start-full-client-devenv.sh
 !/scripts/build-fork-images.sh
+!/scripts/start-lite-stack.sh
 /nexus/
 /tmp/
 /vendor/**/target

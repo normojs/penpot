@@ -1,5 +1,5 @@
 {
-  "name": "mcp-common",
+  "name": "@penpot/mcp-common",
   "version": "1.0.0",
   "description": "Shared type definitions and interfaces for Penpot MCP",
   "main": "dist/index.js",
