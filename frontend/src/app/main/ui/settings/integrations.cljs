@@ -770,7 +770,32 @@
       [:> text* {:as "div"
                  :typography t/body-medium
                  :class (stl/css :color-secondary)}
-       (tr "integrations.mcp-server.description")]]
+       (tr "integrations.mcp-server.description")]
+
+      (when (and (false? mcp-enabled?) (nil? mcp-key))
+        [:> notification-pill* {:level :info
+                                :type :context}
+         [:div {:class (stl/css :mcp-server-notification)}
+          [:> text* {:as "div"
+                     :typography t/headline-small
+                     :class (stl/css :color-primary)}
+           (tr "integrations.mcp-server.setup.title")]
+          [:> text* {:as "div"
+                     :typography t/body-medium
+                     :class (stl/css :color-primary)}
+           (tr "integrations.mcp-server.setup.step-1")]
+          [:> text* {:as "div"
+                     :typography t/body-medium
+                     :class (stl/css :color-primary)}
+           (tr "integrations.mcp-server.setup.step-2")]
+          [:> text* {:as "div"
+                     :typography t/body-medium
+                     :class (stl/css :color-primary)}
+           (tr "integrations.mcp-server.setup.step-3")]
+          [:> button* {:variant "primary"
+                       :class (stl/css :fit-content)
+                       :on-click handle-generate-mcp-key}
+           (tr "integrations.mcp-server.setup.cta")]]])]
 
      [:div
       [:> text* {:as "h3"

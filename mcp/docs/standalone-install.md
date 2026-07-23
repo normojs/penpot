@@ -137,13 +137,13 @@ Default local expectations (builtin mode):
 
 Exact ports depend on your devenv/docker layout; override with env vars below.
 
-### 4. Token setup
+### 4. Token setup (end-user path)
 
-1. In Penpot: **Settings → Integrations** (or your fork’s MCP token UI).  
-2. Create/regenerate an MCP access token.  
-3. Configure the MCP client with `userToken` on the stream URL as documented for
-   your agent (Claude/Cursor/etc.).  
-4. For CLI RPC:
+1. In Penpot: open **Dashboard → MCP card** (or **Settings → Integrations**).  
+2. Click **Enable MCP** / generate an MCP access token (copy once).  
+3. Configure the MCP client with the server URL that includes `userToken`.  
+4. Open a design file — the built-in MCP plugin auto-connects when enabled.  
+5. For CLI RPC:
 
 ```bash
 export PENPOT_CLI_TOKEN=<session-or-access-token>

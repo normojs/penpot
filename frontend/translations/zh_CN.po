@@ -7470,3 +7470,39 @@ msgstr "打开版本菜单"
 #, unused
 msgid "workspace.viewport.click-to-close-path"
 msgstr "单击以闭合路径"
+
+#: src/app/main/ui/settings/integrations.cljs
+msgid "integrations.mcp-server.setup.title"
+msgstr "三步启用 MCP"
+
+#: src/app/main/ui/settings/integrations.cljs
+msgid "integrations.mcp-server.setup.step-1"
+msgstr "1. 点击「启用 MCP」并创建 MCP 密钥（只显示一次，请立即复制）。"
+
+#: src/app/main/ui/settings/integrations.cljs
+msgid "integrations.mcp-server.setup.step-2"
+msgstr "2. 把带 userToken 的服务器 URL 填进 MCP 客户端（Cursor、Claude 等）。"
+
+#: src/app/main/ui/settings/integrations.cljs
+msgid "integrations.mcp-server.setup.step-3"
+msgstr "3. 在 Penpot 中打开设计文件——启用后 MCP 插件会自动连接。"
+
+#: src/app/main/ui/settings/integrations.cljs
+msgid "integrations.mcp-server.setup.cta"
+msgstr "启用 MCP"
+
+#: src/app/main/ui/dashboard/sidebar.cljs
+msgid "integrations.mcp-server.context.setup-cta"
+msgstr "设置 MCP，连接 AI 工具"
+
+#: src/app/main/ui/dashboard/sidebar.cljs
+msgid "integrations.mcp-server.context.setup-action"
+msgstr "去设置"
+
+#: src/app/main/ui/dashboard/sidebar.cljs
+msgid "integrations.mcp-server.context.setup-hint"
+msgstr "一键启用 MCP 并为 Cursor / Claude 创建密钥。"
+
+#: src/app/main/ui/dashboard/sidebar.cljs
+msgid "integrations.mcp-server.context.open-settings"
+msgstr "打开 MCP 设置"

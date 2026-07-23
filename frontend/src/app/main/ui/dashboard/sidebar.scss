@@ -367,6 +367,16 @@
   border-inline-start: $b-2 solid var(--color-foreground-secondary);
   border-radius: $br-8;
   background-color: var(--color-background-secondary);
+  width: calc(100% - 2 * var(--sp-l));
+  text-align: start;
+  cursor: pointer;
+  font: inherit;
+  color: inherit;
+  appearance: none;
+}
+
+.mcp-context-status:hover {
+  border-color: var(--color-foreground-secondary);
 }
 
 .mcp-context-status-bound {
@@ -375,6 +385,11 @@
 
 .mcp-context-status-stale {
   border-inline-start-color: var(--color-accent-tertiary);
+}
+
+.mcp-context-status-cta {
+  border-inline-start-color: var(--color-accent-primary);
+  background-color: var(--color-background-tertiary);
 }
 
 .mcp-context-status-header {
@@ -406,6 +421,7 @@
 .mcp-context-status-detail {
   @include t.use-typography("title-small");
   color: var(--color-foreground-primary);
+  white-space: normal;
 }
 
 // Profile

@@ -2195,6 +2195,42 @@ msgstr "Beta"
 msgid "integrations.mcp-server.description"
 msgstr "The Penpot MCP Server enables MCP clients to interact directly with Penpot design files."
 
+#: src/app/main/ui/settings/integrations.cljs
+msgid "integrations.mcp-server.setup.title"
+msgstr "Get started in 3 steps"
+
+#: src/app/main/ui/settings/integrations.cljs
+msgid "integrations.mcp-server.setup.step-1"
+msgstr "1. Click “Enable MCP” and create an MCP key (shown once — copy it)."
+
+#: src/app/main/ui/settings/integrations.cljs
+msgid "integrations.mcp-server.setup.step-2"
+msgstr "2. Copy the server URL (with userToken) into your MCP client (Cursor, Claude, etc.)."
+
+#: src/app/main/ui/settings/integrations.cljs
+msgid "integrations.mcp-server.setup.step-3"
+msgstr "3. Open a design file in Penpot — the MCP plugin connects automatically when enabled."
+
+#: src/app/main/ui/settings/integrations.cljs
+msgid "integrations.mcp-server.setup.cta"
+msgstr "Enable MCP"
+
+#: src/app/main/ui/dashboard/sidebar.cljs
+msgid "integrations.mcp-server.context.setup-cta"
+msgstr "Set up MCP for AI tools"
+
+#: src/app/main/ui/dashboard/sidebar.cljs
+msgid "integrations.mcp-server.context.setup-action"
+msgstr "Set up"
+
+#: src/app/main/ui/dashboard/sidebar.cljs
+msgid "integrations.mcp-server.context.setup-hint"
+msgstr "One click to enable MCP and create a key for Cursor / Claude."
+
+#: src/app/main/ui/dashboard/sidebar.cljs
+msgid "integrations.mcp-server.context.open-settings"
+msgstr "Open MCP settings"
+
 #: src/app/main/ui/settings/integrations.cljs:353
 msgid "integrations.mcp-server.status"
 msgstr "Status"

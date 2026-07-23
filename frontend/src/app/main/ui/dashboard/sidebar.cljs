@@ -99,20 +99,37 @@
   (let [{:keys [status label-key] :as summary} (dmcp/file-context-summary
                                                 mcp-state
                                                 {:token-expired? token-expired?})
-        detail (mcp-context-detail summary)]
-    (when (or enabled? (not= "unbound" status))
-      [:div {:class (stl/css-case :mcp-context-status true
-                                  :mcp-context-status-bound (= status "bound")
-                                  :mcp-context-status-stale (contains? #{"error" "expired-token" "stale"} status))}
-       [:div {:class (stl/css :mcp-context-status-header)}
-        [:span {:class (stl/css :mcp-context-status-title)}
-         (tr "integrations.mcp-server.context.title")]
-        [:span {:class (stl/css :mcp-context-status-state)}
-         (tr label-key)]]
+        detail (mcp-context-detail summary)
+        on-open-settings
+        (mf/use-fn
+         (fn [event]
+           (dom/prevent-default event)
+           (st/emit! (rt/nav :settings-integrations)
+                     (ev/event {::ev/name "open-mcp-settings"
+                                ::ev/origin "dashboard-sidebar"}))))]
+    [:button {:type "button"
+              :class (stl/css-case :mcp-context-status true
+                                   :mcp-context-status-bound (= status "bound")
+                                   :mcp-context-status-stale (contains? #{"error" "expired-token" "stale"} status)
+                                   :mcp-context-status-cta (not enabled?))
+              :on-click on-open-settings
+              :title (if enabled?
+                       (tr "integrations.mcp-server.context.open-settings")
+                       (tr "integrations.mcp-server.context.setup-cta"))}
+     [:div {:class (stl/css :mcp-context-status-header)}
+      [:span {:class (stl/css :mcp-context-status-title)}
+       (tr "integrations.mcp-server.context.title")]
+      [:span {:class (stl/css :mcp-context-status-state)}
+       (if enabled?
+         (tr label-key)
+         (tr "integrations.mcp-server.context.setup-action"))]]
+     (if enabled?
        (when detail
          [:span {:class (stl/css :mcp-context-status-detail)
                  :title detail}
-          detail])])))
+          detail])
+       [:span {:class (stl/css :mcp-context-status-detail)}
+        (tr "integrations.mcp-server.context.setup-hint")])]))
 
 (mf/defc sidebar-project*
   {::mf/private true}
