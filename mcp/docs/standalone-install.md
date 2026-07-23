@@ -190,6 +190,12 @@ cd docker/images && cp -n .env.fork.example .env.fork
 docker compose --env-file .env.fork \
   -f docker-compose.lite.yaml -f docker-compose.lite.fork.yaml up -d
 
+# Lite + MCP (still no exporter / mailcatch)
+./scripts/build-fork-images.sh backend frontend mcp
+docker compose --env-file .env.fork \
+  -f docker-compose.lite.yaml -f docker-compose.lite.fork.yaml \
+  -f docker-compose.lite.mcp.yaml up -d
+
 # Full stack (+ exporter, mcp, mailcatch)
 ./scripts/build-fork-images.sh
 docker compose --env-file .env.fork \
@@ -197,7 +203,7 @@ docker compose --env-file .env.fork \
 ```
 
 MCP runtime image uses **Node 22 bookworm-slim** (`docker/images/Dockerfile.mcp`).  
-See `docker-compose.lite.yaml`, `docker-compose.fork.yaml`.
+Profiles: `docker-compose.lite.yaml`, `docker-compose.lite.mcp.yaml`, `docker-compose.fork.yaml`.
 On a **fresh** database, operators can set a default account that is created
 once at backend startup (idempotent if the email already exists).
 

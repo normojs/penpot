@@ -1,0 +1,43 @@
+# Optional MCP service for the **lite** stack.
+#
+# Core (lite) + MCP, still without exporter / mailcatch.
+#
+#   ./scripts/build-fork-images.sh backend frontend mcp
+#   cd docker/images
+#   docker compose --env-file .env.fork \
+#     -f docker-compose.lite.yaml \
+#     -f docker-compose.lite.fork.yaml \
+#     -f docker-compose.lite.mcp.yaml \
+#     up -d
+#
+# Upstream MCP image works only if it matches your backend; for this fork use
+# local/penpot-mcp from build-fork-images (see lite.fork + this file).
+
+services:
+  penpot-frontend:
+    depends_on:
+      - penpot-backend
+      - penpot-mcp
+    environment:
+      # Enable in-app MCP UI when MCP container is present
+      PENPOT_FLAGS: disable-email-verification enable-login-with-password enable-prepl-server disable-secure-session-cookies enable-mcp
+
+  penpot-backend:
+    environment:
+      PENPOT_FLAGS: disable-email-verification enable-login-with-password enable-prepl-server disable-secure-session-cookies enable-mcp
+
+  penpot-mcp:
+    image: "local/penpot-mcp:${FORK_IMAGE_TAG:-dev}"
+    pull_policy: never
+    restart: always
+    networks:
+      - penpot
+    depends_on:
+      - penpot-backend
+    ports:
+      # Host access for CLI / external MCP clients (optional; in-app uses internal net)
+      - "${PENPOT_MCP_PORT:-4401}:4401"
+    environment:
+      PENPOT_BACKEND_URI: http://penpot-backend:6060
+      PENPOT_MCP_SERVER_HOST: 0.0.0.0
+    mem_limit: ${PENPOT_MCP_MEM_LIMIT:-512m}

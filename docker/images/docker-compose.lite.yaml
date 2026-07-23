@@ -5,7 +5,7 @@
 #
 # Omits (vs full docker-compose.yaml):
 #   - penpot-exporter  (server-side export/preview; heaviest)
-#   - penpot-mcp       (AI automation; add with docker-compose.fork.yaml + build)
+#   - penpot-mcp       (optional: add docker-compose.lite.mcp.yaml)
 #   - penpot-mailcatch (dev SMTP catcher)
 #
 # Usage (from docker/images):
@@ -17,6 +17,12 @@
 #   cp -n .env.fork.example .env.fork
 #   docker compose --env-file .env.fork \
 #     -f docker-compose.lite.yaml -f docker-compose.lite.fork.yaml up -d
+#
+#   # Lite + MCP (no exporter/mailcatch):
+#   ./scripts/build-fork-images.sh backend frontend mcp
+#   docker compose --env-file .env.fork \
+#     -f docker-compose.lite.yaml -f docker-compose.lite.fork.yaml \
+#     -f docker-compose.lite.mcp.yaml up -d
 #
 # See docs/zh/部署与使用教程.md §「轻量部署」.
 
@@ -54,6 +60,7 @@ services:
       - penpot-backend
     networks:
       - penpot
+    mem_limit: ${PENPOT_FRONTEND_MEM_LIMIT:-256m}
     environment:
       <<: [*penpot-flags, *penpot-http-body-size, *penpot-public-uri]
 
@@ -69,6 +76,7 @@ services:
         condition: service_healthy
     networks:
       - penpot
+    mem_limit: ${PENPOT_BACKEND_MEM_LIMIT:-1536m}
     environment:
       <<: [*penpot-flags, *penpot-public-uri, *penpot-http-body-size, *penpot-secret-key]
       PENPOT_DATABASE_URI: postgresql://penpot-postgres/penpot
@@ -100,6 +108,7 @@ services:
       - penpot_postgres_v15:/var/lib/postgresql/data
     networks:
       - penpot
+    mem_limit: ${PENPOT_POSTGRES_MEM_LIMIT:-512m}
     environment:
       - POSTGRES_INITDB_ARGS=--data-checksums
       - POSTGRES_DB=penpot
@@ -126,5 +135,6 @@ services:
       start_period: 3s
     networks:
       - penpot
+    mem_limit: ${PENPOT_VALKEY_MEM_LIMIT:-128m}
     environment:
       - VALKEY_EXTRA_FLAGS=--maxmemory 64mb --maxmemory-policy volatile-lfu
