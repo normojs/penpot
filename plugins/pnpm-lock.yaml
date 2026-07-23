@@ -90,6 +90,9 @@ importers:
       '@eslint/js':
         specifier: 9.39.2
         version: 9.39.2
+      '@rollup/rollup-linux-arm64-gnu':
+        specifier: 4.57.1
+        version: 4.57.1
       '@schematics/angular':
         specifier: 21.1.1
         version: 21.1.1(chokidar@5.0.0)
@@ -2178,7 +2181,6 @@ packages:
     resolution: {integrity: sha512-MMtej3YHWeg/0klK2Qodf3yrNzz6CGjo2UntLvk2RSPlhzgLvYEB3frRvbEF2wRKh1Z2fDIg9KRPe1fawv7C+g==}
     cpu: [arm64]
     os: [linux]
-    libc: [glibc]
 
   '@rollup/rollup-linux-arm64-musl@4.57.1':
     resolution: {integrity: sha512-1a/qhaaOXhqXGpMFMET9VqwZakkljWHLmZOX48R0I/YLbhdxr1m4gtG1Hq7++VhVUmf+L3sTAf9op4JlhQ5u1Q==}
@@ -8705,8 +8707,7 @@ snapshots:
   '@rollup/rollup-linux-arm-musleabihf@4.57.1':
     optional: true
 
-  '@rollup/rollup-linux-arm64-gnu@4.57.1':
-    optional: true
+  '@rollup/rollup-linux-arm64-gnu@4.57.1': {}
 
   '@rollup/rollup-linux-arm64-musl@4.57.1':
     optional: true
