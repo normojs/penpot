@@ -73,6 +73,7 @@
 /scripts/*
 !/scripts/link-node-modules-cache.mjs
 !/scripts/start-full-client-devenv.sh
+!/scripts/build-fork-images.sh
 /nexus/
 /tmp/
 /vendor/**/target
@@ -92,3 +93,6 @@
 /.pnpm-store
 /tools/__pycache__
 .env
+
+# local fork compose secrets
+docker/images/.env.fork

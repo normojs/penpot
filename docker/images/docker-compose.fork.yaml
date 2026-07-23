@@ -1,0 +1,46 @@
+# Overlay for this private fork (normojs/penpot).
+#
+# Stock docker-compose.yaml uses penpotapp/* upstream images. This file pins
+# locally built fork images so PENPOT_DEFAULT_ADMIN_*, ModelScope templates,
+# and fork MCP packaging actually run.
+#
+# Prerequisites (from monorepo root):
+#   ./scripts/build-fork-images.sh          # backend + frontend + mcp (slow)
+#   # or only what you need:
+#   ./scripts/build-fork-images.sh backend
+#
+# Start:
+#   cd docker/images
+#   cp -n .env.fork.example .env.fork   # edit secrets / admin
+#   docker compose --env-file .env.fork \
+#     -f docker-compose.yaml -f docker-compose.fork.yaml up -d
+#
+# Images expected after build:
+#   local/penpot-backend:dev
+#   local/penpot-frontend:dev
+#   local/penpot-mcp:dev
+
+services:
+  penpot-frontend:
+    image: "local/penpot-frontend:${FORK_IMAGE_TAG:-dev}"
+    pull_policy: never
+
+  penpot-backend:
+    image: "local/penpot-backend:${FORK_IMAGE_TAG:-dev}"
+    pull_policy: never
+    environment:
+      # Prefer values from .env.fork / shell; defaults are local-dev only.
+      PENPOT_DEFAULT_ADMIN_EMAIL: ${PENPOT_DEFAULT_ADMIN_EMAIL:-admin@example.com}
+      PENPOT_DEFAULT_ADMIN_PASSWORD: ${PENPOT_DEFAULT_ADMIN_PASSWORD:-changeme123}
+      PENPOT_DEFAULT_ADMIN_FULLNAME: ${PENPOT_DEFAULT_ADMIN_FULLNAME:-Administrator}
+      # Optional: override secret from env file
+      PENPOT_SECRET_KEY: ${PENPOT_SECRET_KEY:-change-this-insecure-key}
+
+  penpot-mcp:
+    image: "local/penpot-mcp:${FORK_IMAGE_TAG:-dev}"
+    pull_policy: never
+
+  # exporter often still upstream unless you also build it:
+  # penpot-exporter:
+  #   image: "local/penpot-exporter:${FORK_IMAGE_TAG:-dev}"
+  #   pull_policy: never

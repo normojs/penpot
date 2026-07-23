@@ -181,6 +181,18 @@ High level (details in gateway / multi-user docs):
 **Requires a backend image/binary built from this fork.** Stock
 `penpotapp/backend` images ignore `PENPOT_DEFAULT_ADMIN_*` (silent no-op).
 
+Recommended local/prod path for this fork:
+
+```bash
+./scripts/build-fork-images.sh
+cd docker/images
+cp -n .env.fork.example .env.fork   # edit secrets
+docker compose --env-file .env.fork \
+  -f docker-compose.yaml -f docker-compose.fork.yaml up -d
+```
+
+See `docker/images/docker-compose.fork.yaml`.
+
 On a **fresh** database, operators can set a default account that is created
 once at backend startup (idempotent if the email already exists).
 

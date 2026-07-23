@@ -31,12 +31,13 @@
 #   - PENPOT_DEFAULT_ADMIN_* first-deploy bootstrap
 #   - ModelScope single-file template URIs (onboarding.edn)
 #   - first-class MCP packaging from this monorepo
-# To use those features you must build and pin **this repo's** images
-# (see docker/images/Dockerfile.backend / Dockerfile.frontend / Dockerfile.mcp
-# and the project build scripts), e.g. replace image: with:
-#   image: "local/penpot-backend:dev"
-# or a registry path you publish from this fork. Setting DEFAULT_ADMIN_* on
-# stock penpotapp/backend is a silent no-op.
+# To use those features you must build and pin **this repo's** images.
+# Easiest path:
+#   ./scripts/build-fork-images.sh
+#   cd docker/images && cp -n .env.fork.example .env.fork
+#   docker compose --env-file .env.fork -f docker-compose.yaml -f docker-compose.fork.yaml up -d
+# See docker-compose.fork.yaml and docs/zh/部署与使用教程.md.
+# Setting DEFAULT_ADMIN_* on stock penpotapp/backend is a silent no-op.
 # ---------------------------------------------------------------------------
 x-flags: &penpot-flags
   # enable-login-with-password is required for email/password default-admin login.
