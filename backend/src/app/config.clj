@@ -305,7 +305,10 @@
   instance admin (`PENPOT_ADMINS` / `:is-admin`)."
   [config]
   (if-let [email (some-> (:default-admin-email config) str/lower str/trim not-empty)]
-    (update config :admins (fnil conj #{}) email)
+    ;; Only promote well-formed emails into :admins (schema is set of emails).
+    (if (sm/email-string? email)
+      (update config :admins (fnil conj #{}) email)
+      config)
     config))
 
 (defn read-config

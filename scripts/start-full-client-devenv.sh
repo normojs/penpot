@@ -42,7 +42,14 @@ log() { printf '[full-client] %s\n' "$*"; }
 
 http_code() {
   local url="$1"
-  curl -sS -o /dev/null -w '%{http_code}' --max-time 3 "$url" 2>/dev/null || echo 000
+  # Capture curl exit separately so we never print "000" twice (was "000000").
+  local code
+  code="$(curl -sS -o /dev/null -w '%{http_code}' --max-time 3 "$url" 2>/dev/null)" || true
+  if [[ "$code" =~ ^[0-9]{3}$ ]]; then
+    printf '%s' "$code"
+  else
+    printf '000'
+  fi
 }
 
 print_status() {
@@ -194,9 +201,10 @@ else
   tmux send-keys -t "$SESSION":frontend "cd ~/penpot/frontend && pnpm exec concurrently --kill-others-on-fail \"pnpm run watch:app:assets\" \"pnpm run watch:app:main\" \"pnpm run watch:app:libs\"" Enter
 fi
 
-# MCP must run from packages/server so data/initial_instructions.md resolves
+# MCP must run from packages/server so data/initial_instructions.md resolves.
+# Build dist when missing (mirrors plugin fallback).
 tmux new-window -t "$SESSION" -n mcp
-tmux send-keys -t "$SESSION":mcp "cd ~/penpot/mcp/packages/server && export PENPOT_MCP_SERVER_HOST=0.0.0.0 && node dist/index.js" Enter
+tmux send-keys -t "$SESSION":mcp "cd ~/penpot/mcp/packages/server && export PENPOT_MCP_SERVER_HOST=0.0.0.0 && if [ ! -f dist/index.js ]; then echo '[full-client] building MCP server dist...'; (cd ~/penpot/mcp && pnpm install && pnpm --filter @penpot/mcp-server build) || pnpm run build; fi && test -f dist/index.js || { echo '[full-client] ERROR: packages/server/dist/index.js missing after build'; sleep infinity; } && node dist/index.js" Enter
 
 tmux new-window -t "$SESSION" -n plugin
 tmux send-keys -t "$SESSION":plugin "cd ~/penpot/mcp/packages/plugin && (test -f dist/manifest.json || pnpm build) && pnpm exec vite preview --host 0.0.0.0 --port 4400 --strictPort" Enter

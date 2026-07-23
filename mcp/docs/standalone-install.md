@@ -178,22 +178,33 @@ High level (details in gateway / multi-user docs):
 
 ## D. First-Deploy Default Login (Backend)
 
+**Requires a backend image/binary built from this fork.** Stock
+`penpotapp/backend` images ignore `PENPOT_DEFAULT_ADMIN_*` (silent no-op).
+
 On a **fresh** database, operators can set a default account that is created
 once at backend startup (idempotent if the email already exists).
 
 | Env | Required | Purpose |
 | --- | --- | --- |
-| `PENPOT_DEFAULT_ADMIN_EMAIL` | yes (with password) | Login email |
+| `PENPOT_DEFAULT_ADMIN_EMAIL` | yes (with password) | Login email (must look like a valid email) |
 | `PENPOT_DEFAULT_ADMIN_PASSWORD` | yes (with email) | Login password (**≥ 8 chars**) |
 | `PENPOT_DEFAULT_ADMIN_FULLNAME` | no | Display name (default `Administrator`) |
 
-Also ensure password login is enabled, e.g. `PENPOT_FLAGS` includes
-`enable-login-with-password`. For production, set a strong password and change
-it after first login. Optionally put the same email in `PENPOT_ADMINS` for
-instance-admin tooling; when the default admin email is set, it is automatically
-included in the effective admins set.
+### Create-only (password rotation)
 
-Example (`docker/images/docker-compose.yaml` comments mirror this):
+Bootstrap **does not update** the password if the email already exists. Changing
+`PENPOT_DEFAULT_ADMIN_PASSWORD` in env and restarting will **not** change the
+stored password. Rotate via the Penpot UI (profile settings) or srepl/admin
+tooling. Concurrent multi-replica first boot treats race losers as “already
+exists” (startup does not fail).
+
+Also ensure password login is enabled, e.g. `PENPOT_FLAGS` includes
+`enable-login-with-password` (this fork’s compose sample adds it). For
+production, set a strong password and change it after first login. When the
+default admin email is set, it is automatically included in the effective
+admins set (`PENPOT_ADMINS`).
+
+Example:
 
 ```bash
 export PENPOT_DEFAULT_ADMIN_EMAIL=admin@example.com

@@ -17,6 +17,7 @@
    [app.setup :as-alias setup]
    [clojure.edn :as edn]
    [clojure.java.io :as io]
+   [cuerdas.core :as str]
    [datoteka.fs :as fs]
    [integrant.core :as ig]))
 
@@ -34,6 +35,9 @@
                :code :invalid-templates
                :hint "invalid templates"))
 
+;; Bound the time we wait on CDN / object-storage for a single kit.
+(def ^:private template-download-timeout-ms 120000)
+
 (defmethod ig/init-key ::setup/templates
   [_ _]
   (let [templates (-> "app/onboarding.edn" io/resource slurp edn/read-string)
@@ -48,12 +52,20 @@
 
     templates))
 
+(defn- raise-download-error!
+  [uri cause hint]
+  (ex/raise :type :internal
+            :code :unable-to-download-template
+            :hint (str/ffmt "unable to download template from '%': %" uri hint)
+            :cause cause))
+
 (defn get-template-stream
   [cfg template-id]
   (when-let [template (d/seek #(= (:id %) template-id)
                               (::setup/templates cfg))]
     (let [dest (fs/join fs/*cwd* "builtin-templates")
-          path (or (:path template) (fs/join dest template-id))]
+          path (or (:path template) (fs/join dest template-id))
+          uri  (:file-uri template)]
 
       (if (fs/exists? path)
         (io/input-stream path)
@@ -61,12 +73,25 @@
         ;; :file-uri points at one kit binary (e.g. ModelScope resolve URL or a
         ;; static CDN). Shared HTTP client has follow-redirects disabled, so
         ;; follow 3xx explicitly for CDNs / object storage.
-        (let [resp (http/req-with-redirects cfg
-                                            {:method :get :uri (:file-uri template)}
-                                            {:response-type :input-stream :sync? true})]
+        (let [resp (try
+                     (http/req-with-redirects cfg
+                                              {:method :get
+                                               :uri uri
+                                               :timeout template-download-timeout-ms}
+                                              {:response-type :input-stream
+                                               :sync? true})
+                     (catch java.net.ConnectException cause
+                       (raise-download-error! uri cause "connection refused or host unreachable"))
+                     (catch java.net.http.HttpConnectTimeoutException cause
+                       (raise-download-error! uri cause "connection timeout"))
+                     (catch java.net.http.HttpTimeoutException cause
+                       (raise-download-error! uri cause "request timeout"))
+                     (catch java.io.IOException cause
+                       (raise-download-error! uri cause "I/O error")))]
           (when-not (= 200 (:status resp))
             (ex/raise :type :internal
                       :code :unexpected-status-code
-                      :hint (str "unable to download template, recevied status " (:status resp))))
+                      :hint (str "unable to download template, recevied status " (:status resp)
+                                 " from " uri)))
 
           (io/input-stream (:body resp)))))))

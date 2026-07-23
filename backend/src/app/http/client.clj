@@ -107,12 +107,25 @@
       ;; Preserve method/body (307, 308, or GET/HEAD 301/302)
       (assoc orig-request :uri next-uri))))
 
+(defn- close-quietly!
+  "Close Closeable bodies from intermediate redirect hops so InputStream
+   responses do not leak file descriptors."
+  [resp]
+  (when-let [body (:body resp)]
+    (when (instance? java.io.Closeable body)
+      (try
+        (.close ^java.io.Closeable body)
+        (catch Throwable _)))))
+
 (defn req-with-redirects
   "Like `req`, but follows up to `max-redirects` HTTP 3xx redirects.
    SSRF validation is applied before every hop (initial request and
    each redirect target) unless `:skip-ssrf-check? true` is passed.
    Redirect semantics follow RFC 7231 §6.4: 301/302 POST is downgraded
-   to GET; 303 always uses GET; 307/308 preserve the original method."
+   to GET; 303 always uses GET; 307/308 preserve the original method.
+
+   Intermediate hop response bodies (e.g. `:input-stream`) are closed
+   before following Location."
   ([cfg-or-client request]
    (req-with-redirects cfg-or-client request {}))
   ([cfg-or-client request {:keys [max-redirects skip-ssrf-check?]
@@ -129,6 +142,7 @@
                   (< hops max-redirects))
            (if-let [location (get-in resp [:headers "location"])]
              (let [next-uri (resolve-location (str (:uri current-req)) location)]
+               (close-quietly! resp)
                (recur (update (redirect-request current-req next-uri status) :uri uri-coerce)
                       (inc hops)))
              ;; No Location header on a 3xx — return the response as-is
